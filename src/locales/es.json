@@ -1,0 +1,9 @@
+{
+  "login": {
+    "title": "Acceder a Navalha",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "submit": "Iniciar sesión",
+    "error": "Error al iniciar sesión"
+  }
+}

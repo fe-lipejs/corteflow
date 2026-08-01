@@ -1,0 +1,9 @@
+{
+  "login": {
+    "title": "Accéder à Navalha",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "submit": "Se connecter",
+    "error": "Erreur de connexion"
+  }
+}

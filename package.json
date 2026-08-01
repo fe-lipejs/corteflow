@@ -1,0 +1,44 @@
+{
+  "name": "navalha",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.4.3",
+    "@stripe/stripe-js": "^9.12.0",
+    "@supabase/supabase-js": "^2.110.8",
+    "@tanstack/react-query": "^5.101.4",
+    "autoprefixer": "^10.5.4",
+    "date-fns": "^4.4.0",
+    "framer-motion": "^12.42.2",
+    "i18next": "^26.3.6",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.26.0",
+    "postcss": "^8.5.23",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-hook-form": "^7.83.0",
+    "react-i18next": "^17.0.11",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "^7.18.1",
+    "tailwindcss": "^4.3.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/leaflet": "^1.9.21",
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "oxlint": "^1.71.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1"
+  }
+}
