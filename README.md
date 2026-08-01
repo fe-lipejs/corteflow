@@ -1,32 +1,34 @@
-# React + TypeScript + Vite
+# CorteFlow (Navalha SaaS)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+CorteFlow é uma plataforma SaaS multi-tenant de agendamento para Barbearias, Salões de Beleza e Esmalterias.
 
-Currently, two official plugins are available:
+## Stack Tecnológica
+- React + TypeScript + Vite
+- Tailwind CSS + shadcn/ui
+- Supabase (Auth + Postgres + Edge Functions)
+- Stripe (Billing e Connect)
+- React Query, React Hook Form + Zod, React Router DOM, Framer Motion, react-i18next
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Como rodar o projeto localmente
 
-## React Compiler
+1. Clone o repositório.
+2. Instale as dependências com `npm install`.
+3. Renomeie (ou copie) o arquivo `.env.example` para `.env` e preencha com as suas chaves do Supabase e do Stripe.
+4. Execute `npm run dev` para iniciar o servidor de desenvolvimento.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Deploy e Variáveis de Ambiente (MUITO IMPORTANTE)
 
-## Expanding the Oxlint configuration
+Ao fazer o deploy do projeto em serviços como Vercel, Netlify, Render, etc, **lembre-se de configurar as Variáveis de Ambiente no painel da plataforma de hospedagem.**
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+O arquivo `.env` **NÃO** sobe para o GitHub por razões de segurança (ele está no `.gitignore`), então a sua plataforma de deploy não saberá quais são as chaves, a menos que você as cadastre lá.
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+Você precisa configurar na plataforma as mesmas chaves que estão no seu `.env.example`:
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_STRIPE_PUBLIC_KEY`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_CONNECT_CLIENT_ID`
+
+Após configurar essas variáveis no seu serviço de hospedagem, o deploy funcionará corretamente comunicando-se com o Supabase e o Stripe!
