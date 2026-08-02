@@ -57,9 +57,11 @@ export default function Dashboard() {
     enabled: !!tenantId,
   });
 
-  // 2. Fetch Future Week's Bookings (for charts and top services)
-  const { data: futureBookings = [], isLoading: isLoadingFuture } = useQuery({
-    queryKey: ['dashboard_future_bookings', tenantId],
+  // 2. Fetch Recent & Future Bookings (for charts and top services)
+  // Fetch from 30 days ago to 7 days ahead
+  const past30DaysStart = startOfDay(addDays(new Date(), -30)).toISOString();
+  const { data: recentBookings = [], isLoading: isLoadingFuture } = useQuery({
+    queryKey: ['dashboard_recent_bookings', tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('bookings')
@@ -68,7 +70,7 @@ export default function Dashboard() {
           service:services ( name )
         `)
         .eq('tenant_id', tenantId)
-        .gte('scheduled_at', futureWeekStart)
+        .gte('scheduled_at', past30DaysStart)
         .lte('scheduled_at', futureWeekEnd);
       if (error) throw error;
       return data || [];
@@ -113,8 +115,9 @@ export default function Dashboard() {
 
   const loading = isLoadingToday || isLoadingFuture || isLoadingCustomers;
 
-  // Calculando KPIs
-  const totalRevenueToday = todayBookings.reduce((sum, b) => sum + (b.amount_total || 0), 0);
+  // Total revenue today - count only confirmed/completed
+  const validTodayBookings = todayBookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
+  const totalRevenueToday = validTodayBookings.reduce((sum, b) => sum + (b.amount_total || 0), 0);
   
   let occupancy = 'Sem dados';
   const todayWeekday = new Date().getDay(); // 0-6
@@ -129,7 +132,7 @@ export default function Dashboard() {
     
     // Sum duration of all today's bookings
     const totalBookedMinutes = todayBookings.reduce((sum, b) => {
-      const dur = b.service?.duration_minutes || 0;
+      const dur = b.services?.duration_minutes || 0;
       return sum + dur;
     }, 0);
     
@@ -182,8 +185,10 @@ export default function Dashboard() {
   ];
 
   // Gráfico da semana (Previsão)
-  const confirmedFutureBookings = futureBookings.filter(b => b.status === 'confirmed' || b.status === 'pending');
-  const futureRevenue = confirmedFutureBookings.reduce((sum, b) => sum + (b.amount_total || 0), 0);
+  const confirmedRecentBookings = recentBookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
+  const futureRevenue = confirmedRecentBookings
+    .filter(b => new Date(b.scheduled_at) >= new Date())
+    .reduce((sum, b) => sum + (b.amount_total || 0), 0);
   
   // Calculate heights per day (Next 7 days including today)
   const next7Days = Array.from({ length: 7 }).map((_, i) => addDays(new Date(), i));
@@ -192,7 +197,7 @@ export default function Dashboard() {
   const dailyFutureRevenues = next7Days.map(day => {
     const dayStart = startOfDay(day).getTime();
     const dayEnd = endOfDay(day).getTime();
-    return confirmedFutureBookings
+    return confirmedRecentBookings
       .filter(b => {
         const d = new Date(b.scheduled_at).getTime();
         return d >= dayStart && d <= dayEnd;
@@ -203,9 +208,9 @@ export default function Dashboard() {
   const maxFutureRevenue = Math.max(...dailyFutureRevenues, 1);
   const futureWeekHeights = dailyFutureRevenues.map(r => (r / maxFutureRevenue) * 100);
 
-  // Top Serviços (Based on future confirmed bookings)
+  // Top Serviços (Based on recent 30 days + future confirmed bookings)
   const servicesStats: Record<string, { count: number, revenue: number }> = {};
-  confirmedFutureBookings.forEach(b => {
+  confirmedRecentBookings.forEach(b => {
     const serviceData = b.service as any;
     const serviceName = Array.isArray(serviceData) ? serviceData[0]?.name : serviceData?.name;
     

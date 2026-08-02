@@ -1,105 +1,282 @@
-import { useState } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Store, Settings, LogOut, Shield, Menu, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  LayoutDashboard, Building2, CreditCard, DollarSign,
+  Users, ScrollText, Bell, Settings, Shield,
+  LogOut, Menu, X, ChevronRight, Zap
+} from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../integrations/supabase/client';
+import { useAdminNotifications } from '../../hooks/useAdminNotifications';
+
+interface NavItem {
+  to: string;
+  icon: React.ElementType;
+  label: string;
+  badge?: number;
+}
+
+const navGroups = [
+  {
+    label: 'Visão Geral',
+    items: [
+      { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+    ],
+  },
+  {
+    label: 'Plataforma',
+    items: [
+      { to: '/admin/tenants', icon: Building2, label: 'Empresas' },
+      { to: '/admin/plans', icon: CreditCard, label: 'Planos' },
+      { to: '/admin/financeiro', icon: DollarSign, label: 'Financeiro' },
+    ],
+  },
+  {
+    label: 'Gestão',
+    items: [
+      { to: '/admin/usuarios', icon: Users, label: 'Usuários' },
+      { to: '/admin/auditoria', icon: ScrollText, label: 'Auditoria' },
+      { to: '/admin/notificacoes', icon: Bell, label: 'Notificações', badgeKey: 'notifications' },
+    ],
+  },
+  {
+    label: 'Sistema',
+    items: [
+      { to: '/admin/seguranca', icon: Shield, label: 'Segurança' },
+      { to: '/admin/settings', icon: Settings, label: 'Configurações' },
+    ],
+  },
+];
+
+function NavItemComponent({ item, onClick, externalBadge }: { item: NavItem; onClick?: () => void; externalBadge?: number }) {
+  return (
+    <NavLink
+      to={item.to}
+      end={item.to === '/admin'}
+      onClick={onClick}
+      className={({ isActive }) =>
+        `group flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
+          isActive
+            ? 'bg-white/[0.06] text-white'
+            : 'text-[#777] hover:text-[#bbb] hover:bg-white/[0.03]'
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <span className="flex items-center gap-3">
+            <item.icon className={`w-4 h-4 transition-colors ${isActive ? 'text-white' : 'text-[#555] group-hover:text-[#888]'}`} />
+            {item.label}
+          </span>
+          {(item.badge || externalBadge) ? (
+            <span className="bg-violet-500/20 text-violet-400 text-xs font-bold px-1.5 py-0.5 rounded-full">
+              {item.badge ?? externalBadge}
+            </span>
+          ) : isActive ? (
+            <div className="w-1.5 h-1.5 bg-white rounded-full opacity-60" />
+          ) : null}
+        </>
+      )}
+    </NavLink>
+  );
+}
 
 export default function AdminLayout() {
-  const { signOut } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { signOut, user } = useAuth();
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const location = useLocation();
+  const [profile, setProfile] = useState<{ full_name: string } | null>(null);
+  const { unreadCount } = useAdminNotifications();
+
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('full_name').eq('id', user.id).single()
+      .then(({ data }) => { if (data) setProfile(data); });
+  }, [user]);
+
+  const firstName = profile?.full_name?.split(' ')[0] ?? 'Admin';
 
   const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Bom dia';
-    if (hour >= 12 && hour < 18) return 'Boa tarde';
+    const h = new Date().getHours();
+    if (h < 12) return 'Bom dia';
+    if (h < 18) return 'Boa tarde';
     return 'Boa noite';
   };
 
-  const navItems = [
-    { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/admin/tenants', icon: Store, label: 'Salões' },
-    { to: '/admin/settings', icon: Settings, label: 'Configurações' },
-  ];
-
   return (
-    <div className="min-h-screen bg-[#1A1714] text-zinc-50 flex font-sans">
-      
-      {/* Mobile Top Bar */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#1A1714]/80 backdrop-blur-xl border-b border-[#2A2520] z-30 flex items-center justify-between px-4">
-        <div className="flex items-center text-white">
-          <Shield className="w-5 h-5 mr-2 text-[#C9963B]" />
-          <span className="font-bold tracking-wide text-sm">NAVALHA ADMIN</span>
+    <div className="min-h-screen bg-[#000000] text-white flex font-sans antialiased">
+
+      {/* ── Mobile Overlay ── */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+            onClick={() => setIsMobileOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Mobile Top Bar ── */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#000]/90 border-b border-[#1a1a1a] z-50 flex items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 bg-white rounded-sm flex items-center justify-center">
+            <Zap className="w-3.5 h-3.5 text-black" />
+          </div>
+          <span className="text-sm font-semibold text-white tracking-wide">Navalha</span>
+          <span className="text-[10px] font-bold text-[#555] uppercase tracking-widest ml-1">Platform</span>
         </div>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-zinc-400 hover:text-white p-2">
-          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        <button
+          onClick={() => setIsMobileOpen(!isMobileOpen)}
+          className="w-8 h-8 flex items-center justify-center rounded-md text-[#666] hover:text-white hover:bg-[#1a1a1a] transition-colors"
+        >
+          {isMobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
         </button>
       </div>
 
-      {/* Overlay for mobile */}
-      {isMobileMenuOpen && (
-        <div 
-          className="md:hidden fixed inset-0 bg-black/60 z-20 backdrop-blur-sm"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside 
-        className={`w-64 bg-[#1A1714]/80 backdrop-blur-xl border-r border-[#2A2520] flex flex-col fixed h-full z-30 transition-transform duration-300 md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      {/* ── Sidebar ── */}
+      <aside
+        className={`
+          w-60 flex flex-col fixed h-full z-50 
+          bg-[#000000] border-r border-[#111111]
+          transition-transform duration-300 ease-in-out
+          md:translate-x-0
+          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
       >
-        <div className="h-16 hidden md:flex items-center px-6 border-b border-[#2A2520] text-white">
-          <Shield className="w-5 h-5 mr-3 text-[#C9963B]" />
-          <span className="font-bold tracking-wide">NAVALHA ADMIN</span>
+        {/* Logo */}
+        <div className="h-14 flex items-center px-4 border-b border-[#111] gap-2.5">
+          <div className="w-7 h-7 bg-white rounded-md flex items-center justify-center flex-shrink-0">
+            <Zap className="w-4 h-4 text-black" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white leading-none">Navalha</p>
+            <p className="text-[10px] text-[#444] font-medium uppercase tracking-widest mt-0.5">Platform Admin</p>
+          </div>
         </div>
-        
-        {/* Mobile Spacer */}
-        <div className="md:hidden h-16 flex items-center px-6 border-b border-[#2A2520] text-white">
-          <span className="font-bold">Menu</span>
-        </div>
-        
-        <nav className="flex-1 py-6 px-4 space-y-2">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/admin'}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className={({ isActive }) => 
-                `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all ${
-                  isActive ? 'bg-[#C9963B] text-[#1A1714] shadow-[0_0_15px_rgba(201,150,59,0.2)] font-bold' : 'text-[#A09888] hover:bg-[#1E1B17] hover:text-white'
-                }`
-              }
-            >
-              <item.icon className={`w-5 h-5 mr-3 transition-colors`} />
-              {item.label}
-            </NavLink>
+
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-5">
+          {navGroups.map((group) => (
+            <div key={group.label}>
+              <p className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-widest text-[#333]">
+                {group.label}
+              </p>
+              <div className="space-y-0.5">
+                {group.items.map((item) => (
+                  <NavItemComponent
+                    key={item.to}
+                    item={item}
+                    onClick={() => setIsMobileOpen(false)}
+                    externalBadge={(item as any).badgeKey === 'notifications' && unreadCount > 0 ? unreadCount : undefined}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-[#2A2520]">
-          <button 
+        {/* User + Logout */}
+        <div className="border-t border-[#111] p-3">
+          <div className="flex items-center gap-3 px-3 py-2 mb-1">
+            <div className="w-7 h-7 bg-[#1a1a1a] border border-[#2a2a2a] rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-xs font-bold text-[#888]">
+                {firstName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-[#ccc] truncate">{firstName}</p>
+              <p className="text-[10px] text-[#444]">Super Admin</p>
+            </div>
+          </div>
+          <button
             onClick={signOut}
-            className="flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl text-[#A09888] hover:bg-red-500/10 hover:text-red-500 transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#555] hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors"
           >
-            <LogOut className="w-5 h-5 mr-3" />
-            Sair
+            <LogOut className="w-4 h-4" />
+            Sair da plataforma
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto relative pt-16 md:pt-0 md:ml-64 transition-all">
-        {/* Subtle background glow effect */}
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#C9963B]/5 blur-[120px] rounded-full pointer-events-none" />
-        
-        <header className="h-20 border-b border-[#2A2520] hidden md:flex items-center px-8 bg-[#1A1714]/80 backdrop-blur-md sticky top-0 z-20">
-          <h1 className="text-2xl font-serif font-bold text-white tracking-tight">
-            {getGreeting()}, <span className="text-[#C9963B]">plataforma.</span>
-          </h1>
+      {/* ── Main Content ── */}
+      <main className="flex-1 min-h-screen md:ml-60 flex flex-col">
+        {/* Top Header */}
+        <header className="sticky top-0 z-30 h-14 bg-[#000]/80 backdrop-blur-xl border-b border-[#111] hidden md:flex items-center justify-between px-8">
+          {/* Breadcrumb */}
+          <BreadcrumbFromPath />
+
+          {/* Right: greeting */}
+          <p className="text-sm text-[#444]">
+            {getGreeting()},{' '}
+            <span className="text-[#888] font-medium">{firstName}.</span>
+          </p>
         </header>
-        <div className="p-4 md:p-8 max-w-7xl relative z-10 overflow-x-hidden">
-          <Outlet />
+
+        {/* Page Content */}
+        <div className="flex-1 p-6 md:p-8 pt-20 md:pt-8 max-w-screen-2xl">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </div>
+
+        {/* Footer */}
+        <footer className="px-8 py-4 border-t border-[#0d0d0d] flex items-center justify-between">
+          <p className="text-xs text-[#333]">Navalha Platform · Admin Console</p>
+          <p className="text-xs text-[#2a2a2a]">v2.0.0</p>
+        </footer>
       </main>
     </div>
+  );
+}
+
+// ── Helper: Dynamic Breadcrumb ──────────────────────────────────────────────
+const routeLabels: Record<string, string> = {
+  admin: 'Admin',
+  tenants: 'Empresas',
+  plans: 'Planos',
+  financeiro: 'Financeiro',
+  usuarios: 'Usuários',
+  auditoria: 'Auditoria',
+  notificacoes: 'Notificações',
+  seguranca: 'Segurança',
+  settings: 'Configurações',
+  'custom-pricing': 'Preços Customizados',
+};
+
+function BreadcrumbFromPath() {
+  const location = useLocation();
+  const parts = location.pathname.split('/').filter(Boolean);
+
+  return (
+    <nav className="flex items-center gap-1 text-sm">
+      {parts.map((part, i) => {
+        const label = routeLabels[part] ?? (part.charAt(0).toUpperCase() + part.slice(1));
+        const isLast = i === parts.length - 1;
+        return (
+          <span key={i} className="flex items-center gap-1">
+            {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-[#2a2a2a]" />}
+            <span className={isLast ? 'text-[#888] font-medium' : 'text-[#333]'}>
+              {label}
+            </span>
+          </span>
+        );
+      })}
+    </nav>
   );
 }

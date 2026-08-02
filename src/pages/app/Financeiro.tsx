@@ -7,8 +7,9 @@ import { supabase } from '../../integrations/supabase/client';
 import { useAuth } from '../../contexts/AuthContext';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import FeatureGate from '../../components/FeatureGate';
 
-export default function Financeiro() {
+function FinanceiroContent() {
   const { theme } = useTheme();
   const { tenant } = useAuth();
   const [currentMonth] = useState(new Date());
@@ -61,6 +62,27 @@ export default function Financeiro() {
 
       if (refundsError) throw refundsError;
 
+      // Fetch Local Bookings (pagamento no local, apenas concluídos para contar como receita real)
+      const { data: localBookings, error: localBookingsError } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          created_at,
+          scheduled_at,
+          amount_total,
+          status,
+          customers (name),
+          services (name)
+        `)
+        .eq('tenant_id', tenant.id)
+        .eq('payment_mode', 'local')
+        .eq('status', 'completed')
+        .gte('scheduled_at', start)
+        .lte('scheduled_at', end)
+        .order('scheduled_at', { ascending: false });
+        
+      if (localBookingsError) throw localBookingsError;
+
       let entradas = 0;
       let saidas = 0;
 
@@ -97,6 +119,21 @@ export default function Financeiro() {
           date: r.created_at,
           customer_name: r.payments?.bookings?.customers?.name || 'Cliente',
           description: `Estorno: ${r.payments?.bookings?.services?.name || 'Serviço'}`,
+        });
+      });
+
+      localBookings?.forEach((b: any) => {
+        entradas += Number(b.amount_total || 0);
+
+        transactions.push({
+          id: b.id,
+          type: 'income',
+          amount: Number(b.amount_total || 0),
+          status: 'succeeded',
+          method: 'Local (Dinheiro/Outro)',
+          date: b.scheduled_at,
+          customer_name: b.customers?.name || 'Cliente',
+          description: b.services?.name || 'Serviço',
         });
       });
 
@@ -239,5 +276,16 @@ export default function Financeiro() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Financeiro() {
+  return (
+    <FeatureGate
+      feature="financeiro"
+      message="O módulo financeiro está disponível no plano Growth e superiores. Faça upgrade para visualizar entradas, saídas e relatórios financeiros."
+    >
+      <FinanceiroContent />
+    </FeatureGate>
   );
 }

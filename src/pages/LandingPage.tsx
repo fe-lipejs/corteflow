@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { CheckCircle, ArrowRight, Scissors, Star, Calendar, Users, CreditCard, Clock, Globe, Phone, Mail } from 'lucide-react';
+import { CheckCircle, ArrowRight, Scissors, Star, Calendar, Users, CreditCard, Clock, Globe, Phone, Mail, User } from 'lucide-react';
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 30 },
@@ -50,8 +50,9 @@ export default function LandingPage() {
             <a href="#planos" className="text-sm text-[#A09888] hover:text-white transition-colors">Planos</a>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/login" className="text-sm font-medium text-[#A09888] hover:text-white transition-colors hidden sm:inline">
-              Entrar
+            <Link to="/login" className="flex items-center gap-2 text-sm font-medium text-[#A09888] hover:text-white transition-colors">
+              <span className="hidden sm:inline">Entrar</span>
+              <User className="w-5 h-5 sm:hidden" />
             </Link>
             <Link
               to="/cadastro"

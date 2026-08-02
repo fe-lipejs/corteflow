@@ -7,6 +7,7 @@ import { supabase } from '../../integrations/supabase/client';
 import { useAuth } from '../../hooks/useAuth';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { CustomerModal } from './clientes/CustomerModal';
 
 export default function Clientes() {
   const { theme } = useTheme();
@@ -14,6 +15,7 @@ export default function Clientes() {
   const [segment, setSegment] = useState('todos');
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   
   const { data: customers = [], isLoading } = useQuery({
     queryKey: ['clientes', tenant?.id],
@@ -147,7 +149,12 @@ export default function Clientes() {
                   </thead>
                   <tbody>
                     {filteredCustomers.map(cliente => (
-                      <tr key={cliente.id} className="border-b last:border-b-0 hover:bg-black/5 transition-colors" style={{ borderColor: theme.border }}>
+                      <tr 
+                        key={cliente.id} 
+                        className="border-b last:border-b-0 hover:bg-black/5 transition-colors cursor-pointer" 
+                        style={{ borderColor: theme.border }}
+                        onClick={() => setSelectedCustomer(cliente)}
+                      >
                         <td className="py-4 px-4">
                           <p className="font-semibold" style={{ color: theme.textPrimary }}>{cliente.name}</p>
                           <p className="text-xs" style={{ color: theme.textSecondary }}>{cliente.phone || cliente.email || 'Sem contato'}</p>
@@ -177,6 +184,14 @@ export default function Clientes() {
           </div>
         </div>
       </div>
+
+      {selectedCustomer && (
+        <CustomerModal 
+          customer={selectedCustomer} 
+          tenantId={tenant!.id} 
+          onClose={() => setSelectedCustomer(null)} 
+        />
+      )}
     </div>
   );
 }

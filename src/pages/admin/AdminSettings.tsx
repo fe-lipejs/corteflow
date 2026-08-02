@@ -1,22 +1,24 @@
 import { useState } from 'react';
+import AdminPageHeader from './components/AdminPageHeader';
+import { Settings } from 'lucide-react';
 
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState('finance');
 
   return (
-    <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
-      <div className="flex border-b border-zinc-200">
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Configurações"
+        subtitle="Configurações globais da plataforma"
+        icon={<Settings className="w-5 h-5" />}
+      />
+    <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl overflow-hidden">
+      <div className="flex border-b border-[#1a1a1a]">
         <button 
           onClick={() => setActiveTab('finance')}
           className={`px-6 py-4 text-sm font-medium border-b-2 ${activeTab === 'finance' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-zinc-500 hover:text-zinc-700'}`}
         >
           Financeiro
-        </button>
-        <button 
-          onClick={() => setActiveTab('plans')}
-          className={`px-6 py-4 text-sm font-medium border-b-2 ${activeTab === 'plans' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-zinc-500 hover:text-zinc-700'}`}
-        >
-          Planos
         </button>
         <button 
           onClick={() => setActiveTab('notifications')}
@@ -47,36 +49,6 @@ export default function AdminSettings() {
                 <p className="text-xs text-zinc-500 mt-1">Taxa cobrada sobre as transações via Stripe Connect.</p>
               </div>
               <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700">Salvar Configurações</button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'plans' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-               <h3 className="text-lg font-bold text-zinc-900">Planos e Preços</h3>
-               <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 text-sm">Novo Plano</button>
-            </div>
-            {/* Lista de planos placeholder */}
-            <div className="border border-zinc-200 rounded-lg p-4 flex justify-between items-center">
-               <div>
-                 <h4 className="font-bold text-zinc-900">Starter</h4>
-                 <p className="text-sm text-zinc-500">1 profissional, sem gestão de produtos</p>
-               </div>
-               <div className="text-right">
-                 <span className="font-bold">R$ 27,00</span>
-                 <p className="text-xs text-zinc-500">BRL / Brasil</p>
-               </div>
-            </div>
-            <div className="border border-zinc-200 rounded-lg p-4 flex justify-between items-center">
-               <div>
-                 <h4 className="font-bold text-zinc-900">Growth</h4>
-                 <p className="text-sm text-zinc-500">Até 10 profissionais, com gestão de produtos</p>
-               </div>
-               <div className="text-right">
-                 <span className="font-bold">R$ 77,00</span>
-                 <p className="text-xs text-zinc-500">BRL / Brasil</p>
-               </div>
             </div>
           </div>
         )}
@@ -120,6 +92,7 @@ export default function AdminSettings() {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }
