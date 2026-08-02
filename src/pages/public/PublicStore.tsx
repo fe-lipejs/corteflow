@@ -175,7 +175,7 @@ export default function PublicStore() {
 
   // Geo Location
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
-  const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "denied" | "ok">("idle");
+  const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "denied" | "ok" | "ignored">("idle");
   const todayWeekday = new Date().getDay();
 
   // Coords fallback for salon (-20.4433088, -40.3535541)
@@ -827,6 +827,41 @@ export default function PublicStore() {
                   loading="lazy"
                   allowFullScreen
                 />
+
+                {geoStatus === "loading" && (
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm text-white">
+                    <Loader2 className="w-10 h-10 animate-spin mb-4" style={{ color: theme.accent }} />
+                    <p className="font-semibold text-base">Buscando sua localização...</p>
+                    <p className="text-sm opacity-80 mt-1">Traçando a melhor rota até o local</p>
+                  </div>
+                )}
+                
+                {geoStatus === "denied" && (
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md text-white p-6 text-center">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                      <MapPin className="w-8 h-8 opacity-70" />
+                    </div>
+                    <p className="font-semibold text-lg mb-2">Localização desativada</p>
+                    <p className="text-sm opacity-80 mb-8 max-w-sm">
+                      Para traçar a rota exata até nós, precisamos que você permita o acesso à sua localização no seu celular ou navegador.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+                      <button 
+                        onClick={() => requestLocation()} 
+                        className="flex-1 py-3.5 rounded-xl font-bold text-sm transition-transform active:scale-95 flex items-center justify-center gap-2"
+                        style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
+                      >
+                        <Navigation className="w-4 h-4" /> Permitir e Tentar
+                      </button>
+                      <button 
+                        onClick={() => setGeoStatus("ignored")} 
+                        className="flex-1 py-3.5 rounded-xl font-bold text-sm bg-white/10 hover:bg-white/20 transition-colors border border-white/10"
+                      >
+                        Ver mapa sem rota
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="absolute right-4 top-4 flex flex-col gap-2 z-10">
                   <button

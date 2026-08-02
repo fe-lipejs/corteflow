@@ -33,7 +33,17 @@ export interface Booking {
   created_at: string;
   updated_at: string;
   // Joined
-  customer?: { id: string; name: string; phone: string; email?: string | null };
+  customer?: { 
+    id: string; 
+    name: string; 
+    phone: string; 
+    email?: string | null;
+    segment?: string | null;
+    total_spent?: number;
+    visit_count?: number;
+    last_visit?: string | null;
+    past_services?: string[] | null;
+  };
   professional?: { id: string; name: string; agenda_color: string; photo_url?: string | null };
   service?: { id: string; name: string; duration_minutes: number; buffer_minutes: number; color?: string | null; price: number };
 }
@@ -71,7 +81,7 @@ async function fetchBookings(tenantId: string, from: Date, to: Date): Promise<Bo
     .from('bookings')
     .select(`
       *,
-      customer:customers(id, name, phone, email),
+      customer:customers(id, name, phone, email, segment, total_spent, visit_count, last_visit, past_services),
       professional:professionals(id, name, agenda_color, photo_url),
       service:services(id, name, duration_minutes, buffer_minutes, color, price)
     `)
@@ -291,30 +301,35 @@ export function useRescheduleBooking(tenantId?: string) {
 
 // ─── Utility: generate time slots for a day ───────────────────────────────────
 export function generateTimeSlots(
+  targetDate: Date,
   openTime: string,   // "HH:mm"
   closeTime: string,  // "HH:mm"
   durationMinutes: number,
   bufferMinutes: number,
   existingBookings: Booking[],
   lunchStart?: string | null,
-  lunchEnd?: string | null
+  lunchEnd?: string | null,
+  allowPast: boolean = false
 ): string[] {
   const slots: string[] = [];
   const [oh, om] = openTime.split(':').map(Number);
   const [ch, cm] = closeTime.split(':').map(Number);
   const now = new Date();
 
-  const today = format(now, 'yyyy-MM-dd');
-  let current = new Date(`${today}T${openTime.padStart(5, '0')}:00`);
-  const closeDate = new Date(`${today}T${closeTime.padStart(5, '0')}:00`);
+  // If the targetDate is in the past (yesterday or earlier), we shouldn't show slots unless allowPast is true
+  if (!allowPast && isBefore(startOfDay(targetDate), startOfDay(now))) return [];
+
+  const targetDayStr = format(targetDate, 'yyyy-MM-dd');
+  let current = new Date(`${targetDayStr}T${openTime.padStart(5, '0')}:00`);
+  const closeDate = new Date(`${targetDayStr}T${closeTime.padStart(5, '0')}:00`);
 
   const serviceTotal = durationMinutes + bufferMinutes;
 
   while (isBefore(addMinutes(current, serviceTotal), closeDate) || +addMinutes(current, serviceTotal) === +closeDate) {
     const slotEnd = addMinutes(current, serviceTotal);
 
-    // Skip past times
-    if (isBefore(current, now)) {
+    // Skip past times if allowPast is false
+    if (!allowPast && isBefore(current, now)) {
       current = addMinutes(current, 15);
       continue;
     }
@@ -322,8 +337,8 @@ export function generateTimeSlots(
     // Skip lunch
     let isLunch = false;
     if (lunchStart && lunchEnd) {
-      const ls = new Date(`${today}T${lunchStart.slice(0, 5)}:00`);
-      const le = new Date(`${today}T${lunchEnd.slice(0, 5)}:00`);
+      const ls = new Date(`${targetDayStr}T${lunchStart.slice(0, 5)}:00`);
+      const le = new Date(`${targetDayStr}T${lunchEnd.slice(0, 5)}:00`);
       if (current < le && slotEnd > ls) isLunch = true;
     }
 

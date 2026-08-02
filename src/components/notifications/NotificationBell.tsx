@@ -83,8 +83,8 @@ export function NotificationBell() {
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
           <span 
-            className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full ring-2"
-            style={{ background: theme.accent, ringColor: theme.bg }}
+            className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full"
+            style={{ background: theme.accent, boxShadow: `0 0 0 2px ${theme.bg}` }}
           />
         )}
       </button>

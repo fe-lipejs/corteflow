@@ -8,9 +8,9 @@ import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, type
 import ServiceCard from './servicos/ServiceCard';
 import ServiceModal from './servicos/ServiceModal';
 import ProductModal from './servicos/ProductModal';
+import { CategoriesManagerModal } from './servicos/CategoriesManagerModal';
+import { useCategories } from '../../hooks/useCategories';
 import { CardSkeleton, Skeleton } from '../../components/ui/Skeleton';
-
-const SERVICE_CATEGORIES = ['Todos', 'Cortes', 'Barba', 'Coloração', 'Escova', 'Tratamentos', 'Manicure', 'Pedicure', 'Estética', 'Pacotes', 'Outros'];
 const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
 
 export default function Servicos() {
@@ -28,9 +28,11 @@ export default function Servicos() {
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('Todos');
+  const [categoriesManagerOpen, setCategoriesManagerOpen] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
 
   // Data
+  const { categories, isLoading: loadingCategories } = useCategories(tenantId || null);
   const { data: services = [], isLoading: loadingServices, error: servicesError } = useServices(tenantId || null);
   const { data: products = [], isLoading: loadingProducts } = useProducts(tenantId || null);
 
@@ -58,10 +60,14 @@ export default function Servicos() {
 
   // Filtered products
   const filteredProducts = useMemo(() => {
-    if (!search) return products;
-    const q = search.toLowerCase();
-    return products.filter(p => p.name.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q) || p.brand?.toLowerCase().includes(q));
-  }, [products, search]);
+    let list = [...products];
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(p => p.name.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q) || p.brand?.toLowerCase().includes(q));
+    }
+    if (categoryFilter !== 'Todos') list = list.filter(p => p.category === categoryFilter);
+    return list;
+  }, [products, search, categoryFilter]);
 
   // Stats
   const serviceStats = useMemo(() => ({
@@ -176,7 +182,10 @@ export default function Servicos() {
         {(['servicos', 'produtos'] as const).map(tab => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => {
+              setActiveTab(tab);
+              setCategoryFilter('Todos');
+            }}
             className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === tab ? 'shadow' : 'hover:opacity-80'}`}
             style={{
               color: activeTab === tab ? theme.btnPrimaryText : theme.textSecondary,
@@ -201,17 +210,33 @@ export default function Servicos() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: theme.textSecondary }} />
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar serviço, categoria ou tag..." className="w-full rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none themed-input" />
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-              {SERVICE_CATEGORIES.map(cat => (
-                <button key={cat} onClick={() => setCategoryFilter(cat)} className="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all"
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none items-center">
+              <button onClick={() => setCategoryFilter('Todos')} className="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all"
+                style={{
+                  color: categoryFilter === 'Todos' ? theme.btnPrimaryText : theme.textSecondary,
+                  background: categoryFilter === 'Todos' ? theme.accentGradient : theme.cardBg,
+                  borderColor: categoryFilter === 'Todos' ? theme.accent : theme.border,
+                }}>
+                Todos
+              </button>
+              {categories.filter(c => c.type === 'service' || c.type === 'both').map(cat => (
+                <button key={cat.id} onClick={() => setCategoryFilter(cat.name)} className="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all"
                   style={{
-                    color: categoryFilter === cat ? theme.btnPrimaryText : theme.textSecondary,
-                    background: categoryFilter === cat ? theme.accentGradient : theme.cardBg,
-                    borderColor: categoryFilter === cat ? theme.accent : theme.border,
+                    color: categoryFilter === cat.name ? theme.btnPrimaryText : theme.textSecondary,
+                    background: categoryFilter === cat.name ? theme.accentGradient : theme.cardBg,
+                    borderColor: categoryFilter === cat.name ? theme.accent : theme.border,
                   }}>
-                  {cat}
+                  {cat.name}
                 </button>
               ))}
+              <button
+                onClick={() => setCategoriesManagerOpen(true)}
+                className="ml-2 flex items-center justify-center p-2 rounded-xl border transition-colors opacity-70 hover:opacity-100 shrink-0"
+                style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }}
+                title="Gerenciar Categorias"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
@@ -267,7 +292,41 @@ export default function Servicos() {
 
       {/* ── PRODUCTS TAB ── */}
       {activeTab === 'produtos' && (
-        <div className="relative">
+        <div className="relative space-y-6">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: theme.textSecondary }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar produto, categoria ou marca..." className="w-full rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none themed-input" />
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none items-center">
+              <button onClick={() => setCategoryFilter('Todos')} className="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all"
+                style={{
+                  color: categoryFilter === 'Todos' ? theme.btnPrimaryText : theme.textSecondary,
+                  background: categoryFilter === 'Todos' ? theme.accentGradient : theme.cardBg,
+                  borderColor: categoryFilter === 'Todos' ? theme.accent : theme.border,
+                }}>
+                Todos
+              </button>
+              {categories.filter(c => c.type === 'product' || c.type === 'both').map(cat => (
+                <button key={cat.id} onClick={() => setCategoryFilter(cat.name)} className="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all"
+                  style={{
+                    color: categoryFilter === cat.name ? theme.btnPrimaryText : theme.textSecondary,
+                    background: categoryFilter === cat.name ? theme.accentGradient : theme.cardBg,
+                    borderColor: categoryFilter === cat.name ? theme.accent : theme.border,
+                  }}>
+                  {cat.name}
+                </button>
+              ))}
+              <button
+                onClick={() => setCategoriesManagerOpen(true)}
+                className="ml-2 flex items-center justify-center p-2 rounded-xl border transition-colors opacity-70 hover:opacity-100 shrink-0"
+                style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }}
+                title="Gerenciar Categorias"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
           {/* Products list */}
           <div className="space-y-3">
             {loadingProducts && (
@@ -330,11 +389,19 @@ export default function Servicos() {
       {productModalOpen && (
         <ProductModal
           product={editingProduct}
+          tenantId={tenantId}
           onClose={() => { setProductModalOpen(false); setEditingProduct(null); }}
           onSave={handleSaveProduct}
           isLoading={createProduct.isPending || updateProduct.isPending}
         />
       )}
+
+      {/* ── Categories Manager ── */}
+      <CategoriesManagerModal
+        tenantId={tenantId}
+        isOpen={categoriesManagerOpen}
+        onClose={() => setCategoriesManagerOpen(false)}
+      />
 
       {/* ── Delete Service Confirm ── */}
       {deletingService && (

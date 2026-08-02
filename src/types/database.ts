@@ -127,6 +127,20 @@ export interface Database {
         Insert: Database['public']['Tables']['profiles']['Row'];
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
       };
+      categories: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          name: string;
+          type: 'service' | 'product' | 'both';
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['categories']['Row'], 'id' | 'created_at'> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['categories']['Insert']>;
+      };
       plans: {
         Row: {
           id: string;
@@ -185,6 +199,33 @@ export interface Database {
         Row: Service;
         Insert: Omit<Service, 'id'> & { id?: string };
         Update: Partial<Database['public']['Tables']['services']['Insert']>;
+      };
+      products: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          name: string;
+          description: string | null;
+          category: string | null;
+          price: number;
+          promo_price: number | null;
+          code: string | null;
+          stock: number;
+          min_stock: number;
+          brand: string | null;
+          photo_url: string | null;
+          active: boolean;
+          display_order: number;
+          created_at: string;
+          updated_at: string;
+          linked_service_id: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['products']['Row'], 'id' | 'created_at' | 'updated_at'> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['products']['Insert']>;
       };
       customers: {
         Row: {

@@ -1,25 +1,32 @@
 import { useState, useRef } from 'react';
 import { Upload, Loader2, Check } from 'lucide-react';
 import type { Product, ProductInput } from '../../../hooks/useProducts';
+import { useCategories } from '../../../hooks/useCategories';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { Modal } from '../../../components/ui/Modal';
 
-const CATEGORIES = ['Shampoo', 'Condicionador', 'Pomada', 'Cera', 'Coloração', 'Finalizador', 'Acessórios', 'Equipamentos', 'Esmalte', 'Outros'];
-
 interface Props {
   product?: Product | null;
+  tenantId: string;
   onClose: () => void;
   onSave: (input: ProductInput) => Promise<void>;
   isLoading?: boolean;
 }
 
-export default function ProductModal({ product, onClose, onSave, isLoading }: Props) {
+export default function ProductModal({ product, tenantId, onClose, onSave, isLoading }: Props) {
   const { theme } = useTheme();
+  const { categories } = useCategories(tenantId);
   const isEdit = !!product;
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState(product?.name ?? '');
-  const [category, setCategory] = useState(product?.category ?? 'Outros');
+  
+  const productCategories = categories.filter(c => c.type === 'product' || c.type === 'both');
+  const [category, setCategory] = useState(() => {
+    if (product?.category) return product.category;
+    if (productCategories.length > 0) return productCategories[0].name;
+    return 'Outros';
+  });
   const [description, setDescription] = useState(product?.description ?? '');
   const [price, setPrice] = useState(String(product?.price ?? ''));
   const [promoPrice, setPromoPrice] = useState(String(product?.promo_price ?? ''));
@@ -93,13 +100,19 @@ export default function ProductModal({ product, onClose, onSave, isLoading }: Pr
 
         {/* Category & Brand */}
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Categoria</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Categoria</label>
             <select value={category} onChange={e => setCategory(e.target.value)} className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}>
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              {productCategories.length === 0 && <option value="Outros">Outros</option>}
+              {productCategories.map(c => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+              {product?.category && !productCategories.find(c => c.name === product.category) && (
+                <option value={product.category}>{product.category} (Antiga)</option>
+              )}
             </select>
           </div>
-          <div>
+          <div className="space-y-1.5">
             <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Marca</label>
             <input value={brand} onChange={e => setBrand(e.target.value)} className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} placeholder="Ex: L'Oréal" />
           </div>

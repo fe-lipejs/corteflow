@@ -1,11 +1,11 @@
 import { useState, useRef } from 'react';
 import { Upload, Loader2, Check } from 'lucide-react';
-import type { Service, ServiceInput } from '../../../hooks/useServices';
+import { useServices, type Service, type ServiceInput } from '../../../hooks/useServices';
+import { useCategories } from '../../../hooks/useCategories';
 import type { Professional } from '../../../types/database';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { Modal } from '../../../components/ui/Modal';
 
-const CATEGORIES = ['Cortes', 'Barba', 'Coloração', 'Escova', 'Tratamentos', 'Manicure', 'Pedicure', 'Estética', 'Pacotes', 'Outros'];
 const COLOR_PALETTE = ['#C9963B', '#E8B960', '#60a5fa', '#a78bfa', '#34d399', '#f87171', '#fb923c', '#f472b6', '#4ade80', '#94a3b8'];
 
 interface Props {
@@ -17,13 +17,19 @@ interface Props {
   isLoading?: boolean;
 }
 
-export default function ServiceModal({ service, professionals = [], onClose, onSave, isLoading }: Props) {
+export default function ServiceModal({ service, professionals = [], tenantId, onClose, onSave, isLoading }: Props) {
   const { theme } = useTheme();
+  const { categories } = useCategories(tenantId);
   const isEdit = !!service;
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState(service?.name ?? '');
-  const [category, setCategory] = useState(service?.category ?? 'Outros');
+  const serviceCategories = categories.filter(c => c.type === 'service' || c.type === 'both');
+  const [category, setCategory] = useState(() => {
+    if (service?.category) return service.category;
+    if (serviceCategories.length > 0) return serviceCategories[0].name;
+    return 'Outros';
+  });
   const [description, setDescription] = useState(service?.description ?? '');
   const [price, setPrice] = useState(String(service?.price ?? ''));
   const [originalPrice, setOriginalPrice] = useState(String(service?.original_price ?? ''));
@@ -104,14 +110,20 @@ export default function ServiceModal({ service, professionals = [], onClose, onS
 
         {/* Category + Code */}
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Categoria</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Categoria</label>
             <select value={category} onChange={e => setCategory(e.target.value)} className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}>
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              {serviceCategories.length === 0 && <option value="Outros">Outros</option>}
+              {serviceCategories.map(c => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+              {service?.category && !serviceCategories.find(c => c.name === service.category) && (
+                <option value={service.category}>{service.category} (Antiga)</option>
+              )}
             </select>
           </div>
-          <div>
-            <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Código Interno</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Código Interno</label>
             <input value={code} onChange={e => setCode(e.target.value)} className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} placeholder="Ex: SVC-001" />
           </div>
         </div>

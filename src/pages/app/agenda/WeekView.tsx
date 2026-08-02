@@ -6,14 +6,12 @@ import { Clock, User } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 
 const HOUR_HEIGHT = 80;
-const START_HOUR = 7;
-const END_HOUR = 21;
-const HOURS = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i);
 const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
 
 interface Props {
   weekStart: Date;
   bookings: Booking[];
+  businessHours: any[];
   selectedProfessionalId?: string | null;
   onBookingClick: (b: Booking) => void;
   onSlotClick: (date: Date, hour: number) => void;
@@ -27,13 +25,57 @@ interface PositionedBooking {
   widthPercent: number;
 }
 
-export default function WeekView({ weekStart, bookings, selectedProfessionalId, onBookingClick, onSlotClick }: Props) {
+export default function WeekView({ weekStart, bookings, businessHours, selectedProfessionalId, onBookingClick, onSlotClick }: Props) {
   const { theme } = useTheme();
   
   const days = useMemo(() =>
     Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(weekStart, { weekStartsOn: 0 }), i)),
     [weekStart]
   );
+
+  const { START_HOUR, END_HOUR, HOURS } = useMemo(() => {
+    let minH = 24;
+    let maxH = 0;
+    let hasOpen = false;
+
+    // 1. Verificamos os horários de funcionamento
+    if (businessHours && businessHours.length > 0) {
+      for (const h of businessHours) {
+        if (h.is_open && h.open_time && h.close_time) {
+          hasOpen = true;
+          const openH = parseInt(h.open_time.split(':')[0], 10);
+          const closeH = parseInt(h.close_time.split(':')[0], 10);
+          if (openH < minH) minH = openH;
+          if (closeH > maxH) maxH = closeH;
+        }
+      }
+    }
+
+    // 2. Verificamos se há algum agendamento fora do horário de funcionamento
+    if (bookings && bookings.length > 0) {
+      for (const b of bookings) {
+        if (b.status !== 'canceled') {
+          hasOpen = true;
+          const start = new Date(b.scheduled_at);
+          const end = new Date(start.getTime() + (b.duration_minutes + (b.buffer_minutes || 0)) * 60000);
+          const startH = start.getHours();
+          const endH = end.getHours() + (end.getMinutes() > 0 ? 1 : 0);
+          if (startH < minH) minH = startH;
+          if (endH > maxH) maxH = endH;
+        }
+      }
+    }
+
+    if (!hasOpen) return { START_HOUR: 7, END_HOUR: 21, HOURS: Array.from({ length: 15 }, (_, i) => 7 + i) };
+
+    const start = Math.max(0, minH - 1); // 1 hora de margem antes
+    const end = Math.min(23, maxH + 1);  // 1 hora de margem depois
+    return {
+      START_HOUR: start,
+      END_HOUR: end,
+      HOURS: Array.from({ length: end - start + 1 }, (_, i) => start + i)
+    };
+  }, [businessHours, bookings]);
 
   const now = new Date();
   const nowTop = ((now.getHours() - START_HOUR) * 60 + now.getMinutes()) / 60 * HOUR_HEIGHT;
@@ -139,7 +181,8 @@ export default function WeekView({ weekStart, bookings, selectedProfessionalId, 
               className="flex-1 py-3 px-2 flex flex-col items-center border-r last:border-r-0 transition-colors"
               style={{ 
                 borderColor: theme.border,
-                background: today ? `${theme.accent}10` : 'transparent'
+                background: today ? `${theme.accent}10` : 'transparent',
+                opacity: businessHours.find((h: any) => h.weekday === day.getDay())?.is_open === false ? 0.5 : 1
               }}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -204,32 +247,40 @@ export default function WeekView({ weekStart, bookings, selectedProfessionalId, 
             {days.map(day => {
               const positionedBookings = getPositionedBookingsForDay(day);
               const today = isToday(day);
+              const dayHours = businessHours.find((bh: any) => bh.weekday === day.getDay());
+              const isClosed = dayHours && !dayHours.is_open;
 
               return (
                 <div 
                   key={day.toISOString()} 
                   className="flex-1 relative border-r last:border-r-0"
-                  style={{ borderColor: `${theme.border}80`, background: today ? `${theme.accent}05` : 'transparent' }}
+                  style={{ borderColor: theme.border, background: isClosed ? 'var(--theme-bg-hover)' : (today ? `${theme.accent}05` : 'transparent') }}
                 >
                   {/* Hour grid cells */}
-                  {HOURS.map(h => (
-                    <div 
-                      key={h} 
-                      onClick={() => onSlotClick(day, h)}
-                      className="border-b transition-colors cursor-pointer group relative hover:bg-[var(--theme-calendar-available-bg)]"
-                      style={{ height: `${HOUR_HEIGHT}px`, borderColor: `${theme.border}80` }}
-                    >
-                      {/* Interactive Hover "+" */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                        <span className="px-3 py-1 rounded-full text-xs font-bold shadow-lg transform scale-95 group-hover:scale-100 transition-transform" style={{ background: theme.accent, color: theme.btnPrimaryText }}>
-                          + {String(h).padStart(2, '0')}:00
-                        </span>
-                      </div>
+                  {HOURS.map(h => {
+                    const slotTime = new Date(day);
+                    slotTime.setHours(h, 0, 0, 0);
+                    const isPast = slotTime.getTime() < now.getTime();
+                    const isUnavailable = isClosed || isPast;
+
+                    return (
+                      <div 
+                        key={h} 
+                        onClick={() => { if (!isUnavailable) onSlotClick(day, h); }}
+                        className={`h-[${HOUR_HEIGHT}px] border-b transition-colors group relative ${!isUnavailable ? 'cursor-pointer hover:bg-white/5' : ''}`}
+                        style={{ borderColor: theme.border, height: `${HOUR_HEIGHT}px` }}
+                      >
+                        {!isUnavailable && (
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity" style={{ background: theme.accentGradient }}>
+                            <span className="text-[10px] font-bold text-white tracking-widest">+ {h.toString().padStart(2, '0')}:00</span>
+                          </div>
+                        )}
 
                       {/* Half-hour dashed divider */}
                       <div className="h-px border-b border-dashed mt-10 mx-2" style={{ borderColor: `${theme.border}50` }} />
                     </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Red dot on Today's column only */}
                   {today && showNowLine && (

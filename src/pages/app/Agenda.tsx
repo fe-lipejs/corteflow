@@ -11,7 +11,7 @@ import { useServices } from '../../hooks/useServices';
 import { useTheme } from '../../contexts/ThemeContext';
 import {
   useBookingsByWeek, useBookingsByDay,
-  useCreateBooking, useUpdateBookingStatus,
+  useCreateBooking, useUpdateBookingStatus, useDeleteBooking,
   type Booking, type BookingStatus, type CreateBookingInput,
   useBookingsRealtime
 } from '../../hooks/useBookings';
@@ -111,6 +111,14 @@ export default function Agenda() {
     await updateStatus.mutateAsync({ id, status });
     if (selectedBooking?.id === id) {
       setSelectedBooking(prev => prev ? { ...prev, status } : null);
+    }
+  };
+
+  const deleteBooking = useDeleteBooking(tenantId);
+  const handleDelete = async (id: string) => {
+    await deleteBooking.mutateAsync(id);
+    if (selectedBooking?.id === id) {
+      setSelectedBooking(null); // Fecha a sheet
     }
   };
 
@@ -269,6 +277,7 @@ export default function Agenda() {
                 <WeekView
                   weekStart={weekStart}
                   bookings={weekBookings}
+                  businessHours={businessHours}
                   selectedProfessionalId={selectedProfessionalId}
                   onBookingClick={setSelectedBooking}
                   onSlotClick={handleSlotClick}
@@ -277,6 +286,7 @@ export default function Agenda() {
                 <DayView
                   day={currentDay}
                   bookings={dayBookings}
+                  businessHours={businessHours}
                   onBookingClick={setSelectedBooking}
                   onSlotClick={handleSlotClick}
                 />
@@ -306,7 +316,8 @@ export default function Agenda() {
           booking={selectedBooking}
           onClose={() => setSelectedBooking(null)}
           onStatusChange={handleStatusChange}
-          isUpdating={updateStatus.isPending}
+          onDelete={handleDelete}
+          isUpdating={updateStatus.isPending || deleteBooking.isPending}
         />
       )}
     </div>

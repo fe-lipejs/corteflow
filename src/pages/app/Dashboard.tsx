@@ -1,21 +1,26 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../integrations/supabase/client';
 import { Calendar, DollarSign, UserPlus, Clock, ArrowUpRight, ArrowRight, Loader2 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useQuery } from '@tanstack/react-query';
+import { addDays, startOfDay, endOfDay, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
-const weekDays = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
-const weekHeights = [45, 62, 55, 80, 70, 100, 30];
-const topServices = [
-  { name: 'Corte + barba', pct: 82 },
-  { name: 'Degradê', pct: 65 },
-  { name: 'Barba', pct: 40 },
-];
+import { useProfessionals } from '../../hooks/useProfessionals';
+import { useServices } from '../../hooks/useServices';
+import { useCreateBooking } from '../../hooks/useBookings';
+import BookingModal from './agenda/BookingModal';
 
 export default function Dashboard() {
   const { profile, tenant } = useAuth();
   const { theme } = useTheme();
+  const navigate = useNavigate();
+  const tenantId = tenant?.id ?? '';
   const firstName = profile?.full_name?.split(' ')[0] || 'Dono';
+
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -24,48 +29,118 @@ export default function Dashboard() {
     return 'Boa noite';
   };
 
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const todayStart = startOfDay(new Date()).toISOString();
+  const todayEnd = endOfDay(new Date()).toISOString();
+  // Para previsão futura da semana (hoje + 6 dias)
+  const futureWeekStart = todayStart;
+  const futureWeekEnd = endOfDay(addDays(new Date(), 6)).toISOString();
 
-  useEffect(() => {
-    if (!tenant?.id) return;
+  // 1. Fetch Today's Bookings
+  const { data: todayBookings = [], isLoading: isLoadingToday } = useQuery({
+    queryKey: ['dashboard_today_bookings', tenantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          customers ( name ),
+          professionals ( name ),
+          services ( name, duration_minutes )
+        `)
+        .eq('tenant_id', tenantId)
+        .gte('scheduled_at', todayStart)
+        .lte('scheduled_at', todayEnd)
+        .order('scheduled_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!tenantId,
+  });
 
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        
-        const todayEnd = new Date();
-        todayEnd.setHours(23, 59, 59, 999);
+  // 2. Fetch Future Week's Bookings (for charts and top services)
+  const { data: futureBookings = [], isLoading: isLoadingFuture } = useQuery({
+    queryKey: ['dashboard_future_bookings', tenantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          id, scheduled_at, amount_total, status,
+          service:services ( name )
+        `)
+        .eq('tenant_id', tenantId)
+        .gte('scheduled_at', futureWeekStart)
+        .lte('scheduled_at', futureWeekEnd);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!tenantId,
+  });
 
-        const { data, error } = await supabase
-          .from('bookings')
-          .select(`
-            *,
-            customers ( name ),
-            professionals ( name ),
-            services ( name )
-          `)
-          .eq('tenant_id', tenant.id)
-          .gte('scheduled_at', todayStart.toISOString())
-          .lte('scheduled_at', todayEnd.toISOString())
-          .order('scheduled_at', { ascending: true });
+  // 3. Fetch new customers this week (created in the last 7 days)
+  const { data: newCustomersCount, isLoading: isLoadingCustomers } = useQuery({
+    queryKey: ['dashboard_new_customers', tenantId],
+    queryFn: async () => {
+      const pastWeekStart = startOfDay(addDays(new Date(), -7)).toISOString();
+      const { count, error } = await supabase
+        .from('customers')
+        .select('*', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
+        .gte('created_at', pastWeekStart)
+        .lte('created_at', todayEnd);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!tenantId,
+  });
 
-        if (error) throw error;
-        setBookings(data || []);
-      } catch (err) {
-        console.error('Error fetching bookings:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // 4. Fetch business hours (to calculate occupancy)
+  const { data: businessHours = [] } = useQuery({
+    queryKey: ['dashboard_business_hours', tenantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('business_hours')
+        .select('*')
+        .eq('tenant_id', tenantId);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!tenantId,
+  });
 
-    fetchDashboardData();
-  }, [tenant?.id]);
+  const { data: professionals = [] } = useProfessionals(tenantId || null);
+  const { data: services = [] } = useServices(tenantId || null);
+  const createBooking = useCreateBooking(tenantId || '');
 
-  const totalRevenue = bookings.reduce((sum, b) => sum + (b.amount_total || 0), 0);
+  const loading = isLoadingToday || isLoadingFuture || isLoadingCustomers;
+
+  // Calculando KPIs
+  const totalRevenueToday = todayBookings.reduce((sum, b) => sum + (b.amount_total || 0), 0);
   
+  let occupancy = 'Sem dados';
+  const todayWeekday = new Date().getDay(); // 0-6
+  const todayHours = businessHours.find(h => h.weekday === todayWeekday);
+  
+  if (todayBookings.length === 0) {
+    occupancy = 'Ainda sem agendamentos';
+  } else if (todayHours && todayHours.is_open && todayHours.open_time && todayHours.close_time) {
+    const startHour = parseInt(todayHours.open_time.split(':')[0]);
+    const endHour = parseInt(todayHours.close_time.split(':')[0]);
+    const totalMinutesOpen = (endHour - startHour) * 60;
+    
+    // Sum duration of all today's bookings
+    const totalBookedMinutes = todayBookings.reduce((sum, b) => {
+      const dur = b.service?.duration_minutes || 0;
+      return sum + dur;
+    }, 0);
+    
+    if (totalMinutesOpen > 0) {
+      const pct = Math.min(100, Math.round((totalBookedMinutes / totalMinutesOpen) * 100));
+      occupancy = `${pct}%`;
+    }
+  } else if (todayHours && !todayHours.is_open) {
+    occupancy = 'Fechado';
+  }
+
   // Basic formatter
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -78,33 +153,84 @@ export default function Dashboard() {
   const kpis = [
     {
       label: 'Agendamentos hoje',
-      value: bookings.length.toString(),
-      sub: '↗ vs ontem',
+      value: todayBookings.length.toString(),
+      sub: 'agora',
       icon: Calendar,
       dark: true,
     },
     {
       label: 'Faturamento previsto',
-      value: formatCurrency(totalRevenue),
+      value: formatCurrency(totalRevenueToday),
       sub: 'hoje',
       icon: DollarSign,
       dark: false,
     },
     {
       label: 'Ocupação',
-      value: 'N/A',
+      value: occupancy,
       sub: 'hoje',
       icon: Clock,
       dark: false,
     },
     {
       label: 'Novos clientes',
-      value: 'N/A', 
-      sub: 'esta semana',
+      value: newCustomersCount === 0 ? 'Nenhum cliente novo' : (newCustomersCount !== undefined ? newCustomersCount.toString() : '...'), 
+      sub: 'últimos 7 dias',
       icon: UserPlus,
       dark: false,
     },
   ];
+
+  // Gráfico da semana (Previsão)
+  const confirmedFutureBookings = futureBookings.filter(b => b.status === 'confirmed' || b.status === 'pending');
+  const futureRevenue = confirmedFutureBookings.reduce((sum, b) => sum + (b.amount_total || 0), 0);
+  
+  // Calculate heights per day (Next 7 days including today)
+  const next7Days = Array.from({ length: 7 }).map((_, i) => addDays(new Date(), i));
+  const weekDays = next7Days.map(d => format(d, 'E', { locale: ptBR }).charAt(0).toUpperCase());
+  
+  const dailyFutureRevenues = next7Days.map(day => {
+    const dayStart = startOfDay(day).getTime();
+    const dayEnd = endOfDay(day).getTime();
+    return confirmedFutureBookings
+      .filter(b => {
+        const d = new Date(b.scheduled_at).getTime();
+        return d >= dayStart && d <= dayEnd;
+      })
+      .reduce((sum, b) => sum + (b.amount_total || 0), 0);
+  });
+  
+  const maxFutureRevenue = Math.max(...dailyFutureRevenues, 1);
+  const futureWeekHeights = dailyFutureRevenues.map(r => (r / maxFutureRevenue) * 100);
+
+  // Top Serviços (Based on future confirmed bookings)
+  const servicesStats: Record<string, { count: number, revenue: number }> = {};
+  confirmedFutureBookings.forEach(b => {
+    const serviceData = b.service as any;
+    const serviceName = Array.isArray(serviceData) ? serviceData[0]?.name : serviceData?.name;
+    
+    if (serviceName) {
+      if (!servicesStats[serviceName]) {
+        servicesStats[serviceName] = { count: 0, revenue: 0 };
+      }
+      servicesStats[serviceName].count += 1;
+      servicesStats[serviceName].revenue += (b.amount_total || 0);
+    }
+  });
+  
+  const topServices = Object.entries(servicesStats)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 3)
+    .map(([name, stats]) => ({
+      name,
+      count: stats.count,
+      revenue: stats.revenue
+    }));
+
+  const handleCreateBooking = async (input: any) => {
+    await createBooking.mutateAsync(input);
+    setBookingModalOpen(false);
+  };
 
   if (loading) {
     return (
@@ -126,12 +252,14 @@ export default function Dashboard() {
             {getGreeting()}, <span style={{ color: theme.accent }}>{firstName}.</span>
           </h1>
           <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-            Você tem {bookings.length} agendamentos hoje.
+            {todayBookings.length > 0 
+              ? `Você tem ${todayBookings.length} agendamentos hoje.` 
+              : 'Nenhum agendamento para hoje.'}
           </p>
         </div>
         <div className="flex items-center gap-3 mt-4 md:mt-1">
-          <button className="btn-outline hidden md:block">Hoje</button>
-          <button className="btn-primary">+ Agendar</button>
+          <button onClick={() => navigate('/app/agenda')} className="btn-outline hidden md:block">Hoje</button>
+          <button onClick={() => setBookingModalOpen(true)} className="btn-primary">+ Agendar</button>
         </div>
       </div>
 
@@ -148,7 +276,7 @@ export default function Dashboard() {
                   <k.icon className="w-4 h-4" style={{ color: theme.accent }} />
                 </div>
               </div>
-              <p className="font-serif text-2xl md:text-4xl font-bold mb-2 truncate" style={{ color: theme.textPrimary }}>
+              <p className={`font-serif ${typeof k.value === 'string' && k.value.length > 10 ? 'text-xl md:text-2xl' : 'text-2xl md:text-4xl'} font-bold mb-2 truncate`} style={{ color: theme.textPrimary }}>
                 {k.value}
               </p>
             </div>
@@ -166,15 +294,15 @@ export default function Dashboard() {
           <div className="flex justify-between items-start mb-4">
             <div>
               <h3 className="font-bold text-lg" style={{ color: theme.textPrimary }}>Agenda de hoje</h3>
-              <p className="text-xs" style={{ color: theme.textMuted }}>{bookings.length} horários confirmados</p>
+              <p className="text-xs" style={{ color: theme.textMuted }}>{todayBookings.length} horários confirmados</p>
             </div>
-            <button className="flex items-center gap-1 text-xs font-semibold" style={{ color: theme.accent }}>
+            <button onClick={() => navigate('/app/agenda')} className="flex items-center gap-1 text-xs font-semibold" style={{ color: theme.accent }}>
               Ver semana <ArrowRight className="w-3 h-3" />
             </button>
           </div>
 
           <div className="mt-4 flex flex-col gap-2">
-            {bookings.length === 0 ? (
+            {todayBookings.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-icon">
                   <Calendar className="w-8 h-8" />
@@ -183,7 +311,7 @@ export default function Dashboard() {
                 <p className="empty-state-text">Os clientes que agendarem aparecerão aqui.</p>
               </div>
             ) : (
-              bookings.map((item) => (
+              todayBookings.map((item) => (
                 <div key={item.id} className="agenda-item flex items-center gap-3 p-3 rounded-lg border transition-colors hover:bg-[var(--theme-bg-hover)]" style={{ borderColor: theme.border }}>
                   <span className="agenda-time font-bold text-sm w-12 flex-shrink-0" style={{ color: theme.accent }}>{formatTime(item.scheduled_at)}</span>
                   <div className="flex-1 truncate">
@@ -203,48 +331,76 @@ export default function Dashboard() {
 
         {/* Right col */}
         <div className="flex flex-col gap-4">
-          {/* Semana card (Mock still for visual placeholder) */}
+          {/* Semana card */}
           <div className="glass-card p-5 flex flex-col">
             <div className="flex items-center gap-2 mb-3">
               <ArrowUpRight className="w-4 h-4" style={{ color: theme.accent }} />
-              <span className="text-xs" style={{ color: theme.textSecondary }}>Semana (Simulado)</span>
+              <span className="text-xs font-bold" style={{ color: theme.textPrimary }}>Previsão da Semana</span>
             </div>
-            <p className="font-serif text-3xl font-bold mb-0.5" style={{ color: theme.textPrimary }}>R$ 2.410</p>
+            <p className="font-serif text-3xl font-bold mb-0.5" style={{ color: theme.textPrimary }}>
+              {formatCurrency(futureRevenue)}
+            </p>
             <p className="text-xs mb-5" style={{ color: theme.textMuted }}>faturamento previsto</p>
 
             {/* Mini bar chart */}
             <div className="flex items-end gap-1.5 h-16">
-              {weekHeights.map((h, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <div
-                    className="chart-bar w-full"
-                    style={{ height: `${h}%`, opacity: i === weekHeights.indexOf(Math.max(...weekHeights)) ? 1 : 0.45, background: theme.accent, borderRadius: '2px' }}
-                  />
-                  <span className="text-[9px]" style={{ color: theme.textMuted }}>{weekDays[i]}</span>
+              {futureWeekHeights.every(h => h === 0) ? (
+                <div className="w-full flex items-center justify-center text-xs opacity-70" style={{ color: theme.textSecondary }}>
+                  Nenhuma previsão disponível
                 </div>
-              ))}
+              ) : (
+                futureWeekHeights.map((h, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div
+                      className="chart-bar w-full"
+                      style={{ height: `${h}%`, opacity: i === futureWeekHeights.indexOf(Math.max(...futureWeekHeights)) ? 1 : 0.45, background: theme.accent, borderRadius: '2px' }}
+                    />
+                    <span className="text-[9px]" style={{ color: theme.textMuted }}>{weekDays[i]}</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
-          {/* Top Serviços (Mock placeholder) */}
+          {/* Top Serviços */}
           <div className="glass-card p-5">
-            <h4 className="font-bold text-sm mb-4" style={{ color: theme.textPrimary }}>Top serviços (Simulado)</h4>
-            <div className="space-y-3">
-              {topServices.map((s, i) => (
-                <div key={i}>
-                  <div className="flex justify-between text-xs mb-1.5">
-                    <span style={{ color: theme.textSecondary }}>{s.name}</span>
-                    <span className="font-semibold" style={{ color: theme.textPrimary }}>{s.pct}%</span>
+            <h4 className="font-bold text-sm mb-4" style={{ color: theme.textPrimary }}>Top serviços</h4>
+            
+            {topServices.length === 0 ? (
+              <div className="text-center py-4 text-xs opacity-70" style={{ color: theme.textSecondary }}>
+                Sem informações suficientes
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {topServices.map((s, i) => (
+                  <div key={i} className="flex flex-col">
+                    <div className="flex justify-between items-center text-xs mb-1">
+                      <span className="font-semibold truncate mr-2" style={{ color: theme.textPrimary }}>{s.name}</span>
+                      <span style={{ color: theme.textSecondary, flexShrink: 0 }}>{s.count} agend.</span>
+                    </div>
+                    <div className="text-xs font-medium text-right mb-2" style={{ color: theme.accent }}>
+                      {formatCurrency(s.revenue)}
+                    </div>
                   </div>
-                  <div className="h-1 rounded-full overflow-hidden" style={{ background: theme.inputBg }}>
-                    <div className="h-full rounded-full" style={{ width: `${s.pct}%`, background: theme.accent }} />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
+      
+      {/* Modal de Agendamento */}
+      {bookingModalOpen && (
+        <BookingModal
+          tenantId={tenantId}
+          services={services}
+          professionals={professionals}
+          businessHours={businessHours}
+          onClose={() => setBookingModalOpen(false)}
+          onCreate={handleCreateBooking}
+          isLoading={createBooking.isPending}
+        />
+      )}
     </div>
   );
 }

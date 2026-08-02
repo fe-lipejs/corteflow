@@ -1,12 +1,15 @@
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
-import { X, User, Scissors, Clock, CreditCard, MessageSquare, ChevronDown, Loader2 } from 'lucide-react';
+import { X, User, Scissors, Clock, CreditCard, MessageSquare, Phone, Mail, Loader2, CalendarClock, ChevronDown } from 'lucide-react';
 import { BOOKING_STATUS_CONFIG, type Booking, type BookingStatus } from '../../../hooks/useBookings';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../../../integrations/supabase/client';
 
 interface Props {
   booking: Booking;
   onClose: () => void;
   onStatusChange: (id: string, status: BookingStatus) => void;
+  onDelete?: (id: string) => void;
   isUpdating?: boolean;
 }
 
@@ -14,7 +17,7 @@ const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL',
 
 const STATUS_FLOW: BookingStatus[] = ['pending', 'confirmed', 'arrived', 'in_progress', 'completed'];
 
-export default function BookingDetailSheet({ booking, onClose, onStatusChange, isUpdating }: Props) {
+export default function BookingDetailSheet({ booking, onClose, onStatusChange, onDelete, isUpdating }: Props) {
   const statusCfg = BOOKING_STATUS_CONFIG[booking.status];
   const scheduledAt = new Date(booking.scheduled_at);
   const endTime = new Date(scheduledAt.getTime() + (booking.duration_minutes * 60 * 1000));
@@ -22,45 +25,93 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, i
   const nextStatus = STATUS_FLOW[STATUS_FLOW.indexOf(booking.status) + 1];
   const isFinished = booking.status === 'completed' || booking.status === 'canceled' || booking.status === 'no_show';
 
+  // Fetch last 3 bookings for this customer
+  const { data: pastBookings, isLoading: loadingHistory } = useQuery({
+    queryKey: ['customer_history_bookings', booking.customer_id],
+    queryFn: async () => {
+      if (!booking.customer_id) return [];
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('id, scheduled_at, services(name), professionals(name)')
+        .eq('customer_id', booking.customer_id)
+        .neq('id', booking.id) // exclude current
+        .lt('scheduled_at', booking.scheduled_at) // only past relative to this booking
+        .not('status', 'in', '("canceled","no_show")')
+        .order('scheduled_at', { ascending: false })
+        .limit(3);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!booking.customer_id
+  });
+
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-40 bg-[var(--theme-bg-overlay)] backdrop-blur-sm" onClick={onClose} />
 
       {/* Sheet — slides up from bottom on mobile, right panel on desktop */}
-      <div className="fixed bottom-0 left-0 right-0 md:top-0 md:right-0 md:left-auto md:bottom-0 z-50 flex flex-col w-full md:w-[420px]"
-        style={{ background: '#1C1A17', borderTop: '1px solid #3A3530', borderLeft: '1px solid #3A3530', borderRadius: '24px 24px 0 0' }}>
+      <div className="fixed bottom-0 left-0 right-0 md:top-0 md:right-0 md:left-auto md:bottom-0 z-50 flex flex-col w-full md:w-[480px] h-[90vh] md:h-full"
+        style={{ background: 'var(--theme-bg)', borderTop: '1px solid var(--theme-border)', borderLeft: '1px solid var(--theme-border)', borderRadius: '24px 24px 0 0' }}>
 
         {/* Handle bar (mobile) */}
         <div className="flex justify-center pt-3 pb-1 md:hidden">
-          <div className="w-12 h-1 rounded-full bg-[#3A3530]" />
+          <div className="w-12 h-1 rounded-full" style={{ background: 'var(--theme-border)' }} />
         </div>
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#3A3530]">
+        {/* Header (Customer Info) */}
+        <div className="flex items-start justify-between px-6 py-5 border-b" style={{ borderColor: 'var(--theme-border)' }}>
           <div>
-            <p className="text-[10px] font-bold text-[#A09888] uppercase tracking-wider">Agendamento</p>
-            <h3 className="font-serif text-xl font-bold text-white">{booking.customer?.name ?? 'Cliente'}</h3>
+            <div className="flex items-center gap-2 mb-1.5">
+               <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--theme-text-secondary)' }}>Agendamento</p>
+               {booking.customer?.segment && (
+                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                    booking.customer.segment === 'vip' ? 'bg-[var(--theme-accent-muted)] text-[var(--theme-accent)] border border-[var(--theme-accent)]' :
+                    booking.customer.segment === 'fiel' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                    booking.customer.segment === 'novo' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                    booking.customer.segment === 'inativo' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                    'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                  }`}>
+                    {booking.customer.segment}
+                  </span>
+               )}
+            </div>
+            <h3 className="font-serif text-2xl font-bold mb-2" style={{ color: 'var(--theme-text-primary)' }}>{booking.customer?.name ?? 'Cliente'}</h3>
+            
+            {/* Contatos Reais */}
+            <div className="flex flex-col gap-1.5">
+              {booking.customer?.phone && (
+                <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--theme-text-secondary)' }}>
+                  <Phone className="w-3.5 h-3.5" /> {booking.customer.phone}
+                </div>
+              )}
+              {booking.customer?.email && (
+                <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--theme-text-secondary)' }}>
+                  <Mail className="w-3.5 h-3.5" /> {booking.customer.email}
+                </div>
+              )}
+            </div>
           </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-full flex items-center justify-center text-[#A09888] hover:text-white hover:bg-white/10 transition-all">
+          <button onClick={onClose} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all hover:bg-white/10" style={{ color: 'var(--theme-text-secondary)' }}>
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-6">
 
           {/* Status badge */}
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold" style={{ background: statusCfg.bg, color: statusCfg.color }}>
+            <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border" style={{ background: statusCfg.bg, color: statusCfg.color, borderColor: `${statusCfg.color}30` }}>
               <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: statusCfg.color }} />
               {statusCfg.label}
             </span>
-            <p className="text-xs text-[#A09888]">#{booking.order_number}</p>
+            <p className="text-xs font-mono" style={{ color: 'var(--theme-text-secondary)' }}>#{booking.order_number}</p>
           </div>
 
-          {/* Info cards */}
+          {/* Info cards (Booking context) */}
           <div className="space-y-3">
+            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--theme-text-secondary)' }}>Detalhes da Reserva</p>
             {[
               {
                 icon: Clock,
@@ -85,80 +136,169 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, i
                 icon: CreditCard,
                 label: 'Valor',
                 value: fmt.format(booking.amount_total),
-                sub: `Pago: ${fmt.format(booking.amount_paid)}`,
+                sub: `Pago: ${fmt.format(booking.amount_paid)} (${booking.payment_mode === 'local' ? 'No local' : booking.payment_mode === 'full' ? 'Integral' : 'Sinal'})`,
               },
             ].map(item => (
-              <div key={item.label} className="flex items-start gap-4 p-4 rounded-2xl bg-[#252118] border border-[#3A3530]">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: item.color ? `${item.color}20` : '#3A3530' }}>
-                  <item.icon className="w-4 h-4" style={{ color: item.color ?? '#A09888' }} />
+              <div key={item.label} className="flex items-start gap-4 p-4 rounded-2xl border" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: item.color ? `${item.color}20` : 'var(--theme-bg-hover)' }}>
+                  <item.icon className="w-4.5 h-4.5" style={{ color: item.color ?? 'var(--theme-text-secondary)' }} />
                 </div>
                 <div>
-                  <p className="text-xs text-[#A09888]">{item.label}</p>
-                  <p className="text-sm font-bold text-white">{item.value}</p>
-                  {item.sub && <p className="text-xs text-[#A09888]">{item.sub}</p>}
+                  <p className="text-[11px] uppercase tracking-wider mb-0.5" style={{ color: 'var(--theme-text-secondary)' }}>{item.label}</p>
+                  <p className="text-sm font-bold" style={{ color: 'var(--theme-text-primary)' }}>{item.value}</p>
+                  {item.sub && <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-secondary)' }}>{item.sub}</p>}
                 </div>
               </div>
             ))}
 
             {/* Notes */}
             {booking.notes && (
-              <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#252118] border border-[#3A3530]">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[#3A3530] shrink-0">
-                  <MessageSquare className="w-4 h-4 text-[#A09888]" />
+              <div className="flex items-start gap-4 p-4 rounded-2xl border" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--theme-bg-hover)' }}>
+                  <MessageSquare className="w-4.5 h-4.5" style={{ color: 'var(--theme-text-secondary)' }} />
                 </div>
                 <div>
-                  <p className="text-xs text-[#A09888]">Observações</p>
-                  <p className="text-sm text-white">{booking.notes}</p>
+                  <p className="text-[11px] uppercase tracking-wider mb-0.5" style={{ color: 'var(--theme-text-secondary)' }}>Observações</p>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--theme-text-primary)' }}>{booking.notes}</p>
                 </div>
               </div>
             )}
           </div>
 
+          {/* Customer CRM History */}
+          <div className="space-y-4 pt-4 border-t" style={{ borderColor: 'var(--theme-border)' }}>
+             <div className="flex items-center gap-2">
+               <CalendarClock className="w-4 h-4" style={{ color: 'var(--theme-accent)' }} />
+               <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--theme-accent)' }}>Histórico do Cliente</p>
+             </div>
+             
+             <div className="grid grid-cols-2 gap-3">
+               <div className="p-4 rounded-2xl border" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
+                 <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--theme-text-secondary)' }}>Total Gasto</p>
+                 <p className="text-base font-bold" style={{ color: 'var(--theme-text-primary)' }}>{fmt.format(booking.customer?.total_spent || 0)}</p>
+               </div>
+               <div className="p-4 rounded-2xl border" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
+                 <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--theme-text-secondary)' }}>Visitas Concluídas</p>
+                 <p className="text-base font-bold" style={{ color: 'var(--theme-text-primary)' }}>{booking.customer?.visit_count || 0} vezes</p>
+               </div>
+               <div className="col-span-2 p-4 rounded-2xl border" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
+                 <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--theme-text-secondary)' }}>Última Visita</p>
+                 <p className="text-sm font-bold" style={{ color: 'var(--theme-text-primary)' }}>
+                   {booking.customer?.last_visit 
+                     ? format(new Date(booking.customer.last_visit), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR }) 
+                     : 'Primeiro atendimento / Sem histórico'}
+                 </p>
+               </div>
+               
+               {/* Serviços Realizados (Past Services) */}
+               {booking.customer?.past_services && booking.customer.past_services.length > 0 && (
+                 <div className="col-span-2 p-4 rounded-2xl border" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
+                   <p className="text-[10px] uppercase tracking-wider mb-2.5" style={{ color: 'var(--theme-text-secondary)' }}>Serviços Frequentes</p>
+                   <div className="flex flex-wrap gap-2">
+                     {booking.customer.past_services.slice(0, 5).map((srv: string) => (
+                       <span key={srv} className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium border" style={{ background: 'var(--theme-bg-hover)', borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)' }}>{srv}</span>
+                     ))}
+                   </div>
+                 </div>
+               )}
+             </div>
+             
+             {/* Últimos Agendamentos List */}
+             <div className="pt-2">
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--theme-text-secondary)' }}>Últimos Atendimentos</p>
+                {loadingHistory ? (
+                  <div className="flex items-center justify-center py-4"><Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--theme-text-secondary)' }} /></div>
+                ) : pastBookings && pastBookings.length > 0 ? (
+                  <div className="space-y-2">
+                    {pastBookings.map((pb: any) => (
+                      <div key={pb.id} className="flex items-center justify-between p-3.5 rounded-xl border transition-colors hover:opacity-80" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
+                        <div>
+                          <p className="text-sm font-bold" style={{ color: 'var(--theme-text-primary)' }}>{pb.services?.name}</p>
+                          <p className="text-[11px] mt-0.5" style={{ color: 'var(--theme-text-secondary)' }}>com {pb.professionals?.name}</p>
+                        </div>
+                        <span className="text-xs font-mono font-medium px-2 py-1 rounded-md" style={{ background: 'var(--theme-bg-hover)', color: 'var(--theme-text-secondary)' }}>
+                          {format(new Date(pb.scheduled_at), "dd/MM/yy")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 rounded-xl border border-dashed" style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-bg-hover)' }}>
+                    <p className="text-xs" style={{ color: 'var(--theme-text-secondary)' }}>Nenhum agendamento anterior encontrado.</p>
+                  </div>
+                )}
+             </div>
+          </div>
+
           {/* Status actions */}
-          {!isFinished && (
-            <div className="space-y-2">
-              <p className="text-xs font-bold text-[#A09888] uppercase tracking-wider">Ações</p>
+          {!isFinished ? (
+            <div className="space-y-3 pt-4 border-t" style={{ borderColor: 'var(--theme-border)' }}>
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--theme-text-secondary)' }}>Mudar Status</p>
               {nextStatus && (
                 <button
                   onClick={() => onStatusChange(booking.id, nextStatus)}
                   disabled={isUpdating}
-                  className="w-full py-3 rounded-xl font-bold text-sm text-[#1A1714] flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)]"
-                  style={{ background: 'linear-gradient(135deg, #C9963B, #E8B960)' }}
+                  className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-all btn-primary"
                 >
                   {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  → {BOOKING_STATUS_CONFIG[nextStatus].label}
+                  Marcar como {BOOKING_STATUS_CONFIG[nextStatus].label}
                 </button>
               )}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3 mt-2">
                 <button
                   onClick={() => onStatusChange(booking.id, 'no_show')}
                   disabled={isUpdating}
-                  className="py-2.5 rounded-xl text-sm font-semibold border border-orange-500/30 text-orange-400 hover:bg-orange-500/10 transition-all"
+                  className="py-3 rounded-xl text-xs font-bold border border-orange-500/30 text-orange-500 hover:bg-orange-500/10 transition-all"
                 >
                   Não compareceu
                 </button>
                 <button
                   onClick={() => onStatusChange(booking.id, 'canceled')}
                   disabled={isUpdating}
-                  className="py-2.5 rounded-xl text-sm font-semibold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all"
+                  className="py-3 rounded-xl text-xs font-bold border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-all"
                 >
-                  Cancelar
+                  Cancelar Reserva
                 </button>
               </div>
             </div>
+          ) : (
+             <div className="pt-4 border-t" style={{ borderColor: 'var(--theme-border)' }}>
+                {onDelete && (
+                  <button
+                    onClick={() => { if(window.confirm('Tem certeza que deseja excluir permanentemente este agendamento?')) onDelete(booking.id) }}
+                    disabled={isUpdating}
+                    className="w-full py-3.5 rounded-xl text-sm font-bold border border-red-500 text-red-500 hover:bg-red-500/10 transition-all flex items-center justify-center gap-2"
+                  >
+                    {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                    Excluir Definitivamente
+                  </button>
+                )}
+             </div>
           )}
 
-          {/* Contact */}
-          {booking.customer?.phone && (
-            <a
-              href={`https://wa.me/${booking.customer.phone.replace(/\D/g, '')}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-[#3A3530] text-[#A09888] hover:text-white hover:border-[#3A3530]/80 text-sm font-semibold transition-all"
-            >
-              📱 Contatar via WhatsApp
-            </a>
-          )}
+          {/* Contact Actions */}
+          <div className="pt-6 pb-8 border-t mt-4" style={{ borderColor: 'var(--theme-border)' }}>
+            {booking.customer?.phone ? (
+              <a
+                href={`https://wa.me/${booking.customer.phone.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-4 rounded-xl border text-sm font-bold transition-all shadow-sm hover:shadow-md"
+                style={{ 
+                  background: 'var(--theme-card-bg)',
+                  borderColor: '#25D366', 
+                  color: 'var(--theme-text-primary)' 
+                }}
+              >
+                <Phone className="w-5 h-5" style={{ color: '#25D366' }} />
+                Conversar no WhatsApp
+              </a>
+            ) : (
+               <button disabled className="w-full py-4 rounded-xl border text-sm font-semibold cursor-not-allowed opacity-50" style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-bg-hover)', color: 'var(--theme-text-secondary)' }}>
+                 Telefone não cadastrado
+               </button>
+            )}
+          </div>
         </div>
       </div>
     </>

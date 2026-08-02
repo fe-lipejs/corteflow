@@ -35,6 +35,12 @@ export default function BookingModal({
   const [searchingCustomers, setSearchingCustomers] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // New Customer Form State
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState('');
+  const [newCustomerPhone, setNewCustomerPhone] = useState('');
+  const [creatingCustomer, setCreatingCustomer] = useState(false);
+
   const { data: dayBookings = [] } = useBookingsByDay(tenantId, selectedDate);
 
   useEffect(() => {
@@ -58,11 +64,12 @@ export default function BookingModal({
     return () => clearTimeout(timer);
   }, [customerSearch, tenantId]);
 
-  // Days for picker (14 days ahead)
-  const availableDays = useMemo(() =>
-    Array.from({ length: 14 }, (_, i) => addDays(startOfDay(new Date()), i)),
-    []
-  );
+  // Days for picker (14 days ahead, but start from initialDate if it's in the past)
+  const availableDays = useMemo(() => {
+    const today = startOfDay(new Date());
+    const start = (initialDate && isBefore(startOfDay(initialDate), today)) ? startOfDay(initialDate) : today;
+    return Array.from({ length: 14 }, (_, i) => addDays(start, i));
+  }, [initialDate]);
 
   // Business hours for selected day
   const todayHours = useMemo(() => {
@@ -79,59 +86,97 @@ export default function BookingModal({
       : dayBookings;
 
     return generateTimeSlots(
-      todayHours.open_time?.slice(0, 5) ?? '08:00',
-      todayHours.close_time?.slice(0, 5) ?? '20:00',
+      selectedDate,
+      (typeof todayHours.open_time === 'string' ? todayHours.open_time : '08:00').slice(0, 5),
+      (typeof todayHours.close_time === 'string' ? todayHours.close_time : '20:00').slice(0, 5),
       selectedService.duration_minutes,
       selectedService.buffer_minutes,
       proBookings as any,
       todayHours.lunch_start,
       todayHours.lunch_end,
+      false // Não permitir agendamentos no passado, conforme pedido
     );
   }, [selectedService, selectedPro, todayHours, dayBookings]);
+
+  const handleCreateCustomer = async () => {
+    if (!newCustomerName.trim() || !newCustomerPhone.trim()) {
+      setError('Preencha nome e telefone do cliente.');
+      return;
+    }
+    setCreatingCustomer(true);
+    setError(null);
+    try {
+      const { data, error: insertError } = await supabase
+        .from('customers')
+        .insert({
+          tenant_id: tenantId,
+          name: newCustomerName.trim(),
+          phone: newCustomerPhone.trim(),
+        } as any)
+        .select('*').single();
+
+      if (insertError) throw insertError;
+      
+      setSelectedCustomer(data);
+      setIsCreatingCustomer(false);
+      setNewCustomerName('');
+      setNewCustomerPhone('');
+    } catch (err: any) {
+      setError(err.message || 'Erro ao criar cliente');
+    } finally {
+      setCreatingCustomer(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!selectedCustomer || !selectedService || !selectedTime) {
       setError('Preencha todos os campos obrigatórios.');
       return;
     }
-    const [h, m] = selectedTime.split(':').map(Number);
-    const scheduledAt = new Date(selectedDate);
-    scheduledAt.setHours(h, m, 0, 0);
+    setError(null);
+    try {
+      const [h, m] = selectedTime.split(':').map(Number);
+      const scheduledAt = new Date(selectedDate);
+      scheduledAt.setHours(h, m, 0, 0);
 
-    await onCreate({
-      customer_id: selectedCustomer.id,
-      professional_id: selectedPro?.id ?? null,
-      service_id: selectedService.id,
-      scheduled_at: scheduledAt.toISOString(),
-      payment_mode: paymentMode,
-      amount_total: selectedService.price,
-      duration_minutes: selectedService.duration_minutes,
-      buffer_minutes: selectedService.buffer_minutes,
-      pro_color: selectedPro?.agenda_color ?? '#C9963B',
-      notes: notes.trim() || undefined,
-    });
+      await onCreate({
+        customer_id: selectedCustomer.id,
+        professional_id: selectedPro?.id ?? null,
+        service_id: selectedService.id,
+        scheduled_at: scheduledAt.toISOString(),
+        payment_mode: 'local', // Dono do salão agendando manualmente não precisa escolher pagamento
+        amount_total: selectedService.price,
+        duration_minutes: selectedService.duration_minutes,
+        buffer_minutes: selectedService.buffer_minutes,
+        pro_color: selectedPro?.agenda_color ?? 'var(--theme-accent)',
+        notes: notes.trim() || undefined,
+      });
+    } catch (err: any) {
+      console.error("Erro ao criar agendamento:", err);
+      setError(err.message || "Erro ao criar agendamento. Verifique os dados e tente novamente.");
+    }
   };
 
   const STEPS = ['Serviço', 'Profissional', 'Horário', 'Confirmar'];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg rounded-3xl border border-[#3A3530] shadow-2xl flex flex-col" style={{ background: '#1C1A17', maxHeight: '92vh' }}>
+      <div className="relative w-full max-w-lg rounded-3xl border shadow-2xl flex flex-col" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)', maxHeight: '92vh' }}>
 
         {/* Header */}
-        <div className="p-6 pb-4 shrink-0 border-b border-[#3A3530]">
+        <div className="p-6 pb-4 shrink-0 border-b" style={{ borderColor: 'var(--theme-border)' }}>
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h2 className="font-serif text-2xl font-bold text-white">Novo Agendamento</h2>
-              <p className="text-xs text-[#A09888] mt-0.5">Passo {step} de {STEPS.length} — {STEPS[step - 1]}</p>
+              <h2 className="font-serif text-2xl font-bold" style={{ color: 'var(--theme-text-primary)' }}>Novo Agendamento</h2>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-secondary)' }}>Passo {step} de {STEPS.length} — {STEPS[step - 1]}</p>
             </div>
-            <button onClick={onClose} className="w-9 h-9 rounded-full flex items-center justify-center text-[#A09888] hover:text-white hover:bg-white/10 transition-all">
+            <button onClick={onClose} className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-black/10" style={{ color: 'var(--theme-text-secondary)' }}>
               <X className="w-5 h-5" />
             </button>
           </div>
           {/* Progress bar */}
-          <div className="h-1 w-full rounded-full bg-[#3A3530]">
-            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(step / STEPS.length) * 100}%`, background: 'linear-gradient(90deg, #C9963B, #E8B960)' }} />
+          <div className="h-1 w-full rounded-full" style={{ background: 'var(--theme-border)' }}>
+            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(step / STEPS.length) * 100}%`, background: 'var(--theme-accent-gradient)' }} />
           </div>
         </div>
 
@@ -141,49 +186,69 @@ export default function BookingModal({
           {/* Step 1: Service */}
           {step === 1 && (
             <div className="space-y-3">
-              <p className="text-xs font-bold text-[#A09888] uppercase tracking-wider mb-3">Escolha o serviço</p>
-              {services.filter(s => s.active).map(svc => (
-                <div key={svc.id} onClick={() => setSelectedService(svc)} className={`flex items-center gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${selectedService?.id === svc.id ? 'border-[#C9963B]/50 bg-[#C9963B]/5' : 'border-[#3A3530] bg-[#252118]/60 hover:border-[#3A3530]/60'}`}>
-                  <div className="w-3 h-3 rounded-full shrink-0" style={{ background: svc.color || '#C9963B' }} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-white text-sm">{svc.name}</p>
-                    <p className="text-xs text-[#A09888]">{svc.duration_minutes} min {svc.buffer_minutes > 0 && `+ ${svc.buffer_minutes} min buffer`}</p>
+              <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--theme-text-secondary)' }}>Escolha o serviço</p>
+              {services.filter(s => s.active).map(svc => {
+                const isSelected = selectedService?.id === svc.id;
+                return (
+                <div key={svc.id} onClick={() => setSelectedService(svc)} className="flex items-center gap-4 p-4 rounded-2xl border cursor-pointer transition-all" style={{
+                  borderColor: isSelected ? 'var(--theme-accent)' : 'var(--theme-border)',
+                  background: isSelected ? 'var(--theme-calendar-available-bg)' : 'var(--theme-bg-hover)'
+                }}>
+                  {svc.photo_url ? (
+                    <img src={svc.photo_url} alt={svc.name} className="w-10 h-10 rounded-xl object-cover shrink-0" />
+                  ) : (
+                    <div className="w-3 h-3 rounded-full shrink-0 ml-3" style={{ background: svc.color || 'var(--theme-accent)' }} />
+                  )}
+                  <div className="flex-1 min-w-0 ml-2">
+                    <p className="font-semibold text-sm" style={{ color: 'var(--theme-text-primary)' }}>{svc.name}</p>
+                    <p className="text-xs" style={{ color: 'var(--theme-text-secondary)' }}>{svc.duration_minutes} min {svc.buffer_minutes > 0 && `+ ${svc.buffer_minutes} min buffer`}</p>
                   </div>
-                  <p className="font-bold text-[#C9963B] text-sm shrink-0">{fmt.format(svc.price)}</p>
-                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${selectedService?.id === svc.id ? 'border-[#C9963B]' : 'border-[#3A3530]'}`} style={selectedService?.id === svc.id ? { background: 'linear-gradient(135deg, #C9963B, #E8B960)' } : {}}>
-                    {selectedService?.id === svc.id && <Check className="w-3 h-3 text-[#1A1714]" />}
+                  <p className="font-bold text-sm shrink-0" style={{ color: 'var(--theme-accent)' }}>{fmt.format(svc.price)}</p>
+                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all`} style={{
+                    borderColor: isSelected ? 'transparent' : 'var(--theme-border)',
+                    background: isSelected ? 'var(--theme-accent-gradient)' : 'transparent'
+                  }}>
+                    {isSelected && <Check className="w-3 h-3 text-white" />}
                   </div>
                 </div>
-              ))}
-              {services.length === 0 && <p className="text-center text-[#A09888] py-8">Nenhum serviço ativo. Cadastre serviços primeiro.</p>}
+              )})}
+              {services.length === 0 && <p className="text-center py-8" style={{ color: 'var(--theme-text-secondary)' }}>Nenhum serviço ativo. Cadastre serviços primeiro.</p>}
             </div>
           )}
 
           {/* Step 2: Professional */}
           {step === 2 && (
             <div className="space-y-3">
-              <p className="text-xs font-bold text-[#A09888] uppercase tracking-wider mb-3">Escolha o profissional</p>
+              <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--theme-text-secondary)' }}>Escolha o profissional</p>
               {/* Any */}
-              <div onClick={() => setSelectedPro(null)} className={`flex items-center gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${selectedPro === null ? 'border-[#C9963B]/50 bg-[#C9963B]/5' : 'border-[#3A3530] bg-[#252118]/60 hover:border-[#3A3530]/60'}`}>
-                <div className="w-10 h-10 rounded-full bg-[#3A3530] flex items-center justify-center text-[#A09888] text-sm font-bold">?</div>
+              <div onClick={() => setSelectedPro(null)} className="flex items-center gap-4 p-4 rounded-2xl border cursor-pointer transition-all" style={{
+                borderColor: selectedPro === null ? 'var(--theme-accent)' : 'var(--theme-border)',
+                background: selectedPro === null ? 'var(--theme-calendar-available-bg)' : 'var(--theme-bg-hover)'
+              }}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'var(--theme-border)', color: 'var(--theme-text-secondary)' }}>?</div>
                 <div className="flex-1">
-                  <p className="font-semibold text-white text-sm">Qualquer profissional</p>
-                  <p className="text-xs text-[#A09888]">Primeiro horário disponível</p>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--theme-text-primary)' }}>Qualquer profissional</p>
+                  <p className="text-xs" style={{ color: 'var(--theme-text-secondary)' }}>Primeiro horário disponível</p>
                 </div>
-                {selectedPro === null && <Check className="w-4 h-4 text-[#C9963B]" />}
+                {selectedPro === null && <Check className="w-4 h-4" style={{ color: 'var(--theme-accent)' }} />}
               </div>
-              {professionals.filter(p => p.status === 'active').map(pro => (
-                <div key={pro.id} onClick={() => setSelectedPro(pro)} className={`flex items-center gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${selectedPro?.id === pro.id ? 'border-[#C9963B]/50 bg-[#C9963B]/5' : 'border-[#3A3530] bg-[#252118]/60 hover:border-[#3A3530]/60'}`}>
+              {professionals.filter(p => p.status === 'active').map(pro => {
+                const isSelected = selectedPro?.id === pro.id;
+                return (
+                <div key={pro.id} onClick={() => setSelectedPro(pro)} className="flex items-center gap-4 p-4 rounded-2xl border cursor-pointer transition-all" style={{
+                  borderColor: isSelected ? 'var(--theme-accent)' : 'var(--theme-border)',
+                  background: isSelected ? 'var(--theme-calendar-available-bg)' : 'var(--theme-bg-hover)'
+                }}>
                   <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center font-bold text-sm shrink-0" style={{ background: `${pro.agenda_color}20`, color: pro.agenda_color }}>
                     {pro.photo_url ? <img src={pro.photo_url} alt={pro.name} className="w-full h-full object-cover" /> : pro.name.substring(0, 2).toUpperCase()}
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-white text-sm">{pro.name}</p>
-                    <p className="text-xs text-[#A09888]">{pro.role_title}</p>
+                    <p className="font-semibold text-sm" style={{ color: 'var(--theme-text-primary)' }}>{pro.name}</p>
+                    <p className="text-xs" style={{ color: 'var(--theme-text-secondary)' }}>{pro.role_title}</p>
                   </div>
-                  {selectedPro?.id === pro.id && <Check className="w-4 h-4 text-[#C9963B]" />}
+                  {isSelected && <Check className="w-4 h-4" style={{ color: 'var(--theme-accent)' }} />}
                 </div>
-              ))}
+              )})}
             </div>
           )}
 
@@ -192,7 +257,7 @@ export default function BookingModal({
             <div className="space-y-5">
               {/* Day picker */}
               <div>
-                <p className="text-xs font-bold text-[#A09888] uppercase tracking-wider mb-3">Escolha a data</p>
+                <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--theme-text-secondary)' }}>Escolha a data</p>
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   {availableDays.map(day => {
                     const dow = day.getDay();
@@ -202,8 +267,13 @@ export default function BookingModal({
                     return (
                       <button key={day.toISOString()} onClick={() => { if (isOpen) { setSelectedDate(day); setSelectedTime(null); } }}
                         disabled={!isOpen}
-                        className={`flex flex-col items-center px-3 py-2.5 rounded-2xl border text-xs font-bold shrink-0 min-w-[52px] transition-all ${isSelected ? 'border-[#C9963B] text-[#1A1714]' : isOpen ? 'border-[#3A3530] text-white hover:border-[#C9963B]/50 bg-[#252118]' : 'border-[#2A2520] text-[#A09888]/40 cursor-not-allowed bg-[#1A1714]'}`}
-                        style={isSelected ? { background: 'linear-gradient(135deg, #C9963B, #E8B960)' } : {}}
+                        className={`flex flex-col items-center px-3 py-2.5 rounded-2xl border text-xs font-bold shrink-0 min-w-[52px] transition-all`}
+                        style={{
+                          borderColor: isSelected ? 'var(--theme-accent)' : (isOpen ? 'var(--theme-border)' : 'var(--theme-border)'),
+                          background: isSelected ? 'var(--theme-accent-gradient)' : (isOpen ? 'var(--theme-bg-hover)' : 'transparent'),
+                          color: isSelected ? 'var(--theme-btn-primary-text)' : (isOpen ? 'var(--theme-text-primary)' : 'var(--theme-text-secondary)'),
+                          opacity: isOpen ? 1 : 0.4
+                        }}
                       >
                         <span className="text-[10px] opacity-70">{format(day, 'EEE', { locale: ptBR })}</span>
                         <span className="text-base leading-tight">{format(day, 'd')}</span>
@@ -216,18 +286,23 @@ export default function BookingModal({
 
               {/* Time slots */}
               <div>
-                <p className="text-xs font-bold text-[#A09888] uppercase tracking-wider mb-3">Escolha o horário</p>
+                <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--theme-text-secondary)' }}>Escolha o horário</p>
                 {availableSlots.length === 0 ? (
-                  <div className="text-center py-8 text-[#A09888]">
-                    <Clock className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                    <p className="text-sm">Nenhum horário disponível nesta data.</p>
+                  <div className="text-center py-8 px-4" style={{ color: 'var(--theme-text-secondary)' }}>
+                    <Clock className="w-8 h-8 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm font-semibold mb-1">Nenhum horário disponível.</p>
+                    <p className="text-xs opacity-70">Os horários desta data já passaram ou estão lotados. Escolha outro dia.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-4 gap-2">
                     {availableSlots.map(slot => (
                       <button key={slot} onClick={() => setSelectedTime(slot)}
-                        className={`py-2.5 rounded-xl text-sm font-bold border transition-all ${selectedTime === slot ? 'border-[#C9963B] text-[#1A1714]' : 'border-[#3A3530] text-white hover:border-[#C9963B]/50 bg-[#252118]'}`}
-                        style={selectedTime === slot ? { background: 'linear-gradient(135deg, #C9963B, #E8B960)' } : {}}
+                        className={`py-2.5 rounded-xl text-sm font-bold border transition-all`}
+                        style={{
+                          borderColor: selectedTime === slot ? 'transparent' : 'var(--theme-border)',
+                          background: selectedTime === slot ? 'var(--theme-accent-gradient)' : 'var(--theme-bg-hover)',
+                          color: selectedTime === slot ? 'var(--theme-btn-primary-text)' : 'var(--theme-text-primary)'
+                        }}
                       >
                         {slot}
                       </button>
@@ -241,37 +316,57 @@ export default function BookingModal({
           {/* Step 4: Confirm */}
           {step === 4 && (
             <div className="space-y-5">
-              {/* Customer search */}
+              {/* Customer search / create */}
               <div>
-                <label className="block text-xs font-bold text-[#A09888] mb-2 uppercase tracking-wider">Cliente *</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--theme-text-secondary)' }}>Cliente *</label>
+                  {!selectedCustomer && (
+                    <button onClick={() => setIsCreatingCustomer(!isCreatingCustomer)} className="text-xs font-bold underline" style={{ color: 'var(--theme-accent)' }}>
+                      {isCreatingCustomer ? 'Buscar existente' : 'Novo Cliente'}
+                    </button>
+                  )}
+                </div>
+
                 {selectedCustomer ? (
-                  <div className="flex items-center gap-3 p-3 rounded-xl border border-[#C9963B]/30 bg-[#C9963B]/5">
-                    <div className="w-9 h-9 rounded-full bg-[#C9963B]/20 flex items-center justify-center text-[#C9963B] font-bold text-sm">{selectedCustomer.name.substring(0, 2).toUpperCase()}</div>
-                    <div className="flex-1"><p className="font-semibold text-white text-sm">{selectedCustomer.name}</p><p className="text-xs text-[#A09888]">{selectedCustomer.phone}</p></div>
-                    <button onClick={() => setSelectedCustomer(null)} className="text-xs text-[#A09888] hover:text-white">Trocar</button>
+                  <div className="flex items-center gap-3 p-3 rounded-xl border" style={{ borderColor: 'var(--theme-accent)', background: 'var(--theme-calendar-available-bg)' }}>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm" style={{ background: 'var(--theme-calendar-available-bg)', color: 'var(--theme-accent)' }}>{selectedCustomer.name.substring(0, 2).toUpperCase()}</div>
+                    <div className="flex-1"><p className="font-semibold text-sm" style={{ color: 'var(--theme-text-primary)' }}>{selectedCustomer.name}</p><p className="text-xs" style={{ color: 'var(--theme-text-secondary)' }}>{selectedCustomer.phone}</p></div>
+                    <button onClick={() => setSelectedCustomer(null)} className="text-xs font-bold underline" style={{ color: 'var(--theme-text-secondary)' }}>Trocar</button>
+                  </div>
+                ) : isCreatingCustomer ? (
+                  <div className="space-y-3 p-4 rounded-xl border" style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-bg-hover)' }}>
+                    <div>
+                      <input value={newCustomerName} onChange={e => setNewCustomerName(e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none" style={{ background: 'var(--theme-input-bg)', borderColor: 'var(--theme-input-border)', color: 'var(--theme-input-text)', border: '1px solid var(--theme-input-border)' }} placeholder="Nome completo..." />
+                    </div>
+                    <div>
+                      <input value={newCustomerPhone} onChange={e => setNewCustomerPhone(e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none" style={{ background: 'var(--theme-input-bg)', borderColor: 'var(--theme-input-border)', color: 'var(--theme-input-text)', border: '1px solid var(--theme-input-border)' }} placeholder="Telefone ou WhatsApp..." />
+                    </div>
+                    <button onClick={handleCreateCustomer} disabled={creatingCustomer} className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2" style={{ background: 'var(--theme-accent-gradient)', color: 'var(--theme-btn-primary-text)' }}>
+                      {creatingCustomer ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Cadastrar e Selecionar'}
+                    </button>
                   </div>
                 ) : (
                   <div className="relative">
-                    <Search className="absolute left-3 top-3.5 w-4 h-4 text-[#A09888]" />
-                    <input value={customerSearch} onChange={e => setCustomerSearch(e.target.value)} className="w-full bg-[#252118] border border-[#3A3530] rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:outline-none focus:border-[#C9963B]/60" placeholder="Buscar por nome ou telefone..." />
+                    <Search className="absolute left-3 top-3.5 w-4 h-4" style={{ color: 'var(--theme-text-secondary)' }} />
+                    <input value={customerSearch} onChange={e => setCustomerSearch(e.target.value)} className="w-full rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none border" style={{ background: 'var(--theme-input-bg)', borderColor: 'var(--theme-input-border)', color: 'var(--theme-input-text)' }} placeholder="Buscar por nome ou telefone..." />
                     {customerResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-[#1C1A17] border border-[#3A3530] rounded-xl shadow-2xl overflow-hidden z-10">
+                      <div className="absolute top-full left-0 right-0 mt-1 border rounded-xl shadow-2xl overflow-hidden z-10" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
                         {customerResults.map(c => (
-                          <button key={c.id} onClick={() => { setSelectedCustomer(c); setCustomerSearch(''); setCustomerResults([]); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all text-left">
-                            <div className="w-8 h-8 rounded-full bg-[#C9963B]/20 flex items-center justify-center text-[#C9963B] text-xs font-bold">{c.name.substring(0, 2).toUpperCase()}</div>
-                            <div><p className="text-sm font-semibold text-white">{c.name}</p><p className="text-xs text-[#A09888]">{c.phone}</p></div>
+                          <button key={c.id} onClick={() => { setSelectedCustomer(c); setCustomerSearch(''); setCustomerResults([]); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-black/5 transition-all text-left">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'var(--theme-calendar-available-bg)', color: 'var(--theme-accent)' }}>{c.name.substring(0, 2).toUpperCase()}</div>
+                            <div><p className="text-sm font-semibold" style={{ color: 'var(--theme-text-primary)' }}>{c.name}</p><p className="text-xs" style={{ color: 'var(--theme-text-secondary)' }}>{c.phone}</p></div>
                           </button>
                         ))}
                       </div>
                     )}
-                    {searchingCustomers && <Loader2 className="absolute right-3 top-3.5 w-4 h-4 animate-spin text-[#A09888]" />}
+                    {searchingCustomers && <Loader2 className="absolute right-3 top-3.5 w-4 h-4 animate-spin" style={{ color: 'var(--theme-text-secondary)' }} />}
                   </div>
                 )}
               </div>
 
               {/* Summary */}
-              <div className="rounded-2xl border border-[#3A3530] p-4 bg-[#252118]/60 space-y-3">
-                <p className="text-xs font-bold text-[#A09888] uppercase tracking-wider">Resumo</p>
+              <div className="rounded-2xl border p-4 space-y-3" style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-bg-hover)' }}>
+                <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--theme-text-secondary)' }}>Resumo</p>
                 {[
                   { label: 'Serviço', value: selectedService?.name },
                   { label: 'Profissional', value: selectedPro?.name ?? 'Qualquer disponível' },
@@ -281,26 +376,16 @@ export default function BookingModal({
                   { label: 'Valor', value: selectedService ? fmt.format(selectedService.price) : null },
                 ].map(row => row.value && (
                   <div key={row.label} className="flex items-center justify-between text-sm">
-                    <span className="text-[#A09888]">{row.label}</span>
-                    <span className="text-white font-semibold">{row.value}</span>
+                    <span style={{ color: 'var(--theme-text-secondary)' }}>{row.label}</span>
+                    <span className="font-semibold" style={{ color: 'var(--theme-text-primary)' }}>{row.value}</span>
                   </div>
                 ))}
               </div>
 
               {/* Notes */}
               <div>
-                <label className="block text-xs font-bold text-[#A09888] mb-2 uppercase tracking-wider">Observações</label>
-                <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="w-full bg-[#252118] border border-[#3A3530] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#C9963B]/60 resize-none" placeholder="Preferências, alergias, detalhes..." />
-              </div>
-
-              {/* Payment mode */}
-              <div>
-                <label className="block text-xs font-bold text-[#A09888] mb-2 uppercase tracking-wider">Pagamento</label>
-                <select value={paymentMode} onChange={e => setPaymentMode(e.target.value)} className="w-full bg-[#252118] border border-[#3A3530] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#C9963B]/60">
-                  <option value="local">Pagar no local</option>
-                  <option value="deposit">Entrada (parcial)</option>
-                  <option value="full">Pagamento integral</option>
-                </select>
+                <label className="block text-xs font-bold mb-2 uppercase tracking-wider" style={{ color: 'var(--theme-text-secondary)' }}>Observações</label>
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none resize-none" style={{ background: 'var(--theme-input-bg)', borderColor: 'var(--theme-input-border)', color: 'var(--theme-input-text)' }} placeholder="Preferências, alergias, detalhes..." />
               </div>
 
               {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -309,21 +394,24 @@ export default function BookingModal({
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 p-6 pt-4 shrink-0 border-t border-[#3A3530]">
-          <button onClick={() => step > 1 ? setStep(s => (s - 1) as any) : onClose()} className="flex-1 py-3 rounded-xl border border-[#3A3530] text-[#A09888] hover:text-white font-semibold text-sm transition-all">
-            {step === 1 ? 'Cancelar' : '← Voltar'}
-          </button>
-          <button
-            onClick={() => {
-              if (step < 4) setStep(s => (s + 1) as any);
-              else handleSubmit();
-            }}
-            disabled={(step === 1 && !selectedService) || (step === 3 && !selectedTime) || isLoading}
-            className="flex-1 py-3 rounded-xl font-bold text-sm text-[#1A1714] transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] disabled:opacity-40 flex items-center justify-center gap-2"
-            style={{ background: 'linear-gradient(135deg, #C9963B, #E8B960)' }}
-          >
-            {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Criando...</> : step < 4 ? 'Continuar →' : <><Check className="w-4 h-4" /> Confirmar</>}
-          </button>
+        <div className="flex flex-col gap-3 p-6 pt-4 shrink-0 border-t" style={{ borderColor: 'var(--theme-border)' }}>
+          {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+          <div className="flex gap-3 w-full">
+            <button onClick={() => step > 1 ? setStep(s => (s - 1) as any) : onClose()} className="flex-1 py-3 rounded-xl border font-semibold text-sm transition-all hover:opacity-80" style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)' }}>
+              {step === 1 ? 'Cancelar' : '← Voltar'}
+            </button>
+            <button
+              onClick={() => {
+                if (step < 4) setStep(s => (s + 1) as any);
+                else handleSubmit();
+              }}
+              disabled={(step === 1 && !selectedService) || (step === 3 && !selectedTime) || isLoading}
+              className="flex-1 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+              style={{ background: 'var(--theme-accent-gradient)', color: 'var(--theme-btn-primary-text)' }}
+            >
+              {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Criando...</> : step < 4 ? 'Continuar →' : <><Check className="w-4 h-4" /> Confirmar</>}
+            </button>
+          </div>
         </div>
       </div>
     </div>

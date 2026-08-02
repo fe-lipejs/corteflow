@@ -5,20 +5,62 @@ import { BOOKING_STATUS_CONFIG, type Booking } from '../../../hooks/useBookings'
 import { useTheme } from '../../../contexts/ThemeContext';
 
 const HOUR_HEIGHT = 72;
-const START_HOUR = 7;
-const END_HOUR = 21;
-const HOURS = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i);
 const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
 
 interface Props {
   day: Date;
   bookings: Booking[];
+  businessHours: any[];
   onBookingClick: (b: Booking) => void;
   onSlotClick: (date: Date, hour: number) => void;
 }
 
-export default function DayView({ day, bookings, onBookingClick, onSlotClick }: Props) {
+export default function DayView({ day, bookings, businessHours, onBookingClick, onSlotClick }: Props) {
   const { theme } = useTheme();
+
+  const { START_HOUR, END_HOUR, HOURS } = useMemo(() => {
+    let minH = 24;
+    let maxH = 0;
+    let hasOpen = false;
+
+    // 1. Verificamos os horários de funcionamento
+    if (businessHours && businessHours.length > 0) {
+      for (const h of businessHours) {
+        if (h.is_open && h.open_time && h.close_time) {
+          hasOpen = true;
+          const openH = parseInt(h.open_time.split(':')[0], 10);
+          const closeH = parseInt(h.close_time.split(':')[0], 10);
+          if (openH < minH) minH = openH;
+          if (closeH > maxH) maxH = closeH;
+        }
+      }
+    }
+
+    // 2. Verificamos se há algum agendamento fora do horário de funcionamento
+    if (bookings && bookings.length > 0) {
+      for (const b of bookings) {
+        if (b.status !== 'canceled') {
+          hasOpen = true;
+          const start = new Date(b.scheduled_at);
+          const end = new Date(start.getTime() + (b.duration_minutes + (b.buffer_minutes || 0)) * 60000);
+          const startH = start.getHours();
+          const endH = end.getHours() + (end.getMinutes() > 0 ? 1 : 0);
+          if (startH < minH) minH = startH;
+          if (endH > maxH) maxH = endH;
+        }
+      }
+    }
+
+    if (!hasOpen) return { START_HOUR: 7, END_HOUR: 21, HOURS: Array.from({ length: 15 }, (_, i) => 7 + i) };
+
+    const start = Math.max(0, minH - 1); // 1 hora de margem antes
+    const end = Math.min(23, maxH + 1);  // 1 hora de margem depois
+    return {
+      START_HOUR: start,
+      END_HOUR: end,
+      HOURS: Array.from({ length: end - start + 1 }, (_, i) => start + i)
+    };
+  }, [businessHours, bookings]);
   
   const now = new Date();
   const nowTop = ((now.getHours() - START_HOUR) * 60 + now.getMinutes()) / 60 * HOUR_HEIGHT;
@@ -65,16 +107,33 @@ export default function DayView({ day, bookings, onBookingClick, onSlotClick }: 
             ))}
           </div>
 
-          {/* Column */}
+          {/* Time grid */}
           <div className="flex-1 relative">
-            {HOURS.map(h => (
-              <div key={h} onClick={() => onSlotClick(day, h)}
-                className="border-b transition-colors cursor-pointer hover:bg-[var(--theme-calendar-available-bg)]"
-                style={{ height: `${HOUR_HEIGHT}px`, borderColor: `${theme.border}80` }}
-              >
-                <div className="h-px mt-9 mx-3" style={{ background: `${theme.border}80` }} />
-              </div>
-            ))}
+            {HOURS.map(h => {
+              const slotTime = new Date(day);
+              slotTime.setHours(h, 0, 0, 0);
+              const isPast = slotTime.getTime() < now.getTime();
+              
+              return (
+                <div 
+                  key={h} 
+                  onClick={() => { if (!isPast) onSlotClick(day, h); }}
+                  className={`border-b transition-colors relative group ${!isPast ? 'cursor-pointer hover:bg-[var(--theme-calendar-available-bg)]' : ''}`}
+                  style={{ height: `${HOUR_HEIGHT}px`, borderColor: `${theme.border}80` }}
+                >
+                  <div className="h-px mt-9 mx-3" style={{ background: `${theme.border}80` }} />
+                  
+                  {/* Hover Add Button */}
+                  {!isPast && (
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity z-10 pointer-events-none">
+                      <span className="px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg" style={{ background: theme.accent }}>
+                        + {h.toString().padStart(2, '0')}:00
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
             {/* Now line */}
             {showNowLine && (
