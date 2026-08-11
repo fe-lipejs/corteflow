@@ -65,6 +65,10 @@ export default function Configuracoes() {
   const [selectedTheme, setSelectedTheme] = useState('classic');
   const [paymentMode, setPaymentMode] = useState('local');
   const [depositPercentage, setDepositPercentage] = useState(50);
+  // Fix #2: Individual payment option toggles
+  const [allowLocal, setAllowLocal] = useState(true);
+  const [allowDeposit, setAllowDeposit] = useState(true);
+  const [allowFull, setAllowFull] = useState(true);
 
   // Branding
   const [fantasyName, setFantasyName] = useState('');
@@ -99,6 +103,8 @@ export default function Configuracoes() {
   const [maxReschedules, setMaxReschedules] = useState(1);
   const [allowCancel, setAllowCancel] = useState(true);
   const [cancelDeadlineHours, setCancelDeadlineHours] = useState(24);
+  const [cancelPolicyText, setCancelPolicyText] = useState('');
+  const [cancelFeeAmount, setCancelFeeAmount] = useState(0);
 
   // Financial Policies (Sprint 3.9)
   const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
@@ -152,8 +158,27 @@ export default function Configuracoes() {
       if (data) {
         setSettingsId(data.id);
         setSelectedTheme(data.theme_preset || 'classic');
-        setPaymentMode(data.booking_payment_mode || 'local');
         setDepositPercentage(data.deposit_percentage || 50);
+        // Fix #2: parse booking_payment_mode as JSON if possible, else legacy fallback
+        try {
+          const pm = data.booking_payment_mode;
+          if (pm && pm.startsWith('{')) {
+            const parsed = JSON.parse(pm);
+            setAllowLocal(parsed.local !== false);
+            setAllowDeposit(parsed.deposit !== false);
+            setAllowFull(parsed.full !== false);
+          } else {
+            // Legacy single value — map to individual toggles
+            setAllowLocal(pm === 'local' || pm === 'client_choice' || !pm);
+            setAllowDeposit(pm === 'deposit' || pm === 'client_choice');
+            setAllowFull(pm === 'full' || pm === 'client_choice');
+          }
+        } catch {
+          setAllowLocal(true);
+          setAllowDeposit(true);
+          setAllowFull(true);
+        }
+        setPaymentMode(data.booking_payment_mode || 'local');
         setFantasyName(data.fantasy_name || '');
         setSlogan(data.slogan || '');
         setDescription(data.description || data.short_description || '');
@@ -184,6 +209,8 @@ export default function Configuracoes() {
         setMaxReschedules(data.max_reschedules ?? 1);
         setAllowCancel(data.allow_cancel ?? true);
         setCancelDeadlineHours(data.cancel_deadline_hours ?? 24);
+        setCancelPolicyText(data.cancel_policy_text || '');
+        setCancelFeeAmount(data.cancel_fee_amount || 0);
       }
 
       // Load notification settings
@@ -285,12 +312,21 @@ export default function Configuracoes() {
       await (supabase as any).from('tenants').update({ language }).eq('id', tenant.id);
       i18n.changeLanguage(language);
 
+      // Fix #2: Serialize individual payment toggles as JSON and validate
+      const activeOptions = [allowLocal, allowDeposit, allowFull].filter(Boolean).length;
+      if (activeOptions === 0) {
+        alert('Pelo menos uma forma de pagamento deve estar ativa!');
+        setLoading(false);
+        return;
+      }
+      const paymentModeJson = JSON.stringify({ local: allowLocal, deposit: allowDeposit, full: allowFull });
+
       // Build payload
       const payload: Record<string, any> = {
         tenant_id: tenant.id,
         theme_preset: selectedTheme,
-        booking_payment_mode: paymentMode,
-        deposit_percentage: paymentMode === 'deposit' ? depositPercentage : null,
+        booking_payment_mode: paymentModeJson,
+        deposit_percentage: allowDeposit ? depositPercentage : null,
         fantasy_name: fantasyName,
         slogan,
         description,
@@ -317,6 +353,8 @@ export default function Configuracoes() {
         max_reschedules: maxReschedules,
         allow_cancel: allowCancel,
         cancel_deadline_hours: cancelDeadlineHours,
+        cancel_policy_text: cancelPolicyText,
+        cancel_fee_amount: cancelFeeAmount,
       };
 
       if (settingsId) {
@@ -475,7 +513,8 @@ export default function Configuracoes() {
 
           {/* ═══════════════════════════ TAB 1: GERAL & TEMA ═══════════════════════════ */}
           {activeTab === 'geral' && (
-            <div className="space-y-8">
+            <>
+              <div className="space-y-8">
               {/* Theme Selection */}
               <div>
                 <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
@@ -541,49 +580,51 @@ export default function Configuracoes() {
                 </select>
               </div>
 
-              {/* Payment Mode */}
+              {/* Payment Mode — Fix #2: Individual toggles */}
               <div>
                 <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
                   <CreditCard className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Modo de Pagamento
+                  Formas de Pagamento
                 </h3>
                 <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
-                  Como seus clientes pagam ao agendar na sua página pública.
+                  Ative as formas de pagamento disponíveis para seus clientes. Pelo menos uma deve estar ativa.
                 </p>
                 <div className="space-y-3 mt-3">
                   {[
-                    { id: 'local', label: 'Pagar no local', desc: 'Cliente paga quando chegar ao salão' },
-                    { id: 'deposit', label: 'Sinal Obrigatório', desc: 'Cliente paga um percentual adiantado' },
-                    { id: 'full', label: 'Pagamento 100% antecipado', desc: 'Cliente paga o valor total online' },
-                    { id: 'client_choice', label: 'Cliente Escolhe', desc: 'O cliente decide a forma de pagamento' },
-                  ].map(m => (
-                    <label
-                      key={m.id}
-                      className="flex items-start gap-3 p-4 rounded-xl cursor-pointer transition-all"
-                      style={{
-                        background: paymentMode === m.id ? theme.accentMuted : theme.inputBg,
-                        border: `1px solid ${paymentMode === m.id ? theme.accent : theme.inputBorder}`,
-                      }}
-                    >
-                      <input
-                        type="radio"
-                        name="payMode"
-                        value={m.id}
-                        checked={paymentMode === m.id}
-                        onChange={e => setPaymentMode(e.target.value)}
-                        className="mt-0.5"
-                        style={{ accentColor: theme.accent }}
-                      />
-                      <div>
-                        <span className="text-sm font-medium" style={{ color: theme.textPrimary }}>{m.label}</span>
-                        <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{m.desc}</p>
+                    { key: 'local' as const, label: 'Pagar no local', desc: 'Cliente paga quando chegar ao salão', state: allowLocal, set: setAllowLocal },
+                    { key: 'deposit' as const, label: 'Sinal (50%)', desc: 'Cliente paga um percentual adiantado', state: allowDeposit, set: setAllowDeposit },
+                    { key: 'full' as const, label: 'Pagamento total antecipado', desc: 'Cliente paga 100% do valor online', state: allowFull, set: setAllowFull },
+                  ].map(m => {
+                    const activeCount = [allowLocal, allowDeposit, allowFull].filter(Boolean).length;
+                    const isLastActive = m.state && activeCount === 1;
+                    return (
+                      <div key={m.key} className="flex items-center justify-between p-4 rounded-xl" style={{ background: m.state ? theme.accentMuted : theme.inputBg, border: `1px solid ${m.state ? theme.accent : theme.inputBorder}` }}>
+                        <div>
+                          <p className="text-sm font-medium" style={{ color: theme.textPrimary }}>{m.label}</p>
+                          <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{m.desc}</p>
+                          {isLastActive && (
+                            <p className="text-xs mt-1 font-semibold" style={{ color: '#f59e0b' }}>⚠ Última opção ativa — não pode ser desabilitada</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isLastActive) return; // prevent disabling last option
+                            m.set(!m.state);
+                          }}
+                          className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ml-4"
+                          style={{ background: m.state ? theme.accent : theme.border }}
+                          title={isLastActive ? 'Pelo menos uma opção deve estar ativa' : ''}
+                        >
+                          <span className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform" style={{ transform: m.state ? 'translateX(20px)' : 'translateX(4px)' }} />
+                        </button>
                       </div>
-                    </label>
-                  ))}
+                    );
+                  })}
                 </div>
 
-                {/* Deposit Percentage Slider */}
-                {paymentMode === 'deposit' && (
+                {/* Deposit Percentage Slider — only shown when deposit is active */}
+                {allowDeposit && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
@@ -613,6 +654,60 @@ export default function Configuracoes() {
                 )}
               </div>
             </div>
+
+            {/* Política de Cancelamento e Reagendamento */}
+            <div className="glass-card p-6 mt-6">
+              <h2 className="font-bold text-lg mb-1" style={{ color: theme.textPrimary }}>
+                <Clock className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
+                Políticas de Cancelamento
+              </h2>
+              <p className="text-sm mb-5" style={{ color: theme.textSecondary }}>Configure as regras visíveis para o cliente.</p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
+                    Texto da Política de Cancelamento
+                  </label>
+                  <textarea
+                    value={cancelPolicyText}
+                    onChange={(e) => setCancelPolicyText(e.target.value)}
+                    placeholder="Ex: Cancelamentos gratuitos até 24h antes. Após esse prazo, será cobrada uma taxa de R$ 50,00."
+                    className="w-full p-3.5 rounded-xl border focus:ring-2 focus:outline-none transition-all text-sm font-sans"
+                    rows={3}
+                    style={{
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                      color: theme.textPrimary,
+                      outlineColor: theme.accent
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
+                    Taxa de Cancelamento Exibida (R$)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={cancelFeeAmount}
+                    onChange={(e) => setCancelFeeAmount(Number(e.target.value))}
+                    placeholder="0.00"
+                    className="w-full sm:w-1/3 p-3.5 rounded-xl border focus:ring-2 focus:outline-none transition-all text-sm font-sans"
+                    style={{
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                      color: theme.textPrimary,
+                      outlineColor: theme.accent
+                    }}
+                  />
+                  <p className="text-[10px] mt-1 opacity-70" style={{ color: theme.textSecondary }}>
+                    Essa taxa é informativa para o cliente. O Salão deve fazer a cobrança separadamente se não usar pagamento antecipado.
+                  </p>
+                </div>
+              </div>
+            </div>
+            </>
           )}
 
           {/* ═══════════════════════════ TAB 2: BRANDING ═══════════════════════════════ */}

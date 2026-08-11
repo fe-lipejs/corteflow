@@ -33,8 +33,13 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'bookings', filter: `tenant_id=eq.${tenantId}` },
         () => {
+          // Invalidate all booking-related queries (agenda views)
           queryClient.invalidateQueries({ queryKey: ['bookings'] });
-          queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+          // FIX #7: Invalidate the actual query keys used by Dashboard.tsx
+          queryClient.invalidateQueries({ queryKey: ['dashboard_today_bookings'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard_recent_bookings'] });
+          // Also invalidate customer history that shows in BookingDetailSheet
+          queryClient.invalidateQueries({ queryKey: ['customer_history_bookings'] });
         }
       )
       // Escutar clientes
@@ -43,6 +48,8 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         { event: '*', schema: 'public', table: 'customers', filter: `tenant_id=eq.${tenantId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ['customers'] });
+          // FIX #7: Also update the dashboard new customers counter
+          queryClient.invalidateQueries({ queryKey: ['dashboard_new_customers'] });
         }
       )
       // Escutar notificações

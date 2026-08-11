@@ -1,112 +1,131 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowUpRight,
   Calendar,
   Check,
   ChevronLeft,
+  ChevronRight,
   Clock,
   Copy,
   CreditCard,
-  Globe,
-  Info,
   Loader2,
   MapPin,
   MessageCircle,
   Navigation,
   Phone,
   Scissors,
-  Sparkles,
   Star,
   User,
   X,
-  ChevronUp,
-  ChevronRight,
   Zap,
   QrCode,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles,
+  ArrowRight,
+  CheckCircle2,
+  Info,
+  ChevronUp,
 } from "lucide-react";
-import { format, parse, isBefore, isSameDay, addDays, startOfDay } from "date-fns";
+import { format, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale/pt-BR";
 import { generateAvailableSlots } from "../../lib/availability";
 import type { Slot } from "../../lib/availability";
 import { supabase } from "../../integrations/supabase/client";
 import { usePhoneFormat } from "../../hooks/usePhoneFormat";
 import { useTheme } from "../../contexts/ThemeContext";
-import { usePublicStore } from "../../hooks/usePublicStore";
+import { usePublicStore, PUBLIC_STORE_QUERY_KEY } from "../../hooks/usePublicStore";
+import { useQueryClient } from "@tanstack/react-query";
 
-// Custom SVG Icons
+// ── Icons ────────────────────────────────────────────────────────────────────
 const InstagramIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
     <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
     <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
   </svg>
 );
 
-const FacebookIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+const WhatsAppIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.553 4.103 1.52 5.83L.058 23.277a.5.5 0 0 0 .608.636l5.707-1.512A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.007-1.376l-.357-.213-3.706.982.995-3.613-.234-.374A9.818 9.818 0 0 1 2.182 12C2.182 6.574 6.574 2.182 12 2.182c5.426 0 9.818 4.392 9.818 9.818 0 5.426-4.392 9.818-9.818 9.818z"/>
   </svg>
 );
 
+// ── Types ─────────────────────────────────────────────────────────────────────
 type PaymentScope = "full" | "partial" | "local";
 type PaymentMethod = "pix" | "card" | "cash";
 
-const WEEKDAYS = [
-  "Domingo",
-  "Segunda-feira",
-  "Terça-feira",
-  "Quarta-feira",
-  "Quinta-feira",
-  "Sexta-feira",
-  "Sábado",
-];
-
-const scopeLabel: Record<PaymentScope, string> = {
-  full: "Pago integralmente",
-  partial: "Sinal de 50% pago",
-  local: "Pagamento no local",
-};
-
-const methodLabel: Record<PaymentMethod, string> = {
-  pix: "PIX",
-  card: "Cartão de Crédito/Débito",
-  cash: "Dinheiro no local",
-};
-
-const stepTitles = [
-  "O que você deseja fazer?",
-  "Com quem?",
-  "Quando?",
-  "Seus dados e pagamento",
-  "Resumo da reserva",
-];
+const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const WEEKDAYS_FULL = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 
 const money = (val: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
 
 const onlyDigits = (str: string) => (str || "").replace(/\D/g, "");
 
-// Haversine distance formula
 function haversineKm(pos1: { lat: number; lng: number }, pos2: { lat: number; lng: number }) {
   const R = 6371;
   const dLat = ((pos2.lat - pos1.lat) * Math.PI) / 180;
   const dLon = ((pos2.lng - pos1.lng) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.sin(dLon / 2) * Math.sin(dLon / 2) *
-    Math.cos((pos1.lat * Math.PI) / 180) *
-    Math.cos((pos2.lat * Math.PI) / 180);
+  const a = Math.sin(dLat / 2) ** 2 + Math.sin(dLon / 2) ** 2 * Math.cos((pos1.lat * Math.PI) / 180) * Math.cos((pos2.lat * Math.PI) / 180);
   return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
+// ── Step Indicator ────────────────────────────────────────────────────────────
+const STEP_LABELS = ["Serviço", "Profissional", "Data & Hora", "Confirmar"];
+
+function StepIndicator({ step, accent }: { step: number; accent: string }) {
+  return (
+    <div className="flex items-center justify-center gap-1 px-6 py-4">
+      {STEP_LABELS.map((label, i) => {
+        const num = i + 1;
+        const done = step > num;
+        const active = step === num;
+        return (
+          <div key={num} className="flex items-center">
+            <div className="flex flex-col items-center gap-1">
+              <motion.div
+                animate={{ scale: active ? 1.1 : 1 }}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                style={{
+                  background: done ? accent : active ? accent : "rgba(255,255,255,0.08)",
+                  color: done || active ? "#000" : "rgba(255,255,255,0.35)",
+                  border: active ? `2px solid ${accent}` : done ? "none" : "1.5px solid rgba(255,255,255,0.12)",
+                }}
+              >
+                {done ? <Check className="w-3.5 h-3.5" /> : num}
+              </motion.div>
+              <span
+                className="text-[9px] font-semibold uppercase tracking-wider hidden sm:block"
+                style={{ color: active ? accent : done ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)" }}
+              >
+                {label}
+              </span>
+            </div>
+            {i < STEP_LABELS.length - 1 && (
+              <div className="w-8 sm:w-14 h-px mx-1 sm:mx-2" style={{ background: step > num ? accent : "rgba(255,255,255,0.1)" }} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Audio Helper ────────────────────────────────────────────────────────────
+const playSuccessSound = () => {
+  const audio = new Audio("https://actions.google.com/sounds/v1/alarms/dinner_bell_triangle.ogg");
+  audio.play().catch(() => {});
+};
+
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function PublicStore() {
   const { slug } = useParams<{ slug: string }>();
   const { setThemeId, setCustomPalette, theme } = useTheme();
-
-  const { data: storeData, isLoading: loading, error } = usePublicStore(slug);
+  const { data: storeData, isLoading: loading } = usePublicStore(slug);
+  const queryClient = useQueryClient();
 
   const tenant: any = storeData?.tenant;
   const settings: any = storeData?.settings;
@@ -114,25 +133,17 @@ export default function PublicStore() {
   const professionalsList: any[] = storeData?.professionals || [];
   const businessHoursList: any[] = storeData?.businessHours || [];
 
-  // Sync global theme context when settings theme_preset is loaded
   useEffect(() => {
-    if (settings?.theme_preset) {
-      setThemeId(settings.theme_preset);
-    }
-    if (settings?.custom_palette) {
-      setCustomPalette(settings.custom_palette);
-    }
+    if (settings?.theme_preset) setThemeId(settings.theme_preset);
+    if (settings?.custom_palette) setCustomPalette(settings.custom_palette);
   }, [settings?.theme_preset, settings?.custom_palette, setThemeId, setCustomPalette]);
 
-  // Wizard States
+  // ── State ──────────────────────────────────────────────────────────────────
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<any | null>(null);
   const [selectedPro, setSelectedPro] = useState<any | "any" | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [hasScrolledDates, setHasScrolledDates] = useState(false);
-
-  // Form & Payment States
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
@@ -142,72 +153,125 @@ export default function PublicStore() {
   const [cardNumber, setCardNumber] = useState("");
   const [cardExp, setCardExp] = useState("");
   const [cardCvc, setCardCvc] = useState("");
-
-  const handleCardNumberChange = (value: string) => {
-    const cleaned = value.replace(/\D/g, "").slice(0, 16);
-    const formatted = cleaned.match(/.{1,4}/g)?.join(" ") || cleaned;
-    setCardNumber(formatted);
-  };
-
-  const handleCardExpChange = (value: string) => {
-    let v = value.replace(/\D/g, "");
-    if (v.length >= 2) {
-      v = v.substring(0, 2) + '/' + v.substring(2, 4);
-    }
-    setCardExp(v);
-  };
-
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [bookingCode, setBookingCode] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [showMobileInfoModal, setShowMobileInfoModal] = useState(false);
-  const [hasOpenedBottomSheet, setHasOpenedBottomSheet] = useState(false);
-  const [showExpandedMapModal, setShowExpandedMapModal] = useState(false);
+  const [showInfoSheet, setShowInfoSheet] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
   const [mapZoom, setMapZoom] = useState(16);
+  const [hasScrolledDates, setHasScrolledDates] = useState(false);
+  const [hasOpenedSheet, setHasOpenedSheet] = useState(false);
 
-  const phoneFormat = usePhoneFormat("pt");
+  const step4Ref = useRef<HTMLDivElement>(null);
+  const inputsRef = useRef<HTMLDivElement>(null);
+  const timeSlotsRef = useRef<HTMLDivElement>(null);
+  const confirmBtnRef = useRef<HTMLDivElement>(null);
 
-  const openBottomSheet = useCallback(() => {
-    setHasOpenedBottomSheet(true);
-    setShowMobileInfoModal(true);
-  }, []);
+  // Auto-scroll to top when entering payment/confirmation step
+  useEffect(() => {
+    if (step >= 4) {
+      setTimeout(() => {
+        inputsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, [step]);
 
-  // Geo Location
+  // Auto-scroll down when a date is selected to show time slots
+  useEffect(() => {
+    if (step === 3 && selectedDate) {
+      setTimeout(() => {
+        timeSlotsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, [selectedDate, step]);
+
+  // Auto-scroll down when a time is selected to show the confirm button
+  useEffect(() => {
+    if (step === 3 && selectedTime) {
+      setTimeout(() => {
+        confirmBtnRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+    }
+  }, [selectedTime, step]);
+
+  // Fix #2: When entering step 4, ensure the selected payment scope is one that's allowed
+  useEffect(() => {
+    if (step === 4 && allowedPaymentScopes.length > 0) {
+      const isCurrentAllowed = allowedPaymentScopes.some(o => o.key === paymentScope);
+      if (!isCurrentAllowed) {
+        setPaymentScope(allowedPaymentScopes[0].key);
+      }
+    }
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Geo ────────────────────────────────────────────────────────────────────
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "denied" | "ok" | "ignored">("idle");
   const todayWeekday = new Date().getDay();
 
-  // Coords fallback for salon (-20.4433088, -40.3535541)
   const storeCoords = useMemo(() => ({
     lat: settings?.latitude || -20.4433088,
     lng: settings?.longitude || -40.3535541,
   }), [settings]);
 
   const requestLocation = useCallback(() => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setGeoStatus("denied");
-      return;
-    }
+    if (!navigator.geolocation) { setGeoStatus("denied"); return; }
     setGeoStatus("loading");
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setGeoStatus("ok");
-      },
+      (pos) => { setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGeoStatus("ok"); },
       () => setGeoStatus("denied"),
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }, []);
 
-  // Auto trigger GPS distance when opening expanded map modal
-  useEffect(() => {
-    if (showExpandedMapModal && geoStatus === "idle") {
-      requestLocation();
+  const phoneFormat = usePhoneFormat("pt");
+
+  // ── Derived ────────────────────────────────────────────────────────────────
+  const accent = settings?.custom_palette?.primary || "#C9963B";
+  const storeName = settings?.fantasy_name || tenant?.name || "";
+  const storeAddress = settings?.full_address || settings?.address;
+  const storePhone = settings?.phone || settings?.whatsapp_number;
+
+  let storeInsta = settings?.instagram ? settings.instagram.replace("@", "").trim() : null;
+  if (storeInsta?.includes("instagram.com/")) storeInsta = storeInsta.split("instagram.com/")[1].replace("/", "");
+
+  const total = selectedService?.price ?? 0;
+  const amountPaid = paymentScope === "full" ? total : paymentScope === "partial" ? total / 2 : 0;
+  const amountDue = total - amountPaid;
+  const proName = selectedPro === "any" ? "Qualquer profissional" : (selectedPro?.name ?? "");
+
+  // Fix #2: Parse which payment options are enabled by the admin
+  const allowedPaymentScopes = useMemo((): { key: PaymentScope; label: string; desc: string }[] => {
+    const pm = settings?.booking_payment_mode as string | null | undefined;
+    let allowLocal = true, allowDeposit = true, allowFull = true;
+    if (pm) {
+      try {
+        if (pm.startsWith('{')) {
+          const parsed = JSON.parse(pm);
+          allowLocal = parsed.local !== false;
+          allowDeposit = parsed.deposit !== false;
+          allowFull = parsed.full !== false;
+        } else {
+          // Legacy single-value mapping
+          allowLocal = pm === 'local' || pm === 'client_choice';
+          allowDeposit = pm === 'deposit' || pm === 'client_choice';
+          allowFull = pm === 'full' || pm === 'client_choice';
+          // If none of the known values matched, enable all
+          if (!allowLocal && !allowDeposit && !allowFull) { allowLocal = true; allowDeposit = true; allowFull = true; }
+        }
+      } catch { allowLocal = true; allowDeposit = true; allowFull = true; }
     }
-  }, [showExpandedMapModal, geoStatus, requestLocation]);
+    const all: { key: PaymentScope; label: string; desc: string }[] = [];
+    if (allowDeposit) all.push({ key: "partial", label: "Sinal 50%", desc: money(total / 2) });
+    if (allowFull) all.push({ key: "full", label: "Total agora", desc: money(total) });
+    if (allowLocal) all.push({ key: "local", label: "No local", desc: "Grátis agora" });
+    // Ensure at least one option exists (safety)
+    if (all.length === 0) all.push({ key: "local", label: "No local", desc: "Grátis agora" });
+    return all;
+  }, [settings?.booking_payment_mode, total]);
 
 
+  const distanceKm = useMemo(() => (userPos ? haversineKm(userPos, storeCoords) : null), [userPos, storeCoords]);
 
   const availableDays = useMemo(() => {
     const days: { date: Date; isOpen: boolean }[] = [];
@@ -215,7 +279,6 @@ export default function PublicStore() {
     for (let i = 0; i < 30; i++) {
       const d = addDays(today, i);
       const h = businessHoursList.find((x: any) => x.weekday === d.getDay());
-      // A day is considered open if salon is open
       days.push({ date: d, isOpen: h?.is_open === true });
     }
     return days;
@@ -223,1489 +286,1117 @@ export default function PublicStore() {
 
   const availableSlots: Slot[] = useMemo(() => {
     if (!selectedDate || !selectedService) return [];
-
     return generateAvailableSlots(
-      selectedDate,
-      selectedService,
-      selectedPro ? selectedPro.id : 'any',
-      professionalsList,
-      servicesList,
-      businessHoursList,
-      storeData?.professionalWorkingHours || [],
-      storeData?.professionalBlockedTimes || [],
-      storeData?.bookings || [],
-      storeData?.professionalServices || []
+      selectedDate, selectedService, selectedPro === "any" ? "any" : (selectedPro?.id ?? "any"),
+      professionalsList, servicesList, businessHoursList,
+      storeData?.professionalWorkingHours || [], storeData?.professionalBlockedTimes || [],
+      storeData?.bookings || [], storeData?.professionalServices || []
     );
-  }, [selectedDate, selectedService, selectedPro, professionalsList, servicesList, businessHoursList, storeData?.professionalWorkingHours, storeData?.professionalBlockedTimes, storeData?.bookings, storeData?.professionalServices]);
+  }, [selectedDate, selectedService, selectedPro, professionalsList, servicesList, businessHoursList, storeData]);
 
-  // Static preview map showing ONLY the barber shop marker
   const mapPreviewUrl = useMemo(() => {
+    if (userPos) return `https://www.google.com/maps?saddr=${userPos.lat},${userPos.lng}&daddr=${storeCoords.lat},${storeCoords.lng}&z=16&output=embed`;
     return `https://www.google.com/maps?q=${storeCoords.lat},${storeCoords.lng}&z=16&output=embed`;
-  }, [storeCoords]);
-
-  // Interactive Popup Modal Map (with GPS route and dynamic zoom)
-  const mapEmbedUrl = useMemo(() => {
-    if (userPos) {
-      return `https://www.google.com/maps?saddr=${userPos.lat},${userPos.lng}&daddr=${storeCoords.lat},${storeCoords.lng}&z=${mapZoom}&output=embed`;
-    }
+  }, [userPos, storeCoords]);
+  const mapModalUrl = useMemo(() => {
+    if (userPos) return `https://www.google.com/maps?saddr=${userPos.lat},${userPos.lng}&daddr=${storeCoords.lat},${storeCoords.lng}&z=${mapZoom}&output=embed`;
     return `https://www.google.com/maps?q=${storeCoords.lat},${storeCoords.lng}&z=${mapZoom}&output=embed`;
   }, [userPos, storeCoords, mapZoom]);
 
   const directionsUrl = useMemo(() => {
     if (settings?.map_link) return settings.map_link;
-    if (userPos) {
-      return `https://www.google.com/maps/dir/?api=1&origin=${userPos.lat},${userPos.lng}&destination=${storeCoords.lat},${storeCoords.lng}`;
-    }
-    return "https://maps.app.goo.gl/tJXYADFguv5GpXzg7";
+    if (userPos) return `https://www.google.com/maps/dir/?api=1&origin=${userPos.lat},${userPos.lng}&destination=${storeCoords.lat},${storeCoords.lng}`;
+    return "https://maps.google.com";
   }, [userPos, storeCoords, settings]);
-
-  const distanceKm = useMemo(
-    () => (userPos ? haversineKm(userPos, storeCoords) : null),
-    [userPos, storeCoords]
-  );
-
-  // Dynamic Theme Preset configuration matching Configuracoes.tsx
-  const currentThemeId = settings?.theme_preset || "classic";
-  const isLight = currentThemeId === "elegant";
-
-  // Financial calculations
-  const total = selectedService?.price ?? 0;
-  const amountPaid = paymentScope === "full" ? total : paymentScope === "partial" ? total / 2 : 0;
-  const amountDue = total - amountPaid;
-  const proName = selectedPro === "any" ? "Qualquer barbeiro livre" : (selectedPro?.name ?? "");
-
-  const storeName = settings?.fantasy_name || tenant?.name || "";
-  const storeAddress = settings?.full_address || settings?.address;
-  const storePhone = settings?.phone || settings?.whatsapp_number;
-  
-  let storeInsta = settings?.instagram ? settings.instagram.replace("@", "").trim() : null;
-  if (storeInsta && storeInsta.includes("instagram.com/")) {
-    storeInsta = storeInsta.split("instagram.com/")[1].replace("/", "");
-  }
-  
-  let storeFacebook = settings?.facebook ? settings.facebook.trim() : null;
-  if (storeFacebook && storeFacebook.includes("facebook.com/")) {
-    storeFacebook = storeFacebook.split("facebook.com/")[1].replace("/", "");
-  }
 
   const whatsappUrl = useMemo(() => {
     if (!bookingCode || !selectedService || !selectedDate || !selectedTime) return "#";
     const lines = [
-      `*NOVA RESERVA — ${storeName}*`,
-      "",
-      `*Código:* #${bookingCode}`,
-      `*Cliente:* ${customerName}`,
-      `*WhatsApp:* ${customerPhone}`,
+      `*NOVA RESERVA — ${storeName}*`, "",
+      `*Código:* #${bookingCode}`, `*Cliente:* ${customerName}`,
       `*Serviço:* ${selectedService.name} (${selectedService.duration_minutes} min)`,
       `*Profissional:* ${proName}`,
-      `*Data/Hora:* ${format(selectedDate, "dd 'de' MMMM", { locale: ptBR })} às ${selectedTime}`,
-      "",
-      `*Valor Total:* ${money(total)}`,
-      `*Forma de Pagamento:* ${scopeLabel[paymentScope]}${paymentScope === "local" ? "" : ` (${methodLabel[paymentMethod]})`}`,
-      `*Pago Agora:* ${money(amountPaid)}`,
-      `*A Pagar no Salão:* ${money(amountDue)}`,
-      "",
-      `*Endereço:* ${storeAddress}`,
+      `*Data/Hora:* ${format(selectedDate, "dd 'de' MMMM", { locale: ptBR })} às ${selectedTime}`, "",
+      `*Valor:* ${money(total)}`,
+      storeAddress ? `*Local:* ${storeAddress}` : "",
       customerNotes ? `*Obs:* ${customerNotes}` : "",
     ].filter(Boolean);
-    return `https://wa.me/${onlyDigits(settings?.whatsapp_number || storePhone)}?text=${encodeURIComponent(lines.join("\n"))}`;
-  }, [
-    bookingCode,
-    selectedService,
-    selectedDate,
-    selectedTime,
-    customerName,
-    customerPhone,
-    proName,
-    total,
-    paymentScope,
-    paymentMethod,
-    amountPaid,
-    amountDue,
-    storeName,
-    storeAddress,
-    settings,
-    customerNotes,
-  ]);
+    return `https://wa.me/${onlyDigits(storePhone)}?text=${encodeURIComponent(lines.join("\n"))}`;
+  }, [bookingCode, selectedService, selectedDate, selectedTime, customerName, proName, total, storeName, storeAddress, storePhone, customerNotes]);
 
-  useEffect(() => {
-    if (!copied) return;
-    const t = setTimeout(() => setCopied(false), 2000);
-    return () => clearTimeout(t);
-  }, [copied]);
-
-  // Wizard navigation
-  const handleNext = () => {
-    setErrorMsg("");
-    if (step === 1 && !selectedService) return setErrorMsg("Selecione um serviço para continuar.");
-    if (step === 2 && !selectedPro) return setErrorMsg("Escolha um profissional ou a opção Qualquer um.");
-    if (step === 3 && (!selectedDate || !selectedTime)) return setErrorMsg("Escolha o dia e o horário da sua reserva.");
-    if (step === 4 && (!customerName.trim() || !phoneFormat.validate(customerPhone))) {
-      return setErrorMsg("Por favor, preencha seu nome e um número de WhatsApp válido.");
-    }
-    if (step < 5) setStep(step + 1);
-  };
-
-  const handleBack = () => {
-    setErrorMsg("");
-    if (step > 1) setStep(step - 1);
-  };
+  // ── Handlers ───────────────────────────────────────────────────────────────
+  const handleBack = () => { setErrorMsg(""); if (step > 1) setStep(step - 1); };
 
   const handleConfirm = async () => {
-    if (!tenant || !selectedService || !selectedDate || !selectedTime || !customerName || !customerPhone) return;
+    if (!tenant || !selectedService || !selectedDate || !selectedTime) return;
+    
+    if (!customerName || !customerPhone) {
+      setErrorMsg("Por favor, preencha seu nome e WhatsApp.");
+      inputsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (!phoneFormat.validate(customerPhone)) { 
+      setErrorMsg("Informe um WhatsApp válido com DDD."); 
+      inputsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return; 
+    }
     setIsProcessing(true);
     setErrorMsg("");
-
     try {
-      let customerId = "";
       const cleanPhone = customerPhone.replace(/\D/g, "");
-
-      // Find or create customer
-      const { data: existingCust } = await supabase
-        .from("customers")
-        .select("id")
-        .eq("tenant_id", tenant.id)
-        .eq("phone", cleanPhone)
-        .maybeSingle();
-
-      if (existingCust) {
-        customerId = existingCust.id;
+      let customerId = "";
+      const { data: existing } = await supabase.from("customers").select("id").eq("tenant_id", tenant.id).eq("phone", cleanPhone).maybeSingle();
+      if (existing) {
+        customerId = existing.id;
       } else {
-        const { data: newCust, error: custErr } = await supabase
-          .from("customers")
-          .insert([{ tenant_id: tenant.id, name: customerName, phone: cleanPhone }])
-          .select("id")
-          .single();
-        if (custErr) throw custErr;
-        customerId = newCust.id;
+        const { data: newC, error: cErr } = await supabase.from("customers").insert([{ tenant_id: tenant.id, name: customerName, phone: cleanPhone }]).select("id").single();
+        if (cErr) throw cErr;
+        customerId = newC.id;
       }
 
-      // Create Booking in DB
       const code = Math.random().toString(36).substring(2, 8).toUpperCase();
       const accessCode = Math.random().toString(36).substring(2, 12);
-      const scheduledAt = `${format(selectedDate, "yyyy-MM-dd")}T${selectedTime}:00`;
+      // ── FIX TIMEZONE: Build ISO string with local TZ offset so Supabase stores correct UTC ──
+      // Without offset, "2026-08-11T09:15:00" is interpreted as UTC, showing 06:15 in Brazil (UTC-3)
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const tzOffsetMin = -new Date().getTimezoneOffset(); // positive = east of UTC
+      const tzSign = tzOffsetMin >= 0 ? '+' : '-';
+      const tzAbs = Math.abs(tzOffsetMin);
+      const tzStr = `${tzSign}${pad(Math.floor(tzAbs / 60))}:${pad(tzAbs % 60)}`;
+      const scheduledAt = `${format(selectedDate, "yyyy-MM-dd")}T${selectedTime}:00${tzStr}`;
       let proId = selectedPro === "any" ? null : selectedPro?.id;
       if (selectedPro === "any") {
         const slot = availableSlots.find(s => s.time === selectedTime);
-        if (slot && slot.availableProIds && slot.availableProIds.length > 0) {
-          const randomIndex = Math.floor(Math.random() * slot.availableProIds.length);
-          proId = slot.availableProIds[randomIndex];
-        } else {
-          proId = professionalsList[0]?.id || null;
-        }
+        if (slot?.availableProIds?.length) proId = slot.availableProIds[Math.floor(Math.random() * slot.availableProIds.length)];
+        else proId = professionalsList[0]?.id || null;
       }
 
-      const { data: newBooking, error: bookingErr } = await supabase.from("bookings").insert([{
-        tenant_id: tenant.id,
-        customer_id: customerId,
-        professional_id: proId,
-        service_id: selectedService.id,
-        order_number: code,
-        scheduled_at: scheduledAt,
+      const { data: newBooking, error: bErr } = await supabase.from("bookings").insert([{
+        tenant_id: tenant.id, customer_id: customerId, professional_id: proId,
+        service_id: selectedService.id, order_number: code, scheduled_at: scheduledAt,
         status: "confirmed",
         payment_mode: paymentScope === "full" ? "full" : paymentScope === "partial" ? "deposit" : "local",
-        amount_paid: (paymentScope === "local" || paymentMethod === "cash") ? 0 : amountPaid,
-        amount_total: total,
-        notes: customerNotes,
-        access_code: accessCode,
-      }]).select('id').single();
+        amount_paid: paymentScope === "local" || paymentMethod === "cash" ? 0 : amountPaid,
+        amount_total: total, notes: customerNotes, access_code: accessCode,
+      }]).select("id").single();
+      if (bErr) throw bErr;
 
-      if (bookingErr) throw bookingErr;
-
-      // Se pagamento online, chama Stripe Checkout
       if (paymentScope !== "local" && paymentMethod !== "cash") {
-        const returnUrl = `${window.location.origin}/${slug}/portal`;
-        const { data: checkoutData, error: checkoutErr } = await supabase.functions.invoke('create-booking-checkout', {
-          body: {
-            bookingId: newBooking.id,
-            returnUrl: returnUrl
-          }
+        const { data: checkoutData, error: cErr2 } = await supabase.functions.invoke("create-booking-checkout", {
+          body: { bookingId: newBooking.id, returnUrl: `${window.location.origin}/${slug}/portal` }
         });
+        if (!cErr2 && checkoutData?.url) { window.location.href = checkoutData.url; return; }
+      }
 
-        if (checkoutErr) {
-          console.error("Stripe Error:", checkoutErr);
-          // Se falhar o Stripe, avança para a tela final (step 5) para não perder o agendamento
-          setBookingCode(code);
-          setStep(5);
-          return;
-        }
-
-        if (checkoutData?.url) {
-          window.location.href = checkoutData.url;
-          return;
-        }
+      if (slug) {
+        queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(slug) });
       }
 
       setBookingCode(code);
+      playSuccessSound();
       setStep(5);
     } catch (err: any) {
-      console.error("Erro ao salvar reserva:", err);
-      setErrorMsg(err?.message || "Ocorreu um erro ao registrar sua reserva. Tente novamente.");
+      setErrorMsg(err?.message || "Erro ao registrar agendamento. Tente novamente.");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handlePaymentSubmit = () => {
-    if (!customerName.trim() || !customerPhone.trim()) {
-      alert("Por favor, preencha seu Nome e WhatsApp antes de finalizar o pagamento!");
-      return;
-    }
-    handleConfirm();
-  };
-
   const resetAll = () => {
-    setBookingCode(null);
-    setStep(1);
-    setSelectedService(null);
-    setSelectedPro(null);
-    setSelectedDate(null);
-    setSelectedTime(null);
-    setCustomerName("");
-    setCustomerPhone("");
-    setCustomerNotes("");
-    setPaymentScope("partial");
-    setPaymentMethod("pix");
+    setBookingCode(null); setStep(1); setSelectedService(null); setSelectedPro(null);
+    setSelectedDate(null); setSelectedTime(null); setCustomerName(""); setCustomerPhone("");
+    setCustomerNotes(""); setPaymentScope("partial"); setPaymentMethod("pix");
   };
 
-  // Color Theme Accent (Gold / Custom)
-  const accent = settings?.custom_palette?.primary || "#C9963B";
+  const handleCardNumberChange = (v: string) => {
+    const c = v.replace(/\D/g, "").slice(0, 16);
+    setCardNumber(c.match(/.{1,4}/g)?.join(" ") || c);
+  };
+  const handleCardExpChange = (v: string) => {
+    let d = v.replace(/\D/g, "");
+    if (d.length >= 2) d = d.substring(0, 2) + "/" + d.substring(2, 4);
+    setCardExp(d);
+  };
 
-  // Reusable Social Links
-  const socialRow = (
-    <div className="flex items-center gap-2.5">
-      {storeInsta && (
-        <a
-          href={`https://instagram.com/${storeInsta}`}
-          target="_blank"
-          rel="noreferrer"
-          className="flex h-10 w-10 items-center justify-center rounded-full border transition-colors duration-200"
-          title="Instagram"
-          style={{ borderColor: theme.cardBorder, color: theme.textMuted }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = theme.accent; e.currentTarget.style.borderColor = `${theme.accent}60`; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = theme.textMuted; e.currentTarget.style.borderColor = theme.cardBorder; }}
-        >
-          <InstagramIcon className="h-4 w-4" />
-        </a>
-      )}
-      {storeFacebook && (
-        <a
-          href={`https://facebook.com/${storeFacebook}`}
-          target="_blank"
-          rel="noreferrer"
-          className="flex h-10 w-10 items-center justify-center rounded-full border transition-colors duration-200"
-          title="Facebook"
-          style={{ borderColor: theme.cardBorder, color: theme.textMuted }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = theme.accent; e.currentTarget.style.borderColor = `${theme.accent}60`; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = theme.textMuted; e.currentTarget.style.borderColor = theme.cardBorder; }}
-        >
-          <FacebookIcon className="h-4 w-4" />
-        </a>
-      )}
-      {storePhone && (
-        <>
-          <a
-            href={`https://wa.me/${onlyDigits(storePhone)}`}
-            target="_blank"
-            rel="noreferrer"
-            className="flex h-10 w-10 items-center justify-center rounded-full border transition-colors duration-200"
-            title="WhatsApp"
-            style={{ borderColor: theme.cardBorder, color: theme.textMuted }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = theme.accent; e.currentTarget.style.borderColor = `${theme.accent}60`; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = theme.textMuted; e.currentTarget.style.borderColor = theme.cardBorder; }}
-          >
-            <MessageCircle className="h-4 w-4" />
-          </a>
-          <a
-            href={`tel:${onlyDigits(storePhone)}`}
-            className="flex h-10 w-10 items-center justify-center rounded-full border transition-colors duration-200"
-            title="Telefone"
-            style={{ borderColor: theme.cardBorder, color: theme.textMuted }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = theme.accent; e.currentTarget.style.borderColor = `${theme.accent}60`; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = theme.textMuted; e.currentTarget.style.borderColor = theme.cardBorder; }}
-          >
-            <Phone className="h-3.5 w-3.5" />
-          </a>
-        </>
-      )}
-    </div>
-  );
-
-  // Reusable Map Component — quiet, single hairline border, no glass stacking
-  const mapCard = storeAddress ? (
-    <div>
-      <div className="relative h-40 w-full overflow-hidden rounded-xl border" style={{ borderColor: theme.cardBorder }}>
-        <iframe
-          title="Localização do Salão"
-          src={mapPreviewUrl}
-          className="h-full w-full border-0 pointer-events-none"
-          style={{ filter: (theme as any).mapFilter }}
-          loading="lazy"
-        />
-      </div>
-
-      <div className="pt-4 space-y-3">
-        <div className="flex items-start gap-3">
-          <MapPin className="h-4 w-4 mt-0.5 shrink-0" style={{ color: theme.accent }} />
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: theme.textMuted }}>
-              Localização
-            </p>
-            <p className="text-sm leading-relaxed" style={{ color: theme.textPrimary }}>
-              {storeAddress}
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setShowExpandedMapModal(true)}
-          className="w-full py-3 rounded-xl text-xs font-semibold tracking-wide transition-transform duration-200 active:scale-[0.98] flex items-center justify-center gap-2 border"
-          style={{ borderColor: theme.cardBorder, color: theme.accent }}
-        >
-          <Navigation className="h-3.5 w-3.5" /> Como chegar
-        </button>
-      </div>
-    </div>
-  ) : null;
-
-  // Reusable Operating Hours Component — list with quiet dividers, no boxed rows
-  const hoursCard = businessHoursList.length > 0 ? (
-    <div>
-      <div className="flex items-center gap-2.5 mb-3">
-        <Clock className="h-4 w-4" style={{ color: theme.accent }} />
-        <h3 className="text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: theme.textMuted }}>Horário de atendimento</h3>
-      </div>
-      <div className="divide-y" style={{ borderColor: theme.cardBorder }}>
-        {businessHoursList.map((h: any) => {
-          const isToday = h.weekday === todayWeekday;
-          return (
-            <div
-              key={h.weekday}
-              className="flex items-center justify-between py-2 text-xs"
-              style={{ borderColor: theme.cardBorder, color: isToday ? theme.textPrimary : theme.textMuted }}
-            >
-              <span className="flex items-center gap-2" style={{ fontWeight: isToday ? 600 : 400 }}>
-                {WEEKDAYS[h.weekday]}
-                {isToday && (
-                  <span className="rounded-full px-1.5 py-[1px] text-[9px] font-bold uppercase tracking-wide" style={{ background: `${theme.accent}18`, color: theme.accent }}>
-                    Hoje
-                  </span>
-                )}
-              </span>
-              <span className="font-mono tabular-nums" style={{ fontWeight: isToday ? 600 : 400 }}>
-                {h.is_open ? `${h.open_time.substring(0, 5)} – ${h.close_time.substring(0, 5)}` : "Fechado"}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  ) : null;
-
-  const supportLinks = (
-    <div className="flex flex-col gap-2.5 pt-1">
-      <a
-        href={`/${slug}/portal`}
-        className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-semibold tracking-wide transition-transform duration-200 active:scale-[0.98]"
-        style={{ background: theme.accent, color: theme.bg }}
-      >
-        <Calendar className="h-3.5 w-3.5" /> Já possui agendamento?
-      </a>
-      {storePhone && (
-        <a
-          href={`https://wa.me/${onlyDigits(storePhone)}`}
-          target="_blank"
-          rel="noreferrer"
-          className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-semibold tracking-wide border transition-transform duration-200 active:scale-[0.98]"
-          style={{ borderColor: theme.cardBorder, color: theme.textPrimary }}
-        >
-          <MessageCircle className="h-3.5 w-3.5" style={{ color: "#25D366" }} /> Precisa de ajuda?
-        </a>
-      )}
-    </div>
-  );
-
+  // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className={`min-h-screen flex flex-col items-center justify-center transition-colors duration-300 ${theme.fontSans}`} style={{ background: theme.bg, color: theme.textPrimary }}>
-        <Loader2 className="h-6 w-6 animate-spin mb-4" style={{ color: theme.accent }} />
-        <p className="text-xs font-medium tracking-wide" style={{ color: theme.textMuted }}>Carregando agendamento online…</p>
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "#0d0d0d" }}>
+        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+          <Loader2 className="w-8 h-8" style={{ color: accent }} />
+        </motion.div>
+        <p className="mt-4 text-sm font-medium text-white/40">Carregando agendamento…</p>
       </div>
     );
   }
 
+  const handleOpenSheet = () => { 
+    setShowInfoSheet(true); 
+    setHasOpenedSheet(true); 
+    if (geoStatus === "idle") requestLocation();
+  };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
   return (
-    <div className={`relative min-h-screen ${theme.fontSans} overflow-x-hidden flex flex-col lg:flex-row transition-colors duration-300`} style={{ background: theme.bg, color: theme.textPrimary }}>
+    <>
+      {/* Playfair Display from Google Fonts */}
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
 
-      {/* ─────────────────────────────────────────────────────────────
-          MOBILE TOP HEADER & HERO SECTION
-      ─────────────────────────────────────────────────────────────── */}
-      <header className="relative lg:hidden border-b z-30 pb-6" style={{ background: theme.cardBg, borderColor: theme.cardBorder }}>
-        {/* Banner Image */}
-        <div className="relative h-48 w-full overflow-hidden">
-          {settings?.banner_url ? (
-            <img src={settings.banner_url} alt="Banner" className="h-full w-full object-cover" />
-          ) : (
-            <div className="h-full w-full" style={{ background: theme.cardBg }} />
-          )}
-          <div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(to top, ${theme.cardBg} 0%, transparent 65%)` }} />
-        </div>
+    <div className="min-h-screen" style={{ background: theme.bg, color: theme.textPrimary, fontFamily: "'Inter', sans-serif" }}>
 
-        {/* Store Brand Box */}
-        <div className="relative px-5 -mt-12 flex flex-col items-center text-center gap-4">
-          <div className="h-24 w-24 rounded-full border-4 overflow-hidden shadow-lg flex items-center justify-center relative z-10" style={{ borderColor: theme.cardBg, background: theme.cardBg }}>
-            {settings?.logo_url ? (
-              <img src={settings.logo_url} alt="Logo" className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-3xl font-semibold font-serif uppercase" style={{ color: theme.textPrimary }}>{storeName?.charAt(0)}</span>
-            )}
-          </div>
-
-          <div className="flex flex-col items-center gap-1.5 -mt-2">
-            <div className="flex items-center justify-center gap-2">
-              <h1 className="text-2xl font-serif font-semibold tracking-tight" style={{ color: theme.textPrimary }}>{storeName}</h1>
-              <span className="flex items-center gap-1 text-[11px] font-semibold shrink-0" style={{ color: theme.accent }}>
-                <Star className="h-3.5 w-3.5" style={{ fill: theme.accent, color: theme.accent }} /> 4.9
-              </span>
-            </div>
-            <p className="text-sm px-4" style={{ color: theme.textMuted }}>{settings?.slogan || settings?.description || "Agende seu horário com a nossa equipe de especialistas."}</p>
-          </div>
-
-          <div className="flex flex-col w-full gap-4 mt-2">
-            <div className="flex items-center justify-center">
-              {socialRow}
-            </div>
-            <a
-              href={`/${slug}/portal`}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-xs font-semibold border transition-transform active:scale-[0.98]"
-              style={{ borderColor: theme.cardBorder, color: theme.textPrimary }}
-            >
-              <Calendar className="h-4 w-4" style={{ color: theme.accent }} />
-              <span>Meus agendamentos</span>
-            </a>
-          </div>
-        </div>
-      </header>
-
-      {/* MOBILE BOTTOM SHEET */}
+      {/* ── INFO SHEET (Mobile) ── */}
       <AnimatePresence>
-        {showMobileInfoModal && (
-          <div
-            onClick={() => setShowMobileInfoModal(false)}
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm"
+        {showInfoSheet && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end"
+            style={{ background: "rgba(0,0,0,0.7)" }}
+            onClick={() => setShowInfoSheet(false)}
           >
             <motion.div
-              onClick={(e) => e.stopPropagation()}
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              drag="y"
-              dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={0.2}
-              onDragEnd={(_, info) => {
-                if (info.offset.y > 100) setShowMobileInfoModal(false);
-              }}
-              className="relative w-full max-w-xl max-h-[85vh] overflow-y-auto rounded-t-[24px] border-t p-6 space-y-7 shadow-2xl"
-              style={{ background: theme.cardBg, borderColor: theme.cardBorder, color: theme.textPrimary }}
+              onClick={e => e.stopPropagation()}
+              className="w-full rounded-t-3xl overflow-hidden"
+              style={{ background: theme.cardBg, border: `1px solid ${theme.cardBorder}`, maxHeight: "85vh", overflowY: "auto" }}
             >
-              <div className="flex flex-col items-center justify-center -mt-1 pb-1">
-                <div className="w-9 h-1 rounded-full cursor-grab active:cursor-grabbing" style={{ background: theme.cardBorder }} />
+              {/* Sheet handle */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full" style={{ background: theme.cardBorder }} />
               </div>
 
-              <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: theme.cardBorder }}>
-                <div className="min-w-0">
-                  <h3 className="font-serif font-semibold text-lg leading-tight truncate">{storeName}</h3>
-                  <p className="text-xs truncate mt-0.5" style={{ color: theme.textMuted }}>{storeAddress}</p>
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: theme.cardBorder }}>
+                <div>
+                  <h3 className="text-lg font-bold" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>{storeName}</h3>
+                  <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{storeAddress}</p>
                 </div>
-                <button
-                  onClick={() => setShowMobileInfoModal(false)}
-                  className="rounded-full p-2 transition-colors shrink-0"
-                  style={{ color: theme.textMuted }}
-                >
-                  <X className="h-4 w-4" />
+                <button onClick={() => setShowInfoSheet(false)} className="p-2 rounded-full" style={{ color: theme.textMuted }}>
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {mapCard}
-              {hoursCard}
-              {supportLinks}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* PERSISTENT MOBILE BOTTOM SHEET PEEK BAR */}
-      {!showMobileInfoModal && step < 4 && (
-        <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden pointer-events-auto overflow-hidden">
-          <motion.div
-            initial={{ y: 60, opacity: 0 }}
-            animate={
-              hasOpenedBottomSheet
-                ? { y: 0, opacity: 1 }
-                : { y: [0, -8, 0], opacity: 1 }
-            }
-            transition={{
-              y: hasOpenedBottomSheet
-                ? { duration: 0.2 }
-                : { duration: 1.6, repeat: 1, repeatDelay: 2.5, ease: "easeInOut" },
-              opacity: { duration: 0.4 }
-            }}
-            drag="y"
-            dragConstraints={{ top: -150, bottom: 0 }}
-            dragElastic={{ top: 0.8, bottom: 0 }}
-            onDragEnd={(_, info) => {
-              if (info.offset.y < -20 || info.velocity.y < -50) {
-                openBottomSheet();
-              }
-            }}
-            onTouchStart={(e) => {
-              (e.currentTarget as any)._touchStartY = e.touches[0].clientY;
-            }}
-            onTouchEnd={(e) => {
-              const startY = (e.currentTarget as any)._touchStartY;
-              if (startY !== undefined) {
-                const endY = e.changedTouches[0].clientY;
-                if (startY - endY > 15) {
-                  openBottomSheet();
-                }
-              }
-            }}
-            onClick={openBottomSheet}
-            className="cursor-grab active:cursor-grabbing border-t px-6 pt-3 pb-9 -mb-6 rounded-t-[24px] flex flex-col items-center justify-center transition-transform active:scale-[0.99] touch-pan-y"
-            style={{ background: theme.cardBg, borderColor: theme.cardBorder, boxShadow: "0 -8px 30px rgba(0,0,0,0.12)" }}
-          >
-            <div className="flex flex-col items-center justify-center mb-2 gap-1.5">
-              {!hasOpenedBottomSheet && (
-                <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.3, ease: "easeInOut" }}>
-                  <ChevronUp className="h-4 w-4" style={{ color: theme.textMuted }} />
-                </motion.div>
-              )}
-              <div className="w-9 h-1 rounded-full" style={{ background: theme.cardBorder }} />
-            </div>
-
-            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] flex items-center gap-2" style={{ color: theme.textMuted }}>
-              <MapPin className="h-3.5 w-3.5" style={{ color: theme.accent }} /> Localização & horários
-            </span>
-          </motion.div>
-        </div>
-      )}
-
-      {/* EXPANDED MAP MODAL */}
-      <AnimatePresence>
-        {showExpandedMapModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 sm:p-6">
-            <motion.div
-              initial={{ scale: 0.97, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.97, opacity: 0 }}
-              className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl border flex flex-col shadow-2xl"
-              style={{ borderColor: theme.cardBorder, background: theme.cardBg }}
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: theme.cardBorder }}>
-                <div className="min-w-0">
-                  <h3 className="font-serif font-semibold text-base" style={{ color: theme.textPrimary }}>Mapa & navegação</h3>
-                  <p className="text-xs truncate mt-0.5" style={{ color: theme.textMuted }}>{storeAddress}</p>
-                </div>
-                <button
-                  onClick={() => setShowExpandedMapModal(false)}
-                  className="rounded-full p-2 transition-colors"
-                  style={{ color: theme.textMuted }}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Large Interactive Map View with In-App Zoom Controls */}
-              <div className="relative flex-1 min-h-[400px] w-full overflow-hidden bg-black flex flex-col">
-                <iframe
-                  title="Mapa Expandido no App"
-                  src={mapEmbedUrl}
-                  className="h-full w-full flex-1 border-0"
-                  style={{ filter: (theme as any).mapFilter, pointerEvents: "auto" }}
-                  loading="lazy"
-                  allowFullScreen
-                />
-
-                {geoStatus === "loading" && (
-                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm text-white">
-                    <Loader2 className="w-10 h-10 animate-spin mb-4" style={{ color: theme.accent }} />
-                    <p className="font-semibold text-base">Buscando sua localização...</p>
-                    <p className="text-sm opacity-80 mt-1">Traçando a melhor rota até o local</p>
-                  </div>
-                )}
-                
-                {geoStatus === "denied" && (
-                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md text-white p-6 text-center">
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                      <MapPin className="w-8 h-8 opacity-70" />
-                    </div>
-                    <p className="font-semibold text-lg mb-2">Localização desativada</p>
-                    <p className="text-sm opacity-80 mb-8 max-w-sm">
-                      Para traçar a rota exata até nós, precisamos que você permita o acesso à sua localização no seu celular ou navegador.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
-                      <button 
-                        onClick={() => requestLocation()} 
-                        className="flex-1 py-3.5 rounded-xl font-bold text-sm transition-transform active:scale-95 flex items-center justify-center gap-2"
-                        style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
-                      >
-                        <Navigation className="w-4 h-4" /> Permitir e Tentar
-                      </button>
-                      <button 
-                        onClick={() => setGeoStatus("ignored")} 
-                        className="flex-1 py-3.5 rounded-xl font-bold text-sm bg-white/10 hover:bg-white/20 transition-colors border border-white/10"
-                      >
-                        Ver mapa sem rota
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="absolute right-4 top-4 flex flex-col gap-2 z-10">
-                  <button
-                    onClick={() => setMapZoom((z) => Math.min(z + 1, 20))}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border font-medium text-base shadow-lg transition-transform active:scale-95"
-                    title="Aumentar Zoom (+)"
-                    style={{ background: theme.cardBg, borderColor: theme.cardBorder, color: theme.textPrimary }}
-                  >
-                    +
-                  </button>
-                  <button
-                    onClick={() => setMapZoom((z) => Math.max(z - 1, 10))}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border font-medium text-base shadow-lg transition-transform active:scale-95"
-                    title="Diminuir Zoom (-)"
-                    style={{ background: theme.cardBg, borderColor: theme.cardBorder, color: theme.textPrimary }}
-                  >
-                    −
-                  </button>
-                </div>
-              </div>
-
-              {/* Modal Controls & GPS Calculator */}
-              <div className="p-6 border-t space-y-4" style={{ background: theme.cardBg, borderColor: theme.cardBorder }}>
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <div className="text-left w-full sm:w-auto">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: theme.textMuted }}>Endereço completo</p>
-                    <p className="text-sm mt-0.5" style={{ color: theme.textPrimary }}>{storeAddress}</p>
-                  </div>
-                  {distanceKm !== null ? (
-                    <div className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-xs font-semibold shrink-0" style={{ borderColor: theme.cardBorder, color: theme.accent }}>
-                      <Navigation className="h-3.5 w-3.5" /> Você está a {distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)} km`}
-                    </div>
-                  ) : (
-                    <button
-                      onClick={requestLocation}
-                      disabled={geoStatus === "loading"}
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-xs font-semibold transition-colors disabled:opacity-60 shrink-0"
-                      style={{ borderColor: theme.cardBorder, color: theme.textPrimary }}
-                    >
-                      {geoStatus === "loading" ? (
-                        <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Localizando…
-                        </>
-                      ) : (
-                        <>
-                          <Navigation className="h-3.5 w-3.5" /> Calcular minha distância
-                        </>
+              <div className="px-6 py-5 space-y-6">
+                {/* Map */}
+                {storeAddress && (
+                  <div>
+                    <div className="rounded-2xl overflow-hidden border relative" style={{ borderColor: theme.cardBorder, height: 200 }}>
+                      {geoStatus !== "loading" && (
+                        <iframe
+                          title="Mapa"
+                          src={mapPreviewUrl}
+                          className="w-full h-full border-0"
+                          loading="lazy"
+                          allowFullScreen
+                          style={{ filter: (theme as any).mapFilter }}
+                        />
                       )}
-                    </button>
+                      {/* Loading overlay while getting location */}
+                      {geoStatus === "loading" && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl"
+                          style={{ background: `${theme.cardBg}ee`, backdropFilter: "blur(4px)" }}
+                        >
+                          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+                            <Loader2 className="w-7 h-7" style={{ color: accent }} />
+                          </motion.div>
+                          <p className="text-xs font-semibold" style={{ color: theme.textMuted }}>Traçando rota…</p>
+                        </motion.div>
+                      )}
+                    </div>
+                    <a href={directionsUrl} target="_blank" rel="noreferrer"
+                      className="mt-3 flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold border transition-colors"
+                      style={{ borderColor: `${accent}40`, color: accent }}>
+                      <Navigation className="w-4 h-4" /> Como chegar
+                    </a>
+                  </div>
+                )}
+
+                {/* Hours */}
+                {businessHoursList.length > 0 && (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: theme.textMuted }}>Horários</p>
+                    <div className="space-y-1">
+                      {businessHoursList.map((h: any) => {
+                        const isToday = h.weekday === todayWeekday;
+                        return (
+                          <div key={h.weekday} className="flex items-center justify-between py-1.5 text-sm"
+                            style={{ color: isToday ? theme.textPrimary : theme.textMuted, fontWeight: isToday ? 600 : 400 }}>
+                            <span className="flex items-center gap-2">
+                              {WEEKDAYS_FULL[h.weekday]}
+                              {isToday && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${accent}20`, color: accent }}>Hoje</span>}
+                            </span>
+                            <span className="font-mono text-xs">
+                              {h.is_open ? `${h.open_time.substring(0, 5)} – ${h.close_time.substring(0, 5)}` : "Fechado"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Contacts */}
+                <div className="flex flex-col gap-2.5">
+                  <a href={`/${slug}/portal`} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold"
+                    style={{ background: accent, color: "#000" }}>
+                    <Calendar className="w-4 h-4" /> Meus agendamentos
+                  </a>
+                  {storePhone && (
+                    <a href={`https://wa.me/${onlyDigits(storePhone)}`} target="_blank" rel="noreferrer"
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold border"
+                      style={{ borderColor: theme.cardBorder, color: theme.textPrimary }}>
+                      <MessageCircle className="w-4 h-4 text-green-400" /> Precisa de ajuda?
+                    </a>
                   )}
                 </div>
-
-                <button
-                  onClick={() => setShowExpandedMapModal(false)}
-                  className="w-full rounded-xl py-3 text-sm font-semibold transition-transform active:scale-[0.99]"
-                  style={{ background: theme.accent, color: theme.bg }}
-                >
-                  Voltar ao agendamento
-                </button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ─────────────────────────────────────────────────────────────
-          DESKTOP SIDEBAR
-      ─────────────────────────────────────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col w-[400px] shrink-0 border-r relative z-20 transition-colors duration-300" style={{ background: theme.cardBg, borderColor: theme.cardBorder }}>
-        <div className="relative h-48 w-full overflow-hidden">
-          {settings?.banner_url ? (
-            <img src={settings.banner_url} alt="Banner" className="h-full w-full object-cover" />
-          ) : (
-            <div className="h-full w-full" style={{ background: theme.cardBg }} />
-          )}
-          <div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(to top, ${theme.cardBg} 0%, transparent 70%)` }} />
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
-            <div className="h-24 w-24 rounded-full border-4 overflow-hidden shadow-lg flex items-center justify-center relative z-10" style={{ borderColor: theme.cardBg, background: theme.cardBg }}>
+      {/* ── MAP MODAL ── */}
+      <AnimatePresence>
+        {showMapModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.85)" }}
+            onClick={() => setShowMapModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="w-full max-w-3xl rounded-2xl overflow-hidden"
+              style={{ background: theme.cardBg, border: `1px solid ${theme.cardBorder}` }}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: theme.cardBorder }}>
+                <p className="font-semibold text-sm" style={{ color: theme.textPrimary }}>Localização</p>
+                <button onClick={() => setShowMapModal(false)} style={{ color: theme.textMuted }}><X className="w-4 h-4" /></button>
+              </div>
+              <div className="relative h-80">
+                <iframe title="Mapa modal" src={mapModalUrl} className="w-full h-full border-0" style={{ filter: (theme as any).mapFilter }} loading="lazy" allowFullScreen />
+                {geoStatus === "loading" && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                    <Loader2 className="w-8 h-8 animate-spin" style={{ color: accent }} />
+                  </div>
+                )}
+                <div className="absolute right-3 top-3 flex flex-col gap-1.5">
+                  <button onClick={() => setMapZoom(z => Math.min(z + 1, 20))} className="w-8 h-8 rounded-full text-sm font-bold flex items-center justify-center border shadow-lg" style={{ background: theme.cardBg, borderColor: theme.cardBorder, color: theme.textPrimary }}>+</button>
+                  <button onClick={() => setMapZoom(z => Math.max(z - 1, 10))} className="w-8 h-8 rounded-full text-sm font-bold flex items-center justify-center border shadow-lg" style={{ background: theme.cardBg, borderColor: theme.cardBorder, color: theme.textPrimary }}>−</button>
+                </div>
+              </div>
+              <div className="px-5 py-4 flex flex-col sm:flex-row items-center gap-3">
+                {distanceKm !== null ? (
+                  <span className="text-sm font-medium" style={{ color: accent }}>
+                    Você está a {distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)} km`}
+                  </span>
+                ) : (
+                  <button onClick={requestLocation} disabled={geoStatus === "loading"} className="text-sm flex items-center gap-1.5 disabled:opacity-50" style={{ color: accent }}>
+                    <Navigation className="w-3.5 h-3.5" /> Calcular minha distância
+                  </button>
+                )}
+                <a href={directionsUrl} target="_blank" rel="noreferrer"
+                  className="ml-auto flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold"
+                  style={{ background: accent, color: "#000" }}>
+                  <Navigation className="w-4 h-4" /> Como chegar
+                </a>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── LAYOUT ── */}
+      <div className="flex flex-col lg:flex-row min-h-screen overflow-x-hidden w-full max-w-[100vw]">
+
+        {/* ── SIDEBAR (desktop) / HEADER (mobile) ── */}
+        <aside className="lg:w-[360px] lg:min-h-screen lg:sticky lg:top-0 lg:self-start border-b lg:border-b-0 lg:border-r"
+          style={{ background: theme.cardBg, borderColor: theme.cardBorder }}>
+
+          {/* Banner */}
+          <div className="relative h-44 lg:h-52 overflow-hidden">
+            {settings?.banner_url ? (
+              <img src={settings.banner_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full" style={{ background: `linear-gradient(135deg, ${accent}30, ${accent}08)` }} />
+            )}
+            <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${theme.cardBg} 0%, transparent 60%)` }} />
+          </div>
+
+          {/* Store Info */}
+          <div className="px-6 -mt-16 pb-6 text-center flex flex-col items-center">
+            {/* Logo */}
+            <div className="w-24 h-24 rounded-2xl border-4 overflow-hidden shadow-2xl flex items-center justify-center relative z-10"
+              style={{ borderColor: theme.cardBg, background: theme.bg }}>
               {settings?.logo_url ? (
-                <img src={settings.logo_url} alt="Logo" className="h-full w-full object-cover" />
+                <img src={settings.logo_url} alt={storeName} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-3xl font-semibold font-serif uppercase" style={{ color: theme.textPrimary }}>{storeName?.charAt(0)}</span>
+                <span className="text-3xl font-bold" style={{ color: accent }}>{storeName?.charAt(0)}</span>
               )}
             </div>
-          </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto scrollbar-none px-8 pt-16 pb-8 space-y-8 text-center flex flex-col items-center">
-          <div className="flex flex-col items-center w-full">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <h1 className="text-[28px] font-serif font-semibold tracking-tight leading-tight" style={{ color: theme.textPrimary }}>{storeName}</h1>
-              <span className="flex items-center gap-1 text-xs font-semibold shrink-0" style={{ color: theme.accent }}>
-                <Star className="h-3.5 w-3.5" style={{ fill: theme.accent, color: theme.accent }} /> 4.9
-              </span>
-            </div>
-            <p className="text-sm leading-relaxed max-w-[280px] mx-auto" style={{ color: theme.textMuted }}>{settings?.slogan || settings?.description || "Agende seu horário com os melhores profissionais da região."}</p>
-            
-            <div className="mt-5 flex justify-center w-full">
-              {socialRow}
+            <h1 className="mt-4 text-2xl font-bold tracking-tight" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>{storeName}</h1>
+
+            <div className="flex items-center gap-1 mt-1">
+              {[1,2,3,4,5].map(i => (
+                <Star key={i} className="w-3.5 h-3.5" style={{ fill: accent, color: accent, opacity: i <= 4 ? 1 : 0.4 }} />
+              ))}
+              <span className="text-xs ml-1 font-medium" style={{ color: theme.textMuted }}>4.9</span>
             </div>
 
-            <a
-              href={`/${slug}/portal`}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-semibold border mt-6 transition-transform hover:scale-[1.02] active:scale-95 w-full max-w-[280px]"
-              style={{ borderColor: theme.cardBorder, color: theme.textPrimary }}
-            >
-              <Calendar className="h-4 w-4" style={{ color: theme.accent }} />
-              <span>Meus agendamentos</span>
-            </a>
-          </div>
-          <div className="h-px w-full" style={{ background: theme.cardBorder }} />
-          {mapCard}
-          <div className="h-px w-full" style={{ background: theme.cardBorder }} />
-          {hoursCard}
-          <div className="h-px w-full" style={{ background: theme.cardBorder }} />
-          {supportLinks}
-        </div>
-      </aside>
+            <p className="mt-2 text-sm leading-relaxed max-w-[260px]" style={{ color: theme.textMuted }}>
+              {settings?.slogan || settings?.description || "Agende seu horário com os melhores profissionais."}
+            </p>
 
-      {/* ─────────────────────────────────────────────────────────────
-          MAIN BOOKING WIZARD
-      ─────────────────────────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col min-h-0 relative z-20">
-        {/* Progress Bar */}
-        <div className="h-[3px] w-full relative overflow-hidden" style={{ background: theme.cardBorder }}>
-          <motion.div
-            className="h-full"
-            style={{ background: theme.accent }}
-            initial={false}
-            animate={{ width: `${(step / 5) * 100}%` }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-          />
-        </div>
+            {/* Social */}
+            <div className="flex items-center gap-3 mt-4">
+              {storeInsta && (
+                <a href={`https://instagram.com/${storeInsta}`} target="_blank" rel="noreferrer"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center border transition-colors"
+                  style={{ borderColor: theme.cardBorder, color: theme.textMuted }}
+                  onMouseEnter={e => { e.currentTarget.style.color = accent; e.currentTarget.style.borderColor = `${accent}50`; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = theme.textMuted; e.currentTarget.style.borderColor = theme.cardBorder; }}>
+                  <InstagramIcon className="w-4 h-4" />
+                </a>
+              )}
+              {storePhone && (
+                <>
+                  <a href={`https://wa.me/${onlyDigits(storePhone)}`} target="_blank" rel="noreferrer"
+                    className="w-9 h-9 rounded-xl flex items-center justify-center border transition-colors"
+                    style={{ borderColor: theme.cardBorder, color: theme.textMuted }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "#25D366"; e.currentTarget.style.borderColor = "#25D36650"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = theme.textMuted; e.currentTarget.style.borderColor = theme.cardBorder; }}>
+                    <WhatsAppIcon className="w-4 h-4" />
+                  </a>
+                  <a href={`tel:${onlyDigits(storePhone)}`}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center border transition-colors"
+                    style={{ borderColor: theme.cardBorder, color: theme.textMuted }}
+                    onMouseEnter={e => { e.currentTarget.style.color = accent; e.currentTarget.style.borderColor = `${accent}50`; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = theme.textMuted; e.currentTarget.style.borderColor = theme.cardBorder; }}>
+                    <Phone className="w-3.5 h-3.5" />
+                  </a>
+                </>
+              )}
+            </div>
 
-        {/* Wizard Top Step Title */}
-        <div className="min-h-[76px] px-6 lg:px-12 py-4 flex items-center justify-between border-b shrink-0 transition-colors duration-300" style={{ background: theme.cardBg, borderColor: theme.cardBorder }}>
-          <div className="flex items-center gap-4">
-            {step > 1 && step < 5 && (
-              <button
-                onClick={handleBack}
-                className="flex h-9 w-9 items-center justify-center rounded-full border transition-colors"
-                style={{ borderColor: theme.cardBorder, color: theme.textPrimary }}
-              >
-                <ChevronLeft className="h-4 w-4" />
+            {/* Divider */}
+            <div className="w-full h-px mt-6" style={{ background: theme.cardBorder }} />
+
+            {/* Address */}
+            {storeAddress && (
+              <button onClick={() => { setShowMapModal(true); if (geoStatus === "idle") requestLocation(); }}
+                className="w-full flex items-start gap-3 text-left mt-5 p-3 rounded-xl transition-colors"
+                style={{ background: `${accent}08` }}
+                onMouseEnter={e => (e.currentTarget.style.background = `${accent}14`)}
+                onMouseLeave={e => (e.currentTarget.style.background = `${accent}08`)}>
+                <MapPin className="w-4 h-4 mt-0.5 shrink-0" style={{ color: accent }} />
+                <div>
+                  <p className="text-xs font-semibold mb-0.5" style={{ color: accent }}>Localização</p>
+                  <p className="text-sm leading-snug" style={{ color: theme.textPrimary }}>{storeAddress}</p>
+                </div>
               </button>
             )}
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: theme.accent }}>Passo {step} de 5</p>
-              <h2 className="text-lg font-serif font-semibold mt-0.5" style={{ color: theme.textPrimary }}>{stepTitles[step - 1]}</h2>
-            </div>
-          </div>
 
-          {/* Quick Info Modal Trigger for Mobile */}
-          <button
-            onClick={() => setShowMobileInfoModal(true)}
-            className="lg:hidden flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-medium"
-            style={{ color: theme.textPrimary, borderColor: theme.cardBorder }}
-          >
-            <Info className="h-3.5 w-3.5" style={{ color: theme.accent }} /> Info
-          </button>
-        </div>
-
-        {/* Error Notification */}
-        {errorMsg && (
-          <div className="mx-6 lg:mx-12 mt-6 px-4 py-3 rounded-xl border text-sm flex items-center justify-between" style={{ borderColor: "rgba(244,63,94,0.35)", background: "rgba(244,63,94,0.08)", color: "#fb7185" }}>
-            <span>{errorMsg}</span>
-            <button onClick={() => setErrorMsg("")} className="text-xs underline ml-4 shrink-0">Fechar</button>
-          </div>
-        )}
-
-        {/* Wizard Content Scrollable Area */}
-        <div className="flex-1 overflow-y-auto scrollbar-none px-6 lg:px-12 py-8">
-          <AnimatePresence mode="wait">
-            {/* STEP 1: CHOOSE SERVICE */}
-            {step === 1 && (
-              <motion.div key="step1" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }} className="max-w-4xl mx-auto space-y-6">
-                {servicesList.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center p-16 text-center rounded-2xl border border-dashed" style={{ borderColor: theme.cardBorder }}>
-                    <Scissors className="h-8 w-8 mb-4" style={{ color: theme.textMuted }} />
-                    <h3 className="text-lg font-serif font-semibold mb-1.5" style={{ color: theme.textPrimary }}>Nenhum serviço disponível</h3>
-                    <p className="text-sm" style={{ color: theme.textMuted }}>O salão ainda não cadastrou nenhum serviço.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {servicesList.map((s) => {
-                      const isSel = selectedService?.id === s.id;
-                      const hasDiscount = s.original_price && s.original_price > s.price;
-                      const discountPct = hasDiscount ? Math.round(((s.original_price - s.price) / s.original_price) * 100) : 0;
-
-                      return (
-                        <div
-                          key={s.id}
-                          onClick={() => {
-                            setSelectedService(s);
-                            setStep(2);
-                          }}
-                          className="group relative rounded-2xl cursor-pointer transition-all duration-200 border flex flex-col overflow-hidden"
-                          style={{
-                            borderColor: isSel ? theme.accent : theme.cardBorder,
-                            background: theme.cardBg,
-                            boxShadow: isSel ? `0 0 0 1px ${theme.accent}` : "none",
-                          }}
-                        >
-                          {/* Service Image — full photo always visible, no cropping */}
-                          {s.photo_url ? (
-                            <div className="relative h-52 w-full overflow-hidden" style={{ background: theme.bg }}>
-                              <img
-                                src={s.photo_url}
-                                alt=""
-                                aria-hidden="true"
-                                className="absolute inset-0 h-full w-full object-cover scale-110 blur-2xl opacity-30"
-                              />
-                              <img
-                                src={s.photo_url}
-                                alt={s.name}
-                                className="relative h-full w-full object-contain group-hover:scale-[1.03] transition-transform duration-500"
-                              />
-                              {hasDiscount && (
-                                <span className="absolute top-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm" style={{ background: "rgba(0,0,0,0.55)" }}>
-                                  -{discountPct}%
-                                </span>
-                              )}
-                              {s.category && (
-                                <span className="absolute top-3 right-3 rounded-full px-2.5 py-1 text-[10px] font-medium text-white/90" style={{ background: "rgba(0,0,0,0.4)" }}>
-                                  {s.category}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="relative h-24 w-full flex items-center justify-center border-b" style={{ borderColor: theme.cardBorder }}>
-                              <Scissors className="h-6 w-6" style={{ color: theme.textMuted }} />
-                              {hasDiscount && (
-                                <span className="absolute top-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide" style={{ background: `${theme.accent}18`, color: theme.accent }}>
-                                  -{discountPct}%
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="p-5 flex flex-col flex-1">
-                            <div className="flex items-start justify-between gap-3 mb-1.5">
-                              <h3 className="text-base font-serif font-semibold leading-snug" style={{ color: theme.textPrimary }}>
-                                {s.name}
-                              </h3>
-                              <div className="text-right shrink-0">
-                                {hasDiscount && (
-                                  <span className="block text-[11px] line-through" style={{ color: theme.textMuted }}>
-                                    {money(s.original_price)}
-                                  </span>
-                                )}
-                                <span className="text-base font-semibold tabular-nums" style={{ color: theme.accent }}>
-                                  {money(s.price)}
-                                </span>
-                              </div>
-                            </div>
-
-                            <p className="text-xs leading-relaxed mb-4 line-clamp-2" style={{ color: theme.textMuted }}>
-                              {s.description || "Atendimento completo de alto padrão com finalização profissional."}
-                            </p>
-
-                            <div className="flex items-center justify-between pt-3 border-t mt-auto" style={{ borderColor: theme.cardBorder }}>
-                              <span className="flex items-center gap-1.5 text-xs" style={{ color: theme.textMuted }}>
-                                <Clock className="h-3.5 w-3.5" /> {s.duration_minutes} min
-                              </span>
-                              <span
-                                className="flex items-center gap-1 text-xs font-semibold transition-transform group-hover:translate-x-0.5"
-                                style={{ color: theme.accent }}
-                              >
-                                Selecionar <ArrowUpRight className="h-3.5 w-3.5" />
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {/* STEP 2: CHOOSE PROFESSIONAL */}
-            {step === 2 && (
-              <motion.div key="step2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }} className="max-w-4xl mx-auto">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                  <div
-                    onClick={() => {
-                      setSelectedPro("any");
-                      setStep(3);
-                    }}
-                    className="p-6 rounded-2xl cursor-pointer text-center transition-all duration-200 border flex flex-col items-center justify-center aspect-square"
-                    style={{
-                      borderColor: selectedPro === "any" ? theme.accent : theme.cardBorder,
-                      background: theme.cardBg,
-                      boxShadow: selectedPro === "any" ? `0 0 0 1px ${theme.accent}` : "none",
-                    }}
-                  >
-                    <div className="h-20 w-20 rounded-full border flex items-center justify-center mb-3" style={{ borderColor: theme.cardBorder, color: theme.accent }}>
-                      <Zap className="h-7 w-7" />
-                    </div>
-                    <p className="font-semibold text-sm" style={{ color: theme.textPrimary }}>Qualquer profissional</p>
-                    <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>O mais rápido disponível</p>
-                  </div>
-
-                  {professionalsList.map((p) => {
-                    const isSel = selectedPro?.id === p.id;
-                    return (
-                      <div
-                        key={p.id}
-                        onClick={() => {
-                          setSelectedPro(p);
-                          setStep(3);
-                        }}
-                        className="p-6 rounded-2xl cursor-pointer text-center transition-all duration-200 border flex flex-col items-center justify-center aspect-square"
-                        style={{
-                          borderColor: isSel ? theme.accent : theme.cardBorder,
-                          background: theme.cardBg,
-                          boxShadow: isSel ? `0 0 0 1px ${theme.accent}` : "none",
-                        }}
-                      >
-                        {p.photo_url ? (
-                          <img src={p.photo_url} alt={p.name} className="h-20 w-20 rounded-full object-cover mb-3" />
-                        ) : (
-                          <div className="h-20 w-20 rounded-full border flex items-center justify-center mb-3" style={{ borderColor: theme.cardBorder, color: theme.textMuted }}>
-                            <User className="h-8 w-8" />
-                          </div>
-                        )}
-                        <h4 className="font-serif font-semibold text-base" style={{ color: theme.textPrimary }}>{p.name}</h4>
-                        <p className="text-[11px] truncate w-full mt-0.5" style={{ color: theme.textMuted }}>{p.role_title || "Profissional"}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-
-            {/* STEP 3: CHOOSE DATE & TIME */}
-            {step === 3 && (
-              <motion.div key="step3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }} className="max-w-3xl mx-auto space-y-8">
-                {/* Date Slider */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] flex items-center gap-2" style={{ color: theme.textMuted }}>
-                      <Calendar className="h-3.5 w-3.5" style={{ color: theme.accent }} /> Selecione o dia
-                    </h3>
-                    {!hasScrolledDates && (
-                      <motion.div
-                        animate={{ x: [0, 5, 0] }}
-                        transition={{ repeat: Infinity, duration: 1.1, ease: "easeInOut" }}
-                        style={{ color: theme.textMuted }}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </motion.div>
-                    )}
-                  </div>
-                  <div
-                    onScroll={() => setHasScrolledDates(true)}
-                    className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none"
-                  >
-                    {availableDays.map(({ date: d, isOpen }) => {
-                      const isSel = selectedDate?.getTime() === d.getTime();
-                      return (
-                        <div
-                          key={d.getTime()}
-                          onClick={() => {
-                            if (!isOpen) return;
-                            setHasScrolledDates(true);
-                            setSelectedDate(d);
-                            setSelectedTime(null);
-                          }}
-                          className={`min-w-[72px] py-3.5 rounded-xl text-center transition-all duration-200 border shrink-0 ${!isOpen ? "opacity-30 cursor-not-allowed" : "cursor-pointer"
-                            }`}
-                          style={{
-                            borderColor: isSel ? theme.accent : theme.cardBorder,
-                            background: isSel ? theme.accent : theme.cardBg,
-                            color: isSel ? theme.bg : theme.textPrimary
-                          }}
-                        >
-                          <p className="text-[9px] uppercase font-semibold mb-1" style={{ opacity: isSel ? 0.85 : 0.55 }}>
-                            {format(d, "eee", { locale: ptBR })}
-                          </p>
-                          <p className="text-xl font-serif font-semibold" style={{ color: isSel ? theme.bg : (!isOpen ? theme.textMuted : theme.textPrimary) }}>
-                            {format(d, "dd")}
-                          </p>
-                          <p className="text-[9px] uppercase font-semibold mt-0.5" style={{ opacity: isSel ? 0.85 : 0.55 }}>
-                            {format(d, "MMM", { locale: ptBR })}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Time Slots */}
-                {selectedDate && (
+            {/* Hours today */}
+            {businessHoursList.length > 0 && (() => {
+              const today = businessHoursList.find((h: any) => h.weekday === todayWeekday);
+              if (!today) return null;
+              return (
+                <div className="w-full flex items-center gap-3 mt-3 px-3 py-3 rounded-xl" style={{ background: today.is_open ? `${accent}08` : "rgba(239,68,68,0.06)" }}>
+                  <Clock className="w-4 h-4 shrink-0" style={{ color: today.is_open ? accent : "#ef4444" }} />
                   <div>
-                    <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-4 flex items-center gap-2" style={{ color: theme.textMuted }}>
-                      <Clock className="h-3.5 w-3.5" style={{ color: theme.accent }} /> Horários livres em {format(selectedDate, "dd/MM")}
-                    </h3>
-                    {availableSlots.length > 0 ? (
-                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
-                        {availableSlots.map((slot) => {
-                          const isSel = selectedTime === slot.time;
-                          const isAvail = slot.available;
-
-                          return (
-                            <button
-                              key={slot.time}
-                              disabled={!isAvail}
-                              onClick={() => setSelectedTime(slot.time)}
-                              className={`py-2.5 rounded-xl text-xs font-semibold tabular-nums transition-all border ${!isAvail ? "opacity-30 cursor-not-allowed line-through" : ""
-                                }`}
-                              style={{
-                                borderColor: isSel ? theme.accent : theme.cardBorder,
-                                background: isSel ? theme.accent : theme.cardBg,
-                                color: isSel ? theme.bg : theme.textPrimary
-                              }}
-                            >
-                              {slot.time}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-sm italic p-4 rounded-xl border" style={{ color: theme.textMuted, borderColor: theme.cardBorder }}>Não há horários disponíveis para este dia. Escolha outra data acima.</p>
-                    )}
-
-                    {/* Step 3 CTA Button */}
-                    {selectedDate && selectedTime && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="pt-6"
-                      >
-                        <button
-                          onClick={() => setStep(4)}
-                          className="w-full py-3.5 px-6 rounded-xl font-semibold text-sm transition-transform duration-200 active:scale-[0.99] flex items-center justify-center gap-2"
-                          style={{ background: theme.accent, color: theme.bg }}
-                        >
-                          Continuar para identificação & pagamento <ArrowUpRight className="h-4 w-4" />
-                        </button>
-                      </motion.div>
-                    )}
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {/* STEP 4: CUSTOMER FORM & PAYMENT PREFERENCE */}
-            {step === 4 && (
-              <motion.div key="step4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }} className="max-w-5xl mx-auto pb-20 lg:pb-0">
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-10 lg:gap-16 items-start">
-
-                  {/* LEFT: form + payment choices */}
-                  <div className="space-y-10 min-w-0">
-                    {/* Contact Details */}
-                    <div className="space-y-5">
-                      <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] flex items-center gap-2" style={{ color: theme.textMuted }}>
-                        <User className="h-3.5 w-3.5" style={{ color: theme.accent }} /> Seus dados de contato
-                      </h3>
-                      <div>
-                        <label className="block text-[10px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: theme.textMuted }}>Nome completo</label>
-                        <input
-                          type="text"
-                          placeholder="Ex: João da Silva"
-                          value={customerName}
-                          onChange={(e) => setCustomerName(e.target.value)}
-                          className="w-full rounded-xl border px-4 py-3 text-sm focus:outline-none transition-colors"
-                          style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
-                          onFocus={(e) => e.target.style.borderColor = theme.accent}
-                          onBlur={(e) => e.target.style.borderColor = theme.cardBorder}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: theme.textMuted }}>WhatsApp com DDD</label>
-                        <input
-                          type="tel"
-                          placeholder={phoneFormat.placeholder}
-                          value={customerPhone}
-                          onChange={(e) => setCustomerPhone(phoneFormat.format(e.target.value))}
-                          maxLength={phoneFormat.maxLength}
-                          className="w-full rounded-xl border px-4 py-3 text-sm focus:outline-none transition-colors"
-                          style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
-                          onFocus={(e) => e.target.style.borderColor = theme.accent}
-                          onBlur={(e) => e.target.style.borderColor = theme.cardBorder}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: theme.textMuted }}>Observações (opcional)</label>
-                        <textarea
-                          placeholder="Ex: Prefiro tesoura no topo..."
-                          value={customerNotes}
-                          onChange={(e) => setCustomerNotes(e.target.value)}
-                          rows={2}
-                          className="w-full rounded-xl border px-4 py-3 text-sm focus:outline-none transition-colors resize-none"
-                          style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
-                          onFocus={(e) => e.target.style.borderColor = theme.accent}
-                          onBlur={(e) => e.target.style.borderColor = theme.cardBorder}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="h-px w-full" style={{ background: theme.cardBorder }} />
-
-                    {/* PAYMENT SELECTION & STRIPE CHECKOUT */}
-                    <div className="space-y-6">
-                      <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] flex items-center gap-2" style={{ color: theme.textMuted }}>
-                        <CreditCard className="h-3.5 w-3.5" style={{ color: theme.accent }} /> Forma de pagamento
-                      </h3>
-
-                      {/* Payment Scope Selector (50% or 100%) — amounts live in the summary, kept here as a simple choice */}
-                      <div className="grid grid-cols-2 rounded-xl border p-1 gap-1" style={{ borderColor: theme.cardBorder }}>
-                        <button
-                          onClick={() => setPaymentScope("partial")}
-                          className="py-3 px-4 rounded-lg text-center transition-all duration-200 flex items-center justify-center gap-2"
-                          style={{
-                            background: paymentScope === "partial" ? theme.bg : "transparent",
-                            boxShadow: paymentScope === "partial" ? `0 0 0 1px ${theme.cardBorder}` : "none",
-                          }}
-                        >
-                          <span className="text-xs font-semibold" style={{ color: theme.textPrimary }}>Sinal de 50%</span>
-                          {paymentScope === "partial" && <Check className="h-3.5 w-3.5" style={{ color: theme.accent }} />}
-                        </button>
-
-                        <button
-                          onClick={() => setPaymentScope("full")}
-                          className="py-3 px-4 rounded-lg text-center transition-all duration-200 flex items-center justify-center gap-2"
-                          style={{
-                            background: paymentScope === "full" ? theme.bg : "transparent",
-                            boxShadow: paymentScope === "full" ? `0 0 0 1px ${theme.cardBorder}` : "none",
-                          }}
-                        >
-                          <span className="text-xs font-semibold" style={{ color: theme.textPrimary }}>Pagamento total</span>
-                          {paymentScope === "full" && <Check className="h-3.5 w-3.5" style={{ color: theme.accent }} />}
-                        </button>
-                      </div>
-
-                      {/* Method Selector Tabs (PIX / Credit Card) */}
-                      <div className="flex items-center gap-6 border-b" style={{ borderColor: theme.cardBorder }}>
-                        <button
-                          onClick={() => setPaymentMethod("pix")}
-                          className="pb-3 text-xs font-semibold flex items-center gap-2 transition-colors relative"
-                          style={{ color: paymentMethod === "pix" ? theme.textPrimary : theme.textMuted }}
-                        >
-                          <QrCode className="h-3.5 w-3.5" /> PIX
-                          {paymentMethod === "pix" && (
-                            <motion.div layoutId="paymentTabIndicator" className="absolute -bottom-px left-0 right-0 h-[2px]" style={{ background: theme.accent }} />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => setPaymentMethod("card")}
-                          className="pb-3 text-xs font-semibold flex items-center gap-2 transition-colors relative"
-                          style={{ color: paymentMethod === "card" ? theme.textPrimary : theme.textMuted }}
-                        >
-                          <CreditCard className="h-3.5 w-3.5" /> Cartão de crédito
-                          {paymentMethod === "card" && (
-                            <motion.div layoutId="paymentTabIndicator" className="absolute -bottom-px left-0 right-0 h-[2px]" style={{ background: theme.accent }} />
-                          )}
-                        </button>
-                      </div>
-
-                      {/* Method Form Fields */}
-                      {paymentMethod === "card" ? (
-                        <div className="space-y-4">
-                          {/* Auto-fill Stripe Test Card Helper */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setCardNumber(import.meta.env.VITE_STRIPE_TEST_CARD_VISA || "4242 4242 4242 4242");
-                              setCardExp(import.meta.env.VITE_STRIPE_TEST_EXP || "12/30");
-                              setCardCvc(import.meta.env.VITE_STRIPE_TEST_CVC || "123");
-                            }}
-                            className="text-[11px] font-medium flex items-center gap-1.5 transition-colors"
-                            style={{ color: theme.accent }}
-                          >
-                            <Sparkles className="h-3 w-3" /> Preencher cartão de teste Stripe
-                          </button>
-
-                          <div>
-                            <label className="block text-[10px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: theme.textMuted }}>Número do cartão</label>
-                            <input
-                              type="text"
-                              placeholder="4242 •••• •••• 4242"
-                              value={cardNumber}
-                              onChange={(e) => handleCardNumberChange(e.target.value)}
-                              className="w-full rounded-xl border px-4 py-3 text-sm focus:outline-none font-mono transition-colors"
-                              style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
-                              onFocus={(e) => e.target.style.borderColor = theme.accent}
-                              onBlur={(e) => e.target.style.borderColor = theme.cardBorder}
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-[10px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: theme.textMuted }}>Validade</label>
-                              <input
-                                type="text"
-                                placeholder="12/30"
-                                value={cardExp}
-                                onChange={(e) => handleCardExpChange(e.target.value)}
-                                className="w-full rounded-xl border px-4 py-3 text-sm focus:outline-none font-mono text-center transition-colors"
-                                style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
-                                onFocus={(e) => e.target.style.borderColor = theme.accent}
-                                onBlur={(e) => e.target.style.borderColor = theme.cardBorder}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[10px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: theme.textMuted }}>CVC</label>
-                              <input
-                                type="text"
-                                maxLength={4}
-                                placeholder="123"
-                                value={cardCvc}
-                                onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, ""))}
-                                className="w-full rounded-xl border px-4 py-3 text-sm focus:outline-none font-mono text-center transition-colors"
-                                style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
-                                onFocus={(e) => e.target.style.borderColor = theme.accent}
-                                onBlur={(e) => e.target.style.borderColor = theme.cardBorder}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="rounded-2xl border p-6 text-center space-y-5" style={{ borderColor: theme.cardBorder }}>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-semibold flex items-center gap-1.5" style={{ color: theme.textPrimary }}>
-                              <QrCode className="h-3.5 w-3.5" style={{ color: theme.success }} /> QR Code PIX
-                            </span>
-                            <span className="text-[10px] font-mono" style={{ color: theme.textMuted }}>
-                              Expira em 15:00
-                            </span>
-                          </div>
-
-                          {/* Visual QR Code Image */}
-                          <div className="mx-auto flex justify-center p-3 bg-white rounded-2xl w-40 h-40 border" style={{ borderColor: theme.cardBorder }}>
-                            <img
-                              src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=00020126580014br.gov.bcb.pix0136stripe-connect-navalha-${slug}-${amountPaid}`}
-                              alt="QR Code PIX Stripe"
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-
-                          {/* Copia e Cola Section */}
-                          <div className="space-y-2 text-left">
-                            <label className="block text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: theme.textMuted }}>
-                              Chave PIX copia e cola
-                            </label>
-                            <div className="flex items-center gap-2">
-                              <input
-                                readOnly
-                                type="text"
-                                value={`00020126580014br.gov.bcb.pix0136stripe-connect-navalha-${slug}-${amountPaid}5204000053039865405${amountPaid}.005802BR5913Navalha SaaS6009Vila Velha62070503***6304E2A5`}
-                                className="w-full rounded-xl border px-3 py-2.5 text-[11px] font-mono truncate select-all focus:outline-none"
-                                style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textMuted }}
-                              />
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(`00020126580014br.gov.bcb.pix0136stripe-connect-navalha-${slug}-${amountPaid}5204000053039865405${amountPaid}.005802BR5913Navalha SaaS6009Vila Velha62070503***6304E2A5`);
-                                  setPixCopied(true);
-                                  setTimeout(() => setPixCopied(false), 3000);
-                                }}
-                                className="px-3.5 py-2.5 rounded-xl font-semibold text-xs shrink-0 transition-all flex items-center gap-1.5 border"
-                                style={pixCopied
-                                  ? { borderColor: theme.success, color: theme.success }
-                                  : { borderColor: theme.cardBorder, color: theme.textPrimary }}
-                              >
-                                {pixCopied ? (
-                                  <>
-                                    <Check className="h-3.5 w-3.5" /> Copiado
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="h-3.5 w-3.5" /> Copiar
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          </div>
-
-                          <p className="text-[11px] leading-relaxed" style={{ color: theme.textMuted }}>
-                            Abra o app do seu banco e escolha PIX &gt; Ler QR Code, ou use o PIX Copia e Cola para pagar {money(amountPaid)}.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* RIGHT: order summary — always visible, sticky on desktop */}
-                  <div className="hidden lg:block">
-                    <div className="lg:sticky lg:top-6 rounded-2xl border p-6 space-y-5" style={{ borderColor: theme.cardBorder, background: theme.cardBg }}>
-                      <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: theme.textMuted }}>Resumo da reserva</h3>
-
-                      <div className="space-y-3">
-                        <div className="flex items-start gap-3">
-                          <Scissors className="h-4 w-4 mt-0.5 shrink-0" style={{ color: theme.accent }} />
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate" style={{ color: theme.textPrimary }}>{selectedService?.name}</p>
-                            <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{proName}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <Calendar className="h-4 w-4 mt-0.5 shrink-0" style={{ color: theme.accent }} />
-                          <p className="text-sm" style={{ color: theme.textPrimary }}>
-                            {selectedDate && format(selectedDate, "dd 'de' MMMM", { locale: ptBR })} às {selectedTime}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="h-px w-full" style={{ background: theme.cardBorder }} />
-
-                      <div className="space-y-1.5 text-sm">
-                        <div className="flex justify-between" style={{ color: theme.textMuted }}>
-                          <span>Valor do serviço</span>
-                          <span className="tabular-nums">{money(total)}</span>
-                        </div>
-                        <div className="flex justify-between font-semibold">
-                          <span style={{ color: theme.textPrimary }}>Pagar agora</span>
-                          <span className="tabular-nums" style={{ color: theme.accent }}>{money(amountPaid)}</span>
-                        </div>
-                        {paymentScope === "partial" && (
-                          <div className="flex justify-between text-xs" style={{ color: theme.textMuted }}>
-                            <span>Restante no salão</span>
-                            <span className="tabular-nums">{money(total - amountPaid)}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <button
-                        onClick={handlePaymentSubmit}
-                        disabled={isProcessing}
-                        className="w-full py-3.5 px-5 rounded-xl font-semibold text-sm transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-70"
-                        style={{ background: theme.accent, color: theme.bg }}
-                      >
-                        {isProcessing ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" /> Processando…
-                          </>
-                        ) : (
-                          <>
-                            <ShieldCheck className="h-4 w-4" /> {paymentMethod === "pix" ? "Confirmar pagamento PIX" : "Pagar & agendar"}
-                          </>
-                        )}
-                      </button>
-
-                      <p className="text-[10px] flex items-center justify-center gap-1.5" style={{ color: theme.textMuted }}>
-                        <ShieldCheck className="h-3 w-3" style={{ color: theme.success }} /> Checkout seguro via Stripe
+                    <p className="text-xs font-semibold" style={{ color: today.is_open ? accent : "#ef4444" }}>
+                      {today.is_open ? "Aberto hoje" : "Fechado hoje"}
+                    </p>
+                    {today.is_open && (
+                      <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
+                        {today.open_time.substring(0, 5)} – {today.close_time.substring(0, 5)}
                       </p>
-                    </div>
+                    )}
                   </div>
                 </div>
+              );
+            })()}
 
-                {/* MOBILE: fixed payment bar — total and action always in view */}
-                <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t px-5 py-3.5" style={{ background: theme.cardBg, borderColor: theme.cardBorder, boxShadow: "0 -8px 30px rgba(0,0,0,0.12)" }}>
-                  <div className="flex items-center justify-between gap-4 max-w-xl mx-auto">
-                    <div className="min-w-0">
-                      <p className="text-[9px] font-semibold uppercase tracking-[0.12em]" style={{ color: theme.textMuted }}>Pagar agora</p>
-                      <p className="text-base font-semibold tabular-nums" style={{ color: theme.accent }}>{money(amountPaid)}</p>
-                    </div>
-                    <button
-                      onClick={handlePaymentSubmit}
-                      disabled={isProcessing}
-                      className="shrink-0 py-3 px-6 rounded-xl font-semibold text-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70"
-                      style={{ background: theme.accent, color: theme.bg }}
-                    >
-                      {isProcessing ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <ShieldCheck className="h-4 w-4" />
-                      )}
-                      {isProcessing ? "Processando" : paymentMethod === "pix" ? "Confirmar PIX" : "Pagar & agendar"}
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
+            {/* Portal link */}
+            <a href={`/${slug}/portal`} className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border transition-opacity hover:opacity-80"
+              style={{ borderColor: theme.cardBorder, color: theme.textPrimary }}>
+              <Calendar className="w-4 h-4" style={{ color: accent }} /> Meus agendamentos
+            </a>
+          </div>
+        </aside>
+
+        {/* ── MAIN WIZARD ── */}
+        <main className="flex-1 flex flex-col min-h-0">
+
+          {/* Mobile: info button */}
+          <div className="lg:hidden flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: theme.cardBorder, background: theme.cardBg }}>
+            <button onClick={handleOpenSheet} className="flex items-center gap-2 text-sm font-medium" style={{ color: theme.textMuted }}>
+              <Info className="w-4 h-4" style={{ color: accent }} />
+              <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, color: theme.textPrimary }}>{storeName}</span>
+            </button>
+            {storePhone && (
+              <a href={`https://wa.me/${onlyDigits(storePhone)}`} target="_blank" rel="noreferrer"
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full"
+                style={{ background: "#25D36620", color: "#25D366" }}>
+                <MessageCircle className="w-3.5 h-3.5" /> Ajuda
+              </a>
             )}
+          </div>
 
-            {/* STEP 5: SUCCESS / BOOKING CONFIRMED */}
-            {step === 5 && bookingCode && (
-              <motion.div key="step5" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }} className="max-w-md mx-auto text-center space-y-8">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border" style={{ borderColor: theme.success, color: theme.success }}>
-                  <Check className="h-7 w-7" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-serif font-semibold" style={{ color: theme.textPrimary }}>Reserva confirmada</h2>
-                  <p className="text-xs mt-1.5" style={{ color: theme.textMuted }}>Envie os detalhes do agendamento para a barbearia pelo WhatsApp.</p>
-                </div>
+          {/* Step indicator */}
+          {step < 5 && (
+            <div className="border-b" style={{ borderColor: theme.cardBorder, background: theme.cardBg }}>
+              <StepIndicator step={step} accent={accent} />
+            </div>
+          )}
 
-                <div className="rounded-2xl border p-6 text-left space-y-3 text-xs" style={{ borderColor: theme.cardBorder }}>
-                  <div className="flex justify-between border-b pb-2.5" style={{ borderColor: theme.cardBorder }}>
-                    <span style={{ color: theme.textMuted }}>Código</span>
-                    <span className="font-mono font-semibold" style={{ color: theme.accent }}>#{bookingCode}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2.5" style={{ borderColor: theme.cardBorder }}>
-                    <span style={{ color: theme.textMuted }}>Serviço</span>
-                    <span className="font-medium" style={{ color: theme.textPrimary }}>{selectedService?.name}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2.5" style={{ borderColor: theme.cardBorder }}>
-                    <span style={{ color: theme.textMuted }}>Profissional</span>
-                    <span className="font-medium" style={{ color: theme.textPrimary }}>{proName}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2.5" style={{ borderColor: theme.cardBorder }}>
-                    <span style={{ color: theme.textMuted }}>Data & hora</span>
-                    <span className="font-medium tabular-nums" style={{ color: theme.textPrimary }}>{selectedDate && format(selectedDate, "dd/MM")} às {selectedTime}</span>
-                  </div>
-                  <div className="flex justify-between pt-1">
-                    <span style={{ color: theme.textMuted }}>Valor total</span>
-                    <span className="font-semibold tabular-nums" style={{ color: theme.accent }}>{money(total)}</span>
-                  </div>
-                </div>
+          {/* Progress bar */}
+          {step < 5 && (
+            <div className="h-1" style={{ background: theme.cardBorder }}>
+              <motion.div className="h-full" style={{ background: accent }} animate={{ width: `${(step / 4) * 100}%` }} transition={{ duration: 0.4, ease: "easeOut" }} />
+            </div>
+          )}
 
-                {/* WhatsApp Button */}
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex w-full items-center justify-center gap-3 rounded-xl py-4 px-6 font-semibold text-[13px] uppercase tracking-wide transition-transform duration-200 active:scale-[0.99]"
-                  style={{ background: "#25D366", color: "#FFFFFF" }}
-                >
-                  <MessageCircle className="h-5 w-5 shrink-0" />
-                  <div className="flex flex-col items-start text-left">
-                    <span>Enviar reserva no WhatsApp</span>
-                    <span className="text-[10px] normal-case font-normal mt-0.5 opacity-80">Toque para enviar seu pedido</span>
-                  </div>
-                </a>
+          {/* Back + Title bar */}
+          {step > 1 && step < 5 && (
+            <div className="flex items-center gap-3 px-5 lg:px-10 py-4 border-b" style={{ borderColor: theme.cardBorder }}>
+              <button onClick={handleBack}
+                className="w-9 h-9 rounded-xl border flex items-center justify-center transition-colors"
+                style={{ borderColor: theme.cardBorder, color: theme.textPrimary }}>
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest" style={{ color: accent }}>
+                  {["", "Escolha o Serviço", "Escolha o Profissional", "Data & Horário", "Confirmar"][step]}
+                </p>
+                {step === 2 && selectedService && (
+                  <p className="text-sm font-medium mt-0.5" style={{ color: theme.textMuted }}>
+                    {selectedService.name} · {money(selectedService.price)}
+                  </p>
+                )}
+                {step === 3 && selectedPro && (
+                  <p className="text-sm font-medium mt-0.5" style={{ color: theme.textMuted }}>
+                    {selectedService?.name} · {proName}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
-                <button
-                  onClick={resetAll}
-                  className="text-xs underline transition-opacity"
-                  style={{ color: theme.textMuted }}
-                >
-                  Fazer outro agendamento
-                </button>
+          {/* Error banner */}
+          <AnimatePresence>
+            {errorMsg && (
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="mx-5 lg:mx-10 mt-4 px-4 py-3 rounded-xl flex items-center justify-between gap-3 text-sm"
+                style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171" }}>
+                <span>{errorMsg}</span>
+                <button onClick={() => setErrorMsg("")} className="shrink-0 opacity-60 hover:opacity-100"><X className="w-4 h-4" /></button>
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
 
-        {/* FOOTER */}
-        <footer className="mt-8 pb-28 lg:pb-8 text-center text-xs space-y-1.5 border-t pt-6 px-4" style={{ color: theme.textMuted, borderColor: theme.cardBorder }}>
-          <p>© {new Date().getFullYear()} {storeName}. Todos os direitos reservados.</p>
-          <p className="flex items-center justify-center gap-1 text-[11px] font-mono opacity-70">
-            Desenvolvido com <span className="font-semibold" style={{ color: theme.accent }}>Navalha SaaS</span>
-          </p>
-        </footer>
-      </main>
+          {/* ── STEP CONTENT ── */}
+          <div className="flex-1 overflow-y-auto">
+            <AnimatePresence mode="wait">
+
+              {/* ───────────────── STEP 1: SERVICE ───────────────── */}
+              {step === 1 && (
+                <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22 }}
+                  className="px-5 lg:px-10 py-8 pb-32 lg:pb-12 max-w-4xl mx-auto w-full">
+                  <h2 className="text-3xl font-bold mb-2" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>O que você quer fazer hoje?</h2>
+                  <p className="text-sm mb-8" style={{ color: theme.textMuted }}>Selecione um serviço para começar o agendamento.</p>
+
+                  {servicesList.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-center rounded-2xl border border-dashed" style={{ borderColor: theme.cardBorder }}>
+                      <Scissors className="w-10 h-10 mb-4" style={{ color: theme.textMuted }} />
+                      <h3 className="text-base font-semibold" style={{ color: theme.textPrimary }}>Nenhum serviço disponível</h3>
+                      <p className="text-sm mt-1" style={{ color: theme.textMuted }}>O estabelecimento ainda não cadastrou serviços.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                      {servicesList.map((s, i) => {
+                        const hasDiscount = s.original_price && s.original_price > s.price;
+                        const discountPct = hasDiscount ? Math.round(((s.original_price - s.price) / s.original_price) * 100) : 0;
+                        return (
+                          <motion.button
+                            key={s.id}
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.05 }}
+                            onClick={() => { setSelectedService(s); setStep(2); }}
+                            className="group relative text-left rounded-2xl overflow-hidden border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex flex-col"
+                            style={{ borderColor: theme.cardBorder, background: theme.cardBg }}
+                            onMouseEnter={e => (e.currentTarget.style.borderColor = accent)}
+                            onMouseLeave={e => (e.currentTarget.style.borderColor = theme.cardBorder)}
+                          >
+                            {/* Image or icon */}
+                            {s.photo_url ? (
+                              <div className="relative h-60 sm:h-56 overflow-hidden">
+                                <img src={s.photo_url} alt={s.name} className="w-full h-full object-cover object-[center_15%] group-hover:scale-105 transition-transform duration-700 ease-out" />
+                                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%)" }} />
+                                {hasDiscount && (
+                                  <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold text-white shadow-sm" style={{ background: "#ef4444" }}>-{discountPct}%</span>
+                                )}
+                                {s.category && (
+                                  <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-semibold text-white/90 shadow-sm" style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>{s.category}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="h-28 flex items-center justify-center border-b" style={{ borderColor: theme.cardBorder, background: `${accent}08` }}>
+                                <Scissors className="w-8 h-8" style={{ color: `${accent}60` }} />
+                              </div>
+                            )}
+
+                            <div className="p-5 flex flex-col flex-1">
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <h3 className="text-base font-bold leading-snug" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>{s.name}</h3>
+                                <div className="text-right shrink-0">
+                                  {hasDiscount && <p className="text-[11px] line-through" style={{ color: theme.textMuted }}>{money(s.original_price)}</p>}
+                                  <p className="text-lg font-bold" style={{ color: accent, fontFamily: "'Playfair Display', serif" }}>{money(s.price)}</p>
+                                </div>
+                              </div>
+                              {s.description && (
+                                <p className="text-xs leading-relaxed line-clamp-2 mb-3" style={{ color: theme.textMuted }}>{s.description}</p>
+                              )}
+                              <div className="flex items-center justify-between pt-3 mt-auto border-t" style={{ borderColor: theme.cardBorder }}>
+                                <span className="flex items-center gap-1.5 text-xs" style={{ color: theme.textMuted }}>
+                                  <Clock className="w-3.5 h-3.5" /> {s.duration_minutes} min
+                                </span>
+                                <span className="flex items-center gap-1 text-xs font-bold" style={{ color: accent }}>
+                                  Agendar <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                                </span>
+                              </div>
+                            </div>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* ───────────────── STEP 2: PROFESSIONAL ───────────────── */}
+              {step === 2 && (
+                <motion.div key="s2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22 }}
+                  className="px-5 lg:px-10 py-8 pb-32 lg:pb-12 max-w-3xl mx-auto w-full">
+                  <h2 className="text-3xl font-bold mb-2" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>Com quem prefere ser atendido?</h2>
+                  <p className="text-sm mb-8" style={{ color: theme.textMuted }}>Escolha um profissional ou deixe que encontremos o mais rápido disponível.</p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {/* Any professional */}
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      onClick={() => { setSelectedPro("any"); setStep(3); }}
+                      className="group relative rounded-2xl border-2 p-6 flex flex-col items-center justify-center text-center transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+                      style={{ borderColor: `${accent}40`, background: `${accent}06` }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = accent)}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = `${accent}40`)}
+                    >
+                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: `${accent}18` }}>
+                        <Zap className="w-7 h-7" style={{ color: accent }} />
+                      </div>
+                      <p className="font-bold text-sm" style={{ color: theme.textPrimary }}>Qualquer profissional</p>
+                      <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Horário mais rápido</p>
+                      <span className="mt-3 text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: `${accent}20`, color: accent }}>Recomendado</span>
+                    </motion.button>
+
+                    {professionalsList.map((p, i) => (
+                      <motion.button
+                        key={p.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: (i + 1) * 0.06 }}
+                        onClick={() => { setSelectedPro(p); setStep(3); }}
+                        className="group relative rounded-2xl border-2 p-6 flex flex-col items-center text-center transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+                        style={{ borderColor: theme.cardBorder, background: theme.cardBg }}
+                        onMouseEnter={e => (e.currentTarget.style.borderColor = accent)}
+                        onMouseLeave={e => (e.currentTarget.style.borderColor = theme.cardBorder)}
+                      >
+                        {p.photo_url ? (
+                          <img src={p.photo_url} alt={p.name} className="w-16 h-16 rounded-2xl object-cover mb-4 shadow-md" />
+                        ) : (
+                          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border" style={{ borderColor: theme.cardBorder, background: theme.bg }}>
+                            <User className="w-7 h-7" style={{ color: theme.textMuted }} />
+                          </div>
+                        )}
+                        <p className="font-bold text-sm" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>{p.name}</p>
+                        <p className="text-xs mt-1 truncate w-full" style={{ color: theme.textMuted }}>{p.role_title || "Profissional"}</p>
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ───────────────── STEP 3: DATE & TIME ───────────────── */}
+              {step === 3 && (
+                <motion.div key="s3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22 }}
+                  className="px-5 lg:px-10 py-8 pb-32 lg:pb-12 max-w-3xl mx-auto w-full space-y-8">
+                  <div>
+                    <h2 className="text-3xl font-bold mb-2" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>Quando você prefere?</h2>
+                    <p className="text-sm" style={{ color: theme.textMuted }}>Escolha o dia e horário que melhor se encaixa na sua agenda.</p>
+                  </div>
+
+                  {/* Date Carousel */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-xs font-bold uppercase tracking-widest" style={{ color: theme.textMuted }}>Selecione o dia</p>
+                      {!hasScrolledDates && (
+                        <motion.div animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.2 }} style={{ color: theme.textMuted }}>
+                          <ChevronRight className="w-4 h-4" />
+                        </motion.div>
+                      )}
+                    </div>
+                    <div className="flex gap-6 overflow-x-auto pt-2 pb-5 scrollbar-none" onScroll={() => setHasScrolledDates(true)}>
+                      {availableDays.map(({ date: d, isOpen }) => {
+                        const isSel = selectedDate?.getTime() === d.getTime();
+                        const isToday = d.getTime() === startOfDay(new Date()).getTime();
+                        return (
+                          <button
+                            key={d.getTime()}
+                            disabled={!isOpen}
+                            onClick={() => { if (!isOpen) return; setHasScrolledDates(true); setSelectedDate(d); setSelectedTime(null); }}
+                            className="shrink-0 w-[76px] py-4 rounded-2xl text-center border-2 transition-all duration-200 disabled:opacity-25 disabled:cursor-not-allowed"
+                            style={{
+                              borderColor: isSel ? accent : theme.cardBorder,
+                              background: isSel ? accent : theme.cardBg,
+                              color: isSel ? "#000" : theme.textPrimary,
+                            }}
+                          >
+                            <p className="text-[10px] uppercase font-bold tracking-wider mb-1.5" style={{ opacity: isSel ? 0.7 : 0.5 }}>
+                              {isToday ? "Hoje" : WEEKDAYS[d.getDay()]}
+                            </p>
+                            <p className="text-2xl" style={{ color: isSel ? "#000" : theme.textPrimary, fontFamily: "'Playfair Display', serif", fontWeight: 900, lineHeight: 1 }}>{format(d, "dd")}</p>
+                            <p className="text-[10px] uppercase font-semibold mt-1.5" style={{ opacity: isSel ? 0.7 : 0.5 }}>
+                              {format(d, "MMM", { locale: ptBR })}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Time Slots */}
+                  <AnimatePresence>
+                    {selectedDate && (
+                      <motion.div key="slots" ref={timeSlotsRef} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                        <p className="text-xs font-bold uppercase tracking-widest mb-6 mt-4" style={{ color: theme.textMuted }}>
+                          Horários disponíveis em {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                        </p>
+                        {availableSlots.length === 0 ? (
+                          <div className="py-10 text-center rounded-2xl border" style={{ borderColor: theme.cardBorder }}>
+                            <Clock className="w-8 h-8 mx-auto mb-3" style={{ color: theme.textMuted, opacity: 0.5 }} />
+                            <p className="text-sm font-medium" style={{ color: theme.textPrimary }}>Nenhum horário disponível</p>
+                            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Tente outra data acima.</p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3.5">
+                            {availableSlots.map((slot) => {
+                              const isSel = selectedTime === slot.time;
+                              return (
+                                <button
+                                  key={slot.time}
+                                  disabled={!slot.available}
+                                  onClick={() => setSelectedTime(slot.time)}
+                                  className="py-3.5 rounded-xl text-sm font-bold border-2 transition-all duration-150 disabled:opacity-20 disabled:cursor-not-allowed disabled:line-through"
+                                  style={{
+                                    borderColor: isSel ? accent : theme.cardBorder,
+                                    background: isSel ? accent : theme.cardBg,
+                                    color: isSel ? "#000" : theme.textPrimary,
+                                  }}
+                                >
+                                  {slot.time}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        <AnimatePresence>
+                          {selectedDate && selectedTime && (
+                            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-6" ref={confirmBtnRef}>
+                              <button
+                                onClick={() => setStep(4)}
+                                className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                                style={{ background: accent, color: "#000" }}
+                              >
+                                Continuar para confirmação <ArrowRight className="w-5 h-5" />
+                              </button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+
+              {/* ───────────────── STEP 4: CONFIRM ───────────────── */}
+              {step === 4 && (
+                <motion.div key="s4" ref={step4Ref} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22 }}
+                  className="px-5 lg:px-10 py-8 max-w-5xl mx-auto w-full pb-32 lg:pb-12">
+
+                  {/* Booking Summary Banner */}
+                  <div className="rounded-2xl p-5 mb-8 border" style={{ background: `${accent}0a`, borderColor: `${accent}25` }}>
+                    <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: accent }}>Resumo do seu agendamento</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      {[
+                        { icon: Scissors, label: "Serviço", value: selectedService?.name },
+                        { icon: User, label: "Profissional", value: proName },
+                        { icon: Calendar, label: "Data", value: selectedDate ? format(selectedDate, "dd 'de' MMMM", { locale: ptBR }) : "" },
+                        { icon: Clock, label: "Horário", value: selectedTime || "" },
+                      ].map(({ icon: Icon, label, value }) => (
+                        <div key={label} className="flex items-start gap-2.5">
+                          <Icon className="w-4 h-4 mt-0.5 shrink-0" style={{ color: accent }} />
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: `${accent}80` }}>{label}</p>
+                            <p className="text-sm font-semibold mt-0.5" style={{ color: theme.textPrimary }}>{value}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
+                    {/* LEFT */}
+                    <div className="space-y-8">
+                      {/* Contact */}
+                      <div ref={inputsRef}>
+                        <h3 className="text-base font-bold mb-5 flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                          <User className="w-4 h-4" style={{ color: accent }} /> Seus dados
+                        </h3>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: theme.textMuted }}>WhatsApp com DDD *</label>
+                            <input
+                              type="tel"
+                              placeholder={phoneFormat.placeholder}
+                              value={customerPhone}
+                              onChange={e => setCustomerPhone(phoneFormat.format(e.target.value))}
+                              maxLength={phoneFormat.maxLength}
+                              className="w-full rounded-xl border-2 px-4 py-3.5 text-sm font-medium focus:outline-none transition-all"
+                              style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
+                              onFocus={e => (e.target.style.borderColor = accent)}
+                              onBlur={e => (e.target.style.borderColor = theme.cardBorder)}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: theme.textMuted }}>Nome completo *</label>
+                            <input
+                              type="text"
+                              placeholder="Seu nome"
+                              value={customerName}
+                              onChange={e => setCustomerName(e.target.value)}
+                              className="w-full rounded-xl border-2 px-4 py-3.5 text-sm font-medium focus:outline-none transition-all"
+                              style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
+                              onFocus={e => (e.target.style.borderColor = accent)}
+                              onBlur={e => (e.target.style.borderColor = theme.cardBorder)}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: theme.textMuted }}>Observações (opcional)</label>
+                            <textarea
+                              placeholder="Ex: Prefiro tesoura no topo, trazer foto de referência..."
+                              value={customerNotes}
+                              onChange={e => setCustomerNotes(e.target.value)}
+                              rows={3}
+                              className="w-full rounded-xl border-2 px-4 py-3.5 text-sm focus:outline-none resize-none transition-all"
+                              style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
+                              onFocus={e => (e.target.style.borderColor = accent)}
+                              onBlur={e => (e.target.style.borderColor = theme.cardBorder)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Payment */}
+                      <div>
+                        <h3 className="text-base font-bold mb-5 flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                          <CreditCard className="w-4 h-4" style={{ color: accent }} /> Forma de pagamento
+                        </h3>
+
+                        {/* Scope — Fix #2: only show admin-enabled options */}
+                        <div className={`grid gap-2 mb-6`} style={{ gridTemplateColumns: `repeat(${allowedPaymentScopes.length}, 1fr)` }}>
+                          {allowedPaymentScopes.map(({ key, label, desc }) => (
+                            <button
+                              key={key}
+                              onClick={() => setPaymentScope(key)}
+                              className="relative rounded-xl p-3.5 text-center border-2 transition-all"
+                              style={{
+                                borderColor: paymentScope === key ? accent : theme.cardBorder,
+                                background: paymentScope === key ? `${accent}10` : theme.cardBg,
+                              }}
+                            >
+                              {paymentScope === key && <CheckCircle2 className="w-3.5 h-3.5 absolute top-2.5 right-2.5" style={{ color: accent }} />}
+                              <p className="text-xs font-bold" style={{ color: paymentScope === key ? accent : theme.textPrimary }}>{label}</p>
+                              <p className="text-xs mt-0.5 font-semibold" style={{ color: paymentScope === key ? `${accent}90` : theme.textMuted }}>{desc}</p>
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Method tabs */}
+                        {paymentScope !== "local" && (
+                          <>
+                            <div className="flex items-center gap-1 border rounded-xl p-1 mb-6" style={{ borderColor: theme.cardBorder }}>
+                              {([
+                                { key: "pix", label: "PIX", icon: QrCode },
+                                { key: "card", label: "Cartão", icon: CreditCard },
+                              ] as { key: PaymentMethod; label: string; icon: any }[]).map(({ key, label, icon: Icon }) => (
+                                <button key={key} onClick={() => setPaymentMethod(key)}
+                                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all"
+                                  style={{ background: paymentMethod === key ? accent : "transparent", color: paymentMethod === key ? "#000" : theme.textMuted }}>
+                                  <Icon className="w-4 h-4" /> {label}
+                                </button>
+                              ))}
+                            </div>
+
+                            {paymentMethod === "pix" && (
+                              <div className="rounded-2xl border p-6 text-center space-y-4" style={{ borderColor: theme.cardBorder, background: theme.cardBg }}>
+                                <div className="mx-auto w-36 h-36 bg-white rounded-2xl flex items-center justify-center p-2 shadow-md">
+                                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=pix-navalha-${slug}-${amountPaid}`} alt="QR PIX" className="w-full h-full object-contain" />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <input readOnly value={`pix.navalha.${slug}.${amountPaid}`} className="flex-1 rounded-xl px-3 py-2 text-xs font-mono border truncate" style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textMuted }} />
+                                  <button onClick={() => { navigator.clipboard.writeText(`pix.navalha.${slug}.${amountPaid}`); setPixCopied(true); setTimeout(() => setPixCopied(false), 2500); }}
+                                    className="px-3 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all"
+                                    style={{ borderColor: pixCopied ? "#10b981" : theme.cardBorder, color: pixCopied ? "#10b981" : theme.textPrimary }}>
+                                    {pixCopied ? <><Check className="w-3.5 h-3.5" /> Copiado</> : <><Copy className="w-3.5 h-3.5" /> Copiar</>}
+                                  </button>
+                                </div>
+                                <p className="text-xs" style={{ color: theme.textMuted }}>Pague {money(amountPaid)} via PIX, depois confirme abaixo.</p>
+                              </div>
+                            )}
+
+                            {paymentMethod === "card" && (
+                              <div className="space-y-4">
+                                <button onClick={() => { setCardNumber("4242 4242 4242 4242"); setCardExp("12/30"); setCardCvc("123"); }}
+                                  className="text-xs flex items-center gap-1.5" style={{ color: accent }}>
+                                  <Sparkles className="w-3 h-3" /> Preencher cartão de teste Stripe
+                                </button>
+                                <div>
+                                  <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: theme.textMuted }}>Número do cartão</label>
+                                  <input type="text" placeholder="4242 4242 4242 4242" value={cardNumber} onChange={e => handleCardNumberChange(e.target.value)}
+                                    className="w-full rounded-xl border-2 px-4 py-3.5 text-sm font-mono focus:outline-none transition-all"
+                                    style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
+                                    onFocus={e => (e.target.style.borderColor = accent)} onBlur={e => (e.target.style.borderColor = theme.cardBorder)} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: theme.textMuted }}>Validade</label>
+                                    <input type="text" placeholder="12/30" value={cardExp} onChange={e => handleCardExpChange(e.target.value)}
+                                      className="w-full rounded-xl border-2 px-4 py-3.5 text-sm font-mono text-center focus:outline-none transition-all"
+                                      style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
+                                      onFocus={e => (e.target.style.borderColor = accent)} onBlur={e => (e.target.style.borderColor = theme.cardBorder)} />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: theme.textMuted }}>CVC</label>
+                                    <input type="text" maxLength={4} placeholder="123" value={cardCvc} onChange={e => setCardCvc(e.target.value.replace(/\D/g, ""))}
+                                      className="w-full rounded-xl border-2 px-4 py-3.5 text-sm font-mono text-center focus:outline-none transition-all"
+                                      style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
+                                      onFocus={e => (e.target.style.borderColor = accent)} onBlur={e => (e.target.style.borderColor = theme.cardBorder)} />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* RIGHT: Sticky Summary */}
+                    <div className="hidden lg:block">
+                      <div className="sticky top-6 rounded-2xl border p-6 space-y-5" style={{ borderColor: theme.cardBorder, background: theme.cardBg }}>
+                        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: theme.textMuted }}>Total a pagar</p>
+
+                        <div className="space-y-3 text-sm">
+                          <div className="flex justify-between" style={{ color: theme.textMuted }}>
+                            <span>Serviço</span>
+                            <span>{money(total)}</span>
+                          </div>
+                          <div className="flex justify-between font-bold text-lg border-t pt-3" style={{ borderColor: theme.cardBorder }}>
+                            <span style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>Pagar agora</span>
+                            <span style={{ color: accent, fontFamily: "'Playfair Display', serif" }}>{money(amountPaid)}</span>
+                          </div>
+                          {paymentScope === "partial" && (
+                            <div className="flex justify-between text-xs" style={{ color: theme.textMuted }}>
+                              <span>Restante no salão</span>
+                              <span>{money(amountDue)}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={handleConfirm}
+                          disabled={isProcessing}
+                          className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all disabled:opacity-60"
+                          style={{ background: accent, color: "#000" }}
+                        >
+                          {isProcessing ? <><Loader2 className="w-5 h-5 animate-spin" /> Processando…</> : <><ShieldCheck className="w-5 h-5" /> Confirmar agendamento</>}
+                        </button>
+
+                        <p className="text-[10px] text-center flex items-center justify-center gap-1.5" style={{ color: theme.textMuted }}>
+                          <ShieldCheck className="w-3 h-3 text-green-500" /> Pagamento seguro via Stripe
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ───────────────── STEP 5: SUCCESS ───────────────── */}
+              {step === 5 && bookingCode && (
+                <motion.div key="s5" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.35 }}
+                  className="px-5 lg:px-10 py-12 max-w-lg mx-auto w-full text-center">
+
+                  {/* Checkmark */}
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", damping: 12, stiffness: 180, delay: 0.1 }}
+                    className="w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6 shadow-lg"
+                    style={{ background: `${accent}20`, border: `3px solid ${accent}` }}>
+                    <CheckCircle2 className="w-10 h-10" style={{ color: accent }} />
+                  </motion.div>
+
+                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+                    <h2 className="text-3xl font-black mb-2" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>Reserva confirmada!</h2>
+                    <p className="text-sm" style={{ color: theme.textMuted }}>Seu horário está garantido. Anote o código de confirmação abaixo.</p>
+                  </motion.div>
+
+                  {/* Booking card */}
+                  <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+                    className="mt-8 rounded-2xl border overflow-hidden"
+                    style={{ borderColor: theme.cardBorder, background: theme.cardBg }}>
+                    <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: theme.cardBorder, background: `${accent}0a` }}>
+                      <p className="text-xs font-bold uppercase tracking-widest" style={{ color: accent }}>Código da reserva</p>
+                      <p className="text-2xl font-black" style={{ color: accent, fontFamily: "'Playfair Display', serif" }}>#{bookingCode}</p>
+                    </div>
+                    <div className="px-6 py-5 space-y-3 text-sm text-left">
+                      {[
+                        { label: "Serviço", value: selectedService?.name },
+                        { label: "Profissional", value: proName },
+                        { label: "Data", value: selectedDate ? format(selectedDate, "dd 'de' MMMM", { locale: ptBR }) : "" },
+                        { label: "Horário", value: selectedTime },
+                        { label: "Total", value: money(total) },
+                      ].map(({ label, value }) => (
+                        <div key={label} className="flex justify-between">
+                          <span style={{ color: theme.textMuted }}>{label}</span>
+                          <span className="font-semibold" style={{ color: theme.textPrimary }}>{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+
+                  {/* Actions */}
+                  <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="mt-6 space-y-3">
+                    <a href={whatsappUrl} target="_blank" rel="noreferrer"
+                      className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-base transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                      style={{ background: "#25D366", color: "#fff" }}>
+                      <WhatsAppIcon className="w-5 h-5" />
+                      <div className="text-left">
+                        <p className="leading-none">Enviar reserva no WhatsApp</p>
+                        <p className="text-xs font-normal opacity-80 mt-0.5">Confirme com o estabelecimento</p>
+                      </div>
+                    </a>
+
+                    <a href={`/${slug}/portal`}
+                      className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-semibold text-sm border transition-opacity hover:opacity-80"
+                      style={{ borderColor: theme.cardBorder, color: theme.textPrimary }}>
+                      <Calendar className="w-4 h-4" style={{ color: accent }} /> Ver meus agendamentos
+                    </a>
+
+                    <button onClick={resetAll} className="text-sm underline" style={{ color: theme.textMuted }}>
+                      Fazer outro agendamento
+                    </button>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* ── MOBILE FIXED FOOTER — Step 4 ── */}
+          {step === 4 && (
+            <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t px-5 py-4"
+              style={{ background: theme.cardBg, borderColor: theme.cardBorder, boxShadow: "0 -8px 40px rgba(0,0,0,0.2)" }}>
+              <div className="flex items-center gap-4 max-w-xl mx-auto">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>Pagar agora</p>
+                  <p className="text-xl font-black" style={{ color: accent }}>{money(amountPaid)}</p>
+                </div>
+                <button
+                  onClick={handleConfirm}
+                  disabled={isProcessing}
+                  className="flex-1 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-60 active:scale-[0.98]"
+                  style={{ background: accent, color: "#000" }}
+                >
+                  {isProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando…</> : <><ShieldCheck className="w-4 h-4" /> Confirmar</>}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Mobile info peek bar */}
+          {step < 4 && (
+            <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t"
+              style={{ background: theme.cardBg, borderColor: theme.cardBorder }}>
+              <button
+                onClick={handleOpenSheet}
+                className="w-full flex items-center justify-center gap-2 py-3 text-xs font-semibold relative overflow-hidden"
+                style={{ color: theme.textMuted }}
+              >
+                {/* Pulse ripple — only until first interaction */}
+                {!hasOpenedSheet && (
+                  <>
+                    <motion.span
+                      className="absolute inset-0 rounded-none"
+                      style={{ background: `${accent}18` }}
+                      animate={{ opacity: [0, 1, 0] }}
+                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut", repeatDelay: 1 }}
+                    />
+                    <motion.span
+                      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-6 rounded-full"
+                      style={{ background: `${accent}20` }}
+                      animate={{ scaleX: [0.8, 1.4, 0.8], opacity: [0.6, 0, 0.6] }}
+                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                    />
+                  </>
+                )}
+                <motion.span
+                  animate={!hasOpenedSheet ? { y: [0, -3, 0] } : { y: 0 }}
+                  transition={{ repeat: hasOpenedSheet ? 0 : Infinity, duration: 1.4, ease: "easeInOut" }}
+                >
+                  <ChevronUp className="w-4 h-4" style={{ color: accent }} />
+                </motion.span>
+                <MapPin className="w-3.5 h-3.5" style={{ color: accent }} />
+                <span style={{ color: accent, fontWeight: 700 }}>Localização & horários</span>
+              </button>
+            </div>
+          )}
+
+          {/* Footer */}
+          {step === 5 && (
+            <footer className="mt-4 pb-8 text-center text-xs" style={{ color: theme.textMuted }}>
+              <p>© {new Date().getFullYear()} {storeName}</p>
+              <p className="mt-1 font-mono opacity-50">Desenvolvido com <span style={{ color: accent }}>Navalha SaaS</span></p>
+            </footer>
+          )}
+        </main>
+      </div>
     </div>
+    </>
   );
 }

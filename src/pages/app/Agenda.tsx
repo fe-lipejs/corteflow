@@ -3,9 +3,10 @@ import { format, startOfWeek, addWeeks, subWeeks, addDays, isToday } from 'date-
 import { ptBR } from 'date-fns/locale/pt-BR';
 import {
   ChevronLeft, ChevronRight, Plus, Calendar, RefreshCw,
-  Users, CheckCircle, Clock, DollarSign, Loader2
+  Users, CheckCircle, Clock, DollarSign, Loader2, Bell
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useBarberSound } from '../../hooks/useBarberSound';
 import { useProfessionals } from '../../hooks/useProfessionals';
 import { useServices } from '../../hooks/useServices';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -31,6 +32,7 @@ export default function Agenda() {
   const { tenant } = useAuth();
   const { theme } = useTheme();
   const tenantId = tenant?.id ?? '';
+  const { play: playChime } = useBarberSound();
 
   const [view, setView] = useState<View>('week');
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 0 }));
@@ -172,8 +174,18 @@ export default function Agenda() {
               ))}
             </div>
 
-            <button onClick={() => refetchWeek()} className="p-2 rounded-xl border transition-all glass-card" style={{ color: theme.textSecondary, borderColor: theme.cardBorder }}>
+            <button onClick={() => refetchWeek()} className="p-2 rounded-xl border transition-all glass-card" style={{ color: theme.textSecondary, borderColor: theme.cardBorder }} title="Atualizar">
               <RefreshCw className="w-4 h-4" />
+            </button>
+
+            {/* Sound test button */}
+            <button
+              onClick={() => playChime('booking')}
+              className="p-2 rounded-xl border transition-all glass-card"
+              style={{ color: theme.textSecondary, borderColor: theme.cardBorder }}
+              title="Testar som de novo agendamento"
+            >
+              <Bell className="w-4 h-4" />
             </button>
 
             <button

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, addMinutes, isBefore } from 'date-fns';
 import { supabase } from '../integrations/supabase/client';
+import { useBarberSound } from './useBarberSound';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type BookingStatus =
@@ -363,6 +364,7 @@ export function generateTimeSlots(
 // ─── Realtime Hook ────────────────────────────────────────────────────────────
 export function useBookingsRealtime(tenantId: string | null) {
   const queryClient = useQueryClient();
+  const { play } = useBarberSound();
 
   useEffect(() => {
     if (!tenantId) return;
@@ -377,6 +379,14 @@ export function useBookingsRealtime(tenantId: string | null) {
           filter: `tenant_id=eq.${tenantId}`,
         },
         (payload) => {
+          // 🔔 Play distinct chime on new booking
+          if (payload.eventType === 'INSERT') {
+            play('booking');
+          }
+          // 🔕 Play cancel alert when a booking is marked canceled
+          if (payload.eventType === 'UPDATE' && (payload.new as any)?.status === 'canceled') {
+            play('cancel');
+          }
           // Invalidate bookings for this tenant (will match ['bookings', tenantId, ...])
           queryClient.invalidateQueries({ queryKey: ['bookings', tenantId] });
         }
@@ -386,5 +396,6 @@ export function useBookingsRealtime(tenantId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tenantId, queryClient]);
+  }, [tenantId, queryClient, play]);
 }
+

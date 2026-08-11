@@ -3,7 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCancelBooking, useRescheduleBooking } from '../../hooks/useBookings';
-import { format, isBefore, addHours } from 'date-fns';
+import { format, isBefore, addHours, startOfDay, addDays } from 'date-fns';
+import { generateAvailableSlots } from '../../lib/availability';
+import type { Slot } from '../../lib/availability';
 import { ptBR } from 'date-fns/locale';
 import { Calendar, Clock, ArrowLeft, Loader2, ShieldCheck } from 'lucide-react';
 import { usePhoneFormat } from '../../hooks/usePhoneFormat';
@@ -21,9 +23,13 @@ export default function ClientPortal() {
   const [loading, setLoading] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(null);
 
+  // Cancel State
+  const [bookingToCancel, setBookingToCancel] = useState<any>(null);
+  const [cancelReason, setCancelReason] = useState("");
+
   // Reschedule State
   const [rescheduleBooking, setRescheduleBooking] = useState<any>(null);
-  const [newDate, setNewDate] = useState<string>('');
+  const [newDate, setNewDate] = useState<Date | null>(null);
   const [newTime, setNewTime] = useState<string>('');
 
   // Tenant Info
@@ -52,18 +58,45 @@ export default function ClientPortal() {
   const cancelMutation = useCancelBooking();
   const rescheduleMutation = useRescheduleBooking();
 
+  const availableDays = useMemo(() => {
+    const days: { date: Date; isOpen: boolean }[] = [];
+    const today = startOfDay(new Date());
+    for (let i = 0; i < 30; i++) {
+      const d = addDays(today, i);
+      const h = storeData?.businessHours?.find((x: any) => x.weekday === d.getDay());
+      days.push({ date: d, isOpen: h?.is_open === true });
+    }
+    return days;
+  }, [storeData?.businessHours]);
+
+  const availableSlots: Slot[] = useMemo(() => {
+    if (!newDate || !rescheduleBooking) return [];
+    
+    const service = storeData?.services?.find((s: any) => s.id === rescheduleBooking.service_id);
+    if (!service) return [];
+    
+    return generateAvailableSlots(
+      newDate, service, rescheduleBooking.professional_id,
+      storeData?.professionals || [], storeData?.services || [], storeData?.businessHours || [],
+      storeData?.professionalWorkingHours || [], storeData?.professionalBlockedTimes || [],
+      storeData?.bookings || [], storeData?.professionalServices || []
+    );
+  }, [newDate, rescheduleBooking, storeData]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone || !tenant) return;
     setLoading(true);
 
     try {
-      const formattedPhone = phoneFormat.format(phone);
+      // FIX #5: bookings save phone as raw digits only (cleanPhone = customerPhone.replace(/\D/g, ''))
+      // So we must search with digits-only too — NOT with the formatted mask version
+      const cleanPhone = phone.replace(/\D/g, '');
       const { data, error } = await supabase
         .from('customers')
         .select('id')
         .eq('tenant_id', tenant.id)
-        .eq('phone', formattedPhone)
+        .eq('phone', cleanPhone)
         .maybeSingle();
 
       if (data) {
@@ -79,7 +112,7 @@ export default function ClientPortal() {
     }
   };
 
-  const handleCancel = async (booking: any) => {
+  const handleCancelClick = (booking: any) => {
     if (!tenant?.tenant_settings?.[0]) return;
     const settings = tenant.tenant_settings[0];
 
@@ -96,19 +129,26 @@ export default function ClientPortal() {
       return;
     }
 
-    const reason = window.prompt('Motivo do cancelamento (opcional):', 'Imprevisto');
-    if (reason === null) return;
+    setCancelReason("Imprevisto");
+    setBookingToCancel(booking);
+  };
 
+  const handleCancelConfirm = async () => {
+    if (!bookingToCancel) return;
+    setLoading(true);
     try {
       await cancelMutation.mutateAsync({
-        bookingId: booking.id,
-        reason,
+        bookingId: bookingToCancel.id,
+        reason: cancelReason,
         actorType: 'client'
       });
       alert('Agendamento cancelado com sucesso!');
       qc.invalidateQueries({ queryKey: ['customer-bookings', customerId] });
+      setBookingToCancel(null);
     } catch (err: any) {
       alert(`Erro ao cancelar: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -129,9 +169,17 @@ export default function ClientPortal() {
 
     try {
       setLoading(true);
+      
+      const tzOffsetMin = -new Date().getTimezoneOffset();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const tzSign = tzOffsetMin >= 0 ? '+' : '-';
+      const tzAbs = Math.abs(tzOffsetMin);
+      const tzStr = `${tzSign}${pad(Math.floor(tzAbs / 60))}:${pad(tzAbs % 60)}`;
+      const scheduledAt = `${format(newDate, "yyyy-MM-dd")}T${newTime}:00${tzStr}`;
+
       await rescheduleMutation.mutateAsync({
         bookingId: rescheduleBooking.id,
-        newTime: `${newDate}T${newTime}:00`,
+        newTime: scheduledAt,
         newProId: rescheduleBooking.professional_id, // keep the same professional for now
         actorType: 'client'
       });
@@ -325,7 +373,7 @@ export default function ClientPortal() {
                     <div className="flex gap-2 w-full sm:w-auto">
                       {settings?.allow_cancel && (
                         <button 
-                          onClick={() => handleCancel(b)}
+                          onClick={() => handleCancelClick(b)}
                           className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-bold bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 transition-colors"
                         >
                           Cancelar
@@ -373,58 +421,144 @@ export default function ClientPortal() {
         </section>
       </div>
 
-      {/* Reschedule Modal */}
-      {rescheduleBooking && (
+      {/* Cancel Modal */}
+      {bookingToCancel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
           <div className="w-full max-w-md p-7 rounded-3xl shadow-2xl border" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
-            <h3 className="text-2xl font-serif font-bold mb-2" style={{ color: theme.textPrimary }}>Reagendar Atendimento</h3>
-            <p className="text-xs mb-5" style={{ color: theme.textSecondary }}>Escolha uma nova data e horário para o serviço <strong>{rescheduleBooking.services?.name}</strong>.</p>
+            <h3 className="text-2xl font-serif font-bold mb-2 text-red-500">Cancelar Agendamento</h3>
             
-            <form onSubmit={handleRescheduleSubmit} className="space-y-4">
+            {tenant?.tenant_settings?.[0]?.cancel_policy_text && (
+              <div className="p-4 rounded-xl mb-4 text-xs bg-red-500/10 text-red-600 border border-red-500/20">
+                <strong>Política de Cancelamento:</strong><br />
+                {tenant.tenant_settings[0].cancel_policy_text}
+                {tenant.tenant_settings[0].cancel_fee_amount > 0 && (
+                  <p className="mt-2 font-bold">Taxa aplicável: R$ {tenant.tenant_settings[0].cancel_fee_amount.toFixed(2)}</p>
+                )}
+              </div>
+            )}
+
+            <div className="mb-4">
+              <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textPrimary }}>Motivo do Cancelamento (opcional)</label>
+              <textarea 
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                className="w-full p-3.5 rounded-2xl border focus:ring-2 focus:outline-none transition-all text-sm font-sans"
+                style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.textPrimary, outlineColor: theme.accent }}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setBookingToCancel(null)}
+                className="flex-1 py-3.5 rounded-2xl font-bold border text-xs transition-colors"
+                style={{ borderColor: theme.border, color: theme.textPrimary }}
+              >
+                Voltar
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelConfirm}
+                disabled={loading}
+                className="flex-1 py-3.5 rounded-2xl font-bold text-xs flex justify-center items-center gap-2 transition-all hover:opacity-90 shadow-md bg-red-500 text-white"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirmar Cancelamento'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Modal */}
+      {rescheduleBooking && (
+        <div className="fixed inset-0 z-50 flex flex-col p-0 sm:p-4 bg-black/60 backdrop-blur-md sm:justify-center sm:items-center">
+          <div className="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-md p-6 rounded-none sm:rounded-3xl shadow-2xl border flex flex-col bg-white" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+            <div className="flex justify-between items-center mb-6">
               <div>
-                <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textPrimary }}>Nova Data</label>
-                <input 
-                  type="date"
-                  required
-                  value={newDate}
-                  onChange={(e) => setNewDate(e.target.value)}
-                  min={format(new Date(), 'yyyy-MM-dd')}
-                  className="w-full p-3.5 rounded-2xl border focus:ring-2 focus:outline-none transition-all text-sm font-sans"
-                  style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.textPrimary, outlineColor: theme.accent }}
-                />
+                <h3 className="text-2xl font-serif font-bold" style={{ color: theme.textPrimary }}>Reagendar</h3>
+                <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>{rescheduleBooking.services?.name}</p>
+              </div>
+              <button onClick={() => setRescheduleBooking(null)} className="p-2 rounded-full hover:bg-black/5" style={{ color: theme.textPrimary }}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto no-scrollbar space-y-6">
+              {/* Data */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: theme.textSecondary }}>
+                  <Calendar className="w-4 h-4" /> Nova Data
+                </h4>
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                  {availableDays.map((day, i) => {
+                    const isSelected = newDate && format(newDate, 'yyyy-MM-dd') === format(day.date, 'yyyy-MM-dd');
+                    return (
+                      <button
+                        key={i}
+                        disabled={!day.isOpen}
+                        onClick={() => { setNewDate(day.date); setNewTime(''); }}
+                        className="flex-shrink-0 w-[4.5rem] p-3 rounded-2xl border flex flex-col items-center justify-center transition-all relative overflow-hidden"
+                        style={{
+                          backgroundColor: isSelected ? theme.accent : theme.inputBg,
+                          borderColor: isSelected ? theme.accent : theme.inputBorder,
+                          color: isSelected ? theme.btnPrimaryText : day.isOpen ? theme.textPrimary : theme.textMuted,
+                          opacity: day.isOpen ? 1 : 0.4,
+                        }}
+                      >
+                        <span className="text-[10px] font-medium uppercase tracking-wider mb-1 opacity-80">{format(day.date, 'EEE', { locale: ptBR })}</span>
+                        <span className="text-xl font-bold font-serif">{format(day.date, 'dd')}</span>
+                        {isSelected && <div className="absolute inset-0 bg-white/20" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textPrimary }}>Novo Horário</label>
-                <input 
-                  type="time"
-                  required
-                  value={newTime}
-                  onChange={(e) => setNewTime(e.target.value)}
-                  className="w-full p-3.5 rounded-2xl border focus:ring-2 focus:outline-none transition-all text-sm font-sans"
-                  style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.textPrimary, outlineColor: theme.accent }}
-                />
-              </div>
+              {/* Horários */}
+              <AnimatePresence mode="popLayout">
+                {newDate && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }}>
+                    <h4 className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: theme.textSecondary }}>
+                      <Clock className="w-4 h-4" /> Novo Horário
+                    </h4>
+                    {availableSlots.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        {availableSlots.map((slot, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setNewTime(slot.time)}
+                            className="p-3 rounded-xl border text-sm font-bold font-sans transition-all relative overflow-hidden"
+                            style={{
+                              backgroundColor: newTime === slot.time ? theme.accent : theme.inputBg,
+                              borderColor: newTime === slot.time ? theme.accent : theme.inputBorder,
+                              color: newTime === slot.time ? theme.btnPrimaryText : theme.textPrimary,
+                            }}
+                          >
+                            {slot.time}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-6 rounded-2xl border text-center" style={{ backgroundColor: theme.inputBg, borderColor: theme.border }}>
+                        <p className="text-sm font-medium" style={{ color: theme.textSecondary }}>Nenhum horário livre.</p>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setRescheduleBooking(null)}
-                  className="flex-1 py-3.5 rounded-2xl font-bold border text-xs transition-colors"
-                  style={{ borderColor: theme.border, color: theme.textPrimary }}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 py-3.5 rounded-2xl font-bold text-xs flex justify-center items-center gap-2 transition-all hover:opacity-90 shadow-md"
-                  style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
-                >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirmar Reagendamento'}
-                </button>
-              </div>
-            </form>
+            {/* Ações */}
+            <div className="pt-4 mt-auto border-t" style={{ borderColor: theme.border }}>
+              <button
+                onClick={handleRescheduleSubmit}
+                disabled={loading || !newDate || !newTime}
+                className="w-full py-4 rounded-2xl font-bold text-sm flex justify-center items-center gap-2 transition-all disabled:opacity-50"
+                style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirmar Reagendamento'}
+              </button>
+            </div>
           </div>
         </div>
       )}

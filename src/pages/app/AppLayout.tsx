@@ -92,9 +92,12 @@ export default function AppLayout() {
           </div>
           <span className="font-bold text-sm" style={{ color: theme.textPrimary }}>Navalha</span>
         </div>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} style={{ color: theme.textPrimary }} className="p-2">
-          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        <div className="flex items-center gap-3">
+          <NotificationBell align="right" />
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} style={{ color: theme.textPrimary }} className="p-2 -mr-2">
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Overlay for mobile */}
@@ -125,7 +128,7 @@ export default function AppLayout() {
               <p className="text-xs leading-tight" style={{ color: theme.textMuted }}>Painel do Salão</p>
             </div>
           </div>
-          <NotificationBell />
+          <NotificationBell align="left" />
         </div>
 
         {/* Mobile Spacer */}
