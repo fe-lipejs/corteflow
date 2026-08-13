@@ -463,6 +463,13 @@ export const ThemeProvider: React.FC<{
       border: dynamicBorder,
       cardBorder: dynamicBorder,
       inputBorder: dynamicBorder,
+      sidebarBorder: dynamicBorder,
+      bgHover: isDarkBg ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+      sidebarHover: isDarkBg ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+      btnOutlineBorder: dynamicBorder,
+      btnOutlineText: customPalette.text || (isDarkBg ? '#FFFFFF' : '#0F172A'),
+      inputText: customPalette.text || (isDarkBg ? '#FFFFFF' : '#0F172A'),
+      inputPlaceholder: isDarkBg ? '#64748B' : '#94A3B8',
       ...(customPalette.card && {
         cardBg: customPalette.card,
         bgCard: customPalette.card,

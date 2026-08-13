@@ -52,7 +52,7 @@ type TabId = typeof TABS[number]['id'];
 export default function Configuracoes() {
   const { tenant, profile, signOut } = useAuth();
   const { i18n } = useTranslation();
-  const { theme, setThemeId, themeId } = useTheme();
+  const { theme, setThemeId, themeId, setCustomPalette: setContextCustomPalette } = useTheme();
   const phoneFormat = usePhoneFormat(tenant?.language || 'pt');
 
   const [loading, setLoading] = useState(false);
@@ -175,6 +175,10 @@ export default function Configuracoes() {
         setSettingsId(data.id);
         setSelectedTheme(data.theme_preset || 'classic');
         setCustomPalette(data.custom_palette || null);
+        if (data.theme_preset) setThemeId(data.theme_preset);
+        if (data.custom_palette) setContextCustomPalette(data.custom_palette);
+        else setContextCustomPalette(undefined);
+
         if (data.custom_palette?.background) {
           // Detect if background is light or dark
           const bg = data.custom_palette.background.toLowerCase();
@@ -306,6 +310,7 @@ export default function Configuracoes() {
         text: smartResult.text,
       };
       setCustomPalette(newPalette);
+      setContextCustomPalette(newPalette);
       setSelectedTheme(mode === 'light' ? 'elegant' : 'classic');
       setThemeId(mode === 'light' ? 'elegant' : 'classic');
     } catch (e) {
@@ -328,6 +333,7 @@ export default function Configuracoes() {
       text: generated.text,
     };
     setCustomPalette(newPalette);
+    setContextCustomPalette(newPalette);
     setSelectedTheme(newMode === 'light' ? 'elegant' : 'classic');
     setThemeId(newMode === 'light' ? 'elegant' : 'classic');
   };
@@ -342,6 +348,7 @@ export default function Configuracoes() {
       text: generated.text,
     };
     setCustomPalette(newPalette);
+    setContextCustomPalette(newPalette);
     setSelectedTheme(bgMode === 'light' ? 'elegant' : 'classic');
     setThemeId(bgMode === 'light' ? 'elegant' : 'classic');
   };
@@ -395,6 +402,7 @@ export default function Configuracoes() {
     setSelectedTheme(id);
     setThemeId(id); // Apply immediately for preview
     setCustomPalette(null); // Reset overrides to adopt new preset
+    setContextCustomPalette(undefined);
   };
 
   // ─── Save ─────────────────────────────────────────────────────────────────
@@ -495,14 +503,20 @@ export default function Configuracoes() {
         await supabase.from('notification_settings').insert([{ tenant_id: tenant.id, sound_enabled: soundEnabled }]);
       }
 
-      // Apply theme locally
+      // Apply theme locally & globally across the whole admin
       setThemeId(selectedTheme);
+      if (customPalette) {
+        setContextCustomPalette(customPalette);
+      } else {
+        setContextCustomPalette(undefined);
+      }
 
       // Invalidate public page query cache so changes reflect immediately
       if (tenant?.slug) {
         queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(tenant.slug) });
       }
       queryClient.invalidateQueries({ queryKey: ['tenant_settings', tenant?.id] });
+      queryClient.invalidateQueries({ queryKey: ['tenant_settings'] });
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
