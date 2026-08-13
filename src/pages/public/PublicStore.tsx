@@ -1335,7 +1335,7 @@ export default function PublicStore() {
                               value={customerPhone}
                               onChange={e => setCustomerPhone(phoneFormat.format(e.target.value))}
                               maxLength={phoneFormat.maxLength}
-                              className="w-full rounded-xl border-2 px-4 py-3.5 text-sm font-medium focus:outline-none transition-all"
+                              className="w-full rounded-xl border-2 px-4 py-3.5 text-base sm:text-sm font-medium focus:outline-none transition-all"
                               style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
                               onFocus={e => (e.target.style.borderColor = accent)}
                               onBlur={e => (e.target.style.borderColor = theme.cardBorder)}
@@ -1348,7 +1348,7 @@ export default function PublicStore() {
                               placeholder="Seu nome"
                               value={customerName}
                               onChange={e => setCustomerName(e.target.value)}
-                              className="w-full rounded-xl border-2 px-4 py-3.5 text-sm font-medium focus:outline-none transition-all"
+                              className="w-full rounded-xl border-2 px-4 py-3.5 text-base sm:text-sm font-medium focus:outline-none transition-all"
                               style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
                               onFocus={e => (e.target.style.borderColor = accent)}
                               onBlur={e => (e.target.style.borderColor = theme.cardBorder)}
@@ -1361,7 +1361,7 @@ export default function PublicStore() {
                               value={customerNotes}
                               onChange={e => setCustomerNotes(e.target.value)}
                               rows={3}
-                              className="w-full rounded-xl border-2 px-4 py-3.5 text-sm focus:outline-none resize-none transition-all"
+                              className="w-full rounded-xl border-2 px-4 py-3.5 text-base sm:text-sm focus:outline-none resize-none transition-all"
                               style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
                               onFocus={e => (e.target.style.borderColor = accent)}
                               onBlur={e => (e.target.style.borderColor = theme.cardBorder)}
@@ -1437,7 +1437,7 @@ export default function PublicStore() {
                                 <div>
                                   <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: theme.textMuted }}>Número do cartão</label>
                                   <input type="text" placeholder="4242 4242 4242 4242" value={cardNumber} onChange={e => handleCardNumberChange(e.target.value)}
-                                    className="w-full rounded-xl border-2 px-4 py-3.5 text-sm font-mono focus:outline-none transition-all"
+                                    className="w-full rounded-xl border-2 px-4 py-3.5 text-base sm:text-sm font-mono focus:outline-none transition-all"
                                     style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
                                     onFocus={e => (e.target.style.borderColor = accent)} onBlur={e => (e.target.style.borderColor = theme.cardBorder)} />
                                 </div>
@@ -1445,14 +1445,14 @@ export default function PublicStore() {
                                   <div>
                                     <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: theme.textMuted }}>Validade</label>
                                     <input type="text" placeholder="12/30" value={cardExp} onChange={e => handleCardExpChange(e.target.value)}
-                                      className="w-full rounded-xl border-2 px-4 py-3.5 text-sm font-mono text-center focus:outline-none transition-all"
+                                      className="w-full rounded-xl border-2 px-4 py-3.5 text-base sm:text-sm font-mono text-center focus:outline-none transition-all"
                                       style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
                                       onFocus={e => (e.target.style.borderColor = accent)} onBlur={e => (e.target.style.borderColor = theme.cardBorder)} />
                                   </div>
                                   <div>
                                     <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: theme.textMuted }}>CVC</label>
                                     <input type="text" maxLength={4} placeholder="123" value={cardCvc} onChange={e => setCardCvc(e.target.value.replace(/\D/g, ""))}
-                                      className="w-full rounded-xl border-2 px-4 py-3.5 text-sm font-mono text-center focus:outline-none transition-all"
+                                      className="w-full rounded-xl border-2 px-4 py-3.5 text-base sm:text-sm font-mono text-center focus:outline-none transition-all"
                                       style={{ background: theme.bg, borderColor: theme.cardBorder, color: theme.textPrimary }}
                                       onFocus={e => (e.target.style.borderColor = accent)} onBlur={e => (e.target.style.borderColor = theme.cardBorder)} />
                                   </div>
