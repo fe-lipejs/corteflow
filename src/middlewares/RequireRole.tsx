@@ -23,10 +23,9 @@ export default function RequireRole({ children, allowedRoles }: { children: Reac
   }
 
   if (!allowedRoles.includes(role)) {
-    // Se o usuário logado tem a role super_admin, mas tentou acessar a área de app, 
-    // ou se é admin tentando acessar /admin (que é só super_admin).
-    if (role === 'super_admin') {
-      return <Navigate to="/admin" replace />;
+    // Se a role não é permitida, redireciona adequadamente
+    if (role === 'super_admin' || role === 'owner') {
+      return <Navigate to="/app" replace />;
     } else {
       return <Navigate to="/app" replace />;
     }

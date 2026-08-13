@@ -65,12 +65,12 @@ export default function AppRoutes() {
         <Route path="/:slug/sucesso" element={<SuccessBooking />} />
         <Route path="/:slug" element={<PublicStore />} />
 
-        {/* ── Admin Routes — Super Admin Only ── */}
+        {/* ── Admin Routes — Super Admin & Platform Owners ── */}
         <Route
           path="/admin"
           element={
             <RequireAuth>
-              <RequireRole allowedRoles={['super_admin']}>
+              <RequireRole allowedRoles={['super_admin', 'owner']}>
                 <AdminLayout />
               </RequireRole>
             </RequireAuth>

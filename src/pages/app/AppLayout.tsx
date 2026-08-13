@@ -202,7 +202,7 @@ export default function AppLayout() {
           {/* Divider */}
           <div className="my-3" style={{ borderTop: `1px solid ${theme.border}` }} />
 
-          {profile?.role === 'super_admin' && (
+          {(profile?.role === 'super_admin' || profile?.role === 'owner') && (
             <NavLink
               to="/admin"
               className={({ isActive }) => `navalha-nav-item ${isActive ? 'active' : ''}`}
