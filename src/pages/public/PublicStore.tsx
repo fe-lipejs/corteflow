@@ -33,7 +33,7 @@ import { generateAvailableSlots } from "../../lib/availability";
 import type { Slot } from "../../lib/availability";
 import { supabase } from "../../integrations/supabase/client";
 import { usePhoneFormat } from "../../hooks/usePhoneFormat";
-import { useTheme, getThemeById } from "../../contexts/ThemeContext";
+import { useTheme, getThemeById, adjustColorBrightness } from "../../contexts/ThemeContext";
 import { usePublicStore, PUBLIC_STORE_QUERY_KEY } from "../../hooks/usePublicStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { getThemeContrastEngine } from "../../lib/themeEngine";
@@ -250,12 +250,19 @@ export default function PublicStore() {
       }),
       ...(palette.primary && {
         accent: palette.primary,
-        btnPrimaryBg: palette.primary,
+        accentLight: adjustColorBrightness(palette.primary, 15),
+        accentHover: adjustColorBrightness(palette.primary, 8),
+        accentMuted: `${palette.primary}25`,
+        accentGradient: `linear-gradient(135deg, ${palette.primary}, ${adjustColorBrightness(palette.primary, 18)})`,
+        btnPrimaryBg: `linear-gradient(135deg, ${palette.primary}, ${adjustColorBrightness(palette.primary, 18)})`,
         btnPrimaryText: btnTextColor,
+        btnPrimaryHover: `0 0 20px ${palette.primary}60`,
         borderActive: palette.primary,
         inputFocusBorder: palette.primary,
         calendarActiveBg: palette.primary,
         calendarActiveText: btnTextColor,
+        calendarAvailableBg: `${palette.primary}18`,
+        shadowAccent: `0 0 20px ${palette.primary}40`,
       }),
     };
   }, [settings?.theme_preset, settings?.custom_palette]);

@@ -413,6 +413,22 @@ function applyThemeToDOM(tokens: ThemeTokens) {
   document.body.style.color = tokens.textPrimary;
 }
 
+// ─── Helper for Dynamic Gradients ─────────────────────────────────────────────
+export function adjustColorBrightness(hexColor: string, percent: number): string {
+  const cleanHex = hexColor.replace('#', '');
+  if (cleanHex.length !== 6) return hexColor;
+  let r = parseInt(cleanHex.substring(0, 2), 16) || 0;
+  let g = parseInt(cleanHex.substring(2, 4), 16) || 0;
+  let b = parseInt(cleanHex.substring(4, 6), 16) || 0;
+
+  r = Math.min(255, Math.max(0, Math.round(r + (255 - r) * (percent / 100))));
+  g = Math.min(255, Math.max(0, Math.round(g + (255 - g) * (percent / 100))));
+  b = Math.min(255, Math.max(0, Math.round(b + (255 - b) * (percent / 100))));
+
+  const toHex = (n: number) => n.toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 export const ThemeProvider: React.FC<{
   children: React.ReactNode;
@@ -480,14 +496,21 @@ export const ThemeProvider: React.FC<{
       }),
       ...(customPalette.primary && {
         accent: customPalette.primary,
-        btnPrimaryBg: customPalette.primary,
+        accentLight: adjustColorBrightness(customPalette.primary, 15),
+        accentHover: adjustColorBrightness(customPalette.primary, 8),
+        accentMuted: `${customPalette.primary}25`,
+        accentGradient: `linear-gradient(135deg, ${customPalette.primary}, ${adjustColorBrightness(customPalette.primary, 18)})`,
+        btnPrimaryBg: `linear-gradient(135deg, ${customPalette.primary}, ${adjustColorBrightness(customPalette.primary, 18)})`,
         btnPrimaryText: btnTextColor,
+        btnPrimaryHover: `0 0 20px ${customPalette.primary}60`,
         borderActive: customPalette.primary,
         inputFocusBorder: customPalette.primary,
         calendarActiveBg: customPalette.primary,
         calendarActiveText: btnTextColor,
+        calendarAvailableBg: `${customPalette.primary}18`,
         sidebarActiveItemBg: `${customPalette.primary}20`,
         sidebarActiveItemText: customPalette.primary,
+        shadowAccent: `0 0 20px ${customPalette.primary}40`,
       }),
     };
   }, [themeId, customPalette]);
