@@ -68,8 +68,8 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
 
     if (!hasOpen) return { START_HOUR: 7, END_HOUR: 21, HOURS: Array.from({ length: 15 }, (_, i) => 7 + i) };
 
-    const start = Math.max(0, minH - 1); // 1 hora de margem antes
-    const end = Math.min(23, maxH + 1);  // 1 hora de margem depois
+    const start = Math.max(0, minH - 1);
+    const end = Math.min(23, maxH + 1);
     return {
       START_HOUR: start,
       END_HOUR: end,
@@ -91,6 +91,7 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
     return bookings.filter(b => b.professional_id === selectedProfessionalId);
   }, [bookings, selectedProfessionalId]);
 
+  // ─── Algoritmo Preciso de Colisão de Horários ──────────────────────────────
   const getPositionedBookingsForDay = (day: Date): PositionedBooking[] => {
     const dayBookings = filteredBookings
       .filter(b => isSameDay(new Date(b.scheduled_at), day))
@@ -103,63 +104,41 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
       const startMinutes = (start.getHours() - START_HOUR) * 60 + start.getMinutes();
       const top = (startMinutes / 60) * HOUR_HEIGHT;
       const duration = b.duration_minutes || 30;
-      const height = Math.max((duration / 60) * HOUR_HEIGHT - 4, 48);
-      return { booking: b, top, bottom: top + height, height };
+      const height = Math.max((duration / 60) * HOUR_HEIGHT - 4, 52);
+      const bottom = top + height;
+      return { booking: b, top, bottom, height };
     });
-
-    const clusters: typeof items[] = [];
-    let currentCluster: typeof items = [];
-    let clusterMaxBottom = -1;
-
-    items.forEach(item => {
-      if (currentCluster.length === 0) {
-        currentCluster.push(item);
-        clusterMaxBottom = item.bottom;
-      } else if (item.top < clusterMaxBottom) {
-        currentCluster.push(item);
-        clusterMaxBottom = Math.max(clusterMaxBottom, item.bottom);
-      } else {
-        clusters.push(currentCluster);
-        currentCluster = [item];
-        clusterMaxBottom = item.bottom;
-      }
-    });
-    if (currentCluster.length > 0) clusters.push(currentCluster);
 
     const result: PositionedBooking[] = [];
 
-    clusters.forEach(cluster => {
-      const columns: typeof items[] = [];
+    items.forEach((item) => {
+      // Procura outros agendamentos que realmente se sobrepõem no tempo
+      const overlapping = items.filter(other =>
+        other.top < item.bottom && item.top < other.bottom
+      );
 
-      cluster.forEach(item => {
-        let placed = false;
-        for (let colIdx = 0; colIdx < columns.length; colIdx++) {
-          const lastInCol = columns[colIdx][columns[colIdx].length - 1];
-          if (lastInCol.bottom <= item.top) {
-            columns[colIdx].push(item);
-            placed = true;
-            break;
-          }
-        }
-        if (!placed) {
-          columns.push([item]);
-        }
-      });
-
-      const totalCols = columns.length;
-      columns.forEach((colItems, colIdx) => {
-        colItems.forEach(item => {
-          const widthPercent = 100 / totalCols;
-          const leftPercent = colIdx * widthPercent;
-          result.push({
-            booking: item.booking,
-            top: item.top,
-            height: item.height,
-            leftPercent,
-            widthPercent: widthPercent - (totalCols > 1 ? 1 : 0),
-          });
+      if (overlapping.length <= 1) {
+        // Agendamento único no horário: ocupa 100% da largura da coluna!
+        result.push({
+          booking: item.booking,
+          top: item.top,
+          height: item.height,
+          leftPercent: 0,
+          widthPercent: 100,
         });
-      });
+      } else {
+        // Há colisão de horários entre múltiplos profissionais: divide a coluna
+        const colIdx = overlapping.indexOf(item);
+        const totalCols = overlapping.length;
+        const widthPercent = 100 / totalCols;
+        result.push({
+          booking: item.booking,
+          top: item.top,
+          height: item.height,
+          leftPercent: colIdx * widthPercent,
+          widthPercent: widthPercent - 1,
+        });
+      }
     });
 
     return result;
@@ -267,7 +246,7 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
                   className="flex-1 relative border-r last:border-r-0 transition-colors"
                   style={{
                     borderColor: `${theme.border}40`,
-                    background: isClosed ? 'rgba(0,0,0,0.2)' : (today ? `${theme.accent}05` : 'transparent')
+                    background: isClosed ? 'rgba(0,0,0,0.18)' : (today ? `${theme.accent}05` : 'transparent')
                   }}
                 >
                   {/* Hour grid cells */}
@@ -299,31 +278,32 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
                     );
                   })}
 
-                  {/* Render Bookings */}
+                  {/* Render Bookings (Ultra-Readable Cards) */}
                   {positionedBookings.map(({ booking: b, top, height, leftPercent, widthPercent }) => {
                     const statusCfg = BOOKING_STATUS_CONFIG[b.status] || { label: 'Agendado', bg: 'rgba(201,150,59,0.15)', color: theme.accent };
                     const proAccent = b.professional?.agenda_color || b.service?.color || theme.accent;
                     const start = new Date(b.scheduled_at);
-                    const end = addMinutes(start, b.duration_minutes || 30);
+                    const duration = b.duration_minutes || 30;
+                    const end = addMinutes(start, duration);
                     const isCompact = height < 60;
 
                     return (
                       <div
                         key={b.id}
                         onClick={e => { e.stopPropagation(); onBookingClick(b); }}
-                        className="absolute rounded-xl cursor-pointer shadow-lg hover:shadow-2xl hover:z-50 hover:scale-[1.01] transition-all group overflow-hidden border flex flex-col"
+                        className="absolute rounded-xl cursor-pointer shadow-md hover:shadow-2xl hover:z-50 hover:scale-[1.01] transition-all group overflow-hidden border flex flex-col"
                         style={{
                           top: `${top}px`,
                           height: `${height}px`,
-                          left: `calc(${leftPercent}% + 3px)`,
-                          width: `calc(${widthPercent}% - 6px)`,
+                          left: `calc(${leftPercent}% + 4px)`,
+                          width: `calc(${widthPercent}% - 8px)`,
                           background: theme.cardBg,
-                          borderColor: `${proAccent}50`,
-                          borderLeft: `4px solid ${proAccent}`,
-                          backdropFilter: 'blur(8px)',
+                          borderColor: `${proAccent}40`,
+                          borderLeft: `5px solid ${proAccent}`,
+                          boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
                         }}
                       >
-                        <div className="p-2.5 h-full flex flex-col justify-between min-w-0">
+                        <div className="p-2 h-full flex flex-col justify-between min-w-0">
                           {/* Top Header: Customer Name & Status Badge */}
                           <div className="min-w-0">
                             <div className="flex items-center justify-between gap-1 mb-0.5">
@@ -332,16 +312,20 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
                               </p>
                               
                               <span 
-                                className="shrink-0 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider" 
-                                style={{ background: statusCfg.bg, color: statusCfg.color }}
+                                className="shrink-0 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border" 
+                                style={{
+                                  background: `${statusCfg.color}15`,
+                                  borderColor: `${statusCfg.color}30`,
+                                  color: statusCfg.color
+                                }}
                               >
                                 {statusCfg.label}
                               </span>
                             </div>
 
                             {/* Service Title */}
-                            <p className="text-[11px] font-semibold truncate flex items-center gap-1" style={{ color: proAccent }}>
-                              <Scissors className="w-3 h-3 shrink-0 opacity-70" />
+                            <p className="text-[11px] font-bold truncate flex items-center gap-1" style={{ color: proAccent }}>
+                              <Scissors className="w-3 h-3 shrink-0 opacity-80" />
                               {b.service?.name || 'Serviço'}
                             </p>
                           </div>
@@ -350,11 +334,11 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
                           {!isCompact && (
                             <div className="flex items-center justify-between text-[10px] pt-1.5 border-t mt-auto min-w-0" style={{ borderColor: theme.border }}>
                               <span className="font-semibold flex items-center gap-1" style={{ color: theme.textSecondary }}>
-                                <Clock className="w-3 h-3 shrink-0" />
-                                {format(start, 'HH:mm')} - {format(end, 'HH:mm')}
+                                <Clock className="w-3 h-3 shrink-0 opacity-70" />
+                                {format(start, 'HH:mm')} – {format(end, 'HH:mm')}
                               </span>
 
-                              {b.professional?.name && widthPercent > 40 && (
+                              {b.professional?.name && widthPercent > 45 && (
                                 <span className="font-medium truncate max-w-[80px]" style={{ color: theme.textSecondary }}>
                                   {b.professional.name.split(' ')[0]}
                                 </span>
