@@ -83,6 +83,8 @@ export default function Configuracoes() {
   const [slug, setSlug] = useState('');
   const [slugStatus, setSlugStatus] = useState<'idle' | 'checking' | 'available' | 'unavailable' | 'invalid'>('idle');
   const [slugMessage, setSlugMessage] = useState('');
+  const [identitySaving, setIdentitySaving] = useState(false);
+  const [identitySaved, setIdentitySaved] = useState(false);
 
   // Branding
   const [fantasyName, setFantasyName] = useState('');
@@ -491,7 +493,69 @@ export default function Configuracoes() {
     setContextCustomPalette(undefined);
   };
 
-  // ─── Save ─────────────────────────────────────────────────────────────────
+  // ─── Save Identity & Custom Slug Only ──────────────────────────────────────
+  const handleSaveIdentity = async () => {
+    if (!tenant) return;
+    if (slugStatus === 'unavailable') {
+      alert('O link personalizado escolhido já está em uso por outro salão. Por favor, escolha outro link antes de salvar.');
+      return;
+    }
+    if (slugStatus === 'invalid') {
+      alert('O link personalizado é inválido. Ele deve ter no mínimo 3 caracteres alfanuméricos.');
+      return;
+    }
+
+    const cleanSlug = slug.trim() || tenant.slug;
+    const cleanName = tenantName.trim() || fantasyName.trim() || tenant.name;
+
+    setIdentitySaving(true);
+    try {
+      // 1. Atualiza na tabela tenants
+      const { error: tenantErr } = await (supabase as any)
+        .from('tenants')
+        .update({
+          name: cleanName,
+          slug: cleanSlug,
+        })
+        .eq('id', tenant.id);
+
+      if (tenantErr) {
+        if (tenantErr.code === '23505') {
+          alert('Este link já está em uso por outro salão. Por favor, escolha outro link.');
+          setIdentitySaving(false);
+          return;
+        }
+        throw tenantErr;
+      }
+
+      // 2. Atualiza fantasy_name na tabela tenant_settings
+      if (settingsId) {
+        await supabase.from('tenant_settings').update({ fantasy_name: cleanName }).eq('id', settingsId);
+      } else {
+        const { data } = await supabase.from('tenant_settings').insert([{ tenant_id: tenant.id, fantasy_name: cleanName }]).select().single();
+        if (data) setSettingsId(data.id);
+      }
+
+      // 3. Invalida os caches do React Query
+      if (tenant.slug) queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(tenant.slug) });
+      if (cleanSlug) queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(cleanSlug) });
+      queryClient.invalidateQueries({ queryKey: ['tenant_settings', tenant.id] });
+      queryClient.invalidateQueries({ queryKey: ['tenant_settings'] });
+
+      // 4. Recarrega os dados do tenant no AuthContext
+      await refreshProfile?.();
+
+      setIdentitySaved(true);
+      setTimeout(() => setIdentitySaved(false), 3500);
+    } catch (err: any) {
+      console.error('Erro ao salvar identidade:', err);
+      alert(`Erro ao salvar: ${err.message || 'Tente novamente.'}`);
+    } finally {
+      setIdentitySaving(false);
+    }
+  };
+
+  // ─── Save All Settings ─────────────────────────────────────────────────────
   const handleSave = async () => {
     if (!tenant) return;
     setLoading(true);
@@ -861,6 +925,52 @@ export default function Configuracoes() {
               </p>
             )}
           </div>
+        </div>
+
+        {/* ── Aviso Importante sobre Alteração de Link ── */}
+        <div className="flex items-start gap-3 p-3.5 rounded-xl text-xs border"
+          style={{ background: 'rgba(245, 158, 11, 0.08)', borderColor: 'rgba(245, 158, 11, 0.25)', color: theme.textPrimary }}>
+          <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-bold text-amber-500">Recomendação importante ao alterar o link:</p>
+            <p className="leading-relaxed opacity-90" style={{ color: theme.textSecondary }}>
+              Evite alterar o link com frequência após já tê-lo divulgado. Clientes frequentes que salvaram o link anterior nos favoritos, no WhatsApp ou na tela de início do celular podem não conseguir acessar a agenda se a URL mudar.
+            </p>
+          </div>
+        </div>
+
+        {/* ── Botão de Ação Salvar Identidade & Link ── */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t" style={{ borderColor: theme.cardBorder }}>
+          <p className="text-xs" style={{ color: theme.textSecondary }}>
+            O novo nome e link serão atualizados instantaneamente no seu painel e na página pública.
+          </p>
+          <button
+            onClick={handleSaveIdentity}
+            disabled={identitySaving || slugStatus === 'checking' || slugStatus === 'unavailable' || slugStatus === 'invalid'}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: identitySaved ? '#10b981' : theme.accentGradient,
+              color: identitySaved ? '#FFFFFF' : theme.btnPrimaryText,
+              boxShadow: identitySaved ? '0 0 20px rgba(16, 185, 129, 0.4)' : theme.shadowAccent,
+            }}
+          >
+            {identitySaving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Salvando alterações...
+              </>
+            ) : identitySaved ? (
+              <>
+                <Check className="w-4 h-4" />
+                Identidade Salva com Sucesso!
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Salvar Nome & Link
+              </>
+            )}
+          </button>
         </div>
       </div>
 
