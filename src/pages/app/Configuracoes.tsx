@@ -660,27 +660,57 @@ export default function Configuracoes() {
 
           {/* ═══════════════════════════ TAB: APARÊNCIA & MARCA (UNIFICADO) ═══════════════════════════ */}
           {activeTab === 'aparencia' && (
-            <div className="space-y-8">
-              {/* Header da Seção */}
-              <div>
-                <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
-                  <Sparkles className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Aparência & Identidade Visual
-                </h3>
-                <p className="text-sm" style={{ color: theme.textSecondary }}>
-                  Personalize as cores, tema, logotipo e capa. As alterações refletem no painel admin e na página de agendamento dos seus clientes em tempo real.
-                </p>
+            <div className="space-y-6">
+              {/* Header com Botão Salvar Direto */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b" style={{ borderColor: theme.border }}>
+                <div>
+                  <h3 className="font-bold text-base flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                    <Sparkles className="w-4 h-4" style={{ color: theme.accent }} />
+                    Aparência & Identidade Visual
+                  </h3>
+                  <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>
+                    Cores, logo e capa sincronizadas em tempo real com seu painel e sua página pública de agendamento.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={loading}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 shadow-md shrink-0 self-start sm:self-auto"
+                  style={{
+                    background: theme.btnPrimaryBg || theme.accent,
+                    color: theme.btnPrimaryText,
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : saved ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      Salvo com Sucesso!
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      Salvar Alterações
+                    </>
+                  )}
+                </button>
               </div>
 
-              {/* 1. Uploads: Logo e Capa */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {/* Logo Upload */}
+              {/* 1. Imagens: Logo & Capa */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {/* Logo */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
                     Logo do Salão (Perfil)
                   </label>
                   <div
-                    className="relative h-44 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden group transition-all"
+                    className="relative h-40 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden group transition-all"
                     style={{
                       borderColor: logoUpload.isUploading ? theme.accent : theme.inputBorder,
                       background: theme.inputBg,
@@ -688,8 +718,8 @@ export default function Configuracoes() {
                   >
                     {logoUrl || logoUpload.preview ? (
                       <>
-                        <img src={logoUrl || logoUpload.preview || ''} alt="Logo" className="w-full h-full object-contain p-4" />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                        <img src={logoUrl || logoUpload.preview || ''} alt="Logo" className="w-full h-full object-contain p-3" />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
                           <label className="p-2 rounded-full cursor-pointer" style={{ background: theme.accent, color: theme.textInverse }}>
                             <Upload className="w-4 h-4" />
                             <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
@@ -702,27 +732,27 @@ export default function Configuracoes() {
                     ) : (
                       <label className="text-center p-4 cursor-pointer w-full h-full flex flex-col items-center justify-center">
                         {logoUpload.isUploading ? (
-                          <Loader2 className="w-8 h-8 animate-spin mb-2" style={{ color: theme.accent }} />
+                          <Loader2 className="w-7 h-7 animate-spin mb-2" style={{ color: theme.accent }} />
                         ) : (
-                          <Upload className="w-8 h-8 mb-2" style={{ color: theme.textMuted }} />
+                          <Upload className="w-7 h-7 mb-2" style={{ color: theme.textMuted }} />
                         )}
                         <p className="text-xs font-medium" style={{ color: theme.textMuted }}>
-                          {logoUpload.isUploading ? 'Enviando...' : 'Clique para enviar Logo'}
+                          {logoUpload.isUploading ? 'Enviando...' : 'Enviar Logo do Salão'}
                         </p>
-                        <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Mínimo 400×400px</p>
+                        <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Mínimo 400×400px</p>
                         <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                       </label>
                     )}
                   </div>
                 </div>
 
-                {/* Banner Upload */}
+                {/* Banner Capa */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
-                    Banner (Capa do Salão)
+                    Banner (Capa Superior)
                   </label>
                   <div
-                    className="relative h-44 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden group transition-all"
+                    className="relative h-40 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden group transition-all"
                     style={{
                       borderColor: bannerUpload.isUploading ? theme.accent : theme.inputBorder,
                       background: theme.inputBg,
@@ -731,7 +761,7 @@ export default function Configuracoes() {
                     {bannerUrl || bannerUpload.preview ? (
                       <>
                         <img src={bannerUrl || bannerUpload.preview || ''} alt="Banner" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
                           <label className="p-2 rounded-full cursor-pointer" style={{ background: theme.accent, color: theme.textInverse }}>
                             <Upload className="w-4 h-4" />
                             <input type="file" accept="image/*" onChange={handleBannerUpload} className="hidden" />
@@ -744,299 +774,203 @@ export default function Configuracoes() {
                     ) : (
                       <label className="text-center p-4 cursor-pointer w-full h-full flex flex-col items-center justify-center">
                         {bannerUpload.isUploading ? (
-                          <Loader2 className="w-8 h-8 animate-spin mb-2" style={{ color: theme.accent }} />
+                          <Loader2 className="w-7 h-7 animate-spin mb-2" style={{ color: theme.accent }} />
                         ) : (
-                          <Upload className="w-8 h-8 mb-2" style={{ color: theme.textMuted }} />
+                          <Upload className="w-7 h-7 mb-2" style={{ color: theme.textMuted }} />
                         )}
                         <p className="text-xs font-medium" style={{ color: theme.textMuted }}>
-                          {bannerUpload.isUploading ? 'Enviando...' : 'Clique para enviar Capa'}
+                          {bannerUpload.isUploading ? 'Enviando...' : 'Enviar Foto de Capa'}
                         </p>
-                        <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Ideal 1600×600px</p>
+                        <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Ideal 1600×600px</p>
                         <input type="file" accept="image/*" onChange={handleBannerUpload} className="hidden" />
                       </label>
                     )}
                   </div>
-                  <p className="text-[11px] mt-2 text-center" style={{ color: theme.textMuted }}>
-                    Exibido como capa visual no topo da página de agendamento.
-                  </p>
                 </div>
               </div>
 
-              {/* 2. ✨ Estúdio Dinâmico de Extração de Cores da Logo */}
-              <div className="pt-6 border-t" style={{ borderColor: theme.border }}>
-                <div className="p-5 rounded-2xl border" style={{ background: theme.inputBg, borderColor: theme.border }}>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                    <div>
-                      <h4 className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textPrimary }}>
-                        <Wand2 className="w-4 h-4" style={{ color: theme.accent }} />
-                        Motor de Extração Inteligente de Cores
-                      </h4>
-                      <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>
-                        Identifica as cores mais marcantes e vibrantes da sua logo para criar sua identidade exclusiva.
-                      </p>
-                    </div>
+              {/* 2. Cores Inteligentes da Marca (Simples e Direto) */}
+              <div className="p-5 rounded-2xl border space-y-5" style={{ background: theme.inputBg, borderColor: theme.border }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                      <Palette className="w-4 h-4" style={{ color: theme.accent }} />
+                      Cor de Destaque da Marca
+                    </h4>
+                    <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>
+                      Escolha a cor principal para botões, títulos e detalhes do seu salão.
+                    </p>
+                  </div>
 
+                  {(logoUrl || logoUpload.preview) && (
                     <button
+                      type="button"
                       onClick={() => handleMagicExtract()}
-                      disabled={(!logoUrl && !logoUpload.preview) || isExtracting}
-                      className="flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl text-xs font-bold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-md shrink-0"
+                      disabled={isExtracting}
+                      className="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all hover:scale-105"
+                      style={{ borderColor: theme.accent, color: theme.accent, background: `${theme.accent}10` }}
+                    >
+                      {isExtracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                      Re-extrair da Logo
+                    </button>
+                  )}
+                </div>
+
+                {/* Swatches das Cores Detectadas */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {(extractedColors.length > 0 ? extractedColors : ['#C9963B', '#3B82F6', '#10B981', '#EF4444', '#8B5CF6']).map((hex) => {
+                    const isActive = (customPalette?.primary || theme.accent).toUpperCase() === hex.toUpperCase();
+                    return (
+                      <button
+                        key={hex}
+                        type="button"
+                        onClick={() => handleSelectSwatchColor(hex)}
+                        className="group flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all hover:scale-105 shadow-sm"
+                        style={{
+                          background: isActive ? `${hex}20` : theme.bg,
+                          borderColor: isActive ? hex : theme.border,
+                          boxShadow: isActive ? `0 0 16px ${hex}35` : 'none',
+                        }}
+                      >
+                        <span
+                          className="w-5 h-5 rounded-full shadow flex items-center justify-center"
+                          style={{ background: hex }}
+                        >
+                          {isActive && <Check className="w-3 h-3 text-white drop-shadow" />}
+                        </span>
+                        <span className="text-xs font-mono font-bold" style={{ color: theme.textPrimary }}>
+                          {hex}
+                        </span>
+                      </button>
+                    );
+                  })}
+
+                  {/* Custom Color Picker */}
+                  <label className="flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-all hover:scale-105"
+                    style={{ background: theme.bg, borderColor: theme.border }}>
+                    <input
+                      type="color"
+                      value={customPalette?.primary || theme.accent}
+                      onChange={(e) => handleSelectSwatchColor(e.target.value)}
+                      className="w-5 h-5 rounded-full cursor-pointer border-0 p-0 bg-transparent"
+                    />
+                    <span className="text-xs font-bold" style={{ color: theme.textSecondary }}>Personalizar...</span>
+                  </label>
+                </div>
+
+                {/* Seletor de Atmosfera: Noturno vs Claro */}
+                <div className="pt-4 border-t" style={{ borderColor: theme.border }}>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: theme.textSecondary }}>
+                    Atmosfera do Salão (Fundo):
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Modo Noturno */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleBgMode('dark')}
+                      className="flex items-center justify-between p-4 rounded-xl border text-left transition-all hover:scale-[1.01]"
                       style={{
-                        background: theme.accentGradient || theme.accent,
-                        color: theme.btnPrimaryText,
+                        background: bgMode === 'dark' ? '#0F172A' : theme.bg,
+                        borderColor: bgMode === 'dark' ? (customPalette?.primary || theme.accent) : theme.border,
+                        boxShadow: bgMode === 'dark' ? `0 0 18px ${(customPalette?.primary || theme.accent)}30` : 'none',
                       }}
                     >
-                      {isExtracting ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Analisando imagem...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4" />
-                          Extrair Paleta da Logo
-                        </>
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">🌙</span>
+                        <div>
+                          <p className="text-xs font-bold" style={{ color: bgMode === 'dark' ? '#FFFFFF' : theme.textPrimary }}>
+                            Modo Noturno / Escuro
+                          </p>
+                          <p className="text-[11px]" style={{ color: bgMode === 'dark' ? '#94A3B8' : theme.textMuted }}>
+                            Fundo escuro luxuoso com detalhes na sua cor
+                          </p>
+                        </div>
+                      </div>
+                      {bgMode === 'dark' && (
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center shadow" style={{ background: customPalette?.primary || theme.accent }}>
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                    </button>
+
+                    {/* Modo Claro */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleBgMode('light')}
+                      className="flex items-center justify-between p-4 rounded-xl border text-left transition-all hover:scale-[1.01]"
+                      style={{
+                        background: bgMode === 'light' ? '#FFFFFF' : theme.bg,
+                        borderColor: bgMode === 'light' ? (customPalette?.primary || theme.accent) : theme.border,
+                        boxShadow: bgMode === 'light' ? `0 0 18px ${(customPalette?.primary || theme.accent)}30` : 'none',
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">☀️</span>
+                        <div>
+                          <p className="text-xs font-bold" style={{ color: bgMode === 'light' ? '#0F172A' : theme.textPrimary }}>
+                            Modo Claro / Diurno
+                          </p>
+                          <p className="text-[11px]" style={{ color: bgMode === 'light' ? '#64748B' : theme.textMuted }}>
+                            Fundo branco acetinado com detalhes na sua cor
+                          </p>
+                        </div>
+                      </div>
+                      {bgMode === 'light' && (
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center shadow" style={{ background: customPalette?.primary || theme.accent }}>
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
                       )}
                     </button>
                   </div>
+                </div>
 
-                  {/* Amostras das Cores Extraídas da Logo */}
-                  {extractedColors.length > 0 && (
-                    <div className="mt-4 pt-4 border-t" style={{ borderColor: theme.border }}>
-                      <p className="text-xs font-bold uppercase tracking-wider mb-2.5" style={{ color: theme.textSecondary }}>
-                        🎨 Cores Detectadas na sua Logo <span className="font-normal lowercase text-[11px] opacity-80">(clique em qualquer cor para definir como Destaque):</span>
-                      </p>
-                      <div className="flex flex-wrap items-center gap-3">
-                        {extractedColors.map((hex) => {
-                          const isActive = (customPalette?.primary || theme.accent).toUpperCase() === hex.toUpperCase();
-                          return (
-                            <button
-                              key={hex}
-                              type="button"
-                              onClick={() => handleSelectSwatchColor(hex)}
-                              className="group flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all hover:scale-105"
-                              style={{
-                                background: isActive ? `${hex}25` : 'transparent',
-                                borderColor: isActive ? hex : theme.border,
-                                boxShadow: isActive ? `0 0 14px ${hex}40` : 'none',
-                              }}
-                            >
-                              <span
-                                className="w-5 h-5 rounded-full shadow-sm flex items-center justify-center"
-                                style={{ background: hex }}
-                              >
-                                {isActive && <Check className="w-3 h-3 text-white drop-shadow" />}
-                              </span>
-                              <span className="text-xs font-mono font-bold" style={{ color: theme.textPrimary }}>
-                                {hex}
-                              </span>
-                            </button>
-                          );
-                        })}
+                {/* Mini Preview Ao Vivo com Contraste Perfeito */}
+                <div className="pt-4 border-t" style={{ borderColor: theme.border }}>
+                  <p className="text-[11px] font-bold uppercase tracking-wider mb-2.5" style={{ color: theme.textMuted }}>
+                    👁️ Prévia do Design em Tempo Real:
+                  </p>
+                  <div className="p-4 rounded-xl border flex flex-col sm:flex-row items-center justify-between gap-4 transition-all"
+                    style={{
+                      background: bgMode === 'dark' ? '#0B0B0D' : '#FAF9F6',
+                      borderColor: bgMode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                    }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base shadow-sm"
+                        style={{
+                          background: customPalette?.primary || theme.accent,
+                          color: theme.btnPrimaryText,
+                        }}>
+                        {fantasyName ? fantasyName.charAt(0).toUpperCase() : 'N'}
+                      </div>
+                      <div>
+                        <p className="font-serif text-sm font-bold" style={{ color: bgMode === 'dark' ? '#FFFFFF' : '#0F172A' }}>
+                          {fantasyName || 'Nome da sua Barbearia'}
+                        </p>
+                        <p className="text-[11px]" style={{ color: bgMode === 'dark' ? '#94A3B8' : '#64748B' }}>
+                          {slogan || 'O melhor corte e atendimento da cidade'}
+                        </p>
                       </div>
                     </div>
-                  )}
 
-                  {/* Seletor de Atmosfera de Fundo (Noturno vs Claro) */}
-                  <div className="mt-5 pt-4 border-t" style={{ borderColor: theme.border }}>
-                    <p className="text-xs font-bold uppercase tracking-wider mb-2.5" style={{ color: theme.textSecondary }}>
-                      🌓 Atmosfera de Fundo do Salão:
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {/* Modo Noturno */}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleBgMode('dark')}
-                        className="flex items-center justify-between p-3.5 rounded-xl border text-left transition-all hover:scale-[1.01]"
-                        style={{
-                          background: bgMode === 'dark' ? '#0F172A' : theme.bg,
-                          borderColor: bgMode === 'dark' ? theme.accent : theme.border,
-                          boxShadow: bgMode === 'dark' ? `0 0 16px ${theme.accent}25` : 'none',
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">🌙</span>
-                          <div>
-                            <p className="text-xs font-bold" style={{ color: bgMode === 'dark' ? '#FFFFFF' : theme.textPrimary }}>
-                              Modo Noturno / Escuro
-                            </p>
-                            <p className="text-[11px]" style={{ color: bgMode === 'dark' ? '#94A3B8' : theme.textMuted }}>
-                              Fundo escuro luxuoso e letras brancas
-                            </p>
-                          </div>
-                        </div>
-                        {bgMode === 'dark' && (
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: theme.accent }}>
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
-                        )}
-                      </button>
-
-                      {/* Modo Claro */}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleBgMode('light')}
-                        className="flex items-center justify-between p-3.5 rounded-xl border text-left transition-all hover:scale-[1.01]"
-                        style={{
-                          background: bgMode === 'light' ? '#FFFFFF' : theme.bg,
-                          borderColor: bgMode === 'light' ? theme.accent : theme.border,
-                          boxShadow: bgMode === 'light' ? `0 0 16px ${theme.accent}25` : 'none',
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">☀️</span>
-                          <div>
-                            <p className="text-xs font-bold" style={{ color: bgMode === 'light' ? '#0F172A' : theme.textPrimary }}>
-                              Modo Claro / Diurno
-                            </p>
-                            <p className="text-[11px]" style={{ color: bgMode === 'light' ? '#64748B' : theme.textMuted }}>
-                              Fundo branco acetinado e letras escuras
-                            </p>
-                          </div>
-                        </div>
-                        {bgMode === 'light' && (
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: theme.accent }}>
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. Presets de Temas Base */}
-              <div className="pt-6 border-t" style={{ borderColor: theme.border }}>
-                <h4 className="font-bold text-sm mb-1" style={{ color: theme.textPrimary }}>
-                  <Palette className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Estilos Prontos (Presets)
-                </h4>
-                <p className="text-xs mb-4" style={{ color: theme.textSecondary }}>
-                  Ou escolha um dos temas consagrados da plataforma.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {Object.values(THEMES).map(t => {
-                    const isSelected = selectedTheme === t.id && !customPalette;
-                    return (
-                      <div
-                        key={t.id}
-                        onClick={() => handleThemeChange(t.id)}
-                        className="rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-1"
-                        style={{
-                          border: `2px solid ${isSelected ? t.accent : t.border}`,
-                          boxShadow: isSelected ? `0 0 20px ${t.accent}30` : 'none',
-                        }}
-                      >
-                        <div className="relative p-4 flex flex-col justify-end" style={{ background: t.bg, minHeight: '100px' }}>
-                          {isSelected && (
-                            <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: t.accent }}>
-                              <Check className="w-3 h-3" style={{ color: t.textInverse }} />
-                            </div>
-                          )}
-                          <p className="font-serif text-lg font-bold mb-2" style={{ color: t.textPrimary }}>Salão</p>
-                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full w-max" style={{ background: t.accent, color: t.btnPrimaryText }}>
-                            Agendar
-                          </span>
-                        </div>
-                        <div className="p-3" style={{ background: t.bgCard }}>
-                          <p className="font-bold text-sm" style={{ color: t.textPrimary }}>{t.name}</p>
-                          <p className="text-xs mt-0.5" style={{ color: t.accent }}>{t.description}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 4. Paleta Personalizada Detalhada (Ajuste Fino) */}
-              <div className="pt-6 border-t" style={{ borderColor: theme.border }}>
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>
-                      <Sparkles className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" style={{ color: theme.accent }} />
-                      Ajuste Fino de Cores (Manual)
-                    </h4>
-                    <p className="text-xs" style={{ color: theme.textSecondary }}>Edição manual dos valores Hexadecimais se desejar personalizar cada detalhe.</p>
-                  </div>
-                  {customPalette && (
                     <button
                       type="button"
-                      onClick={() => { setCustomPalette(null); setThemeId(selectedTheme); }}
-                      className="text-xs font-bold underline transition-opacity hover:opacity-80"
-                      style={{ color: theme.accent }}
+                      className="px-5 py-2 rounded-xl text-xs font-bold shadow-md transition-transform hover:scale-105 shrink-0"
+                      style={{
+                        background: customPalette?.primary || theme.accent,
+                        color: theme.btnPrimaryText,
+                      }}
                     >
-                      Restaurar padrão
+                      Agendar Horário
                     </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: theme.textSecondary }}>Destaque (Accent)</label>
-                    <div className="flex items-center gap-2 p-2 rounded-xl border" style={{ background: theme.inputBg, borderColor: theme.inputBorder }}>
-                      <input
-                        type="color"
-                        value={customPalette?.primary || theme.accent}
-                        onChange={(e) => {
-                          const p = { ...(customPalette || {}), primary: e.target.value };
-                          setCustomPalette(p);
-                        }}
-                        className="w-7 h-7 rounded-lg cursor-pointer border-0 p-0 bg-transparent"
-                      />
-                      <span className="text-xs font-mono font-medium" style={{ color: theme.textPrimary }}>{customPalette?.primary || theme.accent}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: theme.textSecondary }}>Fundo (Background)</label>
-                    <div className="flex items-center gap-2 p-2 rounded-xl border" style={{ background: theme.inputBg, borderColor: theme.inputBorder }}>
-                      <input
-                        type="color"
-                        value={customPalette?.background || theme.bg}
-                        onChange={(e) => {
-                          const p = { ...(customPalette || {}), background: e.target.value };
-                          setCustomPalette(p);
-                        }}
-                        className="w-7 h-7 rounded-lg cursor-pointer border-0 p-0 bg-transparent"
-                      />
-                      <span className="text-xs font-mono font-medium" style={{ color: theme.textPrimary }}>{customPalette?.background || theme.bg}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: theme.textSecondary }}>Cartões (Cards)</label>
-                    <div className="flex items-center gap-2 p-2 rounded-xl border" style={{ background: theme.inputBg, borderColor: theme.inputBorder }}>
-                      <input
-                        type="color"
-                        value={customPalette?.card || (theme.cardBg.startsWith('#') ? theme.cardBg : '#1A1714')}
-                        onChange={(e) => {
-                          const p = { ...(customPalette || {}), card: e.target.value };
-                          setCustomPalette(p);
-                        }}
-                        className="w-7 h-7 rounded-lg cursor-pointer border-0 p-0 bg-transparent"
-                      />
-                      <span className="text-xs font-mono font-medium" style={{ color: theme.textPrimary }}>{customPalette?.card || 'Padrão'}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: theme.textSecondary }}>Texto Principal</label>
-                    <div className="flex items-center gap-2 p-2 rounded-xl border" style={{ background: theme.inputBg, borderColor: theme.inputBorder }}>
-                      <input
-                        type="color"
-                        value={customPalette?.text || theme.textPrimary}
-                        onChange={(e) => {
-                          const p = { ...(customPalette || {}), text: e.target.value };
-                          setCustomPalette(p);
-                        }}
-                        className="w-7 h-7 rounded-lg cursor-pointer border-0 p-0 bg-transparent"
-                      />
-                      <span className="text-xs font-mono font-medium" style={{ color: theme.textPrimary }}>{customPalette?.text || theme.textPrimary}</span>
-                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* 5. Informações da Marca */}
-              <div className="pt-6 border-t space-y-4" style={{ borderColor: theme.border }}>
-                <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>
-                  <Building2 className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Informações da Marca
+              {/* 3. Informações da Marca */}
+              <div className="p-5 rounded-2xl border space-y-4" style={{ background: theme.inputBg, borderColor: theme.border }}>
+                <h4 className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                  <Building2 className="w-4 h-4" style={{ color: theme.accent }} />
+                  Informações da Marca & Idioma
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

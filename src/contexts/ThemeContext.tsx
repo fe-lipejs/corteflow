@@ -431,16 +431,29 @@ export const ThemeProvider: React.FC<{
     if (!customPalette) return baseTheme;
     
     // Apply dynamic overrides from custom_palette (database)
+    let btnTextColor = baseTheme.btnPrimaryText;
+    if (customPalette.primary) {
+      // Calculate luminance for high contrast text on buttons
+      const hex = customPalette.primary.replace('#', '');
+      const r = parseInt(hex.substring(0, 2), 16) || 201;
+      const g = parseInt(hex.substring(2, 4), 16) || 150;
+      const b = parseInt(hex.substring(4, 6), 16) || 59;
+      const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      btnTextColor = lum > 145 ? '#0F172A' : '#FFFFFF';
+    }
+
     return {
       ...baseTheme,
       ...(customPalette.background && { bg: customPalette.background }),
       ...(customPalette.text && { textPrimary: customPalette.text }),
-      ...(customPalette.card && { cardBg: customPalette.card }),
+      ...(customPalette.card && { cardBg: customPalette.card, bgCard: customPalette.card }),
       ...(customPalette.primary && {
         accent: customPalette.primary,
         btnPrimaryBg: customPalette.primary,
+        btnPrimaryText: btnTextColor,
         borderActive: customPalette.primary,
         calendarActiveBg: customPalette.primary,
+        calendarActiveText: btnTextColor,
       }),
     };
   }, [themeId, customPalette]);

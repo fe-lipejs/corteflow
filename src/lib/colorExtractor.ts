@@ -248,6 +248,16 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
 }
 
 /**
+ * Calcula a cor ideal do texto para botões e fundos (garante contraste AAA)
+ */
+export function getOptimalTextColor(bgColorHex: string): '#FFFFFF' | '#0F172A' {
+  const rgb = hexToRgb(bgColorHex);
+  if (!rgb) return '#FFFFFF';
+  const lum = 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
+  return lum > 145 ? '#0F172A' : '#FFFFFF';
+}
+
+/**
  * Gera paleta completa e profissional baseada na cor de destaque escolhida e no modo (Noturno/Claro)
  */
 export function generatePaletteFromAccent(
@@ -258,6 +268,7 @@ export function generatePaletteFromAccent(
   background: string;
   card: string;
   text: string;
+  btnText: string;
   isDark: boolean;
 } {
   const rgb = hexToRgb(accentHex) || { r: 201, g: 150, b: 59 };
@@ -265,33 +276,36 @@ export function generatePaletteFromAccent(
 
   if (mode === 'dark') {
     // Modo Noturno Premium
-    // Fundo escuro luxuoso com 2% de matiz da cor de destaque
-    const bgHex = hslToHex(hsl.h, 10, 5); // Fundo ultra-escuro elegante (#0B0B0D)
-    const cardHex = hslToHex(hsl.h, 12, 10); // Cartão com leve elevação (#141417)
+    const bgHex = hslToHex(hsl.h, 10, 6); // Fundo ultra-escuro elegante (#0B0B0D)
+    const cardHex = hslToHex(hsl.h, 12, 11); // Cartão refinado com elevação suave (#141418)
 
     // Ajusta o accent para brilhar perfeitamente no fundo escuro
-    const calibratedAccent = hslToHex(hsl.h, Math.max(hsl.s, 60), Math.min(Math.max(hsl.l, 48), 62));
+    const calibratedAccent = hslToHex(hsl.h, Math.max(hsl.s, 60), Math.min(Math.max(hsl.l, 46), 65));
+    const btnText = getOptimalTextColor(calibratedAccent);
 
     return {
       primary: calibratedAccent,
       background: bgHex,
       card: cardHex,
       text: '#FFFFFF',
+      btnText,
       isDark: true,
     };
   } else {
     // Modo Claro / Diurno Luxuoso
-    const bgHex = hslToHex(hsl.h, 15, 97); // Off-white acetinado límpido (#FAF9F7)
+    const bgHex = hslToHex(hsl.h, 15, 97); // Off-white límpido (#FAF9F6)
     const cardHex = '#FFFFFF';
 
     // Accent calibrado para contraste forte no fundo branco
-    const calibratedAccent = hslToHex(hsl.h, Math.max(hsl.s, 70), Math.min(Math.max(hsl.l, 35), 45));
+    const calibratedAccent = hslToHex(hsl.h, Math.max(hsl.s, 70), Math.min(Math.max(hsl.l, 32), 48));
+    const btnText = getOptimalTextColor(calibratedAccent);
 
     return {
       primary: calibratedAccent,
       background: bgHex,
       card: cardHex,
       text: '#0F172A',
+      btnText,
       isDark: false,
     };
   }
@@ -308,6 +322,7 @@ export async function generateSmartPaletteFromLogo(
   background: string;
   card: string;
   text: string;
+  btnText: string;
   isDark: boolean;
   extractedPalette: string[];
 }> {
