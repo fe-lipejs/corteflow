@@ -875,11 +875,11 @@ export default function PublicStore() {
       <div className="flex flex-col lg:flex-row min-h-screen overflow-x-hidden w-full max-w-[100vw]">
 
         {/* ── SIDEBAR (desktop) / HEADER (mobile) ── */}
-        <aside className="relative lg:w-[360px] lg:min-h-screen lg:sticky lg:top-0 lg:self-start border-b lg:border-b-0 lg:border-r overflow-hidden"
+        <aside className="relative lg:w-[360px] lg:h-screen lg:sticky lg:top-0 lg:self-start border-b lg:border-b-0 lg:border-r overflow-y-auto scrollbar-none flex flex-col"
           style={{ background: theme.cardBg, borderColor: theme.cardBorder }}>
 
           {/* Banner com Degradê Suave Contínuo */}
-          <div className="absolute top-0 left-0 right-0 h-[480px] overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-0 left-0 right-0 h-[360px] overflow-hidden pointer-events-none z-0">
             {settings?.banner_url ? (
               <img src={settings.banner_url} alt="" className="w-full h-full object-cover" />
             ) : (
@@ -892,10 +892,10 @@ export default function PublicStore() {
           </div>
 
           {/* Espaçador para visualização da foto de capa */}
-          <div className="h-32 sm:h-36" />
+          <div className="h-28 sm:h-32 shrink-0" />
 
           {/* Informações do Salão sobre o Degradê Suave */}
-          <div className="relative z-10 px-6 pb-6 text-center flex flex-col items-center">
+          <div className="relative z-10 px-6 pb-2 text-center flex flex-col items-center">
             {/* Logo / Avatar com recorte e sombra de destaque */}
             <div className="w-24 h-24 rounded-2xl border-4 overflow-hidden shadow-2xl flex items-center justify-center relative z-10"
               style={{ borderColor: theme.cardBg, background: theme.bg }}>
@@ -907,7 +907,7 @@ export default function PublicStore() {
             </div>
 
             {/* Nome do Salão */}
-            <h1 className="mt-3.5 text-2xl font-bold tracking-tight" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif", textShadow: contrast.titleTextShadow }}>
+            <h1 className="mt-3 text-2xl font-bold tracking-tight" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif", textShadow: contrast.titleTextShadow }}>
               {storeName}
             </h1>
 
@@ -921,13 +921,13 @@ export default function PublicStore() {
             </div>
 
             {/* Slogan / Descrição com contraste evidente e legibilidade perfeita */}
-            <p className="mt-2.5 text-sm font-medium leading-relaxed max-w-[280px]"
+            <p className="mt-2 text-sm font-medium leading-relaxed max-w-[280px]"
               style={{ color: contrast.descriptionColor }}>
               {settings?.slogan || settings?.description || "Agende seu horário com os melhores profissionais."}
             </p>
 
             {/* Redes Sociais e Contatos */}
-            <div className="flex items-center gap-3 mt-4">
+            <div className="flex items-center gap-3 mt-3.5">
               {storeInsta && (
                 <a href={`https://instagram.com/${storeInsta}`} target="_blank" rel="noreferrer"
                   className="w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm"
@@ -952,15 +952,15 @@ export default function PublicStore() {
             </div>
 
             {/* Divider */}
-            <div className="w-full h-px mt-5" style={{ background: theme.cardBorder }} />
+            <div className="w-full h-px mt-4" style={{ background: theme.cardBorder }} />
           </div>
 
           {/* Seção Inferior: Endereço & Horários */}
-          <div className="px-4 sm:px-5 pt-4 space-y-3">
+          <div className="px-4 sm:px-5 pt-3 pb-6 space-y-3 relative z-10">
             {/* Address */}
             {storeAddress && (
               <button onClick={() => { setShowMapModal(true); if (geoStatus === "idle") requestLocation(); }}
-                className="w-full flex items-start gap-3 text-left p-3.5 rounded-2xl transition-colors border"
+                className="w-full flex items-start gap-3 text-left p-3.5 rounded-2xl transition-colors border shadow-sm"
                 style={{ background: `${accent}08`, borderColor: `${accent}20` }}
                 onMouseEnter={e => (e.currentTarget.style.background = `${accent}14`)}
                 onMouseLeave={e => (e.currentTarget.style.background = `${accent}08`)}>
@@ -977,7 +977,7 @@ export default function PublicStore() {
               const today = businessHoursList.find((h: any) => h.weekday === todayWeekday);
               if (!today) return null;
               return (
-                <div className="w-full flex items-center gap-3 mt-3 px-3 py-3 rounded-xl" style={{ background: today.is_open ? `${accent}08` : "rgba(239,68,68,0.06)" }}>
+                <div className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl border" style={{ background: today.is_open ? `${accent}08` : "rgba(239,68,68,0.06)", borderColor: theme.cardBorder }}>
                   <Clock className="w-4 h-4 shrink-0" style={{ color: today.is_open ? accent : "#ef4444" }} />
                   <div>
                     <p className="text-xs font-semibold" style={{ color: today.is_open ? accent : "#ef4444" }}>
@@ -994,7 +994,7 @@ export default function PublicStore() {
             })()}
 
             {/* Portal link */}
-            <a href={`/${slug}/portal`} className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border transition-opacity hover:opacity-80"
+            <a href={`/${slug}/portal`} className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border transition-opacity hover:opacity-80"
               style={{ borderColor: theme.cardBorder, color: theme.textPrimary }}>
               <Calendar className="w-4 h-4" style={{ color: accent }} /> Meus agendamentos
             </a>
