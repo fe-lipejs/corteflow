@@ -50,7 +50,7 @@ const TABS = [
 type TabId = typeof TABS[number]['id'];
 
 export default function Configuracoes() {
-  const { tenant, profile, signOut } = useAuth();
+  const { tenant, profile, signOut, refreshProfile } = useAuth();
   const { i18n } = useTranslation();
   const { theme, setThemeId, themeId, setCustomPalette: setContextCustomPalette } = useTheme();
   const phoneFormat = usePhoneFormat(tenant?.language || 'pt');
@@ -77,6 +77,12 @@ export default function Configuracoes() {
   const [allowLocal, setAllowLocal] = useState(true);
   const [allowDeposit, setAllowDeposit] = useState(true);
   const [allowFull, setAllowFull] = useState(true);
+
+  // Tenant Identity & Custom Slug
+  const [tenantName, setTenantName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [slugStatus, setSlugStatus] = useState<'idle' | 'checking' | 'available' | 'unavailable' | 'invalid'>('idle');
+  const [slugMessage, setSlugMessage] = useState('');
 
   // Branding
   const [fantasyName, setFantasyName] = useState('');
@@ -206,7 +212,9 @@ export default function Configuracoes() {
           setAllowDeposit(true);
           setAllowFull(false);
         }
-        setFantasyName(data.fantasy_name || '');
+        setFantasyName(data.fantasy_name || tenant.name || '');
+        setTenantName(tenant.name || data.fantasy_name || '');
+        setSlug(tenant.slug || '');
         setSlogan(data.slogan || '');
         setDescription(data.description || data.short_description || '');
         setLogoUrl(data.logo_url || '');
@@ -241,6 +249,16 @@ export default function Configuracoes() {
         setCancelFeePercent(data.cancel_fee_percent ?? 0);
         setNoshowFeePercent(data.noshow_fee_percent ?? 0);
         setDelayToleranceMinutes(data.delay_tolerance_minutes ?? 15);
+
+        // Financial Policies
+        setOnlinePaymentEnabled(data.online_payment_enabled ?? true);
+        setPaymentOptions(data.payment_options || 'both');
+        setAllowRefunds(data.allow_refunds ?? true);
+        setRefundPolicy(data.refund_policy || 'full_refund_only');
+        setCreditValidityDays(data.credit_validity_days ?? 90);
+      } else {
+        setTenantName(tenant.name || '');
+        setSlug(tenant.slug || '');
       }
 
       // Load notification settings
@@ -276,6 +294,74 @@ export default function Configuracoes() {
       setInitialLoading(false);
     }
   };
+
+  // ─── Slug Formatter & Real-Time Availability Checker ──────────────────────
+  const formatSlug = (raw: string) => {
+    return raw
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^a-z0-9-]/g, '-')     // Converte caracteres inválidos em hífen
+      .replace(/-+/g, '-')             // Remove hífens duplicados
+      .replace(/^-/, '');              // Não permite hífen no início
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatSlug(e.target.value);
+    setSlug(formatted);
+  };
+
+  useEffect(() => {
+    if (!tenant) return;
+    const cleanSlug = slug.trim();
+    if (!cleanSlug) {
+      setSlugStatus('invalid');
+      setSlugMessage('O link não pode ficar em branco.');
+      return;
+    }
+
+    if (cleanSlug.length < 3) {
+      setSlugStatus('invalid');
+      setSlugMessage('O link deve ter no mínimo 3 caracteres alfanuméricos.');
+      return;
+    }
+
+    if (cleanSlug === tenant.slug) {
+      setSlugStatus('available');
+      setSlugMessage('Este é o link oficial atual do seu salão.');
+      return;
+    }
+
+    setSlugStatus('checking');
+    setSlugMessage('Verificando se o link está disponível...');
+
+    const timer = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('tenants')
+          .select('id')
+          .eq('slug', cleanSlug)
+          .neq('id', tenant.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          setSlugStatus('unavailable');
+          setSlugMessage('Este link já está em uso por outro salão.');
+        } else {
+          setSlugStatus('available');
+          setSlugMessage('Link disponível para uso imediato!');
+        }
+      } catch (err) {
+        console.error('Erro ao verificar disponibilidade do link:', err);
+        setSlugStatus('idle');
+        setSlugMessage('');
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [slug, tenant?.id, tenant?.slug]);
 
   // ─── Handle Image Upload ──────────────────────────────────────────────────
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -411,8 +497,40 @@ export default function Configuracoes() {
     setLoading(true);
 
     try {
-      // Update tenant language
-      await (supabase as any).from('tenants').update({ language }).eq('id', tenant.id);
+      // Validate slug status before saving
+      if (slugStatus === 'unavailable') {
+        alert('O link personalizado escolhido já está em uso por outro salão. Por favor, escolha outro link antes de salvar.');
+        setLoading(false);
+        return;
+      }
+      if (slugStatus === 'invalid') {
+        alert('O link personalizado é inválido. Ele deve ter no mínimo 3 caracteres alfanuméricos.');
+        setLoading(false);
+        return;
+      }
+
+      const cleanSlug = slug.trim() || tenant.slug;
+      const cleanName = tenantName.trim() || fantasyName.trim() || tenant.name;
+
+      // Update tenant name, slug and language
+      const { error: tenantErr } = await (supabase as any)
+        .from('tenants')
+        .update({
+          name: cleanName,
+          slug: cleanSlug,
+          language,
+        })
+        .eq('id', tenant.id);
+
+      if (tenantErr) {
+        if (tenantErr.code === '23505') {
+          alert('Este link já está em uso por outro salão. Por favor, escolha outro link.');
+          setLoading(false);
+          return;
+        }
+        console.error('Erro ao atualizar dados do salão:', tenantErr);
+      }
+
       i18n.changeLanguage(language);
 
       // Fix #2: Serialize individual payment toggles as JSON and validate
@@ -431,7 +549,7 @@ export default function Configuracoes() {
         custom_palette: customPalette || null,
         payment_methods: paymentModeJson,
         deposit_percentage: allowDeposit ? depositPercentage : null,
-        fantasy_name: fantasyName,
+        fantasy_name: cleanName,
         slogan,
         description,
         logo_url: logoUrl,
@@ -515,8 +633,14 @@ export default function Configuracoes() {
       if (tenant?.slug) {
         queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(tenant.slug) });
       }
+      if (cleanSlug) {
+        queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(cleanSlug) });
+      }
       queryClient.invalidateQueries({ queryKey: ['tenant_settings', tenant?.id] });
       queryClient.invalidateQueries({ queryKey: ['tenant_settings'] });
+
+      // Refresh auth tenant data
+      await refreshProfile?.();
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -618,36 +742,125 @@ export default function Configuracoes() {
         </h1>
       </div>
 
-      {/* Public Link Card */}
-      <div className="glass-card p-6">
-        <h2 className="font-bold text-lg mb-1" style={{ color: theme.textPrimary }}>
-          <LinkIcon className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-          Sua página pública
-        </h2>
-        <p className="text-sm mb-5" style={{ color: theme.textSecondary }}>Compartilhe este link com seus clientes.</p>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div
-            className="flex-1 flex items-center rounded-xl px-4 py-3 text-sm"
-            style={{ background: theme.inputBg, color: theme.textSecondary, border: `1px solid ${theme.inputBorder}` }}
-          >
-            <LinkIcon className="w-4 h-4 mr-2 flex-shrink-0" style={{ color: theme.accent }} />
-            {publicUrl}
+      {/* ── Identidade & Link da Barbearia ── */}
+      <div className="glass-card p-6 rounded-2xl border space-y-5" style={{ borderColor: theme.border }}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b" style={{ borderColor: theme.cardBorder }}>
+          <div>
+            <h2 className="font-bold text-lg flex items-center gap-2" style={{ color: theme.textPrimary }}>
+              <Building2 className="w-5 h-5" style={{ color: theme.accent }} />
+              Identidade & Link da sua Barbearia
+            </h2>
+            <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>
+              Personalize o nome do seu estabelecimento e a URL exclusiva compartilhada com seus clientes.
+            </p>
           </div>
-          <button
-            onClick={() => { navigator.clipboard.writeText(publicUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-            className="flex justify-center items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all"
-            style={{ background: theme.inputBg, color: copied ? theme.success : theme.textSecondary, border: `1px solid ${theme.inputBorder}` }}
-          >
-            {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            {copied ? 'Copiado!' : 'Copiar'}
-          </button>
-          <button
-            onClick={() => window.open(`/${tenant?.slug}`, '_blank')}
-            className="flex justify-center items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-all"
-            style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
-          >
-            <ExternalLink className="w-4 h-4" /> Ver página
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const currentFullUrl = `navalha.app/${slug || tenant?.slug || ''}`;
+                navigator.clipboard.writeText(currentFullUrl);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all border"
+              style={{ background: theme.inputBg, color: copied ? theme.success : theme.textSecondary, borderColor: theme.border }}
+              title="Copiar link da página"
+            >
+              {copied ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Copiado!' : 'Copiar Link'}
+            </button>
+            <button
+              onClick={() => window.open(`/${slug || tenant?.slug}`, '_blank')}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm"
+              style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Ver Página
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Campo 1: Nome da Barbearia */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold flex items-center justify-between" style={{ color: theme.textPrimary }}>
+              <span>Nome do Estabelecimento</span>
+              <span className="text-[10px] font-normal" style={{ color: theme.textSecondary }}>Aparece no topo e na agenda</span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={tenantName}
+                onChange={(e) => {
+                  setTenantName(e.target.value);
+                  setFantasyName(e.target.value);
+                }}
+                placeholder="Ex: Barbearia Raffros Maria"
+                className="w-full px-4 py-2.5 rounded-xl text-sm font-medium border themed-input focus:outline-none"
+                style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textPrimary }}
+              />
+            </div>
+          </div>
+
+          {/* Campo 2: Slug / Link Personalizado com Verificação em Tempo Real */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold" style={{ color: theme.textPrimary }}>
+                Link Exclusivo (URL)
+              </label>
+              {/* Status Badge em Tempo Real */}
+              <div className="flex items-center gap-1 text-[11px] font-semibold">
+                {slugStatus === 'checking' && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border text-amber-500 bg-amber-500/10 border-amber-500/20">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Verificando...
+                  </span>
+                )}
+                {slugStatus === 'available' && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border text-emerald-500 bg-emerald-500/10 border-emerald-500/20">
+                    <CheckCircle2 className="w-3 h-3" /> Disponível!
+                  </span>
+                )}
+                {slugStatus === 'unavailable' && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border text-rose-500 bg-rose-500/10 border-rose-500/20">
+                    <AlertCircle className="w-3 h-3" /> Já em uso!
+                  </span>
+                )}
+                {slugStatus === 'invalid' && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border text-amber-400 bg-amber-400/10 border-amber-400/20">
+                    <AlertCircle className="w-3 h-3" /> Mín. 3 letras
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Input com Prefixo navalha.app/ */}
+            <div className="flex items-center rounded-xl border overflow-hidden transition-all focus-within:ring-2 focus-within:ring-[var(--theme-accent)]"
+              style={{
+                background: theme.inputBg,
+                borderColor: slugStatus === 'unavailable' ? '#f43f5e' : slugStatus === 'available' ? '#10b981' : theme.border
+              }}>
+              <span className="px-3.5 py-2.5 text-xs font-bold select-none border-r shrink-0 flex items-center gap-1"
+                style={{ background: theme.bgHover, borderColor: theme.border, color: theme.textSecondary }}>
+                <LinkIcon className="w-3.5 h-3.5" style={{ color: theme.accent }} />
+                navalha.app/
+              </span>
+              <input
+                type="text"
+                value={slug}
+                onChange={handleSlugChange}
+                placeholder="seu-link"
+                className="w-full px-3 py-2.5 text-sm font-bold bg-transparent border-0 focus:outline-none"
+                style={{ color: theme.textPrimary }}
+              />
+            </div>
+            {slugMessage && (
+              <p className="text-[11px] font-medium"
+                style={{
+                  color: slugStatus === 'unavailable' ? '#f43f5e' : slugStatus === 'available' ? '#10b981' : theme.textSecondary
+                }}>
+                {slugMessage}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
