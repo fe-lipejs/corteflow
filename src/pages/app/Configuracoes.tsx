@@ -320,17 +320,30 @@ export default function Configuracoes() {
   const handleToggleBgMode = (newMode: 'dark' | 'light') => {
     setBgMode(newMode);
     const activeAccent = customPalette?.primary || theme.accent;
-    if (logoUrl || logoUpload.preview) {
-      handleMagicExtract(undefined, newMode, activeAccent);
-    } else {
-      setSelectedTheme(newMode === 'light' ? 'elegant' : 'classic');
-      setThemeId(newMode === 'light' ? 'elegant' : 'classic');
-    }
+    const generated = generatePaletteFromAccent(activeAccent, newMode);
+    const newPalette = {
+      primary: activeAccent,
+      background: generated.background,
+      card: generated.card,
+      text: generated.text,
+    };
+    setCustomPalette(newPalette);
+    setSelectedTheme(newMode === 'light' ? 'elegant' : 'classic');
+    setThemeId(newMode === 'light' ? 'elegant' : 'classic');
   };
 
   // Select a specific color from extracted palette swatches
   const handleSelectSwatchColor = (swatchHex: string) => {
-    handleMagicExtract(undefined, bgMode, swatchHex);
+    const generated = generatePaletteFromAccent(swatchHex, bgMode);
+    const newPalette = {
+      primary: swatchHex,
+      background: generated.background,
+      card: generated.card,
+      text: generated.text,
+    };
+    setCustomPalette(newPalette);
+    setSelectedTheme(bgMode === 'light' ? 'elegant' : 'classic');
+    setThemeId(bgMode === 'light' ? 'elegant' : 'classic');
   };
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

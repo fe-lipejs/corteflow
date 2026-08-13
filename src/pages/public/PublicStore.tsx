@@ -205,26 +205,60 @@ export default function PublicStore() {
 
   // Theme directly computed from database settings for immediate accuracy
   const theme = useMemo(() => {
-    if (settings?.theme_preset) {
-      const base = getThemeById(settings.theme_preset);
-      if (settings?.custom_palette) {
-        return {
-          ...base,
-          ...(settings.custom_palette.background && { bg: settings.custom_palette.background }),
-          ...(settings.custom_palette.text && { textPrimary: settings.custom_palette.text }),
-          ...(settings.custom_palette.card && { cardBg: settings.custom_palette.card }),
-          ...(settings.custom_palette.primary && {
-            accent: settings.custom_palette.primary,
-            btnPrimaryBg: settings.custom_palette.primary,
-            borderActive: settings.custom_palette.primary,
-            calendarActiveBg: settings.custom_palette.primary,
-          }),
-        };
-      }
-      return base;
+    const presetId = settings?.theme_preset || 'classic';
+    const base = getThemeById(presetId);
+    if (!settings?.custom_palette) return base;
+
+    const palette = settings.custom_palette;
+    let btnTextColor = base.btnPrimaryText;
+    if (palette.primary) {
+      const hex = palette.primary.replace('#', '');
+      const r = parseInt(hex.substring(0, 2), 16) || 201;
+      const g = parseInt(hex.substring(2, 4), 16) || 150;
+      const b = parseInt(hex.substring(4, 6), 16) || 59;
+      const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      btnTextColor = lum > 145 ? '#0F172A' : '#FFFFFF';
     }
-    return contextTheme;
-  }, [settings?.theme_preset, settings?.custom_palette, contextTheme]);
+
+    const bgHex = (palette.background || base.bg).replace('#', '');
+    const bgR = parseInt(bgHex.substring(0, 2), 16) || 14;
+    const bgG = parseInt(bgHex.substring(2, 4), 16) || 16;
+    const bgB = parseInt(bgHex.substring(4, 6), 16) || 19;
+    const bgLum = 0.2126 * bgR + 0.7152 * bgG + 0.0722 * bgB;
+    const isDarkBg = bgLum < 135;
+
+    const dynamicBorder = isDarkBg ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)';
+    const dynamicTextSecondary = isDarkBg ? '#94A3B8' : '#64748B';
+    const dynamicTextMuted = isDarkBg ? '#64748B' : '#94A3B8';
+
+    return {
+      ...base,
+      ...(palette.background && { bg: palette.background }),
+      ...(palette.text && { textPrimary: palette.text }),
+      textSecondary: dynamicTextSecondary,
+      textMuted: dynamicTextMuted,
+      border: dynamicBorder,
+      cardBorder: dynamicBorder,
+      inputBorder: dynamicBorder,
+      ...(palette.card && {
+        cardBg: palette.card,
+        bgCard: palette.card,
+        bgSidebar: palette.card,
+        sidebarBg: palette.card,
+        inputBg: isDarkBg ? '#121417' : '#FFFFFF',
+        bgInput: isDarkBg ? '#121417' : '#FFFFFF',
+      }),
+      ...(palette.primary && {
+        accent: palette.primary,
+        btnPrimaryBg: palette.primary,
+        btnPrimaryText: btnTextColor,
+        borderActive: palette.primary,
+        inputFocusBorder: palette.primary,
+        calendarActiveBg: palette.primary,
+        calendarActiveText: btnTextColor,
+      }),
+    };
+  }, [settings?.theme_preset, settings?.custom_palette]);
 
   useEffect(() => {
     if (settings?.theme_preset) setThemeId(settings.theme_preset);

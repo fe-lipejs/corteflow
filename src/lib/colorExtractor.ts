@@ -271,40 +271,27 @@ export function generatePaletteFromAccent(
   btnText: string;
   isDark: boolean;
 } {
-  const rgb = hexToRgb(accentHex) || { r: 201, g: 150, b: 59 };
-  const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  const cleanHex = accentHex.startsWith('#') ? accentHex : `#${accentHex}`;
+  const btnText = getOptimalTextColor(cleanHex);
 
   if (mode === 'dark') {
-    // Modo Noturno Premium
-    const bgHex = hslToHex(hsl.h, 10, 6); // Fundo ultra-escuro elegante (#0B0B0D)
-    const cardHex = hslToHex(hsl.h, 12, 11); // Cartão refinado com elevação suave (#141418)
-
-    // Ajusta o accent para brilhar perfeitamente no fundo escuro
-    const calibratedAccent = hslToHex(hsl.h, Math.max(hsl.s, 60), Math.min(Math.max(hsl.l, 46), 65));
-    const btnText = getOptimalTextColor(calibratedAccent);
-
+    // Modo Noturno / Chumbo Moderno Luxuoso
+    // Fundo Chumbo Grafite profundo e cartões com acabamento slate elevado
     return {
-      primary: calibratedAccent,
-      background: bgHex,
-      card: cardHex,
-      text: '#FFFFFF',
+      primary: cleanHex,
+      background: '#0E1013', // Chumbo grafite escuro absoluto
+      card: '#181A1E',       // Cartão chumbo elevado com alto contraste
+      text: '#FFFFFF',       // Branco límpido
       btnText,
       isDark: true,
     };
   } else {
     // Modo Claro / Diurno Luxuoso
-    const bgHex = hslToHex(hsl.h, 15, 97); // Off-white límpido (#FAF9F6)
-    const cardHex = '#FFFFFF';
-
-    // Accent calibrado para contraste forte no fundo branco
-    const calibratedAccent = hslToHex(hsl.h, Math.max(hsl.s, 70), Math.min(Math.max(hsl.l, 32), 48));
-    const btnText = getOptimalTextColor(calibratedAccent);
-
     return {
-      primary: calibratedAccent,
-      background: bgHex,
-      card: cardHex,
-      text: '#0F172A',
+      primary: cleanHex,
+      background: '#F4F5F7', // Cinza gelo suave e limpo
+      card: '#FFFFFF',       // Cartão branco puro
+      text: '#0F172A',       // Slate-900 escuro e nítido
       btnText,
       isDark: false,
     };

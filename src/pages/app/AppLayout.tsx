@@ -16,7 +16,7 @@ import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 export default function AppLayout() {
   const { signOut, tenant, profile, loading } = useAuth();
   const { i18n } = useTranslation();
-  const { theme, setThemeId } = useTheme();
+  const { theme, setThemeId, setCustomPalette } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -39,10 +39,12 @@ export default function AppLayout() {
           if (data) {
             setTenantSettings(data);
             if (data.theme_preset) setThemeId(data.theme_preset);
+            if (data.custom_palette) setCustomPalette(data.custom_palette);
+            else setCustomPalette(undefined);
           }
         });
     }
-  }, [tenant?.id, setThemeId]);
+  }, [tenant?.id, setThemeId, setCustomPalette]);
 
   useEffect(() => {
     if (tenant?.language && i18n.language !== tenant.language) {

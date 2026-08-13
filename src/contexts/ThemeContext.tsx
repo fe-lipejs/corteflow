@@ -429,7 +429,7 @@ export const ThemeProvider: React.FC<{
   const theme = useMemo(() => {
     const baseTheme = THEMES[themeId] || THEME_CLASSIC;
     if (!customPalette) return baseTheme;
-    
+
     // Apply dynamic overrides from custom_palette (database)
     let btnTextColor = baseTheme.btnPrimaryText;
     if (customPalette.primary) {
@@ -442,18 +442,45 @@ export const ThemeProvider: React.FC<{
       btnTextColor = lum > 145 ? '#0F172A' : '#FFFFFF';
     }
 
+    // Determine if background is dark or light
+    const bgHex = (customPalette.background || baseTheme.bg).replace('#', '');
+    const bgR = parseInt(bgHex.substring(0, 2), 16) || 14;
+    const bgG = parseInt(bgHex.substring(2, 4), 16) || 16;
+    const bgB = parseInt(bgHex.substring(4, 6), 16) || 19;
+    const bgLum = 0.2126 * bgR + 0.7152 * bgG + 0.0722 * bgB;
+    const isDarkBg = bgLum < 135;
+
+    const dynamicBorder = isDarkBg ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)';
+    const dynamicTextSecondary = isDarkBg ? '#94A3B8' : '#64748B';
+    const dynamicTextMuted = isDarkBg ? '#64748B' : '#94A3B8';
+
     return {
       ...baseTheme,
       ...(customPalette.background && { bg: customPalette.background }),
       ...(customPalette.text && { textPrimary: customPalette.text }),
-      ...(customPalette.card && { cardBg: customPalette.card, bgCard: customPalette.card }),
+      textSecondary: dynamicTextSecondary,
+      textMuted: dynamicTextMuted,
+      border: dynamicBorder,
+      cardBorder: dynamicBorder,
+      inputBorder: dynamicBorder,
+      ...(customPalette.card && {
+        cardBg: customPalette.card,
+        bgCard: customPalette.card,
+        bgSidebar: customPalette.card,
+        sidebarBg: customPalette.card,
+        inputBg: isDarkBg ? '#121417' : '#FFFFFF',
+        bgInput: isDarkBg ? '#121417' : '#FFFFFF',
+      }),
       ...(customPalette.primary && {
         accent: customPalette.primary,
         btnPrimaryBg: customPalette.primary,
         btnPrimaryText: btnTextColor,
         borderActive: customPalette.primary,
+        inputFocusBorder: customPalette.primary,
         calendarActiveBg: customPalette.primary,
         calendarActiveText: btnTextColor,
+        sidebarActiveItemBg: `${customPalette.primary}20`,
+        sidebarActiveItemText: customPalette.primary,
       }),
     };
   }, [themeId, customPalette]);
