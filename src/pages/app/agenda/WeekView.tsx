@@ -2,10 +2,10 @@ import { useMemo, useRef, useEffect } from 'react';
 import { format, addDays, startOfWeek, isSameDay, isToday, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { BOOKING_STATUS_CONFIG, type Booking } from '../../../hooks/useBookings';
-import { Clock, User } from 'lucide-react';
+import { Clock, User, Scissors, DollarSign } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 
-const HOUR_HEIGHT = 80;
+const HOUR_HEIGHT = 88;
 const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
 
 interface Props {
@@ -102,7 +102,8 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
       const start = new Date(b.scheduled_at);
       const startMinutes = (start.getHours() - START_HOUR) * 60 + start.getMinutes();
       const top = (startMinutes / 60) * HOUR_HEIGHT;
-      const height = Math.max((b.duration_minutes / 60) * HOUR_HEIGHT - 4, 32);
+      const duration = b.duration_minutes || 30;
+      const height = Math.max((duration / 60) * HOUR_HEIGHT - 4, 48);
       return { booking: b, top, bottom: top + height, height };
     });
 
@@ -165,41 +166,48 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0" style={{ background: theme.bgInput }}>
-      {/* Day headers */}
-      <div className="flex border-b shrink-0 relative z-20 shadow-md" style={{ borderColor: theme.border, background: theme.bgCard }}>
-        <div className="w-20 shrink-0 border-r flex items-center justify-center" style={{ borderColor: theme.border }}>
-          <Clock className="w-4 h-4" style={{ color: theme.textSecondary }} />
+    <div className="flex flex-col h-full min-h-0 rounded-2xl border overflow-hidden shadow-2xl" style={{ background: theme.bg, borderColor: theme.border }}>
+      {/* ── Day Headers ── */}
+      <div className="flex border-b shrink-0 relative z-20" style={{ borderColor: theme.border, background: theme.cardBg }}>
+        {/* Time column header */}
+        <div className="w-20 shrink-0 border-r flex flex-col items-center justify-center py-3" style={{ borderColor: theme.border }}>
+          <Clock className="w-4 h-4 opacity-50" style={{ color: theme.textSecondary }} />
+          <span className="text-[10px] font-bold uppercase tracking-wider mt-1 opacity-50" style={{ color: theme.textSecondary }}>Hora</span>
         </div>
+
+        {/* Day columns headers */}
         {days.map((day) => {
           const today = isToday(day);
-          const dayCount = filteredBookings.filter(b => isSameDay(new Date(b.scheduled_at), day)).length;
+          const dayBookings = filteredBookings.filter(b => isSameDay(new Date(b.scheduled_at), day));
+          const dayCount = dayBookings.length;
+          const dayHours = businessHours.find((h: any) => h.weekday === day.getDay());
+          const isClosed = dayHours && !dayHours.is_open;
 
           return (
             <div 
               key={day.toISOString()} 
-              className="flex-1 py-3 px-2 flex flex-col items-center border-r last:border-r-0 transition-colors"
+              className="flex-1 py-3.5 px-2 flex flex-col items-center justify-center border-r last:border-r-0 transition-all relative"
               style={{ 
                 borderColor: theme.border,
-                background: today ? `${theme.accent}10` : 'transparent',
-                opacity: businessHours.find((h: any) => h.weekday === day.getDay())?.is_open === false ? 0.5 : 1
+                background: today ? `${theme.accent}12` : 'transparent',
+                opacity: isClosed ? 0.45 : 1
               }}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold uppercase tracking-wider" style={{ color: today ? theme.accent : theme.textSecondary }}>
-                  {format(day, 'EEEE', { locale: ptBR })}
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: today ? theme.accent : theme.textSecondary }}>
+                  {format(day, 'EEE', { locale: ptBR })}
                 </span>
                 {dayCount > 0 && (
-                  <span className="px-1.5 py-0.2 text-[9px] font-bold rounded-full text-white" style={{ background: theme.accent }}>
+                  <span className="px-1.5 py-0.2 text-[10px] font-extrabold rounded-full" style={{ background: theme.accent, color: theme.btnPrimaryText }}>
                     {dayCount}
                   </span>
                 )}
               </div>
 
               <div 
-                className="w-9 h-9 flex items-center justify-center rounded-2xl text-base font-serif font-bold transition-all"
+                className="w-10 h-10 flex items-center justify-center rounded-2xl text-base font-bold transition-all shadow-sm"
                 style={{
-                  background: today ? theme.accentGradient : 'transparent',
+                  background: today ? theme.accentGradient : theme.inputBg,
                   color: today ? theme.btnPrimaryText : theme.textPrimary,
                   border: today ? 'none' : `1px solid ${theme.border}`,
                   boxShadow: today ? theme.shadowAccent : 'none'
@@ -212,19 +220,19 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
         })}
       </div>
 
-      {/* Time grid container */}
+      {/* ── Time Grid Container ── */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth">
         <div className="flex min-h-full">
           
           {/* Left Hour labels column */}
-          <div className="w-20 shrink-0 border-r sticky left-0 z-30 select-none" style={{ borderColor: theme.border, background: theme.bgInput }}>
+          <div className="w-20 shrink-0 border-r sticky left-0 z-30 select-none" style={{ borderColor: theme.border, background: theme.cardBg }}>
             {HOURS.map(h => (
               <div 
                 key={h} 
                 className="relative border-b text-xs font-semibold flex items-start pt-2 pr-3 justify-end" 
-                style={{ height: `${HOUR_HEIGHT}px`, borderColor: `${theme.border}80`, color: theme.textSecondary }}
+                style={{ height: `${HOUR_HEIGHT}px`, borderColor: `${theme.border}40`, color: theme.textSecondary }}
               >
-                <span>{String(h).padStart(2, '0')}:00</span>
+                <span className="text-[11px] font-mono tracking-tight font-medium opacity-80">{String(h).padStart(2, '0')}:00</span>
               </div>
             ))}
           </div>
@@ -239,7 +247,10 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
                 className="absolute left-0 right-0 z-40 pointer-events-none flex items-center" 
                 style={{ top: `${nowTop}px` }}
               >
-                <div className="w-full h-[2px] bg-gradient-to-r from-red-500 via-red-500/80 to-red-500/20 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                <div className="w-full h-[2px] bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.9)]" />
+                <span className="absolute left-2 -top-3 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-red-500 text-white shadow">
+                  Agora {format(now, 'HH:mm')}
+                </span>
               </div>
             )}
 
@@ -247,14 +258,17 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
             {days.map(day => {
               const positionedBookings = getPositionedBookingsForDay(day);
               const today = isToday(day);
-              const dayHours = businessHours.find((bh: any) => bh.weekday === day.getDay());
+              const dayHours = businessHours.find((h: any) => h.weekday === day.getDay());
               const isClosed = dayHours && !dayHours.is_open;
 
               return (
                 <div 
                   key={day.toISOString()} 
-                  className="flex-1 relative border-r last:border-r-0"
-                  style={{ borderColor: theme.border, background: isClosed ? 'var(--theme-bg-hover)' : (today ? `${theme.accent}05` : 'transparent') }}
+                  className="flex-1 relative border-r last:border-r-0 transition-colors"
+                  style={{
+                    borderColor: `${theme.border}40`,
+                    background: isClosed ? 'rgba(0,0,0,0.2)' : (today ? `${theme.accent}05` : 'transparent')
+                  }}
                 >
                   {/* Hour grid cells */}
                   {HOURS.map(h => {
@@ -267,98 +281,87 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
                       <div 
                         key={h} 
                         onClick={() => { if (!isUnavailable) onSlotClick(day, h); }}
-                        className={`h-[${HOUR_HEIGHT}px] border-b transition-colors group relative ${!isUnavailable ? 'cursor-pointer hover:bg-white/5' : ''}`}
-                        style={{ borderColor: theme.border, height: `${HOUR_HEIGHT}px` }}
+                        className={`border-b transition-colors group relative flex flex-col justify-between ${!isUnavailable ? 'cursor-pointer hover:bg-white/5' : ''}`}
+                        style={{ borderColor: `${theme.border}40`, height: `${HOUR_HEIGHT}px` }}
                       >
+                        {/* Hover Quick Action Indicator */}
                         {!isUnavailable && (
-                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity" style={{ background: theme.accentGradient }}>
-                            <span className="text-[10px] font-bold text-white tracking-widest">+ {h.toString().padStart(2, '0')}:00</span>
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all backdrop-blur-[2px]" style={{ background: `${theme.accent}15` }}>
+                            <span className="text-[11px] font-bold px-3 py-1 rounded-full shadow-lg" style={{ background: theme.accent, color: theme.btnPrimaryText }}>
+                              + Agendar {h.toString().padStart(2, '0')}:00
+                            </span>
                           </div>
                         )}
 
-                      {/* Half-hour dashed divider */}
-                      <div className="h-px border-b border-dashed mt-10 mx-2" style={{ borderColor: `${theme.border}50` }} />
-                    </div>
+                        {/* Subtle 30-min divider line */}
+                        <div className="w-full h-px mt-auto mb-auto" style={{ background: `${theme.border}25` }} />
+                      </div>
                     );
                   })}
 
-                  {/* Red dot on Today's column only */}
-                  {today && showNowLine && (
-                    <div 
-                      className="absolute left-2 z-50 pointer-events-none -mt-1.5" 
-                      style={{ top: `${nowTop}px` }}
-                    >
-                      <span className="relative flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2" style={{ borderColor: theme.bgInput }}></span>
-                      </span>
-                    </div>
-                  )}
-
                   {/* Render Bookings */}
                   {positionedBookings.map(({ booking: b, top, height, leftPercent, widthPercent }) => {
-                    const statusCfg = BOOKING_STATUS_CONFIG[b.status];
-                    const accent = b.pro_color || theme.accent;
+                    const statusCfg = BOOKING_STATUS_CONFIG[b.status] || { label: 'Agendado', bg: 'rgba(201,150,59,0.15)', color: theme.accent };
+                    const proAccent = b.professional?.agenda_color || b.service?.color || theme.accent;
                     const start = new Date(b.scheduled_at);
-                    const end = addMinutes(start, b.duration_minutes);
-                    const isVeryShort = b.duration_minutes <= 25;
+                    const end = addMinutes(start, b.duration_minutes || 30);
+                    const isCompact = height < 60;
 
                     return (
                       <div
                         key={b.id}
                         onClick={e => { e.stopPropagation(); onBookingClick(b); }}
-                        className="absolute rounded-xl cursor-pointer shadow-md hover:shadow-2xl hover:z-50 hover:-translate-y-0.5 transition-all group overflow-hidden border"
+                        className="absolute rounded-xl cursor-pointer shadow-lg hover:shadow-2xl hover:z-50 hover:scale-[1.01] transition-all group overflow-hidden border flex flex-col"
                         style={{
                           top: `${top}px`,
                           height: `${height}px`,
                           left: `calc(${leftPercent}% + 3px)`,
                           width: `calc(${widthPercent}% - 6px)`,
-                          background: `linear-gradient(135deg, ${accent}30, ${accent}15)`,
-                          borderColor: `${accent}50`,
-                          borderLeft: `4px solid ${accent}`,
+                          background: theme.cardBg,
+                          borderColor: `${proAccent}50`,
+                          borderLeft: `4px solid ${proAccent}`,
+                          backdropFilter: 'blur(8px)',
                         }}
                       >
-                        <div className="p-2 h-full flex flex-col justify-between min-w-0">
-                          {/* Top Row: Name & Status */}
+                        <div className="p-2.5 h-full flex flex-col justify-between min-w-0">
+                          {/* Top Header: Customer Name & Status Badge */}
                           <div className="min-w-0">
-                            <div className="flex items-center justify-between gap-1">
-                              <p className="text-xs font-bold truncate transition-colors leading-tight" style={{ color: theme.textPrimary }}>
+                            <div className="flex items-center justify-between gap-1 mb-0.5">
+                              <p className="text-xs font-extrabold truncate leading-tight" style={{ color: theme.textPrimary }}>
                                 {b.customer?.name ?? 'Cliente'}
                               </p>
                               
-                              {!isVeryShort && widthPercent > 40 && (
-                                <span 
-                                  className="shrink-0 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider" 
-                                  style={{ background: statusCfg.bg, color: statusCfg.color }}
-                                >
-                                  {statusCfg.label}
-                                </span>
-                              )}
+                              <span 
+                                className="shrink-0 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider" 
+                                style={{ background: statusCfg.bg, color: statusCfg.color }}
+                              >
+                                {statusCfg.label}
+                              </span>
                             </div>
 
-                            <p className="text-[10px] truncate mt-0.5 font-medium" style={{ color: theme.textSecondary }}>
-                              {b.service?.name}
+                            {/* Service Title */}
+                            <p className="text-[11px] font-semibold truncate flex items-center gap-1" style={{ color: proAccent }}>
+                              <Scissors className="w-3 h-3 shrink-0 opacity-70" />
+                              {b.service?.name || 'Serviço'}
                             </p>
                           </div>
 
                           {/* Bottom Row: Time, Professional & Price */}
-                          {!isVeryShort && height >= 45 && (
-                            <div className="flex items-center justify-between text-[10px] pt-1.5 border-t mt-auto min-w-0" style={{ borderColor: `${theme.textPrimary}20` }}>
-                              <span className="font-semibold" style={{ color: theme.textPrimary }}>
+                          {!isCompact && (
+                            <div className="flex items-center justify-between text-[10px] pt-1.5 border-t mt-auto min-w-0" style={{ borderColor: theme.border }}>
+                              <span className="font-semibold flex items-center gap-1" style={{ color: theme.textSecondary }}>
+                                <Clock className="w-3 h-3 shrink-0" />
                                 {format(start, 'HH:mm')} - {format(end, 'HH:mm')}
                               </span>
 
-                              {widthPercent > 45 && (
-                                <div className="flex items-center gap-1 min-w-0">
-                                  <User className="w-3 h-3 shrink-0" style={{ color: theme.textSecondary }} />
-                                  <span className="font-medium truncate max-w-[70px]" style={{ color: theme.textSecondary }}>
-                                    {b.professional?.name?.split(' ')[0]}
-                                  </span>
-                                </div>
+                              {b.professional?.name && widthPercent > 40 && (
+                                <span className="font-medium truncate max-w-[80px]" style={{ color: theme.textSecondary }}>
+                                  {b.professional.name.split(' ')[0]}
+                                </span>
                               )}
 
-                              <span className="font-bold shrink-0" style={{ color: accent }}>
-                                {fmt.format(b.amount_total)}
+                              <span className="font-bold shrink-0 text-xs" style={{ color: theme.textPrimary }}>
+                                {fmt.format(b.amount_total || 0)}
                               </span>
                             </div>
                           )}
