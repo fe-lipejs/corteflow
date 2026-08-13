@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Edit2, Trash2, CheckCircle, Ban, CreditCard,
-  X, Save, Users, Package, Clock
+  X, Save, Users, Package, Clock, Lock, Unlock,
+  LayoutDashboard, Calendar, Scissors, DollarSign, BarChart3
 } from 'lucide-react';
 import AdminPageHeader from './components/AdminPageHeader';
 import AdminEmptyState from './components/AdminEmptyState';
@@ -20,6 +21,37 @@ type Plan = Database['public']['Tables']['plans']['Row'] & {
   }>;
 };
 
+// Feature flags that can be toggled per plan
+interface FeatureFlags {
+  agenda: boolean;
+  clientes: boolean;
+  equipe: boolean;
+  servicos: boolean;
+  financeiro: boolean;
+  relatorios: boolean;
+  produtos: boolean;
+}
+
+const DEFAULT_FLAGS: FeatureFlags = {
+  agenda: true,
+  clientes: true,
+  equipe: true,
+  servicos: true,
+  financeiro: false,
+  relatorios: false,
+  produtos: false,
+};
+
+const FEATURE_META: { key: keyof FeatureFlags; label: string; icon: React.ElementType; description: string }[] = [
+  { key: 'agenda', label: 'Agenda', icon: Calendar, description: 'Visualização e gestão de agendamentos' },
+  { key: 'clientes', label: 'Clientes', icon: Users, description: 'Lista e ficha de clientes' },
+  { key: 'equipe', label: 'Equipe', icon: Users, description: 'Cadastro de profissionais' },
+  { key: 'servicos', label: 'Serviços', icon: Scissors, description: 'Catálogo de serviços' },
+  { key: 'financeiro', label: 'Financeiro', icon: DollarSign, description: 'Fluxo de caixa e relatórios financeiros' },
+  { key: 'relatorios', label: 'Relatórios', icon: BarChart3, description: 'Dashboards e métricas avançadas' },
+  { key: 'produtos', label: 'Produtos', icon: Package, description: 'Venda e gestão de estoque' },
+];
+
 interface PlanFormData {
   name: string;
   key: string;
@@ -28,8 +60,8 @@ interface PlanFormData {
   allow_products: boolean;
   trial_days: number;
   sort_order: number;
-  features: string[];
-  // Price fields (BRL primary)
+  feature_flags: FeatureFlags;
+  display_features: string[]; // Marketing bullet points
   price_brl: number;
 }
 
@@ -41,9 +73,37 @@ const EMPTY_FORM: PlanFormData = {
   allow_products: false,
   trial_days: 7,
   sort_order: 0,
-  features: [],
+  feature_flags: DEFAULT_FLAGS,
+  display_features: [],
   price_brl: 0,
 };
+
+function parsePlanFeatures(plan: Plan): { flags: FeatureFlags; displayFeatures: string[] } {
+  if (!plan.features) return { flags: DEFAULT_FLAGS, displayFeatures: [] };
+
+  const f = plan.features as any;
+
+  // Detect old format (array of strings) vs new format (object with flags)
+  if (Array.isArray(f)) {
+    return { flags: DEFAULT_FLAGS, displayFeatures: f as string[] };
+  }
+
+  if (typeof f === 'object') {
+    const flags: FeatureFlags = {
+      agenda: f.agenda ?? true,
+      clientes: f.clientes ?? true,
+      equipe: f.equipe ?? true,
+      servicos: f.servicos ?? true,
+      financeiro: f.financeiro ?? false,
+      relatorios: f.relatorios ?? false,
+      produtos: f.produtos ?? false,
+    };
+    const displayFeatures: string[] = Array.isArray(f.display_features) ? f.display_features : [];
+    return { flags, displayFeatures };
+  }
+
+  return { flags: DEFAULT_FLAGS, displayFeatures: [] };
+}
 
 // ── Plan Modal ────────────────────────────────────────────────────────────────
 function PlanModal({
@@ -58,6 +118,8 @@ function PlanModal({
   saving: boolean;
 }) {
   const existingPrice = plan?.plan_prices?.find(p => p.currency === 'BRL');
+  const parsedFeatures = plan ? parsePlanFeatures(plan) : { flags: DEFAULT_FLAGS, displayFeatures: [] };
+
   const [form, setForm] = useState<PlanFormData>(
     plan ? {
       name: plan.name,
@@ -67,7 +129,8 @@ function PlanModal({
       allow_products: plan.allow_products,
       trial_days: plan.trial_days,
       sort_order: plan.sort_order,
-      features: Array.isArray(plan.features) ? plan.features as string[] : [],
+      feature_flags: parsedFeatures.flags,
+      display_features: parsedFeatures.displayFeatures,
       price_brl: existingPrice?.amount ?? 0,
     } : EMPTY_FORM
   );
@@ -75,13 +138,22 @@ function PlanModal({
 
   const addFeature = () => {
     if (newFeature.trim()) {
-      setForm(f => ({ ...f, features: [...f.features, newFeature.trim()] }));
+      setForm(f => ({ ...f, display_features: [...f.display_features, newFeature.trim()] }));
       setNewFeature('');
     }
   };
 
   const removeFeature = (i: number) =>
-    setForm(f => ({ ...f, features: f.features.filter((_, idx) => idx !== i) }));
+    setForm(f => ({ ...f, display_features: f.display_features.filter((_, idx) => idx !== i) }));
+
+  const toggleFlag = (key: keyof FeatureFlags) => {
+    setForm(f => ({
+      ...f,
+      feature_flags: { ...f.feature_flags, [key]: !f.feature_flags[key] },
+      // Sync allow_products with produtos flag
+      allow_products: key === 'produtos' ? !f.feature_flags.produtos : f.allow_products,
+    }));
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -103,7 +175,8 @@ function PlanModal({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Basic info */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-[#555] mb-1.5">Nome do Plano *</label>
@@ -136,6 +209,7 @@ function PlanModal({
             />
           </div>
 
+          {/* Numeric fields */}
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-[#555] mb-1.5">Preço BRL (R$)</label>
@@ -169,24 +243,46 @@ function PlanModal({
             </div>
           </div>
 
-          {/* Toggles */}
-          <div className="flex items-center gap-6">
-            <label className="flex items-center gap-2.5 cursor-pointer group">
-              <div
-                onClick={() => setForm(f => ({ ...f, allow_products: !f.allow_products }))}
-                className={`w-10 h-5 rounded-full transition-colors relative ${form.allow_products ? 'bg-violet-600' : 'bg-[#1a1a1a]'}`}
-              >
-                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.allow_products ? 'translate-x-5' : 'translate-x-0.5'}`} />
-              </div>
-              <span className="text-sm text-[#888] group-hover:text-white transition-colors">Permitir Produtos</span>
-            </label>
+          {/* ── Feature Flags (new — from DB) ── */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <label className="text-xs font-medium text-[#555]">Telas/Recursos Liberados</label>
+              <span className="text-[10px] px-2 py-0.5 rounded border border-violet-500/20 bg-violet-500/5 text-violet-400 font-mono">salvo no banco</span>
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              {FEATURE_META.map(({ key, label, icon: Icon, description }) => {
+                const enabled = form.feature_flags[key];
+                return (
+                  <div
+                    key={key}
+                    onClick={() => toggleFlag(key)}
+                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all select-none ${
+                      enabled
+                        ? 'border-emerald-500/30 bg-emerald-500/5'
+                        : 'border-[#1a1a1a] bg-[#111] opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className={`w-4 h-4 flex-shrink-0 ${enabled ? 'text-emerald-400' : 'text-[#333]'}`} />
+                      <div>
+                        <p className={`text-sm font-medium ${enabled ? 'text-white' : 'text-[#555]'}`}>{label}</p>
+                        <p className="text-[11px] text-[#444]">{description}</p>
+                      </div>
+                    </div>
+                    <div className={`w-8 h-4 rounded-full transition-colors relative flex-shrink-0 ${enabled ? 'bg-emerald-600' : 'bg-[#222]'}`}>
+                      <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${enabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Features */}
+          {/* Display features (marketing bullets) */}
           <div>
-            <label className="block text-xs font-medium text-[#555] mb-2">Recursos do Plano</label>
+            <label className="block text-xs font-medium text-[#555] mb-2">Bullets de Marketing (exibidos na Landing Page)</label>
             <div className="space-y-1.5 mb-2">
-              {form.features.map((f, i) => (
+              {form.display_features.map((f, i) => (
                 <div key={i} className="flex items-center gap-2 bg-[#111] border border-[#1a1a1a] rounded-lg px-3 py-2">
                   <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
                   <span className="text-sm text-[#bbb] flex-1">{f}</span>
@@ -250,15 +346,22 @@ export default function AdminPlans() {
 
   const savePlan = useMutation({
     mutationFn: async ({ form, id }: { form: PlanFormData; id?: string }) => {
+      // Build the features JSONB: flags + display_features combined
+      const featuresJsonb = {
+        ...form.feature_flags,
+        allow_products: form.feature_flags.produtos,
+        display_features: form.display_features,
+      };
+
       const planData = {
         name: form.name,
         key: form.key,
         description: form.description || null,
         max_professionals: form.max_professionals,
-        allow_products: form.allow_products,
+        allow_products: form.feature_flags.produtos, // sync with feature flag
         trial_days: form.trial_days,
         sort_order: form.sort_order,
-        features: form.features,
+        features: featuresJsonb,
         active: true,
       };
 
@@ -292,6 +395,7 @@ export default function AdminPlans() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_plans_v2'] });
+      queryClient.invalidateQueries({ queryKey: ['plan_features'] });
       setModalPlan('closed' as any);
     }
   });
@@ -301,7 +405,10 @@ export default function AdminPlans() {
       const { error } = await supabase.from('plans').update({ active } as any).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin_plans_v2'] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin_plans_v2'] });
+      queryClient.invalidateQueries({ queryKey: ['plan_features'] });
+    }
   });
 
   const deletePlan = useMutation({
@@ -347,7 +454,8 @@ export default function AdminPlans() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {plans.map((plan, i) => {
             const brlPrice = plan.plan_prices?.find(p => p.currency === 'BRL');
-            const features = Array.isArray(plan.features) ? plan.features as string[] : [];
+            const { flags, displayFeatures } = parsePlanFeatures(plan);
+            const enabledCount = Object.values(flags).filter(Boolean).length;
 
             return (
               <motion.div
@@ -386,26 +494,46 @@ export default function AdminPlans() {
                       Até {plan.max_professionals} profissional{plan.max_professionals !== 1 ? 'is' : ''}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-[#666]">
-                      <Package className="w-3.5 h-3.5 text-[#333]" />
-                      {plan.allow_products ? 'Gestão de produtos' : 'Sem gestão de produtos'}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-[#666]">
                       <Clock className="w-3.5 h-3.5 text-[#333]" />
                       {plan.trial_days} dias de trial
                     </div>
+                    <div className="flex items-center gap-2 text-xs text-[#666]">
+                      {flags.financeiro ? (
+                        <Unlock className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Lock className="w-3.5 h-3.5 text-[#333]" />
+                      )}
+                      <span>{enabledCount} de {FEATURE_META.length} recursos liberados</span>
+                    </div>
                   </div>
 
-                  {/* Features */}
-                  {features.length > 0 && (
-                    <div className="space-y-1.5">
-                      {features.slice(0, 4).map((f, fi) => (
+                  {/* Feature badges */}
+                  <div className="flex flex-wrap gap-1">
+                    {FEATURE_META.map(({ key, label }) => (
+                      <span
+                        key={key}
+                        className={`text-[10px] px-1.5 py-0.5 rounded border font-mono ${
+                          flags[key]
+                            ? 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5'
+                            : 'text-[#333] border-[#111] bg-transparent line-through'
+                        }`}
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Marketing bullets */}
+                  {displayFeatures.length > 0 && (
+                    <div className="mt-3 space-y-1">
+                      {displayFeatures.slice(0, 3).map((f, fi) => (
                         <div key={fi} className="flex items-center gap-2 text-xs text-[#666]">
                           <CheckCircle className="w-3 h-3 text-emerald-600 flex-shrink-0" />
                           {f}
                         </div>
                       ))}
-                      {features.length > 4 && (
-                        <p className="text-xs text-[#333] pl-5">+{features.length - 4} recursos</p>
+                      {displayFeatures.length > 3 && (
+                        <p className="text-xs text-[#333] pl-5">+{displayFeatures.length - 3} itens</p>
                       )}
                     </div>
                   )}

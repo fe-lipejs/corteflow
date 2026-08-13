@@ -70,7 +70,7 @@ export default function Login() {
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-700 relative overflow-hidden ${isSuperAdminMode ? 'bg-[#000000]' : 'bg-[#1A1714]'}`}>
+    <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-700 relative overflow-hidden ${isSuperAdminMode ? 'bg-[#000000]' : 'bg-[#000000]'}`}>
       
       {/* Background glow (only in normal mode) */}
       <AnimatePresence>
@@ -101,19 +101,16 @@ export default function Login() {
               <div className="text-center mb-8">
                 <button 
                   onClick={handleLogoClick}
-                  className="inline-flex items-center gap-2 mb-6 cursor-pointer focus:outline-none"
+                  className="inline-flex items-center justify-center mb-8 cursor-pointer focus:outline-none"
                 >
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #C9963B, #E8B960)' }}>
-                    <Scissors className="w-5 h-5 text-[#1A1714]" />
-                  </div>
-                  <span className="font-bold text-xl text-white">Navalha</span>
+                  <img src="/logo.svg" alt="Raffros Corteflow" className="h-20 md:h-24 w-auto" />
                 </button>
               </div>
 
-              <div className="bg-[#1E1B17] rounded-2xl border border-[#2A2520] p-8 shadow-2xl">
+              <div className="bg-[#0A0A0A] rounded-2xl border border-[#222222] p-8 shadow-2xl">
                 <div className="text-center mb-8">
                   <h2 className="text-2xl font-bold text-white">{t('login.title')}</h2>
-                  <p className="text-[#A09888] mt-2 text-sm">Acesse o painel do seu salão</p>
+                  <p className="text-[#A1A1AA] mt-2 text-sm">Acesse o painel do seu salão</p>
                 </div>
                 
                 {error && (
@@ -124,27 +121,27 @@ export default function Login() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1.5 text-[#A09888]">
+                    <label className="block text-sm font-medium mb-1.5 text-[#A1A1AA]">
                       {t('login.email')}
                     </label>
                     <input
                       type="email"
                       required
-                      className="w-full px-4 py-3 bg-[#141210] border border-[#2A2520] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 focus:ring-1 focus:ring-[#C9963B]/30 transition-all"
+                      className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 focus:ring-1 focus:ring-[#C9963B]/30 transition-all"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="joao@exemplo.com"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1.5 text-[#A09888]">
+                    <label className="block text-sm font-medium mb-1.5 text-[#A1A1AA]">
                       {t('login.password')}
                     </label>
                     <div className="relative">
                       <input
                         type={showPassword ? 'text' : 'password'}
                         required
-                        className="w-full px-4 py-3 pr-12 bg-[#141210] border border-[#2A2520] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 focus:ring-1 focus:ring-[#C9963B]/30 transition-all"
+                        className="w-full px-4 py-3 pr-12 bg-[#050505] border border-[#222222] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 focus:ring-1 focus:ring-[#C9963B]/30 transition-all"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
@@ -152,7 +149,7 @@ export default function Login() {
                       <button 
                         type="button" 
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] hover:text-[#A09888] transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] hover:text-[#A1A1AA] transition-colors"
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -169,7 +166,7 @@ export default function Login() {
                     type="submit"
                     disabled={loading}
                     className="w-full py-3.5 px-4 font-bold text-sm rounded-xl disabled:opacity-50 transition-all hover:shadow-[0_0_20px_rgba(201,150,59,0.3)] mt-2"
-                    style={{ background: 'linear-gradient(135deg, #C9963B, #E8B960)', color: '#1A1714' }}
+                    style={{ background: 'linear-gradient(135deg, #C9963B, #E8B960)', color: '#000000' }}
                   >
                     {loading ? 'Entrando...' : t('login.submit')}
                   </button>
@@ -182,7 +179,7 @@ export default function Login() {
                   </Link>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-[#2A2520] text-center">
+                <div className="mt-8 pt-6 border-t border-[#222222] text-center">
                   <button 
                     onClick={() => {
                       setIsSuperAdminMode(true);
@@ -216,7 +213,7 @@ export default function Login() {
                 </div>
                 
                 <div className="text-center mb-8">
-                  <h2 className="text-xl font-medium text-white tracking-wide">Navalha <span className="font-light text-zinc-500">Platform</span></h2>
+                  <h2 className="text-xl font-medium text-white tracking-wide">Raffros Corteflow <span className="font-light text-zinc-500">Platform</span></h2>
                   <p className="text-zinc-500 mt-2 text-sm">Acesso Restrito</p>
                 </div>
                 

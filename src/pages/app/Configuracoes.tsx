@@ -6,11 +6,14 @@ import { useTheme, THEMES } from '../../contexts/ThemeContext';
 import { useImageUpload } from '../../hooks/useImageUpload';
 import { usePhoneFormat } from '../../hooks/usePhoneFormat';
 import { motion, AnimatePresence } from 'framer-motion';
+import { extractDominantColor, generateSmartPaletteFromLogo } from '../../lib/colorExtractor';
+import { useQueryClient } from '@tanstack/react-query';
+import { PUBLIC_STORE_QUERY_KEY } from '../../hooks/usePublicStore';
 import {
   Save, Check, Link as LinkIcon, Copy, ExternalLink, Image as ImageIcon,
   MapPin, Phone, Globe, Mail, Palette, Clock, CreditCard, Upload,
   Trash2, Eye, Settings2, Sparkles, Building2, X, ChevronRight,
-  Loader2, AlertCircle, CheckCircle2, Shield, Bell
+  Loader2, AlertCircle, CheckCircle2, Shield, Bell, Wand2
 } from 'lucide-react';
 
 // ─── Custom SVG Icons ─────────────────────────────────────────────────────────
@@ -35,20 +38,19 @@ const WhatsAppIcon = ({ className, style }: { className?: string; style?: React.
 );
 
 const TABS = [
-  { id: 'geral', label: 'Geral & Tema', icon: Palette },
-  { id: 'branding', label: 'Branding', icon: ImageIcon },
+  { id: 'aparencia', label: 'Aparência & Marca', icon: Palette },
+  { id: 'stripe', label: 'Recebimentos & Pagamentos', icon: CreditCard },
   { id: 'contato', label: 'Contato', icon: Phone },
-  { id: 'notificacoes', label: 'Notificações', icon: Bell },
-  { id: 'local', label: 'Localização', icon: MapPin },
-  { id: 'stripe', label: 'Recebimentos', icon: CreditCard },
   { id: 'horarios', label: 'Horários', icon: Clock },
   { id: 'politicas', label: 'Políticas', icon: Shield },
+  { id: 'local', label: 'Localização', icon: MapPin },
+  { id: 'notificacoes', label: 'Notificações', icon: Bell },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
 
 export default function Configuracoes() {
-  const { tenant } = useAuth();
+  const { tenant, profile, signOut } = useAuth();
   const { i18n } = useTranslation();
   const { theme, setThemeId, themeId } = useTheme();
   const phoneFormat = usePhoneFormat(tenant?.language || 'pt');
@@ -57,12 +59,18 @@ export default function Configuracoes() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabId>('geral');
+  const [activeTab, setActiveTab] = useState<TabId>('aparencia');
+  
+  // Danger Zone
+  const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [settingsId, setSettingsId] = useState<string | null>(null);
 
   // ─── Form State ───────────────────────────────────────────────────────────
   const [language, setLanguage] = useState<string>('pt');
   const [selectedTheme, setSelectedTheme] = useState('classic');
+  const [customPalette, setCustomPalette] = useState<any>(null);
   const [paymentMode, setPaymentMode] = useState('local');
   const [depositPercentage, setDepositPercentage] = useState(50);
   // Fix #2: Individual payment option toggles
@@ -97,20 +105,23 @@ export default function Configuracoes() {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
 
-  // Policies
+  // Policies (Intelligent Engine)
   const [allowReschedule, setAllowReschedule] = useState(true);
   const [rescheduleDeadlineHours, setRescheduleDeadlineHours] = useState(24);
-  const [maxReschedules, setMaxReschedules] = useState(1);
   const [allowCancel, setAllowCancel] = useState(true);
-  const [cancelDeadlineHours, setCancelDeadlineHours] = useState(24);
   const [cancelPolicyText, setCancelPolicyText] = useState('');
-  const [cancelFeeAmount, setCancelFeeAmount] = useState(0);
+  
+  // New Intelligent Policies
+  const [cancelFreeHoursBefore, setCancelFreeHoursBefore] = useState(2);
+  const [cancelFeePercent, setCancelFeePercent] = useState(0);
+  const [noshowFeePercent, setNoshowFeePercent] = useState(0);
+  const [delayToleranceMinutes, setDelayToleranceMinutes] = useState(15);
 
-  // Financial Policies (Sprint 3.9)
+  // Financial Policies
   const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
-  const [paymentOptions, setPaymentOptions] = useState('both'); // online_only, local_only, both
+  const [paymentOptions, setPaymentOptions] = useState('both');
   const [allowRefunds, setAllowRefunds] = useState(true);
-  const [refundPolicy, setRefundPolicy] = useState('full_refund_only'); // full_refund_only, partial_refund, credit_only, no_refund
+  const [refundPolicy, setRefundPolicy] = useState('full_refund_only');
   const [creditValidityDays, setCreditValidityDays] = useState(90);
 
   // Notifications
@@ -158,27 +169,25 @@ export default function Configuracoes() {
       if (data) {
         setSettingsId(data.id);
         setSelectedTheme(data.theme_preset || 'classic');
+        setCustomPalette(data.custom_palette || null);
         setDepositPercentage(data.deposit_percentage || 50);
-        // Fix #2: parse booking_payment_mode as JSON if possible, else legacy fallback
+        // Payment Methods JSONB
         try {
-          const pm = data.booking_payment_mode;
-          if (pm && pm.startsWith('{')) {
-            const parsed = JSON.parse(pm);
-            setAllowLocal(parsed.local !== false);
-            setAllowDeposit(parsed.deposit !== false);
-            setAllowFull(parsed.full !== false);
+          const pm = data.payment_methods;
+          if (pm) {
+            setAllowLocal(pm.pay_local ?? true);
+            setAllowDeposit(pm.partial_50 ?? true);
+            setAllowFull(pm.full_100 ?? false);
           } else {
-            // Legacy single value — map to individual toggles
-            setAllowLocal(pm === 'local' || pm === 'client_choice' || !pm);
-            setAllowDeposit(pm === 'deposit' || pm === 'client_choice');
-            setAllowFull(pm === 'full' || pm === 'client_choice');
+            setAllowLocal(true);
+            setAllowDeposit(true);
+            setAllowFull(false);
           }
         } catch {
           setAllowLocal(true);
           setAllowDeposit(true);
-          setAllowFull(true);
+          setAllowFull(false);
         }
-        setPaymentMode(data.booking_payment_mode || 'local');
         setFantasyName(data.fantasy_name || '');
         setSlogan(data.slogan || '');
         setDescription(data.description || data.short_description || '');
@@ -206,11 +215,14 @@ export default function Configuracoes() {
         // Policies
         setAllowReschedule(data.allow_reschedule ?? true);
         setRescheduleDeadlineHours(data.reschedule_deadline_hours ?? 24);
-        setMaxReschedules(data.max_reschedules ?? 1);
         setAllowCancel(data.allow_cancel ?? true);
-        setCancelDeadlineHours(data.cancel_deadline_hours ?? 24);
         setCancelPolicyText(data.cancel_policy_text || '');
-        setCancelFeeAmount(data.cancel_fee_amount || 0);
+        
+        // Intelligent engine policies
+        setCancelFreeHoursBefore(data.cancel_free_hours_before ?? 2);
+        setCancelFeePercent(data.cancel_fee_percent ?? 0);
+        setNoshowFeePercent(data.noshow_fee_percent ?? 0);
+        setDelayToleranceMinutes(data.delay_tolerance_minutes ?? 15);
       }
 
       // Load notification settings
@@ -252,6 +264,29 @@ export default function Configuracoes() {
     if (!e.target.files || e.target.files.length === 0 || !tenant) return;
     const url = await logoUpload.upload(e.target.files[0], `${tenant.id}/logo`);
     if (url) setLogoUrl(url);
+  };
+
+  const handleMagicExtract = async () => {
+    const targetUrl = logoUrl || logoUpload.preview;
+    if (!targetUrl) {
+      alert('Faça upload de uma logo primeiro para extrair a paleta!');
+      return;
+    }
+    try {
+      const mode = selectedTheme === 'elegant' ? 'light' : 'dark';
+      const smartPalette = await generateSmartPaletteFromLogo(targetUrl, mode);
+      const newPalette = {
+        primary: smartPalette.primary,
+        background: smartPalette.background,
+        card: smartPalette.card,
+        text: smartPalette.text,
+      };
+      setCustomPalette(newPalette);
+      setThemeId(selectedTheme);
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao analisar cores da imagem');
+    }
   };
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -296,10 +331,13 @@ export default function Configuracoes() {
     setWhatsapp(formatted);
   };
 
+  const queryClient = useQueryClient();
+
   // ─── Handle Theme Change ──────────────────────────────────────────────────
   const handleThemeChange = (id: string) => {
     setSelectedTheme(id);
     setThemeId(id); // Apply immediately for preview
+    setCustomPalette(null); // Reset overrides to adopt new preset
   };
 
   // ─── Save ─────────────────────────────────────────────────────────────────
@@ -319,13 +357,14 @@ export default function Configuracoes() {
         setLoading(false);
         return;
       }
-      const paymentModeJson = JSON.stringify({ local: allowLocal, deposit: allowDeposit, full: allowFull });
+      const paymentModeJson = { pay_local: allowLocal, partial_50: allowDeposit, full_100: allowFull };
 
       // Build payload
       const payload: Record<string, any> = {
         tenant_id: tenant.id,
         theme_preset: selectedTheme,
-        booking_payment_mode: paymentModeJson,
+        custom_palette: customPalette || null,
+        payment_methods: paymentModeJson,
         deposit_percentage: allowDeposit ? depositPercentage : null,
         fantasy_name: fantasyName,
         slogan,
@@ -350,11 +389,12 @@ export default function Configuracoes() {
         longitude,
         allow_reschedule: allowReschedule,
         reschedule_deadline_hours: rescheduleDeadlineHours,
-        max_reschedules: maxReschedules,
         allow_cancel: allowCancel,
-        cancel_deadline_hours: cancelDeadlineHours,
         cancel_policy_text: cancelPolicyText,
-        cancel_fee_amount: cancelFeeAmount,
+        cancel_free_hours_before: cancelFreeHoursBefore,
+        cancel_fee_percent: cancelFeePercent,
+        noshow_fee_percent: noshowFeePercent,
+        delay_tolerance_minutes: delayToleranceMinutes,
       };
 
       if (settingsId) {
@@ -398,8 +438,14 @@ export default function Configuracoes() {
         await supabase.from('notification_settings').insert([{ tenant_id: tenant.id, sound_enabled: soundEnabled }]);
       }
 
-      // Apply theme
+      // Apply theme locally
       setThemeId(selectedTheme);
+
+      // Invalidate public page query cache so changes reflect immediately
+      if (tenant?.slug) {
+        queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(tenant.slug) });
+      }
+      queryClient.invalidateQueries({ queryKey: ['tenant_settings', tenant?.id] });
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -407,6 +453,63 @@ export default function Configuracoes() {
       console.error('Error saving:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConnectStripe = async () => {
+    if (!tenant) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Não autenticado');
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-onboarding-link`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Erro na API: ${res.status} ${errorText}`);
+      }
+
+      const { url } = await res.json();
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (err: any) {
+      console.error('Stripe Connect error:', err);
+      alert(`Erro ao iniciar conexão com o Stripe: ${err.message}`);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmationText !== 'EXCLUIR') return;
+    setDeleteLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Não autenticado');
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erro ao excluir conta');
+      }
+
+      await signOut();
+    } catch (err: any) {
+      console.error(err);
+      alert(`Erro: ${err.message}`);
+      setDeleteLoading(false);
     }
   };
 
@@ -511,223 +614,26 @@ export default function Configuracoes() {
           className="glass-card p-6"
         >
 
-          {/* ═══════════════════════════ TAB 1: GERAL & TEMA ═══════════════════════════ */}
-          {activeTab === 'geral' && (
-            <>
-              <div className="space-y-8">
-              {/* Theme Selection */}
-              <div>
-                <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
-                  <Palette className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Tema da Página
-                </h3>
-                <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>
-                  O tema afeta o painel inteiro e a página pública dos seus clientes.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {Object.values(THEMES).map(t => {
-                    const isSelected = selectedTheme === t.id;
-                    return (
-                      <div
-                        key={t.id}
-                        onClick={() => handleThemeChange(t.id)}
-                        className="rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-1"
-                        style={{
-                          border: `2px solid ${isSelected ? t.accent : t.border}`,
-                          boxShadow: isSelected ? `0 0 20px ${t.accent}30` : 'none',
-                        }}
-                      >
-                        <div className="relative p-4 flex flex-col justify-end" style={{ background: t.bg, minHeight: '110px' }}>
-                          {isSelected && (
-                            <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: t.accent }}>
-                              <Check className="w-3 h-3" style={{ color: t.textInverse }} />
-                            </div>
-                          )}
-                          <p className="font-serif text-xl font-bold mb-3" style={{ color: t.textPrimary }}>Salão</p>
-                          <span className="text-[11px] font-semibold px-3 py-1 rounded-full w-max" style={{ background: t.accent, color: t.btnPrimaryText }}>
-                            Agendar
-                          </span>
-                        </div>
-                        <div className="p-3" style={{ background: t.bgCard }}>
-                          <p className="font-semibold text-sm" style={{ color: t.textPrimary }}>{t.name}</p>
-                          <p className="text-xs mt-0.5" style={{ color: t.accent }}>{t.description}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Language */}
-              <div>
-                <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
-                  <Globe className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Idioma do Salão
-                </h3>
-                <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
-                  Afeta todo o painel admin e a página pública de agendamento.
-                </p>
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="themed-input w-full sm:w-auto"
-                >
-                  <option value="pt">🇧🇷 Português (Brasil)</option>
-                  <option value="en">🇺🇸 English</option>
-                  <option value="es">🇪🇸 Español</option>
-                  <option value="fr">🇫🇷 Français</option>
-                  <option value="de">🇩🇪 Deutsch</option>
-                </select>
-              </div>
-
-              {/* Payment Mode — Fix #2: Individual toggles */}
-              <div>
-                <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
-                  <CreditCard className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Formas de Pagamento
-                </h3>
-                <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
-                  Ative as formas de pagamento disponíveis para seus clientes. Pelo menos uma deve estar ativa.
-                </p>
-                <div className="space-y-3 mt-3">
-                  {[
-                    { key: 'local' as const, label: 'Pagar no local', desc: 'Cliente paga quando chegar ao salão', state: allowLocal, set: setAllowLocal },
-                    { key: 'deposit' as const, label: 'Sinal (50%)', desc: 'Cliente paga um percentual adiantado', state: allowDeposit, set: setAllowDeposit },
-                    { key: 'full' as const, label: 'Pagamento total antecipado', desc: 'Cliente paga 100% do valor online', state: allowFull, set: setAllowFull },
-                  ].map(m => {
-                    const activeCount = [allowLocal, allowDeposit, allowFull].filter(Boolean).length;
-                    const isLastActive = m.state && activeCount === 1;
-                    return (
-                      <div key={m.key} className="flex items-center justify-between p-4 rounded-xl" style={{ background: m.state ? theme.accentMuted : theme.inputBg, border: `1px solid ${m.state ? theme.accent : theme.inputBorder}` }}>
-                        <div>
-                          <p className="text-sm font-medium" style={{ color: theme.textPrimary }}>{m.label}</p>
-                          <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{m.desc}</p>
-                          {isLastActive && (
-                            <p className="text-xs mt-1 font-semibold" style={{ color: '#f59e0b' }}>⚠ Última opção ativa — não pode ser desabilitada</p>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (isLastActive) return; // prevent disabling last option
-                            m.set(!m.state);
-                          }}
-                          className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ml-4"
-                          style={{ background: m.state ? theme.accent : theme.border }}
-                          title={isLastActive ? 'Pelo menos uma opção deve estar ativa' : ''}
-                        >
-                          <span className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform" style={{ transform: m.state ? 'translateX(20px)' : 'translateX(4px)' }} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Deposit Percentage Slider — only shown when deposit is active */}
-                {allowDeposit && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mt-4 p-4 rounded-xl"
-                    style={{ background: theme.inputBg, border: `1px solid ${theme.inputBorder}` }}
-                  >
-                    <label className="text-xs font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
-                      Percentual do Sinal: <span style={{ color: theme.accent }}>{depositPercentage}%</span>
-                    </label>
-                    <input
-                      type="range"
-                      min={10}
-                      max={90}
-                      step={5}
-                      value={depositPercentage}
-                      onChange={(e) => setDepositPercentage(Number(e.target.value))}
-                      className="w-full mt-2"
-                      style={{ accentColor: theme.accent }}
-                    />
-                    <div className="flex justify-between text-xs mt-1" style={{ color: theme.textMuted }}>
-                      <span>10%</span>
-                      <span>50%</span>
-                      <span>90%</span>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-            </div>
-
-            {/* Política de Cancelamento e Reagendamento */}
-            <div className="glass-card p-6 mt-6">
-              <h2 className="font-bold text-lg mb-1" style={{ color: theme.textPrimary }}>
-                <Clock className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                Políticas de Cancelamento
-              </h2>
-              <p className="text-sm mb-5" style={{ color: theme.textSecondary }}>Configure as regras visíveis para o cliente.</p>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
-                    Texto da Política de Cancelamento
-                  </label>
-                  <textarea
-                    value={cancelPolicyText}
-                    onChange={(e) => setCancelPolicyText(e.target.value)}
-                    placeholder="Ex: Cancelamentos gratuitos até 24h antes. Após esse prazo, será cobrada uma taxa de R$ 50,00."
-                    className="w-full p-3.5 rounded-xl border focus:ring-2 focus:outline-none transition-all text-sm font-sans"
-                    rows={3}
-                    style={{
-                      backgroundColor: theme.inputBg,
-                      borderColor: theme.inputBorder,
-                      color: theme.textPrimary,
-                      outlineColor: theme.accent
-                    }}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
-                    Taxa de Cancelamento Exibida (R$)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={cancelFeeAmount}
-                    onChange={(e) => setCancelFeeAmount(Number(e.target.value))}
-                    placeholder="0.00"
-                    className="w-full sm:w-1/3 p-3.5 rounded-xl border focus:ring-2 focus:outline-none transition-all text-sm font-sans"
-                    style={{
-                      backgroundColor: theme.inputBg,
-                      borderColor: theme.inputBorder,
-                      color: theme.textPrimary,
-                      outlineColor: theme.accent
-                    }}
-                  />
-                  <p className="text-[10px] mt-1 opacity-70" style={{ color: theme.textSecondary }}>
-                    Essa taxa é informativa para o cliente. O Salão deve fazer a cobrança separadamente se não usar pagamento antecipado.
-                  </p>
-                </div>
-              </div>
-            </div>
-            </>
-          )}
-
-          {/* ═══════════════════════════ TAB 2: BRANDING ═══════════════════════════════ */}
-          {activeTab === 'branding' && (
-            <div className="space-y-6">
+          {/* ═══════════════════════════ TAB: APARÊNCIA & MARCA (UNIFICADO) ═══════════════════════════ */}
+          {activeTab === 'aparencia' && (
+            <div className="space-y-8">
+              {/* Header da Seção */}
               <div>
                 <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
                   <Sparkles className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Identidade Visual
+                  Aparência & Identidade Visual
                 </h3>
-                <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>
-                  Logo e banner aparecem automaticamente na sua página pública.
+                <p className="text-sm" style={{ color: theme.textSecondary }}>
+                  Personalize as cores, tema, logotipo e capa. As alterações refletem no painel admin e na página de agendamento dos seus clientes.
                 </p>
               </div>
 
+              {/* Uploads: Logo e Capa */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {/* Logo Upload */}
+                {/* Logo Upload & Extração Mágica */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
-                    Logo do Salão
+                    Logo do Salão (Perfil)
                   </label>
                   <div
                     className="relative h-44 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden group transition-all"
@@ -764,12 +670,38 @@ export default function Configuracoes() {
                       </label>
                     )}
                   </div>
+                  
+                  {/* Botão de Extração Inteligente de Cores da Logo */}
+                  <div className="mt-3">
+                    <button 
+                      onClick={handleMagicExtract}
+                      disabled={!logoUrl && !logoUpload.preview}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-md"
+                      style={{ 
+                        background: theme.accentGradient || theme.accent,
+                        color: theme.btnPrimaryText,
+                      }}
+                    >
+                      <Wand2 className="w-4 h-4" />
+                      Extrair Paleta Inteligente da Logo
+                    </button>
+                    {customPalette?.primary && (
+                      <div className="flex items-center justify-between mt-2 px-1">
+                        <span className="text-[11px] font-medium flex items-center gap-1.5" style={{ color: theme.textSecondary }}>
+                          Destaque ativo: <span className="inline-block w-3.5 h-3.5 rounded-full border shadow-sm" style={{ background: customPalette.primary, borderColor: theme.border }}></span> {customPalette.primary}
+                        </span>
+                        <button onClick={() => { setCustomPalette(null); setThemeId(selectedTheme); }} className="text-[11px] font-bold text-red-500 hover:underline">
+                          Restaurar
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Banner Upload */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
-                    Banner (Capa)
+                    Banner (Capa do Salão)
                   </label>
                   <div
                     className="relative h-44 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden group transition-all"
@@ -806,48 +738,206 @@ export default function Configuracoes() {
                       </label>
                     )}
                   </div>
+                  <p className="text-[11px] mt-2 text-center" style={{ color: theme.textMuted }}>
+                    Exibido como capa visual no topo da página de agendamento.
+                  </p>
                 </div>
               </div>
 
-              {/* Text Fields */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
-                  Nome Fantasia
-                </label>
-                <input
-                  type="text"
-                  value={fantasyName}
-                  onChange={e => setFantasyName(e.target.value)}
-                  className="themed-input"
-                  placeholder="Nome do seu salão"
-                />
+              {/* Presets de Temas */}
+              <div className="pt-6 border-t" style={{ borderColor: theme.border }}>
+                <h4 className="font-bold text-sm mb-1" style={{ color: theme.textPrimary }}>
+                  <Palette className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
+                  Tema Base (Presets)
+                </h4>
+                <p className="text-xs mb-4" style={{ color: theme.textSecondary }}>
+                  Escolha um estilo base visual para a atmosfera do salão.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {Object.values(THEMES).map(t => {
+                    const isSelected = selectedTheme === t.id && !customPalette;
+                    return (
+                      <div
+                        key={t.id}
+                        onClick={() => handleThemeChange(t.id)}
+                        className="rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-1"
+                        style={{
+                          border: `2px solid ${isSelected ? t.accent : t.border}`,
+                          boxShadow: isSelected ? `0 0 20px ${t.accent}30` : 'none',
+                        }}
+                      >
+                        <div className="relative p-4 flex flex-col justify-end" style={{ background: t.bg, minHeight: '100px' }}>
+                          {isSelected && (
+                            <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: t.accent }}>
+                              <Check className="w-3 h-3" style={{ color: t.textInverse }} />
+                            </div>
+                          )}
+                          <p className="font-serif text-lg font-bold mb-2" style={{ color: t.textPrimary }}>Salão</p>
+                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full w-max" style={{ background: t.accent, color: t.btnPrimaryText }}>
+                            Agendar
+                          </span>
+                        </div>
+                        <div className="p-3" style={{ background: t.bgCard }}>
+                          <p className="font-bold text-sm" style={{ color: t.textPrimary }}>{t.name}</p>
+                          <p className="text-xs mt-0.5" style={{ color: t.accent }}>{t.description}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
-                  Slogan / Subtítulo
-                </label>
-                <input
-                  type="text"
-                  value={slogan}
-                  onChange={e => setSlogan(e.target.value)}
-                  className="themed-input"
-                  placeholder="Ex: O melhor corte da cidade"
-                />
+              {/* Paleta Personalizada */}
+              <div className="pt-6 border-t" style={{ borderColor: theme.border }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>
+                      <Sparkles className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" style={{ color: theme.accent }} />
+                      Paleta Personalizada Detalhada
+                    </h4>
+                    <p className="text-xs" style={{ color: theme.textSecondary }}>Ajuste fino de cores para atender exatamente a sua marca.</p>
+                  </div>
+                  {customPalette && (
+                    <button
+                      type="button"
+                      onClick={() => { setCustomPalette(null); setThemeId(selectedTheme); }}
+                      className="text-xs font-bold underline transition-opacity hover:opacity-80"
+                      style={{ color: theme.accent }}
+                    >
+                      Restaurar padrão
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: theme.textSecondary }}>Destaque (Accent)</label>
+                    <div className="flex items-center gap-2 p-2 rounded-xl border" style={{ background: theme.inputBg, borderColor: theme.inputBorder }}>
+                      <input
+                        type="color"
+                        value={customPalette?.primary || theme.accent}
+                        onChange={(e) => {
+                          const p = { ...(customPalette || {}), primary: e.target.value };
+                          setCustomPalette(p);
+                        }}
+                        className="w-7 h-7 rounded-lg cursor-pointer border-0 p-0 bg-transparent"
+                      />
+                      <span className="text-xs font-mono font-medium" style={{ color: theme.textPrimary }}>{customPalette?.primary || theme.accent}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: theme.textSecondary }}>Fundo (Background)</label>
+                    <div className="flex items-center gap-2 p-2 rounded-xl border" style={{ background: theme.inputBg, borderColor: theme.inputBorder }}>
+                      <input
+                        type="color"
+                        value={customPalette?.background || theme.bg}
+                        onChange={(e) => {
+                          const p = { ...(customPalette || {}), background: e.target.value };
+                          setCustomPalette(p);
+                        }}
+                        className="w-7 h-7 rounded-lg cursor-pointer border-0 p-0 bg-transparent"
+                      />
+                      <span className="text-xs font-mono font-medium" style={{ color: theme.textPrimary }}>{customPalette?.background || theme.bg}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: theme.textSecondary }}>Cartões (Cards)</label>
+                    <div className="flex items-center gap-2 p-2 rounded-xl border" style={{ background: theme.inputBg, borderColor: theme.inputBorder }}>
+                      <input
+                        type="color"
+                        value={customPalette?.card || (theme.cardBg.startsWith('#') ? theme.cardBg : '#1A1714')}
+                        onChange={(e) => {
+                          const p = { ...(customPalette || {}), card: e.target.value };
+                          setCustomPalette(p);
+                        }}
+                        className="w-7 h-7 rounded-lg cursor-pointer border-0 p-0 bg-transparent"
+                      />
+                      <span className="text-xs font-mono font-medium" style={{ color: theme.textPrimary }}>{customPalette?.card || 'Padrão'}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: theme.textSecondary }}>Texto Principal</label>
+                    <div className="flex items-center gap-2 p-2 rounded-xl border" style={{ background: theme.inputBg, borderColor: theme.inputBorder }}>
+                      <input
+                        type="color"
+                        value={customPalette?.text || theme.textPrimary}
+                        onChange={(e) => {
+                          const p = { ...(customPalette || {}), text: e.target.value };
+                          setCustomPalette(p);
+                        }}
+                        className="w-7 h-7 rounded-lg cursor-pointer border-0 p-0 bg-transparent"
+                      />
+                      <span className="text-xs font-mono font-medium" style={{ color: theme.textPrimary }}>{customPalette?.text || theme.textPrimary}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
-                  <span>Sobre o Salão</span>
-                  <span style={{ color: description.length > 180 ? theme.error : theme.textMuted }}>{description.length}/180</span>
-                </label>
-                <textarea
-                  value={description}
-                  onChange={e => setDescription(e.target.value.slice(0, 180))}
-                  rows={4}
-                  className="themed-input resize-none"
-                  placeholder="Conte a história do seu espaço..."
-                />
+              {/* Informações da Marca */}
+              <div className="pt-6 border-t space-y-4" style={{ borderColor: theme.border }}>
+                <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>
+                  <Building2 className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
+                  Informações da Marca
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
+                      Nome Fantasia
+                    </label>
+                    <input
+                      type="text"
+                      value={fantasyName}
+                      onChange={e => setFantasyName(e.target.value)}
+                      className="themed-input"
+                      placeholder="Nome do seu salão"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
+                      Slogan / Subtítulo
+                    </label>
+                    <input
+                      type="text"
+                      value={slogan}
+                      onChange={e => setSlogan(e.target.value)}
+                      className="themed-input"
+                      placeholder="Ex: O melhor corte e barba da cidade"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
+                    <span>Sobre o Salão</span>
+                    <span style={{ color: description.length > 180 ? theme.error : theme.textMuted }}>{description.length}/180</span>
+                  </label>
+                  <textarea
+                    value={description}
+                    onChange={e => setDescription(e.target.value.slice(0, 180))}
+                    rows={3}
+                    className="themed-input resize-none"
+                    placeholder="Conte a história do seu espaço..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
+                    <Globe className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" style={{ color: theme.accent }} />
+                    Idioma Padrão do Salão
+                  </label>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="themed-input w-full sm:w-auto"
+                  >
+                    <option value="pt">🇧🇷 Português (Brasil)</option>
+                    <option value="en">🇺🇸 English</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="de">🇩🇪 Deutsch</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}
@@ -1089,193 +1179,157 @@ export default function Configuracoes() {
             </div>
           )}
 
-          {/* ═══════════════════════════ TAB 5: STRIPE CONNECT ══════════════════════════ */}
+          {/* ═══════════════════════════ TAB: RECEBIMENTOS & PAGAMENTOS ══════════════════════════ */}
           {activeTab === 'stripe' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
+              {/* Formas de Pagamento Aceitas no Agendamento */}
               <div>
                 <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
                   <CreditCard className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Recebimentos via Stripe
+                  Formas de Pagamento no Agendamento
                 </h3>
-                <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>
-                  Conecte sua conta Stripe para receber pagamentos dos clientes.
+                <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
+                  Ative as formas de cobrança disponíveis para seus clientes na hora de agendar. Pelo menos uma deve estar ativa.
                 </p>
-              </div>
-
-              {/* Status Card */}
-              <div
-                className="rounded-2xl p-6 flex items-start gap-4"
-                style={{ background: theme.inputBg, border: `1px solid ${theme.inputBorder}` }}
-              >
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: theme.accentMuted }}
-                >
-                  <Shield className="w-6 h-6" style={{ color: theme.accent }} />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Status da Conta</h4>
-                    <span
-                      className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
-                      style={{ background: `${theme.warning}20`, color: theme.warning }}
-                    >
-                      Não conectada
-                    </span>
-                  </div>
-                  <p className="text-xs" style={{ color: theme.textMuted }}>
-                    Conecte sua conta Stripe para começar a receber pagamentos online dos seus clientes.
-                  </p>
-                </div>
-              </div>
-
-              {/* Connect Button */}
-              <button
-                className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-bold text-sm transition-all"
-                style={{
-                  background: '#635BFF',
-                  color: '#FFFFFF',
-                  boxShadow: '0 4px 14px rgba(99, 91, 255, 0.3)',
-                }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/>
-                </svg>
-                Conectar com Stripe
-              </button>
-
-              <div
-                className="rounded-xl p-4 flex items-start gap-3"
-                style={{ background: `${theme.info}10`, border: `1px solid ${theme.info}30` }}
-              >
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.info }} />
-                <div>
-                  <p className="text-xs font-semibold" style={{ color: theme.info }}>Como funciona?</p>
-                  <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
-                    Ao conectar, você será redirecionado ao Stripe para verificar sua identidade e conta bancária.
-                    Após a verificação, os pagamentos dos seus clientes serão depositados diretamente na sua conta.
-                    Saques são gerenciados no painel do Stripe.
-                  </p>
-                </div>
-              </div>
-
-              {/* Opções de Pagamento */}
-              <div className="pt-6 border-t mt-6" style={{ borderColor: theme.border }}>
-                <h4 className="font-bold text-sm mb-4" style={{ color: theme.textPrimary }}>Opções de Cobrança</h4>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-xl border" style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder }}>
-                    <div>
-                      <p className="font-bold text-sm" style={{ color: theme.textPrimary }}>Aceitar Pagamentos Online</p>
-                      <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>Habilita a opção de pagar pelo site no momento do agendamento.</p>
-                    </div>
-                    <button
-                      onClick={() => setOnlinePaymentEnabled(!onlinePaymentEnabled)}
-                      className="relative w-10 h-5 rounded-full transition-all"
-                      style={{ background: onlinePaymentEnabled ? theme.accent : theme.border }}
-                    >
-                      <span
-                        className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-all"
-                        style={{ transform: onlinePaymentEnabled ? 'translateX(20px)' : 'translateX(0)' }}
-                      />
-                    </button>
-                  </div>
-
-                  {onlinePaymentEnabled && (
-                    <>
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>Disponibilidade de Pagamento</label>
-                        <select
-                          value={paymentOptions}
-                          onChange={e => setPaymentOptions(e.target.value)}
-                          className="themed-input"
-                        >
-                          <option value="both">Online e Presencial (Cliente escolhe)</option>
-                          <option value="online_only">Apenas Online (Obrigatório)</option>
-                          <option value="local_only">Apenas Presencial</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>Momento da Cobrança Online</label>
-                        <select
-                          value={paymentMode}
-                          onChange={e => setPaymentMode(e.target.value)}
-                          className="themed-input"
-                        >
-                          <option value="full">Cobrar 100% no Agendamento</option>
-                          <option value="deposit">Cobrar apenas um Sinal (Garantia)</option>
-                          <option value="local">Nenhuma cobrança antecipada</option>
-                        </select>
-                      </div>
-
-                      {paymentMode === 'deposit' && (
-                        <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>Percentual do Sinal (%)</label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="99"
-                            value={depositPercentage}
-                            onChange={e => setDepositPercentage(Number(e.target.value))}
-                            className="themed-input"
-                          />
-                        </div>
-                      )}
-                      
-                      {/* Políticas de Reembolso */}
-                      <div className="pt-4 border-t" style={{ borderColor: theme.border }}>
-                        <h4 className="font-bold text-sm mb-4" style={{ color: theme.textPrimary }}>Políticas de Reembolso e Cancelamento</h4>
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between p-4 rounded-xl border" style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder }}>
-                            <div>
-                              <p className="font-bold text-sm" style={{ color: theme.textPrimary }}>Permitir Reembolso Automático</p>
-                              <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>Faz estorno no cartão via Stripe se o cliente cancelar dentro do prazo.</p>
-                            </div>
-                            <button
-                              onClick={() => setAllowRefunds(!allowRefunds)}
-                              className="relative w-10 h-5 rounded-full transition-all"
-                              style={{ background: allowRefunds ? theme.accent : theme.border }}
-                            >
-                              <span
-                                className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-all"
-                                style={{ transform: allowRefunds ? 'translateX(20px)' : 'translateX(0)' }}
-                              />
-                            </button>
+                <div className="space-y-3">
+                  {[
+                    { key: 'local' as const, label: 'Pagar no local', desc: 'Cliente agenda e realiza o pagamento presencialmente após o serviço', state: allowLocal, set: setAllowLocal },
+                    { key: 'deposit' as const, label: 'Exigir Entrada / Depósito (Online)', desc: 'Cliente paga um percentual antecipado via cartão/Pix para garantir o horário', state: allowDeposit, set: setAllowDeposit },
+                    { key: 'full' as const, label: 'Pagamento 100% Antecipado (Online)', desc: 'Cliente paga o valor integral do serviço online no ato do agendamento', state: allowFull, set: setAllowFull },
+                  ].map(m => {
+                    const activeCount = [allowLocal, allowDeposit, allowFull].filter(Boolean).length;
+                    const isLastActive = m.state && activeCount === 1;
+                    return (
+                      <div key={m.key} className="flex flex-col p-4 rounded-2xl transition-colors" style={{ background: m.state ? `${theme.accent}12` : theme.inputBg, border: `1px solid ${m.state ? theme.accent : theme.inputBorder}` }}>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-bold" style={{ color: theme.textPrimary }}>{m.label}</p>
+                            <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{m.desc}</p>
+                            {isLastActive && (
+                              <p className="text-xs mt-1 font-semibold" style={{ color: '#f59e0b' }}>⚠ Pelo menos uma forma de pagamento deve permanecer ativa</p>
+                            )}
                           </div>
-                          
-                          {allowRefunds && (
-                            <div>
-                              <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>Política de Reembolso</label>
-                              <select
-                                value={refundPolicy}
-                                onChange={e => setRefundPolicy(e.target.value)}
-                                className="themed-input"
-                              >
-                                <option value="full_refund_only">Estorno Integral</option>
-                                <option value="credit_only">Gerar Crédito na Loja (sem estorno)</option>
-                                <option value="no_refund">Sem Reembolso (Não Reembolsável)</option>
-                              </select>
-                            </div>
-                          )}
-                          
-                          {allowRefunds && refundPolicy === 'credit_only' && (
-                            <div>
-                              <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>Validade do Crédito (Dias)</label>
-                              <input
-                                type="number"
-                                min="1"
-                                max="365"
-                                value={creditValidityDays}
-                                onChange={e => setCreditValidityDays(Number(e.target.value))}
-                                className="themed-input"
-                              />
-                            </div>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isLastActive) return; // prevent disabling last option
+                              m.set(!m.state);
+                            }}
+                            className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ml-4"
+                            style={{ background: m.state ? theme.accent : theme.border }}
+                            title={isLastActive ? 'Pelo menos uma opção deve estar ativa' : ''}
+                          >
+                            <span className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform" style={{ transform: m.state ? 'translateX(22px)' : 'translateX(4px)' }} />
+                          </button>
                         </div>
+
+                        {/* Slider for deposit percentage */}
+                        <AnimatePresence>
+                          {m.key === 'deposit' && m.state && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="mt-4 pt-4 border-t"
+                              style={{ borderColor: theme.inputBorder }}
+                            >
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold uppercase tracking-wider block" style={{ color: theme.textSecondary }}>
+                                  Percentual de Entrada: <span className="font-extrabold" style={{ color: theme.accent }}>{depositPercentage}%</span>
+                                </label>
+                                <span className="text-[11px] font-medium" style={{ color: theme.textMuted }}>
+                                  O saldo restante ({100 - depositPercentage}%) será pago no salão.
+                                </span>
+                              </div>
+                              <input
+                                type="range"
+                                min={10}
+                                max={90}
+                                step={5}
+                                value={depositPercentage}
+                                onChange={(e) => setDepositPercentage(Number(e.target.value))}
+                                className="w-full mt-3"
+                                style={{ accentColor: theme.accent }}
+                              />
+                              <div className="flex justify-between text-xs mt-1 font-medium" style={{ color: theme.textMuted }}>
+                                <span>10% (mínimo)</span>
+                                <span>50% (recomendado)</span>
+                                <span>90%</span>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
-                    </>
-                  )}
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Conexão Stripe Connect */}
+              <div className="pt-6 border-t" style={{ borderColor: theme.border }}>
+                <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
+                  <Shield className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
+                  Recebimentos Online (Stripe Connect)
+                </h3>
+                <p className="text-xs mb-4" style={{ color: theme.textSecondary }}>
+                  Conecte sua conta bancária/Stripe para receber pagamentos online direto na sua conta.
+                </p>
+
+                {/* Status Card */}
+                <div
+                  className="rounded-2xl p-5 flex items-start gap-4 mb-4"
+                  style={{ background: theme.inputBg, border: `1px solid ${theme.inputBorder}` }}
+                >
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: `${theme.accent}15` }}
+                  >
+                    <Shield className="w-5 h-5" style={{ color: theme.accent }} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Conta Bancária de Recebimento</h4>
+                      <span
+                        className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
+                        style={{ background: `${theme.warning}20`, color: theme.warning }}
+                      >
+                        Não conectada
+                      </span>
+                    </div>
+                    <p className="text-xs" style={{ color: theme.textMuted }}>
+                      Conecte sua conta Stripe para receber as entradas e pagamentos integrais automaticamente.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Connect Button */}
+                <button
+                  onClick={handleConnectStripe}
+                  className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-xl font-bold text-sm transition-all hover:scale-[1.01] active:scale-[0.99]"
+                  style={{
+                    background: '#635BFF',
+                    color: '#FFFFFF',
+                    boxShadow: '0 4px 14px rgba(99, 91, 255, 0.3)',
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/>
+                  </svg>
+                  Conectar com Stripe
+                </button>
+
+                <div
+                  className="rounded-xl p-4 flex items-start gap-3 mt-4"
+                  style={{ background: `${theme.info}10`, border: `1px solid ${theme.info}30` }}
+                >
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.info }} />
+                  <div>
+                    <p className="text-xs font-semibold" style={{ color: theme.info }}>Como funciona a transferência?</p>
+                    <p className="text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
+                      Ao conectar, você será direcionado ao Stripe para cadastrar sua chave Pix ou conta bancária.
+                      Os valores pagos pelos clientes caem diretamente na sua conta com segurança bancária.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1458,30 +1512,15 @@ export default function Configuracoes() {
                         <option value={72}>Até 72 horas antes</option>
                       </select>
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                        Quantidade máxima
-                      </label>
-                      <select
-                        value={maxReschedules}
-                        onChange={(e) => setMaxReschedules(Number(e.target.value))}
-                        className="themed-input w-full"
-                      >
-                        <option value={1}>1 vez</option>
-                        <option value={2}>2 vezes</option>
-                        <option value={3}>3 vezes</option>
-                        <option value={999}>Ilimitado</option>
-                      </select>
-                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Cancelamento */}
+              {/* Cancelamento, Atraso e No-Show */}
               <div className="rounded-xl p-5" style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}>
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Permitir Cancelamento</h4>
+                    <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Permitir Cancelamento Pelo Portal</h4>
                     <p className="text-xs" style={{ color: theme.textMuted }}>O cliente pode cancelar sozinho pelo portal?</p>
                   </div>
                   <button
@@ -1496,30 +1535,148 @@ export default function Configuracoes() {
                   </button>
                 </div>
 
-                {allowCancel && (
-                  <div className="pt-4 border-t" style={{ borderColor: theme.border }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t" style={{ borderColor: theme.border }}>
+                  <div>
                     <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                      Prazo máximo (Horas de antecedência)
+                      Cancelamento Grátis até (Horas antes)
                     </label>
                     <select
-                      value={cancelDeadlineHours}
-                      onChange={(e) => setCancelDeadlineHours(Number(e.target.value))}
-                      className="themed-input w-full md:w-1/2"
+                      value={cancelFreeHoursBefore}
+                      onChange={(e) => setCancelFreeHoursBefore(Number(e.target.value))}
+                      className="themed-input w-full"
                     >
-                      <option value={2}>Até 2 horas antes</option>
-                      <option value={6}>Até 6 horas antes</option>
-                      <option value={12}>Até 12 horas antes</option>
-                      <option value={24}>Até 24 horas antes</option>
-                      <option value={48}>Até 48 horas antes</option>
-                      <option value={72}>Até 72 horas antes</option>
+                      <option value={1}>1 hora antes</option>
+                      <option value={2}>2 horas antes</option>
+                      <option value={6}>6 horas antes</option>
+                      <option value={12}>12 horas antes</option>
+                      <option value={24}>24 horas antes</option>
+                      <option value={48}>48 horas antes</option>
                     </select>
                   </div>
-                )}
+                  <div>
+                    <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
+                      Multa de Cancelamento Tardio (%)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={cancelFeePercent}
+                      onChange={e => setCancelFeePercent(Number(e.target.value))}
+                      className="themed-input w-full"
+                      placeholder="Ex: 50%"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
+                      Tolerância de Atraso (Minutos)
+                    </label>
+                    <select
+                      value={delayToleranceMinutes}
+                      onChange={(e) => setDelayToleranceMinutes(Number(e.target.value))}
+                      className="themed-input w-full"
+                    >
+                      <option value={5}>5 minutos</option>
+                      <option value={10}>10 minutos</option>
+                      <option value={15}>15 minutos</option>
+                      <option value={30}>30 minutos</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
+                      Multa de No-Show (%)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={noshowFeePercent}
+                      onChange={e => setNoshowFeePercent(Number(e.target.value))}
+                      className="themed-input w-full"
+                      placeholder="Ex: 100%"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* Danger Zone (Only for owners) */}
+      {profile?.role === 'owner' && (
+        <div className="mt-12 p-6 rounded-2xl border border-red-500/30 bg-red-500/5">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-red-500 mb-1">Zona de Perigo</h3>
+              <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>
+                A exclusão da conta é irreversível. Ao excluir sua conta, todas as suas assinaturas ativas serão canceladas imediatamente e seu acesso será revogado.
+              </p>
+              <button
+                onClick={() => setDeleteAccountModalOpen(true)}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-lg transition-colors"
+              >
+                Excluir Minha Conta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {deleteAccountModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-[#1a1a1a]">
+              <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-6 h-6 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-center text-white mb-2">Excluir Conta Permanentemente?</h3>
+              <p className="text-sm text-[#888] text-center">
+                Esta ação <strong>cancelará imediatamente</strong> qualquer assinatura ativa no Stripe e revogará seu acesso ao sistema. O histórico será mantido apenas para fins de auditoria.
+              </p>
+            </div>
+            
+            <div className="p-6">
+              <label className="block text-sm font-bold text-[#888] mb-2">
+                Para confirmar, digite <strong className="text-white">EXCLUIR</strong> abaixo:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmationText}
+                onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                className="w-full px-4 py-3 bg-[#111] border border-[#1a1a1a] rounded-xl text-white outline-none focus:border-red-500 transition-colors uppercase font-mono"
+                placeholder="EXCLUIR"
+                onPaste={e => e.preventDefault()}
+              />
+            </div>
+            
+            <div className="border-t border-[#1a1a1a] p-4 flex justify-end gap-3 bg-[#0a0a0a]">
+              <button
+                onClick={() => {
+                  setDeleteAccountModalOpen(false);
+                  setDeleteConfirmationText('');
+                }}
+                className="px-4 py-2 text-sm text-[#888] hover:text-white transition-colors"
+                disabled={deleteLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmationText !== 'EXCLUIR' || deleteLoading}
+                className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              >
+                {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                {deleteLoading ? 'Excluindo...' : 'Sim, Excluir Minha Conta'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Save Button */}
       <div className="flex justify-end pt-2">

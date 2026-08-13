@@ -33,9 +33,10 @@ import { generateAvailableSlots } from "../../lib/availability";
 import type { Slot } from "../../lib/availability";
 import { supabase } from "../../integrations/supabase/client";
 import { usePhoneFormat } from "../../hooks/usePhoneFormat";
-import { useTheme } from "../../contexts/ThemeContext";
+import { useTheme, getThemeById } from "../../contexts/ThemeContext";
 import { usePublicStore, PUBLIC_STORE_QUERY_KEY } from "../../hooks/usePublicStore";
 import { useQueryClient } from "@tanstack/react-query";
+import { getThemeContrastEngine } from "../../lib/themeEngine";
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const InstagramIcon = ({ className }: { className?: string }) => (
@@ -73,10 +74,79 @@ function haversineKm(pos1: { lat: number; lng: number }, pos2: { lat: number; ln
   return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
+// ── SlotGrid: Original design + crossed-out unavailable slots ──────────────────
+function SlotGrid({
+  allSlots,
+  selectedTime,
+  onSelect,
+  accent,
+  theme,
+}: {
+  allSlots: import('../../lib/availability').Slot[];
+  selectedTime: string;
+  onSelect: (t: string) => void;
+  accent: string;
+  theme: any;
+}) {
+  const visibleSlots = allSlots.filter(
+    (s) => s.available || (s.unavailableReason !== 'past' && s.unavailableReason !== 'no_fit')
+  );
+
+  if (visibleSlots.length === 0) {
+    return (
+      <div className="py-10 text-center rounded-2xl border" style={{ borderColor: theme.cardBorder }}>
+        <Clock className="w-8 h-8 mx-auto mb-3" style={{ color: theme.textMuted, opacity: 0.5 }} />
+        <p className="text-sm font-medium" style={{ color: theme.textPrimary }}>Nenhum horário disponível</p>
+        <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Tente outra data acima.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3.5">
+      {visibleSlots.map((slot) => {
+        if (!slot.available) {
+          return (
+            <button
+              key={slot.time}
+              disabled
+              className="py-3.5 rounded-xl text-sm font-bold border-2 transition-all duration-150 opacity-40 cursor-not-allowed line-through"
+              style={{
+                borderColor: theme.cardBorder,
+                background: 'transparent',
+                color: theme.textMuted,
+              }}
+            >
+              {slot.time}
+            </button>
+          );
+        }
+
+        const isSel = selectedTime === slot.time;
+        return (
+          <button
+            key={slot.time}
+            onClick={() => onSelect(slot.time)}
+            className="py-3.5 rounded-xl text-sm font-bold border-2 transition-all duration-150 relative"
+            style={{
+              borderColor: isSel ? accent : theme.cardBorder,
+              background: isSel ? (theme.btnPrimaryBg || accent) : theme.cardBg,
+              color: isSel ? theme.btnPrimaryText : theme.textPrimary,
+            }}
+          >
+            {slot.time}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Step Indicator ────────────────────────────────────────────────────────────
 const STEP_LABELS = ["Serviço", "Profissional", "Data & Hora", "Confirmar"];
 
-function StepIndicator({ step, accent }: { step: number; accent: string }) {
+function StepIndicator({ step, accent, theme }: { step: number; accent: string; theme: any }) {
+  const contrast = getThemeContrastEngine(theme);
   return (
     <div className="flex items-center justify-center gap-1 px-6 py-4">
       {STEP_LABELS.map((label, i) => {
@@ -88,24 +158,24 @@ function StepIndicator({ step, accent }: { step: number; accent: string }) {
             <div className="flex flex-col items-center gap-1">
               <motion.div
                 animate={{ scale: active ? 1.1 : 1 }}
-                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm"
                 style={{
-                  background: done ? accent : active ? accent : "rgba(255,255,255,0.08)",
-                  color: done || active ? "#000" : "rgba(255,255,255,0.35)",
-                  border: active ? `2px solid ${accent}` : done ? "none" : "1.5px solid rgba(255,255,255,0.12)",
+                  background: done ? accent : active ? (theme.btnPrimaryBg || accent) : contrast.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+                  color: done || active ? theme.btnPrimaryText : contrast.isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.4)",
+                  border: active ? `2px solid ${accent}` : done ? "none" : `1.5px solid ${theme.cardBorder}`,
                 }}
               >
                 {done ? <Check className="w-3.5 h-3.5" /> : num}
               </motion.div>
               <span
                 className="text-[9px] font-semibold uppercase tracking-wider hidden sm:block"
-                style={{ color: active ? accent : done ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)" }}
+                style={{ color: active ? accent : done ? theme.textSecondary : theme.textMuted }}
               >
                 {label}
               </span>
             </div>
             {i < STEP_LABELS.length - 1 && (
-              <div className="w-8 sm:w-14 h-px mx-1 sm:mx-2" style={{ background: step > num ? accent : "rgba(255,255,255,0.1)" }} />
+              <div className="w-8 sm:w-14 h-px mx-1 sm:mx-2" style={{ background: step > num ? accent : theme.cardBorder }} />
             )}
           </div>
         );
@@ -123,7 +193,7 @@ const playSuccessSound = () => {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function PublicStore() {
   const { slug } = useParams<{ slug: string }>();
-  const { setThemeId, setCustomPalette, theme } = useTheme();
+  const { setThemeId, setCustomPalette, theme: contextTheme } = useTheme();
   const { data: storeData, isLoading: loading } = usePublicStore(slug);
   const queryClient = useQueryClient();
 
@@ -133,9 +203,33 @@ export default function PublicStore() {
   const professionalsList: any[] = storeData?.professionals || [];
   const businessHoursList: any[] = storeData?.businessHours || [];
 
+  // Theme directly computed from database settings for immediate accuracy
+  const theme = useMemo(() => {
+    if (settings?.theme_preset) {
+      const base = getThemeById(settings.theme_preset);
+      if (settings?.custom_palette) {
+        return {
+          ...base,
+          ...(settings.custom_palette.background && { bg: settings.custom_palette.background }),
+          ...(settings.custom_palette.text && { textPrimary: settings.custom_palette.text }),
+          ...(settings.custom_palette.card && { cardBg: settings.custom_palette.card }),
+          ...(settings.custom_palette.primary && {
+            accent: settings.custom_palette.primary,
+            btnPrimaryBg: settings.custom_palette.primary,
+            borderActive: settings.custom_palette.primary,
+            calendarActiveBg: settings.custom_palette.primary,
+          }),
+        };
+      }
+      return base;
+    }
+    return contextTheme;
+  }, [settings?.theme_preset, settings?.custom_palette, contextTheme]);
+
   useEffect(() => {
     if (settings?.theme_preset) setThemeId(settings.theme_preset);
     if (settings?.custom_palette) setCustomPalette(settings.custom_palette);
+    else setCustomPalette(undefined);
   }, [settings?.theme_preset, settings?.custom_palette, setThemeId, setCustomPalette]);
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -204,6 +298,17 @@ export default function PublicStore() {
     }
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Favicon ────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (settings?.logo_url) {
+      const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
+      link.type = 'image/x-icon';
+      link.rel = 'icon';
+      link.href = settings.logo_url;
+      document.head.appendChild(link);
+    }
+  }, [settings?.logo_url]);
+
   // ── Geo ────────────────────────────────────────────────────────────────────
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "denied" | "ok" | "ignored">("idle");
@@ -227,7 +332,8 @@ export default function PublicStore() {
   const phoneFormat = usePhoneFormat("pt");
 
   // ── Derived ────────────────────────────────────────────────────────────────
-  const accent = settings?.custom_palette?.primary || "#C9963B";
+  const accent = settings?.custom_palette?.primary || theme.accent;
+  const contrast = useMemo(() => getThemeContrastEngine(theme), [theme]);
   const storeName = settings?.fantasy_name || tenant?.name || "";
   const storeAddress = settings?.full_address || settings?.address;
   const storePhone = settings?.phone || settings?.whatsapp_number;
@@ -242,9 +348,18 @@ export default function PublicStore() {
 
   // Fix #2: Parse which payment options are enabled by the admin
   const allowedPaymentScopes = useMemo((): { key: PaymentScope; label: string; desc: string }[] => {
-    const pm = settings?.booking_payment_mode as string | null | undefined;
     let allowLocal = true, allowDeposit = true, allowFull = true;
-    if (pm) {
+    
+    // 1. Try reading from new JSONB field
+    if (settings?.payment_methods) {
+      const pm = settings.payment_methods;
+      allowLocal = pm.pay_local ?? true;
+      allowDeposit = pm.partial_50 ?? true;
+      allowFull = pm.full_100 ?? false;
+    } 
+    // 2. Fallback to legacy string field
+    else if (settings?.booking_payment_mode) {
+      const pm = settings.booking_payment_mode as string;
       try {
         if (pm.startsWith('{')) {
           const parsed = JSON.parse(pm);
@@ -252,23 +367,24 @@ export default function PublicStore() {
           allowDeposit = parsed.deposit !== false;
           allowFull = parsed.full !== false;
         } else {
-          // Legacy single-value mapping
           allowLocal = pm === 'local' || pm === 'client_choice';
           allowDeposit = pm === 'deposit' || pm === 'client_choice';
           allowFull = pm === 'full' || pm === 'client_choice';
-          // If none of the known values matched, enable all
           if (!allowLocal && !allowDeposit && !allowFull) { allowLocal = true; allowDeposit = true; allowFull = true; }
         }
       } catch { allowLocal = true; allowDeposit = true; allowFull = true; }
     }
+
+    const depositPct = settings?.deposit_percentage || 50;
+    
     const all: { key: PaymentScope; label: string; desc: string }[] = [];
-    if (allowDeposit) all.push({ key: "partial", label: "Sinal 50%", desc: money(total / 2) });
+    if (allowDeposit) all.push({ key: "partial", label: `Entrada ${depositPct}%`, desc: money(total * (depositPct / 100)) });
     if (allowFull) all.push({ key: "full", label: "Total agora", desc: money(total) });
     if (allowLocal) all.push({ key: "local", label: "No local", desc: "Grátis agora" });
     // Ensure at least one option exists (safety)
     if (all.length === 0) all.push({ key: "local", label: "No local", desc: "Grátis agora" });
     return all;
-  }, [settings?.booking_payment_mode, total]);
+  }, [settings?.payment_methods, settings?.booking_payment_mode, settings?.deposit_percentage, total]);
 
 
   const distanceKm = useMemo(() => (userPos ? haversineKm(userPos, storeCoords) : null), [userPos, storeCoords]);
@@ -287,12 +403,21 @@ export default function PublicStore() {
   const availableSlots: Slot[] = useMemo(() => {
     if (!selectedDate || !selectedService) return [];
     return generateAvailableSlots(
-      selectedDate, selectedService, selectedPro === "any" ? "any" : (selectedPro?.id ?? "any"),
-      professionalsList, servicesList, businessHoursList,
-      storeData?.professionalWorkingHours || [], storeData?.professionalBlockedTimes || [],
-      storeData?.bookings || [], storeData?.professionalServices || []
+      selectedDate,
+      selectedService,
+      selectedPro === "any" ? "any" : (selectedPro?.id ?? "any"),
+      professionalsList,
+      servicesList,
+      businessHoursList,
+      storeData?.professionalWorkingHours || [],
+      storeData?.professionalBlockedTimes || [],
+      storeData?.bookings || [],
+      storeData?.professionalServices || [],
+      // Pass array of selected services for multi-service block-size calculation
+      [selectedService]
     );
   }, [selectedDate, selectedService, selectedPro, professionalsList, servicesList, businessHoursList, storeData]);
+
 
   const mapPreviewUrl = useMemo(() => {
     if (userPos) return `https://www.google.com/maps?saddr=${userPos.lat},${userPos.lng}&daddr=${storeCoords.lat},${storeCoords.lng}&z=16&output=embed`;
@@ -331,17 +456,20 @@ export default function PublicStore() {
     if (!tenant || !selectedService || !selectedDate || !selectedTime) return;
     
     if (!customerName || !customerPhone) {
+      alert("Por favor, preencha seu nome e WhatsApp.");
       setErrorMsg("Por favor, preencha seu nome e WhatsApp.");
       inputsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     if (!phoneFormat.validate(customerPhone)) { 
+      alert("Informe um WhatsApp válido com DDD.");
       setErrorMsg("Informe um WhatsApp válido com DDD."); 
       inputsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return; 
     }
     setIsProcessing(true);
     setErrorMsg("");
+
     try {
       const cleanPhone = customerPhone.replace(/\D/g, "");
       let customerId = "";
@@ -356,10 +484,8 @@ export default function PublicStore() {
 
       const code = Math.random().toString(36).substring(2, 8).toUpperCase();
       const accessCode = Math.random().toString(36).substring(2, 12);
-      // ── FIX TIMEZONE: Build ISO string with local TZ offset so Supabase stores correct UTC ──
-      // Without offset, "2026-08-11T09:15:00" is interpreted as UTC, showing 06:15 in Brazil (UTC-3)
       const pad = (n: number) => String(n).padStart(2, '0');
-      const tzOffsetMin = -new Date().getTimezoneOffset(); // positive = east of UTC
+      const tzOffsetMin = -new Date().getTimezoneOffset();
       const tzSign = tzOffsetMin >= 0 ? '+' : '-';
       const tzAbs = Math.abs(tzOffsetMin);
       const tzStr = `${tzSign}${pad(Math.floor(tzAbs / 60))}:${pad(tzAbs % 60)}`;
@@ -423,9 +549,58 @@ export default function PublicStore() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "#0d0d0d" }}>
         <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
-          <Loader2 className="w-8 h-8" style={{ color: accent }} />
+          <Loader2 className="w-8 h-8" style={{ color: accent || "#fff" }} />
         </motion.div>
         <p className="mt-4 text-sm font-medium text-white/40">Carregando agendamento…</p>
+      </div>
+    );
+  }
+
+  if (!tenant || tenant.status !== 'active') {
+    return (
+      <div className="min-h-screen flex flex-col p-6" style={{ background: theme.bg }}>
+        <div className="flex-1 flex flex-col items-center justify-center text-center max-w-md mx-auto w-full">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6" style={{ background: `${theme.accent}15`, border: `1px solid ${theme.accent}30` }}>
+            <Calendar className="w-8 h-8" style={{ color: theme.accent }} />
+          </div>
+          <h2 className="text-2xl font-bold mb-3" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>Agenda Fechada</h2>
+          <p className="text-sm mb-10 leading-relaxed" style={{ color: theme.textMuted }}>
+            Este salão não está aceitando agendamentos no momento. Entre em contato diretamente com o estabelecimento para mais informações.
+          </p>
+
+          {storeAddress && (
+            <div className="w-full text-left bg-black/20 rounded-2xl p-4 border" style={{ borderColor: theme.cardBorder }}>
+              <div className="flex items-start gap-3 mb-4">
+                <MapPin className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: theme.accent }} />
+                <div>
+                  <h4 className="font-bold text-sm mb-1" style={{ color: theme.textPrimary }}>Endereço da Loja</h4>
+                  <p className="text-xs leading-relaxed" style={{ color: theme.textMuted }}>{storeAddress}</p>
+                </div>
+              </div>
+              <div className="rounded-xl overflow-hidden border relative" style={{ borderColor: theme.cardBorder, height: 160 }}>
+                {geoStatus !== "loading" ? (
+                  <iframe
+                    title="Mapa"
+                    src={mapPreviewUrl}
+                    className="w-full h-full border-0"
+                    loading="lazy"
+                    allowFullScreen
+                    style={{ filter: (theme as any).mapFilter }}
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/5">
+                    <Loader2 className="w-6 h-6 animate-spin" style={{ color: theme.accent }} />
+                  </div>
+                )}
+              </div>
+              <a href={directionsUrl} target="_blank" rel="noreferrer"
+                className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold border transition-colors"
+                style={{ borderColor: `${theme.accent}40`, color: theme.accent }}>
+                <Navigation className="w-4 h-4" /> Como chegar
+              </a>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -484,40 +659,64 @@ export default function PublicStore() {
               </div>
 
               <div className="px-6 py-5 space-y-6">
+                {/* Realtime Route Status Banner */}
+                {geoStatus === "loading" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold"
+                    style={{ background: `${accent}15`, borderColor: `${accent}35`, color: accent }}
+                  >
+                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                    <span>Calculando sua localização e rota em tempo real…</span>
+                  </motion.div>
+                )}
+
+                {geoStatus === "ok" && distanceKm !== null && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center justify-between p-3 rounded-xl border text-xs font-semibold"
+                    style={{ background: `${accent}15`, borderColor: `${accent}35`, color: theme.textPrimary }}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Navigation className="w-3.5 h-3.5" style={{ color: accent }} />
+                      <span>Você está a <strong style={{ color: accent }}>{distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)} km`}</strong> do salão</span>
+                    </span>
+                    <span className="text-[10px] uppercase tracking-wider font-bold" style={{ color: accent }}>Rota ativa</span>
+                  </motion.div>
+                )}
+
                 {/* Map */}
                 {storeAddress && (
                   <div>
                     <div className="rounded-2xl overflow-hidden border relative" style={{ borderColor: theme.cardBorder, height: 200 }}>
-                      {geoStatus !== "loading" && (
-                        <iframe
-                          title="Mapa"
-                          src={mapPreviewUrl}
-                          className="w-full h-full border-0"
-                          loading="lazy"
-                          allowFullScreen
-                          style={{ filter: (theme as any).mapFilter }}
-                        />
-                      )}
+                      <iframe
+                        title="Mapa"
+                        src={mapPreviewUrl}
+                        className="w-full h-full border-0"
+                        loading="lazy"
+                        allowFullScreen
+                        style={{ filter: (theme as any).mapFilter }}
+                      />
                       {/* Loading overlay while getting location */}
                       {geoStatus === "loading" && (
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl"
+                          className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 rounded-2xl z-10"
                           style={{ background: `${theme.cardBg}ee`, backdropFilter: "blur(4px)" }}
                         >
-                          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
-                            <Loader2 className="w-7 h-7" style={{ color: accent }} />
-                          </motion.div>
-                          <p className="text-xs font-semibold" style={{ color: theme.textMuted }}>Traçando rota…</p>
+                          <Loader2 className="w-7 h-7 animate-spin" style={{ color: accent }} />
+                          <p className="text-xs font-semibold" style={{ color: theme.textPrimary }}>Traçando sua rota…</p>
                         </motion.div>
                       )}
                     </div>
                     <a href={directionsUrl} target="_blank" rel="noreferrer"
-                      className="mt-3 flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold border transition-colors"
-                      style={{ borderColor: `${accent}40`, color: accent }}>
-                      <Navigation className="w-4 h-4" /> Como chegar
+                      className="mt-3 flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold border transition-all hover:scale-[1.01]"
+                      style={{ background: `${accent}15`, borderColor: `${accent}50`, color: accent }}>
+                      <Navigation className="w-4 h-4" /> Como chegar (Abrir no GPS)
                     </a>
                   </div>
                 )}
@@ -549,7 +748,7 @@ export default function PublicStore() {
                 {/* Contacts */}
                 <div className="flex flex-col gap-2.5">
                   <a href={`/${slug}/portal`} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold"
-                    style={{ background: accent, color: "#000" }}>
+                    style={{ background: theme.btnPrimaryBg || accent, color: theme.btnPrimaryText }}>
                     <Calendar className="w-4 h-4" /> Meus agendamentos
                   </a>
                   {storePhone && (
@@ -582,38 +781,47 @@ export default function PublicStore() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="w-full max-w-3xl rounded-2xl overflow-hidden"
+              className="w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl"
               style={{ background: theme.cardBg, border: `1px solid ${theme.cardBorder}` }}
             >
               <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: theme.cardBorder }}>
-                <p className="font-semibold text-sm" style={{ color: theme.textPrimary }}>Localização</p>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" style={{ color: accent }} />
+                  <p className="font-semibold text-sm" style={{ color: theme.textPrimary }}>Localização & Rota</p>
+                </div>
                 <button onClick={() => setShowMapModal(false)} style={{ color: theme.textMuted }}><X className="w-4 h-4" /></button>
               </div>
               <div className="relative h-80">
                 <iframe title="Mapa modal" src={mapModalUrl} className="w-full h-full border-0" style={{ filter: (theme as any).mapFilter }} loading="lazy" allowFullScreen />
                 {geoStatus === "loading" && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-black/60 backdrop-blur-sm z-20">
                     <Loader2 className="w-8 h-8 animate-spin" style={{ color: accent }} />
+                    <p className="text-xs font-semibold text-white">Traçando rota com sua localização em tempo real…</p>
                   </div>
                 )}
-                <div className="absolute right-3 top-3 flex flex-col gap-1.5">
+                <div className="absolute right-3 top-3 flex flex-col gap-1.5 z-10">
                   <button onClick={() => setMapZoom(z => Math.min(z + 1, 20))} className="w-8 h-8 rounded-full text-sm font-bold flex items-center justify-center border shadow-lg" style={{ background: theme.cardBg, borderColor: theme.cardBorder, color: theme.textPrimary }}>+</button>
                   <button onClick={() => setMapZoom(z => Math.max(z - 1, 10))} className="w-8 h-8 rounded-full text-sm font-bold flex items-center justify-center border shadow-lg" style={{ background: theme.cardBg, borderColor: theme.cardBorder, color: theme.textPrimary }}>−</button>
                 </div>
               </div>
               <div className="px-5 py-4 flex flex-col sm:flex-row items-center gap-3">
-                {distanceKm !== null ? (
-                  <span className="text-sm font-medium" style={{ color: accent }}>
-                    Você está a {distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)} km`}
+                {geoStatus === "loading" ? (
+                  <div className="flex items-center gap-2 text-sm" style={{ color: accent }}>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Obtendo sua localização…</span>
+                  </div>
+                ) : distanceKm !== null ? (
+                  <span className="text-sm font-semibold flex items-center gap-1.5" style={{ color: accent }}>
+                    <Navigation className="w-4 h-4" /> Você está a {distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)} km`}
                   </span>
                 ) : (
-                  <button onClick={requestLocation} disabled={geoStatus === "loading"} className="text-sm flex items-center gap-1.5 disabled:opacity-50" style={{ color: accent }}>
+                  <button onClick={requestLocation} className="text-sm flex items-center gap-1.5 transition-colors hover:underline" style={{ color: accent }}>
                     <Navigation className="w-3.5 h-3.5" /> Calcular minha distância
                   </button>
                 )}
                 <a href={directionsUrl} target="_blank" rel="noreferrer"
-                  className="ml-auto flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold"
-                  style={{ background: accent, color: "#000" }}>
+                  className="ml-auto flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md"
+                  style={{ background: theme.btnPrimaryBg || accent, color: theme.btnPrimaryText }}>
                   <Navigation className="w-4 h-4" /> Como chegar
                 </a>
               </div>
@@ -626,22 +834,28 @@ export default function PublicStore() {
       <div className="flex flex-col lg:flex-row min-h-screen overflow-x-hidden w-full max-w-[100vw]">
 
         {/* ── SIDEBAR (desktop) / HEADER (mobile) ── */}
-        <aside className="lg:w-[360px] lg:min-h-screen lg:sticky lg:top-0 lg:self-start border-b lg:border-b-0 lg:border-r"
+        <aside className="relative lg:w-[360px] lg:min-h-screen lg:sticky lg:top-0 lg:self-start border-b lg:border-b-0 lg:border-r overflow-hidden"
           style={{ background: theme.cardBg, borderColor: theme.cardBorder }}>
 
-          {/* Banner */}
-          <div className="relative h-44 lg:h-52 overflow-hidden">
+          {/* Banner com Degradê Suave Contínuo */}
+          <div className="absolute top-0 left-0 right-0 h-[480px] overflow-hidden pointer-events-none z-0">
             {settings?.banner_url ? (
               <img src={settings.banner_url} alt="" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full" style={{ background: `linear-gradient(135deg, ${accent}30, ${accent}08)` }} />
             )}
-            <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${theme.cardBg} 0%, transparent 60%)` }} />
+            {/* Camada 1: Vinheta fotográfica suave */}
+            <div className="absolute inset-0" style={{ background: contrast.bannerVignette }} />
+            {/* Camada 2: Degradê multi-stop contínuo que dissolve a foto na cor do tema */}
+            <div className="absolute inset-0" style={{ background: contrast.bannerGradient }} />
           </div>
 
-          {/* Store Info */}
-          <div className="px-6 -mt-16 pb-6 text-center flex flex-col items-center">
-            {/* Logo */}
+          {/* Espaçador para visualização da foto de capa */}
+          <div className="h-32 sm:h-36" />
+
+          {/* Informações do Salão sobre o Degradê Suave */}
+          <div className="relative z-10 px-6 pb-6 text-center flex flex-col items-center">
+            {/* Logo / Avatar com recorte e sombra de destaque */}
             <div className="w-24 h-24 rounded-2xl border-4 overflow-hidden shadow-2xl flex items-center justify-center relative z-10"
               style={{ borderColor: theme.cardBg, background: theme.bg }}>
               {settings?.logo_url ? (
@@ -651,44 +865,45 @@ export default function PublicStore() {
               )}
             </div>
 
-            <h1 className="mt-4 text-2xl font-bold tracking-tight" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>{storeName}</h1>
+            {/* Nome do Salão */}
+            <h1 className="mt-3.5 text-2xl font-bold tracking-tight" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif", textShadow: contrast.titleTextShadow }}>
+              {storeName}
+            </h1>
 
-            <div className="flex items-center gap-1 mt-1">
-              {[1,2,3,4,5].map(i => (
+            {/* Rating Badge */}
+            <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full shadow-sm"
+              style={{ background: contrast.ratingPillBg, border: `1px solid ${contrast.ratingPillBorder}` }}>
+              {[1, 2, 3, 4, 5].map(i => (
                 <Star key={i} className="w-3.5 h-3.5" style={{ fill: accent, color: accent, opacity: i <= 4 ? 1 : 0.4 }} />
               ))}
-              <span className="text-xs ml-1 font-medium" style={{ color: theme.textMuted }}>4.9</span>
+              <span className="text-xs font-bold" style={{ color: contrast.ratingPillText }}>4.9</span>
             </div>
 
-            <p className="mt-2 text-sm leading-relaxed max-w-[260px]" style={{ color: theme.textMuted }}>
+            {/* Slogan / Descrição com contraste evidente e legibilidade perfeita */}
+            <p className="mt-2.5 text-sm font-medium leading-relaxed max-w-[280px]"
+              style={{ color: contrast.descriptionColor }}>
               {settings?.slogan || settings?.description || "Agende seu horário com os melhores profissionais."}
             </p>
 
-            {/* Social */}
+            {/* Redes Sociais e Contatos */}
             <div className="flex items-center gap-3 mt-4">
               {storeInsta && (
                 <a href={`https://instagram.com/${storeInsta}`} target="_blank" rel="noreferrer"
-                  className="w-9 h-9 rounded-xl flex items-center justify-center border transition-colors"
-                  style={{ borderColor: theme.cardBorder, color: theme.textMuted }}
-                  onMouseEnter={e => { e.currentTarget.style.color = accent; e.currentTarget.style.borderColor = `${accent}50`; }}
-                  onMouseLeave={e => { e.currentTarget.style.color = theme.textMuted; e.currentTarget.style.borderColor = theme.cardBorder; }}>
-                  <InstagramIcon className="w-4 h-4" />
+                  className="w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm"
+                  style={{ background: contrast.socialBtnBg, borderColor: contrast.socialBtnBorder, color: contrast.socialIconColor }}>
+                  <InstagramIcon className="w-4.5 h-4.5" />
                 </a>
               )}
               {storePhone && (
                 <>
                   <a href={`https://wa.me/${onlyDigits(storePhone)}`} target="_blank" rel="noreferrer"
-                    className="w-9 h-9 rounded-xl flex items-center justify-center border transition-colors"
-                    style={{ borderColor: theme.cardBorder, color: theme.textMuted }}
-                    onMouseEnter={e => { e.currentTarget.style.color = "#25D366"; e.currentTarget.style.borderColor = "#25D36650"; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = theme.textMuted; e.currentTarget.style.borderColor = theme.cardBorder; }}>
+                    className="w-10 h-10 rounded-xl flex items-center justify-center border transition-colors shadow-sm"
+                    style={{ borderColor: contrast.socialBtnBorder, color: "#25D366", background: contrast.socialBtnBg }}>
                     <WhatsAppIcon className="w-4 h-4" />
                   </a>
                   <a href={`tel:${onlyDigits(storePhone)}`}
-                    className="w-9 h-9 rounded-xl flex items-center justify-center border transition-colors"
-                    style={{ borderColor: theme.cardBorder, color: theme.textMuted }}
-                    onMouseEnter={e => { e.currentTarget.style.color = accent; e.currentTarget.style.borderColor = `${accent}50`; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = theme.textMuted; e.currentTarget.style.borderColor = theme.cardBorder; }}>
+                    className="w-10 h-10 rounded-xl flex items-center justify-center border transition-colors shadow-sm"
+                    style={{ borderColor: contrast.socialBtnBorder, color: contrast.socialIconColor, background: contrast.socialBtnBg }}>
                     <Phone className="w-3.5 h-3.5" />
                   </a>
                 </>
@@ -696,19 +911,22 @@ export default function PublicStore() {
             </div>
 
             {/* Divider */}
-            <div className="w-full h-px mt-6" style={{ background: theme.cardBorder }} />
+            <div className="w-full h-px mt-5" style={{ background: theme.cardBorder }} />
+          </div>
 
+          {/* Seção Inferior: Endereço & Horários */}
+          <div className="px-4 sm:px-5 pt-4 space-y-3">
             {/* Address */}
             {storeAddress && (
               <button onClick={() => { setShowMapModal(true); if (geoStatus === "idle") requestLocation(); }}
-                className="w-full flex items-start gap-3 text-left mt-5 p-3 rounded-xl transition-colors"
-                style={{ background: `${accent}08` }}
+                className="w-full flex items-start gap-3 text-left p-3.5 rounded-2xl transition-colors border"
+                style={{ background: `${accent}08`, borderColor: `${accent}20` }}
                 onMouseEnter={e => (e.currentTarget.style.background = `${accent}14`)}
                 onMouseLeave={e => (e.currentTarget.style.background = `${accent}08`)}>
                 <MapPin className="w-4 h-4 mt-0.5 shrink-0" style={{ color: accent }} />
                 <div>
                   <p className="text-xs font-semibold mb-0.5" style={{ color: accent }}>Localização</p>
-                  <p className="text-sm leading-snug" style={{ color: theme.textPrimary }}>{storeAddress}</p>
+                  <p className="text-sm leading-snug font-medium" style={{ color: theme.textPrimary }}>{storeAddress}</p>
                 </div>
               </button>
             )}
@@ -763,7 +981,7 @@ export default function PublicStore() {
           {/* Step indicator */}
           {step < 5 && (
             <div className="border-b" style={{ borderColor: theme.cardBorder, background: theme.cardBg }}>
-              <StepIndicator step={step} accent={accent} />
+              <StepIndicator step={step} accent={accent} theme={theme} />
             </div>
           )}
 
@@ -996,38 +1214,23 @@ export default function PublicStore() {
                   {/* Time Slots */}
                   <AnimatePresence>
                     {selectedDate && (
-                      <motion.div key="slots" ref={timeSlotsRef} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                      <motion.div
+                        key={`slots-${selectedDate?.toDateString()}-${selectedService?.id}-${typeof selectedPro === 'object' ? selectedPro?.id : selectedPro}`}
+                        ref={timeSlotsRef}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                      >
                         <p className="text-xs font-bold uppercase tracking-widest mb-6 mt-4" style={{ color: theme.textMuted }}>
-                          Horários disponíveis em {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                          Horários em {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
                         </p>
-                        {availableSlots.length === 0 ? (
-                          <div className="py-10 text-center rounded-2xl border" style={{ borderColor: theme.cardBorder }}>
-                            <Clock className="w-8 h-8 mx-auto mb-3" style={{ color: theme.textMuted, opacity: 0.5 }} />
-                            <p className="text-sm font-medium" style={{ color: theme.textPrimary }}>Nenhum horário disponível</p>
-                            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Tente outra data acima.</p>
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3.5">
-                            {availableSlots.map((slot) => {
-                              const isSel = selectedTime === slot.time;
-                              return (
-                                <button
-                                  key={slot.time}
-                                  disabled={!slot.available}
-                                  onClick={() => setSelectedTime(slot.time)}
-                                  className="py-3.5 rounded-xl text-sm font-bold border-2 transition-all duration-150 disabled:opacity-20 disabled:cursor-not-allowed disabled:line-through"
-                                  style={{
-                                    borderColor: isSel ? accent : theme.cardBorder,
-                                    background: isSel ? accent : theme.cardBg,
-                                    color: isSel ? "#000" : theme.textPrimary,
-                                  }}
-                                >
-                                  {slot.time}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
+                        <SlotGrid
+                          allSlots={availableSlots}
+                          selectedTime={selectedTime || ""}
+                          onSelect={setSelectedTime}
+                          accent={accent}
+                          theme={theme}
+                        />
 
                         <AnimatePresence>
                           {selectedDate && selectedTime && (
@@ -1161,7 +1364,7 @@ export default function PublicStore() {
                               ] as { key: PaymentMethod; label: string; icon: any }[]).map(({ key, label, icon: Icon }) => (
                                 <button key={key} onClick={() => setPaymentMethod(key)}
                                   className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all"
-                                  style={{ background: paymentMethod === key ? accent : "transparent", color: paymentMethod === key ? "#000" : theme.textMuted }}>
+                                  style={{ background: paymentMethod === key ? (theme.btnPrimaryBg || accent) : "transparent", color: paymentMethod === key ? theme.btnPrimaryText : theme.textMuted }}>
                                   <Icon className="w-4 h-4" /> {label}
                                 </button>
                               ))}
@@ -1245,8 +1448,8 @@ export default function PublicStore() {
                         <button
                           onClick={handleConfirm}
                           disabled={isProcessing}
-                          className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all disabled:opacity-60"
-                          style={{ background: accent, color: "#000" }}
+                          className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all disabled:opacity-60 shadow-lg"
+                          style={{ background: theme.btnPrimaryBg || accent, color: theme.btnPrimaryText }}
                         >
                           {isProcessing ? <><Loader2 className="w-5 h-5 animate-spin" /> Processando…</> : <><ShieldCheck className="w-5 h-5" /> Confirmar agendamento</>}
                         </button>
@@ -1285,7 +1488,7 @@ export default function PublicStore() {
                       <p className="text-xs font-bold uppercase tracking-widest" style={{ color: accent }}>Código da reserva</p>
                       <p className="text-2xl font-black" style={{ color: accent, fontFamily: "'Playfair Display', serif" }}>#{bookingCode}</p>
                     </div>
-                    <div className="px-6 py-5 space-y-3 text-sm text-left">
+                    <div className="px-6 py-5 space-y-3 text-left">
                       {[
                         { label: "Serviço", value: selectedService?.name },
                         { label: "Profissional", value: proName },
@@ -1340,8 +1543,8 @@ export default function PublicStore() {
                 <button
                   onClick={handleConfirm}
                   disabled={isProcessing}
-                  className="flex-1 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-60 active:scale-[0.98]"
-                  style={{ background: accent, color: "#000" }}
+                  className="flex-1 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-60 active:scale-[0.98] shadow-md"
+                  style={{ background: theme.btnPrimaryBg || accent, color: theme.btnPrimaryText }}
                 >
                   {isProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando…</> : <><ShieldCheck className="w-4 h-4" /> Confirmar</>}
                 </button>
@@ -1358,31 +1561,42 @@ export default function PublicStore() {
                 className="w-full flex items-center justify-center gap-2 py-3 text-xs font-semibold relative overflow-hidden"
                 style={{ color: theme.textMuted }}
               >
-                {/* Pulse ripple — only until first interaction */}
-                {!hasOpenedSheet && (
+                {geoStatus === "loading" ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: accent }} />
+                    <span style={{ color: accent, fontWeight: 700 }}>Traçando rota em tempo real…</span>
+                  </div>
+                ) : (
                   <>
+                    {/* Pulse ripple — only until first interaction */}
+                    {!hasOpenedSheet && (
+                      <>
+                        <motion.span
+                          className="absolute inset-0 rounded-none"
+                          style={{ background: `${accent}18` }}
+                          animate={{ opacity: [0, 1, 0] }}
+                          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut", repeatDelay: 1 }}
+                        />
+                        <motion.span
+                          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-6 rounded-full"
+                          style={{ background: `${accent}20` }}
+                          animate={{ scaleX: [0.8, 1.4, 0.8], opacity: [0.6, 0, 0.6] }}
+                          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                        />
+                      </>
+                    )}
                     <motion.span
-                      className="absolute inset-0 rounded-none"
-                      style={{ background: `${accent}18` }}
-                      animate={{ opacity: [0, 1, 0] }}
-                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut", repeatDelay: 1 }}
-                    />
-                    <motion.span
-                      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-6 rounded-full"
-                      style={{ background: `${accent}20` }}
-                      animate={{ scaleX: [0.8, 1.4, 0.8], opacity: [0.6, 0, 0.6] }}
-                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                    />
+                      animate={!hasOpenedSheet ? { y: [0, -3, 0] } : { y: 0 }}
+                      transition={{ repeat: hasOpenedSheet ? 0 : Infinity, duration: 1.4, ease: "easeInOut" }}
+                    >
+                      <ChevronUp className="w-4 h-4" style={{ color: accent }} />
+                    </motion.span>
+                    <MapPin className="w-3.5 h-3.5" style={{ color: accent }} />
+                    <span style={{ color: accent, fontWeight: 700 }}>
+                      {distanceKm !== null ? `A ${distanceKm < 1 ? Math.round(distanceKm * 1000) + 'm' : distanceKm.toFixed(1) + ' km'} de você • Horários` : "Localização & horários"}
+                    </span>
                   </>
                 )}
-                <motion.span
-                  animate={!hasOpenedSheet ? { y: [0, -3, 0] } : { y: 0 }}
-                  transition={{ repeat: hasOpenedSheet ? 0 : Infinity, duration: 1.4, ease: "easeInOut" }}
-                >
-                  <ChevronUp className="w-4 h-4" style={{ color: accent }} />
-                </motion.span>
-                <MapPin className="w-3.5 h-3.5" style={{ color: accent }} />
-                <span style={{ color: accent, fontWeight: 700 }}>Localização & horários</span>
               </button>
             </div>
           )}
@@ -1391,7 +1605,7 @@ export default function PublicStore() {
           {step === 5 && (
             <footer className="mt-4 pb-8 text-center text-xs" style={{ color: theme.textMuted }}>
               <p>© {new Date().getFullYear()} {storeName}</p>
-              <p className="mt-1 font-mono opacity-50">Desenvolvido com <span style={{ color: accent }}>Navalha SaaS</span></p>
+              <p className="mt-1 font-mono opacity-50">Desenvolvido com <span style={{ color: accent }}>Raffros Corteflow</span></p>
             </footer>
           )}
         </main>

@@ -172,7 +172,7 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                 icon: CreditCard,
                 label: 'Valor',
                 value: fmt.format(booking.amount_total),
-                sub: `Pago: ${fmt.format(booking.amount_paid)} (${booking.payment_mode === 'local' ? 'No local' : booking.payment_mode === 'full' ? 'Integral' : 'Sinal'})`,
+                sub: `Pago: ${fmt.format(booking.amount_paid)} (${(booking.payment_mode as string) === 'local' || (booking.payment_mode as string) === 'pay_local' ? 'No local' : (booking.payment_mode as string) === 'full' || (booking.payment_mode as string) === 'full_100' ? 'Integral' : 'Sinal'})`,
                 photo: null,
                 color: null,
               },
@@ -289,28 +289,44 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
           {!isFinished ? (
             <div className="space-y-3 pt-4 border-t" style={{ borderColor: 'var(--theme-border)' }}>
               <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--theme-text-secondary)' }}>Mudar Status</p>
-              {nextStatus && (
+              
+              {/* Opções principais (em atendimento e finalizado) */}
+              <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => onStatusChange(booking.id, nextStatus)}
-                  disabled={isUpdating}
-                  className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-all btn-primary"
+                  onClick={() => onStatusChange(booking.id, 'in_progress')}
+                  disabled={isUpdating || booking.status === 'in_progress'}
+                  className="py-3 rounded-xl text-xs font-bold border transition-all"
+                  style={{
+                    backgroundColor: booking.status === 'in_progress' ? 'var(--theme-accent)' : 'transparent',
+                    borderColor: 'var(--theme-accent)',
+                    color: booking.status === 'in_progress' ? '#000' : 'var(--theme-accent)',
+                  }}
                 >
-                  {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  Marcar como {BOOKING_STATUS_CONFIG[nextStatus].label}
+                  Em atendimento
                 </button>
-              )}
-              <div className="grid grid-cols-2 gap-3 mt-2">
+                <button
+                  onClick={() => onStatusChange(booking.id, 'completed')}
+                  disabled={isUpdating}
+                  className="py-3 rounded-xl text-xs font-bold transition-all text-white hover:opacity-90 shadow-md"
+                  style={{ backgroundColor: '#10b981' }} // Verde esmeralda para concluído
+                >
+                  Finalizado
+                </button>
+              </div>
+
+              {/* Cancelamentos */}
+              <div className="flex justify-between items-center mt-6 pt-4 border-t" style={{ borderColor: 'var(--theme-border)' }}>
                 <button
                   onClick={() => onStatusChange(booking.id, 'no_show')}
                   disabled={isUpdating}
-                  className="py-3 rounded-xl text-xs font-bold border border-orange-500/30 text-orange-500 hover:bg-orange-500/10 transition-all"
+                  className="text-xs font-bold text-orange-500/80 hover:text-orange-500 transition-colors px-2 py-1"
                 >
                   Não compareceu
                 </button>
                 <button
                   onClick={() => onStatusChange(booking.id, 'canceled')}
                   disabled={isUpdating}
-                  className="py-3 rounded-xl text-xs font-bold border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-all"
+                  className="text-xs font-bold text-red-500/80 hover:text-red-500 transition-colors px-2 py-1"
                 >
                   Cancelar Reserva
                 </button>

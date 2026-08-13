@@ -23,9 +23,12 @@ export interface Booking {
   order_number: string;
   scheduled_at: string;
   status: BookingStatus;
-  payment_mode: string;
+  payment_mode?: 'pay_local' | 'partial_50' | 'full_100';
+  payment_status?: 'pending' | 'partial_paid' | 'full_paid' | 'refunded' | 'failed';
   amount_paid: number;
   amount_total: number;
+  amount_due?: number;
+  payment_method?: string;
   notes: string | null;
   access_code: string | null;
   pro_color: string;
@@ -389,6 +392,8 @@ export function useBookingsRealtime(tenantId: string | null) {
           }
           // Invalidate bookings for this tenant (will match ['bookings', tenantId, ...])
           queryClient.invalidateQueries({ queryKey: ['bookings', tenantId] });
+          // Invalidate customer portal bookings as well so it updates in real time for the client
+          queryClient.invalidateQueries({ queryKey: ['customer-bookings'] });
         }
       )
       .subscribe();

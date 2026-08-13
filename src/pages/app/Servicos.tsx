@@ -5,6 +5,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useServices, useCreateService, useUpdateService, useDeleteService, type Service, type ServiceInput } from '../../hooks/useServices';
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, type Product, type ProductInput } from '../../hooks/useProducts';
+import { supabase } from '../../integrations/supabase/client';
+import FeatureGate from '../../components/FeatureGate';
 import ServiceCard from './servicos/ServiceCard';
 import ServiceModal from './servicos/ServiceModal';
 import ProductModal from './servicos/ProductModal';
@@ -292,6 +294,7 @@ export default function Servicos() {
 
       {/* ── PRODUCTS TAB ── */}
       {activeTab === 'produtos' && (
+        <FeatureGate feature="produtos">
         <div className="relative space-y-6">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
@@ -372,6 +375,7 @@ export default function Servicos() {
             )}
           </div>
         </div>
+        </FeatureGate>
       )}
 
       {/* ── Service Modal ── */}

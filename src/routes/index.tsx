@@ -38,6 +38,9 @@ import Clientes from '../pages/app/Clientes';
 import Financeiro from '../pages/app/Financeiro';
 import Configuracoes from '../pages/app/Configuracoes';
 import Assinatura from '../pages/app/Assinatura';
+import Suporte from '../pages/app/Suporte';
+import AdminSuporte from '../pages/admin/AdminSuporte';
+import FeatureGate from '../components/FeatureGate';
 
 export default function AppRoutes() {
   return (
@@ -83,6 +86,7 @@ export default function AppRoutes() {
           <Route path="notificacoes" element={<AdminNotificacoes />} />
           <Route path="seguranca" element={<AdminSeguranca />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="suporte" element={<AdminSuporte />} />
         </Route>
 
         {/* ── App Routes — Tenant Roles ── */}
@@ -97,13 +101,14 @@ export default function AppRoutes() {
           }
         >
           <Route index element={<Dashboard />} />
-          <Route path="agenda" element={<Agenda />} />
+          <Route path="agenda" element={<FeatureGate feature="agenda"><Agenda /></FeatureGate>} />
           <Route path="equipe" element={<Equipe />} />
           <Route path="servicos" element={<Servicos />} />
-          <Route path="clientes" element={<Clientes />} />
-          <Route path="financeiro" element={<Financeiro />} />
+          <Route path="clientes" element={<FeatureGate feature="clientes"><Clientes /></FeatureGate>} />
+          <Route path="financeiro" element={<FeatureGate feature="financeiro"><Financeiro /></FeatureGate>} />
           <Route path="configuracoes" element={<Configuracoes />} />
           <Route path="assinatura" element={<Assinatura />} />
+          <Route path="suporte" element={<Suporte />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />

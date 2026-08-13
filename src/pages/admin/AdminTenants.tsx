@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   Search, ExternalLink, MoreVertical, CheckCircle,
   ShieldAlert, Ban, PlayCircle, Building2, ChevronLeft, ChevronRight,
-  ArrowUpDown
+  ArrowUpDown, Trash2
 } from 'lucide-react';
 import AdminPageHeader from './components/AdminPageHeader';
 import AdminEmptyState from './components/AdminEmptyState';
@@ -14,6 +14,7 @@ import { AdminTableSkeleton } from './components/AdminSkeleton';
 import type { Database } from '../../types/database';
 
 type Tenant = Database['public']['Tables']['tenants']['Row'] & {
+  deleted_at?: string | null;
   tenant_settings?: {
     logo_url: string | null;
     phone: string | null;
@@ -22,13 +23,18 @@ type Tenant = Database['public']['Tables']['tenants']['Row'] & {
   } | null;
   subscriptions?: Array<{
     status: string;
+    stripe_subscription_id: string | null;
+    stripe_customer_id: string | null;
+    grace_period_ends_at: string | null;
+    canceled_at: string | null;
+    suspension_reason: string | null;
     plans?: { name: string } | null;
     current_period_end: string | null;
   }>;
 };
 
 type SortField = 'name' | 'created_at' | 'status';
-type StatusFilter = 'all' | 'active' | 'trial' | 'suspended' | 'blocked' | 'canceled';
+type StatusFilter = 'all' | 'active' | 'trial' | 'suspended' | 'blocked' | 'canceled' | 'deleted';
 type TypeFilter = 'all' | 'barbearia' | 'salao' | 'esmalteria';
 
 const PAGE_SIZE = 20;
@@ -41,6 +47,9 @@ export default function AdminTenants() {
   const [sortAsc, setSortAsc] = useState(false);
   const [page, setPage] = useState(0);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState<Tenant | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [stripeInfoModalOpen, setStripeInfoModalOpen] = useState<Tenant | null>(null);
   const queryClient = useQueryClient();
 
   const { data: tenants = [], isLoading } = useQuery({
@@ -51,7 +60,7 @@ export default function AdminTenants() {
         .select(`
           *,
           tenant_settings (logo_url, phone, city, state),
-          subscriptions (status, current_period_end, plans (name))
+          subscriptions (status, stripe_subscription_id, stripe_customer_id, grace_period_ends_at, canceled_at, suspension_reason, current_period_end, plans (name))
         `)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -70,19 +79,41 @@ export default function AdminTenants() {
     }
   });
 
+  const deleteTenant = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc('delete_tenant_safely', { p_tenant_id: id });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin_tenants_v2'] });
+      setDeleteModalOpen(null);
+      setDeleteConfirmText('');
+      alert('Empresa excluída com sucesso.');
+    },
+    onError: (err: any) => {
+      alert(`Erro: ${err.message}`);
+    }
+  });
+
   // ── Filter + Sort + Paginate ──
   const filtered = tenants
     .filter(t => {
       const matchSearch = t.name.toLowerCase().includes(search.toLowerCase()) ||
         t.slug.toLowerCase().includes(search.toLowerCase());
-      const matchStatus = statusFilter === 'all' || t.status === statusFilter;
+      
+      const computedStatus = t.deleted_at ? 'deleted' : t.status;
+      const matchStatus = statusFilter === 'all' || computedStatus === statusFilter;
       const matchType = typeFilter === 'all' || t.business_type === typeFilter;
       return matchSearch && matchStatus && matchType;
     })
     .sort((a, b) => {
       const dir = sortAsc ? 1 : -1;
       if (sortField === 'name') return dir * a.name.localeCompare(b.name);
-      if (sortField === 'status') return dir * a.status.localeCompare(b.status);
+      if (sortField === 'status') {
+        const statusA = a.deleted_at ? 'deleted' : a.status;
+        const statusB = b.deleted_at ? 'deleted' : b.status;
+        return dir * statusA.localeCompare(statusB);
+      }
       return dir * (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     });
 
@@ -135,6 +166,7 @@ export default function AdminTenants() {
           <option value="suspended">Suspenso</option>
           <option value="blocked">Bloqueado</option>
           <option value="canceled">Cancelado</option>
+          <option value="deleted">Excluída</option>
         </select>
 
         {/* Type filter */}
@@ -151,7 +183,7 @@ export default function AdminTenants() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl overflow-hidden">
+      <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl overflow-visible">
         {/* Table header */}
         <div className="border-b border-[#111] px-5 py-3 grid grid-cols-12 gap-4 text-[10px] font-bold uppercase tracking-widest text-[#333]">
           <div className="col-span-4">
@@ -188,6 +220,7 @@ export default function AdminTenants() {
             {paginated.map((tenant, i) => {
               const activeSub = tenant.subscriptions?.find(s => s.status === 'active' || s.status === 'trial');
               const settings = tenant.tenant_settings;
+              const computedStatus = tenant.deleted_at ? 'deleted' : tenant.status;
 
               return (
                 <motion.div
@@ -195,7 +228,7 @@ export default function AdminTenants() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.03 }}
-                  className="group grid grid-cols-12 gap-4 items-center px-5 py-3.5 hover:bg-[#0f0f0f] transition-colors relative"
+                  className={`group grid grid-cols-12 gap-4 items-center px-5 py-3.5 hover:bg-[#0f0f0f] transition-colors relative ${tenant.deleted_at ? 'opacity-50 grayscale hover:grayscale-0' : ''}`}
                 >
                   {/* Name + slug */}
                   <div className="col-span-4 flex items-center gap-3 min-w-0">
@@ -207,7 +240,7 @@ export default function AdminTenants() {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{tenant.name}</p>
+                      <p className={`text-sm font-medium truncate ${tenant.deleted_at ? 'text-[#666] line-through' : 'text-white'}`}>{tenant.name}</p>
                       <p className="text-xs text-[#444] truncate">/{tenant.slug}{settings?.city ? ` · ${settings.city}` : ''}</p>
                     </div>
                   </div>
@@ -219,7 +252,54 @@ export default function AdminTenants() {
 
                   {/* Status */}
                   <div className="col-span-2 hidden md:block">
-                    <AdminBadge value={tenant.status} dot />
+                    {(() => {
+                      if (tenant.deleted_at) {
+                        return <AdminBadge value="deleted" dot />;
+                      }
+                      
+                      // Pick subscription by sorting current_period_end (descending)
+                      const latestSub = tenant.subscriptions?.sort((a, b) => {
+                        const dateA = a.current_period_end ? new Date(a.current_period_end).getTime() : 0;
+                        const dateB = b.current_period_end ? new Date(b.current_period_end).getTime() : 0;
+                        return dateB - dateA;
+                      })[0];
+                      
+                      if (latestSub && (tenant.status === 'active' || tenant.status === 'trial')) {
+                        const stripeStatus = latestSub.status;
+                        
+                        if (stripeStatus === 'past_due' || stripeStatus === 'unpaid') {
+                          let daysLeftText = '';
+                          if (latestSub.grace_period_ends_at) {
+                            const days = Math.ceil((new Date(latestSub.grace_period_ends_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                            if (days > 0) {
+                              daysLeftText = `Bloqueia em ${days} dia${days > 1 ? 's' : ''}`;
+                            } else {
+                              daysLeftText = 'Prazo expirado';
+                            }
+                          }
+                          return (
+                            <div className="flex flex-col items-start gap-1">
+                              <AdminBadge value="past_due" dot />
+                              {daysLeftText && <span className="text-[10px] text-yellow-500/70 font-semibold">{daysLeftText}</span>}
+                            </div>
+                          );
+                        }
+                        
+                        if (stripeStatus === 'canceled') {
+                          return (
+                            <div className="flex flex-col items-start gap-1">
+                              <AdminBadge value="canceled" dot />
+                              {latestSub.canceled_at && <span className="text-[10px] text-[#666] font-semibold">{new Date(latestSub.canceled_at).toLocaleDateString('pt-BR')}</span>}
+                            </div>
+                          );
+                        }
+
+                        if (stripeStatus === 'active') return <AdminBadge value="active" dot />;
+                        if (stripeStatus === 'trialing' || stripeStatus === 'trial') return <AdminBadge value="trial" dot />;
+                      }
+
+                      return <AdminBadge value={tenant.status} dot />;
+                    })()}
                   </div>
 
                   {/* Plan */}
@@ -274,6 +354,24 @@ export default function AdminTenants() {
                           >
                             <Ban className="w-3.5 h-3.5" /> Bloquear
                           </button>
+                          <button
+                            onClick={() => {
+                              setStripeInfoModalOpen(tenant);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#888] hover:bg-[#1a1a1a] hover:text-white transition-colors border-t border-[#111]"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" /> Detalhes Stripe
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteModalOpen(tenant);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-colors border-t border-[#111] font-medium"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Apagar Empresa
+                          </button>
                         </div>
                       )}
                     </div>
@@ -310,6 +408,135 @@ export default function AdminTenants() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3 text-red-500 mb-2">
+                <ShieldAlert className="w-6 h-6" />
+                <h3 className="font-bold text-lg text-white">Apagar Empresa</h3>
+              </div>
+              <p className="text-sm text-[#888] leading-relaxed">
+                Esta ação é <strong className="text-white">irreversível</strong>. Todos os dados da empresa 
+                <strong className="text-white"> {deleteModalOpen.name}</strong>, incluindo clientes, agendamentos, financeiros e profissionais serão apagados permanentemente.
+              </p>
+              
+              <div className="pt-2">
+                <label className="block text-xs font-semibold uppercase tracking-widest text-[#555] mb-2">
+                  Para confirmar, digite: <span className="text-white select-none">{deleteModalOpen.slug}</span>
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={e => setDeleteConfirmText(e.target.value)}
+                  placeholder={deleteModalOpen.slug}
+                  className="w-full px-4 py-3 bg-[#111] border border-[#1a1a1a] rounded-xl text-sm text-white outline-none focus:border-red-500/50 transition-colors"
+                  onPaste={e => e.preventDefault()}
+                />
+              </div>
+            </div>
+            
+            <div className="border-t border-[#1a1a1a] p-4 flex justify-end gap-3 bg-[#0a0a0a]">
+              <button
+                onClick={() => {
+                  setDeleteModalOpen(null);
+                  setDeleteConfirmText('');
+                }}
+                className="px-4 py-2 text-sm text-[#888] hover:text-white transition-colors"
+                disabled={deleteTenant.isPending}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => deleteTenant.mutate(deleteModalOpen.id)}
+                disabled={deleteConfirmText !== deleteModalOpen.slug || deleteTenant.isPending}
+                className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {deleteTenant.isPending ? 'Apagando...' : 'Apagar Permanentemente'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Stripe Info Modal */}
+      {stripeInfoModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-[#1a1a1a]">
+              <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
+                <ShieldAlert className="w-6 h-6 text-blue-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Detalhes do Stripe</h3>
+              <p className="text-sm text-[#888] mt-1">Informações de assinatura para {stripeInfoModalOpen.name}</p>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {stripeInfoModalOpen.subscriptions && stripeInfoModalOpen.subscriptions.length > 0 ? (
+                <>
+                  {stripeInfoModalOpen.subscriptions.map((sub, idx) => (
+                    <div key={idx} className="bg-[#111] p-4 rounded-xl border border-[#1a1a1a] text-sm">
+                      <div className="grid grid-cols-2 gap-y-3">
+                        <div className="text-[#888]">Status:</div>
+                        <div className="text-white font-medium capitalize">{sub.status}</div>
+                        
+                        <div className="text-[#888]">Plano:</div>
+                        <div className="text-white">{sub.plans?.name || 'Desconhecido'}</div>
+                        
+                        <div className="text-[#888]">Customer ID:</div>
+                        <div className="text-white font-mono text-xs">{sub.stripe_customer_id || '—'}</div>
+                        
+                        <div className="text-[#888]">Subscription ID:</div>
+                        <div className="text-white font-mono text-xs">{sub.stripe_subscription_id || '—'}</div>
+                        
+                        {sub.current_period_end && (
+                          <>
+                            <div className="text-[#888]">Período expira:</div>
+                            <div className="text-white">{new Date(sub.current_period_end).toLocaleDateString('pt-BR')}</div>
+                          </>
+                        )}
+
+                        {sub.grace_period_ends_at && (
+                          <>
+                            <div className="text-red-400">Carência até:</div>
+                            <div className="text-red-400 font-bold">{new Date(sub.grace_period_ends_at).toLocaleDateString('pt-BR')}</div>
+                          </>
+                        )}
+                        
+                        {sub.canceled_at && (
+                          <>
+                            <div className="text-[#888]">Cancelado em:</div>
+                            <div className="text-white">{new Date(sub.canceled_at).toLocaleDateString('pt-BR')}</div>
+                          </>
+                        )}
+                      </div>
+                      {sub.suspension_reason && (
+                        <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-xs">
+                          <strong>Motivo da suspensão:</strong> {sub.suspension_reason}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div className="text-center py-6 text-[#888]">
+                  <p>Nenhuma assinatura registrada no Stripe.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="border-t border-[#1a1a1a] p-4 flex justify-end bg-[#0a0a0a]">
+              <button
+                onClick={() => setStripeInfoModalOpen(null)}
+                className="px-6 py-2 bg-white text-black font-bold rounded-lg transition-opacity hover:opacity-90 text-sm"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

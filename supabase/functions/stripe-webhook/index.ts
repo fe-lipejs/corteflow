@@ -2,26 +2,34 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
-  apiVersion: '2024-06-20',
-  httpClient: Stripe.createFetchHttpClient(),
-});
-
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
 serve(async (req) => {
+  const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY');
+  const endpointSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+
+  if (!stripeSecret || !endpointSecret) {
+    console.error('Missing STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET');
+    return new Response('Server misconfiguration', { status: 500 });
+  }
+
+  const stripe = new Stripe(stripeSecret, {
+    apiVersion: '2024-06-20',
+    httpClient: Stripe.createFetchHttpClient(),
+  });
+
   const signature = req.headers.get('stripe-signature');
   if (!signature) {
     return new Response('No signature', { status: 400 });
   }
 
   const body = await req.text();
-  const endpointSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') as string;
 
-  let event;
+  let event: Stripe.Event;
   try {
     event = await stripe.webhooks.constructEventAsync(body, signature, endpointSecret, undefined, cryptoProvider);
   } catch (err: any) {
+    console.error(`Webhook signature verification failed: ${err.message}`);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
@@ -30,140 +38,204 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
+  // 1. Idempotency Check
+  const { data: existingEvent } = await supabase
+    .from('stripe_events')
+    .select('id')
+    .eq('stripe_event_id', event.id)
+    .maybeSingle();
+
+  if (existingEvent) {
+    console.log(`Event ${event.id} already processed. Skipping.`);
+    return new Response(JSON.stringify({ received: true, skipped: true }), { status: 200 });
+  }
+
+  let eventTenantId: string | null = null;
+  let processingError: string | null = null;
+
   try {
+    console.log(`Processing webhook event: ${event.type}`);
+
+    // Helper: Find tenant_id from subscription
+    const getTenantFromSub = async (subId: string) => {
+      const { data } = await supabase
+        .from('subscriptions')
+        .select('tenant_id')
+        .eq('stripe_subscription_id', subId)
+        .maybeSingle();
+      return data?.tenant_id || null;
+    };
+
     switch (event.type) {
+
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
+
         if (session.metadata?.tenant_id && session.metadata?.plan_id) {
-          // Atualiza ou insere assinatura do salão
-          await supabase.from('subscriptions').upsert({
-            tenant_id: session.metadata.tenant_id,
-            plan_id: session.metadata.plan_id,
+          eventTenantId = session.metadata.tenant_id;
+          const planId = session.metadata.plan_id;
+
+          let trialEndsAt: string | null = null;
+          let currentPeriodEnd: string | null = null;
+
+          if (session.subscription) {
+            const stripeSub = await stripe.subscriptions.retrieve(session.subscription as string);
+            if (stripeSub.trial_end) {
+              trialEndsAt = new Date(stripeSub.trial_end * 1000).toISOString();
+            }
+            currentPeriodEnd = new Date(stripeSub.current_period_end * 1000).toISOString();
+          }
+
+          const { error: upsertError } = await supabase.from('subscriptions').upsert({
+            tenant_id: eventTenantId,
+            plan_id: planId,
             stripe_subscription_id: session.subscription as string,
             stripe_customer_id: session.customer as string,
             status: 'active',
-          });
+            trial_ends_at: trialEndsAt,
+            current_period_end: currentPeriodEnd,
+            grace_period_ends_at: null,
+            suspension_reason: null,
+            canceled_at: null,
+            latest_invoice_status: 'paid'
+          }, { onConflict: 'tenant_id' });
+
+          if (upsertError) throw upsertError;
+
+          await supabase.from('tenants').update({ status: 'active' }).eq('id', eventTenantId);
         } else if (session.metadata?.booking_id) {
-          // Pagamento de um cliente do salão (Stripe Connect)
           await supabase.from('bookings').update({
             status: 'confirmed',
+            amount_paid: (session.amount_total ?? 0) / 100,
           }).eq('id', session.metadata.booking_id);
         }
         break;
       }
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription;
-        await supabase.from('subscriptions').update({
-          status: 'canceled',
-        }).eq('stripe_subscription_id', subscription.id);
-        break;
-      }
-      case 'customer.subscription.updated': {
-        const subscription = event.data.object as Stripe.Subscription;
-        await supabase.from('subscriptions').update({
-          status: subscription.status,
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-        }).eq('stripe_subscription_id', subscription.id);
-        break;
-      }
-      case 'payment_intent.succeeded': {
-        const pi = event.data.object as Stripe.PaymentIntent;
-        const tenant_id = pi.metadata.tenant_id;
-        const booking_id = pi.metadata.booking_id;
-        
-        // Se houver booking_id, atualiza o status de pagamento
-        if (tenant_id && booking_id) {
-           await supabase.from('payments').update({
-             status: 'succeeded',
-             payment_method: pi.payment_method?.toString() || 'unknown'
-           }).eq('stripe_payment_intent_id', pi.id);
-           
-           // Fetch payment to get details for history
-           const { data: payment } = await supabase.from('payments').select('id, amount, status').eq('stripe_payment_intent_id', pi.id).single();
-           
-           if (payment) {
-             await supabase.from('payment_history').insert({
-               tenant_id,
-               payment_id: payment.id,
-               action: 'payment_succeeded',
-               status: 'succeeded',
-               details: { stripe_payment_intent_id: pi.id }
-             });
 
-             // Update booking status
-             await supabase.from('bookings').update({
-               payment_status: 'paid'
-             }).eq('id', booking_id);
-           }
+      case 'customer.subscription.updated': {
+        const sub = event.data.object as Stripe.Subscription;
+        eventTenantId = await getTenantFromSub(sub.id);
+        
+        if (eventTenantId) {
+          const trialEndsAt = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null;
+          
+          await supabase.from('subscriptions').update({
+            status: sub.status,
+            trial_ends_at: trialEndsAt,
+            current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: sub.cancel_at_period_end,
+          }).eq('stripe_subscription_id', sub.id);
+
+          // If it became active/trialing, clear suspension
+          if (sub.status === 'active' || sub.status === 'trialing') {
+            await supabase.from('tenants').update({ status: sub.status === 'trialing' ? 'trial' : 'active' }).eq('id', eventTenantId);
+            await supabase.from('subscriptions').update({ grace_period_ends_at: null, suspension_reason: null }).eq('tenant_id', eventTenantId);
+          }
         }
         break;
       }
-      case 'payment_intent.payment_failed': {
-        const pi = event.data.object as Stripe.PaymentIntent;
-        const tenant_id = pi.metadata.tenant_id;
-        
-        if (tenant_id) {
-           await supabase.from('payments').update({
-             status: 'failed'
-           }).eq('stripe_payment_intent_id', pi.id);
-           
-           const { data: payment } = await supabase.from('payments').select('id, amount, booking_id').eq('stripe_payment_intent_id', pi.id).single();
-           
-           if (payment) {
-             await supabase.from('payment_history').insert({
-               tenant_id,
-               payment_id: payment.id,
-               action: 'payment_failed',
-               status: 'failed',
-               details: { error: pi.last_payment_error }
-             });
-             
-             await supabase.from('bookings').update({
-               payment_status: 'failed'
-             }).eq('id', payment.booking_id);
-           }
+
+      case 'customer.subscription.deleted': {
+        const sub = event.data.object as Stripe.Subscription;
+        eventTenantId = await getTenantFromSub(sub.id);
+
+        if (eventTenantId) {
+          const canceledAt = sub.canceled_at ? new Date(sub.canceled_at * 1000).toISOString() : new Date().toISOString();
+          
+          await supabase.from('subscriptions').update({
+            status: 'canceled',
+            canceled_at: canceledAt,
+            grace_period_ends_at: null,
+            suspension_reason: 'Assinatura cancelada no Stripe.'
+          }).eq('stripe_subscription_id', sub.id);
+
+          await supabase.from('tenants').update({ status: 'canceled' }).eq('id', eventTenantId);
         }
         break;
       }
-      case 'charge.refunded': {
-        const charge = event.data.object as Stripe.Charge;
-        const piId = typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id;
+
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object as Stripe.Invoice;
+        const stripeSubId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
         
-        if (piId) {
-           const { data: payment } = await supabase.from('payments').select('*').eq('stripe_payment_intent_id', piId).single();
-           if (payment) {
-              await supabase.from('payments').update({
-                status: 'refunded'
-              }).eq('id', payment.id);
-              
-              await supabase.from('refunds').insert({
-                tenant_id: payment.tenant_id,
-                payment_id: payment.id,
-                amount: charge.amount_refunded / 100, // em reais
-                stripe_refund_id: charge.refunds?.data[0]?.id || charge.id,
-                status: 'succeeded'
-              });
-              
-              await supabase.from('payment_history').insert({
-                tenant_id: payment.tenant_id,
-                payment_id: payment.id,
-                action: 'payment_refunded',
-                status: 'refunded',
-                details: { amount_refunded: charge.amount_refunded }
-              });
-              
-              await supabase.from('bookings').update({
-                payment_status: 'refunded'
-              }).eq('id', payment.booking_id);
-           }
+        if (stripeSubId) {
+          eventTenantId = await getTenantFromSub(stripeSubId);
+          if (eventTenantId) {
+            // Check current subscription
+            const { data: currentSub } = await supabase.from('subscriptions').select('grace_period_ends_at').eq('tenant_id', eventTenantId).single();
+            
+            // Set 5-day grace period if not already set
+            let gracePeriod = currentSub?.grace_period_ends_at;
+            if (!gracePeriod) {
+              const fiveDaysFromNow = new Date();
+              fiveDaysFromNow.setDate(fiveDaysFromNow.getDate() + 5);
+              gracePeriod = fiveDaysFromNow.toISOString();
+            }
+
+            await supabase.from('subscriptions').update({
+              status: 'past_due',
+              latest_invoice_status: 'failed',
+              grace_period_ends_at: gracePeriod,
+            }).eq('stripe_subscription_id', stripeSubId);
+            
+            // Note: Tenant status remains 'active', the frontend will check grace_period_ends_at
+          }
         }
+        break;
+      }
+
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice;
+        const stripeSubId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
+        
+        if (stripeSubId) {
+          eventTenantId = await getTenantFromSub(stripeSubId);
+          if (eventTenantId) {
+            await supabase.from('subscriptions').update({
+              status: 'active',
+              latest_invoice_status: 'paid',
+              grace_period_ends_at: null,
+              suspension_reason: null
+            }).eq('stripe_subscription_id', stripeSubId);
+
+            // Restore tenant access if they were suspended (though handled by frontend primarily)
+            // But just to be sure we clear 'suspended' status if it was set
+            await supabase.from('tenants').update({ status: 'active' }).eq('id', eventTenantId);
+          }
+        }
+        break;
+      }
+
+      case 'account.updated': {
+        const account = event.data.object as Stripe.Account;
+        await supabase.from('stripe_connect_accounts').update({
+          charges_enabled: account.charges_enabled,
+          payouts_enabled: account.payouts_enabled,
+        }).eq('stripe_account_id', account.id);
         break;
       }
     }
 
-    return new Response(JSON.stringify({ received: true }), { status: 200 });
   } catch (err: any) {
-    console.error(`Error processing webhook: ${err.message}`);
-    return new Response(`Error processing webhook: ${err.message}`, { status: 500 });
+    processingError = err.message;
+    console.error(`Error processing webhook event ${event.type}: ${err.message}`);
   }
+
+  // 2. Audit Log (Idempotency Save)
+  await supabase.from('stripe_events').insert({
+    stripe_event_id: event.id,
+    type: event.type,
+    tenant_id: eventTenantId,
+    payload: event as any, // Cast to any because Supabase Json type
+    error: processingError
+  });
+
+  if (processingError) {
+    return new Response(`Error: ${processingError}`, { status: 500 });
+  }
+
+  return new Response(JSON.stringify({ received: true }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
 });

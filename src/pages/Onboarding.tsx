@@ -133,16 +133,25 @@ export default function Onboarding() {
         instagram: data.instagramHandle || '',
       } as any);
 
-      // 5. Create Subscription Trial
-      const { data: planData } = await supabase.from('plans').select('id').eq('key', 'growth').maybeSingle();
+      // 5. Create Subscription Trial — uses trial_days configured in the plan by Super Admin
+      const { data: planData } = await supabase
+        .from('plans')
+        .select('id, trial_days')
+        .eq('active', true)
+        .order('sort_order', { ascending: true })
+        .limit(1)
+        .maybeSingle();
       const plan = planData as any;
       
       if (plan) {
+        const trialDays = plan.trial_days ?? 7; // fallback to 7 if not set
+        const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
         await supabase.from('subscriptions').insert({
           tenant_id: tenant.id,
           plan_id: plan.id,
           status: 'trial',
-          current_period_end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          trial_ends_at: trialEndsAt,
+          current_period_end: trialEndsAt,
         } as any);
       }
 
@@ -196,27 +205,24 @@ export default function Onboarding() {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#1A1714] relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#000000] relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute top-[-30%] right-[-20%] w-[50%] h-[50%] bg-[#C9963B]/5 blur-[150px] rounded-full pointer-events-none" />
       
-      <div className="w-full max-w-3xl rounded-2xl overflow-hidden flex flex-col md:flex-row border border-[#2A2520] shadow-2xl relative z-10" style={{ minHeight: '600px' }}>
+      <div className="w-full max-w-3xl rounded-2xl overflow-hidden flex flex-col md:flex-row border border-[#222222] shadow-2xl relative z-10" style={{ minHeight: '600px' }}>
         
         {/* Sidebar Progress */}
-        <div className="bg-[#141210] p-8 md:w-60 flex flex-col border-r border-[#2A2520]">
-          <div className="flex items-center gap-2 mb-10">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #C9963B, #E8B960)' }}>
-              <Scissors className="w-4 h-4 text-[#1A1714]" />
-            </div>
-            <span className="font-bold text-white">Navalha</span>
+        <div className="bg-[#050505] p-8 md:w-60 flex flex-col border-r border-[#222222]">
+          <div className="flex items-center mb-10">
+            <img src="/logo.svg" alt="Raffros Corteflow" className="h-10 w-auto" />
           </div>
           <div className="space-y-5 flex-1">
             {stepLabels.map((s) => (
               <div key={s.num} className={`flex items-center gap-3 transition-all ${step >= s.num ? 'text-white' : 'text-[#555]'}`}>
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all" style={{
-                  background: step > s.num ? '#22c55e' : step === s.num ? 'linear-gradient(135deg, #C9963B, #E8B960)' : '#1E1B17',
-                  color: step === s.num ? '#1A1714' : step > s.num ? 'white' : '#555',
-                  border: step < s.num ? '1px solid #2A2520' : 'none',
+                  background: step > s.num ? '#22c55e' : step === s.num ? 'linear-gradient(135deg, #C9963B, #E8B960)' : '#0A0A0A',
+                  color: step === s.num ? '#000000' : step > s.num ? 'white' : '#555',
+                  border: step < s.num ? '1px solid #222222' : 'none',
                 }}>
                   {step > s.num ? <CheckCircle2 className="w-4 h-4" /> : s.num}
                 </div>
@@ -228,7 +234,7 @@ export default function Onboarding() {
         </div>
 
         {/* Form Content */}
-        <div className="p-8 flex-1 flex flex-col bg-[#1E1B17]">
+        <div className="p-8 flex-1 flex flex-col bg-[#0A0A0A]">
           <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col">
             <AnimatePresence mode="wait">
 
@@ -236,11 +242,11 @@ export default function Onboarding() {
               {step === 1 && (
                 <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1">
                   <h3 className="text-2xl font-bold mb-1 text-white">Qual é o seu negócio?</h3>
-                  <p className="text-sm mb-6 text-[#A09888]">Escolha o tipo para personalizar sua experiência.</p>
+                  <p className="text-sm mb-6 text-[#A1A1AA]">Escolha o tipo para personalizar sua experiência.</p>
                   
                   <div className="mb-5">
-                    <label className="block text-sm font-medium text-[#A09888] mb-1.5">Idioma do Sistema</label>
-                    <select {...register('language')} className="w-full px-4 py-3 bg-[#141210] border border-[#2A2520] rounded-xl text-white outline-none focus:border-[#C9963B]/50 transition-all">
+                    <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5">Idioma do Sistema</label>
+                    <select {...register('language')} className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-xl text-white outline-none focus:border-[#C9963B]/50 transition-all">
                       <option value="pt">Português</option>
                       <option value="en">English</option>
                       <option value="es">Español</option>
@@ -260,16 +266,16 @@ export default function Onboarding() {
                         onClick={() => setValue('businessType', type.id as any)}
                         className="p-4 rounded-xl cursor-pointer transition-all border group hover:-translate-y-0.5"
                         style={{
-                          borderColor: businessType === type.id ? '#C9963B' : '#2A2520',
-                          background: businessType === type.id ? '#C9963B10' : '#141210',
+                          borderColor: businessType === type.id ? '#C9963B' : '#222222',
+                          background: businessType === type.id ? '#C9963B10' : '#050505',
                           boxShadow: businessType === type.id ? '0 0 15px rgba(201,150,59,0.1)' : 'none',
                         }}
                       >
                         <div className="flex items-center gap-3">
-                          <type.icon className="w-6 h-6" style={{ color: businessType === type.id ? '#C9963B' : '#A09888' }} />
+                          <type.icon className="w-6 h-6" style={{ color: businessType === type.id ? '#C9963B' : '#A1A1AA' }} />
                           <div>
                             <div className="font-bold text-sm text-white">{type.title}</div>
-                            <div className="text-xs mt-0.5 text-[#A09888]">{type.desc}</div>
+                            <div className="text-xs mt-0.5 text-[#A1A1AA]">{type.desc}</div>
                           </div>
                         </div>
                       </div>
@@ -282,10 +288,10 @@ export default function Onboarding() {
               {step === 2 && (
                 <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1">
                   <h3 className="text-2xl font-bold mb-1 text-white">Como os clientes vão te encontrar?</h3>
-                  <p className="text-sm mb-6 text-[#A09888]">Você poderá alterar depois nas configurações.</p>
+                  <p className="text-sm mb-6 text-[#A1A1AA]">Você poderá alterar depois nas configurações.</p>
                   <div className="space-y-5">
                     <div>
-                      <label className="block text-sm font-medium text-[#A09888] mb-1.5">Nome do Estabelecimento</label>
+                      <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5">Nome do Estabelecimento</label>
                       <input 
                         {...register('businessName')} 
                         placeholder="Ex: Studio VIP"
@@ -295,20 +301,20 @@ export default function Onboarding() {
                              setValue('slug', e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-'));
                            }
                         }}
-                        className="w-full px-4 py-3 bg-[#141210] border border-[#2A2520] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all" 
+                        className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all" 
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-[#A09888] mb-1.5">URL Personalizada</label>
+                      <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5">URL Personalizada</label>
                       <div className="flex items-center">
-                        <span className="px-4 py-3 bg-[#141210] border border-[#2A2520] border-r-0 rounded-l-xl text-[#555] text-sm font-medium">navalha.app/</span>
+                        <span className="px-4 py-3 bg-[#050505] border border-[#222222] border-r-0 rounded-l-xl text-[#555] text-sm font-medium">navalha.app/</span>
                         <input 
                           {...register('slug')} 
                           onChange={(e) => {
                             setValue('slug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
                             setError(null);
                           }}
-                          className="w-full px-4 py-3 bg-[#141210] border border-[#2A2520] rounded-r-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all" 
+                          className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-r-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all" 
                         />
                       </div>
                       {errors.slug && <p className="text-red-400 text-xs mt-1.5">{errors.slug.message}</p>}
@@ -327,16 +333,16 @@ export default function Onboarding() {
               {step === 3 && (
                 <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 overflow-y-auto">
                   <h3 className="text-2xl font-bold mb-1 text-white">Identidade do seu salão</h3>
-                  <p className="text-sm mb-6 text-[#A09888]">Faça sua página se destacar. Tudo editável depois.</p>
+                  <p className="text-sm mb-6 text-[#A1A1AA]">Faça sua página se destacar. Tudo editável depois.</p>
                   
                   <div className="space-y-5">
                     {/* Logo Upload */}
                     <div>
-                      <label className="block text-sm font-medium text-[#A09888] mb-1.5">Logo (quadrado, mínimo 400x400)</label>
+                      <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5">Logo (quadrado, mínimo 400x400)</label>
                       <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                       <div 
                         onClick={() => logoInputRef.current?.click()} 
-                        className="w-24 h-24 rounded-2xl border-2 border-dashed border-[#2A2520] hover:border-[#C9963B]/50 cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-[#141210]"
+                        className="w-24 h-24 rounded-2xl border-2 border-dashed border-[#222222] hover:border-[#C9963B]/50 cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-[#050505]"
                       >
                         {logoPreview ? (
                           <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
@@ -348,11 +354,11 @@ export default function Onboarding() {
 
                     {/* Banner Upload */}
                     <div>
-                      <label className="block text-sm font-medium text-[#A09888] mb-1.5">Banner (1600x600 ideal)</label>
+                      <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5">Banner (1600x600 ideal)</label>
                       <input ref={bannerInputRef} type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
                       <div 
                         onClick={() => bannerInputRef.current?.click()} 
-                        className="w-full h-28 rounded-2xl border-2 border-dashed border-[#2A2520] hover:border-[#C9963B]/50 cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-[#141210]"
+                        className="w-full h-28 rounded-2xl border-2 border-dashed border-[#222222] hover:border-[#C9963B]/50 cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-[#050505]"
                       >
                         {bannerPreview ? (
                           <img src={bannerPreview} alt="Banner" className="w-full h-full object-cover" />
@@ -367,7 +373,7 @@ export default function Onboarding() {
 
                     {/* Descrição curta */}
                     <div>
-                      <label className="block text-sm font-medium text-[#A09888] mb-1.5 flex items-center justify-between">
+                      <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5 flex items-center justify-between">
                         <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> Descrição curta</span>
                         <span className="text-xs text-[#555]">{shortDescription.length}/180</span>
                       </label>
@@ -375,46 +381,46 @@ export default function Onboarding() {
                         {...register('shortDescription')}
                         rows={2}
                         placeholder="Ex: A melhor barbearia do bairro. Cortes modernos e ambiente exclusivo."
-                        className="w-full px-4 py-3 bg-[#141210] border border-[#2A2520] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all resize-none text-sm"
+                        className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all resize-none text-sm"
                       />
                     </div>
 
                     {/* Instagram */}
                     <div>
-                      <label className="block text-sm font-medium text-[#A09888] mb-1.5 flex items-center gap-1">
+                      <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5 flex items-center gap-1">
                         <AtSign className="w-3.5 h-3.5" /> Instagram
                       </label>
                       <div className="flex items-center">
-                        <span className="px-3 py-3 bg-[#141210] border border-[#2A2520] border-r-0 rounded-l-xl text-[#555] text-sm">@</span>
+                        <span className="px-3 py-3 bg-[#050505] border border-[#222222] border-r-0 rounded-l-xl text-[#555] text-sm">@</span>
                         <input 
                           {...register('instagramHandle')} 
                           placeholder="seusalao"
-                          className="w-full px-4 py-3 bg-[#141210] border border-[#2A2520] rounded-r-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all" 
+                          className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-r-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all" 
                         />
                       </div>
                     </div>
 
                     {/* Endereço */}
                     <div>
-                      <label className="block text-sm font-medium text-[#A09888] mb-1.5 flex items-center gap-1">
+                      <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5 flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5" /> Endereço
                       </label>
                       <input 
                         {...register('address')} 
                         placeholder="Rua Exemplo, 123 — Bairro, Cidade"
-                        className="w-full px-4 py-3 bg-[#141210] border border-[#2A2520] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all" 
+                        className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all" 
                       />
                     </div>
 
                     {/* Telefone do salão */}
                     <div>
-                      <label className="block text-sm font-medium text-[#A09888] mb-1.5 flex items-center gap-1">
+                      <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5 flex items-center gap-1">
                         <PhoneIcon className="w-3.5 h-3.5" /> Telefone do salão (para agendamentos)
                       </label>
                       <input 
                         {...register('phoneNumber')} 
                         placeholder="11999999999"
-                        className="w-full px-4 py-3 bg-[#141210] border border-[#2A2520] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all" 
+                        className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all" 
                       />
                     </div>
                   </div>
@@ -425,7 +431,7 @@ export default function Onboarding() {
               {step === 4 && (
                 <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1">
                   <h3 className="text-2xl font-bold mb-1 text-white">Escolha o estilo</h3>
-                  <p className="text-sm mb-6 text-[#A09888]">O tema define a aparência da sua página pública. Personalizável depois.</p>
+                  <p className="text-sm mb-6 text-[#A1A1AA]">O tema define a aparência da sua página pública. Personalizável depois.</p>
                   
                   <div className="grid grid-cols-3 gap-3">
                     {[
@@ -437,13 +443,13 @@ export default function Onboarding() {
                         key={theme.id}
                         onClick={() => setValue('themePreset', theme.id)}
                         className="rounded-xl cursor-pointer transition-all overflow-hidden border-2 hover:-translate-y-0.5"
-                        style={{ borderColor: themePreset === theme.id ? '#C9963B' : '#2A2520', boxShadow: themePreset === theme.id ? '0 0 15px rgba(201,150,59,0.15)' : 'none' }}
+                        style={{ borderColor: themePreset === theme.id ? '#C9963B' : '#222222', boxShadow: themePreset === theme.id ? '0 0 15px rgba(201,150,59,0.15)' : 'none' }}
                       >
                         <div className="p-4 flex flex-col gap-2" style={{ background: theme.previewBg, minHeight: '90px' }}>
                           <span className="font-serif font-bold text-sm" style={{ color: theme.textC }}>Salão</span>
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full self-start" style={{ background: theme.btnBg, color: theme.btnText }}>Agendar</span>
                         </div>
-                        <div className="p-3 bg-[#1E1B17]">
+                        <div className="p-3 bg-[#0A0A0A]">
                           <p className="font-bold text-xs text-white">{theme.title}</p>
                         </div>
                       </div>
@@ -459,9 +465,9 @@ export default function Onboarding() {
               )}
             </AnimatePresence>
 
-            <div className="mt-8 pt-6 border-t border-[#2A2520] flex justify-between">
+            <div className="mt-8 pt-6 border-t border-[#222222] flex justify-between">
               {step > 1 ? (
-                <button type="button" onClick={() => { setError(null); setStep(step - 1); }} className="flex items-center px-4 py-2 text-[#A09888] hover:text-white font-medium transition-colors">
+                <button type="button" onClick={() => { setError(null); setStep(step - 1); }} className="flex items-center px-4 py-2 text-[#A1A1AA] hover:text-white font-medium transition-colors">
                   <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
                 </button>
               ) : (
@@ -474,7 +480,7 @@ export default function Onboarding() {
                   onClick={handleNextStep}
                   disabled={nextDisabled() || loading}
                   className="flex items-center px-6 py-2.5 rounded-xl font-bold text-sm disabled:opacity-50 transition-all hover:shadow-[0_0_15px_rgba(201,150,59,0.2)]"
-                  style={{ background: 'linear-gradient(135deg, #C9963B, #E8B960)', color: '#1A1714' }}
+                  style={{ background: 'linear-gradient(135deg, #C9963B, #E8B960)', color: '#000000' }}
                 >
                   {loading ? 'Verificando...' : 'Próximo'}
                   <ChevronRight className="w-4 h-4 ml-1" />
@@ -484,7 +490,7 @@ export default function Onboarding() {
                   type="submit"
                   disabled={loading}
                   className="flex items-center px-6 py-2.5 rounded-xl font-bold text-sm disabled:opacity-50 transition-all hover:shadow-[0_0_15px_rgba(201,150,59,0.2)]"
-                  style={{ background: 'linear-gradient(135deg, #C9963B, #E8B960)', color: '#1A1714' }}
+                  style={{ background: 'linear-gradient(135deg, #C9963B, #E8B960)', color: '#000000' }}
                 >
                   {loading ? 'Salvando...' : 'Finalizar e Acessar'}
                 </button>

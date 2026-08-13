@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   Search, Bell, CheckCheck, AlertCircle, Clock,
-  UserPlus, DollarSign, Ban, Zap, ChevronLeft, ChevronRight
+  UserPlus, DollarSign, Ban, Zap, ChevronLeft, ChevronRight, MessageCircle
 } from 'lucide-react';
 import { supabase } from '../../integrations/supabase/client';
 import AdminPageHeader from './components/AdminPageHeader';
@@ -22,6 +23,7 @@ interface Notification {
 }
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
+  new_ticket: MessageCircle,
   new_signup: UserPlus,
   trial_expiring: Clock,
   payment_failed: AlertCircle,
@@ -41,6 +43,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 const PAGE_SIZE = 25;
 
 export default function AdminNotificacoes() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showUnread, setShowUnread] = useState(false);
@@ -81,6 +84,13 @@ export default function AdminNotificacoes() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin_notifications'] })
   });
 
+  const handleNotifClick = (notif: Notification) => {
+    if (!notif.read) markRead.mutate(notif.id);
+    if (notif.type === 'new_ticket') {
+      navigate('/admin/suporte');
+    }
+  };
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const filtered = notifications.filter(n => {
@@ -98,55 +108,49 @@ export default function AdminNotificacoes() {
     const date = new Date(d);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-    const mins = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-    if (mins < 1) return 'Agora';
-    if (mins < 60) return `${mins}min`;
-    if (hours < 24) return `${hours}h`;
-    return `${days}d`;
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 60) return `${minutes}m atrás`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h atrás`;
+    return `${Math.floor(hours / 24)}d atrás`;
   };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <AdminPageHeader
         title="Notificações"
-        subtitle={unreadCount > 0 ? `${unreadCount} não lida${unreadCount !== 1 ? 's' : ''}` : 'Todas as notificações lidas'}
+        subtitle="Eventos da plataforma e alertas do sistema."
         icon={<Bell className="w-5 h-5" />}
         actions={
-          unreadCount > 0 ? (
-            <button
-              onClick={() => markAllRead.mutate()}
-              disabled={markAllRead.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-[#0a0a0a] border border-[#1a1a1a] text-sm text-[#888] hover:text-white hover:border-[#333] rounded-lg transition-colors"
-            >
-              <CheckCheck className="w-4 h-4" />
-              Marcar todas como lidas
-            </button>
-          ) : undefined
+          <button
+            onClick={() => markAllRead.mutate()}
+            disabled={unreadCount === 0 || markAllRead.isPending}
+            className="flex items-center gap-2 px-4 py-2 bg-[#111] hover:bg-[#1a1a1a] disabled:opacity-50 border border-[#222] rounded-xl text-sm font-medium transition-colors"
+          >
+            <CheckCheck className="w-4 h-4" />
+            Marcar todas lidas
+          </button>
         }
       />
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-3">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#444]" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666]" />
           <input
             type="text"
             placeholder="Buscar notificação..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(0); }}
-            className="w-full pl-9 pr-4 py-2 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg text-sm text-white placeholder-[#444] outline-none focus:border-[#333]"
+            className="w-full bg-[#0d0d0d] border border-[#222] text-white rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-violet-500/50"
           />
         </div>
         <label className="flex items-center gap-2 cursor-pointer">
-          <div
-            onClick={() => { setShowUnread(!showUnread); setPage(0); }}
-            className={`w-9 h-5 rounded-full transition-colors relative ${showUnread ? 'bg-violet-600' : 'bg-[#1a1a1a]'}`}
-          >
-            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${showUnread ? 'translate-x-4' : 'translate-x-0.5'}`} />
+          <div className="relative">
+            <input type="checkbox" className="sr-only peer" checked={showUnread} onChange={e => { setShowUnread(e.target.checked); setPage(0); }} />
+            <div className="w-9 h-5 bg-[#222] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#888] peer-checked:after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-violet-600"></div>
           </div>
-          <span className="text-sm text-[#666]">Apenas não lidas</span>
+          <span className="text-sm text-[#888] font-medium">Apenas não lidas</span>
         </label>
       </div>
 
@@ -172,7 +176,7 @@ export default function AdminNotificacoes() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.02 }}
-                  onClick={() => !notif.read && markRead.mutate(notif.id)}
+                  onClick={() => handleNotifClick(notif)}
                   className={`flex items-start gap-4 px-5 py-4 hover:bg-[#0f0f0f] transition-colors cursor-pointer ${!notif.read ? 'bg-[#0d0d0d]' : ''}`}
                 >
                   {/* Icon */}

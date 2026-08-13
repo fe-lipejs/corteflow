@@ -1,4 +1,4 @@
-type BadgeVariant = 'active' | 'trial' | 'suspended' | 'blocked' | 'canceled' | 'neutral' | 'violet' | 'blue';
+type BadgeVariant = 'active' | 'trial' | 'suspended' | 'blocked' | 'canceled' | 'neutral' | 'violet' | 'blue' | 'deleted' | 'past_due';
 
 const variantMap: Record<BadgeVariant, string> = {
   active:    'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
@@ -6,6 +6,8 @@ const variantMap: Record<BadgeVariant, string> = {
   suspended: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
   blocked:   'bg-red-500/10 text-red-400 border-red-500/20',
   canceled:  'bg-zinc-800/50 text-zinc-500 border-zinc-700/30',
+  deleted:   'bg-red-950/50 text-red-500 border-red-500/30 line-through decoration-red-500/50',
+  past_due:  'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
   neutral:   'bg-[#1a1a1a] text-[#777] border-[#333]',
   violet:    'bg-violet-500/10 text-violet-400 border-violet-500/20',
   blue:      'bg-blue-500/10 text-blue-400 border-blue-500/20',
@@ -17,6 +19,8 @@ const labelMap: Record<string, string> = {
   suspended: 'Suspenso',
   blocked: 'Bloqueado',
   canceled: 'Cancelado',
+  deleted: 'Excluída',
+  past_due: 'Inadimplente',
   super_admin: 'Super Admin',
   admin: 'Admin',
   manager: 'Gerente',

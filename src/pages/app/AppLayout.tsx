@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Calendar, Users, Scissors,
-  DollarSign, Settings, LogOut, Bell, CreditCard, Shield, Loader2, Menu, X
+  DollarSign, Settings, LogOut, Bell, CreditCard, Shield, Loader2, Menu, X,
+  AlertTriangle, Clock, LifeBuoy
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -10,26 +11,34 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { supabase } from '../../integrations/supabase/client';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { ConnectionStatus } from '../../components/notifications/ConnectionStatus';
+import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 
 export default function AppLayout() {
   const { signOut, tenant, profile, loading } = useAuth();
   const { i18n } = useTranslation();
   const { theme, setThemeId } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [tenantSettings, setTenantSettings] = useState<any>(null);
+  const { features, isLoading: planLoading } = usePlanFeatures();
+
+  // Pages always accessible regardless of subscription status
+  const publicAppPaths = ['/app/assinatura', '/app/configuracoes', '/app/suporte'];
 
   // Sync theme with tenant settings from DB
   useEffect(() => {
     if (tenant?.id) {
       supabase
         .from('tenant_settings')
-        .select('theme_preset')
+        .select('*')
         .eq('tenant_id', tenant.id)
         .maybeSingle()
         .then(({ data }) => {
-          if (data?.theme_preset) {
-            setThemeId(data.theme_preset);
+          if (data) {
+            setTenantSettings(data);
+            if (data.theme_preset) setThemeId(data.theme_preset);
           }
         });
     }
@@ -62,6 +71,7 @@ export default function AppLayout() {
     { to: '/app/clientes', icon: Users, label: 'Clientes', end: false },
     { to: '/app/financeiro', icon: DollarSign, label: 'Financeiro', end: false },
     { to: '/app/assinatura', icon: CreditCard, label: 'Assinatura', end: false },
+    { to: '/app/suporte', icon: LifeBuoy, label: 'Suporte', end: false },
     { to: '/app/configuracoes', icon: Settings, label: 'Configurações', end: false },
   ];
 
@@ -75,6 +85,42 @@ export default function AppLayout() {
     navigate('/login');
   };
 
+  // Subscription guard — allow access to /app/assinatura and /app/configuracoes always
+  const isPublicAppPath = publicAppPaths.some(p => location.pathname.startsWith(p));
+  const tenantStatus = (tenant as any).status as string | undefined;
+
+  // Calculate dynamic suspension if grace period expired
+  const isGracePeriodExpired = features.subscription_status === 'past_due' && features.grace_period_ends_at && new Date(features.grace_period_ends_at) < new Date();
+  const isEffectivelySuspended = tenantStatus === 'blocked' || tenantStatus === 'suspended' || isGracePeriodExpired;
+  
+  const displaySuspensionReason = features.suspension_reason || 'Sua conta foi suspensa. Entre em contato com o suporte.';
+
+  // Blocked or suspended by admin (or by grace period expiration): hard block
+  if (isEffectivelySuspended && !isPublicAppPath) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: theme.bg }}>
+        <div className="max-w-sm text-center px-8">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="w-8 h-8 text-red-400" />
+          </div>
+          <h2 className="text-xl font-bold mb-2" style={{ color: theme.textPrimary }}>Conta Suspensa</h2>
+          <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>{displaySuspensionReason}</p>
+          <div className="flex flex-col gap-3">
+            {features.subscription_status === 'past_due' && (
+              <button onClick={() => navigate('/app/assinatura')} className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl w-full" style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}>
+                <CreditCard className="w-4 h-4" /> Regularizar Assinatura
+              </button>
+            )}
+            <button onClick={handleSignOut} className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl w-full border" style={{ borderColor: theme.border, color: theme.textPrimary }}>
+              <LogOut className="w-4 h-4" /> Sair
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
   return (
     <div className="min-h-screen flex" style={{ background: theme.bg }}>
       
@@ -84,13 +130,17 @@ export default function AppLayout() {
         style={{ background: theme.sidebarBg, borderBottom: `1px solid ${theme.border}` }}
       >
         <div className="flex items-center gap-2">
-          <div 
-            className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm"
-            style={{ background: theme.accent, color: theme.textInverse }}
-          >
-            {initials}
-          </div>
-          <span className="font-bold text-sm" style={{ color: theme.textPrimary }}>Navalha</span>
+          {tenantSettings?.logo_url ? (
+            <img src={tenantSettings.logo_url} alt="Logo do Salão" className="w-8 h-8 rounded-full object-cover border" style={{ borderColor: theme.border }} />
+          ) : (
+            <div 
+              className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm"
+              style={{ background: theme.accent, color: theme.textInverse }}
+            >
+              {initials}
+            </div>
+          )}
+          <img src="/logo.svg" alt="Raffros Corteflow" className="h-5 w-auto" />
         </div>
         <div className="flex items-center gap-3">
           <NotificationBell align="right" />
@@ -117,14 +167,8 @@ export default function AppLayout() {
         {/* Logo */}
         <div className="items-center justify-between px-5 py-5 hidden md:flex" style={{ borderBottom: `1px solid ${theme.border}` }}>
           <div className="flex items-center gap-3">
-            <div 
-              className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm"
-              style={{ background: theme.accent, color: theme.textInverse }}
-            >
-              {initials}
-            </div>
+            <img src="/logo.svg" alt="Raffros Corteflow" className="h-8 w-auto flex-shrink-0" />
             <div>
-              <p className="font-bold text-sm leading-tight" style={{ color: theme.textPrimary }}>Navalha</p>
               <p className="text-xs leading-tight" style={{ color: theme.textMuted }}>Painel do Salão</p>
             </div>
           </div>
@@ -201,6 +245,26 @@ export default function AppLayout() {
       {/* Main Content */}
       <main className="flex-1 min-w-0 min-h-screen pt-16 md:pt-0 md:ml-[250px] transition-all flex flex-col">
         <div className="p-4 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden flex-1 flex flex-col">
+          {features.subscription_status === 'past_due' && features.grace_period_ends_at && !isGracePeriodExpired && (
+            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 rounded-xl p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-bold text-sm">Problema com o pagamento</h3>
+                  <p className="text-sm opacity-90">
+                    Identificamos uma pendência no pagamento da sua assinatura. 
+                    Você possui acesso até {new Date(features.grace_period_ends_at).toLocaleDateString('pt-BR')} para regularizar a situação antes da suspensão da conta.
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => navigate('/app/assinatura')}
+                className="whitespace-nowrap px-4 py-2 bg-yellow-500 text-yellow-950 font-bold rounded-lg text-sm transition-opacity hover:opacity-90 w-full md:w-auto text-center"
+              >
+                Regularizar Agora
+              </button>
+            </div>
+          )}
           <Outlet />
         </div>
       </main>

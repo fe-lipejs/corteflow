@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Building2, CreditCard, DollarSign,
   Users, ScrollText, Bell, Settings, Shield,
-  LogOut, Menu, X, ChevronRight, Zap
+  LogOut, Menu, X, ChevronRight, Zap, LifeBuoy
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../integrations/supabase/client';
@@ -38,6 +38,7 @@ const navGroups = [
       { to: '/admin/usuarios', icon: Users, label: 'Usuários' },
       { to: '/admin/auditoria', icon: ScrollText, label: 'Auditoria' },
       { to: '/admin/notificacoes', icon: Bell, label: 'Notificações', badgeKey: 'notifications' },
+      { to: '/admin/suporte', icon: LifeBuoy, label: 'Suporte', badgeKey: 'support' },
     ],
   },
   {
@@ -127,10 +128,7 @@ export default function AdminLayout() {
       {/* ── Mobile Top Bar ── */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#000]/90 border-b border-[#1a1a1a] z-50 flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-white rounded-sm flex items-center justify-center">
-            <Zap className="w-3.5 h-3.5 text-black" />
-          </div>
-          <span className="text-sm font-semibold text-white tracking-wide">Navalha</span>
+          <img src="/logo.svg" alt="Raffros Corteflow" className="h-8 md:h-10 w-auto" />
           <span className="text-[10px] font-bold text-[#555] uppercase tracking-widest ml-1">Platform</span>
         </div>
         <button
@@ -152,12 +150,9 @@ export default function AdminLayout() {
         `}
       >
         {/* Logo */}
-        <div className="h-14 flex items-center px-4 border-b border-[#111] gap-2.5">
-          <div className="w-7 h-7 bg-white rounded-md flex items-center justify-center flex-shrink-0">
-            <Zap className="w-4 h-4 text-black" />
-          </div>
+        <div className="h-16 flex items-center px-4 border-b border-[#111] gap-2.5">
+          <img src="/logo.svg" alt="Raffros Corteflow" className="h-12 w-auto flex-shrink-0" />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-white leading-none">Navalha</p>
             <p className="text-[10px] text-[#444] font-medium uppercase tracking-widest mt-0.5">Platform Admin</p>
           </div>
         </div>
@@ -237,7 +232,7 @@ export default function AdminLayout() {
 
         {/* Footer */}
         <footer className="px-8 py-4 border-t border-[#0d0d0d] flex items-center justify-between">
-          <p className="text-xs text-[#333]">Navalha Platform · Admin Console</p>
+          <p className="text-xs text-[#333]">Raffros Corteflow · Admin Console</p>
           <p className="text-xs text-[#2a2a2a]">v2.0.0</p>
         </footer>
       </main>

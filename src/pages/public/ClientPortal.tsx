@@ -1,16 +1,18 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCancelBooking, useRescheduleBooking } from '../../hooks/useBookings';
+import { useCancelBooking, useRescheduleBooking, useBookingsRealtime } from '../../hooks/useBookings';
 import { format, isBefore, addHours, startOfDay, addDays } from 'date-fns';
 import { generateAvailableSlots } from '../../lib/availability';
 import type { Slot } from '../../lib/availability';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Clock, ArrowLeft, Loader2, ShieldCheck } from 'lucide-react';
+import { Calendar, Clock, ArrowLeft, Loader2, ShieldCheck, X } from 'lucide-react';
 import { usePhoneFormat } from '../../hooks/usePhoneFormat';
 import { getThemeById } from '../../contexts/ThemeContext';
 import { usePublicStore } from '../../hooks/usePublicStore';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getThemeContrastEngine } from '../../lib/themeEngine';
 
 export default function ClientPortal() {
   const { slug } = useParams();
@@ -23,6 +25,12 @@ export default function ClientPortal() {
   const [loading, setLoading] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(null);
 
+  const { data: storeData, isLoading: loadingStore } = usePublicStore(slug || '');
+  const tenant = storeData?.tenant;
+  
+  // Habilitar atualizações em tempo real para o portal do cliente
+  useBookingsRealtime(tenant?.id || null);
+
   // Cancel State
   const [bookingToCancel, setBookingToCancel] = useState<any>(null);
   const [cancelReason, setCancelReason] = useState("");
@@ -33,8 +41,6 @@ export default function ClientPortal() {
   const [newTime, setNewTime] = useState<string>('');
 
   // Tenant Info
-  const { data: storeData } = usePublicStore(slug);
-  const tenant = storeData?.tenant;
 
   // Bookings Fetch
   const { data: bookings = [], isLoading: loadingBookings } = useQuery({
@@ -79,9 +85,27 @@ export default function ClientPortal() {
       newDate, service, rescheduleBooking.professional_id,
       storeData?.professionals || [], storeData?.services || [], storeData?.businessHours || [],
       storeData?.professionalWorkingHours || [], storeData?.professionalBlockedTimes || [],
-      storeData?.bookings || [], storeData?.professionalServices || []
+      storeData?.bookings || [], storeData?.professionalServices || [],
+      [service]
     );
   }, [newDate, rescheduleBooking, storeData]);
+
+  const visibleSlots = useMemo(() => {
+    return availableSlots.filter(
+      (s) => s.available || (s.unavailableReason !== 'past' && s.unavailableReason !== 'no_fit')
+    );
+  }, [availableSlots]);
+
+  // ── Favicon ────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (storeData?.settings?.logo_url) {
+      const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
+      link.type = 'image/x-icon';
+      link.rel = 'icon';
+      link.href = storeData.settings.logo_url;
+      document.head.appendChild(link);
+    }
+  }, [storeData?.settings?.logo_url]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,8 +137,8 @@ export default function ClientPortal() {
   };
 
   const handleCancelClick = (booking: any) => {
-    if (!tenant?.tenant_settings?.[0]) return;
-    const settings = tenant.tenant_settings[0];
+    const settings = storeData?.settings;
+    if (!settings) return;
 
     if (!settings.allow_cancel) {
       alert('O salão não permite cancelamentos pelo portal.');
@@ -122,11 +146,23 @@ export default function ClientPortal() {
     }
 
     const scheduledDate = new Date(booking.scheduled_at);
-    const deadlineDate = addHours(new Date(), settings.cancel_deadline_hours || 24);
+    
+    // Calcula o prazo máximo onde o cancelamento ainda é 100% grátis
+    const freeDeadlineDate = new Date(scheduledDate);
+    freeDeadlineDate.setHours(freeDeadlineDate.getHours() - (settings.cancel_free_hours_before || 2));
+    
+    const now = new Date();
 
-    if (isBefore(scheduledDate, deadlineDate)) {
-      alert(`O prazo máximo para cancelamento é de ${settings.cancel_deadline_hours} horas de antecedência.`);
-      return;
+    if (now > freeDeadlineDate) {
+      // Passou do prazo gratuito, verificar se cobra multa
+      const feePercent = settings.cancel_fee_percent || 0;
+      if (feePercent > 0) {
+        const confirmCancel = window.confirm(`ATENÇÃO: Você está cancelando com menos de ${settings.cancel_free_hours_before}h de antecedência.\n\nUma multa de ${feePercent}% será aplicada sobre o valor pago.\n\nDeseja confirmar o cancelamento?`);
+        if (!confirmCancel) return;
+      } else {
+        const confirmCancel = window.confirm('Você está cancelando em cima da hora, mas o salão não cobra multa. Deseja confirmar?');
+        if (!confirmCancel) return;
+      }
     }
 
     setCancelReason("Imprevisto");
@@ -156,14 +192,19 @@ export default function ClientPortal() {
     e.preventDefault();
     if (!rescheduleBooking || !newDate || !newTime) return;
 
-    if (!tenant?.tenant_settings?.[0]) return;
-    const settings = tenant.tenant_settings[0];
+    const settings = storeData?.settings;
+    if (!settings) return;
 
     const scheduledDate = new Date(rescheduleBooking.scheduled_at);
-    const deadlineDate = addHours(new Date(), settings.reschedule_deadline_hours || 24);
+    
+    // Prazo máximo onde reagendamento é permitido (mesmo comportamento antigo, mas corrigido o state)
+    const deadlineDate = new Date(scheduledDate);
+    deadlineDate.setHours(deadlineDate.getHours() - (settings.reschedule_deadline_hours || 24));
 
-    if (isBefore(scheduledDate, deadlineDate)) {
-      alert(`O prazo máximo para reagendamento é de ${settings.reschedule_deadline_hours} horas de antecedência.`);
+    const now = new Date();
+
+    if (now > deadlineDate) {
+      alert(`Você não pode reagendar em cima da hora. O prazo máximo para reagendamento é de ${settings.reschedule_deadline_hours} horas de antecedência.`);
       return;
     }
 
@@ -197,22 +238,25 @@ export default function ClientPortal() {
 
   const settings = storeData?.settings;
   const theme = getThemeById(settings?.theme_preset || 'classic');
+  const contrast = getThemeContrastEngine(theme);
 
   const storeHeader = (
     <div className="relative w-full overflow-hidden border-b mb-8" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
-      {/* Banner */}
+      {/* Banner com Motor de Contraste */}
       <div className="relative h-44 sm:h-56 w-full overflow-hidden">
         {settings?.banner_url ? (
-          <img src={settings.banner_url} alt="Banner" className="h-full w-full object-cover opacity-90" />
+          <img src={settings.banner_url} alt="Banner" className="h-full w-full object-cover" />
         ) : (
-          <div className="h-full w-full opacity-90" style={{ background: `linear-gradient(135deg, ${theme.accent}40, ${theme.bg})` }} />
+          <div className="h-full w-full" style={{ background: `linear-gradient(135deg, ${theme.accent}40, ${theme.bg})` }} />
         )}
-        <div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(to top, ${theme.cardBg} 0%, transparent 100%)` }} />
+        {/* Camadas inteligentes de contraste */}
+        <div className="absolute inset-0" style={{ background: contrast.bannerVignette }} />
+        <div className="absolute inset-0" style={{ background: contrast.bannerGradient }} />
 
         {/* Back Button */}
         <button
           onClick={() => navigate(`/${slug}`)}
-          className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/40 backdrop-blur-xl text-white text-[11px] font-medium shadow-xl border border-white/20 transition-all active:scale-95 hover:bg-black/60 font-sans"
+          className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/50 backdrop-blur-xl text-white text-[11px] font-medium shadow-xl border border-white/20 transition-all active:scale-95 hover:bg-black/70 font-sans"
         >
           <ArrowLeft className="w-3.5 h-3.5 text-white/90" />
           <span>Voltar ao Salão</span>
@@ -234,10 +278,10 @@ export default function ClientPortal() {
             <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border mb-1" style={{ borderColor: `${theme.accent}40`, backgroundColor: `${theme.accent}15`, color: theme.accent }}>
               Portal do Cliente
             </span>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight" style={{ color: theme.accent }}>
+            <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight" style={{ color: theme.textPrimary, textShadow: contrast.titleTextShadow }}>
               {tenant.name}
             </h1>
-            <p className="text-xs sm:text-sm mt-0.5 opacity-80" style={{ color: theme.textSecondary }}>
+            <p className="text-xs sm:text-sm mt-0.5 font-medium" style={{ color: contrast.descriptionColor, textShadow: contrast.descriptionTextShadow }}>
               {settings?.short_description || settings?.address || "Gerencie seus agendamentos e histórico completo."}
             </p>
           </div>
@@ -246,8 +290,8 @@ export default function ClientPortal() {
         {isLogged && (
           <button
             onClick={() => { setIsLogged(false); setCustomerId(null); setPhone(''); }}
-            className="text-xs font-bold underline opacity-70 hover:opacity-100 transition-opacity"
-            style={{ color: theme.textSecondary }}
+            className="text-xs font-bold underline opacity-80 hover:opacity-100 transition-opacity"
+            style={{ color: contrast.descriptionColor }}
           >
             Sair da Conta
           </button>
@@ -338,6 +382,11 @@ export default function ClientPortal() {
                 <div key={b.id} className="rounded-3xl p-6 shadow-xl border backdrop-blur-xl transition-all" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
                   <div className="flex justify-between items-start mb-4 border-b pb-4" style={{ borderColor: theme.border }}>
                     <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-mono font-bold tracking-widest px-2 py-0.5 rounded border" style={{ color: theme.textSecondary, borderColor: theme.border, backgroundColor: theme.inputBg }}>
+                          #{b.order_number}
+                        </span>
+                      </div>
                       <h3 className="font-serif font-bold text-xl" style={{ color: theme.textPrimary }}>{b.services?.name}</h3>
                       <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>com <strong>{b.professionals?.name || 'Profissional'}</strong></p>
                     </div>
@@ -379,11 +428,12 @@ export default function ClientPortal() {
                           Cancelar
                         </button>
                       )}
-                      {settings?.allow_reschedule && (
+                      {settings?.allow_reschedule && (b.status === 'pending' || b.status === 'confirmed') && (
                         <button 
                           onClick={() => {
                             setRescheduleBooking(b);
-                            setNewDate(format(new Date(b.scheduled_at), 'yyyy-MM-dd'));
+                            // Set to a Date object, not a string
+                            setNewDate(startOfDay(new Date(b.scheduled_at)));
                             setNewTime('');
                           }}
                           className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all hover:opacity-90 shadow-md"
@@ -521,22 +571,41 @@ export default function ClientPortal() {
                     <h4 className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: theme.textSecondary }}>
                       <Clock className="w-4 h-4" /> Novo Horário
                     </h4>
-                    {availableSlots.length > 0 ? (
+                    {visibleSlots.length > 0 ? (
                       <div className="grid grid-cols-3 gap-2">
-                        {availableSlots.map((slot, i) => (
-                          <button
-                            key={i}
-                            onClick={() => setNewTime(slot.time)}
-                            className="p-3 rounded-xl border text-sm font-bold font-sans transition-all relative overflow-hidden"
-                            style={{
-                              backgroundColor: newTime === slot.time ? theme.accent : theme.inputBg,
-                              borderColor: newTime === slot.time ? theme.accent : theme.inputBorder,
-                              color: newTime === slot.time ? theme.btnPrimaryText : theme.textPrimary,
-                            }}
-                          >
-                            {slot.time}
-                          </button>
-                        ))}
+                        {visibleSlots.map((slot) => {
+                          if (!slot.available) {
+                            return (
+                              <button
+                                key={slot.time}
+                                disabled
+                                className="p-3 rounded-xl border text-sm font-bold font-sans opacity-40 cursor-not-allowed line-through"
+                                style={{
+                                  backgroundColor: 'transparent',
+                                  borderColor: theme.inputBorder,
+                                  color: theme.textMuted,
+                                }}
+                              >
+                                {slot.time}
+                              </button>
+                            );
+                          }
+
+                          return (
+                            <button
+                              key={slot.time}
+                              onClick={() => setNewTime(slot.time)}
+                              className="p-3 rounded-xl border text-sm font-bold font-sans transition-all relative overflow-hidden"
+                              style={{
+                                backgroundColor: newTime === slot.time ? theme.accent : theme.inputBg,
+                                borderColor: newTime === slot.time ? theme.accent : theme.inputBorder,
+                                color: newTime === slot.time ? theme.btnPrimaryText : theme.textPrimary,
+                              }}
+                            >
+                              {slot.time}
+                            </button>
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="p-6 rounded-2xl border text-center" style={{ backgroundColor: theme.inputBg, borderColor: theme.border }}>
