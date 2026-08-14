@@ -39,6 +39,10 @@ export default function Onboarding() {
     if (!authLoading) {
       if (!user) {
         navigate('/login', { replace: true });
+      } else if (!user.email_confirmed_at && !user.confirmed_at) {
+        supabase.auth.signOut().then(() => {
+          navigate('/login', { replace: true });
+        });
       } else if (tenant || profile?.tenant_id || profile?.role === 'owner' || profile?.role === 'super_admin') {
         navigate('/app', { replace: true });
       }
@@ -93,6 +97,19 @@ export default function Onboarding() {
     setError(null);
 
     try {
+      // 0. Double check if tenant already exists for this user
+      const { data: existingTenant } = await supabase
+        .from('tenants')
+        .select('id')
+        .eq('owner_user_id', user.id)
+        .maybeSingle();
+
+      if (existingTenant) {
+        await refreshProfile();
+        navigate('/app', { replace: true });
+        return;
+      }
+
       // 1. Create Tenant
       const { data: tenantData, error: tenantError } = await supabase.from('tenants').insert({
         owner_user_id: user.id,
@@ -137,7 +154,19 @@ export default function Onboarding() {
         instagram: data.instagramHandle || '',
       } as any);
 
-      // 5. Create Subscription Trial — uses trial_days configured in the plan by Super Admin
+      // 5. Initialize default business hours (Monday to Saturday 09:00 - 19:00, Sunday closed)
+      const defaultHours = [
+        { tenant_id: tenant.id, weekday: 0, is_open: false, open_time: '09:00', close_time: '19:00' }, // Domingo
+        { tenant_id: tenant.id, weekday: 1, is_open: true,  open_time: '09:00', close_time: '19:00' }, // Segunda
+        { tenant_id: tenant.id, weekday: 2, is_open: true,  open_time: '09:00', close_time: '19:00' }, // Terça
+        { tenant_id: tenant.id, weekday: 3, is_open: true,  open_time: '09:00', close_time: '19:00' }, // Quarta
+        { tenant_id: tenant.id, weekday: 4, is_open: true,  open_time: '09:00', close_time: '19:00' }, // Quinta
+        { tenant_id: tenant.id, weekday: 5, is_open: true,  open_time: '09:00', close_time: '19:00' }, // Sexta
+        { tenant_id: tenant.id, weekday: 6, is_open: true,  open_time: '09:00', close_time: '18:00' }, // Sábado
+      ];
+      await supabase.from('business_hours').insert(defaultHours as any);
+
+      // 6. Create Subscription Trial — uses trial_days configured in the plan by Super Admin
       const { data: planData } = await supabase
         .from('plans')
         .select('id, trial_days')
@@ -160,7 +189,7 @@ export default function Onboarding() {
       }
 
       await refreshProfile();
-      navigate('/app');
+      navigate('/app', { replace: true });
 
     } catch (err: any) {
       console.error(err);

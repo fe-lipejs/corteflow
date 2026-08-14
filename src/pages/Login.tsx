@@ -40,32 +40,85 @@ export default function Login() {
     }, 2000);
   };
 
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      setError('Digite seu e-mail para reenviar a confirmação.');
+      return;
+    }
+    setResendingEmail(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim().toLowerCase(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/onboarding`
+        }
+      });
+      if (error) throw error;
+      setResendSuccess(true);
+      setError(null);
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Não foi possível reenviar o e-mail no momento. Tente novamente em alguns instantes.');
+    } finally {
+      setResendingEmail(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setResendSuccess(false);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data: signInData, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-    if (error) {
-      if (error.message.includes('Invalid login')) {
-        setError('E-mail ou senha incorretos.');
-      } else if (error.message.includes('Email not confirmed')) {
-        setError('Confirme seu e-mail antes de fazer login. Verifique sua caixa de entrada.');
-      } else {
-        setError(error.message);
+      if (error) {
+        if (error.message.includes('Invalid login')) {
+          setError('E-mail ou senha incorretos.');
+        } else if (error.message.includes('Email not confirmed')) {
+          setError('Você precisa confirmar seu e-mail antes de entrar. Verifique sua caixa de entrada ou spam.');
+        } else {
+          setError(error.message);
+        }
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-    } else {
-      // The middlewares RequireAuth and RequireRole will handle correct redirects if wrong role
-      if (isSuperAdminMode) {
+
+      // ── Security Guard: Enforce email confirmation ──
+      const user = signInData.user;
+      if (user && !user.email_confirmed_at && !user.confirmed_at) {
+        await supabase.auth.signOut();
+        setError('Você ainda não confirmou seu e-mail. Por favor, clique no link de ativação enviado para o seu e-mail antes de fazer login.');
+        setLoading(false);
+        return;
+      }
+
+      // Check if user already has a tenant to route accurately
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role, tenant_id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (isSuperAdminMode || profileData?.role === 'super_admin') {
         navigate('/admin');
+      } else if (profileData?.tenant_id || profileData?.role === 'owner') {
+        navigate('/app');
       } else {
-        navigate('/app'); 
+        navigate('/onboarding');
       }
+    } catch (err: any) {
+      console.error(err);
+      setError('Erro ao autenticar. Tente novamente.');
+      setLoading(false);
     }
   };
 
@@ -113,9 +166,25 @@ export default function Login() {
                   <p className="text-[#A1A1AA] mt-2 text-sm">Acesse o painel do seu salão</p>
                 </div>
                 
+                {resendSuccess && (
+                  <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-sm flex items-center justify-between">
+                    <span>Link de confirmação reenviado com sucesso! Verifique seu e-mail.</span>
+                  </div>
+                )}
+
                 {error && (
-                  <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
-                    {error}
+                  <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm space-y-2">
+                    <p>{error}</p>
+                    {error.includes('confirmar seu e-mail') && (
+                      <button
+                        type="button"
+                        onClick={handleResendConfirmation}
+                        disabled={resendingEmail}
+                        className="text-xs font-bold text-[#C9963B] hover:underline flex items-center gap-1"
+                      >
+                        {resendingEmail ? 'Reenviando...' : 'Clique aqui para reenviar o e-mail de confirmação →'}
+                      </button>
+                    )}
                   </div>
                 )}
 
