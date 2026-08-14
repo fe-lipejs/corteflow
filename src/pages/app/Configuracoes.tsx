@@ -1109,7 +1109,15 @@ export default function Configuracoes() {
                     className="p-4 rounded-2xl border flex items-center gap-3.5"
                     style={{ background: theme.inputBg, borderColor: theme.border }}
                   >
-                    <span className="text-2xl">{bgMode === 'dark' ? '🌙' : '☀️'}</span>
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                      style={{
+                        background: bgMode === 'dark' ? `${customPalette?.primary || theme.accent}20` : `${theme.accent}15`,
+                        color: customPalette?.primary || theme.accent,
+                      }}
+                    >
+                      {bgMode === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                    </div>
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>Atmosfera</p>
                       <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>
@@ -2351,14 +2359,22 @@ export default function Configuracoes() {
                               style={{ background: prevCardBg, borderColor: prevBorder }}>
                               <div className="flex items-center gap-3 min-w-0">
                                 <div
-                                  className="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-base shrink-0 shadow-sm"
+                                  className="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-base shrink-0 shadow-sm overflow-hidden"
                                   style={{
-                                    background: activeAccent,
+                                    background: logoUrl || logoUpload.preview ? (isDarkPrev ? '#1E1E22' : '#F1F5F9') : activeAccent,
                                     color: prevBtnText,
                                     fontFamily: prevFontFamily,
                                   }}
                                 >
-                                  {fantasyName ? fantasyName.charAt(0).toUpperCase() : 'N'}
+                                  {logoUrl || logoUpload.preview ? (
+                                    <img
+                                      src={logoUrl || logoUpload.preview || ''}
+                                      alt="Logo"
+                                      className="w-full h-full object-contain p-1"
+                                    />
+                                  ) : (
+                                    fantasyName ? fantasyName.charAt(0).toUpperCase() : 'N'
+                                  )}
                                 </div>
                                 <div className="min-w-0">
                                   <h5
