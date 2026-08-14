@@ -896,14 +896,28 @@ export default function PublicStore() {
 
           {/* Informações do Salão sobre o Degradê Suave */}
           <div className="relative z-10 px-6 pb-2 text-center flex flex-col items-center">
-            {/* Logo / Avatar com recorte e sombra de destaque */}
-            <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-3xl border-4 overflow-hidden shadow-2xl flex items-center justify-center relative z-10 transition-transform duration-300 hover:scale-105"
-              style={{ borderColor: theme.cardBg, background: theme.bg }}>
-              {settings?.logo_url ? (
-                <img src={settings.logo_url} alt={storeName} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-4xl font-bold" style={{ color: accent }}>{storeName?.charAt(0)}</span>
-              )}
+            {/* Logo / Avatar com recorte e sombra de projeção e destaque */}
+            <div className="relative group my-1">
+              {/* Sombra de contato e projeção inferior suave */}
+              <div
+                className="absolute -bottom-2.5 inset-x-3 h-8 rounded-full blur-md opacity-70 pointer-events-none -z-10 transition-opacity duration-300 group-hover:opacity-100"
+                style={{ background: `radial-gradient(ellipse, rgba(0,0,0,0.6) 0%, ${accent}50 60%, transparent 85%)` }}
+              />
+
+              <div
+                className="w-36 h-36 sm:w-40 sm:h-40 rounded-3xl border-4 overflow-hidden flex items-center justify-center relative z-10 transition-transform duration-300 hover:scale-105"
+                style={{
+                  borderColor: theme.cardBg,
+                  background: theme.bg,
+                  boxShadow: `0 22px 40px -12px rgba(0,0,0,0.55), 0 0 20px ${accent}25`
+                }}
+              >
+                {settings?.logo_url ? (
+                  <img src={settings.logo_url} alt={storeName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-5xl font-bold font-serif" style={{ color: accent }}>{storeName?.charAt(0)}</span>
+                )}
+              </div>
             </div>
 
             {/* Nome do Salão */}
