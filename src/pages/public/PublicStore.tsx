@@ -231,8 +231,13 @@ export default function PublicStore() {
     const dynamicTextSecondary = isDarkBg ? '#94A3B8' : '#64748B';
     const dynamicTextMuted = isDarkBg ? '#64748B' : '#94A3B8';
 
+    const fontSerif = palette.fontStyle === 'sans'
+      ? "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif"
+      : "'Playfair Display', Georgia, serif";
+
     return {
       ...base,
+      fontSerif,
       ...(palette.background && { bg: palette.background }),
       ...(palette.text && { textPrimary: palette.text }),
       textSecondary: dynamicTextSecondary,
@@ -604,7 +609,7 @@ export default function PublicStore() {
           <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6" style={{ background: `${theme.accent}15`, border: `1px solid ${theme.accent}30` }}>
             <Calendar className="w-8 h-8" style={{ color: theme.accent }} />
           </div>
-          <h2 className="text-2xl font-bold mb-3" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>Agenda Fechada</h2>
+          <h2 className="text-2xl font-bold mb-3" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>Agenda Fechada</h2>
           <p className="text-sm mb-10 leading-relaxed" style={{ color: theme.textMuted }}>
             Este salão não está aceitando agendamentos no momento. Entre em contato diretamente com o estabelecimento para mais informações.
           </p>
@@ -691,7 +696,7 @@ export default function PublicStore() {
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: theme.cardBorder }}>
                 <div>
-                  <h3 className="text-lg font-bold" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>{storeName}</h3>
+                  <h3 className="text-lg font-bold" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>{storeName}</h3>
                   <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{storeAddress}</p>
                 </div>
                 <button onClick={() => setShowInfoSheet(false)} className="p-2 rounded-full" style={{ color: theme.textMuted }}>
@@ -921,7 +926,7 @@ export default function PublicStore() {
             </div>
 
             {/* Nome do Salão */}
-            <h1 className="mt-3 text-2xl font-bold tracking-tight" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif", textShadow: contrast.titleTextShadow }}>
+            <h1 className="mt-3 text-2xl font-bold tracking-tight" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif, textShadow: contrast.titleTextShadow }}>
               {storeName}
             </h1>
 
@@ -1022,7 +1027,7 @@ export default function PublicStore() {
           <div className="lg:hidden flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: theme.cardBorder, background: theme.cardBg }}>
             <button onClick={handleOpenSheet} className="flex items-center gap-2 text-sm font-medium" style={{ color: theme.textMuted }}>
               <Info className="w-4 h-4" style={{ color: accent }} />
-              <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, color: theme.textPrimary }}>{storeName}</span>
+              <span style={{ fontFamily: theme.fontSerif, fontWeight: 700, color: theme.textPrimary }}>{storeName}</span>
             </button>
             {storePhone && (
               <a href={`https://wa.me/${onlyDigits(storePhone)}`} target="_blank" rel="noreferrer"
@@ -1093,7 +1098,7 @@ export default function PublicStore() {
               {step === 1 && (
                 <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22 }}
                   className="px-5 lg:px-10 py-8 pb-32 lg:pb-12 max-w-4xl mx-auto w-full">
-                  <h2 className="text-3xl font-bold mb-2" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>O que você quer fazer hoje?</h2>
+                  <h2 className="text-3xl font-bold mb-2" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>O que você quer fazer hoje?</h2>
                   <p className="text-sm mb-8" style={{ color: theme.textMuted }}>Selecione um serviço para começar o agendamento.</p>
 
                   {servicesList.length === 0 ? (
@@ -1139,10 +1144,10 @@ export default function PublicStore() {
 
                             <div className="p-5 flex flex-col flex-1">
                               <div className="flex items-start justify-between gap-2 mb-2">
-                                <h3 className="text-base font-bold leading-snug" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>{s.name}</h3>
+                                <h3 className="text-base font-bold leading-snug" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>{s.name}</h3>
                                 <div className="text-right shrink-0">
                                   {hasDiscount && <p className="text-[11px] line-through" style={{ color: theme.textMuted }}>{money(s.original_price)}</p>}
-                                  <p className="text-lg font-bold" style={{ color: accent, fontFamily: "'Playfair Display', serif" }}>{money(s.price)}</p>
+                                  <p className="text-lg font-bold" style={{ color: accent, fontFamily: theme.fontSerif }}>{money(s.price)}</p>
                                 </div>
                               </div>
                               {s.description && (
@@ -1169,7 +1174,7 @@ export default function PublicStore() {
               {step === 2 && (
                 <motion.div key="s2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22 }}
                   className="px-5 lg:px-10 py-8 pb-32 lg:pb-12 max-w-3xl mx-auto w-full">
-                  <h2 className="text-3xl font-bold mb-2" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>Com quem prefere ser atendido?</h2>
+                  <h2 className="text-3xl font-bold mb-2" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>Com quem prefere ser atendido?</h2>
                   <p className="text-sm mb-8" style={{ color: theme.textMuted }}>Escolha um profissional ou deixe que encontremos o mais rápido disponível.</p>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -1210,7 +1215,7 @@ export default function PublicStore() {
                             <User className="w-7 h-7" style={{ color: theme.textMuted }} />
                           </div>
                         )}
-                        <p className="font-bold text-sm" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>{p.name}</p>
+                        <p className="font-bold text-sm" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>{p.name}</p>
                         <p className="text-xs mt-1 truncate w-full" style={{ color: theme.textMuted }}>{p.role_title || "Profissional"}</p>
                       </motion.button>
                     ))}
@@ -1223,7 +1228,7 @@ export default function PublicStore() {
                 <motion.div key="s3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22 }}
                   className="px-5 lg:px-10 py-8 pb-32 lg:pb-12 max-w-3xl mx-auto w-full space-y-8">
                   <div>
-                    <h2 className="text-3xl font-bold mb-2" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>Quando você prefere?</h2>
+                    <h2 className="text-3xl font-bold mb-2" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>Quando você prefere?</h2>
                     <p className="text-sm" style={{ color: theme.textMuted }}>Escolha o dia e horário que melhor se encaixa na sua agenda.</p>
                   </div>
 
@@ -1256,7 +1261,7 @@ export default function PublicStore() {
                             <p className="text-[10px] uppercase font-bold tracking-wider mb-1.5" style={{ opacity: isSel ? 0.7 : 0.5 }}>
                               {isToday ? "Hoje" : WEEKDAYS[d.getDay()]}
                             </p>
-                            <p className="text-2xl" style={{ color: isSel ? "#000" : theme.textPrimary, fontFamily: "'Playfair Display', serif", fontWeight: 900, lineHeight: 1 }}>{format(d, "dd")}</p>
+                            <p className="text-2xl" style={{ color: isSel ? "#000" : theme.textPrimary, fontFamily: theme.fontSerif, fontWeight: 900, lineHeight: 1 }}>{format(d, "dd")}</p>
                             <p className="text-[10px] uppercase font-semibold mt-1.5" style={{ opacity: isSel ? 0.7 : 0.5 }}>
                               {format(d, "MMM", { locale: ptBR })}
                             </p>
@@ -1489,8 +1494,8 @@ export default function PublicStore() {
                             <span>{money(total)}</span>
                           </div>
                           <div className="flex justify-between font-bold text-lg border-t pt-3" style={{ borderColor: theme.cardBorder }}>
-                            <span style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>Pagar agora</span>
-                            <span style={{ color: accent, fontFamily: "'Playfair Display', serif" }}>{money(amountPaid)}</span>
+                            <span style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>Pagar agora</span>
+                            <span style={{ color: accent, fontFamily: theme.fontSerif }}>{money(amountPaid)}</span>
                           </div>
                           {paymentScope === "partial" && (
                             <div className="flex justify-between text-xs" style={{ color: theme.textMuted }}>
@@ -1531,7 +1536,7 @@ export default function PublicStore() {
                   </motion.div>
 
                   <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-                    <h2 className="text-3xl font-black mb-2" style={{ color: theme.textPrimary, fontFamily: "'Playfair Display', serif" }}>Reserva confirmada!</h2>
+                    <h2 className="text-3xl font-black mb-2" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>Reserva confirmada!</h2>
                     <p className="text-sm" style={{ color: theme.textMuted }}>Seu horário está garantido. Anote o código de confirmação abaixo.</p>
                   </motion.div>
 
@@ -1541,7 +1546,7 @@ export default function PublicStore() {
                     style={{ borderColor: theme.cardBorder, background: theme.cardBg }}>
                     <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: theme.cardBorder, background: `${accent}0a` }}>
                       <p className="text-xs font-bold uppercase tracking-widest" style={{ color: accent }}>Código da reserva</p>
-                      <p className="text-2xl font-black" style={{ color: accent, fontFamily: "'Playfair Display', serif" }}>#{bookingCode}</p>
+                      <p className="text-2xl font-black" style={{ color: accent, fontFamily: theme.fontSerif }}>#{bookingCode}</p>
                     </div>
                     <div className="px-6 py-5 space-y-3 text-left">
                       {[

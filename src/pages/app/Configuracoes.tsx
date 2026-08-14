@@ -646,7 +646,10 @@ export default function Configuracoes() {
       }
       const paymentModeJson = { pay_local: allowLocal, partial_50: allowDeposit, full_100: allowFull };
 
-      const finalPalette = customPalette ? { ...customPalette, fontStyle } : { fontStyle };
+      const finalPalette = {
+        ...(customPalette || {}),
+        fontStyle: draftFontStyle,
+      };
 
       // Build payload
       const payload: Record<string, any> = {
@@ -729,11 +732,9 @@ export default function Configuracoes() {
 
       // Apply theme locally & globally across the whole admin
       setThemeId(selectedTheme);
-      if (customPalette) {
-        setContextCustomPalette(customPalette);
-      } else {
-        setContextCustomPalette(undefined);
-      }
+      setFontStyle(draftFontStyle);
+      setCustomPalette(finalPalette);
+      setContextCustomPalette(finalPalette);
 
       // Invalidate public page query cache so changes reflect immediately
       if (tenant?.slug) {
@@ -849,32 +850,32 @@ export default function Configuracoes() {
           </h1>
         </div>
 
-        {/* Compact Public Link Pill */}
+        {/* Compact Public Link Pill (exibe o link oficial salvo no banco) */}
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-medium" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textPrimary }}>
             <Globe className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-            <span className="font-mono font-bold">navalha.app/{slug || tenant?.slug || 'seu-link'}</span>
+            <span className="font-mono font-bold">navalha.app/{tenant?.slug || 'seu-link'}</span>
           </div>
           <button
             type="button"
             onClick={() => {
-              const currentFullUrl = `navalha.app/${slug || tenant?.slug || ''}`;
+              const currentFullUrl = `navalha.app/${tenant?.slug || ''}`;
               navigator.clipboard.writeText(currentFullUrl);
               setCopied(true);
               setTimeout(() => setCopied(false), 2000);
             }}
             className="p-2.5 rounded-xl border transition-all hover:scale-105 cursor-pointer"
             style={{ background: theme.inputBg, borderColor: theme.border, color: copied ? theme.success : theme.textSecondary }}
-            title="Copiar Link"
+            title="Copiar Link Oficial Salvo"
           >
             {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
           </button>
           <button
             type="button"
-            onClick={() => window.open(`/${slug || tenant?.slug}`, '_blank')}
+            onClick={() => window.open(`/${tenant?.slug}`, '_blank')}
             className="p-2.5 rounded-xl transition-all hover:scale-105 cursor-pointer shadow-sm"
             style={{ background: theme.btnPrimaryBg || theme.accent, color: theme.btnPrimaryText }}
-            title="Ver Página Pública"
+            title="Ver Página Pública Oficial"
           >
             <ExternalLink className="w-4 h-4" />
           </button>
@@ -924,10 +925,15 @@ export default function Configuracoes() {
             <div className="space-y-6">
               {/* 1. Nome & Link da Barbearia (Clean & Spacious) */}
               <div className="p-5 sm:p-6 rounded-2xl border space-y-4" style={{ background: theme.inputBg, borderColor: theme.border }}>
-                <h4 className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textPrimary }}>
-                  <Building2 className="w-4 h-4" style={{ color: theme.accent }} />
-                  Nome do Estabelecimento & Link Público
-                </h4>
+                <div>
+                  <h4 className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                    <Building2 className="w-4 h-4" style={{ color: theme.accent }} />
+                    Nome do Estabelecimento & Link Público
+                  </h4>
+                  <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>
+                    As alterações feitas aqui só são salvas e publicadas quando você clicar em "Salvar Configurações".
+                  </p>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Nome do Salão */}
@@ -1090,7 +1096,10 @@ export default function Configuracoes() {
 
                   <button
                     type="button"
-                    onClick={() => setIsCustomizerOpen(true)}
+                    onClick={() => {
+                      setDraftFontStyle(fontStyle);
+                      setIsCustomizerOpen(true);
+                    }}
                     className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl text-xs font-extrabold uppercase tracking-wider shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
                     style={{
                       background: theme.btnPrimaryBg || theme.accent,
@@ -1148,13 +1157,19 @@ export default function Configuracoes() {
                     className="p-4 rounded-2xl border flex items-center gap-3.5"
                     style={{ background: theme.inputBg, borderColor: theme.border }}
                   >
-                    <span className="text-lg font-black" style={{ color: customPalette?.primary || theme.accent, fontFamily: draftFontStyle === 'serif' ? "'Playfair Display', serif" : "'Plus Jakarta Sans', sans-serif" }}>
+                    <span
+                      className="text-lg font-black"
+                      style={{
+                        color: customPalette?.primary || theme.accent,
+                        fontFamily: fontStyle === 'serif' ? "'Playfair Display', Georgia, serif" : "'Plus Jakarta Sans', sans-serif",
+                      }}
+                    >
                       Aa
                     </span>
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>Tipografia dos Títulos</p>
                       <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>
-                        {draftFontStyle === 'serif' ? 'Playfair (Clássico)' : 'Plus Jakarta (Moderno)'}
+                        {fontStyle === 'serif' ? 'Playfair (Clássico)' : 'Plus Jakarta (Moderno)'}
                       </p>
                     </div>
                   </div>
