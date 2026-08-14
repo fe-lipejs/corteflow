@@ -92,7 +92,13 @@ export default function Cadastro() {
         return;
       }
 
-      // Save email for OTP and transition to OTP screen
+      // 4. If email confirmation is disabled or session exists, go straight to onboarding!
+      if (authData.session || (authData.user && authData.user.email_confirmed_at)) {
+        navigate('/onboarding', { replace: true });
+        return;
+      }
+
+      // 5. Otherwise, show OTP verification screen
       setSubmittedEmail(cleanEmail);
       setSubmittedFullName(data.fullName.trim());
       setOtpStep(true);
