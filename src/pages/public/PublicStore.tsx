@@ -1251,18 +1251,18 @@ export default function PublicStore() {
                             key={d.getTime()}
                             disabled={!isOpen}
                             onClick={() => { if (!isOpen) return; setHasScrolledDates(true); setSelectedDate(d); setSelectedTime(null); }}
-                            className="shrink-0 w-[76px] py-4 rounded-2xl text-center border-2 transition-all duration-200 disabled:opacity-25 disabled:cursor-not-allowed"
+                            className="shrink-0 w-[76px] py-4 rounded-2xl text-center border-2 transition-all duration-200 disabled:opacity-25 disabled:cursor-not-allowed shadow-sm"
                             style={{
                               borderColor: isSel ? accent : theme.cardBorder,
-                              background: isSel ? accent : theme.cardBg,
-                              color: isSel ? "#000" : theme.textPrimary,
+                              background: isSel ? (theme.btnPrimaryBg || accent) : theme.cardBg,
+                              color: isSel ? theme.btnPrimaryText : theme.textPrimary,
                             }}
                           >
-                            <p className="text-[10px] uppercase font-bold tracking-wider mb-1.5" style={{ opacity: isSel ? 0.7 : 0.5 }}>
+                            <p className="text-[10px] uppercase font-bold tracking-wider mb-1.5" style={{ opacity: isSel ? 0.9 : 0.5, color: isSel ? theme.btnPrimaryText : theme.textMuted }}>
                               {isToday ? "Hoje" : WEEKDAYS[d.getDay()]}
                             </p>
-                            <p className="text-2xl" style={{ color: isSel ? "#000" : theme.textPrimary, fontFamily: theme.fontSerif, fontWeight: 900, lineHeight: 1 }}>{format(d, "dd")}</p>
-                            <p className="text-[10px] uppercase font-semibold mt-1.5" style={{ opacity: isSel ? 0.7 : 0.5 }}>
+                            <p className="text-2xl" style={{ color: isSel ? theme.btnPrimaryText : theme.textPrimary, fontFamily: theme.fontSerif, fontWeight: 900, lineHeight: 1 }}>{format(d, "dd")}</p>
+                            <p className="text-[10px] uppercase font-semibold mt-1.5" style={{ opacity: isSel ? 0.9 : 0.5, color: isSel ? theme.btnPrimaryText : theme.textMuted }}>
                               {format(d, "MMM", { locale: ptBR })}
                             </p>
                           </button>
@@ -1297,8 +1297,8 @@ export default function PublicStore() {
                             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-6" ref={confirmBtnRef}>
                               <button
                                 onClick={() => setStep(4)}
-                                className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-transform hover:scale-[1.01] active:scale-[0.99]"
-                                style={{ background: accent, color: "#000" }}
+                                className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-transform hover:scale-[1.01] active:scale-[0.99] shadow-lg"
+                                style={{ background: theme.btnPrimaryBg || accent, color: theme.btnPrimaryText }}
                               >
                                 Continuar para confirmação <ArrowRight className="w-5 h-5" />
                               </button>
