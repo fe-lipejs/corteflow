@@ -211,13 +211,9 @@ function UpgradeScreen({ feature }: { feature: keyof PlanFeatures }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: 16 }}
-      animate={{ opacity: 1, scale: 1, y: [0, -4, 0] }}
-      transition={{
-        opacity: { duration: 0.3 },
-        scale: { duration: 0.3 },
-        y: { repeat: Infinity, duration: 4, ease: 'easeInOut' },
-      }}
+      initial={{ opacity: 0, scale: 0.96, y: 12 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ type: 'spring', damping: 25, stiffness: 300 }}
       className="relative w-full max-w-md mx-auto z-20"
     >
       {/* Subtle Glow Aura (Apenas no modo escuro, muito discreto) */}
@@ -228,19 +224,19 @@ function UpgradeScreen({ feature }: { feature: keyof PlanFeatures }) {
         />
       )}
 
-      {/* Floating Glassmorphic Upgrade Card */}
+      {/* Solid High-Contrast Card with Clean Borders */}
       <div
-        className="relative rounded-3xl p-6 sm:p-7 border backdrop-blur-2xl text-left overflow-hidden"
+        className="relative rounded-3xl p-6 sm:p-7 border text-left overflow-hidden shadow-2xl"
         style={{
           background: theme.id === 'elegant'
-            ? 'rgba(255, 255, 255, 0.94)'
-            : 'rgba(18, 18, 24, 0.90)',
+            ? '#FFFFFF'
+            : 'rgba(18, 18, 24, 0.95)',
           borderColor: theme.id === 'elegant'
-            ? 'rgba(226, 232, 240, 0.9)'
+            ? '#E2E8F0'
             : 'rgba(255, 255, 255, 0.12)',
           boxShadow: theme.id === 'elegant'
-            ? '0 20px 40px -15px rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.03)'
-            : '0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15)',
+            ? '0 25px 50px -12px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.04)'
+            : '0 25px 50px -12px rgba(0, 0, 0, 0.6), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15)',
         }}
       >
         {/* Top Floating Badge */}
@@ -385,20 +381,20 @@ export default function FeatureGate({ feature, children, message, inline = false
 
     return (
       <div className="relative w-full min-h-[520px] rounded-3xl overflow-hidden border shadow-inner" style={{ borderColor: theme.border }}>
-        {/* Crystal Clear Teaser Backdrop (Sharp & Vivid so the client sees everything they're missing) */}
+        {/* Crystal Clear Teaser Backdrop */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <TeaserBackdrop feature={feature} />
         </div>
 
-        {/* Frosted Glass Pane with Glass Glare & Centered Floating Modal */}
+        {/* Crisp Glass Pane with Low Blur (100% Crisp & High Contrast in Day Mode) */}
         <div
           className="relative z-10 min-h-[520px] flex items-center justify-center p-4 sm:p-6"
           style={{
             background: theme.id === 'elegant'
-              ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(241, 245, 249, 0.65) 100%)'
-              : 'linear-gradient(135deg, rgba(0, 0, 0, 0.45) 0%, rgba(10, 10, 14, 0.7) 100%)',
-            backdropFilter: 'blur(3.5px)',
-            WebkitBackdropFilter: 'blur(3.5px)',
+              ? 'rgba(15, 23, 42, 0.08)'
+              : 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(1.5px)',
+            WebkitBackdropFilter: 'blur(1.5px)',
           }}
         >
           <UpgradeScreen feature={feature} />
