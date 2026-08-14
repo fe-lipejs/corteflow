@@ -91,6 +91,18 @@ export default function Configuracoes() {
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [draftFontStyle, setDraftFontStyle] = useState<'serif' | 'sans'>('serif');
 
+  // Lock body scroll when customizer modal is open
+  useEffect(() => {
+    if (isCustomizerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isCustomizerOpen]);
+
   // Branding
   const [previewMode, setPreviewMode] = useState<'public' | 'admin'>('public');
   const [fantasyName, setFantasyName] = useState('');
@@ -825,181 +837,46 @@ export default function Configuracoes() {
 
   return (
     <div style={{ maxWidth: '900px' }} className="pb-12 space-y-6 animate-fade-in">
-      {/* Header */}
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>
-          <Settings2 className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />
-          Personalização
-        </p>
-        <h1 className="font-serif text-3xl font-bold" style={{ color: theme.textPrimary }}>
-          Configurações do Salão
-        </h1>
-      </div>
-
-      {/* ── Identidade & Link da Barbearia ── */}
-      <div className="glass-card p-6 rounded-2xl border space-y-5" style={{ borderColor: theme.border }}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b" style={{ borderColor: theme.cardBorder }}>
-          <div>
-            <h2 className="font-bold text-lg flex items-center gap-2" style={{ color: theme.textPrimary }}>
-              <Building2 className="w-5 h-5" style={{ color: theme.accent }} />
-              Identidade & Link da sua Barbearia
-            </h2>
-            <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>
-              Personalize o nome do seu estabelecimento e a URL exclusiva compartilhada com seus clientes.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                const currentFullUrl = `navalha.app/${slug || tenant?.slug || ''}`;
-                navigator.clipboard.writeText(currentFullUrl);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all border"
-              style={{ background: theme.inputBg, color: copied ? theme.success : theme.textSecondary, borderColor: theme.border }}
-              title="Copiar link da página"
-            >
-              {copied ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? 'Copiado!' : 'Copiar Link'}
-            </button>
-            <button
-              onClick={() => window.open(`/${slug || tenant?.slug}`, '_blank')}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm"
-              style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
-            >
-              <ExternalLink className="w-3.5 h-3.5" /> Ver Página
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Campo 1: Nome da Barbearia */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold flex items-center justify-between" style={{ color: theme.textPrimary }}>
-              <span>Nome do Estabelecimento</span>
-              <span className="text-[10px] font-normal" style={{ color: theme.textSecondary }}>Aparece no topo e na agenda</span>
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={tenantName}
-                onChange={(e) => {
-                  setTenantName(e.target.value);
-                  setFantasyName(e.target.value);
-                }}
-                placeholder="Ex: Barbearia Raffros Maria"
-                className="w-full px-4 py-2.5 rounded-xl text-sm font-medium border themed-input focus:outline-none"
-                style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textPrimary }}
-              />
-            </div>
-          </div>
-
-          {/* Campo 2: Slug / Link Personalizado com Verificação em Tempo Real */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold" style={{ color: theme.textPrimary }}>
-                Link Exclusivo (URL)
-              </label>
-              {/* Status Badge em Tempo Real */}
-              <div className="flex items-center gap-1 text-[11px] font-semibold">
-                {slugStatus === 'checking' && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border text-amber-500 bg-amber-500/10 border-amber-500/20">
-                    <Loader2 className="w-3 h-3 animate-spin" /> Verificando...
-                  </span>
-                )}
-                {slugStatus === 'available' && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border text-emerald-500 bg-emerald-500/10 border-emerald-500/20">
-                    <CheckCircle2 className="w-3 h-3" /> Disponível!
-                  </span>
-                )}
-                {slugStatus === 'unavailable' && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border text-rose-500 bg-rose-500/10 border-rose-500/20">
-                    <AlertCircle className="w-3 h-3" /> Já em uso!
-                  </span>
-                )}
-                {slugStatus === 'invalid' && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border text-amber-400 bg-amber-400/10 border-amber-400/20">
-                    <AlertCircle className="w-3 h-3" /> Mín. 3 letras
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Input com Prefixo navalha.app/ */}
-            <div className="flex items-center rounded-xl border overflow-hidden transition-all focus-within:ring-2 focus-within:ring-[var(--theme-accent)]"
-              style={{
-                background: theme.inputBg,
-                borderColor: slugStatus === 'unavailable' ? '#f43f5e' : slugStatus === 'available' ? '#10b981' : theme.border
-              }}>
-              <span className="px-3.5 py-2.5 text-xs font-bold select-none border-r shrink-0 flex items-center gap-1"
-                style={{ background: theme.bgHover, borderColor: theme.border, color: theme.textSecondary }}>
-                <LinkIcon className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-                navalha.app/
-              </span>
-              <input
-                type="text"
-                value={slug}
-                onChange={handleSlugChange}
-                placeholder="seu-link"
-                className="w-full px-3 py-2.5 text-sm font-bold bg-transparent border-0 focus:outline-none"
-                style={{ color: theme.textPrimary }}
-              />
-            </div>
-            {slugMessage && (
-              <p className="text-[11px] font-medium"
-                style={{
-                  color: slugStatus === 'unavailable' ? '#f43f5e' : slugStatus === 'available' ? '#10b981' : theme.textSecondary
-                }}>
-                {slugMessage}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* ── Aviso Importante sobre Alteração de Link ── */}
-        <div className="flex items-start gap-3 p-3.5 rounded-xl text-xs border"
-          style={{ background: 'rgba(245, 158, 11, 0.08)', borderColor: 'rgba(245, 158, 11, 0.25)', color: theme.textPrimary }}>
-          <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p className="font-bold text-amber-500">Recomendação importante ao alterar o link:</p>
-            <p className="leading-relaxed opacity-90" style={{ color: theme.textSecondary }}>
-              Evite alterar o link com frequência após já tê-lo divulgado. Clientes frequentes que salvaram o link anterior nos favoritos, no WhatsApp ou na tela de início do celular podem não conseguir acessar a agenda se a URL mudar.
-            </p>
-          </div>
-        </div>
-
-        {/* ── Botão de Ação Salvar Identidade & Link ── */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t" style={{ borderColor: theme.cardBorder }}>
-          <p className="text-xs" style={{ color: theme.textSecondary }}>
-            O novo nome e link serão atualizados instantaneamente no seu painel e na página pública.
+      {/* ── Top Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-1 flex items-center gap-1.5" style={{ color: theme.accent }}>
+            <Settings2 className="w-3.5 h-3.5" />
+            Configurações
           </p>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: theme.textPrimary, fontFamily: fontStyle === 'serif' ? "'Playfair Display', serif" : 'inherit' }}>
+            Configurações do Salão
+          </h1>
+        </div>
+
+        {/* Compact Public Link Pill */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-medium" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textPrimary }}>
+            <Globe className="w-3.5 h-3.5" style={{ color: theme.accent }} />
+            <span className="font-mono font-bold">navalha.app/{slug || tenant?.slug || 'seu-link'}</span>
+          </div>
           <button
-            onClick={handleSaveIdentity}
-            disabled={identitySaving || slugStatus === 'checking' || slugStatus === 'unavailable' || slugStatus === 'invalid'}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{
-              background: identitySaved ? '#10b981' : theme.accentGradient,
-              color: identitySaved ? '#FFFFFF' : theme.btnPrimaryText,
-              boxShadow: identitySaved ? '0 0 20px rgba(16, 185, 129, 0.4)' : theme.shadowAccent,
+            type="button"
+            onClick={() => {
+              const currentFullUrl = `navalha.app/${slug || tenant?.slug || ''}`;
+              navigator.clipboard.writeText(currentFullUrl);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
             }}
+            className="p-2.5 rounded-xl border transition-all hover:scale-105 cursor-pointer"
+            style={{ background: theme.inputBg, borderColor: theme.border, color: copied ? theme.success : theme.textSecondary }}
+            title="Copiar Link"
           >
-            {identitySaving ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Salvando alterações...
-              </>
-            ) : identitySaved ? (
-              <>
-                <Check className="w-4 h-4" />
-                Identidade Salva com Sucesso!
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Salvar Nome & Link
-              </>
-            )}
+            {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+          </button>
+          <button
+            type="button"
+            onClick={() => window.open(`/${slug || tenant?.slug}`, '_blank')}
+            className="p-2.5 rounded-xl transition-all hover:scale-105 cursor-pointer shadow-sm"
+            style={{ background: theme.btnPrimaryBg || theme.accent, color: theme.btnPrimaryText }}
+            title="Ver Página Pública"
+          >
+            <ExternalLink className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -1039,51 +916,73 @@ export default function Configuracoes() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.2 }}
-          className="glass-card p-6"
+          className="glass-card p-4 sm:p-6 rounded-2xl"
         >
 
           {/* ═══════════════════════════ TAB: APARÊNCIA & MARCA (UNIFICADO) ═══════════════════════════ */}
           {activeTab === 'aparencia' && (
             <div className="space-y-6">
-              {/* Header com Botão Salvar Direto */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b" style={{ borderColor: theme.border }}>
-                <div>
-                  <h3 className="font-bold text-base flex items-center gap-2" style={{ color: theme.textPrimary }}>
-                    <Sparkles className="w-4 h-4" style={{ color: theme.accent }} />
-                    Aparência & Identidade Visual
-                  </h3>
-                  <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>
-                    Cores, logo e capa sincronizadas em tempo real com seu painel e sua página pública de agendamento.
-                  </p>
-                </div>
+              {/* 1. Nome & Link da Barbearia (Clean & Spacious) */}
+              <div className="p-5 sm:p-6 rounded-2xl border space-y-4" style={{ background: theme.inputBg, borderColor: theme.border }}>
+                <h4 className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                  <Building2 className="w-4 h-4" style={{ color: theme.accent }} />
+                  Nome do Estabelecimento & Link Público
+                </h4>
 
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={loading}
-                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 shadow-md shrink-0 self-start sm:self-auto"
-                  style={{
-                    background: theme.btnPrimaryBg || theme.accent,
-                    color: theme.btnPrimaryText,
-                  }}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Salvando...
-                    </>
-                  ) : saved ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      Salvo com Sucesso!
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-3.5 h-3.5" />
-                      Salvar Alterações
-                    </>
-                  )}
-                </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Nome do Salão */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
+                      Nome do Salão
+                    </label>
+                    <input
+                      type="text"
+                      value={tenantName}
+                      onChange={(e) => {
+                        setTenantName(e.target.value);
+                        setFantasyName(e.target.value);
+                      }}
+                      placeholder="Ex: Barbearia Raffros"
+                      className="themed-input"
+                    />
+                  </div>
+
+                  {/* Link / URL */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
+                        Link Personalizado (URL)
+                      </label>
+                      {slugStatus === 'available' && (
+                        <span className="text-[10px] font-bold text-emerald-500">✓ Disponível!</span>
+                      )}
+                      {slugStatus === 'unavailable' && (
+                        <span className="text-[10px] font-bold text-rose-500">✕ Já em uso!</span>
+                      )}
+                      {slugStatus === 'checking' && (
+                        <span className="text-[10px] font-bold text-amber-500">Verificando...</span>
+                      )}
+                    </div>
+                    <div className="flex items-center rounded-xl border overflow-hidden transition-all focus-within:ring-2 focus-within:ring-[var(--theme-accent)]"
+                      style={{
+                        background: theme.bg,
+                        borderColor: slugStatus === 'unavailable' ? '#f43f5e' : slugStatus === 'available' ? '#10b981' : theme.border
+                      }}>
+                      <span className="px-3 py-2.5 text-xs font-bold select-none border-r shrink-0 flex items-center gap-1"
+                        style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textSecondary }}>
+                        navalha.app/
+                      </span>
+                      <input
+                        type="text"
+                        value={slug}
+                        onChange={handleSlugChange}
+                        placeholder="seu-link"
+                        className="w-full px-3 py-2.5 text-sm font-bold bg-transparent border-0 focus:outline-none"
+                        style={{ color: theme.textPrimary }}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* 1. Imagens: Logo & Capa */}
@@ -2067,13 +1966,13 @@ export default function Configuracoes() {
       {/* ═══════════════════════════ STUDIO DE IDENTIDADE VISUAL (POP-UP MODAL) ════════════════════════════════ */}
       <AnimatePresence>
         {isCustomizerOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/80 backdrop-blur-md overflow-hidden touch-none">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-5xl rounded-3xl border shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
+              className="relative w-full max-w-4xl h-[92vh] sm:h-auto sm:max-h-[90vh] rounded-3xl border shadow-2xl flex flex-col overflow-hidden overscroll-contain"
               style={{
                 background: theme.cardBg,
                 borderColor: theme.cardBorder,
@@ -2081,21 +1980,21 @@ export default function Configuracoes() {
             >
               {/* Modal Header */}
               <div
-                className="px-6 py-5 border-b flex items-center justify-between shrink-0"
+                className="px-5 sm:px-6 py-4 border-b flex items-center justify-between shrink-0"
                 style={{ borderColor: theme.border, background: theme.bg }}
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-md"
+                    className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md shrink-0"
                     style={{ background: customPalette?.primary || theme.accent, color: theme.btnPrimaryText }}
                   >
-                    <Sparkles className="w-5 h-5" />
+                    <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold" style={{ color: theme.textPrimary }}>
+                    <h3 className="text-base sm:text-lg font-bold" style={{ color: theme.textPrimary }}>
                       Studio de Identidade Visual
                     </h3>
-                    <p className="text-xs" style={{ color: theme.textSecondary }}>
+                    <p className="text-xs hidden sm:block" style={{ color: theme.textSecondary }}>
                       Personalize atmosfera, cores e tipografia com prévia ao vivo. Só muda no sistema ao clicar em salvar.
                     </p>
                   </div>
@@ -2112,34 +2011,34 @@ export default function Configuracoes() {
               </div>
 
               {/* Modal Body - 2 Columns */}
-              <div className="flex-1 overflow-y-auto p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
                 {/* ── Left Column: Controls (Spacious & Clean) ── */}
-                <div className="lg:col-span-7 space-y-7">
+                <div className="lg:col-span-7 space-y-6">
                   {/* 1. Atmosfera */}
                   <div>
-                    <label className="block text-xs font-extrabold uppercase tracking-wider mb-3" style={{ color: theme.textSecondary }}>
+                    <label className="block text-xs font-extrabold uppercase tracking-wider mb-2.5" style={{ color: theme.textSecondary }}>
                       1. Atmosfera do Salão (Fundo)
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* Modo Noturno */}
                       <button
                         type="button"
                         onClick={() => handleToggleBgMode('dark')}
-                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer"
+                        className="flex items-center justify-between p-3.5 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer"
                         style={{
                           background: bgMode === 'dark' ? '#09090B' : theme.inputBg,
                           borderColor: bgMode === 'dark' ? (customPalette?.primary || theme.accent) : theme.border,
                           boxShadow: bgMode === 'dark' ? `0 0 18px ${(customPalette?.primary || theme.accent)}30` : 'none',
                         }}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">🌙</span>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xl">🌙</span>
                           <div>
                             <p className="text-xs font-bold" style={{ color: bgMode === 'dark' ? '#FFFFFF' : theme.textPrimary }}>
                               Modo Noturno / Escuro
                             </p>
-                            <p className="text-[11px] mt-0.5" style={{ color: bgMode === 'dark' ? '#A1A1AA' : theme.textMuted }}>
-                              Fundo escuro luxuoso com detalhes na sua cor
+                            <p className="text-[11px]" style={{ color: bgMode === 'dark' ? '#A1A1AA' : theme.textMuted }}>
+                              Fundo escuro luxuoso
                             </p>
                           </div>
                         </div>
@@ -2154,21 +2053,21 @@ export default function Configuracoes() {
                       <button
                         type="button"
                         onClick={() => handleToggleBgMode('light')}
-                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer"
+                        className="flex items-center justify-between p-3.5 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer"
                         style={{
                           background: bgMode === 'light' ? '#FFFFFF' : theme.inputBg,
                           borderColor: bgMode === 'light' ? (customPalette?.primary || theme.accent) : theme.border,
                           boxShadow: bgMode === 'light' ? `0 0 18px ${(customPalette?.primary || theme.accent)}30` : 'none',
                         }}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">☀️</span>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xl">☀️</span>
                           <div>
                             <p className="text-xs font-bold" style={{ color: bgMode === 'light' ? '#0F172A' : theme.textPrimary }}>
                               Modo Claro / Diurno
                             </p>
-                            <p className="text-[11px] mt-0.5" style={{ color: bgMode === 'light' ? '#64748B' : theme.textMuted }}>
-                              Fundo claro acetinado e limpo
+                            <p className="text-[11px]" style={{ color: bgMode === 'light' ? '#64748B' : theme.textMuted }}>
+                              Fundo claro acetinado
                             </p>
                           </div>
                         </div>
@@ -2182,86 +2081,143 @@ export default function Configuracoes() {
                   </div>
 
                   {/* 2. Cor de Destaque da Marca */}
-                  <div className="pt-2 border-t" style={{ borderColor: theme.border }}>
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="block text-xs font-extrabold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
-                        2. Cor Principal da Marca (Destaque)
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={handleResetToNoir}
-                          className="text-[11px] font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all hover:scale-105"
-                          style={{ borderColor: theme.border, color: theme.textSecondary, background: theme.inputBg }}
-                        >
-                          <RotateCcw className="w-3 h-3" />
-                          Restaurar Noir Padrão
-                        </button>
-                        {(logoUrl || logoUpload.preview) && (
-                          <button
-                            type="button"
-                            onClick={() => handleMagicExtract()}
-                            disabled={isExtracting}
-                            className="text-[11px] font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all hover:scale-105"
-                            style={{ borderColor: theme.accent, color: theme.accent, background: `${theme.accent}10` }}
-                          >
-                            {isExtracting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                            Re-extrair da Logo
-                          </button>
-                        )}
+                  <div className="pt-3 border-t" style={{ borderColor: theme.border }}>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <div>
+                        <label className="block text-xs font-extrabold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
+                          2. Cor Principal da Marca (Destaque)
+                        </label>
+                        <p className="text-[11px]" style={{ color: theme.textMuted }}>
+                          A cor que destaca seus botões e cartões
+                        </p>
+                      </div>
+
+                      {/* Logo de Referência do Cliente no Canto */}
+                      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border shrink-0" style={{ background: theme.inputBg, borderColor: theme.border }}>
+                        <div className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center border shrink-0" style={{ borderColor: theme.border, background: theme.bg }}>
+                          {logoUrl || logoUpload.preview ? (
+                            <img src={logoUrl || logoUpload.preview || ''} alt="Logo" className="w-full h-full object-contain p-0.5" />
+                          ) : (
+                            <span className="font-black text-xs" style={{ color: customPalette?.primary || theme.accent }}>
+                              {fantasyName ? fantasyName.charAt(0).toUpperCase() : 'N'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="hidden sm:block text-left">
+                          <p className="text-[10px] font-bold uppercase tracking-wider leading-none" style={{ color: theme.textPrimary }}>Sua Logo</p>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                      {['#C9963B', '#3B82F6', '#10B981', '#EF4444', '#8B5CF6', '#EC4899', '#F97316'].map((hex) => {
+                    {/* 2 Cores Sugeridas Inteligentes + Personalizar */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {/* Cor 1: Dourado Noir Clássico */}
+                      {(() => {
+                        const hex = '#C9963B';
                         const isActive = (customPalette?.primary || theme.accent).toUpperCase() === hex.toUpperCase();
                         return (
                           <button
-                            key={hex}
+                            key="noir-gold"
                             type="button"
                             onClick={() => handleSelectSwatchColor(hex)}
-                            className="group flex items-center gap-2 px-3.5 py-2.5 rounded-xl border transition-all hover:scale-105 shadow-sm cursor-pointer"
+                            className="flex items-center justify-between p-3 rounded-xl border text-left transition-all hover:scale-[1.02] cursor-pointer"
                             style={{
-                              background: isActive ? `${hex}20` : theme.inputBg,
+                              background: isActive ? `${hex}15` : theme.inputBg,
                               borderColor: isActive ? hex : theme.border,
-                              boxShadow: isActive ? `0 0 16px ${hex}35` : 'none',
+                              boxShadow: isActive ? `0 0 16px ${hex}30` : 'none',
                             }}
                           >
-                            <span
-                              className="w-5 h-5 rounded-full shadow flex items-center justify-center"
-                              style={{ background: hex }}
-                            >
-                              {isActive && <Check className="w-3 h-3 text-white drop-shadow" />}
-                            </span>
-                            <span className="text-xs font-mono font-bold" style={{ color: theme.textPrimary }}>
-                              {hex}
-                            </span>
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-5 h-5 rounded-full shadow flex items-center justify-center shrink-0" style={{ background: hex }}>
+                                {isActive && <Check className="w-3 h-3 text-white" />}
+                              </span>
+                              <div>
+                                <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Dourado Noir</p>
+                                <p className="text-[10px] font-mono" style={{ color: theme.textMuted }}>#C9963B</p>
+                              </div>
+                            </div>
                           </button>
                         );
-                      })}
+                      })()}
 
-                      {/* Custom Color Picker */}
+                      {/* Cor 2: Azul Real / Cor da Marca */}
+                      {(() => {
+                        const hex = (customPalette?.primary && customPalette.primary.toUpperCase() !== '#C9963B')
+                          ? customPalette.primary
+                          : '#3B82F6';
+                        const isCustomSelected = (customPalette?.primary || theme.accent).toUpperCase() === hex.toUpperCase() && hex.toUpperCase() !== '#C9963B';
+                        return (
+                          <button
+                            key="brand-color"
+                            type="button"
+                            onClick={() => handleSelectSwatchColor(hex)}
+                            className="flex items-center justify-between p-3 rounded-xl border text-left transition-all hover:scale-[1.02] cursor-pointer"
+                            style={{
+                              background: isCustomSelected ? `${hex}15` : theme.inputBg,
+                              borderColor: isCustomSelected ? hex : theme.border,
+                              boxShadow: isCustomSelected ? `0 0 16px ${hex}30` : 'none',
+                            }}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-5 h-5 rounded-full shadow flex items-center justify-center shrink-0" style={{ background: hex }}>
+                                {isCustomSelected && <Check className="w-3 h-3 text-white" />}
+                              </span>
+                              <div>
+                                <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>
+                                  {logoUrl || logoUpload.preview ? 'Cor da Logo' : 'Azul Moderno'}
+                                </p>
+                                <p className="text-[10px] font-mono" style={{ color: theme.textMuted }}>{hex}</p>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })()}
+
+                      {/* Cor 3: Seletor Livre */}
                       <label
-                        className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border cursor-pointer transition-all hover:scale-105"
-                        style={{ background: theme.inputBg, borderColor: theme.border }}
+                        className="flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all hover:scale-[1.02]"
+                        style={{
+                          background: theme.inputBg,
+                          borderColor: theme.border,
+                        }}
                       >
-                        <input
-                          type="color"
-                          value={customPalette?.primary || theme.accent}
-                          onChange={(e) => handleSelectSwatchColor(e.target.value)}
-                          className="w-5 h-5 rounded-full cursor-pointer border-0 p-0 bg-transparent"
-                        />
-                        <span className="text-xs font-bold" style={{ color: theme.textSecondary }}>Personalizar...</span>
+                        <div className="flex items-center gap-2.5">
+                          <input
+                            type="color"
+                            value={customPalette?.primary || theme.accent}
+                            onChange={(e) => handleSelectSwatchColor(e.target.value)}
+                            className="w-5 h-5 rounded-full cursor-pointer border-0 p-0 bg-transparent shrink-0"
+                          />
+                          <div>
+                            <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Personalizar...</p>
+                            <p className="text-[10px]" style={{ color: theme.textMuted }}>Qualquer tom</p>
+                          </div>
+                        </div>
                       </label>
                     </div>
+
+                    {(logoUrl || logoUpload.preview) && (
+                      <div className="flex justify-end mt-2">
+                        <button
+                          type="button"
+                          onClick={() => handleMagicExtract()}
+                          disabled={isExtracting}
+                          className="text-[11px] font-bold flex items-center gap-1.5 transition-all hover:opacity-80 cursor-pointer"
+                          style={{ color: theme.accent }}
+                        >
+                          {isExtracting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                          Re-extrair da logo
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* 3. Tipografia */}
-                  <div className="pt-2 border-t" style={{ borderColor: theme.border }}>
-                    <label className="block text-xs font-extrabold uppercase tracking-wider mb-3" style={{ color: theme.textSecondary }}>
+                  <div className="pt-3 border-t" style={{ borderColor: theme.border }}>
+                    <label className="block text-xs font-extrabold uppercase tracking-wider mb-2.5" style={{ color: theme.textSecondary }}>
                       3. Estilo Tipográfico dos Títulos
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* Playfair Display */}
                       <button
                         type="button"
@@ -2269,21 +2225,21 @@ export default function Configuracoes() {
                           setDraftFontStyle('serif');
                           setCustomPalette((prev: any) => ({ ...(prev || {}), fontStyle: 'serif' }));
                         }}
-                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
+                        className="flex items-center justify-between p-3.5 rounded-2xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
                         style={{
                           background: draftFontStyle === 'serif' ? (bgMode === 'dark' ? '#09090B' : '#FFFFFF') : theme.inputBg,
                           borderColor: draftFontStyle === 'serif' ? (customPalette?.primary || theme.accent) : theme.border,
                           boxShadow: draftFontStyle === 'serif' ? `0 0 16px ${(customPalette?.primary || theme.accent)}25` : 'none',
                         }}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl font-serif font-bold" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xl font-serif font-bold" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
                           <div>
                             <p className="text-xs font-bold font-serif" style={{ color: theme.textPrimary }}>
                               Clássico & Elegante
                             </p>
-                            <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>
-                              Playfair Display refinada para títulos e números
+                            <p className="text-[11px]" style={{ color: theme.textMuted }}>
+                              Playfair Display refinada
                             </p>
                           </div>
                         </div>
@@ -2301,21 +2257,21 @@ export default function Configuracoes() {
                           setDraftFontStyle('sans');
                           setCustomPalette((prev: any) => ({ ...(prev || {}), fontStyle: 'sans' }));
                         }}
-                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
+                        className="flex items-center justify-between p-3.5 rounded-2xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
                         style={{
                           background: draftFontStyle === 'sans' ? (bgMode === 'dark' ? '#09090B' : '#FFFFFF') : theme.inputBg,
                           borderColor: draftFontStyle === 'sans' ? (customPalette?.primary || theme.accent) : theme.border,
                           boxShadow: draftFontStyle === 'sans' ? `0 0 16px ${(customPalette?.primary || theme.accent)}25` : 'none',
                         }}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl font-sans font-black" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xl font-sans font-black" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
                           <div>
                             <p className="text-xs font-bold font-sans" style={{ color: theme.textPrimary }}>
                               Moderno & Minimalista
                             </p>
-                            <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>
-                              Plus Jakarta Sans direta, limpa e contemporânea
+                            <p className="text-[11px]" style={{ color: theme.textMuted }}>
+                              Plus Jakarta Sans contemporânea
                             </p>
                           </div>
                         </div>
