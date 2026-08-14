@@ -892,17 +892,17 @@ export default function PublicStore() {
           </div>
 
           {/* Espaçador para visualização da foto de capa */}
-          <div className="h-28 sm:h-32 shrink-0" />
+          <div className="h-20 sm:h-24 shrink-0" />
 
           {/* Informações do Salão sobre o Degradê Suave */}
           <div className="relative z-10 px-6 pb-2 text-center flex flex-col items-center">
             {/* Logo / Avatar com recorte e sombra de destaque */}
-            <div className="w-24 h-24 rounded-2xl border-4 overflow-hidden shadow-2xl flex items-center justify-center relative z-10"
+            <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-3xl border-4 overflow-hidden shadow-2xl flex items-center justify-center relative z-10 transition-transform duration-300 hover:scale-105"
               style={{ borderColor: theme.cardBg, background: theme.bg }}>
               {settings?.logo_url ? (
                 <img src={settings.logo_url} alt={storeName} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-3xl font-bold" style={{ color: accent }}>{storeName?.charAt(0)}</span>
+                <span className="text-4xl font-bold" style={{ color: accent }}>{storeName?.charAt(0)}</span>
               )}
             </div>
 
