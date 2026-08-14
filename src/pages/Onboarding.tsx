@@ -33,13 +33,17 @@ export default function Onboarding() {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const { user, refreshProfile } = useAuth();
+  const { user, profile, tenant, loading: authLoading, refreshProfile } = useAuth();
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
+    if (!authLoading) {
+      if (!user) {
+        navigate('/login', { replace: true });
+      } else if (tenant || profile?.tenant_id || profile?.role === 'owner' || profile?.role === 'super_admin') {
+        navigate('/app', { replace: true });
+      }
     }
-  }, [user, navigate]);
+  }, [user, profile, tenant, authLoading, navigate]);
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<OnboardingForm>({
     resolver: zodResolver(onboardingSchema),
