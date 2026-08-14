@@ -24,13 +24,13 @@ export default function ProfessionalCard({ professional: p, onEdit, onDelete, on
   const initials = p.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
   return (
-    <div className="rounded-3xl border shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col overflow-hidden glass-card" style={{ borderColor: theme.border }}>
+    <div className="rounded-2xl border shadow-xl transition-all duration-300 hover:-translate-y-1.5 flex flex-col overflow-hidden glass-card" style={{ borderColor: theme.border }}>
 
       {/* Top accent bar using agenda color */}
-      <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${p.agenda_color}, ${p.agenda_color}80)` }} />
+      <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${p.agenda_color}, ${p.agenda_color}80)` }} />
 
       {/* Card Body */}
-      <div className="p-6 flex-1 flex flex-col">
+      <div className="p-5 flex-1 flex flex-col">
         {/* Header Row */}
         <div className="flex items-start justify-between mb-4">
           {/* Avatar */}

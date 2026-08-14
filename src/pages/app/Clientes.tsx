@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Download, Filter, Users, Star, Award, UserPlus } from 'lucide-react';
+import { Search, Download, Filter } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { TableRowSkeleton } from '../../components/ui/Skeleton';
 import { useQuery } from '@tanstack/react-query';
@@ -32,14 +32,6 @@ export default function Clientes() {
     enabled: !!tenant?.id,
   });
 
-  const stats = useMemo(() => {
-    const total = customers.length;
-    const vips = customers.filter(c => c.segment === 'vip').length;
-    const fieis = customers.filter(c => c.segment === 'fiel').length;
-    const novos = customers.filter(c => !c.segment || c.segment === 'novo').length;
-    return { total, vips, fieis, novos };
-  }, [customers]);
-
   const filteredCustomers = useMemo(() => {
     let result = customers;
     
@@ -62,13 +54,12 @@ export default function Clientes() {
   const money = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
   return (
-    <div className="space-y-6 h-full flex flex-col animate-fade-in pb-10">
-      {/* ── HEADER ── */}
+    <div className="h-full flex flex-col space-y-6 w-full min-w-0 animate-fade-in">
       <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>CRM & Gestão</p>
-          <h1 className="text-3xl font-bold font-sans" style={{ color: theme.textPrimary }}>Clientes</h1>
-          <p className="mt-1 text-sm" style={{ color: theme.textSecondary }}>Base completa e histórico de relacionamento com seus clientes.</p>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>CRM</p>
+          <h1 className="font-serif text-3xl font-bold" style={{ color: theme.textPrimary }}>Clientes</h1>
+          <p className="mt-1 text-sm" style={{ color: theme.textSecondary }}>Gestão e histórico da sua base.</p>
         </div>
         <div className="flex space-x-3">
           <button className="flex items-center px-4 py-2 border rounded-xl font-medium transition-all shadow-sm hover:-translate-y-0.5 glass-card"
@@ -78,51 +69,20 @@ export default function Clientes() {
         </div>
       </header>
 
-      {/* ── KPIs — Clean Financeiro Style ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { label: 'Total de Clientes', value: stats.total, icon: Users, isHighlight: false, badge: 'Base Total' },
-          { label: 'Clientes VIPs', value: stats.vips, icon: Star, isHighlight: true, badge: 'Alta Frequência' },
-          { label: 'Clientes Fiéis', value: stats.fieis, icon: Award, isHighlight: false, badge: 'Recorrentes' },
-          { label: 'Novos Clientes', value: stats.novos, icon: UserPlus, isHighlight: false, badge: 'Recentes' },
-        ].map((stat, i) => (
-          stat.isHighlight ? (
-            <div key={i} className="p-6 rounded-3xl border shadow-xl relative overflow-hidden flex flex-col justify-between transition-all hover:-translate-y-0.5"
-              style={{ background: theme.accentGradient, borderColor: theme.accent, color: theme.btnPrimaryText }}>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-              <div className="flex justify-between items-start mb-4 relative z-10">
-                <div className="w-12 h-12 rounded-full bg-black/15 flex items-center justify-center backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>
-                  <stat.icon className="w-6 h-6" />
-                </div>
-                <span className="text-xs font-bold px-2.5 py-1 bg-black/20 rounded-full backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>{stat.badge}</span>
-              </div>
-              <p className="text-sm font-bold opacity-80 mb-1 relative z-10">{stat.label}</p>
-              <h3 className="text-3xl font-black relative z-10 tracking-tight">
-                {isLoading ? '—' : stat.value}
-              </h3>
-            </div>
-          ) : (
-            <div key={i} className="p-6 rounded-3xl border shadow-sm glass-card flex flex-col justify-between transition-all hover:-translate-y-0.5"
-              style={{ borderColor: theme.border }}>
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: theme.accentMuted, color: theme.accent }}>
-                  <stat.icon className="w-6 h-6" />
-                </div>
-                <span className="text-xs font-semibold px-2.5 py-1 border rounded-full" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textSecondary }}>{stat.badge}</span>
-              </div>
-              <p className="text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>{stat.label}</p>
-              <h3 className="text-3xl font-bold tracking-tight" style={{ color: theme.textPrimary }}>
-                {isLoading ? '—' : stat.value}
-              </h3>
-            </div>
-          )
-        ))}
-      </div>
+      <div className="border rounded-2xl shadow-2xl flex-1 flex flex-col min-h-[500px] glass-card" style={{ borderColor: theme.border }}>
+        {/* Mobile Filter Toggle */}
+        <div className="md:hidden p-4 border-b" style={{ borderColor: theme.border }}>
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2 transition-colors"
+            style={{ color: theme.textSecondary }}
+          >
+            <Filter className="w-4 h-4" /> Filtros e Busca
+          </button>
+        </div>
 
-      {/* ── CONTAINER DA TABELA ── */}
-      <div className="border rounded-3xl shadow-sm flex-1 flex flex-col min-h-[500px] glass-card overflow-hidden" style={{ borderColor: theme.border }}>
         {/* Filters and Search Bar */}
-        <div className="p-6 border-b flex flex-col md:flex-row md:items-center justify-between gap-4"
+        <div className={`p-4 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 ${showFilters ? 'block' : 'hidden md:flex'}`}
           style={{ borderColor: theme.border, background: theme.inputBg }}>
           <div className="flex flex-wrap gap-2">
             {[
@@ -134,11 +94,11 @@ export default function Clientes() {
               <button 
                 key={tab.id}
                 onClick={() => setSegment(tab.id)}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${segment === tab.id ? 'shadow-sm' : 'hover:opacity-80'}`}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${segment === tab.id ? 'font-bold' : 'hover:opacity-80'}`}
                 style={{
-                  background: segment === tab.id ? theme.accentGradient : theme.cardBg,
+                  background: segment === tab.id ? theme.accentGradient : 'transparent',
                   color: segment === tab.id ? theme.btnPrimaryText : theme.textSecondary,
-                  border: segment === tab.id ? 'none' : `1px solid ${theme.border}`,
+                  boxShadow: segment === tab.id ? theme.shadowAccent : 'none'
                 }}
               >
                 {tab.label}
@@ -149,10 +109,10 @@ export default function Clientes() {
              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: theme.textSecondary }} />
              <input 
                type="text" 
-               placeholder="Buscar por nome, telefone ou e-mail..." 
+               placeholder="Buscar cliente..." 
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
-               className="py-2.5 rounded-2xl text-sm outline-none w-full md:w-80 transition-all themed-input themed-input-search" 
+               className="py-2 rounded-xl text-sm outline-none w-full md:w-64 transition-all themed-input themed-input-search" 
              />
           </div>
         </div>
@@ -169,43 +129,42 @@ export default function Clientes() {
                  </tbody>
                </table>
              ) : filteredCustomers.length === 0 ? (
-               <div className="h-full flex flex-col items-center justify-center py-16 space-y-2" style={{ color: theme.textSecondary }}>
-                 <p className="font-bold text-lg" style={{ color: theme.textPrimary }}>
-                   {customers.length === 0 ? "Nenhum cliente cadastrado ainda" : "Nenhum cliente encontrado"}
+               <div className="h-full flex flex-col items-center justify-center space-y-2" style={{ color: theme.textSecondary }}>
+                 <p className="font-semibold text-lg" style={{ color: theme.textPrimary }}>
+                   {customers.length === 0 ? "Sem informações suficientes" : "Nenhum cliente encontrado"}
                  </p>
-                 <p className="text-xs max-w-sm text-center">
-                   {customers.length === 0 ? "Sua base de clientes será preenchida automaticamente conforme novos agendamentos forem realizados." : "Tente ajustar os termos de busca."}
+                 <p className="text-sm">
+                   {customers.length === 0 ? "Sua lista de clientes aparecerá aqui assim que houver cadastros." : "Tente ajustar os filtros de busca."}
                  </p>
                </div>
              ) : (
                 <table className="w-full text-left text-sm border-collapse">
                   <thead>
                     <tr className="border-b" style={{ borderColor: theme.border, color: theme.textSecondary }}>
-                      <th className="pb-4 px-4 font-semibold text-xs uppercase tracking-wider">Cliente</th>
-                      <th className="pb-4 px-4 font-semibold text-xs uppercase tracking-wider">Segmento</th>
-                      <th className="pb-4 px-4 font-semibold text-xs uppercase tracking-wider">Cadastrado em</th>
-                      <th className="pb-4 px-4 font-semibold text-xs uppercase tracking-wider text-right">Total Investido</th>
+                      <th className="py-3 px-4 font-semibold">Nome / Contato</th>
+                      <th className="py-3 px-4 font-semibold">Segmento</th>
+                      <th className="py-3 px-4 font-semibold">Cadastrado em</th>
+                      <th className="py-3 px-4 font-semibold text-right">Total Gasto</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredCustomers.map(cliente => (
                       <tr 
                         key={cliente.id} 
-                        className="border-b last:border-b-0 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer" 
+                        className="border-b last:border-b-0 hover:bg-black/5 transition-colors cursor-pointer" 
                         style={{ borderColor: theme.border }}
                         onClick={() => setSelectedCustomer(cliente)}
                       >
                         <td className="py-4 px-4">
-                          <p className="font-bold text-sm" style={{ color: theme.textPrimary }}>{cliente.name}</p>
-                          <p className="text-xs font-mono mt-0.5" style={{ color: theme.textSecondary }}>{cliente.phone || cliente.email || 'Sem contato'}</p>
+                          <p className="font-semibold" style={{ color: theme.textPrimary }}>{cliente.name}</p>
+                          <p className="text-xs" style={{ color: theme.textSecondary }}>{cliente.phone || cliente.email || 'Sem contato'}</p>
                         </td>
                         <td className="py-4 px-4">
                           <span 
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border"
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider"
                             style={{ 
                               background: cliente.segment === 'vip' ? `${theme.accent}20` : cliente.segment === 'fiel' ? `${theme.success}20` : `${theme.info}20`,
-                              color: cliente.segment === 'vip' ? theme.accent : cliente.segment === 'fiel' ? theme.success : theme.info,
-                              borderColor: cliente.segment === 'vip' ? `${theme.accent}40` : cliente.segment === 'fiel' ? `${theme.success}40` : `${theme.info}40`
+                              color: cliente.segment === 'vip' ? theme.accent : cliente.segment === 'fiel' ? theme.success : theme.info
                             }}
                           >
                             {cliente.segment || 'Novo'}
@@ -214,7 +173,7 @@ export default function Clientes() {
                         <td className="py-4 px-4" style={{ color: theme.textSecondary }}>
                           {format(new Date(cliente.created_at), "dd 'de' MMM, yyyy", { locale: ptBR })}
                         </td>
-                        <td className="py-4 px-4 text-right font-extrabold text-base" style={{ color: theme.textPrimary }}>
+                        <td className="py-4 px-4 text-right font-bold" style={{ color: theme.textPrimary }}>
                           {money(cliente.total_spent || 0)}
                         </td>
                       </tr>

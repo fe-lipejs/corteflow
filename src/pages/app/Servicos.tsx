@@ -149,45 +149,24 @@ export default function Servicos() {
         </button>
       </div>
 
-      {/* Stats — Clean Financeiro Style */}
+      {/* Stats — Services only */}
       {activeTab === 'servicos' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total de Serviços', value: serviceStats.total, icon: Scissors, isHighlight: false, badge: 'Catálogo' },
-            { label: 'Serviços Ativos', value: serviceStats.active, icon: Tag, isHighlight: true, badge: 'Disponíveis' },
-            { label: 'Categorias Criadas', value: serviceStats.categories, icon: SlidersHorizontal, isHighlight: false, badge: 'Categorias' },
-            { label: 'Duração Média', value: `${serviceStats.avgDuration} min`, icon: Loader2, isHighlight: false, badge: 'Tempo Médio' },
-          ].map((stat, i) => (
-            stat.isHighlight ? (
-              <div key={i} className="p-6 rounded-3xl border shadow-xl relative overflow-hidden flex flex-col justify-between transition-all hover:-translate-y-0.5"
-                style={{ background: theme.accentGradient, borderColor: theme.accent, color: theme.btnPrimaryText }}>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-                <div className="flex justify-between items-start mb-4 relative z-10">
-                  <div className="w-12 h-12 rounded-full bg-black/15 flex items-center justify-center backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>
-                    <stat.icon className="w-6 h-6" />
-                  </div>
-                  <span className="text-xs font-bold px-2.5 py-1 bg-black/20 rounded-full backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>{stat.badge}</span>
-                </div>
-                <p className="text-sm font-bold opacity-80 mb-1 relative z-10">{stat.label}</p>
-                <h3 className="text-3xl font-black relative z-10 tracking-tight">
-                  {loadingServices ? '—' : stat.value}
-                </h3>
+            { label: 'Total', value: serviceStats.total, icon: Scissors, color: theme.accent },
+            { label: 'Ativos', value: serviceStats.active, icon: Tag, color: theme.success },
+            { label: 'Categorias', value: serviceStats.categories, icon: SlidersHorizontal, color: theme.info },
+            { label: 'Duração Média', value: `${serviceStats.avgDuration}min`, icon: Loader2, color: '#a78bfa' },
+          ].map(stat => (
+            <div key={stat.label} className="rounded-2xl p-4 border flex items-center gap-4 glass-card">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${stat.color}15` }}>
+                <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
               </div>
-            ) : (
-              <div key={i} className="p-6 rounded-3xl border shadow-sm glass-card flex flex-col justify-between transition-all hover:-translate-y-0.5"
-                style={{ borderColor: theme.border }}>
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: theme.accentMuted, color: theme.accent }}>
-                    <stat.icon className="w-6 h-6" />
-                  </div>
-                  <span className="text-xs font-semibold px-2.5 py-1 border rounded-full" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textSecondary }}>{stat.badge}</span>
-                </div>
-                <p className="text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>{stat.label}</p>
-                <h3 className="text-3xl font-bold tracking-tight" style={{ color: theme.textPrimary }}>
-                  {loadingServices ? '—' : stat.value}
-                </h3>
+              <div>
+                <p className="text-xl font-bold" style={{ color: theme.textPrimary }}>{loadingServices ? '—' : stat.value}</p>
+                <p className="text-xs" style={{ color: theme.textSecondary }}>{stat.label}</p>
               </div>
-            )
+            </div>
           ))}
         </div>
       )}

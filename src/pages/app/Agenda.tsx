@@ -199,53 +199,39 @@ export default function Agenda() {
         </div>
 
         {/* Professional Filters & Stats row */}
-        <div className="flex flex-col gap-4">
-          {/* Stats cards — Clean Financeiro Style */}
-          <div className="flex overflow-x-auto md:grid md:grid-cols-5 gap-4 pb-2 md:pb-0 scrollbar-none snap-x">
+        <div className="flex flex-col gap-3">
+          {/* Stats cards */}
+          <div className="flex overflow-x-auto md:grid md:grid-cols-5 gap-3 pb-2 md:pb-0 scrollbar-none snap-x">
             {[
-              { label: 'Hoje', value: stats.total, icon: Calendar, color: theme.accent, isHighlight: false },
-              { label: 'Finalizados', value: stats.completed, icon: CheckCircle, color: theme.success, isHighlight: false },
-              { label: 'Em atendimento', value: stats.inProgress, icon: Users, color: '#a78bfa', isHighlight: false },
-              { label: 'Próximo', value: nextBooking ? format(new Date(nextBooking.scheduled_at), 'HH:mm') : '—', icon: Clock, color: theme.info, isHighlight: false },
-              { label: 'Receita prevista', value: fmt.format(stats.revenue), icon: DollarSign, color: theme.warning, isHighlight: true },
-            ].map((s, i) => (
-              s.isHighlight ? (
-                <div key={s.label} className="shrink-0 w-[180px] md:w-auto snap-start rounded-3xl p-4 border shadow-md relative overflow-hidden flex items-center gap-3.5 transition-all hover:-translate-y-0.5"
-                  style={{ background: theme.accentGradient, borderColor: theme.accent, color: theme.btnPrimaryText }}>
-                  <div className="w-11 h-11 rounded-full bg-black/15 flex items-center justify-center shrink-0" style={{ color: theme.btnPrimaryText }}>
-                    <s.icon className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-lg font-black leading-tight truncate tracking-tight">{isLoading ? '—' : s.value}</p>
-                    <p className="text-xs font-bold opacity-85 truncate">{s.label}</p>
-                  </div>
+              { label: 'Hoje', value: stats.total, icon: Calendar, color: theme.accent },
+              { label: 'Finalizados', value: stats.completed, icon: CheckCircle, color: theme.success },
+              { label: 'Em atendimento', value: stats.inProgress, icon: Users, color: '#a78bfa' }, // Keeping standard status colors
+              { label: 'Próximo', value: nextBooking ? format(new Date(nextBooking.scheduled_at), 'HH:mm') : '—', icon: Clock, color: theme.info },
+              { label: 'Receita prevista', value: fmt.format(stats.revenue), icon: DollarSign, color: theme.warning },
+            ].map(s => (
+              <div key={s.label} className="shrink-0 w-[160px] md:w-auto snap-start rounded-2xl p-3 border flex items-center gap-3 glass-card">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${s.color}15` }}>
+                  <s.icon className="w-4 h-4" style={{ color: s.color }} />
                 </div>
-              ) : (
-                <div key={s.label} className="shrink-0 w-[180px] md:w-auto snap-start rounded-3xl p-4 border shadow-sm flex items-center gap-3.5 glass-card transition-all hover:-translate-y-0.5"
-                  style={{ borderColor: theme.border }}>
-                  <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{ background: `${s.color}15`, color: s.color }}>
-                    <s.icon className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-lg font-extrabold leading-tight truncate tracking-tight" style={{ color: theme.textPrimary }}>{isLoading ? '—' : s.value}</p>
-                    <p className="text-xs font-medium truncate" style={{ color: theme.textSecondary }}>{s.label}</p>
-                  </div>
+                <div className="min-w-0">
+                  <p className="text-base font-bold leading-tight truncate" style={{ color: theme.textPrimary }}>{isLoading ? '—' : s.value}</p>
+                  <p className="text-[10px] truncate" style={{ color: theme.textSecondary }}>{s.label}</p>
                 </div>
-              )
+              </div>
             ))}
           </div>
 
-          {/* Professional Filter Chips */}
+          {/* Professional Filter Chips (Desktop & Mobile) */}
           {professionals.length > 0 && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               <span className="text-xs font-bold shrink-0 mr-1" style={{ color: theme.textSecondary }}>Filtrar por:</span>
               <button
                 onClick={() => setSelectedProfessionalId(null)}
-                className="px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 border"
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border`}
                 style={{
                   color: selectedProfessionalId === null ? theme.btnPrimaryText : theme.textSecondary,
                   background: selectedProfessionalId === null ? theme.accentGradient : theme.cardBg,
-                  borderColor: selectedProfessionalId === null ? theme.accent : theme.border,
+                  borderColor: selectedProfessionalId === null ? theme.accent : theme.cardBorder,
                   boxShadow: selectedProfessionalId === null ? theme.shadowAccent : 'none',
                 }}
               >
@@ -258,11 +244,11 @@ export default function Agenda() {
                   <button
                     key={p.id}
                     onClick={() => setSelectedProfessionalId(isSelected ? null : p.id)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 border"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border"
                     style={{
                       color: isSelected ? '#fff' : theme.textSecondary,
                       background: isSelected ? accent : theme.cardBg,
-                      borderColor: isSelected ? 'transparent' : theme.border,
+                      borderColor: isSelected ? 'transparent' : theme.cardBorder,
                       boxShadow: isSelected ? `0 0 15px ${accent}40` : 'none',
                     }}
                   >

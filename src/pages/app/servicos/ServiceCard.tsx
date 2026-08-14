@@ -16,9 +16,9 @@ export default function ServiceCard({ service: s, onEdit, onDelete }: Props) {
   const initials = s.name.substring(0, 2).toUpperCase();
 
   return (
-    <div className="rounded-3xl border shadow-sm flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 glass-card group" style={{ borderColor: theme.border }}>
+    <div className="rounded-2xl border shadow-xl flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 glass-card group" style={{ borderColor: theme.border }}>
       {/* Top accent bar */}
-      <div className="h-1.5 w-full flex-shrink-0" style={{ background: `linear-gradient(90deg, ${accent}, ${accent}60)` }} />
+      <div className="h-1 w-full flex-shrink-0" style={{ background: `linear-gradient(90deg, ${accent}, ${accent}60)` }} />
 
       {/* Image / Initials */}
       <div className="relative h-36 flex items-center justify-center flex-shrink-0" style={{ background: theme.inputBg }}>
