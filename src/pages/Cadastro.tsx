@@ -31,26 +31,54 @@ export default function Cadastro() {
     setLoading(true);
     setError(null);
     try {
-      const { error: authError } = await supabase.auth.signUp({
-        email: data.email,
+      // 1. Proactive check if phone is already registered in tenant_settings
+      const cleanPhone = data.phone.replace(/\D/g, '');
+      const { data: existingSettings } = await supabase
+        .from('tenant_settings')
+        .select('id, phone')
+        .eq('phone', cleanPhone)
+        .limit(1)
+        .maybeSingle();
+
+      if (existingSettings) {
+        setError('Este número de telefone/WhatsApp já está vinculado a uma conta existente. Faça login para continuar.');
+        setLoading(false);
+        return;
+      }
+
+      // 2. Perform Supabase Sign Up
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email.trim().toLowerCase(),
         password: data.password,
         options: {
           data: {
-            full_name: data.fullName,
-            phone: data.phone,
+            full_name: data.fullName.trim(),
+            phone: cleanPhone,
           },
           emailRedirectTo: `${window.location.origin}/onboarding`
         }
       });
 
       if (authError) throw authError;
+
+      // 3. Supabase Auth Security Check: If email is already registered, identities will be an empty array
+      if (authData.user && Array.isArray(authData.user.identities) && authData.user.identities.length === 0) {
+        setError('Este e-mail já está cadastrado no sistema. Por favor, faça login para acessar sua conta.');
+        return;
+      }
+
       setSuccess(true);
       
     } catch (err: any) {
       console.error(err);
       const msg: string = err?.message || '';
-      if (msg.includes('already registered') || msg.includes('User already registered')) {
-        setError('Este e-mail já está cadastrado. Tente fazer login.');
+      if (
+        msg.includes('already registered') || 
+        msg.includes('User already registered') ||
+        msg.includes('user_already_exists') ||
+        msg.includes('already exists')
+      ) {
+        setError('Este e-mail já está cadastrado. Por favor, faça login.');
       } else if (msg.includes('security purposes') || msg.includes('only request this after')) {
         const match = msg.match(/(\d+) second/);
         const secs = match ? match[1] : 'alguns';
