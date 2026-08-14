@@ -181,12 +181,12 @@ export default function Equipe() {
       {/* ── Search & Filters ── */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: theme.textSecondary }} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: theme.textSecondary }} />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar por nome, cargo, especialidade, telefone..."
-            className="w-full rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none themed-input"
+            className="w-full rounded-xl text-sm focus:outline-none themed-input themed-input-search"
           />
         </div>
 
@@ -195,7 +195,7 @@ export default function Equipe() {
           <select
             value={filterStatus}
             onChange={e => setFilterStatus(e.target.value)}
-            className="rounded-xl px-3 py-3 text-sm focus:outline-none themed-input"
+            className="rounded-xl px-4 py-2.5 text-sm focus:outline-none themed-input cursor-pointer min-w-[150px]"
           >
             <option value="all">Todos os status</option>
             <option value="active">Ativos</option>
@@ -209,7 +209,7 @@ export default function Equipe() {
             <select
               value={sortKey}
               onChange={e => setSortKey(e.target.value as SortKey)}
-              className="rounded-xl pl-10 pr-3 py-3 text-sm focus:outline-none appearance-none cursor-pointer themed-input"
+              className="rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none appearance-none cursor-pointer themed-input min-w-[145px]"
             >
               <option value="newest">Mais recente</option>
               <option value="oldest">Mais antigo</option>
@@ -217,7 +217,7 @@ export default function Equipe() {
               <option value="name_desc">Nome Z–A</option>
               <option value="status">Status</option>
             </select>
-            <SlidersHorizontal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: theme.textSecondary }} />
+            <SlidersHorizontal className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: theme.textSecondary }} />
           </div>
         </div>
       </div>

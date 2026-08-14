@@ -466,9 +466,10 @@ export const ThemeProvider: React.FC<{
     const bgLum = 0.2126 * bgR + 0.7152 * bgG + 0.0722 * bgB;
     const isDarkBg = bgLum < 135;
 
-    const dynamicBorder = isDarkBg ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)';
-    const dynamicTextSecondary = isDarkBg ? '#94A3B8' : '#64748B';
-    const dynamicTextMuted = isDarkBg ? '#64748B' : '#94A3B8';
+    const dynamicBorder = isDarkBg ? 'rgba(255, 255, 255, 0.10)' : '#E2E8F0';
+    const dynamicInputBorder = isDarkBg ? 'rgba(255, 255, 255, 0.14)' : '#CBD5E1';
+    const dynamicTextSecondary = isDarkBg ? '#94A3B8' : '#475569';
+    const dynamicTextMuted = isDarkBg ? '#64748B' : '#64748B';
 
     return {
       ...baseTheme,
@@ -478,14 +479,15 @@ export const ThemeProvider: React.FC<{
       textMuted: dynamicTextMuted,
       border: dynamicBorder,
       cardBorder: dynamicBorder,
-      inputBorder: dynamicBorder,
+      inputBorder: dynamicInputBorder,
       sidebarBorder: dynamicBorder,
-      bgHover: isDarkBg ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-      sidebarHover: isDarkBg ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+      bgHover: isDarkBg ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9',
+      sidebarHover: isDarkBg ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9',
       btnOutlineBorder: dynamicBorder,
       btnOutlineText: customPalette.text || (isDarkBg ? '#FFFFFF' : '#0F172A'),
       inputText: customPalette.text || (isDarkBg ? '#FFFFFF' : '#0F172A'),
       inputPlaceholder: isDarkBg ? '#64748B' : '#94A3B8',
+      cardShadow: isDarkBg ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' : '0 4px 14px rgba(0, 0, 0, 0.05)',
       ...(customPalette.card && {
         cardBg: customPalette.card,
         bgCard: customPalette.card,

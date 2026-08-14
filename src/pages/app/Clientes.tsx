@@ -106,13 +106,13 @@ export default function Clientes() {
             ))}
           </div>
           <div className="relative w-full md:w-auto">
-             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: theme.textSecondary }} />
+             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: theme.textSecondary }} />
              <input 
                type="text" 
                placeholder="Buscar cliente..." 
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
-               className="pl-9 pr-4 py-2 rounded-xl text-sm outline-none w-full md:w-64 transition-all themed-input" 
+               className="py-2 rounded-xl text-sm outline-none w-full md:w-64 transition-all themed-input themed-input-search" 
              />
           </div>
         </div>

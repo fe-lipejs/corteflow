@@ -209,8 +209,8 @@ export default function Servicos() {
           {/* Search + Category filter */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: theme.textSecondary }} />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar serviço, categoria ou tag..." className="w-full rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none themed-input" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: theme.textSecondary }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar serviço, categoria ou tag..." className="w-full rounded-xl text-sm focus:outline-none themed-input themed-input-search" />
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none items-center">
               <button onClick={() => setCategoryFilter('Todos')} className="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all"
