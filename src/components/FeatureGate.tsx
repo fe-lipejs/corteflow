@@ -15,13 +15,13 @@ interface FeatureGateProps {
   inline?: boolean;
 }
 
-/** Rich, Vibrant Teaser Mockup so the user clearly sees the feature right behind the glass */
+/** Rich, Privacy-Protected Teaser Mockup so the user sees the structure and charts, but the data is enticely blurred/censored */
 function TeaserBackdrop({ feature }: { feature: keyof PlanFeatures }) {
   const { theme } = useTheme();
 
   if (feature === 'financeiro') {
     return (
-      <div className="space-y-4 p-4 sm:p-6 select-none pointer-events-none">
+      <div className="space-y-4 p-4 sm:p-6 select-none pointer-events-none filter blur-[3.5px] opacity-70">
         {/* KPI Metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           <div className="p-4 rounded-2xl border shadow-sm" style={{ background: theme.cardBg, borderColor: theme.border }}>
@@ -112,7 +112,7 @@ function TeaserBackdrop({ feature }: { feature: keyof PlanFeatures }) {
 
   if (feature === 'produtos') {
     return (
-      <div className="space-y-4 p-4 sm:p-6 select-none pointer-events-none">
+      <div className="space-y-4 p-4 sm:p-6 select-none pointer-events-none filter blur-[3.5px] opacity-70">
         {/* Search & Categories */}
         <div className="flex gap-2">
           <div className="flex-1 p-3 rounded-xl border text-xs font-medium" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textMuted }}>
@@ -155,7 +155,7 @@ function TeaserBackdrop({ feature }: { feature: keyof PlanFeatures }) {
   }
 
   return (
-    <div className="grid grid-cols-3 gap-4 p-4 select-none pointer-events-none">
+    <div className="grid grid-cols-3 gap-4 p-4 select-none pointer-events-none filter blur-[3.5px] opacity-70">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="h-28 rounded-2xl border" style={{ background: theme.cardBg, borderColor: theme.border }} />
       ))}
@@ -235,7 +235,7 @@ function UpgradeScreen({ feature }: { feature: keyof PlanFeatures }) {
             ? '#E2E8F0'
             : 'rgba(255, 255, 255, 0.12)',
           boxShadow: theme.id === 'elegant'
-            ? '0 25px 50px -12px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.04)'
+            ? '0 25px 50px -12px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.04)'
             : '0 25px 50px -12px rgba(0, 0, 0, 0.6), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15)',
         }}
       >
@@ -391,10 +391,10 @@ export default function FeatureGate({ feature, children, message, inline = false
           className="relative z-10 min-h-[520px] flex items-center justify-center p-4 sm:p-6"
           style={{
             background: theme.id === 'elegant'
-              ? 'rgba(15, 23, 42, 0.08)'
+              ? 'rgba(15, 23, 42, 0.05)'
               : 'rgba(0, 0, 0, 0.65)',
-            backdropFilter: 'blur(1.5px)',
-            WebkitBackdropFilter: 'blur(1.5px)',
+            backdropFilter: 'blur(2px)',
+            WebkitBackdropFilter: 'blur(2px)',
           }}
         >
           <UpgradeScreen feature={feature} />
