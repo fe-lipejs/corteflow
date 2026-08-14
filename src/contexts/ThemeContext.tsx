@@ -160,7 +160,7 @@ export const THEME_CLASSIC: ThemeTokens = {
   shadowAccent: '0 0 20px rgba(201, 150, 59, 0.2)',
 
   fontSans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-  fontSerif: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif",
+  fontSerif: "'Playfair Display', Georgia, serif",
 
   skeletonBase: '#252118',
   skeletonShimmer: '#3A3530',
@@ -236,7 +236,7 @@ export const THEME_NOIR: ThemeTokens = {
   shadowAccent: '0 0 25px rgba(201, 150, 59, 0.3)',
 
   fontSans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-  fontSerif: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif",
+  fontSerif: "'Playfair Display', Georgia, serif",
 
   skeletonBase: '#111111',
   skeletonShimmer: '#1A1A1A',
@@ -258,8 +258,8 @@ export const THEME_ELEGANT: ThemeTokens = {
   bgGlass: 'rgba(255, 255, 255, 0.95)',
 
   textPrimary: '#0F172A',
-  textSecondary: '#475569',
-  textMuted: '#94A3B8',
+  textSecondary: '#334155',
+  textMuted: '#64748B',
   textInverse: '#FFFFFF',
 
   accent: '#C9963B',
@@ -274,7 +274,7 @@ export const THEME_ELEGANT: ThemeTokens = {
 
   btnPrimaryBg: 'linear-gradient(135deg, #C9963B, #DAA74E)',
   btnPrimaryText: '#000000',
-  btnPrimaryHover: '0 0 20px rgba(201, 150, 59, 0.4)',
+  btnPrimaryHover: '0 8px 25px rgba(201, 150, 59, 0.35)',
   btnOutlineBorder: '#E2E8F0',
   btnOutlineText: '#0F172A',
   btnOutlineHoverBg: '#F1F5F9',
@@ -285,7 +285,7 @@ export const THEME_ELEGANT: ThemeTokens = {
   calendarUnavailableBg: '#F8FAFC',
 
   inputBg: '#FFFFFF',
-  inputBorder: '#E2E8F0',
+  inputBorder: '#CBD5E1',
   inputFocusBorder: '#C9963B',
   inputPlaceholder: '#94A3B8',
   inputText: '#0F172A',
@@ -312,13 +312,23 @@ export const THEME_ELEGANT: ThemeTokens = {
   shadowAccent: '0 0 25px rgba(201, 150, 59, 0.35)',
 
   fontSans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-  fontSerif: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif",
+  fontSerif: "'Playfair Display', Georgia, serif",
 
   skeletonBase: '#F1F5F9',
   skeletonShimmer: '#E2E8F0',
   scrollbarThumb: '#CBD5E1',
   scrollbarTrack: '#F8FAFC',
 };
+
+export type FontStyle = 'serif' | 'sans';
+
+export interface CustomPaletteConfig {
+  primary?: string;
+  background?: string;
+  text?: string;
+  card?: string;
+  fontStyle?: FontStyle;
+}
 
 // ─── Theme Map ────────────────────────────────────────────────────────────────
 export const THEMES: Record<string, ThemeTokens> = {
@@ -331,8 +341,10 @@ export const THEMES: Record<string, ThemeTokens> = {
 interface ThemeContextType {
   theme: ThemeTokens;
   themeId: string;
+  fontStyle: FontStyle;
+  setFontStyle: (style: FontStyle) => void;
   setThemeId: (id: string) => void;
-  setCustomPalette: (palette: { primary?: string; background?: string; text?: string; card?: string } | undefined) => void;
+  setCustomPalette: (palette: CustomPaletteConfig | undefined) => void;
   themes: typeof THEMES;
 }
 
@@ -433,22 +445,30 @@ export function adjustColorBrightness(hexColor: string, percent: number): string
 export const ThemeProvider: React.FC<{
   children: React.ReactNode;
   initialThemeId?: string;
-  initialCustomPalette?: { primary?: string; background?: string; text?: string; card?: string };
+  initialCustomPalette?: CustomPaletteConfig;
 }> = ({
   children,
-  initialThemeId = 'classic',
+  initialThemeId = 'noir',
   initialCustomPalette,
 }) => {
   const [themeId, setThemeId] = useState(initialThemeId);
-  const [customPalette, setCustomPalette] = useState(initialCustomPalette);
+  const [customPalette, setCustomPalette] = useState<CustomPaletteConfig | undefined>(initialCustomPalette);
+  const [fontStyle, setFontStyle] = useState<FontStyle>(
+    initialCustomPalette?.fontStyle || 'serif'
+  );
 
   const theme = useMemo(() => {
     const baseTheme = THEMES[themeId] || THEME_NOIR;
-    if (!customPalette) return baseTheme;
+    const isLightMode = themeId === 'elegant' || baseTheme.id === 'elegant';
 
-    // Apply dynamic overrides from custom_palette (database)
+    // Apply font override
+    const activeFontStyle = customPalette?.fontStyle || fontStyle;
+    const resolvedFontSerif = activeFontStyle === 'sans'
+      ? "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif"
+      : "'Playfair Display', Georgia, serif";
+
     let btnTextColor = baseTheme.btnPrimaryText;
-    if (customPalette.primary) {
+    if (customPalette?.primary) {
       // Calculate luminance for high contrast text on buttons
       const hex = customPalette.primary.replace('#', '');
       const r = parseInt(hex.substring(0, 2), 16) || 201;
@@ -460,13 +480,22 @@ export const ThemeProvider: React.FC<{
 
     return {
       ...baseTheme,
-      ...(customPalette.background && { bg: customPalette.background }),
-      ...(customPalette.card && {
+      fontSerif: resolvedFontSerif,
+      ...(isLightMode && {
+        shadowAccent: 'none',
+        btnPrimaryHover: 'none',
+        cardShadow: 'none',
+        shadowSm: 'none',
+        shadowMd: 'none',
+        shadowLg: 'none',
+      }),
+      ...(customPalette?.background && { bg: customPalette.background }),
+      ...(customPalette?.card && {
         cardBg: customPalette.card,
         bgCard: customPalette.card,
       }),
-      ...(customPalette.text && { textPrimary: customPalette.text }),
-      ...(customPalette.primary && {
+      ...(customPalette?.text && { textPrimary: customPalette.text }),
+      ...(customPalette?.primary && {
         accent: customPalette.primary,
         accentLight: adjustColorBrightness(customPalette.primary, 15),
         accentHover: adjustColorBrightness(customPalette.primary, 8),
@@ -474,7 +503,7 @@ export const ThemeProvider: React.FC<{
         accentGradient: `linear-gradient(135deg, ${customPalette.primary}, ${adjustColorBrightness(customPalette.primary, 18)})`,
         btnPrimaryBg: `linear-gradient(135deg, ${customPalette.primary}, ${adjustColorBrightness(customPalette.primary, 18)})`,
         btnPrimaryText: btnTextColor,
-        btnPrimaryHover: `0 0 20px ${customPalette.primary}60`,
+        btnPrimaryHover: isLightMode ? 'none' : `0 0 20px ${customPalette.primary}60`,
         borderActive: customPalette.primary,
         inputFocusBorder: customPalette.primary,
         calendarActiveBg: customPalette.primary,
@@ -482,18 +511,29 @@ export const ThemeProvider: React.FC<{
         calendarAvailableBg: `${customPalette.primary}18`,
         sidebarActiveItemBg: customPalette.primary,
         sidebarActiveItemText: btnTextColor,
-        shadowAccent: `0 0 25px ${customPalette.primary}40`,
+        shadowAccent: isLightMode ? 'none' : `0 0 25px ${customPalette.primary}40`,
       }),
     };
-  }, [themeId, customPalette]);
+  }, [themeId, customPalette, fontStyle]);
 
   useEffect(() => {
     applyThemeToDOM(theme);
   }, [theme]);
 
   const value = useMemo(
-    () => ({ theme, themeId, setThemeId, setCustomPalette, themes: THEMES }),
-    [theme, themeId]
+    () => ({
+      theme,
+      themeId,
+      fontStyle,
+      setFontStyle: (s: FontStyle) => {
+        setFontStyle(s);
+        setCustomPalette(prev => ({ ...prev, fontStyle: s }));
+      },
+      setThemeId,
+      setCustomPalette,
+      themes: THEMES,
+    }),
+    [theme, themeId, fontStyle]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

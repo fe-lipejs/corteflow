@@ -52,7 +52,7 @@ type TabId = typeof TABS[number]['id'];
 export default function Configuracoes() {
   const { tenant, profile, signOut, refreshProfile } = useAuth();
   const { i18n } = useTranslation();
-  const { theme, setThemeId, themeId, setCustomPalette: setContextCustomPalette } = useTheme();
+  const { theme, setThemeId, themeId, fontStyle, setFontStyle, setCustomPalette: setContextCustomPalette } = useTheme();
   const phoneFormat = usePhoneFormat(tenant?.language || 'pt');
 
   const [loading, setLoading] = useState(false);
@@ -185,8 +185,14 @@ export default function Configuracoes() {
         setCustomPalette(data.custom_palette || null);
         if (data.theme_preset) setThemeId(data.theme_preset);
         else setThemeId('noir');
-        if (data.custom_palette) setContextCustomPalette(data.custom_palette);
-        else setContextCustomPalette(undefined);
+        if (data.custom_palette) {
+          setContextCustomPalette(data.custom_palette);
+          if (data.custom_palette.fontStyle) {
+            setFontStyle(data.custom_palette.fontStyle);
+          }
+        } else {
+          setContextCustomPalette(undefined);
+        }
 
         if (data.custom_palette?.background) {
           // Detect if background is light or dark
@@ -628,11 +634,13 @@ export default function Configuracoes() {
       }
       const paymentModeJson = { pay_local: allowLocal, partial_50: allowDeposit, full_100: allowFull };
 
+      const finalPalette = customPalette ? { ...customPalette, fontStyle } : { fontStyle };
+
       // Build payload
       const payload: Record<string, any> = {
         tenant_id: tenant.id,
         theme_preset: selectedTheme,
-        custom_palette: customPalette || null,
+        custom_palette: finalPalette,
         payment_methods: paymentModeJson,
         deposit_percentage: allowDeposit ? depositPercentage : null,
         fantasy_name: cleanName,
@@ -997,7 +1005,7 @@ export default function Configuracoes() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 pb-2 overflow-x-auto scrollbar-none" style={{ borderBottom: `1px solid ${theme.border}` }}>
+      <div className="flex gap-2 pb-2 overflow-x-auto scrollbar-none" style={{ borderBottom: `1px solid ${theme.border}` }}>
         {TABS.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1005,15 +1013,19 @@ export default function Configuracoes() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all shrink-0"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
               style={{
-                background: isActive ? theme.accentMuted : 'transparent',
-                color: isActive ? theme.accent : theme.textSecondary,
-                borderBottom: isActive ? `2px solid ${theme.accent}` : '2px solid transparent',
+                background: isActive 
+                  ? (theme.id === 'elegant' ? '#0F172A' : '#FFFFFF') 
+                  : 'transparent',
+                color: isActive 
+                  ? (theme.id === 'elegant' ? '#FFFFFF' : '#000000') 
+                  : theme.textSecondary,
+                boxShadow: isActive ? (theme.id === 'elegant' ? '0 1px 3px rgba(0,0,0,0.1)' : '0 0 12px rgba(255,255,255,0.2)') : 'none',
               }}
             >
               <Icon className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{tab.label}</span>
+              <span>{tab.label}</span>
             </button>
           );
         })}
@@ -1301,6 +1313,78 @@ export default function Configuracoes() {
                         </div>
                       </div>
                       {bgMode === 'light' && (
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center shadow" style={{ background: customPalette?.primary || theme.accent }}>
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. Seletor de Estilo Tipográfico dos Títulos */}
+                <div className="pt-4 border-t" style={{ borderColor: theme.border }}>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: theme.textSecondary }}>
+                    Estilo Tipográfico dos Títulos:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Estilo Clássico (Playfair Display) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFontStyle('serif');
+                        setCustomPalette((prev: any) => ({ ...(prev || {}), fontStyle: 'serif' }));
+                      }}
+                      className="flex items-center justify-between p-4 rounded-xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
+                      style={{
+                        background: fontStyle === 'serif' ? (theme.id === 'elegant' ? '#FFFFFF' : '#0D0D0D') : (theme.id === 'elegant' ? '#F8FAFC' : theme.bg),
+                        borderColor: fontStyle === 'serif' ? (customPalette?.primary || theme.accent) : theme.border,
+                        boxShadow: fontStyle === 'serif' ? (theme.id === 'elegant' ? '0 1px 3px rgba(0,0,0,0.05)' : `0 0 16px ${(customPalette?.primary || theme.accent)}25`) : 'none',
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl font-serif font-bold" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
+                        <div>
+                          <p className="text-xs font-bold font-serif" style={{ color: theme.textPrimary }}>
+                            Clássico & Elegante
+                          </p>
+                          <p className="text-[11px]" style={{ color: theme.textMuted }}>
+                            Playfair Display refinada para títulos e números
+                          </p>
+                        </div>
+                      </div>
+                      {fontStyle === 'serif' && (
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center shadow" style={{ background: customPalette?.primary || theme.accent }}>
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                    </button>
+
+                    {/* Estilo Moderno (Plus Jakarta Sans) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFontStyle('sans');
+                        setCustomPalette((prev: any) => ({ ...(prev || {}), fontStyle: 'sans' }));
+                      }}
+                      className="flex items-center justify-between p-4 rounded-xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
+                      style={{
+                        background: fontStyle === 'sans' ? (theme.id === 'elegant' ? '#FFFFFF' : '#0D0D0D') : (theme.id === 'elegant' ? '#F8FAFC' : theme.bg),
+                        borderColor: fontStyle === 'sans' ? (customPalette?.primary || theme.accent) : theme.border,
+                        boxShadow: fontStyle === 'sans' ? (theme.id === 'elegant' ? '0 1px 3px rgba(0,0,0,0.05)' : `0 0 16px ${(customPalette?.primary || theme.accent)}25`) : 'none',
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl font-sans font-black" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
+                        <div>
+                          <p className="text-xs font-bold font-sans" style={{ color: theme.textPrimary }}>
+                            Moderno & Minimalista
+                          </p>
+                          <p className="text-[11px]" style={{ color: theme.textMuted }}>
+                            Plus Jakarta Sans direta, limpa e contemporânea
+                          </p>
+                        </div>
+                      </div>
+                      {fontStyle === 'sans' && (
                         <div className="w-5 h-5 rounded-full flex items-center justify-center shadow" style={{ background: customPalette?.primary || theme.accent }}>
                           <Check className="w-3 h-3 text-white" />
                         </div>

@@ -352,15 +352,15 @@ export default function Assinatura() {
                     </p>
 
                     {/* Feature flags */}
-                    <div className="flex flex-wrap gap-1 mb-4">
+                    <div className="flex flex-wrap gap-1.5 mb-5">
                       {Object.entries(flags).map(([key, enabled]) => (
                         <span
                           key={key}
-                          className="text-xs px-2 py-0.5 rounded-full border"
+                          className="text-xs px-2.5 py-1 rounded-lg border font-medium flex items-center gap-1 transition-all"
                           style={{
-                            borderColor: enabled ? `${theme.success}40` : theme.border,
+                            borderColor: enabled ? `${theme.success}30` : theme.border,
                             color: enabled ? theme.success : theme.textMuted,
-                            background: enabled ? `${theme.success}10` : 'transparent',
+                            background: enabled ? `${theme.success}12` : `${theme.border}30`,
                           }}
                         >
                           {enabled ? '✓' : '✕'} {FEATURE_LABELS[key]}
@@ -369,50 +369,48 @@ export default function Assinatura() {
                     </div>
 
                     {/* Limits */}
-                    <div className="text-sm space-y-1" style={{ color: theme.textSecondary }}>
-                      <div>👥 Até {plan.max_professionals} profissional{plan.max_professionals !== 1 ? 'is' : ''}</div>
+                    <div className="text-sm font-medium flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                      <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style={{ background: `${theme.accent}20`, color: theme.accent }}>👥</span>
+                      <span>Até {plan.max_professionals} profissional{plan.max_professionals !== 1 ? 'is' : ''}</span>
                     </div>
 
                     {/* Display features bullets */}
                     {displayFeatures.length > 0 && (
-                      <ul className="mt-4 space-y-1.5">
+                      <ul className="mt-4 space-y-2 border-t pt-4" style={{ borderColor: theme.border }}>
                         {displayFeatures.map((f, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm" style={{ color: theme.textSecondary }}>
-                            <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.success }} />
-                            {f}
+                          <li key={i} className="flex items-start gap-2 text-xs" style={{ color: theme.textSecondary }}>
+                            <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: theme.accent }} />
+                            <span>{f}</span>
                           </li>
                         ))}
                       </ul>
                     )}
                   </div>
 
-                  {/* CTA */}
-                  <div className="p-4 border-t" style={{ borderColor: theme.border }}>
+                  {/* Action button */}
+                  <div className="p-6 pt-0">
                     <button
                       onClick={() => handleCheckout(plan.id)}
-                      disabled={!!checkoutLoading || (isCurrent && hasActivePlan && !isTrial)}
-                      className="w-full py-3 rounded-xl font-bold text-sm transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                      disabled={isLoading || isCurrent}
+                      className="w-full py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 hover:opacity-95 cursor-pointer"
                       style={{
-                        background: isCurrent && hasActivePlan && !isTrial
-                          ? theme.inputBg
-                          : theme.accentGradient,
-                        color: isCurrent && hasActivePlan && !isTrial
-                          ? theme.textSecondary
-                          : theme.btnPrimaryText,
-                        boxShadow: isCurrent && hasActivePlan && !isTrial ? 'none' : theme.shadowAccent,
+                        background: isCurrent ? theme.bgHover : theme.accentGradient,
+                        color: isCurrent ? theme.textSecondary : theme.btnPrimaryText,
+                        boxShadow: isCurrent ? 'none' : theme.shadowAccent,
                       }}
                     >
                       {isLoading ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin" /> Aguarde...
-                        </span>
-                      ) : isCurrent && hasActivePlan && !isTrial ? (
-                        '✓ Plano atual'
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Processando...
+                        </>
+                      ) : isCurrent ? (
+                        'Plano Atual'
                       ) : (
-                        <span className="flex items-center justify-center gap-2">
+                        <>
                           <Zap className="w-4 h-4" />
-                          {isCurrent ? 'Renovar' : 'Assinar este plano'}
-                        </span>
+                          Assinar este plano
+                        </>
                       )}
                     </button>
                   </div>

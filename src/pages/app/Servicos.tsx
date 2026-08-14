@@ -141,7 +141,7 @@ export default function Servicos() {
         </div>
         <button
           onClick={() => { setEditingService(null); setServiceModalOpen(true); setMutationError(null); }}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.35)] hover:-translate-y-0.5"
+          className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all hover:opacity-90 cursor-pointer"
           style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
         >
           <Plus className="w-5 h-5" />

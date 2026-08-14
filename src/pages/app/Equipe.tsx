@@ -148,7 +148,7 @@ export default function Equipe() {
         </div>
         <button
           onClick={handleNewClick}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.35)] hover:-translate-y-0.5"
+          className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all hover:opacity-90 cursor-pointer"
           style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
         >
           <Plus className="w-5 h-5" /> Novo Profissional
@@ -267,7 +267,7 @@ export default function Equipe() {
                   <p className="text-sm mb-5" style={{ color: theme.textSecondary }}>Adicione o primeiro profissional do seu salão.</p>
                   <button
                     onClick={handleNewClick}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.35)]"
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all hover:opacity-90 cursor-pointer"
                     style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
                   >
                     <Plus className="w-5 h-5" /> Adicionar Profissional

@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 .font-serif {
-  font-family: var(--theme-font-serif, 'Plus Jakarta Sans', -apple-system, sans-serif);
+  font-family: var(--theme-font-serif, 'Playfair Display', Georgia, serif);
 }
 
 :root {
