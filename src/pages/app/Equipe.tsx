@@ -155,26 +155,44 @@ export default function Equipe() {
         </button>
       </div>
 
-      {/* ── Stats Dashboard ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* ── Stats Dashboard — Clean Financeiro Style ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Total', value: stats.total, icon: Users, color: theme.accent, bg: `${theme.accent}15` },
-          { label: 'Ativos', value: stats.active, icon: CheckCircle, color: theme.success, bg: `${theme.success}15` },
-          { label: 'Férias', value: stats.vacation, icon: Palmtree, color: theme.warning, bg: `${theme.warning}15` },
-          { label: 'Inativos', value: stats.inactive, icon: XCircle, color: theme.error, bg: `${theme.error}15` },
-        ].map(stat => (
-          <div
-            key={stat.label}
-            className="rounded-2xl p-4 border flex items-center gap-4 glass-card"
-          >
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: stat.bg }}>
-              <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
+          { label: 'Total na Equipe', value: stats.total, icon: Users, isHighlight: false, badge: 'Equipe' },
+          { label: 'Profissionais Ativos', value: stats.active, icon: CheckCircle, isHighlight: true, badge: 'Em Atendimento' },
+          { label: 'Em Férias', value: stats.vacation, icon: Palmtree, isHighlight: false, badge: 'Férias' },
+          { label: 'Inativos / Afastados', value: stats.inactive, icon: XCircle, isHighlight: false, badge: 'Inativos' },
+        ].map((stat, i) => (
+          stat.isHighlight ? (
+            <div key={i} className="p-6 rounded-3xl border shadow-xl relative overflow-hidden flex flex-col justify-between transition-all hover:-translate-y-0.5"
+              style={{ background: theme.accentGradient, borderColor: theme.accent, color: theme.btnPrimaryText }}>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+              <div className="flex justify-between items-start mb-4 relative z-10">
+                <div className="w-12 h-12 rounded-full bg-black/15 flex items-center justify-center backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>
+                  <stat.icon className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-bold px-2.5 py-1 bg-black/20 rounded-full backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>{stat.badge}</span>
+              </div>
+              <p className="text-sm font-bold opacity-80 mb-1 relative z-10">{stat.label}</p>
+              <h3 className="text-3xl font-black relative z-10 tracking-tight">
+                {isLoading ? '—' : stat.value}
+              </h3>
             </div>
-            <div>
-              <p className="text-2xl font-bold" style={{ color: theme.textPrimary }}>{isLoading ? '—' : stat.value}</p>
-              <p className="text-xs" style={{ color: theme.textSecondary }}>{stat.label}</p>
+          ) : (
+            <div key={i} className="p-6 rounded-3xl border shadow-sm glass-card flex flex-col justify-between transition-all hover:-translate-y-0.5"
+              style={{ borderColor: theme.border }}>
+              <div className="flex justify-between items-start mb-4">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: theme.accentMuted, color: theme.accent }}>
+                  <stat.icon className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-semibold px-2.5 py-1 border rounded-full" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textSecondary }}>{stat.badge}</span>
+              </div>
+              <p className="text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>{stat.label}</p>
+              <h3 className="text-3xl font-bold tracking-tight" style={{ color: theme.textPrimary }}>
+                {isLoading ? '—' : stat.value}
+              </h3>
             </div>
-          </div>
+          )
         ))}
       </div>
 

@@ -328,71 +328,91 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map((k, i) => (
-          <div key={i} className={`kpi-card ${k.dark ? 'glass-card' : 'glass-card'} flex flex-col justify-between h-full p-5`}>
-            <div>
-              <div className="flex justify-between items-start mb-4">
-                <span className="text-xs font-medium" style={{ color: theme.textSecondary }}>
-                  {k.label}
-                </span>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: theme.accentMuted }}>
-                  <k.icon className="w-4 h-4" style={{ color: theme.accent }} />
+      {/* KPI Cards — Clean Financeiro Style */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {kpis.map((k, i) => {
+          const isHighlight = i === 1; // Faturamento Previsto em destaque
+          return isHighlight ? (
+            <div key={i} className="p-6 rounded-3xl border shadow-xl relative overflow-hidden flex flex-col justify-between transition-all hover:-translate-y-0.5"
+              style={{ background: theme.accentGradient, borderColor: theme.accent, color: theme.btnPrimaryText }}>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+              <div className="flex justify-between items-start mb-4 relative z-10">
+                <div className="w-12 h-12 rounded-full bg-black/15 flex items-center justify-center backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>
+                  <k.icon className="w-6 h-6" />
                 </div>
+                <span className="text-xs font-bold px-2.5 py-1 bg-black/20 rounded-full backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>Hoje</span>
               </div>
-              <p className={`font-serif ${typeof k.value === 'string' && k.value.length > 10 ? 'text-xl md:text-2xl' : 'text-2xl md:text-4xl'} font-bold mb-2 truncate`} style={{ color: theme.textPrimary }}>
+              <p className="text-sm font-bold opacity-80 mb-1 relative z-10">{k.label}</p>
+              <h3 className="text-3xl font-black relative z-10 tracking-tight">
                 {k.value}
-              </p>
+              </h3>
             </div>
-            <p className="text-xs font-medium" style={{ color: theme.accent }}>
-              {k.sub}
-            </p>
-          </div>
-        ))}
+          ) : (
+            <div key={i} className="p-6 rounded-3xl border shadow-sm glass-card flex flex-col justify-between transition-all hover:-translate-y-0.5"
+              style={{ borderColor: theme.border }}>
+              <div className="flex justify-between items-start mb-4">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: theme.accentMuted, color: theme.accent }}>
+                  <k.icon className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-semibold px-2.5 py-1 border rounded-full" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textSecondary }}>{k.sub}</span>
+              </div>
+              <p className="text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>{k.label}</p>
+              <h3 className="text-3xl font-bold tracking-tight" style={{ color: theme.textPrimary }}>
+                {k.value}
+              </h3>
+            </div>
+          );
+        })}
       </div>
 
       {/* Bottom section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Agenda do dia */}
-        <div className="lg:col-span-2 glass-card p-4 md:p-6">
-          <div className="flex justify-between items-start mb-4">
+        <div className="lg:col-span-2 border rounded-3xl p-6 shadow-sm glass-card" style={{ borderColor: theme.border }}>
+          <div className="flex justify-between items-center mb-6">
             <div>
-              <h3 className="font-bold text-lg" style={{ color: theme.textPrimary }}>Agenda de hoje</h3>
-              <p className="text-xs" style={{ color: theme.textMuted }}>{todayBookings.length} horários confirmados</p>
+              <h3 className="font-bold text-xl" style={{ color: theme.textPrimary }}>Agenda de hoje</h3>
+              <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>{todayBookings.length} horários confirmados para atendimento</p>
             </div>
-            <button onClick={() => navigate('/app/agenda')} className="flex items-center gap-1 text-xs font-semibold" style={{ color: theme.accent }}>
-              Ver semana <ArrowRight className="w-3 h-3" />
+            <button onClick={() => navigate('/app/agenda')} className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all hover:opacity-80"
+              style={{ background: theme.inputBg, borderColor: theme.border, color: theme.accent }}>
+              Ver semana completa <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          <div className="mt-4 flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             {todayBookings.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">
-                  <Calendar className="w-8 h-8" />
+              <div className="text-center py-16 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center" style={{ borderColor: theme.border }}>
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3" style={{ background: theme.accentMuted, color: theme.accent }}>
+                  <Calendar className="w-7 h-7" />
                 </div>
-                <p className="empty-state-title">Nenhum agendamento hoje</p>
-                <p className="empty-state-text">Os clientes que agendarem aparecerão aqui.</p>
+                <p className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>Nenhum agendamento para hoje</p>
+                <p className="text-xs max-w-xs" style={{ color: theme.textSecondary }}>Assim que os clientes agendarem horários, eles aparecerão organizados aqui.</p>
               </div>
             ) : (
               todayBookings.map((item) => (
-                <div key={item.id} className="agenda-item flex items-center gap-3 p-3 rounded-lg border transition-colors hover:bg-[var(--theme-bg-hover)]" style={{ borderColor: theme.border }}>
-                  <span className="agenda-time font-bold text-sm w-12 flex-shrink-0" style={{ color: theme.accent }}>{formatTime(item.scheduled_at)}</span>
-                  <div className="flex-1 truncate">
-                    <p className="font-semibold text-sm truncate flex items-center gap-2" style={{ color: theme.textPrimary }}>
-                      {item.customers?.name || 'Cliente anônimo'}
-                      {item.order_number && (
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md border" style={{ color: theme.textMuted, borderColor: theme.border, background: theme.bg }}>
-                          {item.order_number}
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs truncate" style={{ color: theme.textMuted }}>
-                      {item.services?.name || 'Serviço'} · com {item.professionals?.name || 'Equipe'}
-                    </p>
+                <div key={item.id} className="flex items-center justify-between p-4 rounded-2xl border transition-all hover:bg-[var(--theme-bg-hover)]"
+                  style={{ borderColor: theme.border, background: theme.cardBg }}>
+                  <div className="flex items-center gap-4 min-w-0">
+                    <span className="font-bold text-base font-mono shrink-0 px-3 py-1.5 rounded-xl border"
+                      style={{ background: theme.inputBg, borderColor: theme.border, color: theme.accent }}>
+                      {formatTime(item.scheduled_at)}
+                    </span>
+                    <div className="truncate">
+                      <p className="font-bold text-sm truncate flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                        {item.customers?.name || 'Cliente'}
+                        {item.order_number && (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border" style={{ color: theme.textSecondary, borderColor: theme.border, background: theme.inputBg }}>
+                            #{item.order_number}
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs truncate mt-0.5" style={{ color: theme.textSecondary }}>
+                        {item.services?.name || 'Serviço'} · com {item.professionals?.name || 'Equipe'}
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-sm font-semibold flex-shrink-0" style={{ color: theme.textSecondary }}>
+                  <span className="text-base font-extrabold shrink-0 ml-4" style={{ color: theme.textPrimary }}>
                     {formatCurrency(item.amount_total || 0)}
                   </span>
                 </div>
@@ -402,32 +422,43 @@ export default function Dashboard() {
         </div>
 
         {/* Right col */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           {/* Semana card */}
-          <div className="glass-card p-5 flex flex-col">
-            <div className="flex items-center gap-2 mb-3">
-              <ArrowUpRight className="w-4 h-4" style={{ color: theme.accent }} />
-              <span className="text-xs font-bold" style={{ color: theme.textPrimary }}>Previsão da Semana</span>
+          <div className="border rounded-3xl p-6 shadow-sm glass-card flex flex-col justify-between" style={{ borderColor: theme.border }}>
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: theme.accentMuted, color: theme.accent }}>
+                    <ArrowUpRight className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Previsão da Semana</span>
+                </div>
+                <span className="text-xs font-semibold px-2.5 py-1 border rounded-full" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textSecondary }}>7 Dias</span>
+              </div>
+              <p className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: theme.textPrimary }}>
+                {formatCurrency(futureRevenue)}
+              </p>
+              <p className="text-xs mb-6" style={{ color: theme.textSecondary }}>faturamento previsto nos próximos 7 dias</p>
             </div>
-            <p className="font-serif text-3xl font-bold mb-0.5" style={{ color: theme.textPrimary }}>
-              {formatCurrency(futureRevenue)}
-            </p>
-            <p className="text-xs mb-5" style={{ color: theme.textMuted }}>faturamento previsto</p>
 
             {/* Mini bar chart */}
-            <div className="flex items-end gap-1.5 h-16">
+            <div className="flex items-end gap-2 h-20 pt-2 border-t" style={{ borderColor: theme.border }}>
               {futureWeekHeights.every(h => h === 0) ? (
                 <div className="w-full flex items-center justify-center text-xs opacity-70" style={{ color: theme.textSecondary }}>
                   Nenhuma previsão disponível
                 </div>
               ) : (
                 futureWeekHeights.map((h, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
                     <div
-                      className="chart-bar w-full"
-                      style={{ height: `${h}%`, opacity: i === futureWeekHeights.indexOf(Math.max(...futureWeekHeights)) ? 1 : 0.45, background: theme.accent, borderRadius: '2px' }}
+                      className="chart-bar w-full transition-all rounded-lg"
+                      style={{
+                        height: `${Math.max(h, 8)}%`,
+                        opacity: i === futureWeekHeights.indexOf(Math.max(...futureWeekHeights)) ? 1 : 0.45,
+                        background: theme.accent,
+                      }}
                     />
-                    <span className="text-[9px]" style={{ color: theme.textMuted }}>{weekDays[i]}</span>
+                    <span className="text-[10px] font-bold font-mono" style={{ color: theme.textSecondary }}>{weekDays[i]}</span>
                   </div>
                 ))
               )}
