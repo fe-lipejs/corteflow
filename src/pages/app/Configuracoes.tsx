@@ -13,7 +13,8 @@ import {
   Save, Check, Link as LinkIcon, Copy, ExternalLink, Image as ImageIcon,
   MapPin, Phone, Globe, Mail, Palette, Clock, CreditCard, Upload,
   Trash2, Eye, Settings2, Sparkles, Building2, X, ChevronRight,
-  Loader2, AlertCircle, CheckCircle2, Shield, Bell, Wand2, RotateCcw
+  Loader2, AlertCircle, CheckCircle2, Shield, Bell, Wand2, RotateCcw,
+  Sun, Moon, Smartphone, Laptop
 } from 'lucide-react';
 
 // ─── Custom SVG Icons ─────────────────────────────────────────────────────────
@@ -85,6 +86,10 @@ export default function Configuracoes() {
   const [slugMessage, setSlugMessage] = useState('');
   const [identitySaving, setIdentitySaving] = useState(false);
   const [identitySaved, setIdentitySaved] = useState(false);
+
+  // Studio Customizer Modal
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const [draftFontStyle, setDraftFontStyle] = useState<'serif' | 'sans'>('serif');
 
   // Branding
   const [previewMode, setPreviewMode] = useState<'public' | 'admin'>('public');
@@ -190,6 +195,7 @@ export default function Configuracoes() {
           setContextCustomPalette(data.custom_palette);
           if (data.custom_palette.fontStyle) {
             setFontStyle(data.custom_palette.fontStyle);
+            setDraftFontStyle(data.custom_palette.fontStyle);
           }
         } else {
           setContextCustomPalette(undefined);
@@ -416,9 +422,7 @@ export default function Configuracoes() {
             text: '#0F172A',
           };
       setCustomPalette(newPalette);
-      setContextCustomPalette(newPalette);
       setSelectedTheme(mode === 'light' ? 'elegant' : 'noir');
-      setThemeId(mode === 'light' ? 'elegant' : 'noir');
     } catch (e) {
       console.error(e);
       alert('Erro ao analisar cores da imagem');
@@ -427,7 +431,7 @@ export default function Configuracoes() {
     }
   };
 
-  // Switch between Dark/Light mode keeping active accent
+  // Switch between Dark/Light mode keeping active accent (local draft only)
   const handleToggleBgMode = (newMode: 'dark' | 'light') => {
     setBgMode(newMode);
     const activeAccent = customPalette?.primary || theme.accent;
@@ -435,39 +439,34 @@ export default function Configuracoes() {
       ? { primary: activeAccent }
       : {
           primary: activeAccent,
-          background: '#F4F5F7',
+          background: '#F8FAFC',
           card: '#FFFFFF',
           text: '#0F172A',
         };
     setCustomPalette(newPalette);
-    setContextCustomPalette(newPalette);
     setSelectedTheme(newMode === 'light' ? 'elegant' : 'noir');
-    setThemeId(newMode === 'light' ? 'elegant' : 'noir');
   };
 
-  // Select a specific color from extracted palette swatches
+  // Select a specific color from extracted palette swatches (local draft only)
   const handleSelectSwatchColor = (swatchHex: string) => {
     const newPalette = bgMode === 'dark'
       ? { primary: swatchHex }
       : {
           primary: swatchHex,
-          background: '#F4F5F7',
+          background: '#F8FAFC',
           card: '#FFFFFF',
           text: '#0F172A',
         };
     setCustomPalette(newPalette);
-    setContextCustomPalette(newPalette);
     setSelectedTheme(bgMode === 'light' ? 'elegant' : 'noir');
-    setThemeId(bgMode === 'light' ? 'elegant' : 'noir');
   };
 
-  // Reset completely to default Noir Theme
+  // Reset completely to default Noir Theme (local draft only)
   const handleResetToNoir = () => {
     setBgMode('dark');
     setCustomPalette(undefined);
-    setContextCustomPalette(undefined);
+    setDraftFontStyle('serif');
     setSelectedTheme('noir');
-    setThemeId('noir');
   };
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1174,395 +1173,84 @@ export default function Configuracoes() {
                 </div>
               </div>
 
-              {/* 2. Cores Inteligentes da Marca (Simples e Direto) */}
-              <div className="p-5 rounded-2xl border space-y-5" style={{ background: theme.inputBg, borderColor: theme.border }}>
-                <div className="flex items-center justify-between">
+              {/* 2. Identidade Visual da Marca & Studio (Spacious & Clean) */}
+              <div
+                className="p-6 sm:p-7 rounded-3xl border space-y-6 transition-all"
+                style={{ background: theme.cardBg, borderColor: theme.cardBorder }}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h4 className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textPrimary }}>
-                      <Palette className="w-4 h-4" style={{ color: theme.accent }} />
-                      Cor de Destaque da Marca
+                    <h4 className="font-bold text-base flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                      <Palette className="w-5 h-5" style={{ color: theme.accent }} />
+                      Identidade Visual & Cores da Marca
                     </h4>
-                    <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>
-                      Escolha a cor principal para botões, títulos e detalhes do seu salão.
+                    <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>
+                      Configure a atmosfera do seu salão, a cor de destaque e o estilo tipográfico com prévia em tempo real.
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleResetToNoir}
-                      className="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all hover:scale-105"
-                      style={{ borderColor: '#222222', color: '#999999', background: '#0A0A0A' }}
-                      title="Restaurar padrão Noir (#C9963B)"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      Restaurar Noir Padrão
-                    </button>
-
-                    {(logoUrl || logoUpload.preview) && (
-                      <button
-                        type="button"
-                        onClick={() => handleMagicExtract()}
-                        disabled={isExtracting}
-                        className="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all hover:scale-105"
-                        style={{ borderColor: theme.accent, color: theme.accent, background: `${theme.accent}10` }}
-                      >
-                        {isExtracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-                        Re-extrair da Logo
-                      </button>
-                    )}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomizerOpen(true)}
+                    className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl text-xs font-extrabold uppercase tracking-wider shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
+                    style={{
+                      background: theme.btnPrimaryBg || theme.accent,
+                      color: theme.btnPrimaryText,
+                    }}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Personalizar Visual & Cores</span>
+                  </button>
                 </div>
 
-                {/* Swatches das Cores Detectadas */}
-                <div className="flex flex-wrap items-center gap-3">
-                  {(extractedColors.length > 0 ? extractedColors : ['#C9963B', '#3B82F6', '#10B981', '#EF4444', '#8B5CF6']).map((hex) => {
-                    const isActive = (customPalette?.primary || theme.accent).toUpperCase() === hex.toUpperCase();
-                    return (
-                      <button
-                        key={hex}
-                        type="button"
-                        onClick={() => handleSelectSwatchColor(hex)}
-                        className="group flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all hover:scale-105 shadow-sm"
-                        style={{
-                          background: isActive ? `${hex}20` : theme.bg,
-                          borderColor: isActive ? hex : theme.border,
-                          boxShadow: isActive ? `0 0 16px ${hex}35` : 'none',
-                        }}
-                      >
-                        <span
-                          className="w-5 h-5 rounded-full shadow flex items-center justify-center"
-                          style={{ background: hex }}
-                        >
-                          {isActive && <Check className="w-3 h-3 text-white drop-shadow" />}
-                        </span>
-                        <span className="text-xs font-mono font-bold" style={{ color: theme.textPrimary }}>
-                          {hex}
-                        </span>
-                      </button>
-                    );
-                  })}
-
-                  {/* Custom Color Picker */}
-                  <label className="flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-all hover:scale-105"
-                    style={{ background: theme.bg, borderColor: theme.border }}>
-                    <input
-                      type="color"
-                      value={customPalette?.primary || theme.accent}
-                      onChange={(e) => handleSelectSwatchColor(e.target.value)}
-                      className="w-5 h-5 rounded-full cursor-pointer border-0 p-0 bg-transparent"
-                    />
-                    <span className="text-xs font-bold" style={{ color: theme.textSecondary }}>Personalizar...</span>
-                  </label>
-                </div>
-
-                {/* Seletor de Atmosfera: Noturno vs Claro */}
-                <div className="pt-4 border-t" style={{ borderColor: theme.border }}>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: theme.textSecondary }}>
-                    Atmosfera do Salão (Fundo):
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Modo Noturno */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleBgMode('dark')}
-                      className="flex items-center justify-between p-4 rounded-xl border text-left transition-all hover:scale-[1.01]"
-                      style={{
-                        background: bgMode === 'dark' ? '#000000' : theme.bg,
-                        borderColor: bgMode === 'dark' ? (customPalette?.primary || theme.accent) : theme.border,
-                        boxShadow: bgMode === 'dark' ? `0 0 18px ${(customPalette?.primary || theme.accent)}30` : 'none',
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">🌙</span>
-                        <div>
-                          <p className="text-xs font-bold" style={{ color: bgMode === 'dark' ? '#FFFFFF' : theme.textPrimary }}>
-                            Modo Noturno / Escuro
-                          </p>
-                          <p className="text-[11px]" style={{ color: bgMode === 'dark' ? '#94A3B8' : theme.textMuted }}>
-                            Fundo escuro luxuoso com detalhes na sua cor
-                          </p>
-                        </div>
-                      </div>
-                      {bgMode === 'dark' && (
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center shadow" style={{ background: customPalette?.primary || theme.accent }}>
-                          <Check className="w-3 h-3 text-white" />
-                        </div>
-                      )}
-                    </button>
-
-                    {/* Modo Claro */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleBgMode('light')}
-                      className="flex items-center justify-between p-4 rounded-xl border text-left transition-all hover:scale-[1.01]"
-                      style={{
-                        background: bgMode === 'light' ? '#FFFFFF' : theme.bg,
-                        borderColor: bgMode === 'light' ? (customPalette?.primary || theme.accent) : theme.border,
-                        boxShadow: bgMode === 'light' ? `0 0 18px ${(customPalette?.primary || theme.accent)}30` : 'none',
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">☀️</span>
-                        <div>
-                          <p className="text-xs font-bold" style={{ color: bgMode === 'light' ? '#0F172A' : theme.textPrimary }}>
-                            Modo Claro / Diurno
-                          </p>
-                          <p className="text-[11px]" style={{ color: bgMode === 'light' ? '#64748B' : theme.textMuted }}>
-                            Fundo branco acetinado com detalhes na sua cor
-                          </p>
-                        </div>
-                      </div>
-                      {bgMode === 'light' && (
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center shadow" style={{ background: customPalette?.primary || theme.accent }}>
-                          <Check className="w-3 h-3 text-white" />
-                        </div>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* 3. Seletor de Estilo Tipográfico dos Títulos */}
-                <div className="pt-4 border-t" style={{ borderColor: theme.border }}>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: theme.textSecondary }}>
-                    Estilo Tipográfico dos Títulos:
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Estilo Clássico (Playfair Display) */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFontStyle('serif');
-                        setCustomPalette((prev: any) => ({ ...(prev || {}), fontStyle: 'serif' }));
-                      }}
-                      className="flex items-center justify-between p-4 rounded-xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
-                      style={{
-                        background: fontStyle === 'serif' ? (theme.id === 'elegant' ? '#FFFFFF' : '#0D0D0D') : (theme.id === 'elegant' ? '#F8FAFC' : theme.bg),
-                        borderColor: fontStyle === 'serif' ? (customPalette?.primary || theme.accent) : theme.border,
-                        boxShadow: fontStyle === 'serif' ? (theme.id === 'elegant' ? '0 1px 3px rgba(0,0,0,0.05)' : `0 0 16px ${(customPalette?.primary || theme.accent)}25`) : 'none',
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl font-serif font-bold" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
-                        <div>
-                          <p className="text-xs font-bold font-serif" style={{ color: theme.textPrimary }}>
-                            Clássico & Elegante
-                          </p>
-                          <p className="text-[11px]" style={{ color: theme.textMuted }}>
-                            Playfair Display refinada para títulos e números
-                          </p>
-                        </div>
-                      </div>
-                      {fontStyle === 'serif' && (
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center shadow" style={{ background: customPalette?.primary || theme.accent }}>
-                          <Check className="w-3 h-3 text-white" />
-                        </div>
-                      )}
-                    </button>
-
-                    {/* Estilo Moderno (Plus Jakarta Sans) */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFontStyle('sans');
-                        setCustomPalette((prev: any) => ({ ...(prev || {}), fontStyle: 'sans' }));
-                      }}
-                      className="flex items-center justify-between p-4 rounded-xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
-                      style={{
-                        background: fontStyle === 'sans' ? (theme.id === 'elegant' ? '#FFFFFF' : '#0D0D0D') : (theme.id === 'elegant' ? '#F8FAFC' : theme.bg),
-                        borderColor: fontStyle === 'sans' ? (customPalette?.primary || theme.accent) : theme.border,
-                        boxShadow: fontStyle === 'sans' ? (theme.id === 'elegant' ? '0 1px 3px rgba(0,0,0,0.05)' : `0 0 16px ${(customPalette?.primary || theme.accent)}25`) : 'none',
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl font-sans font-black" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
-                        <div>
-                          <p className="text-xs font-bold font-sans" style={{ color: theme.textPrimary }}>
-                            Moderno & Minimalista
-                          </p>
-                          <p className="text-[11px]" style={{ color: theme.textMuted }}>
-                            Plus Jakarta Sans direta, limpa e contemporânea
-                          </p>
-                        </div>
-                      </div>
-                      {fontStyle === 'sans' && (
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center shadow" style={{ background: customPalette?.primary || theme.accent }}>
-                          <Check className="w-3 h-3 text-white" />
-                        </div>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Prévia Interativa do Design em Tempo Real */}
-                <div className="pt-5 border-t" style={{ borderColor: theme.border }}>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                {/* Resumo Visual Atual com Muito Respiro */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                  {/* Atmosfera */}
+                  <div
+                    className="p-4 rounded-2xl border flex items-center gap-3.5"
+                    style={{ background: theme.inputBg, borderColor: theme.border }}
+                  >
+                    <span className="text-2xl">{bgMode === 'dark' ? '🌙' : '☀️'}</span>
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: theme.textPrimary }}>
-                        <span>👁️</span> Prévia Interativa em Tempo Real:
+                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>Atmosfera</p>
+                      <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>
+                        {bgMode === 'dark' ? 'Modo Noturno / Escuro' : 'Modo Claro / Diurno'}
                       </p>
-                      <p className="text-[11px]" style={{ color: theme.textMuted }}>
-                        Veja exatamente como ficará antes de clicar em salvar.
-                      </p>
-                    </div>
-
-                    {/* Selector: Página Pública vs Painel Admin */}
-                    <div className="flex items-center p-1 rounded-xl border gap-1 self-start sm:self-auto" style={{ background: theme.inputBg, borderColor: theme.border }}>
-                      <button
-                        type="button"
-                        onClick={() => setPreviewMode('public')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${previewMode === 'public' ? 'shadow-sm' : 'opacity-70 hover:opacity-100'}`}
-                        style={{
-                          background: previewMode === 'public' ? (customPalette?.primary || theme.accent) : 'transparent',
-                          color: previewMode === 'public' ? theme.btnPrimaryText : theme.textSecondary,
-                        }}
-                      >
-                        📱 Página de Agendamento
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPreviewMode('admin')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${previewMode === 'admin' ? 'shadow-sm' : 'opacity-70 hover:opacity-100'}`}
-                        style={{
-                          background: previewMode === 'admin' ? (customPalette?.primary || theme.accent) : 'transparent',
-                          color: previewMode === 'admin' ? theme.btnPrimaryText : theme.textSecondary,
-                        }}
-                      >
-                        💻 Painel do Salão
-                      </button>
                     </div>
                   </div>
 
-                  {/* Preview Canvas */}
-                  {(() => {
-                    const activeAccent = customPalette?.primary || theme.accent;
-                    const isDarkPrev = bgMode === 'dark';
-                    const prevBg = isDarkPrev ? '#0B0B0D' : '#F8FAFC';
-                    const prevCardBg = isDarkPrev ? '#141416' : '#FFFFFF';
-                    const prevBorder = isDarkPrev ? '#242427' : '#E2E8F0';
-                    const prevTextPrimary = isDarkPrev ? '#FFFFFF' : '#0F172A';
-                    const prevTextSecondary = isDarkPrev ? '#A1A1AA' : '#475569';
-                    const prevTextMuted = isDarkPrev ? '#71717A' : '#94A3B8';
-                    const prevFontFamily = fontStyle === 'serif' ? "'Playfair Display', Georgia, serif" : "'Plus Jakarta Sans', -apple-system, sans-serif";
+                  {/* Cor da Marca */}
+                  <div
+                    className="p-4 rounded-2xl border flex items-center gap-3.5"
+                    style={{ background: theme.inputBg, borderColor: theme.border }}
+                  >
+                    <div
+                      className="w-7 h-7 rounded-xl shadow flex items-center justify-center border border-white/20"
+                      style={{ background: customPalette?.primary || theme.accent }}
+                    />
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>Cor de Destaque</p>
+                      <p className="text-xs font-mono font-bold" style={{ color: theme.textPrimary }}>
+                        {(customPalette?.primary || theme.accent).toUpperCase()}
+                      </p>
+                    </div>
+                  </div>
 
-                    const hex = activeAccent.replace('#', '');
-                    const r = parseInt(hex.substring(0, 2), 16) || 201;
-                    const g = parseInt(hex.substring(2, 4), 16) || 150;
-                    const b = parseInt(hex.substring(4, 6), 16) || 59;
-                    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-                    const prevBtnText = lum > 145 ? '#000000' : '#FFFFFF';
-
-                    return (
-                      <div
-                        className="rounded-2xl border p-5 transition-all shadow-inner overflow-hidden"
-                        style={{
-                          background: prevBg,
-                          borderColor: prevBorder,
-                        }}
-                      >
-                        {previewMode === 'public' ? (
-                          /* ── Public Booking Page Mockup ── */
-                          <div className="space-y-4 max-w-md mx-auto">
-                            {/* Banner & Brand Header */}
-                            <div className="rounded-2xl p-4 border relative overflow-hidden flex items-center justify-between gap-3"
-                              style={{ background: prevCardBg, borderColor: prevBorder }}>
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div
-                                  className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg shrink-0 shadow-sm"
-                                  style={{
-                                    background: activeAccent,
-                                    color: prevBtnText,
-                                    fontFamily: prevFontFamily,
-                                  }}
-                                >
-                                  {fantasyName ? fantasyName.charAt(0).toUpperCase() : 'N'}
-                                </div>
-                                <div className="min-w-0">
-                                  <h5
-                                    className="font-bold text-base truncate leading-tight"
-                                    style={{
-                                      color: prevTextPrimary,
-                                      fontFamily: prevFontFamily,
-                                    }}
-                                  >
-                                    {fantasyName || 'Nome da sua Barbearia'}
-                                  </h5>
-                                  <p className="text-xs truncate mt-0.5" style={{ color: prevTextSecondary }}>
-                                    {slogan || 'O melhor corte e atendimento da cidade'}
-                                  </p>
-                                </div>
-                              </div>
-                              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border shrink-0"
-                                style={{ background: `${activeAccent}15`, borderColor: `${activeAccent}30`, color: activeAccent }}>
-                                Aberto
-                              </span>
-                            </div>
-
-                            {/* Service Card Mockup */}
-                            <div className="rounded-2xl p-4 border flex items-center justify-between gap-3 transition-transform hover:scale-[1.01]"
-                              style={{ background: prevCardBg, borderColor: prevBorder }}>
-                              <div>
-                                <h6 className="font-bold text-sm leading-tight" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>
-                                  Corte Degradê & Barba
-                                </h6>
-                                <p className="text-xs mt-0.5" style={{ color: prevTextMuted }}>
-                                  45 min • Atendimento individual
-                                </p>
-                                <p className="text-sm font-extrabold mt-1.5" style={{ color: activeAccent }}>
-                                  R$ 65,00
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                className="px-4 py-2 rounded-xl text-xs font-bold shadow transition-transform hover:scale-105 shrink-0"
-                                style={{
-                                  background: activeAccent,
-                                  color: prevBtnText,
-                                }}
-                              >
-                                Agendar
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          /* ── Admin Dashboard Mockup ── */
-                          <div className="space-y-4 max-w-md mx-auto">
-                            {/* Dashboard Top Greeting */}
-                            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: prevBorder }}>
-                              <div>
-                                <p className="text-[10px] uppercase font-extrabold tracking-widest" style={{ color: prevTextMuted }}>Painel do Salão</p>
-                                <h5 className="font-bold text-base mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>
-                                  Olá, {profile?.full_name?.split(' ')[0] || 'Dono'} 👋
-                                </h5>
-                              </div>
-                              <div className="px-3 py-1 rounded-xl text-xs font-bold shadow-sm"
-                                style={{ background: activeAccent, color: prevBtnText }}>
-                                + Novo Agendamento
-                              </div>
-                            </div>
-
-                            {/* KPI Cards Grid */}
-                            <div className="grid grid-cols-2 gap-3">
-                              <div className="rounded-xl p-3 border" style={{ background: prevCardBg, borderColor: prevBorder }}>
-                                <p className="text-[10px] font-bold uppercase" style={{ color: prevTextMuted }}>Hoje</p>
-                                <p className="text-lg font-black mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>R$ 480,00</p>
-                                <p className="text-[10px] text-emerald-500 font-bold mt-0.5">+14% vs ontem</p>
-                              </div>
-                              <div className="rounded-xl p-3 border" style={{ background: prevCardBg, borderColor: prevBorder }}>
-                                <p className="text-[10px] font-bold uppercase" style={{ color: prevTextMuted }}>Ocupação</p>
-                                <p className="text-lg font-black mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>85%</p>
-                                <p className="text-[10px] font-bold mt-0.5" style={{ color: activeAccent }}>6 agendamentos</p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  <p className="text-[11px] text-center mt-2.5 font-medium" style={{ color: theme.textMuted }}>
-                    💡 Dica: A prévia acima reflete suas seleções de Modo, Cor e Fonte em tempo real. Clique em <strong>"Salvar Alterações"</strong> no topo para aplicar permanentemente.
-                  </p>
+                  {/* Tipografia */}
+                  <div
+                    className="p-4 rounded-2xl border flex items-center gap-3.5"
+                    style={{ background: theme.inputBg, borderColor: theme.border }}
+                  >
+                    <span className="text-lg font-black" style={{ color: customPalette?.primary || theme.accent, fontFamily: draftFontStyle === 'serif' ? "'Playfair Display', serif" : "'Plus Jakarta Sans', sans-serif" }}>
+                      Aa
+                    </span>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>Tipografia dos Títulos</p>
+                      <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>
+                        {draftFontStyle === 'serif' ? 'Playfair (Clássico)' : 'Plus Jakarta (Moderno)'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -2375,6 +2063,463 @@ export default function Configuracoes() {
           </div>
         </div>
       )}
+
+      {/* ═══════════════════════════ STUDIO DE IDENTIDADE VISUAL (POP-UP MODAL) ════════════════════════════════ */}
+      <AnimatePresence>
+        {isCustomizerOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-5xl rounded-3xl border shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
+              style={{
+                background: theme.cardBg,
+                borderColor: theme.cardBorder,
+              }}
+            >
+              {/* Modal Header */}
+              <div
+                className="px-6 py-5 border-b flex items-center justify-between shrink-0"
+                style={{ borderColor: theme.border, background: theme.bg }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-md"
+                    style={{ background: customPalette?.primary || theme.accent, color: theme.btnPrimaryText }}
+                  >
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold" style={{ color: theme.textPrimary }}>
+                      Studio de Identidade Visual
+                    </h3>
+                    <p className="text-xs" style={{ color: theme.textSecondary }}>
+                      Personalize atmosfera, cores e tipografia com prévia ao vivo. Só muda no sistema ao clicar em salvar.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsCustomizerOpen(false)}
+                  className="p-2 rounded-xl transition-all hover:opacity-80 cursor-pointer"
+                  style={{ background: theme.inputBg, color: theme.textSecondary }}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Body - 2 Columns */}
+              <div className="flex-1 overflow-y-auto p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* ── Left Column: Controls (Spacious & Clean) ── */}
+                <div className="lg:col-span-7 space-y-7">
+                  {/* 1. Atmosfera */}
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase tracking-wider mb-3" style={{ color: theme.textSecondary }}>
+                      1. Atmosfera do Salão (Fundo)
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      {/* Modo Noturno */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleBgMode('dark')}
+                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer"
+                        style={{
+                          background: bgMode === 'dark' ? '#09090B' : theme.inputBg,
+                          borderColor: bgMode === 'dark' ? (customPalette?.primary || theme.accent) : theme.border,
+                          boxShadow: bgMode === 'dark' ? `0 0 18px ${(customPalette?.primary || theme.accent)}30` : 'none',
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">🌙</span>
+                          <div>
+                            <p className="text-xs font-bold" style={{ color: bgMode === 'dark' ? '#FFFFFF' : theme.textPrimary }}>
+                              Modo Noturno / Escuro
+                            </p>
+                            <p className="text-[11px] mt-0.5" style={{ color: bgMode === 'dark' ? '#A1A1AA' : theme.textMuted }}>
+                              Fundo escuro luxuoso com detalhes na sua cor
+                            </p>
+                          </div>
+                        </div>
+                        {bgMode === 'dark' && (
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center shadow shrink-0" style={{ background: customPalette?.primary || theme.accent }}>
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </button>
+
+                      {/* Modo Claro */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleBgMode('light')}
+                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer"
+                        style={{
+                          background: bgMode === 'light' ? '#FFFFFF' : theme.inputBg,
+                          borderColor: bgMode === 'light' ? (customPalette?.primary || theme.accent) : theme.border,
+                          boxShadow: bgMode === 'light' ? `0 0 18px ${(customPalette?.primary || theme.accent)}30` : 'none',
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">☀️</span>
+                          <div>
+                            <p className="text-xs font-bold" style={{ color: bgMode === 'light' ? '#0F172A' : theme.textPrimary }}>
+                              Modo Claro / Diurno
+                            </p>
+                            <p className="text-[11px] mt-0.5" style={{ color: bgMode === 'light' ? '#64748B' : theme.textMuted }}>
+                              Fundo claro acetinado e limpo
+                            </p>
+                          </div>
+                        </div>
+                        {bgMode === 'light' && (
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center shadow shrink-0" style={{ background: customPalette?.primary || theme.accent }}>
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2. Cor de Destaque da Marca */}
+                  <div className="pt-2 border-t" style={{ borderColor: theme.border }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="block text-xs font-extrabold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
+                        2. Cor Principal da Marca (Destaque)
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleResetToNoir}
+                          className="text-[11px] font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all hover:scale-105"
+                          style={{ borderColor: theme.border, color: theme.textSecondary, background: theme.inputBg }}
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          Restaurar Noir Padrão
+                        </button>
+                        {(logoUrl || logoUpload.preview) && (
+                          <button
+                            type="button"
+                            onClick={() => handleMagicExtract()}
+                            disabled={isExtracting}
+                            className="text-[11px] font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all hover:scale-105"
+                            style={{ borderColor: theme.accent, color: theme.accent, background: `${theme.accent}10` }}
+                          >
+                            {isExtracting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                            Re-extrair da Logo
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      {['#C9963B', '#3B82F6', '#10B981', '#EF4444', '#8B5CF6', '#EC4899', '#F97316'].map((hex) => {
+                        const isActive = (customPalette?.primary || theme.accent).toUpperCase() === hex.toUpperCase();
+                        return (
+                          <button
+                            key={hex}
+                            type="button"
+                            onClick={() => handleSelectSwatchColor(hex)}
+                            className="group flex items-center gap-2 px-3.5 py-2.5 rounded-xl border transition-all hover:scale-105 shadow-sm cursor-pointer"
+                            style={{
+                              background: isActive ? `${hex}20` : theme.inputBg,
+                              borderColor: isActive ? hex : theme.border,
+                              boxShadow: isActive ? `0 0 16px ${hex}35` : 'none',
+                            }}
+                          >
+                            <span
+                              className="w-5 h-5 rounded-full shadow flex items-center justify-center"
+                              style={{ background: hex }}
+                            >
+                              {isActive && <Check className="w-3 h-3 text-white drop-shadow" />}
+                            </span>
+                            <span className="text-xs font-mono font-bold" style={{ color: theme.textPrimary }}>
+                              {hex}
+                            </span>
+                          </button>
+                        );
+                      })}
+
+                      {/* Custom Color Picker */}
+                      <label
+                        className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border cursor-pointer transition-all hover:scale-105"
+                        style={{ background: theme.inputBg, borderColor: theme.border }}
+                      >
+                        <input
+                          type="color"
+                          value={customPalette?.primary || theme.accent}
+                          onChange={(e) => handleSelectSwatchColor(e.target.value)}
+                          className="w-5 h-5 rounded-full cursor-pointer border-0 p-0 bg-transparent"
+                        />
+                        <span className="text-xs font-bold" style={{ color: theme.textSecondary }}>Personalizar...</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* 3. Tipografia */}
+                  <div className="pt-2 border-t" style={{ borderColor: theme.border }}>
+                    <label className="block text-xs font-extrabold uppercase tracking-wider mb-3" style={{ color: theme.textSecondary }}>
+                      3. Estilo Tipográfico dos Títulos
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      {/* Playfair Display */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDraftFontStyle('serif');
+                          setCustomPalette((prev: any) => ({ ...(prev || {}), fontStyle: 'serif' }));
+                        }}
+                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
+                        style={{
+                          background: draftFontStyle === 'serif' ? (bgMode === 'dark' ? '#09090B' : '#FFFFFF') : theme.inputBg,
+                          borderColor: draftFontStyle === 'serif' ? (customPalette?.primary || theme.accent) : theme.border,
+                          boxShadow: draftFontStyle === 'serif' ? `0 0 16px ${(customPalette?.primary || theme.accent)}25` : 'none',
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl font-serif font-bold" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
+                          <div>
+                            <p className="text-xs font-bold font-serif" style={{ color: theme.textPrimary }}>
+                              Clássico & Elegante
+                            </p>
+                            <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>
+                              Playfair Display refinada para títulos e números
+                            </p>
+                          </div>
+                        </div>
+                        {draftFontStyle === 'serif' && (
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center shadow shrink-0" style={{ background: customPalette?.primary || theme.accent }}>
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </button>
+
+                      {/* Plus Jakarta Sans */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDraftFontStyle('sans');
+                          setCustomPalette((prev: any) => ({ ...(prev || {}), fontStyle: 'sans' }));
+                        }}
+                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
+                        style={{
+                          background: draftFontStyle === 'sans' ? (bgMode === 'dark' ? '#09090B' : '#FFFFFF') : theme.inputBg,
+                          borderColor: draftFontStyle === 'sans' ? (customPalette?.primary || theme.accent) : theme.border,
+                          boxShadow: draftFontStyle === 'sans' ? `0 0 16px ${(customPalette?.primary || theme.accent)}25` : 'none',
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl font-sans font-black" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
+                          <div>
+                            <p className="text-xs font-bold font-sans" style={{ color: theme.textPrimary }}>
+                              Moderno & Minimalista
+                            </p>
+                            <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>
+                              Plus Jakarta Sans direta, limpa e contemporânea
+                            </p>
+                          </div>
+                        </div>
+                        {draftFontStyle === 'sans' && (
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center shadow shrink-0" style={{ background: customPalette?.primary || theme.accent }}>
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Right Column: Interactive Live Device Preview ── */}
+                <div className="lg:col-span-5 space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5" style={{ color: theme.textPrimary }}>
+                      <Eye className="w-3.5 h-3.5" style={{ color: theme.accent }} />
+                      Prévia Ao Vivo
+                    </p>
+
+                    <div className="flex items-center p-1 rounded-xl border gap-1" style={{ background: theme.inputBg, borderColor: theme.border }}>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewMode('public')}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${previewMode === 'public' ? 'shadow-sm' : 'opacity-70 hover:opacity-100'}`}
+                        style={{
+                          background: previewMode === 'public' ? (customPalette?.primary || theme.accent) : 'transparent',
+                          color: previewMode === 'public' ? theme.btnPrimaryText : theme.textSecondary,
+                        }}
+                      >
+                        📱 Página
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewMode('admin')}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${previewMode === 'admin' ? 'shadow-sm' : 'opacity-70 hover:opacity-100'}`}
+                        style={{
+                          background: previewMode === 'admin' ? (customPalette?.primary || theme.accent) : 'transparent',
+                          color: previewMode === 'admin' ? theme.btnPrimaryText : theme.textSecondary,
+                        }}
+                      >
+                        💻 Painel
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Preview Canvas */}
+                  {(() => {
+                    const activeAccent = customPalette?.primary || theme.accent;
+                    const isDarkPrev = bgMode === 'dark';
+                    const prevBg = isDarkPrev ? '#0B0B0D' : '#F8FAFC';
+                    const prevCardBg = isDarkPrev ? '#141416' : '#FFFFFF';
+                    const prevBorder = isDarkPrev ? '#242427' : '#E2E8F0';
+                    const prevTextPrimary = isDarkPrev ? '#FFFFFF' : '#0F172A';
+                    const prevTextSecondary = isDarkPrev ? '#A1A1AA' : '#475569';
+                    const prevTextMuted = isDarkPrev ? '#71717A' : '#94A3B8';
+                    const prevFontFamily = draftFontStyle === 'serif' ? "'Playfair Display', Georgia, serif" : "'Plus Jakarta Sans', -apple-system, sans-serif";
+
+                    const hex = activeAccent.replace('#', '');
+                    const r = parseInt(hex.substring(0, 2), 16) || 201;
+                    const g = parseInt(hex.substring(2, 4), 16) || 150;
+                    const b = parseInt(hex.substring(4, 6), 16) || 59;
+                    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                    const prevBtnText = lum > 145 ? '#000000' : '#FFFFFF';
+
+                    return (
+                      <div
+                        className="rounded-2xl border p-4 sm:p-5 transition-all shadow-inner overflow-hidden"
+                        style={{
+                          background: prevBg,
+                          borderColor: prevBorder,
+                        }}
+                      >
+                        {previewMode === 'public' ? (
+                          /* Public Booking Mockup */
+                          <div className="space-y-3.5">
+                            <div className="rounded-2xl p-3.5 border relative overflow-hidden flex items-center justify-between gap-3"
+                              style={{ background: prevCardBg, borderColor: prevBorder }}>
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div
+                                  className="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-base shrink-0 shadow-sm"
+                                  style={{
+                                    background: activeAccent,
+                                    color: prevBtnText,
+                                    fontFamily: prevFontFamily,
+                                  }}
+                                >
+                                  {fantasyName ? fantasyName.charAt(0).toUpperCase() : 'N'}
+                                </div>
+                                <div className="min-w-0">
+                                  <h5
+                                    className="font-bold text-sm truncate leading-tight"
+                                    style={{
+                                      color: prevTextPrimary,
+                                      fontFamily: prevFontFamily,
+                                    }}
+                                  >
+                                    {fantasyName || 'Nome da Barbearia'}
+                                  </h5>
+                                  <p className="text-[11px] truncate mt-0.5" style={{ color: prevTextSecondary }}>
+                                    {slogan || 'O melhor atendimento da cidade'}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border shrink-0"
+                                style={{ background: `${activeAccent}15`, borderColor: `${activeAccent}30`, color: activeAccent }}>
+                                Aberto
+                              </span>
+                            </div>
+
+                            <div className="rounded-2xl p-3.5 border flex items-center justify-between gap-3"
+                              style={{ background: prevCardBg, borderColor: prevBorder }}>
+                              <div>
+                                <h6 className="font-bold text-xs leading-tight" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>
+                                  Corte Degradê & Barba
+                                </h6>
+                                <p className="text-[11px] mt-0.5" style={{ color: prevTextMuted }}>
+                                  45 min • Individual
+                                </p>
+                                <p className="text-xs font-extrabold mt-1" style={{ color: activeAccent }}>
+                                  R$ 65,00
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold shadow shrink-0"
+                                style={{
+                                  background: activeAccent,
+                                  color: prevBtnText,
+                                }}
+                              >
+                                Agendar
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Admin Mockup */
+                          <div className="space-y-3.5">
+                            <div className="flex items-center justify-between border-b pb-2.5" style={{ borderColor: prevBorder }}>
+                              <div>
+                                <p className="text-[9px] uppercase font-extrabold tracking-widest" style={{ color: prevTextMuted }}>Painel do Salão</p>
+                                <h5 className="font-bold text-sm mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>
+                                  Olá, {profile?.full_name?.split(' ')[0] || 'Dono'} 👋
+                                </h5>
+                              </div>
+                              <div className="px-2.5 py-1 rounded-xl text-[11px] font-bold shadow-sm"
+                                style={{ background: activeAccent, color: prevBtnText }}>
+                                + Agendar
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2.5">
+                              <div className="rounded-xl p-2.5 border" style={{ background: prevCardBg, borderColor: prevBorder }}>
+                                <p className="text-[9px] font-bold uppercase" style={{ color: prevTextMuted }}>Hoje</p>
+                                <p className="text-base font-black mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>R$ 480,00</p>
+                                <p className="text-[9px] text-emerald-500 font-bold mt-0.5">+14%</p>
+                              </div>
+                              <div className="rounded-xl p-2.5 border" style={{ background: prevCardBg, borderColor: prevBorder }}>
+                                <p className="text-[9px] font-bold uppercase" style={{ color: prevTextMuted }}>Ocupação</p>
+                                <p className="text-base font-black mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>85%</p>
+                                <p className="text-[9px] font-bold mt-0.5" style={{ color: activeAccent }}>6 clientes</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div
+                className="px-6 py-4 border-t flex items-center justify-between shrink-0"
+                style={{ borderColor: theme.border, background: theme.bg }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setIsCustomizerOpen(false)}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold border transition-all hover:opacity-80 cursor-pointer"
+                  style={{ borderColor: theme.border, color: theme.textSecondary, background: theme.inputBg }}
+                >
+                  Fechar sem Salvar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                  style={{
+                    background: theme.btnPrimaryBg || theme.accent,
+                    color: theme.btnPrimaryText,
+                  }}
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  <span>Salvar Alterações</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Save Button */}
       <div className="flex justify-end pt-2">
