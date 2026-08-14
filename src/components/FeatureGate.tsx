@@ -211,37 +211,45 @@ function UpgradeScreen({ feature }: { feature: keyof PlanFeatures }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.96, y: 12 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ type: 'spring', damping: 25, stiffness: 280 }}
+      initial={{ opacity: 0, scale: 0.95, y: 16 }}
+      animate={{ opacity: 1, scale: 1, y: [0, -4, 0] }}
+      transition={{
+        opacity: { duration: 0.3 },
+        scale: { duration: 0.3 },
+        y: { repeat: Infinity, duration: 4, ease: 'easeInOut' },
+      }}
       className="relative w-full max-w-md mx-auto z-20"
     >
-      {/* Golden Glow Aura */}
-      <div
-        className="absolute -inset-1 rounded-3xl blur-2xl opacity-40 -z-10"
-        style={{ background: theme.accent }}
-      />
+      {/* Subtle Glow Aura (Apenas no modo escuro, muito discreto) */}
+      {theme.id !== 'elegant' && (
+        <div
+          className="absolute -inset-2 rounded-3xl blur-xl opacity-15 -z-10"
+          style={{ background: theme.accent }}
+        />
+      )}
 
-      {/* Ultra Glassmorphic Floating Card */}
+      {/* Floating Glassmorphic Upgrade Card */}
       <div
-        className="relative rounded-3xl p-6 sm:p-7 border backdrop-blur-2xl text-left overflow-hidden shadow-2xl"
+        className="relative rounded-3xl p-6 sm:p-7 border backdrop-blur-2xl text-left overflow-hidden"
         style={{
           background: theme.id === 'elegant'
-            ? 'rgba(255, 255, 255, 0.82)'
-            : 'rgba(15, 15, 20, 0.84)',
+            ? 'rgba(255, 255, 255, 0.94)'
+            : 'rgba(18, 18, 24, 0.90)',
           borderColor: theme.id === 'elegant'
-            ? 'rgba(255, 255, 255, 0.95)'
-            : 'rgba(255, 255, 255, 0.15)',
-          boxShadow: `0 25px 50px -12px rgba(0, 0, 0, 0.35), inset 0 1px 1px 0 rgba(255, 255, 255, ${theme.id === 'elegant' ? '0.9' : '0.2'})`,
+            ? 'rgba(226, 232, 240, 0.9)'
+            : 'rgba(255, 255, 255, 0.12)',
+          boxShadow: theme.id === 'elegant'
+            ? '0 20px 40px -15px rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.03)'
+            : '0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15)',
         }}
       >
-        {/* Top Floating Glass Badge */}
+        {/* Top Floating Badge */}
         <div className="flex items-center justify-between mb-4">
           <div
             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider border shadow-sm"
             style={{
-              background: `${theme.accent}20`,
-              borderColor: `${theme.accent}45`,
+              background: `${theme.accent}15`,
+              borderColor: `${theme.accent}35`,
               color: theme.accent,
             }}
           >
@@ -252,7 +260,7 @@ function UpgradeScreen({ feature }: { feature: keyof PlanFeatures }) {
           <span
             className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg border"
             style={{
-              background: theme.id === 'elegant' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.08)',
+              background: theme.id === 'elegant' ? '#F8FAFC' : 'rgba(255, 255, 255, 0.06)',
               borderColor: theme.border,
               color: theme.textSecondary,
             }}
@@ -283,7 +291,7 @@ function UpgradeScreen({ feature }: { feature: keyof PlanFeatures }) {
               key={i}
               className="flex items-center gap-2.5 p-2 rounded-xl border transition-all"
               style={{
-                background: theme.id === 'elegant' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.04)',
+                background: theme.id === 'elegant' ? '#F8FAFC' : 'rgba(255, 255, 255, 0.03)',
                 borderColor: theme.border,
               }}
             >
@@ -300,19 +308,36 @@ function UpgradeScreen({ feature }: { feature: keyof PlanFeatures }) {
           ))}
         </div>
 
-        {/* CTA Button */}
-        <Link
-          to="/app/assinatura"
-          className="group relative flex items-center justify-center gap-2 w-full py-3.5 px-5 font-extrabold text-xs uppercase tracking-wider rounded-xl overflow-hidden transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-xl text-center cursor-pointer"
-          style={{
-            background: theme.btnPrimaryBg || theme.accent,
-            color: theme.btnPrimaryText,
-          }}
+        {/* Pulsing Magnetic CTA Button with Moving Light Beam */}
+        <motion.div
+          animate={{ scale: [1, 1.018, 1] }}
+          transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
         >
-          <Sparkles className="w-4 h-4" />
-          <span>Fazer Upgrade para o Growth</span>
-          <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-        </Link>
+          <Link
+            to="/app/assinatura"
+            className="group relative flex items-center justify-center gap-2 w-full py-3.5 px-5 font-extrabold text-xs uppercase tracking-wider rounded-xl overflow-hidden shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center"
+            style={{
+              background: theme.btnPrimaryBg || theme.accent,
+              color: theme.btnPrimaryText,
+            }}
+          >
+            {/* Animated Light Sweep Beam */}
+            <motion.div
+              className="absolute top-0 bottom-0 w-24 -skew-x-12 bg-gradient-to-r from-transparent via-white/35 to-transparent pointer-events-none"
+              animate={{ left: ['-100%', '200%'] }}
+              transition={{ repeat: Infinity, duration: 2.8, ease: 'easeInOut', repeatDelay: 1 }}
+            />
+
+            <motion.div
+              animate={{ rotate: [0, -14, 14, 0] }}
+              transition={{ repeat: Infinity, duration: 2.2, repeatDelay: 0.8 }}
+            >
+              <Sparkles className="w-4 h-4" />
+            </motion.div>
+            <span>Fazer Upgrade para o Growth</span>
+            <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          </Link>
+        </motion.div>
 
         <p className="text-[10px] text-center mt-3 font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>
           7 dias de teste grátis • Cancele quando quiser
