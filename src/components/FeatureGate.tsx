@@ -166,46 +166,50 @@ function TeaserBackdrop({ feature }: { feature: keyof PlanFeatures }) {
 function UpgradeScreen({ feature }: { feature: keyof PlanFeatures }) {
   const { theme, fontStyle } = useTheme();
 
-  // Honest, precise feature specifics
+  // High-converting, commercial copywriting tailored to salon/barbershop owners
   const featureDetails = {
     produtos: {
-      badge: 'Catálogo de Produtos',
-      title: 'Venda Produtos no seu Salão',
-      desc: 'Comece a vender pomadas, óleos e cosméticos para seus clientes e aumente o faturamento médio de cada atendimento.',
+      badge: 'Aumento de Faturamento',
+      title: 'Fature até 30% a mais vendendo no balcão',
+      desc: 'Salões que vendem pomadas, óleos e cosméticos no atendimento aumentam seu faturamento sem precisar cortar mais cabelo.',
+      roiPill: '💡 Apenas 1 ou 2 pomadas vendidas por mês já pagam o plano Growth.',
       benefits: [
-        'Catálogo de produtos com fotos, categorias e preços',
-        'Controle automático de estoque e aviso de reposição',
-        'Relatório de produtos mais vendidos e faturamento',
+        { title: 'Catálogo de Produtos com Fotos', desc: 'Cadastre marcas, preços promocionais e categorias.' },
+        { title: 'Controle Automático de Estoque', desc: 'Receba alertas antes do produto acabar na prateleira.' },
+        { title: 'Relatório de Produtos Mais Vendidos', desc: 'Descubra quais cosméticos geram maior margem de lucro.' },
       ],
     },
     financeiro: {
-      badge: 'Módulo Financeiro',
-      title: 'Gestão Financeira Completa',
-      desc: 'Tenha clareza absoluta das entradas, despesas, faturamento dos atendimentos e lucro líquido do seu estabelecimento.',
+      badge: 'Controle de Lucro Real',
+      title: 'Descubra para onde está indo o dinheiro do seu salão',
+      desc: 'Pare de perder dinheiro em despesas invisíveis. Tenha visão em tempo real de entradas, custos e do lucro que vai para o seu bolso.',
+      roiPill: '💡 Identificar apenas 1 custo desperdiçado já cobre o valor do plano.',
       benefits: [
-        'Registro automático das receitas de agendamentos',
-        'Lançamento de despesas e controle de fluxo de caixa',
-        'Exportação de relatórios em Excel e PDF',
+        { title: 'Fluxo de Caixa 100% Automático', desc: 'Cada agendamento é registrado como receita sem trabalho manual.' },
+        { title: 'Lançamento de Despesas & Custos', desc: 'Organize contas de luz, aluguel, produtos e comissões.' },
+        { title: 'Cálculo de Lucro Líquido Real', desc: 'Saiba o quanto sobrou no mês e exporte relatórios em PDF/Excel.' },
       ],
     },
     equipe: {
-      badge: 'Equipe Ampliada',
-      title: 'Até 10 Profissionais na Equipe',
-      desc: 'Expanda o seu salão cadastrando até 10 profissionais com agendas e horários de atendimento individuais.',
+      badge: 'Expansão de Capacidade',
+      title: 'Expanda sua equipe para até 10 profissionais',
+      desc: 'Multiplique o número de atendimentos do seu espaço gerenciando múltiplos barbeiros ou cabeleireiros simultaneamente.',
+      roiPill: '💡 Cada profissional a mais pode dobrar a receita de atendimentos do seu salão.',
       benefits: [
-        'Até 10 profissionais ativos (Starter inclui apenas 1)',
-        'Agendas individuais e horários de trabalho personalizados',
-        'Foto, cargo e especialidades na página de agendamento',
+        { title: 'Até 10 Profissionais Ativos', desc: 'O plano Starter inclui apenas 1 profissional.' },
+        { title: 'Agendas & Horários Individuais', desc: 'Cada membro da equipe tem seus próprios dias e horários de folga.' },
+        { title: 'Foto e Cargo na Página Pública', desc: 'Seus clientes escolhem o profissional preferido na hora de agendar.' },
       ],
     },
   }[feature as 'produtos' | 'financeiro' | 'equipe'] || {
-    badge: 'Recurso Growth',
-    title: 'Desbloqueie o Plano Growth',
-    desc: 'Turbine a gestão do seu salão com recursos avançados de produtos, equipe e financeiro.',
+    badge: 'Recurso Exclusivo Growth',
+    title: 'Desbloqueie o potencial máximo do seu negócio',
+    desc: 'Turbine a gestão com produtos no balcão, múltiplos profissionais na equipe e controle financeiro total.',
+    roiPill: '💡 Faça o upgrade agora e transforme a operação do seu salão.',
     benefits: [
-      'Catálogo de Produtos e Controle de Estoque',
-      'Gestão Financeira e Fluxo de Caixa',
-      'Até 10 Profissionais na sua Equipe',
+      { title: 'Catálogo de Produtos & Estoque', desc: 'Venda cosméticos e aumente o ticket médio.' },
+      { title: 'Gestão Financeira & Lucro Líquido', desc: 'Controle completo de entradas e despesas.' },
+      { title: 'Até 10 Profissionais na Equipe', desc: 'Escale seu salão com agendas individuais.' },
     ],
   };
 
@@ -214,47 +218,47 @@ function UpgradeScreen({ feature }: { feature: keyof PlanFeatures }) {
       initial={{ opacity: 0, scale: 0.96, y: 12 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-      className="relative w-full max-w-md mx-auto z-20"
+      className="relative w-full max-w-lg mx-auto z-20"
     >
-      {/* Subtle Glow Aura (Apenas no modo escuro, muito discreto) */}
+      {/* Subtle Glow Aura (Modo escuro discreto) */}
       {theme.id !== 'elegant' && (
         <div
-          className="absolute -inset-2 rounded-3xl blur-xl opacity-15 -z-10"
+          className="absolute -inset-2 rounded-3xl blur-2xl opacity-20 -z-10"
           style={{ background: theme.accent }}
         />
       )}
 
-      {/* Solid High-Contrast Card with Clean Borders */}
+      {/* High-Converting Sales Card */}
       <div
-        className="relative rounded-3xl p-6 sm:p-7 border text-left overflow-hidden shadow-2xl"
+        className="relative rounded-3xl p-6 sm:p-8 border text-left overflow-hidden shadow-2xl"
         style={{
           background: theme.id === 'elegant'
             ? '#FFFFFF'
-            : 'rgba(18, 18, 24, 0.95)',
+            : 'rgba(18, 18, 24, 0.96)',
           borderColor: theme.id === 'elegant'
             ? '#E2E8F0'
             : 'rgba(255, 255, 255, 0.12)',
           boxShadow: theme.id === 'elegant'
-            ? '0 25px 50px -12px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.04)'
-            : '0 25px 50px -12px rgba(0, 0, 0, 0.6), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15)',
+            ? '0 30px 60px -15px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.04)'
+            : '0 30px 60px -15px rgba(0, 0, 0, 0.65), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15)',
         }}
       >
-        {/* Top Floating Badge */}
-        <div className="flex items-center justify-between mb-4">
+        {/* Top Floating Badge & Plan Tag */}
+        <div className="flex items-center justify-between gap-2 mb-4">
           <div
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider border shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border shadow-sm"
             style={{
               background: `${theme.accent}15`,
               borderColor: `${theme.accent}35`,
               color: theme.accent,
             }}
           >
-            <Lock className="w-3 h-3" />
+            <Lock className="w-3.5 h-3.5" />
             <span>{featureDetails.badge}</span>
           </div>
 
           <span
-            className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg border"
+            className="text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full border shadow-sm"
             style={{
               background: theme.id === 'elegant' ? '#F8FAFC' : 'rgba(255, 255, 255, 0.06)',
               borderColor: theme.border,
@@ -265,9 +269,9 @@ function UpgradeScreen({ feature }: { feature: keyof PlanFeatures }) {
           </span>
         </div>
 
-        {/* Title */}
+        {/* Commercial Headline */}
         <h3
-          className="text-xl sm:text-2xl font-black mb-1.5 tracking-tight leading-tight"
+          className="text-xl sm:text-2xl font-black mb-2 tracking-tight leading-snug"
           style={{
             color: theme.textPrimary,
             fontFamily: fontStyle === 'serif' ? "'Playfair Display', Georgia, serif" : 'inherit',
@@ -276,68 +280,114 @@ function UpgradeScreen({ feature }: { feature: keyof PlanFeatures }) {
           {featureDetails.title}
         </h3>
 
-        <p className="text-xs sm:text-sm leading-relaxed mb-5 font-medium" style={{ color: theme.textSecondary }}>
+        <p className="text-xs sm:text-sm leading-relaxed mb-4 font-medium" style={{ color: theme.textSecondary }}>
           {featureDetails.desc}
         </p>
 
-        {/* Honest Benefits List */}
-        <div className="space-y-2 mb-6">
+        {/* ROI / Value Tip Box */}
+        <div
+          className="p-3 rounded-2xl border text-xs font-semibold mb-5 flex items-center gap-2"
+          style={{
+            background: `${theme.accent}0C`,
+            borderColor: `${theme.accent}25`,
+            color: theme.textPrimary,
+          }}
+        >
+          <span>{featureDetails.roiPill}</span>
+        </div>
+
+        {/* Feature Benefits List */}
+        <div className="space-y-2.5 mb-6">
           {featureDetails.benefits.map((benefit, i) => (
             <div
               key={i}
-              className="flex items-center gap-2.5 p-2 rounded-xl border transition-all"
+              className="flex items-start gap-3 p-2.5 rounded-2xl border transition-all"
               style={{
                 background: theme.id === 'elegant' ? '#F8FAFC' : 'rgba(255, 255, 255, 0.03)',
                 borderColor: theme.border,
               }}
             >
               <div
-                className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 shadow-sm"
+                className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm"
                 style={{ background: theme.accent, color: theme.btnPrimaryText }}
               >
                 <Check className="w-3 h-3 stroke-[3]" />
               </div>
-              <span className="text-xs font-semibold leading-tight" style={{ color: theme.textPrimary }}>
-                {benefit}
-              </span>
+              <div>
+                <h6 className="text-xs font-bold leading-tight" style={{ color: theme.textPrimary }}>
+                  {benefit.title}
+                </h6>
+                <p className="text-[11px] mt-0.5 leading-snug" style={{ color: theme.textMuted }}>
+                  {benefit.desc}
+                </p>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Pulsing Magnetic CTA Button with Moving Light Beam */}
-        <motion.div
-          animate={{ scale: [1, 1.018, 1] }}
-          transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
-        >
-          <Link
-            to="/app/assinatura"
-            className="group relative flex items-center justify-center gap-2 w-full py-3.5 px-5 font-extrabold text-xs uppercase tracking-wider rounded-xl overflow-hidden shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center"
-            style={{
-              background: theme.btnPrimaryBg || theme.accent,
-              color: theme.btnPrimaryText,
-            }}
+        {/* Pricing Anchor & Magnetic CTA */}
+        <div className="pt-2 border-t" style={{ borderColor: theme.border }}>
+          {/* Price Header */}
+          <div className="flex items-baseline justify-between mb-3 px-1">
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: theme.textMuted }}>
+                Investimento
+              </span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-black" style={{ color: theme.textPrimary }}>
+                  R$ 77
+                </span>
+                <span className="text-xs font-bold" style={{ color: theme.textMuted }}>
+                  /mês
+                </span>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <span className="text-xs font-black text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                7 Dias Grátis
+              </span>
+              <p className="text-[10px] mt-1 font-semibold" style={{ color: theme.textMuted }}>
+                Menos de R$ 2,60 por dia
+              </p>
+            </div>
+          </div>
+
+          {/* Magnetic High-Impact CTA Button */}
+          <motion.div
+            animate={{ scale: [1, 1.018, 1] }}
+            transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
           >
-            {/* Animated Light Sweep Beam */}
-            <motion.div
-              className="absolute top-0 bottom-0 w-24 -skew-x-12 bg-gradient-to-r from-transparent via-white/35 to-transparent pointer-events-none"
-              animate={{ left: ['-100%', '200%'] }}
-              transition={{ repeat: Infinity, duration: 2.8, ease: 'easeInOut', repeatDelay: 1 }}
-            />
-
-            <motion.div
-              animate={{ rotate: [0, -14, 14, 0] }}
-              transition={{ repeat: Infinity, duration: 2.2, repeatDelay: 0.8 }}
+            <Link
+              to="/app/assinatura"
+              className="group relative flex items-center justify-center gap-2 w-full py-4 px-6 font-black text-xs uppercase tracking-wider rounded-2xl overflow-hidden shadow-2xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center"
+              style={{
+                background: theme.btnPrimaryBg || theme.accent,
+                color: theme.btnPrimaryText,
+              }}
             >
-              <Sparkles className="w-4 h-4" />
-            </motion.div>
-            <span>Fazer Upgrade para o Growth</span>
-            <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-          </Link>
-        </motion.div>
+              {/* Light Sweep Beam */}
+              <motion.div
+                className="absolute top-0 bottom-0 w-28 -skew-x-12 bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none"
+                animate={{ left: ['-100%', '200%'] }}
+                transition={{ repeat: Infinity, duration: 2.6, ease: 'easeInOut', repeatDelay: 0.8 }}
+              />
 
-        <p className="text-[10px] text-center mt-3 font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>
-          7 dias de teste grátis • Cancele quando quiser
-        </p>
+              <motion.div
+                animate={{ rotate: [0, -14, 14, 0] }}
+                transition={{ repeat: Infinity, duration: 2.2, repeatDelay: 0.8 }}
+              >
+                <Sparkles className="w-4 h-4" />
+              </motion.div>
+              <span>Testar Growth por 7 Dias Grátis</span>
+              <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </motion.div>
+
+          <p className="text-[11px] text-center mt-3 font-bold" style={{ color: theme.textMuted }}>
+            🔒 Sem cobrança hoje • Cancele quando quiser com 1 clique
+          </p>
+        </div>
       </div>
     </motion.div>
   );
@@ -380,15 +430,15 @@ export default function FeatureGate({ feature, children, message, inline = false
     }
 
     return (
-      <div className="relative w-full min-h-[520px] rounded-3xl overflow-hidden border shadow-inner" style={{ borderColor: theme.border }}>
-        {/* Crystal Clear Teaser Backdrop */}
+      <div className="relative w-full min-h-[580px] rounded-3xl overflow-hidden border shadow-inner" style={{ borderColor: theme.border }}>
+        {/* Privacy-Protected Teaser Backdrop */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <TeaserBackdrop feature={feature} />
         </div>
 
-        {/* Crisp Glass Pane with Low Blur (100% Crisp & High Contrast in Day Mode) */}
+        {/* Clean Glass Pane with Centered High-Converting Sales Card */}
         <div
-          className="relative z-10 min-h-[520px] flex items-center justify-center p-4 sm:p-6"
+          className="relative z-10 min-h-[580px] flex items-center justify-center p-4 sm:p-6"
           style={{
             background: theme.id === 'elegant'
               ? 'rgba(15, 23, 42, 0.05)'
