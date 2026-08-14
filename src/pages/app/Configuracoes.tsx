@@ -2370,7 +2370,7 @@ export default function Configuracoes() {
                                     <img
                                       src={logoUrl || logoUpload.preview || ''}
                                       alt="Logo"
-                                      className="w-full h-full object-contain p-1"
+                                      className="w-full h-full object-cover"
                                     />
                                   ) : (
                                     fantasyName ? fantasyName.charAt(0).toUpperCase() : 'N'
@@ -2455,53 +2455,6 @@ export default function Configuracoes() {
                       </div>
                     );
                   })()}
-
-                  {/* Logo Reference Card (área demarcada na imagem do usuário) */}
-                  <div
-                    className="p-3.5 sm:p-4 rounded-2xl border flex items-center gap-3.5 transition-all shadow-sm"
-                    style={{ background: theme.inputBg, borderColor: theme.border }}
-                  >
-                    <div
-                      className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl overflow-hidden flex items-center justify-center border shrink-0 shadow-sm"
-                      style={{ borderColor: theme.border, background: theme.bg }}
-                    >
-                      {logoUrl || logoUpload.preview ? (
-                        <img src={logoUrl || logoUpload.preview || ''} alt="Logo" className="w-full h-full object-contain p-1.5" />
-                      ) : (
-                        <span
-                          className="font-black text-xl"
-                          style={{
-                            color: customPalette?.primary || theme.accent,
-                            fontFamily: draftFontStyle === 'serif' ? "'Playfair Display', serif" : 'inherit'
-                          }}
-                        >
-                          {fantasyName ? fantasyName.charAt(0).toUpperCase() : 'N'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-bold truncate" style={{ color: theme.textPrimary }}>
-                          {fantasyName || 'Sua Barbearia'}
-                        </p>
-                        <span
-                          className="text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0 uppercase tracking-wider"
-                          style={{
-                            background: `${customPalette?.primary || theme.accent}15`,
-                            borderColor: `${customPalette?.primary || theme.accent}30`,
-                            color: customPalette?.primary || theme.accent
-                          }}
-                        >
-                          Logo Oficial
-                        </span>
-                      </div>
-                      <p className="text-[11px] mt-0.5 leading-snug" style={{ color: theme.textMuted }}>
-                        {logoUrl || logoUpload.preview
-                          ? 'Logo oficial do seu salão usada como referência visual para o tema.'
-                          : 'Envie a imagem da sua logo na aba Aparência para harmonização.'}
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </div>
 
