@@ -123,8 +123,11 @@ export interface Database {
           role: UserRole;
           full_name: string;
           avatar_url: string | null;
+          onboarding_completed: boolean;
         };
-        Insert: Database['public']['Tables']['profiles']['Row'];
+        Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'onboarding_completed'> & {
+          onboarding_completed?: boolean;
+        };
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
       };
       categories: {

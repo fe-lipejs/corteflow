@@ -285,37 +285,37 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
                     const start = new Date(b.scheduled_at);
                     const duration = b.duration_minutes || 30;
                     const end = addMinutes(start, duration);
-                    const isCompact = height < 60;
+                    const cardHeight = Math.max(height, 68);
 
                     return (
                       <div
                         key={b.id}
                         onClick={e => { e.stopPropagation(); onBookingClick(b); }}
-                        className="absolute rounded-xl cursor-pointer shadow-md hover:shadow-2xl hover:z-50 hover:scale-[1.01] transition-all group overflow-hidden border flex flex-col"
+                        className="absolute rounded-xl cursor-pointer shadow-md hover:shadow-2xl hover:z-50 hover:scale-[1.02] transition-all group overflow-hidden border flex flex-col"
                         style={{
                           top: `${top}px`,
-                          height: `${height}px`,
-                          left: `calc(${leftPercent}% + 4px)`,
-                          width: `calc(${widthPercent}% - 8px)`,
+                          height: `${cardHeight}px`,
+                          left: `calc(${leftPercent}% + 3px)`,
+                          width: `calc(${widthPercent}% - 6px)`,
                           background: theme.cardBg,
-                          borderColor: `${proAccent}40`,
+                          borderColor: `${proAccent}50`,
                           borderLeft: `5px solid ${proAccent}`,
-                          boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
+                          boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
                         }}
                       >
                         <div className="p-2 h-full flex flex-col justify-between min-w-0">
                           {/* Top Header: Customer Name & Status Badge */}
                           <div className="min-w-0">
-                            <div className="flex items-center justify-between gap-1 mb-0.5">
-                              <p className="text-xs font-extrabold truncate leading-tight" style={{ color: theme.textPrimary }}>
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                              <p className="text-[11px] font-extrabold truncate leading-tight" style={{ color: theme.textPrimary }}>
                                 {b.customer?.name ?? 'Cliente'}
                               </p>
                               
                               <span 
-                                className="shrink-0 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border" 
+                                className="shrink-0 px-1.5 py-0.5 rounded-md text-[8px] font-extrabold uppercase tracking-wider border leading-none" 
                                 style={{
-                                  background: `${statusCfg.color}15`,
-                                  borderColor: `${statusCfg.color}30`,
+                                  background: `${statusCfg.color}20`,
+                                  borderColor: `${statusCfg.color}40`,
                                   color: statusCfg.color
                                 }}
                               >
@@ -324,31 +324,23 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
                             </div>
 
                             {/* Service Title */}
-                            <p className="text-[11px] font-bold truncate flex items-center gap-1" style={{ color: proAccent }}>
-                              <Scissors className="w-3 h-3 shrink-0 opacity-80" />
-                              {b.service?.name || 'Serviço'}
+                            <p className="text-[11px] font-bold truncate flex items-center gap-1 leading-tight" style={{ color: proAccent }}>
+                              <Scissors className="w-3 h-3 shrink-0 opacity-85" />
+                              <span className="truncate">{b.service?.name || 'Serviço'}</span>
                             </p>
                           </div>
 
-                          {/* Bottom Row: Time, Professional & Price */}
-                          {!isCompact && (
-                            <div className="flex items-center justify-between text-[10px] pt-1.5 border-t mt-auto min-w-0" style={{ borderColor: theme.border }}>
-                              <span className="font-semibold flex items-center gap-1" style={{ color: theme.textSecondary }}>
-                                <Clock className="w-3 h-3 shrink-0 opacity-70" />
-                                {format(start, 'HH:mm')} – {format(end, 'HH:mm')}
-                              </span>
+                          {/* Bottom Row: Time & Price */}
+                          <div className="flex items-center justify-between text-[10px] pt-1 border-t mt-auto min-w-0" style={{ borderColor: theme.border }}>
+                            <span className="font-semibold flex items-center gap-1" style={{ color: theme.textSecondary }}>
+                              <Clock className="w-2.5 h-2.5 shrink-0 opacity-70" />
+                              {format(start, 'HH:mm')}
+                            </span>
 
-                              {b.professional?.name && widthPercent > 45 && (
-                                <span className="font-medium truncate max-w-[80px]" style={{ color: theme.textSecondary }}>
-                                  {b.professional.name.split(' ')[0]}
-                                </span>
-                              )}
-
-                              <span className="font-bold shrink-0 text-xs" style={{ color: theme.textPrimary }}>
-                                {fmt.format(b.amount_total || 0)}
-                              </span>
-                            </div>
-                          )}
+                            <span className="font-bold shrink-0 text-[11px]" style={{ color: theme.textPrimary }}>
+                              {fmt.format(b.amount_total || 0)}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     );

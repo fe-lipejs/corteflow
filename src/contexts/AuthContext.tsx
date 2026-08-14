@@ -1,7 +1,7 @@
 import React, { createContext, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../integrations/supabase/client';
-import type { Database } from '../types/database';
+import type { Database, UserRole } from '../types/database';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Tenant = Database['public']['Tables']['tenants']['Row'];
@@ -13,6 +13,7 @@ interface AuthContextType {
   tenant: Tenant | null;
   tenantId: string | null;
   role: Profile['role'] | null;
+  onboardingCompleted: boolean;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -112,7 +113,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     profile,
     tenant,
     tenantId: profile?.tenant_id ?? null,
-    role: profile?.role ?? null,
+    role: (profile?.role as UserRole) || (profile?.tenant_id ? 'admin' : null),
+    onboardingCompleted: Boolean(profile?.onboarding_completed || profile?.tenant_id),
     loading,
     signOut,
     refreshProfile,

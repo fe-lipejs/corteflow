@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Mail, Eye, EyeOff, ShieldCheck, RefreshCw, ArrowLeft, KeyRound, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, Mail, Eye, EyeOff, CheckCircle2, RefreshCw } from 'lucide-react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -22,13 +22,9 @@ export default function Cadastro() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   
-  // OTP Verification Step
-  const [otpStep, setOtpStep] = useState(false);
+  // Email Sent Confirmation Screen
+  const [emailSent, setEmailSent] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState('');
-  const [submittedFullName, setSubmittedFullName] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [otpSuccess, setOtpSuccess] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
   const [resending, setResending] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
@@ -38,16 +34,16 @@ export default function Cadastro() {
     mode: 'onChange',
   });
 
-  // Countdown timer for OTP resend
+  // Countdown timer for resend
   useEffect(() => {
     let interval: any = null;
-    if (otpStep && resendTimer > 0) {
+    if (emailSent && resendTimer > 0) {
       interval = setInterval(() => {
         setResendTimer(prev => prev - 1);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [otpStep, resendTimer]);
+  }, [emailSent, resendTimer]);
 
   const onSubmit = async (data: CadastroForm) => {
     setLoading(true);
@@ -98,10 +94,9 @@ export default function Cadastro() {
         return;
       }
 
-      // 5. Otherwise, show OTP verification screen
+      // 5. Show clean Email Confirmation Screen
       setSubmittedEmail(cleanEmail);
-      setSubmittedFullName(data.fullName.trim());
-      setOtpStep(true);
+      setEmailSent(true);
       setResendTimer(60);
       
     } catch (err: any) {
@@ -128,62 +123,7 @@ export default function Cadastro() {
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanToken = otpCode.replace(/\D/g, '');
-    if (cleanToken.length !== 6) {
-      setError('Por favor, digite o código de 6 dígitos completo.');
-      return;
-    }
-
-    setOtpLoading(true);
-    setError(null);
-    setResendMessage(null);
-
-    try {
-      // 1. Verify OTP with Supabase Auth
-      const { data, error: verifyError } = await supabase.auth.verifyOtp({
-        email: submittedEmail,
-        token: cleanToken,
-        type: 'signup'
-      });
-
-      if (verifyError) {
-        // Try fallback type 'email' if 'signup' doesn't match
-        const { data: fallbackData, error: fallbackError } = await supabase.auth.verifyOtp({
-          email: submittedEmail,
-          token: cleanToken,
-          type: 'email'
-        });
-
-        if (fallbackError) {
-          throw verifyError;
-        }
-      }
-
-      setOtpSuccess(true);
-
-      // Redirect smoothly to onboarding
-      setTimeout(() => {
-        navigate('/onboarding', { replace: true });
-      }, 1200);
-
-    } catch (err: any) {
-      console.error(err);
-      const msg: string = err?.message || '';
-      if (msg.includes('Token has expired') || msg.includes('expired')) {
-        setError('Este código expirou. Clique em "Reenviar código" abaixo para receber um novo.');
-      } else if (msg.includes('invalid') || msg.includes('Token is invalid')) {
-        setError('Código incorreto. Verifique os 6 dígitos recebidos no seu e-mail.');
-      } else {
-        setError('Código inválido ou expirado. Tente novamente.');
-      }
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
+  const handleResend = async () => {
     if (resendTimer > 0 || resending) return;
     setResending(true);
     setError(null);
@@ -200,11 +140,11 @@ export default function Cadastro() {
 
       if (resendError) throw resendError;
 
-      setResendMessage('Novo código enviado com sucesso! Verifique sua caixa de entrada ou spam.');
+      setResendMessage('E-mail reenviado com sucesso! Verifique sua caixa de entrada ou spam.');
       setResendTimer(60);
     } catch (err: any) {
       console.error(err);
-      setError(err?.message || 'Erro ao reenviar o código. Aguarde alguns instantes.');
+      setError(err?.message || 'Erro ao reenviar e-mail. Aguarde alguns instantes.');
     } finally {
       setResending(false);
     }
@@ -228,120 +168,71 @@ export default function Cadastro() {
         <div className="bg-[#0A0A0A] rounded-2xl border border-[#222222] p-8 shadow-2xl">
           
           <AnimatePresence mode="wait">
-            {otpStep ? (
-              /* ── STEP 2: DIGITAR CÓDIGO OTP DE 6 DÍGITOS ── */
+            {emailSent ? (
+              /* ── TELA DE CONFIRMAÇÃO POR LINK ENVIADO NO EMAIL ── */
               <motion.div
-                key="otp-step"
+                key="email-sent"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3 }}
-                className="text-center"
+                className="text-center py-4"
               >
-                {otpSuccess ? (
-                  <div className="py-6 text-center space-y-4">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                      className="w-20 h-20 bg-green-500/10 border-2 border-green-500/30 rounded-2xl flex items-center justify-center mx-auto"
-                    >
-                      <CheckCircle2 className="w-10 h-10 text-green-400" />
-                    </motion.div>
-                    <h3 className="text-2xl font-bold text-white">Conta Confirmada!</h3>
-                    <p className="text-sm text-[#A1A1AA]">
-                      Preparando seu painel de configuração...
-                    </p>
+                <div className="w-20 h-20 bg-[#C9963B]/10 border border-[#C9963B]/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Mail className="w-10 h-10 text-[#C9963B]" />
+                </div>
+                
+                <h3 className="text-2xl font-bold text-white mb-2">Verifique seu E-mail!</h3>
+                <p className="text-[#A1A1AA] text-sm leading-relaxed mb-4">
+                  Enviamos um link de ativação para:
+                </p>
+                <p className="text-sm font-bold text-[#C9963B] font-mono break-all mb-6 px-3 py-2 bg-[#111111] rounded-xl border border-[#222222]">
+                  {submittedEmail}
+                </p>
+                
+                <p className="text-xs text-[#888888] leading-relaxed mb-8">
+                  Basta abrir o e-mail no seu celular ou computador e clicar no botão <strong className="text-white">"Ativar Minha Conta"</strong> para começar a configurar seu salão.
+                </p>
+
+                {resendMessage && (
+                  <div className="mb-6 p-3 bg-green-500/10 border border-green-500/20 text-green-400 text-xs rounded-xl">
+                    {resendMessage}
                   </div>
-                ) : (
-                  <form onSubmit={handleVerifyOtp} className="space-y-6">
-                    <div className="w-16 h-16 bg-[#C9963B]/10 border border-[#C9963B]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <KeyRound className="w-8 h-8 text-[#C9963B]" />
-                    </div>
+                )}
 
-                    <div>
-                      <h2 className="text-2xl font-bold text-white mb-1.5">Código de Confirmação</h2>
-                      <p className="text-xs text-[#A1A1AA] leading-relaxed">
-                        Enviamos um código de <strong className="text-white">6 dígitos</strong> para:
-                      </p>
-                      <p className="text-sm font-semibold text-[#C9963B] font-mono mt-0.5 break-all">
-                        {submittedEmail}
-                      </p>
-                    </div>
+                {error && (
+                  <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl">
+                    {error}
+                  </div>
+                )}
 
-                    {resendMessage && (
-                      <div className="p-3 bg-green-500/10 border border-green-500/20 text-green-400 text-xs rounded-xl">
-                        {resendMessage}
-                      </div>
-                    )}
-
-                    {error && (
-                      <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl">
-                        {error}
-                      </div>
-                    )}
-
-                    {/* Input do Código de 6 Dígitos */}
-                    <div>
-                      <label className="block text-xs uppercase tracking-widest text-[#A1A1AA] font-bold mb-2">
-                        Digite o código de 6 dígitos
-                      </label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={6}
-                        autoFocus
-                        value={otpCode}
-                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                        placeholder="000000"
-                        className="w-full px-4 py-3.5 bg-[#050505] border-2 border-[#222222] rounded-xl text-center text-3xl font-mono tracking-[0.35em] text-[#C9963B] placeholder-[#333] outline-none focus:border-[#C9963B] focus:ring-2 focus:ring-[#C9963B]/20 transition-all font-bold"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={otpCode.length !== 6 || otpLoading}
-                      className="w-full flex items-center justify-center px-6 py-3.5 rounded-xl font-bold text-sm disabled:opacity-40 transition-all hover:shadow-[0_0_20px_rgba(201,150,59,0.3)] active:scale-[0.99]"
-                      style={{ background: 'linear-gradient(135deg, #C9963B, #E8B960)', color: '#000000' }}
-                    >
-                      {otpLoading ? 'Verificando código...' : 'Confirmar e Continuar'}
-                      {!otpLoading && <ChevronRight className="w-4 h-4 ml-1" />}
-                    </button>
-
-                    {/* Resend & Change email options */}
-                    <div className="pt-2 border-t border-[#1a1a1a] flex flex-col items-center gap-3 text-xs text-[#888]">
-                      <div>
-                        Não recebeu o código?{' '}
-                        {resendTimer > 0 ? (
-                          <span className="text-[#C9963B] font-mono font-semibold">
-                            Aguarde {resendTimer}s
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={handleResendOtp}
-                            disabled={resending}
-                            className="text-[#C9963B] font-bold hover:underline"
-                          >
-                            {resending ? 'Enviando...' : 'Reenviar código'}
-                          </button>
-                        )}
-                      </div>
-
+                {/* Resend & Actions */}
+                <div className="pt-4 border-t border-[#1a1a1a] flex flex-col items-center gap-4 text-xs text-[#888]">
+                  <div>
+                    Não recebeu o e-mail?{' '}
+                    {resendTimer > 0 ? (
+                      <span className="text-[#C9963B] font-mono font-semibold">
+                        Reenviar em {resendTimer}s
+                      </span>
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => { setOtpStep(false); setOtpCode(''); setError(null); }}
-                        className="flex items-center gap-1 text-[#666] hover:text-[#A1A1AA] transition-colors"
+                        onClick={handleResend}
+                        disabled={resending}
+                        className="text-[#C9963B] font-bold hover:underline"
                       >
-                        <ArrowLeft className="w-3.5 h-3.5" /> Corrigir e-mail de cadastro
+                        {resending ? 'Reenviando...' : 'Reenviar e-mail'}
                       </button>
-                    </div>
-                  </form>
-                )}
+                    )}
+                  </div>
+
+                  <Link to="/login" className="text-[#666] hover:text-[#A1A1AA] transition-colors">
+                    Já confirmou? Fazer Login →
+                  </Link>
+                </div>
               </motion.div>
             ) : (
-              /* ── STEP 1: FORMULÁRIO DE CADASTRO ── */
+              /* ── FORMULÁRIO DE CADASTRO ── */
               <motion.form
                 key="form"
                 initial={{ opacity: 0, y: 10 }}

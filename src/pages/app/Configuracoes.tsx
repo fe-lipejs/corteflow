@@ -13,7 +13,7 @@ import {
   Save, Check, Link as LinkIcon, Copy, ExternalLink, Image as ImageIcon,
   MapPin, Phone, Globe, Mail, Palette, Clock, CreditCard, Upload,
   Trash2, Eye, Settings2, Sparkles, Building2, X, ChevronRight,
-  Loader2, AlertCircle, CheckCircle2, Shield, Bell, Wand2
+  Loader2, AlertCircle, CheckCircle2, Shield, Bell, Wand2, RotateCcw
 } from 'lucide-react';
 
 // ─── Custom SVG Icons ─────────────────────────────────────────────────────────
@@ -181,9 +181,10 @@ export default function Configuracoes() {
       const { data } = await supabase.from('tenant_settings').select('*').eq('tenant_id', tenant.id).maybeSingle();
       if (data) {
         setSettingsId(data.id);
-        setSelectedTheme(data.theme_preset || 'classic');
+        setSelectedTheme(data.theme_preset || 'noir');
         setCustomPalette(data.custom_palette || null);
         if (data.theme_preset) setThemeId(data.theme_preset);
+        else setThemeId('noir');
         if (data.custom_palette) setContextCustomPalette(data.custom_palette);
         else setContextCustomPalette(undefined);
 
@@ -303,13 +304,21 @@ export default function Configuracoes() {
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-      .replace(/[^a-z0-9-]/g, '-')     // Converte caracteres inválidos em hífen
-      .replace(/-+/g, '-')             // Remove hífens duplicados
-      .replace(/^-/, '');              // Não permite hífen no início
+      .replace(/[^a-z0-9-_]/g, '-')    // Converte caracteres inválidos em hífen
+      .replace(/[-_]+/g, (m) => m[0])  // Remove duplicados mantendo o caractere
+      .replace(/^[-_]+|[-_]+$/g, '');  // Remove no início e fim
+  };
+
+  const formatSlugWhileTyping = (raw: string) => {
+    return raw
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9-_]/g, '-');
   };
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatSlug(e.target.value);
+    const formatted = formatSlugWhileTyping(e.target.value);
     setSlug(formatted);
   };
 
@@ -391,16 +400,18 @@ export default function Configuracoes() {
       }
       
       const accentToUse = chosenAccent || smartResult.primary;
-      const newPalette = {
-        primary: accentToUse,
-        background: smartResult.background,
-        card: smartResult.card,
-        text: smartResult.text,
-      };
+      const newPalette = mode === 'dark' 
+        ? { primary: accentToUse } 
+        : {
+            primary: accentToUse,
+            background: '#F4F5F7',
+            card: '#FFFFFF',
+            text: '#0F172A',
+          };
       setCustomPalette(newPalette);
       setContextCustomPalette(newPalette);
-      setSelectedTheme(mode === 'light' ? 'elegant' : 'classic');
-      setThemeId(mode === 'light' ? 'elegant' : 'classic');
+      setSelectedTheme(mode === 'light' ? 'elegant' : 'noir');
+      setThemeId(mode === 'light' ? 'elegant' : 'noir');
     } catch (e) {
       console.error(e);
       alert('Erro ao analisar cores da imagem');
@@ -413,32 +424,43 @@ export default function Configuracoes() {
   const handleToggleBgMode = (newMode: 'dark' | 'light') => {
     setBgMode(newMode);
     const activeAccent = customPalette?.primary || theme.accent;
-    const generated = generatePaletteFromAccent(activeAccent, newMode);
-    const newPalette = {
-      primary: activeAccent,
-      background: generated.background,
-      card: generated.card,
-      text: generated.text,
-    };
+    const newPalette = newMode === 'dark'
+      ? { primary: activeAccent }
+      : {
+          primary: activeAccent,
+          background: '#F4F5F7',
+          card: '#FFFFFF',
+          text: '#0F172A',
+        };
     setCustomPalette(newPalette);
     setContextCustomPalette(newPalette);
-    setSelectedTheme(newMode === 'light' ? 'elegant' : 'classic');
-    setThemeId(newMode === 'light' ? 'elegant' : 'classic');
+    setSelectedTheme(newMode === 'light' ? 'elegant' : 'noir');
+    setThemeId(newMode === 'light' ? 'elegant' : 'noir');
   };
 
   // Select a specific color from extracted palette swatches
   const handleSelectSwatchColor = (swatchHex: string) => {
-    const generated = generatePaletteFromAccent(swatchHex, bgMode);
-    const newPalette = {
-      primary: swatchHex,
-      background: generated.background,
-      card: generated.card,
-      text: generated.text,
-    };
+    const newPalette = bgMode === 'dark'
+      ? { primary: swatchHex }
+      : {
+          primary: swatchHex,
+          background: '#F4F5F7',
+          card: '#FFFFFF',
+          text: '#0F172A',
+        };
     setCustomPalette(newPalette);
     setContextCustomPalette(newPalette);
-    setSelectedTheme(bgMode === 'light' ? 'elegant' : 'classic');
-    setThemeId(bgMode === 'light' ? 'elegant' : 'classic');
+    setSelectedTheme(bgMode === 'light' ? 'elegant' : 'noir');
+    setThemeId(bgMode === 'light' ? 'elegant' : 'noir');
+  };
+
+  // Reset completely to default Noir Theme
+  const handleResetToNoir = () => {
+    setBgMode('dark');
+    setCustomPalette(undefined);
+    setContextCustomPalette(undefined);
+    setSelectedTheme('noir');
+    setThemeId('noir');
   };
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1152,18 +1174,31 @@ export default function Configuracoes() {
                     </p>
                   </div>
 
-                  {(logoUrl || logoUpload.preview) && (
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => handleMagicExtract()}
-                      disabled={isExtracting}
+                      onClick={handleResetToNoir}
                       className="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all hover:scale-105"
-                      style={{ borderColor: theme.accent, color: theme.accent, background: `${theme.accent}10` }}
+                      style={{ borderColor: '#222222', color: '#999999', background: '#0A0A0A' }}
+                      title="Restaurar padrão Noir (#C9963B)"
                     >
-                      {isExtracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-                      Re-extrair da Logo
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Restaurar Noir Padrão
                     </button>
-                  )}
+
+                    {(logoUrl || logoUpload.preview) && (
+                      <button
+                        type="button"
+                        onClick={() => handleMagicExtract()}
+                        disabled={isExtracting}
+                        className="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all hover:scale-105"
+                        style={{ borderColor: theme.accent, color: theme.accent, background: `${theme.accent}10` }}
+                      >
+                        {isExtracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                        Re-extrair da Logo
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Swatches das Cores Detectadas */}
@@ -1220,7 +1255,7 @@ export default function Configuracoes() {
                       onClick={() => handleToggleBgMode('dark')}
                       className="flex items-center justify-between p-4 rounded-xl border text-left transition-all hover:scale-[1.01]"
                       style={{
-                        background: bgMode === 'dark' ? '#0F172A' : theme.bg,
+                        background: bgMode === 'dark' ? '#000000' : theme.bg,
                         borderColor: bgMode === 'dark' ? (customPalette?.primary || theme.accent) : theme.border,
                         boxShadow: bgMode === 'dark' ? `0 0 18px ${(customPalette?.primary || theme.accent)}30` : 'none',
                       }}

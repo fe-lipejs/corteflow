@@ -101,16 +101,18 @@ export default function Login() {
         return;
       }
 
-      // Check if user already has a tenant to route accurately
+      // Check if user already has completed onboarding in database to route accurately
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('role, tenant_id')
+        .select('role, tenant_id, onboarding_completed')
         .eq('id', user.id)
         .maybeSingle();
 
+      const isCompleted = profileData?.onboarding_completed || Boolean(profileData?.tenant_id);
+
       if (isSuperAdminMode || profileData?.role === 'super_admin') {
         navigate('/admin');
-      } else if (profileData?.tenant_id || profileData?.role === 'owner') {
+      } else if (isCompleted) {
         navigate('/app');
       } else {
         navigate('/onboarding');

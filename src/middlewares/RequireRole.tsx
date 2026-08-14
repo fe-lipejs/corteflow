@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import type { UserRole } from '../types/database';
 
 export default function RequireRole({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: UserRole[] }) {
-  const { role, loading } = useAuth();
+  const { role, profile, tenant, onboardingCompleted, loading } = useAuth();
 
   if (loading) {
     return (
@@ -17,18 +17,24 @@ export default function RequireRole({ children, allowedRoles }: { children: Reac
     );
   }
 
-  // Se o usuário não tem uma role definida, pode ser um usuário recém cadastrado que precisa fazer onboarding
-  if (!role) {
+  const effectiveRole = role || (profile?.tenant_id || tenant ? 'admin' : null);
+
+  // Super admin tem acesso direto à área master
+  if (effectiveRole === 'super_admin') {
+    if (!allowedRoles.includes('super_admin')) {
+      return <Navigate to="/admin" replace />;
+    }
+    return <>{children}</>;
+  }
+
+  // Se não concluiu o onboarding no banco, bloqueia qualquer rota interna
+  if (!onboardingCompleted) {
     return <Navigate to="/onboarding" replace />;
   }
 
-  if (!allowedRoles.includes(role)) {
-    // Se a role não é permitida, redireciona adequadamente
-    if (role === 'super_admin' || role === 'owner') {
-      return <Navigate to="/app" replace />;
-    } else {
-      return <Navigate to="/app" replace />;
-    }
+  // Se não tem role válida permitida
+  if (!effectiveRole || (!allowedRoles.includes(effectiveRole as UserRole) && effectiveRole !== 'admin' && effectiveRole !== 'owner')) {
+    return <Navigate to="/app" replace />;
   }
 
   return <>{children}</>;

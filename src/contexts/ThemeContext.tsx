@@ -159,8 +159,8 @@ export const THEME_CLASSIC: ThemeTokens = {
   shadowLg: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
   shadowAccent: '0 0 20px rgba(201, 150, 59, 0.2)',
 
-  fontSans: "'Roboto', system-ui, sans-serif",
-  fontSerif: "'Playfair Display', Georgia, serif",
+  fontSans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  fontSerif: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif",
 
   skeletonBase: '#252118',
   skeletonShimmer: '#3A3530',
@@ -235,8 +235,8 @@ export const THEME_NOIR: ThemeTokens = {
   shadowLg: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
   shadowAccent: '0 0 25px rgba(201, 150, 59, 0.3)',
 
-  fontSans: "'Roboto', system-ui, sans-serif",
-  fontSerif: "'Playfair Display', Georgia, serif",
+  fontSans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  fontSerif: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif",
 
   skeletonBase: '#111111',
   skeletonShimmer: '#1A1A1A',
@@ -246,78 +246,78 @@ export const THEME_NOIR: ThemeTokens = {
 
 export const THEME_ELEGANT: ThemeTokens = {
   id: 'elegant',
-  name: 'Salão Elegante',
-  description: 'Claro, com rosé e serifadas',
+  name: 'Modo Claro',
+  description: 'Branco puro, limpo e profissional',
 
-  bg: '#F5F2ED',
-  bgCard: 'rgba(255, 255, 255, 0.95)',
+  bg: '#F8FAFC',
+  bgCard: '#FFFFFF',
   bgInput: '#FFFFFF',
-  bgSidebar: '#F0EBE1',
-  bgHover: '#EBE5D8',
-  bgOverlay: 'rgba(26, 19, 17, 0.5)',
-  bgGlass: 'rgba(255, 255, 255, 0.85)',
+  bgSidebar: '#FFFFFF',
+  bgHover: '#F1F5F9',
+  bgOverlay: 'rgba(15, 23, 42, 0.4)',
+  bgGlass: 'rgba(255, 255, 255, 0.95)',
 
-  textPrimary: '#1A1311',
-  textSecondary: '#4A3B2F',
-  textMuted: '#6B5D51',
+  textPrimary: '#0F172A',
+  textSecondary: '#475569',
+  textMuted: '#94A3B8',
   textInverse: '#FFFFFF',
 
-  accent: '#C46B4D',
-  accentLight: '#D9896F',
-  accentMuted: 'rgba(196, 107, 77, 0.15)',
-  accentGradient: 'linear-gradient(135deg, #C46B4D, #D9896F)',
-  accentHover: '#A8573D',
+  accent: '#C9963B',
+  accentLight: '#E8B86D',
+  accentMuted: 'rgba(201, 150, 59, 0.12)',
+  accentGradient: 'linear-gradient(135deg, #C9963B, #DAA74E)',
+  accentHover: '#DAA74E',
 
-  border: '#C1B1A5',
-  borderHover: '#A99688',
-  borderActive: '#C46B4D',
+  border: '#E2E8F0',
+  borderHover: '#CBD5E1',
+  borderActive: '#C9963B',
 
-  btnPrimaryBg: 'linear-gradient(135deg, #C46B4D, #D9896F)',
-  btnPrimaryText: '#FFFFFF',
-  btnPrimaryHover: '0 8px 25px rgba(196, 107, 77, 0.4)',
-  btnOutlineBorder: '#D4C4B7',
-  btnOutlineText: '#1A1311',
-  btnOutlineHoverBg: 'rgba(196, 107, 77, 0.08)',
+  btnPrimaryBg: 'linear-gradient(135deg, #C9963B, #DAA74E)',
+  btnPrimaryText: '#000000',
+  btnPrimaryHover: '0 0 20px rgba(201, 150, 59, 0.4)',
+  btnOutlineBorder: '#E2E8F0',
+  btnOutlineText: '#0F172A',
+  btnOutlineHoverBg: '#F1F5F9',
 
-  calendarActiveBg: '#C46B4D',
-  calendarActiveText: '#FFFFFF',
-  calendarAvailableBg: 'rgba(196, 107, 77, 0.1)',
-  calendarUnavailableBg: 'rgba(0, 0, 0, 0.04)',
+  calendarActiveBg: '#C9963B',
+  calendarActiveText: '#000000',
+  calendarAvailableBg: 'rgba(201, 150, 59, 0.08)',
+  calendarUnavailableBg: '#F8FAFC',
 
   inputBg: '#FFFFFF',
-  inputBorder: '#D4C4B7',
-  inputFocusBorder: '#C46B4D',
-  inputPlaceholder: '#A89B8F',
-  inputText: '#1A1311',
+  inputBorder: '#E2E8F0',
+  inputFocusBorder: '#C9963B',
+  inputPlaceholder: '#94A3B8',
+  inputText: '#0F172A',
 
-  cardBg: 'rgba(255, 255, 255, 0.95)',
-  cardBorder: '#D4C4B7',
-  cardShadow: '0 8px 30px rgba(0, 0, 0, 0.12)',
-  glassBlur: '12px',
+  cardBg: '#FFFFFF',
+  cardBorder: '#E2E8F0',
+  cardShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
+  glassBlur: '16px',
 
-  sidebarBg: 'rgba(240, 235, 225, 0.95)',
-  sidebarBorder: '#D4C4B7',
-  sidebarHover: '#EBE5D8',
-  sidebarActiveItemBg: '#C46B4D',
-  sidebarActiveItemText: '#FFFFFF',
+  sidebarBg: '#FFFFFF',
+  sidebarBorder: '#E2E8F0',
+  sidebarHover: '#F1F5F9',
+  sidebarActiveItemBg: '#C9963B',
+  sidebarActiveItemText: '#000000',
 
-  success: '#15803d',
-  warning: '#b45309',
-  error: '#b91c1c',
-  info: '#1d4ed8',
+  success: '#16a34a',
+  warning: '#d97706',
+  error: '#dc2626',
+  info: '#2563eb',
 
-  shadowSm: '0 4px 6px rgba(10, 5, 0, 0.15)',
-  shadowMd: '0 10px 15px rgba(10, 5, 0, 0.2)',
-  shadowLg: '0 25px 50px -12px rgba(10, 5, 0, 0.3)',
-  shadowAccent: '0 10px 30px rgba(196, 107, 77, 0.45)',
+  shadowSm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+  shadowMd: '0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
+  shadowLg: '0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04)',
+  shadowAccent: '0 0 25px rgba(201, 150, 59, 0.35)',
 
-  fontSans: "'Roboto', system-ui, sans-serif",
-  fontSerif: "'Playfair Display', Georgia, serif",
+  fontSans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  fontSerif: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif",
 
-  skeletonBase: '#E3DDD3',
-  skeletonShimmer: '#F0EBE1',
-  scrollbarThumb: '#BFA899',
-  scrollbarTrack: '#F5F2ED',
+  skeletonBase: '#F1F5F9',
+  skeletonShimmer: '#E2E8F0',
+  scrollbarThumb: '#CBD5E1',
+  scrollbarTrack: '#F8FAFC',
 };
 
 // ─── Theme Map ────────────────────────────────────────────────────────────────
@@ -443,7 +443,7 @@ export const ThemeProvider: React.FC<{
   const [customPalette, setCustomPalette] = useState(initialCustomPalette);
 
   const theme = useMemo(() => {
-    const baseTheme = THEMES[themeId] || THEME_CLASSIC;
+    const baseTheme = THEMES[themeId] || THEME_NOIR;
     if (!customPalette) return baseTheme;
 
     // Apply dynamic overrides from custom_palette (database)
@@ -455,47 +455,17 @@ export const ThemeProvider: React.FC<{
       const g = parseInt(hex.substring(2, 4), 16) || 150;
       const b = parseInt(hex.substring(4, 6), 16) || 59;
       const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-      btnTextColor = lum > 145 ? '#0F172A' : '#FFFFFF';
+      btnTextColor = lum > 145 ? '#000000' : '#FFFFFF';
     }
-
-    // Determine if background is dark or light
-    const bgHex = (customPalette.background || baseTheme.bg).replace('#', '');
-    const bgR = parseInt(bgHex.substring(0, 2), 16) || 14;
-    const bgG = parseInt(bgHex.substring(2, 4), 16) || 16;
-    const bgB = parseInt(bgHex.substring(4, 6), 16) || 19;
-    const bgLum = 0.2126 * bgR + 0.7152 * bgG + 0.0722 * bgB;
-    const isDarkBg = bgLum < 135;
-
-    const dynamicBorder = isDarkBg ? 'rgba(255, 255, 255, 0.10)' : '#E2E8F0';
-    const dynamicInputBorder = isDarkBg ? 'rgba(255, 255, 255, 0.14)' : '#CBD5E1';
-    const dynamicTextSecondary = isDarkBg ? '#94A3B8' : '#475569';
-    const dynamicTextMuted = isDarkBg ? '#64748B' : '#64748B';
 
     return {
       ...baseTheme,
       ...(customPalette.background && { bg: customPalette.background }),
-      ...(customPalette.text && { textPrimary: customPalette.text }),
-      textSecondary: dynamicTextSecondary,
-      textMuted: dynamicTextMuted,
-      border: dynamicBorder,
-      cardBorder: dynamicBorder,
-      inputBorder: dynamicInputBorder,
-      sidebarBorder: dynamicBorder,
-      bgHover: isDarkBg ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9',
-      sidebarHover: isDarkBg ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9',
-      btnOutlineBorder: dynamicBorder,
-      btnOutlineText: customPalette.text || (isDarkBg ? '#FFFFFF' : '#0F172A'),
-      inputText: customPalette.text || (isDarkBg ? '#FFFFFF' : '#0F172A'),
-      inputPlaceholder: isDarkBg ? '#64748B' : '#94A3B8',
-      cardShadow: isDarkBg ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' : '0 4px 14px rgba(0, 0, 0, 0.05)',
       ...(customPalette.card && {
         cardBg: customPalette.card,
         bgCard: customPalette.card,
-        bgSidebar: customPalette.card,
-        sidebarBg: customPalette.card,
-        inputBg: isDarkBg ? '#121417' : '#FFFFFF',
-        bgInput: isDarkBg ? '#121417' : '#FFFFFF',
       }),
+      ...(customPalette.text && { textPrimary: customPalette.text }),
       ...(customPalette.primary && {
         accent: customPalette.primary,
         accentLight: adjustColorBrightness(customPalette.primary, 15),
@@ -510,9 +480,9 @@ export const ThemeProvider: React.FC<{
         calendarActiveBg: customPalette.primary,
         calendarActiveText: btnTextColor,
         calendarAvailableBg: `${customPalette.primary}18`,
-        sidebarActiveItemBg: `${customPalette.primary}20`,
-        sidebarActiveItemText: customPalette.primary,
-        shadowAccent: `0 0 20px ${customPalette.primary}40`,
+        sidebarActiveItemBg: customPalette.primary,
+        sidebarActiveItemText: btnTextColor,
+        shadowAccent: `0 0 25px ${customPalette.primary}40`,
       }),
     };
   }, [themeId, customPalette]);

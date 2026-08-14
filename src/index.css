@@ -1,5 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Roboto:wght@300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@400;600;700;800&family=Roboto:wght@300;400;500;700;900&display=swap');
 @import "tailwindcss";
+
+.font-serif {
+  font-family: var(--theme-font-serif, 'Plus Jakarta Sans', -apple-system, sans-serif);
+}
 
 :root {
   /* Theme variables are set dynamically by ThemeContext.tsx */

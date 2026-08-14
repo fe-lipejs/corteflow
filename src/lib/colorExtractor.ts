@@ -275,12 +275,11 @@ export function generatePaletteFromAccent(
   const btnText = getOptimalTextColor(cleanHex);
 
   if (mode === 'dark') {
-    // Modo Noturno / Chumbo Moderno Luxuoso
-    // Fundo Chumbo Grafite profundo e cartões com acabamento slate elevado
+    // Modo Noturno / Tema Noir Puro (Preto Absoluto + Accent da Marca)
     return {
       primary: cleanHex,
-      background: '#0E1013', // Chumbo grafite escuro absoluto
-      card: '#181A1E',       // Cartão chumbo elevado com alto contraste
+      background: '#000000', // Preto absoluto Noir
+      card: '#0D0D0D',       // Cartão elevado Noir
       text: '#FFFFFF',       // Branco límpido
       btnText,
       isDark: true,
