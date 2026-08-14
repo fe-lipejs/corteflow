@@ -52,6 +52,12 @@ export default function AppLayout() {
     }
   }, [tenant?.language, i18n]);
 
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    await signOut();
+    navigate('/login');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: theme.bg }}>
@@ -63,7 +69,30 @@ export default function AppLayout() {
     );
   }
 
-  if (!tenant) return <Navigate to="/login" replace />;
+  if (!tenant) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: theme.bg }}>
+        <div className="max-w-md w-full border rounded-3xl p-8 text-center shadow-2xl space-y-5" style={{ background: theme.cardBg, borderColor: theme.border }}>
+          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-8 h-8 text-red-400" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold mb-1.5" style={{ color: theme.textPrimary }}>Conta Desativada ou Excluída</h2>
+            <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textSecondary }}>
+              O acesso a este estabelecimento foi desativado pelo administrador da plataforma. Entre em contato com o suporte para reativar seu acesso.
+            </p>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="w-full py-3.5 rounded-xl text-xs uppercase tracking-wider font-bold transition-all border"
+            style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
+          >
+            Sair da Conta
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const navItems = [
     { to: '/app', icon: LayoutDashboard, label: 'Visão geral', end: true },
@@ -80,12 +109,6 @@ export default function AppLayout() {
   const initials = profile?.full_name
     ? profile.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
     : 'K';
-
-  const handleSignOut = async () => {
-    setIsSigningOut(true);
-    await signOut();
-    navigate('/login');
-  };
 
   // Subscription guard — allow access to /app/assinatura and /app/configuracoes always
   const isPublicAppPath = publicAppPaths.some(p => location.pathname.startsWith(p));

@@ -108,6 +108,22 @@ export default function Login() {
         .eq('id', user.id)
         .maybeSingle();
 
+      if (profileData?.tenant_id && profileData?.role !== 'super_admin') {
+        const { data: tenantCheck } = await supabase
+          .from('tenants')
+          .select('id, status, deleted_at')
+          .eq('id', profileData.tenant_id)
+          .maybeSingle();
+
+        // If tenant is soft-deleted or RLS filtered out because of deletion
+        if (!tenantCheck || tenantCheck.deleted_at) {
+          await supabase.auth.signOut();
+          setError('Esta conta/empresa foi desativada ou excluída pelo administrador. Entre em contato com o suporte para reativação.');
+          setLoading(false);
+          return;
+        }
+      }
+
       const isCompleted = profileData?.onboarding_completed || Boolean(profileData?.tenant_id);
 
       if (isSuperAdminMode || profileData?.role === 'super_admin') {

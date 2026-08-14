@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   Search, ExternalLink, MoreVertical, CheckCircle,
   ShieldAlert, Ban, PlayCircle, Building2, ChevronLeft, ChevronRight,
-  ArrowUpDown, Trash2
+  ArrowUpDown, Trash2, RotateCcw
 } from 'lucide-react';
 import AdminPageHeader from './components/AdminPageHeader';
 import AdminEmptyState from './components/AdminEmptyState';
@@ -76,6 +76,24 @@ export default function AdminTenants() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_tenants_v2'] });
       setOpenMenuId(null);
+    }
+  });
+
+  const restoreTenant = useMutation({
+    mutationFn: async (id: string) => {
+      const { error: rpcErr } = await supabase.rpc('restore_tenant', { p_tenant_id: id });
+      if (rpcErr) {
+        const { error } = await supabase.from('tenants').update({ deleted_at: null, status: 'active' } as any).eq('id', id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin_tenants_v2'] });
+      setOpenMenuId(null);
+      alert('Empresa restaurada com sucesso! O acesso do cliente foi reativado.');
+    },
+    onError: (err: any) => {
+      alert(`Erro ao restaurar empresa: ${err.message}`);
     }
   });
 
@@ -314,13 +332,23 @@ export default function AdminTenants() {
 
                   {/* Actions */}
                   <div className="col-span-2 md:col-span-2 flex items-center justify-end gap-1.5">
-                    <button
-                      onClick={() => window.open(`/${tenant.slug}`, '_blank')}
-                      className="p-1.5 text-[#444] hover:text-white hover:bg-[#1a1a1a] rounded-lg transition-colors"
-                      title="Ver página pública"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
+                    {tenant.deleted_at ? (
+                      <button
+                        onClick={() => restoreTenant.mutate(tenant.id)}
+                        className="px-2.5 py-1 text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/20 flex items-center gap-1.5 font-bold transition-all"
+                        title="Reativar empresa e liberar acesso do cliente"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" /> Restaurar
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => window.open(`/${tenant.slug}`, '_blank')}
+                        className="p-1.5 text-[#444] hover:text-white hover:bg-[#1a1a1a] rounded-lg transition-colors"
+                        title="Ver página pública"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <div className="relative">
                       <button
                         onClick={() => setOpenMenuId(openMenuId === tenant.id ? null : tenant.id)}
@@ -330,30 +358,41 @@ export default function AdminTenants() {
                       </button>
                       {openMenuId === tenant.id && (
                         <div className="absolute right-0 top-8 w-44 bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl shadow-2xl z-50 overflow-hidden">
-                          <button
-                            onClick={() => updateStatus.mutate({ id: tenant.id, status: 'active' })}
-                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#888] hover:bg-[#1a1a1a] hover:text-emerald-400 transition-colors"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" /> Ativar
-                          </button>
-                          <button
-                            onClick={() => updateStatus.mutate({ id: tenant.id, status: 'trial' })}
-                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#888] hover:bg-[#1a1a1a] hover:text-amber-400 transition-colors"
-                          >
-                            <PlayCircle className="w-3.5 h-3.5" /> Colocar em Trial
-                          </button>
-                          <button
-                            onClick={() => updateStatus.mutate({ id: tenant.id, status: 'suspended' })}
-                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#888] hover:bg-[#1a1a1a] hover:text-orange-400 transition-colors border-t border-[#111]"
-                          >
-                            <ShieldAlert className="w-3.5 h-3.5" /> Suspender
-                          </button>
-                          <button
-                            onClick={() => updateStatus.mutate({ id: tenant.id, status: 'blocked' })}
-                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#888] hover:bg-[#1a1a1a] hover:text-red-400 transition-colors"
-                          >
-                            <Ban className="w-3.5 h-3.5" /> Bloquear
-                          </button>
+                          {tenant.deleted_at ? (
+                            <button
+                              onClick={() => restoreTenant.mutate(tenant.id)}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 font-bold transition-colors"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" /> Restaurar Empresa
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => updateStatus.mutate({ id: tenant.id, status: 'active' })}
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#888] hover:bg-[#1a1a1a] hover:text-emerald-400 transition-colors"
+                              >
+                                <CheckCircle className="w-3.5 h-3.5" /> Ativar
+                              </button>
+                              <button
+                                onClick={() => updateStatus.mutate({ id: tenant.id, status: 'trial' })}
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#888] hover:bg-[#1a1a1a] hover:text-amber-400 transition-colors"
+                              >
+                                <PlayCircle className="w-3.5 h-3.5" /> Colocar em Trial
+                              </button>
+                              <button
+                                onClick={() => updateStatus.mutate({ id: tenant.id, status: 'suspended' })}
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#888] hover:bg-[#1a1a1a] hover:text-orange-400 transition-colors border-t border-[#111]"
+                              >
+                                <ShieldAlert className="w-3.5 h-3.5" /> Suspender
+                              </button>
+                              <button
+                                onClick={() => updateStatus.mutate({ id: tenant.id, status: 'blocked' })}
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#888] hover:bg-[#1a1a1a] hover:text-red-400 transition-colors"
+                              >
+                                <Ban className="w-3.5 h-3.5" /> Bloquear
+                              </button>
+                            </>
+                          )}
                           <button
                             onClick={() => {
                               setStripeInfoModalOpen(tenant);
@@ -363,15 +402,17 @@ export default function AdminTenants() {
                           >
                             <ExternalLink className="w-3.5 h-3.5" /> Detalhes Stripe
                           </button>
-                          <button
-                            onClick={() => {
-                              setDeleteModalOpen(tenant);
-                              setOpenMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-colors border-t border-[#111] font-medium"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" /> Apagar Empresa
-                          </button>
+                          {!tenant.deleted_at && (
+                            <button
+                              onClick={() => {
+                                setDeleteModalOpen(tenant);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-colors border-t border-[#111] font-medium"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Apagar Empresa
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
