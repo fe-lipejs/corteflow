@@ -87,6 +87,7 @@ export default function Configuracoes() {
   const [identitySaved, setIdentitySaved] = useState(false);
 
   // Branding
+  const [previewMode, setPreviewMode] = useState<'public' | 'admin'>('public');
   const [fantasyName, setFantasyName] = useState('');
   const [slogan, setSlogan] = useState('');
   const [description, setDescription] = useState('');
@@ -1393,45 +1394,175 @@ export default function Configuracoes() {
                   </div>
                 </div>
 
-                {/* Mini Preview Ao Vivo com Contraste Perfeito */}
-                <div className="pt-4 border-t" style={{ borderColor: theme.border }}>
-                  <p className="text-[11px] font-bold uppercase tracking-wider mb-2.5" style={{ color: theme.textMuted }}>
-                    👁️ Prévia do Design em Tempo Real:
-                  </p>
-                  <div className="p-4 rounded-xl border flex flex-col sm:flex-row items-center justify-between gap-4 transition-all"
-                    style={{
-                      background: bgMode === 'dark' ? '#0B0B0D' : '#FAF9F6',
-                      borderColor: bgMode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-                    }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base shadow-sm"
-                        style={{
-                          background: customPalette?.primary || theme.accent,
-                          color: theme.btnPrimaryText,
-                        }}>
-                        {fantasyName ? fantasyName.charAt(0).toUpperCase() : 'N'}
-                      </div>
-                      <div>
-                        <p className="font-serif text-sm font-bold" style={{ color: bgMode === 'dark' ? '#FFFFFF' : '#0F172A' }}>
-                          {fantasyName || 'Nome da sua Barbearia'}
-                        </p>
-                        <p className="text-[11px]" style={{ color: bgMode === 'dark' ? '#94A3B8' : '#64748B' }}>
-                          {slogan || 'O melhor corte e atendimento da cidade'}
-                        </p>
-                      </div>
+                {/* Prévia Interativa do Design em Tempo Real */}
+                <div className="pt-5 border-t" style={{ borderColor: theme.border }}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: theme.textPrimary }}>
+                        <span>👁️</span> Prévia Interativa em Tempo Real:
+                      </p>
+                      <p className="text-[11px]" style={{ color: theme.textMuted }}>
+                        Veja exatamente como ficará antes de clicar em salvar.
+                      </p>
                     </div>
 
-                    <button
-                      type="button"
-                      className="px-5 py-2 rounded-xl text-xs font-bold shadow-md transition-transform hover:scale-105 shrink-0"
-                      style={{
-                        background: customPalette?.primary || theme.accent,
-                        color: theme.btnPrimaryText,
-                      }}
-                    >
-                      Agendar Horário
-                    </button>
+                    {/* Selector: Página Pública vs Painel Admin */}
+                    <div className="flex items-center p-1 rounded-xl border gap-1 self-start sm:self-auto" style={{ background: theme.inputBg, borderColor: theme.border }}>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewMode('public')}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${previewMode === 'public' ? 'shadow-sm' : 'opacity-70 hover:opacity-100'}`}
+                        style={{
+                          background: previewMode === 'public' ? (customPalette?.primary || theme.accent) : 'transparent',
+                          color: previewMode === 'public' ? theme.btnPrimaryText : theme.textSecondary,
+                        }}
+                      >
+                        📱 Página de Agendamento
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewMode('admin')}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${previewMode === 'admin' ? 'shadow-sm' : 'opacity-70 hover:opacity-100'}`}
+                        style={{
+                          background: previewMode === 'admin' ? (customPalette?.primary || theme.accent) : 'transparent',
+                          color: previewMode === 'admin' ? theme.btnPrimaryText : theme.textSecondary,
+                        }}
+                      >
+                        💻 Painel do Salão
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Preview Canvas */}
+                  {(() => {
+                    const activeAccent = customPalette?.primary || theme.accent;
+                    const isDarkPrev = bgMode === 'dark';
+                    const prevBg = isDarkPrev ? '#0B0B0D' : '#F8FAFC';
+                    const prevCardBg = isDarkPrev ? '#141416' : '#FFFFFF';
+                    const prevBorder = isDarkPrev ? '#242427' : '#E2E8F0';
+                    const prevTextPrimary = isDarkPrev ? '#FFFFFF' : '#0F172A';
+                    const prevTextSecondary = isDarkPrev ? '#A1A1AA' : '#475569';
+                    const prevTextMuted = isDarkPrev ? '#71717A' : '#94A3B8';
+                    const prevFontFamily = fontStyle === 'serif' ? "'Playfair Display', Georgia, serif" : "'Plus Jakarta Sans', -apple-system, sans-serif";
+
+                    const hex = activeAccent.replace('#', '');
+                    const r = parseInt(hex.substring(0, 2), 16) || 201;
+                    const g = parseInt(hex.substring(2, 4), 16) || 150;
+                    const b = parseInt(hex.substring(4, 6), 16) || 59;
+                    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                    const prevBtnText = lum > 145 ? '#000000' : '#FFFFFF';
+
+                    return (
+                      <div
+                        className="rounded-2xl border p-5 transition-all shadow-inner overflow-hidden"
+                        style={{
+                          background: prevBg,
+                          borderColor: prevBorder,
+                        }}
+                      >
+                        {previewMode === 'public' ? (
+                          /* ── Public Booking Page Mockup ── */
+                          <div className="space-y-4 max-w-md mx-auto">
+                            {/* Banner & Brand Header */}
+                            <div className="rounded-2xl p-4 border relative overflow-hidden flex items-center justify-between gap-3"
+                              style={{ background: prevCardBg, borderColor: prevBorder }}>
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div
+                                  className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg shrink-0 shadow-sm"
+                                  style={{
+                                    background: activeAccent,
+                                    color: prevBtnText,
+                                    fontFamily: prevFontFamily,
+                                  }}
+                                >
+                                  {fantasyName ? fantasyName.charAt(0).toUpperCase() : 'N'}
+                                </div>
+                                <div className="min-w-0">
+                                  <h5
+                                    className="font-bold text-base truncate leading-tight"
+                                    style={{
+                                      color: prevTextPrimary,
+                                      fontFamily: prevFontFamily,
+                                    }}
+                                  >
+                                    {fantasyName || 'Nome da sua Barbearia'}
+                                  </h5>
+                                  <p className="text-xs truncate mt-0.5" style={{ color: prevTextSecondary }}>
+                                    {slogan || 'O melhor corte e atendimento da cidade'}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border shrink-0"
+                                style={{ background: `${activeAccent}15`, borderColor: `${activeAccent}30`, color: activeAccent }}>
+                                Aberto
+                              </span>
+                            </div>
+
+                            {/* Service Card Mockup */}
+                            <div className="rounded-2xl p-4 border flex items-center justify-between gap-3 transition-transform hover:scale-[1.01]"
+                              style={{ background: prevCardBg, borderColor: prevBorder }}>
+                              <div>
+                                <h6 className="font-bold text-sm leading-tight" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>
+                                  Corte Degradê & Barba
+                                </h6>
+                                <p className="text-xs mt-0.5" style={{ color: prevTextMuted }}>
+                                  45 min • Atendimento individual
+                                </p>
+                                <p className="text-sm font-extrabold mt-1.5" style={{ color: activeAccent }}>
+                                  R$ 65,00
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                className="px-4 py-2 rounded-xl text-xs font-bold shadow transition-transform hover:scale-105 shrink-0"
+                                style={{
+                                  background: activeAccent,
+                                  color: prevBtnText,
+                                }}
+                              >
+                                Agendar
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          /* ── Admin Dashboard Mockup ── */
+                          <div className="space-y-4 max-w-md mx-auto">
+                            {/* Dashboard Top Greeting */}
+                            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: prevBorder }}>
+                              <div>
+                                <p className="text-[10px] uppercase font-extrabold tracking-widest" style={{ color: prevTextMuted }}>Painel do Salão</p>
+                                <h5 className="font-bold text-base mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>
+                                  Olá, {profile?.full_name?.split(' ')[0] || 'Dono'} 👋
+                                </h5>
+                              </div>
+                              <div className="px-3 py-1 rounded-xl text-xs font-bold shadow-sm"
+                                style={{ background: activeAccent, color: prevBtnText }}>
+                                + Novo Agendamento
+                              </div>
+                            </div>
+
+                            {/* KPI Cards Grid */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="rounded-xl p-3 border" style={{ background: prevCardBg, borderColor: prevBorder }}>
+                                <p className="text-[10px] font-bold uppercase" style={{ color: prevTextMuted }}>Hoje</p>
+                                <p className="text-lg font-black mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>R$ 480,00</p>
+                                <p className="text-[10px] text-emerald-500 font-bold mt-0.5">+14% vs ontem</p>
+                              </div>
+                              <div className="rounded-xl p-3 border" style={{ background: prevCardBg, borderColor: prevBorder }}>
+                                <p className="text-[10px] font-bold uppercase" style={{ color: prevTextMuted }}>Ocupação</p>
+                                <p className="text-lg font-black mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>85%</p>
+                                <p className="text-[10px] font-bold mt-0.5" style={{ color: activeAccent }}>6 agendamentos</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  <p className="text-[11px] text-center mt-2.5 font-medium" style={{ color: theme.textMuted }}>
+                    💡 Dica: A prévia acima reflete suas seleções de Modo, Cor e Fonte em tempo real. Clique em <strong>"Salvar Alterações"</strong> no topo para aplicar permanentemente.
+                  </p>
                 </div>
               </div>
 
@@ -1915,30 +2046,32 @@ export default function Configuracoes() {
                 {businessHours.map((bh, idx) => (
                   <div
                     key={bh.weekday}
-                    className="rounded-xl p-4 transition-all"
+                    className="rounded-2xl p-4 transition-all"
                     style={{
-                      background: bh.is_open ? theme.inputBg : `${theme.inputBg}80`,
-                      border: `1px solid ${bh.is_open ? theme.inputBorder : theme.border}`,
-                      opacity: bh.is_open ? 1 : 0.6,
+                      background: bh.is_open ? theme.inputBg : `${theme.inputBg}60`,
+                      border: `1px solid ${bh.is_open ? (theme.id === 'elegant' ? '#E2E8F0' : theme.inputBorder) : theme.border}`,
+                      opacity: bh.is_open ? 1 : 0.65,
                     }}
                   >
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <button
+                          type="button"
                           onClick={() => {
                             const updated = [...businessHours];
                             updated[idx].is_open = !updated[idx].is_open;
                             setBusinessHours(updated);
                           }}
-                          className="relative w-10 h-5 rounded-full transition-all"
-                          style={{ background: bh.is_open ? theme.accent : theme.border }}
+                          className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 cursor-pointer"
+                          style={{
+                            background: bh.is_open 
+                              ? (customPalette?.primary || theme.accent) 
+                              : (theme.id === 'elegant' ? '#CBD5E1' : '#2A2A2A')
+                          }}
                         >
                           <span
-                            className="absolute top-0.5 w-4 h-4 rounded-full transition-all"
-                            style={{
-                              background: theme.textPrimary,
-                              left: bh.is_open ? '22px' : '2px',
-                            }}
+                            className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                            style={{ transform: bh.is_open ? 'translateX(22px)' : 'translateX(4px)' }}
                           />
                         </button>
                         <span className="text-sm font-bold" style={{ color: theme.textPrimary }}>
@@ -1946,9 +2079,10 @@ export default function Configuracoes() {
                         </span>
                       </div>
                       <span
-                        className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
+                        className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border"
                         style={{
-                          background: bh.is_open ? `${theme.success}20` : `${theme.error}20`,
+                          background: bh.is_open ? `${theme.success}15` : `${theme.error}15`,
+                          borderColor: bh.is_open ? `${theme.success}30` : `${theme.error}30`,
                           color: bh.is_open ? theme.success : theme.error,
                         }}
                       >
@@ -1960,10 +2094,11 @@ export default function Configuracoes() {
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
-                        className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+                        className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t"
+                        style={{ borderColor: theme.border }}
                       >
                         <div>
-                          <label className="block text-[10px] font-bold uppercase mb-1" style={{ color: theme.textMuted }}>Abre</label>
+                          <label className="block text-[10px] font-bold uppercase mb-1.5" style={{ color: theme.textSecondary }}>Abre</label>
                           <input
                             type="time"
                             value={bh.open_time}
@@ -1972,11 +2107,11 @@ export default function Configuracoes() {
                               updated[idx].open_time = e.target.value;
                               setBusinessHours(updated);
                             }}
-                            className="themed-input text-sm py-2"
+                            className="themed-input text-sm py-2 px-3 font-semibold"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase mb-1" style={{ color: theme.textMuted }}>Fecha</label>
+                          <label className="block text-[10px] font-bold uppercase mb-1.5" style={{ color: theme.textSecondary }}>Fecha</label>
                           <input
                             type="time"
                             value={bh.close_time}
@@ -1985,11 +2120,11 @@ export default function Configuracoes() {
                               updated[idx].close_time = e.target.value;
                               setBusinessHours(updated);
                             }}
-                            className="themed-input text-sm py-2"
+                            className="themed-input text-sm py-2 px-3 font-semibold"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase mb-1" style={{ color: theme.textMuted }}>Almoço início</label>
+                          <label className="block text-[10px] font-bold uppercase mb-1.5" style={{ color: theme.textMuted }}>Almoço Início</label>
                           <input
                             type="time"
                             value={bh.lunch_start}
@@ -1998,12 +2133,12 @@ export default function Configuracoes() {
                               updated[idx].lunch_start = e.target.value;
                               setBusinessHours(updated);
                             }}
-                            className="themed-input text-sm py-2"
+                            className="themed-input text-sm py-2 px-3 opacity-90"
                             placeholder="--:--"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase mb-1" style={{ color: theme.textMuted }}>Almoço fim</label>
+                          <label className="block text-[10px] font-bold uppercase mb-1.5" style={{ color: theme.textMuted }}>Almoço Fim</label>
                           <input
                             type="time"
                             value={bh.lunch_end}
@@ -2012,7 +2147,7 @@ export default function Configuracoes() {
                               updated[idx].lunch_end = e.target.value;
                               setBusinessHours(updated);
                             }}
-                            className="themed-input text-sm py-2"
+                            className="themed-input text-sm py-2 px-3 opacity-90"
                             placeholder="--:--"
                           />
                         </div>

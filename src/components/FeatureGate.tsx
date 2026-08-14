@@ -131,6 +131,7 @@ function InlineLock({ message }: { message?: string }) {
 }
 
 export default function FeatureGate({ feature, children, message, inline = false }: FeatureGateProps) {
+  const { theme } = useTheme();
   const { features, isLoading } = usePlanFeatures();
 
   if (isLoading) return <>{children}</>;
@@ -153,9 +154,16 @@ export default function FeatureGate({ feature, children, message, inline = false
     }
 
     return (
-      <div className="relative w-full min-h-[500px] flex items-center justify-center p-4">
-        {/* Upgrade Overlay */}
-        <UpgradeScreen message={displayMessage} />
+      <div className="relative w-full min-h-[520px] rounded-3xl overflow-hidden border" style={{ borderColor: theme.border }}>
+        {/* Blurred background content so user sees what they're missing */}
+        <div className="filter blur-[6px] opacity-35 pointer-events-none select-none p-4 -z-0">
+          {children}
+        </div>
+
+        {/* Upgrade Frosted Overlay & Floating Modal */}
+        <div className="absolute inset-0 z-10 flex items-center justify-center p-4 backdrop-blur-md bg-black/25 overflow-y-auto">
+          <UpgradeScreen message={displayMessage} />
+        </div>
       </div>
     );
   }

@@ -145,7 +145,7 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 rounded-2xl border overflow-hidden shadow-2xl" style={{ background: theme.bg, borderColor: theme.border }}>
+    <div className="flex flex-col h-full min-h-0 w-full rounded-2xl border overflow-hidden shadow-2xl" style={{ background: theme.bg, borderColor: theme.border }}>
       {/* ── Day Headers ── */}
       <div className="flex border-b shrink-0 relative z-20" style={{ borderColor: theme.border, background: theme.cardBg }}>
         {/* Time column header */}

@@ -284,7 +284,7 @@ export default function Agenda() {
             </div>
 
             {/* Desktop */}
-            <div className="hidden md:flex h-full">
+            <div className="hidden md:flex flex-col h-full w-full">
               {view === 'week' ? (
                 <WeekView
                   weekStart={weekStart}

@@ -81,7 +81,7 @@ export default function DayView({ day, bookings, businessHours, onBookingClick, 
   const isClosed = dayHours && !dayHours.is_open;
 
   return (
-    <div className="flex flex-col h-full min-h-0 rounded-2xl border overflow-hidden shadow-2xl" style={{ background: theme.bg, borderColor: theme.border }}>
+    <div className="flex flex-col h-full min-h-0 w-full rounded-2xl border overflow-hidden shadow-2xl" style={{ background: theme.bg, borderColor: theme.border }}>
       {/* ── Day Header ── */}
       <div className="shrink-0 px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: theme.border, background: theme.cardBg }}>
         <div className="flex items-center gap-4">
