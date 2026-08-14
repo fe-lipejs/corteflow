@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Check, ChevronRight, Crown, TrendingUp, DollarSign, Package, ArrowUpRight, ShieldCheck, BarChart3, Users } from 'lucide-react';
+import { Sparkles, Check, ChevronRight, Lock, Package, ArrowUpRight, TrendingUp, DollarSign } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePlanFeatures } from '../hooks/usePlanFeatures';
 import type { PlanFeatures } from '../hooks/usePlanFeatures';
@@ -15,82 +15,82 @@ interface FeatureGateProps {
   inline?: boolean;
 }
 
-/** Rich Teaser Mockups so the user sees realistic data and feels the urge to upgrade */
+/** Rich, Vibrant Teaser Mockup so the user clearly sees the feature right behind the glass */
 function TeaserBackdrop({ feature }: { feature: keyof PlanFeatures }) {
   const { theme } = useTheme();
 
   if (feature === 'financeiro') {
     return (
-      <div className="space-y-5 p-2 sm:p-4 select-none opacity-50 filter blur-[1.5px] pointer-events-none">
+      <div className="space-y-4 p-4 sm:p-6 select-none pointer-events-none">
         {/* KPI Metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          <div className="p-4 rounded-2xl border" style={{ background: theme.cardBg, borderColor: theme.border }}>
-            <div className="flex items-center justify-between text-xs mb-2">
-              <span className="font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>Faturamento (Mês)</span>
-              <span className="text-emerald-500 font-bold flex items-center text-[11px]"><ArrowUpRight className="w-3.5 h-3.5" /> +24.8%</span>
+          <div className="p-4 rounded-2xl border shadow-sm" style={{ background: theme.cardBg, borderColor: theme.border }}>
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="font-extrabold uppercase tracking-wider text-[10px]" style={{ color: theme.textMuted }}>Faturamento (Mês)</span>
+              <span className="text-emerald-500 font-bold flex items-center text-[11px]"><ArrowUpRight className="w-3.5 h-3.5" /> +24%</span>
             </div>
             <p className="text-2xl font-black" style={{ color: theme.textPrimary }}>R$ 18.450,00</p>
-            <p className="text-[11px] mt-1" style={{ color: theme.textSecondary }}>Meta mensal: 82% atingida</p>
+            <p className="text-[11px] mt-1 font-medium" style={{ color: theme.textSecondary }}>235 agendamentos realizados</p>
           </div>
 
-          <div className="p-4 rounded-2xl border" style={{ background: theme.cardBg, borderColor: theme.border }}>
-            <div className="flex items-center justify-between text-xs mb-2">
-              <span className="font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>Lucro Líquido</span>
-              <span className="text-emerald-500 font-bold flex items-center text-[11px]"><ArrowUpRight className="w-3.5 h-3.5" /> +18.2%</span>
+          <div className="p-4 rounded-2xl border shadow-sm" style={{ background: theme.cardBg, borderColor: theme.border }}>
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="font-extrabold uppercase tracking-wider text-[10px]" style={{ color: theme.textMuted }}>Lucro Líquido</span>
+              <span className="text-emerald-500 font-bold flex items-center text-[11px]"><ArrowUpRight className="w-3.5 h-3.5" /> +18%</span>
             </div>
             <p className="text-2xl font-black text-emerald-500">R$ 11.230,00</p>
-            <p className="text-[11px] mt-1" style={{ color: theme.textSecondary }}>Margem de 60.8%</p>
+            <p className="text-[11px] mt-1 font-medium" style={{ color: theme.textSecondary }}>Após custos e despesas</p>
           </div>
 
-          <div className="p-4 rounded-2xl border" style={{ background: theme.cardBg, borderColor: theme.border }}>
-            <div className="flex items-center justify-between text-xs mb-2">
-              <span className="font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>Ticket Médio</span>
-              <span className="text-emerald-500 font-bold flex items-center text-[11px]"><ArrowUpRight className="w-3.5 h-3.5" /> +8.5%</span>
+          <div className="p-4 rounded-2xl border shadow-sm" style={{ background: theme.cardBg, borderColor: theme.border }}>
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="font-extrabold uppercase tracking-wider text-[10px]" style={{ color: theme.textMuted }}>Ticket Médio</span>
+              <span className="text-emerald-500 font-bold flex items-center text-[11px]"><ArrowUpRight className="w-3.5 h-3.5" /> +9%</span>
             </div>
             <p className="text-2xl font-black" style={{ color: theme.textPrimary }}>R$ 78,50</p>
-            <p className="text-[11px] mt-1" style={{ color: theme.textSecondary }}>235 atendimentos</p>
+            <p className="text-[11px] mt-1 font-medium" style={{ color: theme.textSecondary }}>Média por cliente atendido</p>
           </div>
 
-          <div className="p-4 rounded-2xl border" style={{ background: theme.cardBg, borderColor: theme.border }}>
-            <div className="flex items-center justify-between text-xs mb-2">
-              <span className="font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>Previsão do Mês</span>
+          <div className="p-4 rounded-2xl border shadow-sm" style={{ background: theme.cardBg, borderColor: theme.border }}>
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="font-extrabold uppercase tracking-wider text-[10px]" style={{ color: theme.textMuted }}>Previsão Próx. 30d</span>
               <span className="text-amber-500 font-bold text-[11px]">Projetado</span>
             </div>
             <p className="text-2xl font-black" style={{ color: theme.accent }}>R$ 22.800,00</p>
-            <p className="text-[11px] mt-1" style={{ color: theme.textSecondary }}>Com base nos agendamentos</p>
+            <p className="text-[11px] mt-1 font-medium" style={{ color: theme.textSecondary }}>Baseado na taxa de ocupação</p>
           </div>
         </div>
 
-        {/* Realistic Chart & Table Mock */}
+        {/* Realistic Chart & Transactions Mock */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 p-5 rounded-2xl border space-y-3" style={{ background: theme.cardBg, borderColor: theme.border }}>
+          <div className="lg:col-span-2 p-5 rounded-2xl border space-y-3 shadow-sm" style={{ background: theme.cardBg, borderColor: theme.border }}>
             <div className="flex items-center justify-between">
-              <h5 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Evolução do Faturamento Semanal</h5>
+              <h5 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Fluxo de Faturamento Semanal</h5>
               <span className="text-xs px-2.5 py-1 rounded-lg border font-semibold" style={{ borderColor: theme.border, color: theme.textMuted }}>Últimos 30 dias</span>
             </div>
-            <div className="h-36 flex items-end justify-between gap-2 pt-6">
+            <div className="h-36 flex items-end justify-between gap-2.5 pt-4">
               {[45, 68, 52, 85, 92, 78, 95, 110, 88, 120, 105, 135].map((val, idx) => (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
                   <div
                     className="w-full rounded-t-lg transition-all"
                     style={{
                       height: `${(val / 140) * 100}%`,
-                      background: idx >= 8 ? theme.accent : `${theme.accent}40`,
+                      background: idx >= 8 ? theme.accent : `${theme.accent}45`,
                     }}
                   />
-                  <span className="text-[9px]" style={{ color: theme.textMuted }}>S{idx + 1}</span>
+                  <span className="text-[9px] font-mono" style={{ color: theme.textMuted }}>S{idx + 1}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl border space-y-3" style={{ background: theme.cardBg, borderColor: theme.border }}>
+          <div className="p-5 rounded-2xl border space-y-3 shadow-sm" style={{ background: theme.cardBg, borderColor: theme.border }}>
             <h5 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Últimos Recebimentos</h5>
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {[
                 { name: 'Lucas Silveira', service: 'Corte Degradê & Barba', val: 'R$ 85,00', status: 'Recebido' },
                 { name: 'Matheus Costa', service: 'Assinatura Mensal VIP', val: 'R$ 180,00', status: 'Recebido' },
-                { name: 'Gabriel Rocha', service: 'Pomada Matte + Corte', val: 'R$ 95,00', status: 'Recebido' },
+                { name: 'Gabriel Rocha', service: 'Pomada Matte + Barba', val: 'R$ 95,00', status: 'Recebido' },
               ].map((item, idx) => (
                 <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl border text-xs" style={{ background: theme.inputBg, borderColor: theme.border }}>
                   <div>
@@ -112,7 +112,7 @@ function TeaserBackdrop({ feature }: { feature: keyof PlanFeatures }) {
 
   if (feature === 'produtos') {
     return (
-      <div className="space-y-4 p-2 sm:p-4 select-none opacity-50 filter blur-[1.5px] pointer-events-none">
+      <div className="space-y-4 p-4 sm:p-6 select-none pointer-events-none">
         {/* Search & Categories */}
         <div className="flex gap-2">
           <div className="flex-1 p-3 rounded-xl border text-xs font-medium" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textMuted }}>
@@ -130,14 +130,14 @@ function TeaserBackdrop({ feature }: { feature: keyof PlanFeatures }) {
         {/* Products Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {[
-            { name: 'Pomada Modeladora Efeito Matte 150g', cat: 'Pomadas • Fixação Alta', price: 'R$ 55,00', stock: '34 un', sales: '142 vendidas' },
-            { name: 'Óleo Hidratante de Barba Premium 30ml', cat: 'Barba • Amadeirado', price: 'R$ 68,00', stock: '19 un', sales: '89 vendidas' },
+            { name: 'Pomada Modeladora Efeito Matte 150g', cat: 'Pomadas • Fixação Forte', price: 'R$ 55,00', stock: '34 un', sales: '142 vendidas' },
+            { name: 'Óleo Hidratante de Barba Amadeirado 30ml', cat: 'Barba • Hidratação', price: 'R$ 68,00', stock: '19 un', sales: '89 vendidas' },
             { name: 'Shampoo Fortalecedor Ice Mentol 250ml', cat: 'Cabelo • Refrescante', price: 'R$ 42,00', stock: '27 un', sales: '64 vendidas' },
-            { name: 'Balm Condicionador para Barba 100g', cat: 'Barba • Hidratação', price: 'R$ 49,90', stock: '15 un', sales: '53 vendidas' },
+            { name: 'Balm Multifuncional para Barba 100g', cat: 'Barba • Maciez', price: 'R$ 49,90', stock: '15 un', sales: '53 vendidas' },
           ].map((prod, idx) => (
-            <div key={idx} className="p-4 rounded-2xl border flex items-center justify-between gap-3" style={{ background: theme.cardBg, borderColor: theme.border }}>
+            <div key={idx} className="p-4 rounded-2xl border flex items-center justify-between gap-3 shadow-sm" style={{ background: theme.cardBg, borderColor: theme.border }}>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center border font-bold text-lg shrink-0" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.accent }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center border font-bold text-lg shrink-0 shadow-inner" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.accent }}>
                   <Package className="w-6 h-6" />
                 </div>
                 <div>
@@ -155,7 +155,7 @@ function TeaserBackdrop({ feature }: { feature: keyof PlanFeatures }) {
   }
 
   return (
-    <div className="grid grid-cols-3 gap-4 p-4 select-none opacity-45 filter blur-[1.5px] pointer-events-none">
+    <div className="grid grid-cols-3 gap-4 p-4 select-none pointer-events-none">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="h-28 rounded-2xl border" style={{ background: theme.cardBg, borderColor: theme.border }} />
       ))}
@@ -163,46 +163,101 @@ function TeaserBackdrop({ feature }: { feature: keyof PlanFeatures }) {
   );
 }
 
-function UpgradeScreen({ message, feature }: { message?: string; feature: keyof PlanFeatures }) {
+function UpgradeScreen({ feature }: { feature: keyof PlanFeatures }) {
   const { theme, fontStyle } = useTheme();
+
+  // Honest, precise feature specifics
+  const featureDetails = {
+    produtos: {
+      badge: 'Catálogo de Produtos',
+      title: 'Venda Produtos no seu Salão',
+      desc: 'Comece a vender pomadas, óleos e cosméticos para seus clientes e aumente o faturamento médio de cada atendimento.',
+      benefits: [
+        'Catálogo de produtos com fotos, categorias e preços',
+        'Controle automático de estoque e aviso de reposição',
+        'Relatório de produtos mais vendidos e faturamento',
+      ],
+    },
+    financeiro: {
+      badge: 'Módulo Financeiro',
+      title: 'Gestão Financeira Completa',
+      desc: 'Tenha clareza absoluta das entradas, despesas, faturamento dos atendimentos e lucro líquido do seu estabelecimento.',
+      benefits: [
+        'Registro automático das receitas de agendamentos',
+        'Lançamento de despesas e controle de fluxo de caixa',
+        'Exportação de relatórios em Excel e PDF',
+      ],
+    },
+    equipe: {
+      badge: 'Equipe Ampliada',
+      title: 'Até 10 Profissionais na Equipe',
+      desc: 'Expanda o seu salão cadastrando até 10 profissionais com agendas e horários de atendimento individuais.',
+      benefits: [
+        'Até 10 profissionais ativos (Starter inclui apenas 1)',
+        'Agendas individuais e horários de trabalho personalizados',
+        'Foto, cargo e especialidades na página de agendamento',
+      ],
+    },
+  }[feature as 'produtos' | 'financeiro' | 'equipe'] || {
+    badge: 'Recurso Growth',
+    title: 'Desbloqueie o Plano Growth',
+    desc: 'Turbine a gestão do seu salão com recursos avançados de produtos, equipe e financeiro.',
+    benefits: [
+      'Catálogo de Produtos e Controle de Estoque',
+      'Gestão Financeira e Fluxo de Caixa',
+      'Até 10 Profissionais na sua Equipe',
+    ],
+  };
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: 14 }}
+      initial={{ opacity: 0, scale: 0.96, y: 12 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+      transition={{ type: 'spring', damping: 25, stiffness: 280 }}
       className="relative w-full max-w-md mx-auto z-20"
     >
-      {/* Glow Behind Card */}
+      {/* Golden Glow Aura */}
       <div
-        className="absolute -inset-1 rounded-3xl blur-2xl opacity-35 -z-10"
+        className="absolute -inset-1 rounded-3xl blur-2xl opacity-40 -z-10"
         style={{ background: theme.accent }}
       />
 
-      {/* Floating Glassmorphic Upgrade Card */}
+      {/* Ultra Glassmorphic Floating Card */}
       <div
-        className="relative rounded-3xl p-6 sm:p-7 border shadow-2xl backdrop-blur-2xl text-left overflow-hidden"
+        className="relative rounded-3xl p-6 sm:p-7 border backdrop-blur-2xl text-left overflow-hidden shadow-2xl"
         style={{
-          background: theme.id === 'elegant' ? 'rgba(255, 255, 255, 0.94)' : 'rgba(18, 18, 22, 0.92)',
-          borderColor: `${theme.accent}40`,
-          boxShadow: `0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px ${theme.accent}20 inset`,
+          background: theme.id === 'elegant'
+            ? 'rgba(255, 255, 255, 0.82)'
+            : 'rgba(15, 15, 20, 0.84)',
+          borderColor: theme.id === 'elegant'
+            ? 'rgba(255, 255, 255, 0.95)'
+            : 'rgba(255, 255, 255, 0.15)',
+          boxShadow: `0 25px 50px -12px rgba(0, 0, 0, 0.35), inset 0 1px 1px 0 rgba(255, 255, 255, ${theme.id === 'elegant' ? '0.9' : '0.2'})`,
         }}
       >
-        {/* Top Floating Badge */}
+        {/* Top Floating Glass Badge */}
         <div className="flex items-center justify-between mb-4">
           <div
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider border shadow-sm"
             style={{
-              background: `${theme.accent}18`,
-              borderColor: `${theme.accent}40`,
+              background: `${theme.accent}20`,
+              borderColor: `${theme.accent}45`,
               color: theme.accent,
             }}
           >
-            <Crown className="w-3.5 h-3.5" />
-            <span>Recurso Growth</span>
+            <Lock className="w-3 h-3" />
+            <span>{featureDetails.badge}</span>
           </div>
-          <span className="text-[11px] font-bold px-2 py-0.5 rounded-md" style={{ background: `${theme.border}`, color: theme.textSecondary }}>
-            Upgrade Imediato
+
+          <span
+            className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg border"
+            style={{
+              background: theme.id === 'elegant' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.08)',
+              borderColor: theme.border,
+              color: theme.textSecondary,
+            }}
+          >
+            Plano Growth
           </span>
         </div>
 
@@ -214,26 +269,21 @@ function UpgradeScreen({ message, feature }: { message?: string; feature: keyof 
             fontFamily: fontStyle === 'serif' ? "'Playfair Display', Georgia, serif" : 'inherit',
           }}
         >
-          Desbloqueie todo o potencial
+          {featureDetails.title}
         </h3>
 
         <p className="text-xs sm:text-sm leading-relaxed mb-5 font-medium" style={{ color: theme.textSecondary }}>
-          {message ?? 'Esta funcionalidade faz parte do plano Growth. Faça o upgrade agora para ter controle total.'}
+          {featureDetails.desc}
         </p>
 
-        {/* Value Bullets */}
-        <div className="space-y-2.5 mb-6">
-          {[
-            'Catálogo completo de Produtos e Gestão de Estoque',
-            'Fluxo Financeiro avançado, DRE e Relatórios',
-            'Até 10 profissionais na equipe com comissões',
-            'Taxas de processamento reduzidas e suporte VIP',
-          ].map((benefit, i) => (
+        {/* Honest Benefits List */}
+        <div className="space-y-2 mb-6">
+          {featureDetails.benefits.map((benefit, i) => (
             <div
               key={i}
-              className="flex items-center gap-2.5 p-2 rounded-xl border"
+              className="flex items-center gap-2.5 p-2 rounded-xl border transition-all"
               style={{
-                background: theme.id === 'elegant' ? '#F8FAFC' : 'rgba(255, 255, 255, 0.04)',
+                background: theme.id === 'elegant' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.04)',
                 borderColor: theme.border,
               }}
             >
@@ -253,7 +303,7 @@ function UpgradeScreen({ message, feature }: { message?: string; feature: keyof 
         {/* CTA Button */}
         <Link
           to="/app/assinatura"
-          className="group relative flex items-center justify-center gap-2 w-full py-3.5 px-5 font-extrabold text-xs uppercase tracking-wider rounded-xl overflow-hidden transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-xl text-center"
+          className="group relative flex items-center justify-center gap-2 w-full py-3.5 px-5 font-extrabold text-xs uppercase tracking-wider rounded-xl overflow-hidden transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-xl text-center cursor-pointer"
           style={{
             background: theme.btnPrimaryBg || theme.accent,
             color: theme.btnPrimaryText,
@@ -265,7 +315,7 @@ function UpgradeScreen({ message, feature }: { message?: string; feature: keyof 
         </Link>
 
         <p className="text-[10px] text-center mt-3 font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>
-          Sem fidelidade • Cancele quando quiser
+          7 dias de teste grátis • Cancele quando quiser
         </p>
       </div>
     </motion.div>
@@ -275,8 +325,8 @@ function UpgradeScreen({ message, feature }: { message?: string; feature: keyof 
 function InlineLock({ message }: { message?: string }) {
   const { theme } = useTheme();
   return (
-    <div className="flex items-center gap-2 text-sm p-3 rounded-xl border" style={{ background: theme.cardBg, borderColor: theme.cardBorder }}>
-      <Crown className="w-4 h-4" style={{ color: theme.accent }} />
+    <div className="flex items-center gap-2 text-sm p-3 rounded-xl border shadow-sm backdrop-blur-md" style={{ background: theme.cardBg, borderColor: theme.cardBorder }}>
+      <Lock className="w-4 h-4" style={{ color: theme.accent }} />
       <span style={{ color: theme.textSecondary }}>{message ?? 'Disponível no plano Growth.'}</span>
       <Link to="/app/assinatura" className="font-bold underline ml-auto text-xs" style={{ color: theme.accent }}>
         Fazer Upgrade
@@ -309,24 +359,24 @@ export default function FeatureGate({ feature, children, message, inline = false
     }
 
     return (
-      <div className="relative w-full min-h-[500px] rounded-3xl overflow-hidden border" style={{ borderColor: theme.border }}>
-        {/* Realistic Teaser Backdrop so the client sees exactly what they will unlock */}
+      <div className="relative w-full min-h-[520px] rounded-3xl overflow-hidden border shadow-inner" style={{ borderColor: theme.border }}>
+        {/* Crystal Clear Teaser Backdrop (Sharp & Vivid so the client sees everything they're missing) */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <TeaserBackdrop feature={feature} />
         </div>
 
-        {/* Frosted Glass Gradient Brush Overlay & Centered Modal */}
+        {/* Frosted Glass Pane with Glass Glare & Centered Floating Modal */}
         <div
-          className="relative z-10 min-h-[500px] flex items-center justify-center p-4 sm:p-6"
+          className="relative z-10 min-h-[520px] flex items-center justify-center p-4 sm:p-6"
           style={{
             background: theme.id === 'elegant'
-              ? 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.72) 0%, rgba(241, 245, 249, 0.9) 100%)'
-              : 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.65) 0%, rgba(10, 10, 12, 0.92) 100%)',
-            backdropFilter: 'blur(3px)',
-            WebkitBackdropFilter: 'blur(3px)',
+              ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(241, 245, 249, 0.65) 100%)'
+              : 'linear-gradient(135deg, rgba(0, 0, 0, 0.45) 0%, rgba(10, 10, 14, 0.7) 100%)',
+            backdropFilter: 'blur(3.5px)',
+            WebkitBackdropFilter: 'blur(3.5px)',
           }}
         >
-          <UpgradeScreen message={displayMessage} feature={feature} />
+          <UpgradeScreen feature={feature} />
         </div>
       </div>
     );
