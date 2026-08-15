@@ -73,7 +73,7 @@ export default function Onboarding() {
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
       language: 'pt',
-      themePreset: 'noir',
+      themePreset: 'elegant',
       businessType: 'barbearia',
       businessName: '',
       slug: '',
@@ -87,7 +87,7 @@ export default function Onboarding() {
 
   const businessName = watch('businessName') || '';
   const businessType = watch('businessType');
-  const themePreset = watch('themePreset') || 'noir';
+  const themePreset = watch('themePreset') || 'elegant';
   const slug = watch('slug') || '';
   const shortDescription = watch('shortDescription') || '';
 
@@ -240,7 +240,8 @@ export default function Onboarding() {
       // 4. Create tenant_settings with initial local-only payments
       const { error: settingsError } = await supabase.from('tenant_settings').insert({
         tenant_id: newTenant.id,
-        theme_preset: data.themePreset || 'noir',
+        theme_preset: data.themePreset || 'elegant',
+        custom_palette: { primary: '#DE870D', fontStyle: 'sans' },
         logo_url: logoUrl,
         banner_url: bannerUrl,
         short_description: data.shortDescription || '',
@@ -289,7 +290,7 @@ export default function Onboarding() {
         buffer_minutes: 10,
         active: true,
         category: 'Geral',
-        color: '#C9963B',
+        color: '#DE870D',
       } as any);
 
       // 8. Associate trial plan subscription
@@ -374,14 +375,15 @@ export default function Onboarding() {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#000000] relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#F8FAFC] relative overflow-hidden">
       {/* Background glow */}
-      <div className="absolute top-[-30%] right-[-20%] w-[50%] h-[50%] bg-[#C9963B]/5 blur-[150px] rounded-full pointer-events-none" />
+      <div className="absolute top-[-30%] right-[-20%] w-[50%] h-[50%] bg-[#DE870D]/10 blur-[150px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-20%] left-[-20%] w-[40%] h-[40%] bg-[#DE870D]/5 blur-[120px] rounded-full pointer-events-none" />
       
-      <div className="w-full max-w-3xl rounded-2xl overflow-hidden flex flex-col md:flex-row border border-[#222222] shadow-2xl relative z-10" style={{ minHeight: '620px' }}>
+      <div className="w-full max-w-3xl rounded-3xl overflow-hidden flex flex-col md:flex-row border border-[#E2E8F0] shadow-2xl relative z-10 bg-white" style={{ minHeight: '620px' }}>
         
         {/* Sidebar Progress */}
-        <div className="bg-[#050505] p-8 md:w-60 flex flex-col border-r border-[#222222]">
+        <div className="bg-[#F8FAFC] p-8 md:w-60 flex flex-col border-r border-[#E2E8F0]">
           <div className="flex items-center mb-10">
             <img src="/logo.svg" alt="Raffros Corteflow" className="h-10 w-auto" />
           </div>
@@ -401,28 +403,28 @@ export default function Onboarding() {
                 <div 
                   className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs transition-all ${
                     step > s.num 
-                      ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                      ? 'bg-green-100 text-green-700 border border-green-300' 
                       : step === s.num 
-                        ? 'bg-[#C9963B] text-black shadow-[0_0_15px_rgba(201,150,59,0.3)]' 
-                        : 'bg-[#111111] text-[#555] border border-[#222222]'
+                        ? 'bg-[#DE870D] text-white shadow-md shadow-[#DE870D]/25' 
+                        : 'bg-slate-100 text-slate-400 border border-slate-200'
                   }`}
                 >
                   {step > s.num ? <CheckCircle2 className="w-4 h-4" /> : s.num}
                 </div>
-                <span className={`text-sm font-medium transition-colors ${step >= s.num ? 'text-white' : 'text-[#555]'}`}>
+                <span className={`text-sm font-semibold transition-colors ${step >= s.num ? 'text-[#0F172A]' : 'text-slate-400'}`}>
                   {s.label}
                 </span>
               </div>
             ))}
           </div>
 
-          <div className="text-xs text-[#555]">
+          <div className="text-xs font-semibold text-slate-400">
             Passo {step} de 3
           </div>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 bg-[#0A0A0A] p-8 md:p-10 flex flex-col justify-between">
+        <div className="flex-1 bg-white p-8 md:p-10 flex flex-col justify-between">
           <form 
             onSubmit={handleSubmit(onSubmit)} 
             onKeyDown={handleKeyDown}
@@ -432,12 +434,12 @@ export default function Onboarding() {
                 {/* Step 1: Idioma + Tipo de Negócio */}
                 {step === 1 && (
                   <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1">
-                    <h3 className="text-2xl font-bold mb-1 text-white">Qual é o seu negócio?</h3>
-                    <p className="text-sm mb-6 text-[#A1A1AA]">Personalizaremos a plataforma para o seu segmento.</p>
+                    <h3 className="text-2xl font-black mb-1 text-[#0F172A]">Qual é o seu negócio?</h3>
+                    <p className="text-sm mb-6 text-[#64748B]">Personalizaremos a plataforma para o seu segmento.</p>
 
                     <div className="mb-5">
-                      <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5">Idioma do Sistema</label>
-                      <select {...register('language')} className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-xl text-white outline-none focus:border-[#C9963B]/50 transition-all">
+                      <label className="block text-sm font-semibold text-[#334155] mb-1.5">Idioma do Sistema</label>
+                      <select {...register('language')} className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium">
                         <option value="pt">Português</option>
                         <option value="en">English</option>
                         <option value="es">Español</option>
@@ -455,18 +457,18 @@ export default function Onboarding() {
                         <div
                           key={type.id}
                           onClick={() => setValue('businessType', type.id as any, { shouldValidate: true })}
-                          className="p-4 rounded-xl cursor-pointer transition-all border group hover:-translate-y-0.5"
+                          className="p-4 rounded-2xl cursor-pointer transition-all border group hover:-translate-y-0.5"
                           style={{
-                            borderColor: businessType === type.id ? '#C9963B' : '#222222',
-                            background: businessType === type.id ? '#C9963B10' : '#050505',
-                            boxShadow: businessType === type.id ? '0 0 15px rgba(201,150,59,0.1)' : 'none',
+                            borderColor: businessType === type.id ? '#DE870D' : '#E2E8F0',
+                            background: businessType === type.id ? '#DE870D0C' : '#FFFFFF',
+                            boxShadow: businessType === type.id ? '0 4px 12px rgba(222,135,13,0.12)' : 'none',
                           }}
                         >
                           <div className="flex items-center gap-3">
-                            <type.icon className="w-6 h-6" style={{ color: businessType === type.id ? '#C9963B' : '#A1A1AA' }} />
+                            <type.icon className="w-6 h-6" style={{ color: businessType === type.id ? '#DE870D' : '#94A3B8' }} />
                             <div>
-                              <div className="font-bold text-sm text-white">{type.title}</div>
-                              <div className="text-xs mt-0.5 text-[#A1A1AA]">{type.desc}</div>
+                              <div className="font-bold text-sm text-[#0F172A]">{type.title}</div>
+                              <div className="text-xs mt-0.5 text-[#64748B]">{type.desc}</div>
                             </div>
                           </div>
                         </div>
@@ -478,13 +480,13 @@ export default function Onboarding() {
                 {/* Step 2: Nome + URL com Geração Automática e Live Check */}
                 {step === 2 && (
                   <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1">
-                    <h3 className="text-2xl font-bold mb-1 text-white">Como os clientes vão te encontrar?</h3>
-                    <p className="text-sm mb-6 text-[#A1A1AA]">Seu link exclusivo para agendamentos online.</p>
+                    <h3 className="text-2xl font-black mb-1 text-[#0F172A]">Como os clientes vão te encontrar?</h3>
+                    <p className="text-sm mb-6 text-[#64748B]">Seu link exclusivo para agendamentos online.</p>
                     
                     <div className="space-y-5">
                       {/* Nome do Estabelecimento */}
                       <div>
-                        <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5">Nome do Estabelecimento</label>
+                        <label className="block text-sm font-semibold text-[#334155] mb-1.5">Nome do Estabelecimento</label>
                         <input 
                           {...register('businessName')} 
                           placeholder="Ex: Maria Manic ou Studio Barber"
@@ -497,23 +499,23 @@ export default function Onboarding() {
                              }
                              setError(null);
                           }}
-                          className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all font-medium" 
+                          className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium" 
                         />
                       </div>
 
                       {/* URL Personalizada com Live Check */}
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
-                          <label className="block text-sm font-medium text-[#A1A1AA]">URL Personalizada da sua Página</label>
+                          <label className="block text-sm font-semibold text-[#334155]">URL Personalizada da sua Página</label>
                           {isCheckingSlug && (
-                            <span className="text-xs text-[#A1A1AA] flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-[#C9963B] animate-ping" /> Verificando...
+                            <span className="text-xs text-[#DE870D] flex items-center gap-1 font-semibold">
+                              <span className="w-2 h-2 rounded-full bg-[#DE870D] animate-ping" /> Verificando...
                             </span>
                           )}
                         </div>
 
                         <div className="flex items-center">
-                          <span className="px-3.5 py-3 bg-[#050505] border border-[#222222] border-r-0 rounded-l-xl text-[#666] text-xs font-mono font-medium select-none">
+                          <span className="px-3.5 py-3 bg-[#F1F5F9] border border-[#CBD5E1] border-r-0 rounded-l-xl text-[#64748B] text-xs font-mono font-medium select-none">
                             corteflow.com/
                           </span>
                           <input 
@@ -531,33 +533,33 @@ export default function Onboarding() {
                                 setValue('slug', formatSlug(slug), { shouldValidate: true });
                               }
                             }}
-                            className={`w-full px-4 py-3 bg-[#050505] border rounded-r-xl text-white placeholder-[#555] font-mono text-sm outline-none transition-all ${
+                            className={`w-full px-4 py-3 bg-[#F8FAFC] border rounded-r-xl text-[#0F172A] placeholder-[#94A3B8] font-mono text-sm outline-none transition-all font-semibold ${
                               slugStatus === 'available' 
-                                ? 'border-green-500/50 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 text-green-400' 
+                                ? 'border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 text-green-700' 
                                 : slugStatus === 'taken' 
-                                  ? 'border-amber-500/50 focus:border-amber-500 text-amber-400' 
-                                  : 'border-[#222222] focus:border-[#C9963B]/50'
+                                  ? 'border-amber-500 focus:border-amber-500 text-amber-700' 
+                                  : 'border-[#CBD5E1] focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20'
                             }`}
                           />
                         </div>
 
                         {/* Status Feedback */}
                         {slugStatus === 'available' && !isCheckingSlug && (
-                          <p className="text-green-400 text-xs mt-2 flex items-center gap-1.5 font-medium">
+                          <p className="text-green-600 text-xs mt-2 flex items-center gap-1.5 font-bold">
                             <CheckCircle2 className="w-3.5 h-3.5" /> URL exclusiva e disponível!
                           </p>
                         )}
 
                         {slugStatus === 'taken' && !isCheckingSlug && (
                           <div className="mt-2 space-y-2">
-                            <p className="text-amber-400 text-xs font-medium flex items-center gap-1.5">
+                            <p className="text-amber-600 text-xs font-semibold flex items-center gap-1.5">
                               ⚠️ A URL <strong className="font-mono">"{slug}"</strong> já está em uso por outro salão.
                             </p>
 
                             {/* Sugestões Inteligentes com 1 Clique */}
                             {slugSuggestions.length > 0 && (
-                              <div className="p-3 bg-[#111111] rounded-xl border border-[#222222]">
-                                <p className="text-[11px] font-bold text-[#C9963B] mb-2 flex items-center gap-1.5 uppercase tracking-wider">
+                              <div className="p-3 bg-[#FFFBEB] rounded-xl border border-amber-200">
+                                <p className="text-[11px] font-bold text-[#DE870D] mb-2 flex items-center gap-1.5 uppercase tracking-wider">
                                   <Sparkles className="w-3.5 h-3.5" /> Sugestões disponíveis com 1 clique:
                                 </p>
                                 <div className="flex flex-wrap gap-2">
@@ -569,7 +571,7 @@ export default function Onboarding() {
                                         setValue('slug', sug, { shouldValidate: true });
                                         setUserManuallyEditedSlug(true);
                                       }}
-                                      className="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-[#050505] hover:bg-[#C9963B] text-[#C9963B] hover:text-black border border-[#C9963B]/30 hover:border-[#C9963B] transition-all active:scale-95 flex items-center gap-1"
+                                      className="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-white hover:bg-[#DE870D] text-[#DE870D] hover:text-white border border-[#DE870D]/40 hover:border-[#DE870D] transition-all active:scale-95 flex items-center gap-1 shadow-sm"
                                     >
                                       <span>{sug}</span>
                                       <span className="text-[10px] opacity-70">+</span>
@@ -581,8 +583,8 @@ export default function Onboarding() {
                           </div>
                         )}
 
-                        {errors.slug && <p className="text-red-400 text-xs mt-1.5">{errors.slug.message}</p>}
-                        {error && step === 2 && <p className="text-red-400 text-sm mt-2 font-medium">⚠️ {error}</p>}
+                        {errors.slug && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.slug.message}</p>}
+                        {error && step === 2 && <p className="text-red-500 text-sm mt-2 font-semibold">⚠️ {error}</p>}
                       </div>
                     </div>
                   </motion.div>
@@ -591,40 +593,40 @@ export default function Onboarding() {
                 {/* Step 3: Identidade — Logo, Banner, Instagram, Endereço, Telefone, Descrição, Google Maps */}
                 {step === 3 && (
                   <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 overflow-y-auto pr-1">
-                    <h3 className="text-2xl font-bold mb-1 text-white">Identidade do seu salão</h3>
-                    <p className="text-sm mb-6 text-[#A1A1AA]">Faça sua página se destacar. Tudo editável depois.</p>
+                    <h3 className="text-2xl font-black mb-1 text-[#0F172A]">Identidade do seu estabelecimento</h3>
+                    <p className="text-sm mb-6 text-[#64748B]">Faça sua página se destacar. Tudo editável depois.</p>
                     
                     <div className="space-y-5">
                       {/* Logo Upload */}
                       <div>
-                        <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5">Logo (quadrado, mínimo 400x400)</label>
+                        <label className="block text-sm font-semibold text-[#334155] mb-1.5">Logo (quadrado, mínimo 400x400)</label>
                         <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                         <div 
                           onClick={() => logoInputRef.current?.click()} 
-                          className="w-24 h-24 rounded-2xl border-2 border-dashed border-[#222222] hover:border-[#C9963B]/50 cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-[#050505]"
+                          className="w-24 h-24 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#DE870D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-[#F8FAFC]"
                         >
                           {logoPreview ? (
                             <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
                           ) : (
-                            <Upload className="w-6 h-6 text-[#555]" />
+                            <Upload className="w-6 h-6 text-[#94A3B8]" />
                           )}
                         </div>
                       </div>
 
                       {/* Banner Upload */}
                       <div>
-                        <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5">Banner (1600x600 ideal)</label>
+                        <label className="block text-sm font-semibold text-[#334155] mb-1.5">Banner (1600x600 ideal)</label>
                         <input ref={bannerInputRef} type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
                         <div 
                           onClick={() => bannerInputRef.current?.click()} 
-                          className="w-full h-28 rounded-2xl border-2 border-dashed border-[#222222] hover:border-[#C9963B]/50 cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-[#050505]"
+                          className="w-full h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#DE870D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-[#F8FAFC]"
                         >
                           {bannerPreview ? (
                             <img src={bannerPreview} alt="Banner" className="w-full h-full object-cover" />
                           ) : (
-                            <div className="flex items-center gap-2 text-[#555]">
+                            <div className="flex items-center gap-2 text-[#94A3B8]">
                               <Image className="w-5 h-5" />
-                              <span className="text-sm">Clique para enviar</span>
+                              <span className="text-sm font-medium">Clique para enviar</span>
                             </div>
                           )}
                         </div>
@@ -632,66 +634,66 @@ export default function Onboarding() {
 
                       {/* Descrição curta */}
                       <div>
-                        <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5 flex items-center justify-between">
+                        <label className="block text-sm font-semibold text-[#334155] mb-1.5 flex items-center justify-between">
                           <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> Descrição curta</span>
-                          <span className="text-xs text-[#555]">{shortDescription.length}/180</span>
+                          <span className="text-xs text-[#94A3B8]">{shortDescription.length}/180</span>
                         </label>
                         <textarea
                           {...register('shortDescription')}
                           rows={2}
-                          placeholder="Ex: A melhor barbearia do bairro. Cortes modernos e ambiente exclusivo."
-                          className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all resize-none text-sm"
+                          placeholder="Ex: Cortes modernos, atendimento exclusivo e ambiente climatizado."
+                          className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all resize-none text-sm font-medium"
                         />
                       </div>
 
                       {/* Instagram */}
                       <div>
-                        <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5 flex items-center gap-1">
+                        <label className="block text-sm font-semibold text-[#334155] mb-1.5 flex items-center gap-1">
                           <AtSign className="w-3.5 h-3.5" /> Instagram
                         </label>
                         <div className="flex items-center">
-                          <span className="px-3 py-3 bg-[#050505] border border-[#222222] border-r-0 rounded-l-xl text-[#555] text-sm">@</span>
+                          <span className="px-3.5 py-3 bg-[#F1F5F9] border border-[#CBD5E1] border-r-0 rounded-l-xl text-[#64748B] text-sm font-semibold">@</span>
                           <input 
                             {...register('instagramHandle')} 
-                            placeholder="seusalao"
-                            className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-r-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all" 
+                            placeholder="seuestabelecimento"
+                            className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-r-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium" 
                           />
                         </div>
                       </div>
 
                       {/* Endereço */}
                       <div>
-                        <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5 flex items-center gap-1">
+                        <label className="block text-sm font-semibold text-[#334155] mb-1.5 flex items-center gap-1">
                           <MapPin className="w-3.5 h-3.5" /> Endereço
                         </label>
                         <input 
                           {...register('address')} 
                           placeholder="Rua Exemplo, 123 — Bairro, Cidade"
-                          className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all" 
+                          className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium" 
                         />
                       </div>
 
                       {/* Google Maps Link */}
                       <div>
-                        <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5 flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-[#C9963B]" /> Link do Google Maps (Localização Exata)
+                        <label className="block text-sm font-semibold text-[#334155] mb-1.5 flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-[#DE870D]" /> Link do Google Maps (Localização Exata)
                         </label>
                         <input 
                           {...register('googleMapsUrl')} 
                           placeholder="https://maps.app.goo.gl/... ou link do Google Maps"
-                          className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all text-sm" 
+                          className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all text-sm font-medium" 
                         />
                       </div>
 
                       {/* Telefone do salão */}
                       <div>
-                        <label className="block text-sm font-medium text-[#A1A1AA] mb-1.5 flex items-center gap-1">
-                          <PhoneIcon className="w-3.5 h-3.5" /> Telefone / WhatsApp do salão
+                        <label className="block text-sm font-semibold text-[#334155] mb-1.5 flex items-center gap-1">
+                          <PhoneIcon className="w-3.5 h-3.5" /> Telefone / WhatsApp do estabelecimento
                         </label>
                         <input 
                           {...register('phoneNumber')} 
                           placeholder="11999999999"
-                          className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 transition-all" 
+                          className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium" 
                         />
                       </div>
                     </div>
@@ -700,14 +702,14 @@ export default function Onboarding() {
               </AnimatePresence>
 
             {error && (
-              <div className="mt-4 p-3 rounded-xl text-xs font-medium bg-red-500/10 border border-red-500/20 text-red-400">
+              <div className="mt-4 p-3 rounded-xl text-xs font-semibold bg-red-500/10 border border-red-500/20 text-red-600">
                 ⚠️ {error}
               </div>
             )}
 
-            <div className="mt-8 pt-6 border-t border-[#222222] flex justify-between">
+            <div className="mt-8 pt-6 border-t border-[#E2E8F0] flex justify-between">
               {step > 1 ? (
-                <button type="button" onClick={() => { setError(null); setStep(step - 1); }} className="flex items-center px-4 py-2 text-[#A1A1AA] hover:text-white font-medium transition-colors">
+                <button type="button" onClick={() => { setError(null); setStep(step - 1); }} className="flex items-center px-4 py-2 text-[#64748B] hover:text-[#0F172A] font-semibold transition-colors">
                   <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
                 </button>
               ) : (
@@ -719,8 +721,8 @@ export default function Onboarding() {
                   type="button"
                   onClick={handleNextStep}
                   disabled={nextDisabled() || loading}
-                  className="flex items-center px-6 py-2.5 rounded-xl font-bold text-sm disabled:opacity-50 transition-all hover:shadow-[0_0_15px_rgba(201,150,59,0.2)] cursor-pointer"
-                  style={{ background: 'linear-gradient(135deg, #C9963B, #E8B960)', color: '#000000' }}
+                  className="flex items-center px-6 py-2.5 rounded-xl font-bold text-sm text-white disabled:opacity-50 transition-all shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer"
+                  style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
                 >
                   {loading ? 'Verificando...' : 'Próximo'}
                   <ChevronRight className="w-4 h-4 ml-1" />
@@ -729,8 +731,8 @@ export default function Onboarding() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center px-6 py-2.5 rounded-xl font-bold text-sm disabled:opacity-50 transition-all hover:shadow-[0_0_15px_rgba(201,150,59,0.2)] cursor-pointer"
-                  style={{ background: 'linear-gradient(135deg, #C9963B, #E8B960)', color: '#000000' }}
+                  className="flex items-center px-6 py-2.5 rounded-xl font-bold text-sm text-white disabled:opacity-50 transition-all shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer"
+                  style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
                 >
                   {loading ? 'Salvando...' : 'Finalizar e Acessar'}
                 </button>

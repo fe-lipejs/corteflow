@@ -159,7 +159,7 @@ export const THEME_CLASSIC: ThemeTokens = {
   shadowLg: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
   shadowAccent: '0 0 20px rgba(201, 150, 59, 0.2)',
 
-  fontSans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  fontSans: "'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   fontSerif: "'Playfair Display', Georgia, serif",
 
   skeletonBase: '#252118',
@@ -186,31 +186,31 @@ export const THEME_NOIR: ThemeTokens = {
   textMuted: '#555555',
   textInverse: '#000000',
 
-  accent: '#C9963B',
-  accentLight: '#E8B86D',
-  accentMuted: 'rgba(201, 150, 59, 0.12)',
-  accentGradient: 'linear-gradient(135deg, #C9963B, #DAA74E)',
-  accentHover: '#DAA74E',
+  accent: '#DE870D',
+  accentLight: '#F5A623',
+  accentMuted: 'rgba(222, 135, 13, 0.12)',
+  accentGradient: 'linear-gradient(135deg, #DE870D, #F5A623)',
+  accentHover: '#C67509',
 
   border: '#1A1A1A',
   borderHover: '#2A2A2A',
-  borderActive: '#C9963B',
+  borderActive: '#DE870D',
 
-  btnPrimaryBg: 'linear-gradient(135deg, #C9963B, #DAA74E)',
+  btnPrimaryBg: 'linear-gradient(135deg, #DE870D, #F5A623)',
   btnPrimaryText: '#000000',
-  btnPrimaryHover: '0 0 25px rgba(201, 150, 59, 0.5)',
+  btnPrimaryHover: '0 0 25px rgba(222, 135, 13, 0.5)',
   btnOutlineBorder: '#1A1A1A',
   btnOutlineText: '#FFFFFF',
-  btnOutlineHoverBg: 'rgba(201, 150, 59, 0.08)',
+  btnOutlineHoverBg: 'rgba(222, 135, 13, 0.08)',
 
-  calendarActiveBg: '#C9963B',
+  calendarActiveBg: '#DE870D',
   calendarActiveText: '#000000',
-  calendarAvailableBg: 'rgba(201, 150, 59, 0.08)',
+  calendarAvailableBg: 'rgba(222, 135, 13, 0.08)',
   calendarUnavailableBg: 'rgba(255, 255, 255, 0.02)',
 
   inputBg: '#0A0A0A',
   inputBorder: '#1A1A1A',
-  inputFocusBorder: '#C9963B',
+  inputFocusBorder: '#DE870D',
   inputPlaceholder: '#444444',
   inputText: '#FFFFFF',
 
@@ -222,7 +222,7 @@ export const THEME_NOIR: ThemeTokens = {
   sidebarBg: 'rgba(5, 5, 5, 0.9)',
   sidebarBorder: '#1A1A1A',
   sidebarHover: '#111111',
-  sidebarActiveItemBg: '#C9963B',
+  sidebarActiveItemBg: '#DE870D',
   sidebarActiveItemText: '#000000',
 
   success: '#22c55e',
@@ -233,9 +233,9 @@ export const THEME_NOIR: ThemeTokens = {
   shadowSm: '0 1px 2px rgba(0, 0, 0, 0.5)',
   shadowMd: '0 4px 6px rgba(0, 0, 0, 0.5)',
   shadowLg: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
-  shadowAccent: '0 0 25px rgba(201, 150, 59, 0.3)',
+  shadowAccent: '0 0 25px rgba(222, 135, 13, 0.3)',
 
-  fontSans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  fontSans: "'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   fontSerif: "'Playfair Display', Georgia, serif",
 
   skeletonBase: '#111111',
@@ -247,7 +247,7 @@ export const THEME_NOIR: ThemeTokens = {
 export const THEME_ELEGANT: ThemeTokens = {
   id: 'elegant',
   name: 'Modo Claro',
-  description: 'Branco puro, limpo e profissional',
+  description: 'Branco puro, limpo e profissional com toque âmbar',
 
   bg: '#F8FAFC',
   bgCard: '#FFFFFF',
@@ -262,31 +262,31 @@ export const THEME_ELEGANT: ThemeTokens = {
   textMuted: '#64748B',
   textInverse: '#FFFFFF',
 
-  accent: '#C9963B',
-  accentLight: '#E8B86D',
-  accentMuted: 'rgba(201, 150, 59, 0.12)',
-  accentGradient: 'linear-gradient(135deg, #C9963B, #DAA74E)',
-  accentHover: '#DAA74E',
+  accent: '#DE870D',
+  accentLight: '#F5A623',
+  accentMuted: 'rgba(222, 135, 13, 0.12)',
+  accentGradient: 'linear-gradient(135deg, #DE870D, #F5A623)',
+  accentHover: '#C67509',
 
   border: '#E2E8F0',
   borderHover: '#CBD5E1',
-  borderActive: '#C9963B',
+  borderActive: '#DE870D',
 
-  btnPrimaryBg: 'linear-gradient(135deg, #C9963B, #DAA74E)',
-  btnPrimaryText: '#000000',
-  btnPrimaryHover: '0 8px 25px rgba(201, 150, 59, 0.35)',
+  btnPrimaryBg: 'linear-gradient(135deg, #DE870D, #F5A623)',
+  btnPrimaryText: '#FFFFFF',
+  btnPrimaryHover: 'none',
   btnOutlineBorder: '#E2E8F0',
   btnOutlineText: '#0F172A',
   btnOutlineHoverBg: '#F1F5F9',
 
-  calendarActiveBg: '#C9963B',
-  calendarActiveText: '#000000',
-  calendarAvailableBg: 'rgba(201, 150, 59, 0.08)',
+  calendarActiveBg: '#DE870D',
+  calendarActiveText: '#FFFFFF',
+  calendarAvailableBg: 'rgba(222, 135, 13, 0.08)',
   calendarUnavailableBg: '#F8FAFC',
 
   inputBg: '#FFFFFF',
   inputBorder: '#CBD5E1',
-  inputFocusBorder: '#C9963B',
+  inputFocusBorder: '#DE870D',
   inputPlaceholder: '#94A3B8',
   inputText: '#0F172A',
 
@@ -298,8 +298,8 @@ export const THEME_ELEGANT: ThemeTokens = {
   sidebarBg: '#FFFFFF',
   sidebarBorder: '#E2E8F0',
   sidebarHover: '#F1F5F9',
-  sidebarActiveItemBg: '#C9963B',
-  sidebarActiveItemText: '#000000',
+  sidebarActiveItemBg: '#DE870D',
+  sidebarActiveItemText: '#FFFFFF',
 
   success: '#16a34a',
   warning: '#d97706',
@@ -307,11 +307,11 @@ export const THEME_ELEGANT: ThemeTokens = {
   info: '#2563eb',
 
   shadowSm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-  shadowMd: '0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
-  shadowLg: '0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04)',
-  shadowAccent: '0 0 25px rgba(201, 150, 59, 0.35)',
+  shadowMd: '0 4px 6px -1px rgba(0, 0, 0, 0.07)',
+  shadowLg: '0 10px 15px -3px rgba(0, 0, 0, 0.08)',
+  shadowAccent: 'none',
 
-  fontSans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  fontSans: "'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   fontSerif: "'Playfair Display', Georgia, serif",
 
   skeletonBase: '#F1F5F9',
@@ -448,17 +448,17 @@ export const ThemeProvider: React.FC<{
   initialCustomPalette?: CustomPaletteConfig;
 }> = ({
   children,
-  initialThemeId = 'noir',
-  initialCustomPalette,
+  initialThemeId = 'elegant',
+  initialCustomPalette = { primary: '#DE870D', fontStyle: 'sans' },
 }) => {
   const [themeId, setThemeId] = useState(initialThemeId);
   const [customPalette, setCustomPalette] = useState<CustomPaletteConfig | undefined>(initialCustomPalette);
   const [fontStyle, setFontStyle] = useState<FontStyle>(
-    initialCustomPalette?.fontStyle || 'serif'
+    initialCustomPalette?.fontStyle || 'sans'
   );
 
   const theme = useMemo(() => {
-    const baseTheme = THEMES[themeId] || THEME_NOIR;
+    const baseTheme = THEMES[themeId] || THEME_ELEGANT;
     const isLightMode = themeId === 'elegant' || baseTheme.id === 'elegant';
 
     // Apply font override

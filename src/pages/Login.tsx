@@ -141,7 +141,7 @@ export default function Login() {
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-700 relative overflow-hidden ${isSuperAdminMode ? 'bg-[#000000]' : 'bg-[#000000]'}`}>
+    <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-700 relative overflow-hidden ${isSuperAdminMode ? 'bg-[#000000]' : 'bg-[#F8FAFC]'}`}>
       
       {/* Background glow (only in normal mode) */}
       <AnimatePresence>
@@ -150,7 +150,7 @@ export default function Login() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute top-[-30%] left-[-20%] w-[60%] h-[60%] bg-[#C9963B]/5 blur-[150px] rounded-full pointer-events-none" 
+            className="absolute top-[-30%] left-[-20%] w-[60%] h-[60%] bg-[#DE870D]/10 blur-[150px] rounded-full pointer-events-none" 
           />
         )}
       </AnimatePresence>
@@ -159,7 +159,7 @@ export default function Login() {
         <AnimatePresence mode="wait">
           {!isSuperAdminMode ? (
             /* ========================================================
-               MODO EMPRESA (Default)
+               MODO EMPRESA (Light Theme Default)
                ======================================================== */
             <motion.div
               key="empresa-mode"
@@ -172,33 +172,33 @@ export default function Login() {
               <div className="text-center mb-8">
                 <button 
                   onClick={handleLogoClick}
-                  className="inline-flex items-center justify-center mb-8 cursor-pointer focus:outline-none"
+                  className="inline-flex items-center justify-center mb-4 cursor-pointer focus:outline-none"
                 >
                   <img src="/logo.svg" alt="Raffros Corteflow" className="h-20 md:h-24 w-auto" />
                 </button>
               </div>
 
-              <div className="bg-[#0A0A0A] rounded-2xl border border-[#222222] p-8 shadow-2xl">
+              <div className="bg-white rounded-3xl border border-[#E2E8F0] p-8 shadow-xl">
                 <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold text-white">{t('login.title')}</h2>
-                  <p className="text-[#A1A1AA] mt-2 text-sm">Acesse o painel do seu salão</p>
+                  <h2 className="text-2xl font-black text-[#0F172A]">{t('login.title')}</h2>
+                  <p className="text-[#64748B] mt-2 text-sm">Acesse o painel do seu estabelecimento</p>
                 </div>
                 
                 {resendSuccess && (
-                  <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-sm flex items-center justify-between">
+                  <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-700 text-sm flex items-center justify-between">
                     <span>Link de confirmação reenviado com sucesso! Verifique seu e-mail.</span>
                   </div>
                 )}
 
                 {error && (
-                  <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm space-y-2">
+                  <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-sm space-y-2">
                     <p>{error}</p>
                     {error.includes('confirmar seu e-mail') && (
                       <button
                         type="button"
                         onClick={handleResendConfirmation}
                         disabled={resendingEmail}
-                        className="text-xs font-bold text-[#C9963B] hover:underline flex items-center gap-1"
+                        className="text-xs font-bold text-[#DE870D] hover:underline flex items-center gap-1"
                       >
                         {resendingEmail ? 'Reenviando...' : 'Clique aqui para reenviar o e-mail de confirmação →'}
                       </button>
@@ -208,27 +208,27 @@ export default function Login() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1.5 text-[#A1A1AA]">
+                    <label className="block text-sm font-semibold mb-1.5 text-[#334155]">
                       {t('login.email')}
                     </label>
                     <input
                       type="email"
                       required
-                      className="w-full px-4 py-3 bg-[#050505] border border-[#222222] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 focus:ring-1 focus:ring-[#C9963B]/30 transition-all"
+                      className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="joao@exemplo.com"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1.5 text-[#A1A1AA]">
+                    <label className="block text-sm font-semibold mb-1.5 text-[#334155]">
                       {t('login.password')}
                     </label>
                     <div className="relative">
                       <input
                         type={showPassword ? 'text' : 'password'}
                         required
-                        className="w-full px-4 py-3 pr-12 bg-[#050505] border border-[#222222] rounded-xl text-white placeholder-[#555] outline-none focus:border-[#C9963B]/50 focus:ring-1 focus:ring-[#C9963B]/30 transition-all"
+                        className="w-full px-4 py-3 pr-12 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
@@ -236,7 +236,7 @@ export default function Login() {
                       <button 
                         type="button" 
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] hover:text-[#A1A1AA] transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#334155] transition-colors"
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -244,7 +244,7 @@ export default function Login() {
                   </div>
                   
                   <div className="flex justify-end">
-                    <button type="button" className="text-sm text-[#C9963B] hover:underline">
+                    <button type="button" className="text-sm text-[#DE870D] font-semibold hover:underline">
                       Esqueci minha senha
                     </button>
                   </div>
@@ -252,21 +252,21 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3.5 px-4 font-bold text-sm rounded-xl disabled:opacity-50 transition-all hover:shadow-[0_0_20px_rgba(201,150,59,0.3)] mt-2"
-                    style={{ background: 'linear-gradient(135deg, #C9963B, #E8B960)', color: '#000000' }}
+                    className="w-full py-3.5 px-4 font-bold text-sm text-white rounded-xl disabled:opacity-50 transition-all shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer mt-2"
+                    style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
                   >
                     {loading ? 'Entrando...' : t('login.submit')}
                   </button>
                 </form>
 
-                <div className="mt-6 text-center text-sm text-[#666]">
+                <div className="mt-6 text-center text-sm text-[#64748B]">
                   Não tem uma conta?{' '}
-                  <Link to="/cadastro" className="text-[#C9963B] font-medium hover:underline">
+                  <Link to="/cadastro" className="text-[#DE870D] font-bold hover:underline">
                     Criar conta grátis
                   </Link>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-[#222222] text-center">
+                <div className="mt-8 pt-6 border-t border-[#E2E8F0] text-center">
                   <button 
                     onClick={() => {
                       setIsSuperAdminMode(true);
@@ -274,9 +274,9 @@ export default function Login() {
                       setPassword('');
                       setError(null);
                     }}
-                    className="text-xs text-[#555] hover:text-[#C9963B] transition-colors"
+                    className="text-xs text-[#94A3B8] hover:text-[#DE870D] font-medium transition-colors"
                   >
-                    Acesso Admin
+                    Acesso Admin Master
                   </button>
                 </div>
               </div>

@@ -7,72 +7,72 @@
 
 :root {
   /* Theme variables are set dynamically by ThemeContext.tsx */
-  /* These are fallback defaults (classic theme) */
-  --theme-bg: #1A1714;
-  --theme-bg-card: rgba(37, 33, 24, 0.8);
-  --theme-bg-input: #1A1714;
-  --theme-bg-sidebar: #141210;
-  --theme-bg-hover: #1E1B17;
-  --theme-bg-overlay: rgba(0, 0, 0, 0.6);
-  --theme-bg-glass: rgba(37, 33, 24, 0.7);
+  /* Default: Modo Claro com Accent #DE870D e Fonte Plus Jakarta Sans */
+  --theme-bg: #F8FAFC;
+  --theme-bg-card: #FFFFFF;
+  --theme-bg-input: #FFFFFF;
+  --theme-bg-sidebar: #FFFFFF;
+  --theme-bg-hover: #F1F5F9;
+  --theme-bg-overlay: rgba(15, 23, 42, 0.4);
+  --theme-bg-glass: rgba(255, 255, 255, 0.95);
 
-  --theme-text-primary: #FFFFFF;
-  --theme-text-secondary: #A09888;
-  --theme-text-muted: #666666;
-  --theme-text-inverse: #1A1714;
+  --theme-text-primary: #0F172A;
+  --theme-text-secondary: #334155;
+  --theme-text-muted: #64748B;
+  --theme-text-inverse: #FFFFFF;
 
-  --theme-accent: #C9963B;
-  --theme-accent-light: #E8B86D;
-  --theme-accent-muted: rgba(201, 150, 59, 0.15);
-  --theme-accent-gradient: linear-gradient(135deg, #C9963B, #E8B960);
-  --theme-accent-hover: #D9A64B;
+  --theme-accent: #DE870D;
+  --theme-accent-light: #F5A623;
+  --theme-accent-muted: rgba(222, 135, 13, 0.12);
+  --theme-accent-gradient: linear-gradient(135deg, #DE870D, #F5A623);
+  --theme-accent-hover: #C67509;
 
-  --theme-border: #2A2520;
-  --theme-border-hover: #3A3530;
-  --theme-border-active: #C9963B;
+  --theme-border: #E2E8F0;
+  --theme-border-hover: #CBD5E1;
+  --theme-border-active: #DE870D;
 
-  --theme-btn-primary-bg: linear-gradient(135deg, #C9963B, #E8B960);
-  --theme-btn-primary-text: #1A1714;
-  --theme-btn-primary-hover: 0 0 20px rgba(201, 150, 59, 0.4);
+  --theme-btn-primary-bg: linear-gradient(135deg, #DE870D, #F5A623);
+  --theme-btn-primary-text: #FFFFFF;
+  --theme-btn-primary-hover: none;
 
-  --theme-calendar-active-bg: #C9963B;
-  --theme-calendar-active-text: #1A1714;
-  --theme-calendar-available-bg: rgba(201, 150, 59, 0.1);
+  --theme-calendar-active-bg: #DE870D;
+  --theme-calendar-active-text: #FFFFFF;
+  --theme-calendar-available-bg: rgba(222, 135, 13, 0.08);
 
-  --theme-input-bg: #1A1714;
-  --theme-input-border: #2A2520;
-  --theme-input-focus-border: #C9963B;
-  --theme-input-placeholder: #666666;
-  --theme-input-text: #FFFFFF;
+  --theme-input-bg: #FFFFFF;
+  --theme-input-border: #CBD5E1;
+  --theme-input-focus-border: #DE870D;
+  --theme-input-placeholder: #94A3B8;
+  --theme-input-text: #0F172A;
 
-  --theme-card-bg: rgba(37, 33, 24, 0.8);
-  --theme-card-border: #3A3530;
-  --theme-card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  --theme-glass-blur: 12px;
+  --theme-card-bg: #FFFFFF;
+  --theme-card-border: #E2E8F0;
+  --theme-card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  --theme-glass-blur: 16px;
 
-  --theme-sidebar-bg: rgba(20, 18, 16, 0.8);
-  --theme-sidebar-border: #2A2520;
-  --theme-sidebar-hover: #1E1B17;
-  --theme-sidebar-active-bg: #C9963B;
-  --theme-sidebar-active-text: #1A1714;
+  --theme-sidebar-bg: #FFFFFF;
+  --theme-sidebar-border: #E2E8F0;
+  --theme-sidebar-hover: #F1F5F9;
+  --theme-sidebar-active-bg: #DE870D;
+  --theme-sidebar-active-text: #FFFFFF;
 
-  --theme-success: #22c55e;
-  --theme-warning: #f59e0b;
-  --theme-error: #ef4444;
-  --theme-info: #3b82f6;
+  --theme-success: #16a34a;
+  --theme-warning: #d97706;
+  --theme-error: #dc2626;
+  --theme-info: #2563eb;
 
-  --theme-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --theme-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
-  --theme-shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
-  --theme-shadow-accent: 0 0 20px rgba(201, 150, 59, 0.2);
+  --theme-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --theme-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
+  --theme-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+  --theme-shadow-accent: none;
 
-  --theme-font-sans: 'Roboto', system-ui, sans-serif;
+  --theme-font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --theme-font-serif: 'Playfair Display', Georgia, serif;
 
-  --theme-skeleton-base: #252118;
-  --theme-skeleton-shimmer: #3A3530;
-  --theme-scrollbar-thumb: #3A3530;
-  --theme-scrollbar-track: #1A1714;
+  --theme-skeleton-base: #F1F5F9;
+  --theme-skeleton-shimmer: #E2E8F0;
+  --theme-scrollbar-thumb: #CBD5E1;
+  --theme-scrollbar-track: #F8FAFC;
 
   /* Legacy compat aliases */
   --color-cream: var(--theme-bg);
