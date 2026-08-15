@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme, THEMES } from '../../contexts/ThemeContext';
 import { useImageUpload } from '../../hooks/useImageUpload';
 import { usePhoneFormat } from '../../hooks/usePhoneFormat';
+import { normalizeBrazilianPhone, formatPhoneMask } from '../../lib/phoneUtils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateSmartPaletteFromLogo, generatePaletteFromAccent } from '../../lib/colorExtractor';
 import { useQueryClient } from '@tanstack/react-query';
@@ -139,6 +140,7 @@ export default function Configuracoes() {
   const [email, setEmail] = useState('');
 
   // Location
+  const [streetAddress, setStreetAddress] = useState('');
   const [fullAddress, setFullAddress] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [streetNumber, setStreetNumber] = useState('');
@@ -199,38 +201,18 @@ export default function Configuracoes() {
   const [extractedColors, setExtractedColors] = useState<string[]>([]);
   const [bgMode, setBgMode] = useState<'dark' | 'light'>('dark');
   const [isExtracting, setIsExtracting] = useState(false);
+  const [businessType, setBusinessType] = useState<'barbearia' | 'salao' | 'esmalteria'>((tenant?.business_type as any) || 'barbearia');
 
   const WEEKDAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
-  // ─── Load Settings ────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (tenant) {
-      setLanguage(tenant.language || 'pt');
-      loadSettings();
-
-      const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get('tab');
-      if (tabParam && TABS.some(t => t.id === tabParam)) {
-        setActiveTab(tabParam as TabId);
-      }
-      if (tabParam === 'stripe' || window.location.search.includes('connect')) {
-        syncConnectStatus(true);
-      }
-    }
-  }, [tenant]);
-
-  // Auto sync fresh Stripe status whenever entering Stripe tab
-  useEffect(() => {
-    if (activeTab === 'stripe' && tenant?.id) {
-      syncConnectStatus(false);
-    }
-  }, [activeTab, tenant?.id]);
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     if (!tenant) return;
     setInitialLoading(true);
 
     try {
+      if (tenant.business_type) {
+        setBusinessType(tenant.business_type as any);
+      }
       // Load tenant settings
       const { data } = await supabase.from('tenant_settings').select('*').eq('tenant_id', tenant.id).maybeSingle();
       if (data) {
@@ -285,11 +267,12 @@ export default function Configuracoes() {
         setBannerUrl(data.banner_url || '');
         if (data.logo_url) logoUpload.setPreview(data.logo_url);
         if (data.banner_url) bannerUpload.setPreview(data.banner_url);
-        setWhatsapp(data.whatsapp_number || '');
+        setWhatsapp(data.whatsapp_number || data.phone || '');
         setInstagram(data.instagram || '');
         setFacebook(data.facebook || '');
         setWebsite(data.website || '');
         setEmail(data.email || '');
+        setStreetAddress(data.address || data.street || '');
         setFullAddress(data.full_address || data.address || '');
         setZipCode(data.zip_code || '');
         setStreetNumber(data.street_number || '');
@@ -352,139 +335,108 @@ export default function Configuracoes() {
         });
         setBusinessHours(mapped);
       }
-
-      // Load subscription and plan status
-      const { data: sub } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (sub) {
-        if ((sub as any).plan_id) {
-          const { data: planData } = await supabase
-            .from('plans')
-            .select('*')
-            .eq('id', (sub as any).plan_id)
-            .maybeSingle();
-          setSubInfo({ ...sub, plans: planData });
-        } else {
-          setSubInfo(sub);
-        }
-      }
-
-      // Load Stripe Connect status
-      const { data: connectAcc } = await supabase
-        .from('stripe_connect_accounts')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .maybeSingle();
-
-      if (connectAcc) {
-        setStripeConnectInfo({
-          has_account: true,
-          charges_enabled: connectAcc.charges_enabled ?? false,
-          payouts_enabled: connectAcc.payouts_enabled ?? false,
-          details_submitted: connectAcc.details_submitted ?? false,
-          stripe_account_id: connectAcc.stripe_account_id,
-        });
-      }
     } catch (err) {
-      console.error('Error loading settings:', err);
+      console.error('Error fetching settings:', err);
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, [tenant]);
 
-  // ─── Slug Formatter & Real-Time Availability Checker ──────────────────────
-  const formatSlug = (raw: string) => {
-    return raw
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-      .replace(/[^a-z0-9-_]/g, '-')    // Converte caracteres inválidos em hífen
-      .replace(/[-_]+/g, (m) => m[0])  // Remove duplicados mantendo o caractere
-      .replace(/^[-_]+|[-_]+$/g, '');  // Remove no início e fim
-  };
+  // ─── Load Settings ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (tenant) {
+      setLanguage(tenant.language || 'pt');
+      loadSettings();
 
-  const formatSlugWhileTyping = (raw: string) => {
-    return raw
-      .toLowerCase()
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && TABS.some(t => t.id === tabParam)) {
+        setActiveTab(tabParam as TabId);
+      }
+      if (tabParam === 'stripe' || window.location.search.includes('connect')) {
+        syncConnectStatus(true);
+      }
+    }
+  }, [tenant, loadSettings]);
+
+  // Auto sync fresh Stripe status whenever entering Stripe tab
+  useEffect(() => {
+    if (activeTab === 'stripe' && tenant?.id) {
+      syncConnectStatus(false);
+    }
+  }, [activeTab, tenant?.id]);
+
+  // ─── Slug Uniqueness & Format Validation ──────────────────────────────────
+  const slugCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const validateSlugLive = (rawSlug: string) => {
+    const formatted = rawSlug
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9-_]/g, '-');
-  };
+      .toLowerCase()
+      .replace(/[^a-z0-9-_]+/g, '-')
+      .replace(/^[-_]+|[-_]+$/g, '');
 
-  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatSlugWhileTyping(e.target.value);
-    setSlug(formatted);
-  };
+    if (slugCheckTimerRef.current) clearTimeout(slugCheckTimerRef.current);
 
-  useEffect(() => {
-    if (!tenant) return;
-    const cleanSlug = slug.trim();
-    if (!cleanSlug) {
+    if (!formatted || formatted.length < 3) {
       setSlugStatus('invalid');
-      setSlugMessage('O link não pode ficar em branco.');
+      setSlugMessage('O link deve ter no mínimo 3 caracteres (letras, números ou hífens).');
       return;
     }
 
-    if (cleanSlug.length < 3) {
-      setSlugStatus('invalid');
-      setSlugMessage('O link deve ter no mínimo 3 caracteres alfanuméricos.');
-      return;
-    }
-
-    if (cleanSlug === tenant.slug) {
+    if (tenant && formatted === tenant.slug) {
       setSlugStatus('available');
-      setSlugMessage('Este é o link oficial atual do seu salão.');
+      setSlugMessage('Este é o seu link atual.');
       return;
     }
 
     setSlugStatus('checking');
-    setSlugMessage('Verificando se o link está disponível...');
+    setSlugMessage('Verificando disponibilidade...');
 
-    const timer = setTimeout(async () => {
+    slugCheckTimerRef.current = setTimeout(async () => {
       try {
         const { data, error } = await supabase
           .from('tenants')
-          .select('id')
-          .eq('slug', cleanSlug)
-          .neq('id', tenant.id)
+          .select('id, slug')
+          .eq('slug', formatted)
           .maybeSingle();
 
         if (error) throw error;
 
-        if (data) {
+        if (data && data.id !== tenant?.id) {
           setSlugStatus('unavailable');
-          setSlugMessage('Este link já está em uso por outro salão.');
+          setSlugMessage(`O link "${formatted}" já está em uso por outro salão.`);
         } else {
           setSlugStatus('available');
-          setSlugMessage('Link disponível para uso imediato!');
+          setSlugMessage(`O link "${formatted}" está livre!`);
         }
-      } catch (err) {
-        console.error('Erro ao verificar disponibilidade do link:', err);
+      } catch (err: any) {
+        console.error('Erro ao validar slug:', err);
         setSlugStatus('idle');
         setSlugMessage('');
       }
-    }, 350);
+    }, 400);
+  };
 
-    return () => clearTimeout(timer);
-  }, [slug, tenant?.id, tenant?.slug]);
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, '-');
+    setSlug(raw);
+    validateSlugLive(raw);
+  };
 
-  // ─── Handle Image Upload ──────────────────────────────────────────────────
+  // ─── Auto Color Extraction from Logo (Smart AI-like Palette) ──────────────
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0 || !tenant) return;
-    const url = await logoUpload.upload(e.target.files[0], `${tenant.id}/logo`);
+    const file = e.target.files[0];
+    const url = await logoUpload.upload(file, `${tenant.id}/logo`);
     if (url) {
       setLogoUrl(url);
-      // Auto-extract colors on upload
       handleMagicExtract(url, bgMode);
     }
   };
 
+  // Extract smart colors and generate tailored theme (local draft only)
   const handleMagicExtract = async (targetUrlOverride?: string, targetModeOverride?: 'dark' | 'light', chosenAccent?: string) => {
     const targetUrl = targetUrlOverride || logoUrl || logoUpload.preview;
     if (!targetUrl) {
@@ -581,10 +533,10 @@ export default function Configuracoes() {
       const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
       const data = await res.json();
       if (!data.erro) {
-        setFullAddress(`${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`);
-        setNeighborhood(data.bairro || '');
-        setCity(data.localidade || '');
-        setState(data.uf || '');
+        if (data.logradouro) setStreetAddress(data.logradouro);
+        if (data.bairro) setNeighborhood(data.bairro);
+        if (data.localidade) setCity(data.localidade);
+        if (data.uf) setState(data.uf);
         setCountry('Brasil');
       }
     } catch (err) {
@@ -592,10 +544,61 @@ export default function Configuracoes() {
     }
   };
 
+  // ─── Live Phone Verification States (SSOT) ──────────────────────────────
+  const [phoneCheckStatus, setPhoneCheckStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid' | 'taken'>('idle');
+  const [phoneFeedback, setPhoneFeedback] = useState<string | null>(null);
+  const phoneCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const validatePhoneLive = (rawPhone: string) => {
+    if (phoneCheckTimerRef.current) clearTimeout(phoneCheckTimerRef.current);
+
+    if (!rawPhone || !rawPhone.trim()) {
+      setPhoneCheckStatus('idle');
+      setPhoneFeedback(null);
+      return;
+    }
+
+    const phoneValidation = normalizeBrazilianPhone(rawPhone);
+    if (!phoneValidation.isValid || !phoneValidation.normalized) {
+      setPhoneCheckStatus('invalid');
+      setPhoneFeedback(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.');
+      return;
+    }
+
+    setPhoneCheckStatus('checking');
+    setPhoneFeedback('Verificando disponibilidade...');
+
+    phoneCheckTimerRef.current = setTimeout(async () => {
+      try {
+        const { data: avail, error: availErr } = await supabase.rpc('check_phone_availability', {
+          p_phone: phoneValidation.normalized,
+          p_exclude_user_id: profile?.id
+        });
+
+        if (!availErr && avail) {
+          if (!avail.available) {
+            setPhoneCheckStatus('taken');
+            setPhoneFeedback(avail.error || 'Este número de telefone já está cadastrado em outra conta.');
+          } else {
+            setPhoneCheckStatus('valid');
+            setPhoneFeedback('Telefone válido e disponível!');
+          }
+        } else {
+          setPhoneCheckStatus('valid');
+          setPhoneFeedback('Telefone válido!');
+        }
+      } catch (e) {
+        setPhoneCheckStatus('idle');
+        setPhoneFeedback(null);
+      }
+    }, 350);
+  };
+
   // ─── Handle Phone Formatting ──────────────────────────────────────────────
   const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = phoneFormat.format(e.target.value);
+    const formatted = formatPhoneMask(e.target.value);
     setWhatsapp(formatted);
+    validatePhoneLive(formatted);
   };
 
   const queryClient = useQueryClient();
@@ -688,16 +691,47 @@ export default function Configuracoes() {
         return;
       }
 
+      // Validação arquitetural do Telefone / WhatsApp (SSOT)
+      let normalizedPhone: string | null = null;
+      let cleanWhatsapp = whatsapp.trim();
+      if (cleanWhatsapp) {
+        const phoneValidation = normalizeBrazilianPhone(cleanWhatsapp);
+        if (!phoneValidation.isValid || !phoneValidation.normalized) {
+          alert(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.');
+          setLoading(false);
+          return;
+        }
+        normalizedPhone = phoneValidation.normalized;
+        cleanWhatsapp = phoneValidation.formatted || cleanWhatsapp;
+
+        // Checagem de unicidade contra outras contas
+        try {
+          const { data: avail, error: availErr } = await supabase.rpc('check_phone_availability', {
+            p_phone: normalizedPhone,
+            p_exclude_user_id: profile?.id
+          });
+
+          if (!availErr && avail && !avail.available) {
+            alert(avail.error || 'Este número de telefone já está cadastrado em outra conta.');
+            setLoading(false);
+            return;
+          }
+        } catch (checkErr) {
+          console.warn('Check phone availability error:', checkErr);
+        }
+      }
+
       const cleanSlug = slug.trim() || tenant.slug;
       const cleanName = tenantName.trim() || fantasyName.trim() || tenant.name;
 
-      // Update tenant name, slug and language
+      // Update tenant name, slug, language and business_type
       const { error: tenantErr } = await (supabase as any)
         .from('tenants')
         .update({
           name: cleanName,
           slug: cleanSlug,
           language,
+          business_type: businessType,
         })
         .eq('id', tenant.id);
 
@@ -711,6 +745,14 @@ export default function Configuracoes() {
       }
 
       i18n.changeLanguage(language);
+
+      // Atualiza telefone no perfil do usuário
+      if (profile?.id) {
+        await supabase.from('profiles').update({
+          phone: cleanWhatsapp,
+          phone_normalized: normalizedPhone,
+        }).eq('id', profile.id);
+      }
 
       // Fix #2: Serialize individual payment toggles as JSON and validate
       const activeOptions = [allowLocal, allowDeposit, allowFull].filter(Boolean).length;
@@ -726,6 +768,8 @@ export default function Configuracoes() {
         fontStyle: draftFontStyle,
       };
 
+      const computedFullAddress = [streetAddress, streetNumber, neighborhood, city, state].filter(Boolean).join(', ') || fullAddress;
+
       // Build payload
       const payload: Record<string, any> = {
         tenant_id: tenant.id,
@@ -739,18 +783,20 @@ export default function Configuracoes() {
         logo_url: logoUrl,
         banner_url: bannerUrl,
         whatsapp_number: whatsapp,
+        phone: whatsapp,
         instagram,
         facebook,
         website,
         email,
-        full_address: fullAddress,
+        address: streetAddress,
+        full_address: computedFullAddress,
         zip_code: zipCode,
         street_number: streetNumber,
         complement,
         neighborhood,
         city,
         state,
-        country,
+        country: country || 'Brasil',
         map_link: mapLink,
         latitude,
         longitude,
@@ -783,33 +829,32 @@ export default function Configuracoes() {
           lunch_end: bh.lunch_end ? bh.lunch_end + ':00' : null,
         };
 
-        const { data: existing } = await supabase
+        const { data: existingHour } = await supabase
           .from('business_hours')
           .select('id')
           .eq('tenant_id', tenant.id)
           .eq('weekday', bh.weekday)
           .maybeSingle();
 
-        if (existing) {
-          await supabase.from('business_hours').update(hourPayload).eq('id', existing.id);
+        if (existingHour) {
+          await supabase.from('business_hours').update(hourPayload).eq('id', existingHour.id);
         } else {
           await supabase.from('business_hours').insert([hourPayload]);
         }
       }
 
-      // Save notification settings
-      const { data: notifData } = await supabase.from('notification_settings').select('id').eq('tenant_id', tenant.id).maybeSingle();
-      if (notifData) {
-        await supabase.from('notification_settings').update({ sound_enabled: soundEnabled }).eq('id', notifData.id);
+      // Save notifications
+      const { data: existingNotif } = await supabase
+        .from('notification_settings')
+        .select('id')
+        .eq('tenant_id', tenant.id)
+        .maybeSingle();
+
+      if (existingNotif) {
+        await supabase.from('notification_settings').update({ sound_enabled: soundEnabled }).eq('id', existingNotif.id);
       } else {
         await supabase.from('notification_settings').insert([{ tenant_id: tenant.id, sound_enabled: soundEnabled }]);
       }
-
-      // Apply theme locally & globally across the whole admin
-      setThemeId(selectedTheme);
-      setFontStyle(draftFontStyle);
-      setCustomPalette(finalPalette);
-      setContextCustomPalette(finalPalette);
 
       // Invalidate public page query cache so changes reflect immediately
       if (tenant?.slug) {
@@ -1414,6 +1459,40 @@ export default function Configuracoes() {
                   Informações da Marca & Idioma
                 </h4>
 
+                {/* Tipo de Negócio */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
+                    Tipo de Negócio / Segmento
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { id: 'barbearia', label: 'Barbearia', icon: '💈', desc: 'Cortes, barba e navalha' },
+                      { id: 'salao', label: 'Salão de Beleza', icon: '💇‍♀️', desc: 'Cabelo, estética e coloração' },
+                      { id: 'esmalteria', label: 'Esmalteria / Nails', icon: '💅', desc: 'Manicure, pedicure e unhas' },
+                    ].map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setBusinessType(item.id as any)}
+                        className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${
+                          businessType === item.id ? 'ring-2 ring-[#DE870D]' : ''
+                        }`}
+                        style={{
+                          background: businessType === item.id ? `${theme.accent}15` : theme.inputBg,
+                          borderColor: businessType === item.id ? theme.accent : theme.border,
+                          color: theme.textPrimary,
+                        }}
+                      >
+                        <span className="text-xl">{item.icon}</span>
+                        <div>
+                          <p className="text-xs font-bold">{item.label}</p>
+                          <p className="text-[10px] opacity-70 leading-tight mt-0.5">{item.desc}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
@@ -1492,17 +1571,36 @@ export default function Configuracoes() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
-                    <WhatsAppIcon className="w-3.5 h-3.5" style={{ color: '#25D366' }} /> WhatsApp Agendamento
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
+                      <WhatsAppIcon className="w-3.5 h-3.5" style={{ color: '#25D366' }} /> WhatsApp Agendamento
+                    </label>
+                    {phoneCheckStatus === 'checking' && (
+                      <span className="text-[10px] text-[#DE870D] font-bold">Verificando...</span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={whatsapp}
                     onChange={handleWhatsappChange}
-                    className="themed-input"
-                    placeholder={phoneFormat.placeholder}
-                    maxLength={phoneFormat.maxLength}
+                    className={`themed-input ${
+                      phoneCheckStatus === 'valid'
+                        ? 'border-green-500 text-green-800'
+                        : phoneCheckStatus === 'taken' || phoneCheckStatus === 'invalid'
+                          ? 'border-red-500 text-red-700'
+                          : ''
+                    }`}
+                    placeholder="(27) 99730-3135"
                   />
+                  {phoneFeedback && (
+                    <p className={`text-[11px] mt-1 font-semibold flex items-center gap-1 ${
+                      phoneCheckStatus === 'valid'
+                        ? 'text-green-600'
+                        : 'text-red-500'
+                    }`}>
+                      {phoneCheckStatus === 'valid' ? <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" /> : '⚠️'} {phoneFeedback}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
@@ -1597,9 +1695,9 @@ export default function Configuracoes() {
                 </p>
               </div>
 
-              {/* CEP + Number row */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="col-span-1">
+              {/* CEP + Rua + Número */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="sm:col-span-1">
                   <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>CEP</label>
                   <input
                     type="text"
@@ -1614,7 +1712,17 @@ export default function Configuracoes() {
                     maxLength={8}
                   />
                 </div>
-                <div className="col-span-1">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>Rua / Logradouro</label>
+                  <input
+                    type="text"
+                    value={streetAddress}
+                    onChange={e => setStreetAddress(e.target.value)}
+                    className="themed-input"
+                    placeholder="Ex: Av. Paulista ou Rua das Flores"
+                  />
+                </div>
+                <div className="sm:col-span-1">
                   <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>Número</label>
                   <input
                     type="text"
@@ -1624,7 +1732,11 @@ export default function Configuracoes() {
                     placeholder="123"
                   />
                 </div>
-                <div className="col-span-2">
+              </div>
+
+              {/* Complemento + Bairro + Cidade + Estado */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="sm:col-span-1">
                   <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>Complemento</label>
                   <input
                     type="text"
@@ -1634,10 +1746,7 @@ export default function Configuracoes() {
                     placeholder="Sala 2, Bloco B..."
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
+                <div className="sm:col-span-1">
                   <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>Bairro</label>
                   <input
                     type="text"
@@ -1647,7 +1756,7 @@ export default function Configuracoes() {
                     placeholder="Centro"
                   />
                 </div>
-                <div>
+                <div className="sm:col-span-1">
                   <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>Cidade</label>
                   <input
                     type="text"
@@ -1657,7 +1766,7 @@ export default function Configuracoes() {
                     placeholder="São Paulo"
                   />
                 </div>
-                <div>
+                <div className="sm:col-span-1">
                   <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>Estado</label>
                   <input
                     type="text"
@@ -1670,22 +1779,7 @@ export default function Configuracoes() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
-                  <MapPin className="w-3 h-3 inline mr-1 -mt-0.5" /> Endereço Completo
-                </label>
-                <input
-                  type="text"
-                  value={fullAddress}
-                  onChange={e => setFullAddress(e.target.value)}
-                  className="themed-input"
-                  placeholder="Ex: Av. Paulista, 1000 - Bela Vista, São Paulo - SP"
-                />
-                <p className="text-xs mt-2" style={{ color: theme.textMuted }}>
-                  Preenchido automaticamente pelo CEP. Edite se necessário.
-                </p>
-              </div>
-
+              {/* Link Google Maps */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
                   Link do Google Maps

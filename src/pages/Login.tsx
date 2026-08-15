@@ -4,6 +4,7 @@ import { supabase } from '../integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
 import { Scissors, Eye, EyeOff, Shield, Mail, CheckCircle2, X, KeyRound } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { normalizeBrazilianPhone } from '../lib/phoneUtils';
 
 export default function Login() {
   const { t } = useTranslation();
@@ -61,24 +62,42 @@ export default function Login() {
     }
 
     const isEmail = input.includes('@');
-    const digitsOnly = input.replace(/\D/g, '');
+    let searchIdentifier = input;
 
-    if (!isEmail && digitsOnly.length < 8) {
-      setForgotError('Informe um e-mail válido ou telefone com DDD (mínimo 8 dígitos).');
-      return;
+    if (!isEmail) {
+      const phoneValidation = normalizeBrazilianPhone(input);
+      if (!phoneValidation.isValid || !phoneValidation.normalized) {
+        setForgotError(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.');
+        return;
+      }
+      searchIdentifier = phoneValidation.normalized;
     }
 
     setForgotLoading(true);
 
     try {
-      // 1. Localiza com segurança o e-mail cadastrado (seja por e-mail direto ou por telefone)
-      const { data: targetEmail, error: rpcError } = await supabase.rpc('get_email_by_phone_or_email', {
-        p_identifier: input
-      });
+      let finalEmail: string | null = null;
 
-      if (!rpcError && targetEmail) {
+      // 1. Tenta localizar via RPC segura
+      try {
+        const { data: targetEmail, error: rpcError } = await supabase.rpc('get_email_by_phone_or_email', {
+          p_identifier: searchIdentifier
+        });
+
+        if (!rpcError && targetEmail) {
+          finalEmail = targetEmail;
+        } else if (isEmail) {
+          finalEmail = input.toLowerCase();
+        }
+      } catch (rpcErr) {
+        if (isEmail) {
+          finalEmail = input.toLowerCase();
+        }
+      }
+
+      if (finalEmail) {
         // 2. Envia recuperação de senha do Supabase Auth para o e-mail localizado
-        await supabase.auth.resetPasswordForEmail(targetEmail, {
+        await supabase.auth.resetPasswordForEmail(finalEmail, {
           redirectTo: `${window.location.origin}/redefinir-senha`,
         });
       }

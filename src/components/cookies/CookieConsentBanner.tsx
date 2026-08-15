@@ -83,16 +83,16 @@ export default function CookieConsentBanner() {
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="fixed bottom-4 inset-x-4 sm:left-6 sm:right-auto sm:max-w-xl z-50 pointer-events-auto"
           >
-            <div className="bg-[#0f0f0f]/95 backdrop-blur-xl border border-[#2a2a2a] p-5 sm:p-6 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] text-white space-y-4">
+            <div className="bg-white/95 backdrop-blur-xl border border-[#E2E8F0] p-5 sm:p-6 rounded-3xl shadow-[0_20px_50px_rgba(15,23,42,0.15)] text-[#0F172A] space-y-4">
               <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-2xl bg-[#C9963B]/10 border border-[#C9963B]/20 flex items-center justify-center text-[#C9963B] shrink-0 mt-0.5">
+                <div className="w-10 h-10 rounded-2xl bg-[#DE870D]/10 border border-[#DE870D]/20 flex items-center justify-center text-[#DE870D] shrink-0 mt-0.5 shadow-sm">
                   <Cookie className="w-5 h-5" />
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-[#0F172A] flex items-center gap-2">
                     Privacidade e Cookies
                   </h4>
-                  <p className="text-xs text-[#999] leading-relaxed">
+                  <p className="text-xs text-[#475569] leading-relaxed font-normal">
                     Usamos cookies necessários para manter sua sessão segura e lembrar suas preferências de tema e idioma. Você pode aceitar todos ou personalizar seus consentimentos conforme a LGPD.
                   </p>
                 </div>
@@ -102,7 +102,7 @@ export default function CookieConsentBanner() {
                 <button
                   type="button"
                   onClick={() => setShowModal(true)}
-                  className="w-full sm:w-auto px-3.5 py-2 rounded-xl text-xs font-semibold text-[#888] hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-1.5"
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-xl text-xs font-semibold text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5" /> Preferências
                 </button>
@@ -111,14 +111,14 @@ export default function CookieConsentBanner() {
                   <button
                     type="button"
                     onClick={handleRejectNonEssential}
-                    className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border border-[#333] hover:bg-[#1a1a1a] text-[#aaa] hover:text-white text-xs font-bold transition-all text-center"
+                    className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border border-[#CBD5E1] bg-white hover:bg-[#F8FAFC] text-[#334155] hover:text-[#0F172A] text-xs font-bold transition-all text-center cursor-pointer shadow-sm"
                   >
                     Apenas Necessários
                   </button>
                   <button
                     type="button"
                     onClick={handleAcceptAll}
-                    className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-[#C9963B] hover:bg-[#d8a346] text-black text-xs font-bold transition-all shadow-md text-center"
+                    className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-[#DE870D] hover:bg-[#C77507] text-white text-xs font-bold transition-all shadow-md shadow-[#DE870D]/25 hover:shadow-lg hover:shadow-[#DE870D]/30 text-center cursor-pointer"
                   >
                     Aceitar Todos
                   </button>

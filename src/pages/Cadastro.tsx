@@ -6,10 +6,11 @@ import { ChevronRight, Mail, Eye, EyeOff, CheckCircle2, RefreshCw } from 'lucide
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { normalizeBrazilianPhone, formatPhoneMask } from '../lib/phoneUtils';
 
 const cadastroSchema = z.object({
   fullName: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
-  phone: z.string().min(10, "Telefone inválido (informe DDD + número)"),
+  phone: z.string().min(1, "Informe o telefone com DDD. Ex.: (27) 99730-3135."),
   email: z.string().email("E-mail inválido"),
   password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres"),
   confirmPassword: z.string().min(8, "Confirme sua senha"),
@@ -33,8 +34,9 @@ export default function Cadastro() {
   const [resendTimer, setResendTimer] = useState(60);
   const [resending, setResending] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [resendError, setResendError] = useState<string | null>(null);
 
-  const { register, handleSubmit, formState: { errors, isValid } } = useForm<CadastroForm>({
+  const { register, handleSubmit, setValue, formState: { errors, isValid } } = useForm<CadastroForm>({
     resolver: zodResolver(cadastroSchema),
     mode: 'onChange',
   });
@@ -54,9 +56,6 @@ export default function Cadastro() {
     setLoading(true);
     setErrorList([]);
 
-    const cleanPhone = data.phone.replace(/\D/g, '');
-    const cleanEmail = data.email.trim().toLowerCase();
-
     // 1. Validação estrita de senha e confirmação de senha
     if (data.password !== data.confirmPassword) {
       setErrorList(['As senhas não coincidem.']);
@@ -64,38 +63,66 @@ export default function Cadastro() {
       return;
     }
 
-    if (cleanPhone.length < 10) {
-      setErrorList(['Telefone inválido. Informe DDD + número (ex: 27999999999).']);
+    // 2. Validação e normalização arquitetural do telefone brasileiro (SSOT)
+    const phoneValidation = normalizeBrazilianPhone(data.phone);
+    if (!phoneValidation.isValid || !phoneValidation.normalized) {
+      setErrorList([phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.']);
       setLoading(false);
       return;
     }
 
+    const cleanPhone = phoneValidation.normalized;
+    const cleanEmail = data.email.trim().toLowerCase();
+
     try {
-      // 2. Verificação de duplicidade de e-mail e telefone no banco de dados via RPC
-      const { data: availability, error: availError } = await supabase.rpc('check_registration_availability', {
-        p_email: cleanEmail,
-        p_phone: cleanPhone
-      });
+      // 3. Verificação de duplicidade de e-mail e telefone no banco de dados via RPC (com fallback tolerante)
+      try {
+        const { data: availability, error: availError } = await supabase.rpc('check_registration_availability', {
+          p_email: cleanEmail,
+          p_phone: cleanPhone
+        });
 
-      if (!availError && availability) {
-        const foundErrors: string[] = [];
+        if (!availError && availability) {
+          const foundErrors: string[] = [];
 
-        if (availability.email_exists) {
-          foundErrors.push('Este e-mail já está cadastrado.');
+          if (availability.email_exists) {
+            foundErrors.push('Este e-mail já está cadastrado.');
+          }
+
+          if (availability.phone_exists) {
+            foundErrors.push('Este número de telefone já está cadastrado.');
+          }
+
+          if (availability.phone_invalid) {
+            foundErrors.push('Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.');
+          }
+
+          if (foundErrors.length > 0) {
+            setErrorList(foundErrors);
+            setLoading(false);
+            return;
+          }
+        } else if (availError) {
+          console.warn('check_registration_availability fallback:', availError);
+          // Fallback de verificação em profiles / tenant_settings
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('id, phone_normalized, phone')
+            .or(`phone_normalized.eq.${cleanPhone},phone.eq.${cleanPhone}`)
+            .limit(1)
+            .maybeSingle();
+
+          if (existingProfile) {
+            setErrorList(['Este número de telefone já está cadastrado.']);
+            setLoading(false);
+            return;
+          }
         }
-
-        if (availability.phone_exists) {
-          foundErrors.push('Este número de telefone já está cadastrado.');
-        }
-
-        if (foundErrors.length > 0) {
-          setErrorList(foundErrors);
-          setLoading(false);
-          return;
-        }
+      } catch (checkErr) {
+        console.warn('Pre-check availability skipped:', checkErr);
       }
 
-      // 3. Criação de conta no Supabase Auth
+      // 4. Criação de conta no Supabase Auth com telefone normalizado
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: data.password,
@@ -103,6 +130,7 @@ export default function Cadastro() {
           data: {
             full_name: data.fullName.trim(),
             phone: cleanPhone,
+            phone_normalized: cleanPhone,
           },
           emailRedirectTo: `${window.location.origin}/onboarding`
         }
@@ -110,58 +138,60 @@ export default function Cadastro() {
 
       if (authError) throw authError;
 
-      // 4. Checagem de segurança do Supabase Auth: identities vazio indica e-mail já existente
+      // 5. Checagem de segurança do Supabase Auth: identities vazio indica e-mail já existente
       if (authData.user && Array.isArray(authData.user.identities) && authData.user.identities.length === 0) {
-        setErrorList(['Este e-mail já está cadastrado no sistema. Por favor, faça login.']);
+        setErrorList(['Este e-mail já está cadastrado.']);
         setLoading(false);
         return;
       }
 
-      // 5. Se não exigir confirmação por e-mail ou já estiver ativo, vai direto para onboarding
+      // 6. Se não exigir confirmação por e-mail ou já estiver ativo, vai direto para onboarding
       if (authData.session || (authData.user && authData.user.email_confirmed_at)) {
         navigate('/onboarding', { replace: true });
         return;
       }
 
-      // 6. Exibe tela de confirmação de e-mail
+      // 7. Se exigir confirmação por e-mail, exibe a tela de confirmação
       setSubmittedEmail(cleanEmail);
       setEmailSent(true);
       setResendTimer(60);
-      
+
     } catch (err: any) {
-      console.error(err);
-      const msg: string = err?.message || '';
-      if (
-        msg.includes('already registered') || 
-        msg.includes('User already registered') ||
-        msg.includes('user_already_exists') ||
-        msg.includes('already exists')
-      ) {
-        setErrorList(['Este e-mail já está cadastrado. Por favor, faça login.']);
-      } else if (msg.includes('security purposes') || msg.includes('only request this after')) {
-        const match = msg.match(/(\d+) second/);
-        const secs = match ? match[1] : 'alguns';
-        setErrorList([`Por segurança, aguarde ${secs} segundos antes de tentar novamente.`]);
-      } else if (msg.includes('Password should be')) {
+      console.error('Erro ao cadastrar:', err);
+
+      let msg = '';
+      if (err?.message) {
+        msg = err.message;
+      } else if (err?.error_description) {
+        msg = err.error_description;
+      } else if (typeof err === 'string') {
+        msg = err;
+      }
+
+      const lowerMsg = msg.toLowerCase();
+
+      if (lowerMsg.includes('user already registered') || lowerMsg.includes('email already exists') || lowerMsg.includes('duplicate key') && lowerMsg.includes('email')) {
+        setErrorList(['Este e-mail já está cadastrado.']);
+      } else if (lowerMsg.includes('phone') && (lowerMsg.includes('unique') || lowerMsg.includes('already') || lowerMsg.includes('duplicate'))) {
+        setErrorList(['Este número de telefone já está cadastrado.']);
+      } else if (lowerMsg.includes('password') && lowerMsg.includes('short')) {
         setErrorList(['A senha deve ter no mínimo 8 caracteres.']);
       } else {
-        setErrorList([msg || 'Ocorreu um erro ao criar a conta.']);
+        setErrorList([msg && msg !== '{}' ? msg : 'Erro ao criar conta. Verifique os dados e tente novamente.']);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const [resendError, setResendError] = useState<string | null>(null);
-
   const handleResend = async () => {
-    if (resendTimer > 0 || resending) return;
+    if (!submittedEmail || resending) return;
     setResending(true);
-    setResendError(null);
     setResendMessage(null);
+    setResendError(null);
 
     try {
-      const { error: err } = await supabase.auth.resend({
+      const { error } = await supabase.auth.resend({
         type: 'signup',
         email: submittedEmail,
         options: {
@@ -169,9 +199,8 @@ export default function Cadastro() {
         }
       });
 
-      if (err) throw err;
-
-      setResendMessage('E-mail reenviado com sucesso! Verifique sua caixa de entrada ou spam.');
+      if (error) throw error;
+      setResendMessage('Link de confirmação reenviado com sucesso para sua caixa de entrada.');
       setResendTimer(60);
     } catch (err: any) {
       console.error(err);
@@ -250,7 +279,7 @@ export default function Cadastro() {
                         type="button"
                         onClick={handleResend}
                         disabled={resending}
-                        className="text-[#DE870D] font-bold hover:underline"
+                        className="text-[#DE870D] font-bold hover:underline cursor-pointer"
                       >
                         {resending ? 'Reenviando...' : 'Reenviar e-mail'}
                       </button>
@@ -295,8 +324,13 @@ export default function Cadastro() {
                     <input
                       type="tel"
                       {...register('phone')}
+                      onChange={(e) => {
+                        const masked = formatPhoneMask(e.target.value);
+                        setValue('phone', masked, { shouldValidate: true });
+                        if (errorList.length > 0) setErrorList([]);
+                      }}
                       className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
-                      placeholder="11999999999"
+                      placeholder="(27) 99730-3135"
                     />
                     {errors.phone && <p className="text-red-500 text-xs mt-1.5">{errors.phone.message}</p>}
                   </div>
@@ -326,7 +360,7 @@ export default function Cadastro() {
                       <button 
                         type="button" 
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#334155] transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#334155] transition-colors cursor-pointer"
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -347,7 +381,7 @@ export default function Cadastro() {
                       <button 
                         type="button" 
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#334155] transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#334155] transition-colors cursor-pointer"
                       >
                         {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>

@@ -4,6 +4,7 @@ import type { Professional, ProfessionalWorkingHour, Service } from '../../../ty
 import type { CreateProfessionalInput, UpdateProfessionalInput } from '../../../hooks/useProfessionals';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { Modal } from '../../../components/ui/Modal';
+import { normalizeBrazilianPhone, formatPhoneMask } from '../../../lib/phoneUtils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ROLES = ['Barbeiro', 'Cabeleireiro', 'Manicure', 'Pedicure', 'Esteticista', 'Maquiador', 'Outro'];
@@ -257,7 +258,14 @@ export default function ProfessionalModal({ professional, services, onClose, onC
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Telefone</label>
-                  <input value={phone} onChange={e => setPhone(e.target.value)} className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} placeholder="(11) 99999-9999" />
+                  <input 
+                    value={phone} 
+                    onChange={e => setPhone(formatPhoneMask(e.target.value))} 
+                    className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
+                    style={{ borderColor: errors.phone ? theme.error : theme.border, background: theme.inputBg, color: theme.textPrimary }} 
+                    placeholder="(11) 99999-9999" 
+                  />
+                  {errors.phone && <p className="text-xs mt-1" style={{ color: theme.error }}>{errors.phone}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Instagram</label>
