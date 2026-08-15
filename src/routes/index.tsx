@@ -9,6 +9,7 @@ import Login from '../pages/Login';
 import Cadastro from '../pages/Cadastro';
 import LandingPage from '../pages/LandingPage';
 import Onboarding from '../pages/Onboarding';
+import RedefinirSenha from '../pages/RedefinirSenha';
 
 // Client Public Pages
 import SuccessBooking from '../pages/public/SuccessBooking';
@@ -49,6 +50,8 @@ export default function AppRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
+        <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+        <Route path="/reset-password" element={<RedefinirSenha />} />
 
         {/* Onboarding only requires auth, handles role assignment inside */}
         <Route

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
-import { Scissors, Eye, EyeOff, Shield } from 'lucide-react';
+import { Scissors, Eye, EyeOff, Shield, Mail, CheckCircle2, X, KeyRound } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Login() {
@@ -42,6 +42,57 @@ export default function Login() {
 
   const [resendingEmail, setResendingEmail] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+
+  // ── Forgot Password States ──
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [forgotIdentifier, setForgotIdentifier] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSubmitted, setForgotSubmitted] = useState(false);
+  const [forgotError, setForgotError] = useState<string | null>(null);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError(null);
+
+    const input = forgotIdentifier.trim();
+    if (!input) {
+      setForgotError('Por favor, informe seu e-mail ou número de telefone.');
+      return;
+    }
+
+    const isEmail = input.includes('@');
+    const digitsOnly = input.replace(/\D/g, '');
+
+    if (!isEmail && digitsOnly.length < 8) {
+      setForgotError('Informe um e-mail válido ou telefone com DDD (mínimo 8 dígitos).');
+      return;
+    }
+
+    setForgotLoading(true);
+
+    try {
+      // 1. Localiza com segurança o e-mail cadastrado (seja por e-mail direto ou por telefone)
+      const { data: targetEmail, error: rpcError } = await supabase.rpc('get_email_by_phone_or_email', {
+        p_identifier: input
+      });
+
+      if (!rpcError && targetEmail) {
+        // 2. Envia recuperação de senha do Supabase Auth para o e-mail localizado
+        await supabase.auth.resetPasswordForEmail(targetEmail, {
+          redirectTo: `${window.location.origin}/redefinir-senha`,
+        });
+      }
+
+      // 3. Regra de segurança contra enumeração: SEMPRE exibe a mensagem genérica de sucesso
+      setForgotSubmitted(true);
+    } catch (err: any) {
+      console.error('Forgot password error:', err);
+      // Mantém segurança contra enumeração mesmo em erro inesperado
+      setForgotSubmitted(true);
+    } finally {
+      setForgotLoading(false);
+    }
+  };
 
   const handleResendConfirmation = async () => {
     if (!email) {
@@ -244,7 +295,16 @@ export default function Login() {
                   </div>
                   
                   <div className="flex justify-end">
-                    <button type="button" className="text-sm text-[#DE870D] font-semibold hover:underline">
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setForgotIdentifier(email);
+                        setForgotError(null);
+                        setForgotSubmitted(false);
+                        setForgotPasswordOpen(true);
+                      }}
+                      className="text-sm text-[#DE870D] font-semibold hover:underline cursor-pointer"
+                    >
                       Esqueci minha senha
                     </button>
                   </div>
@@ -361,6 +421,121 @@ export default function Login() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* ── MODAL: ESQUECI MINHA SENHA ── */}
+      <AnimatePresence>
+        {forgotPasswordOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setForgotPasswordOpen(false)}
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            />
+
+            {/* Modal Dialog */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-md bg-white rounded-3xl border border-[#E2E8F0] p-7 shadow-2xl z-10 space-y-5"
+            >
+              <button
+                type="button"
+                onClick={() => setForgotPasswordOpen(false)}
+                className="absolute top-5 right-5 text-[#94A3B8] hover:text-[#0F172A] p-1 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {forgotSubmitted ? (
+                /* Estado: Instruções Enviadas / Concluído */
+                <div className="text-center py-3 space-y-4">
+                  <div className="w-14 h-14 bg-green-100 border border-green-200 text-green-600 rounded-2xl flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-bold text-[#0F172A]">Solicitação Processada</h3>
+                  <p className="text-xs sm:text-sm text-[#475569] leading-relaxed font-medium">
+                    Se encontrarmos uma conta associada aos dados informados, enviaremos as instruções para redefinição de senha ao e-mail cadastrado.
+                  </p>
+                  <p className="text-xs text-[#94A3B8] leading-relaxed">
+                    Por motivos de segurança, o link é enviado exclusivamente para o e-mail da conta (não enviamos SMS). Verifique também sua caixa de Spam.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setForgotPasswordOpen(false)}
+                    className="w-full mt-2 py-3 font-bold text-sm text-white rounded-xl shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer transition-all"
+                    style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
+                  >
+                    Entendido
+                  </button>
+                </div>
+              ) : (
+                /* Estado: Formulário de solicitação */
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-2xl bg-[#DE870D]/10 text-[#DE870D] flex items-center justify-center">
+                      <KeyRound className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-[#0F172A]">Recuperação de Senha</h3>
+                      <p className="text-xs text-[#64748B]">Informe o e-mail ou telefone da sua conta</p>
+                    </div>
+                  </div>
+
+                  {forgotError && (
+                    <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-xs font-medium">
+                      {forgotError}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#334155] mb-1.5">
+                        E-mail ou telefone
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          required
+                          value={forgotIdentifier}
+                          onChange={(e) => setForgotIdentifier(e.target.value)}
+                          placeholder="seuemail@exemplo.com ou 27999999999"
+                          className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-[#94A3B8] leading-relaxed">
+                      Você pode informar seu e-mail cadastrado ou seu número de telefone. As instruções serão enviadas para o e-mail da sua conta.
+                    </p>
+
+                    <div className="pt-2 flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setForgotPasswordOpen(false)}
+                        className="w-1/3 py-3 font-semibold text-xs text-[#64748B] hover:text-[#0F172A] bg-[#F1F5F9] hover:bg-[#E2E8F0] rounded-xl transition-colors cursor-pointer"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={forgotLoading}
+                        className="w-2/3 py-3 font-bold text-xs text-white rounded-xl shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer transition-all disabled:opacity-60"
+                        style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
+                      >
+                        {forgotLoading ? 'Enviando...' : 'Enviar Instruções'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

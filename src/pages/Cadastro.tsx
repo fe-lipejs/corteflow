@@ -8,10 +8,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 
 const cadastroSchema = z.object({
-  fullName: z.string().min(3, "Nome muito curto"),
-  phone: z.string().min(10, "Telefone inválido (mínimo 10 dígitos)").regex(/^[0-9]+$/, "Apenas números"),
+  fullName: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
+  phone: z.string().min(10, "Telefone inválido (informe DDD + número)"),
   email: z.string().email("E-mail inválido"),
   password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres"),
+  confirmPassword: z.string().min(8, "Confirme sua senha"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem.",
+  path: ["confirmPassword"],
 });
 
 type CadastroForm = z.infer<typeof cadastroSchema>;
@@ -19,8 +23,9 @@ type CadastroForm = z.infer<typeof cadastroSchema>;
 export default function Cadastro() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorList, setErrorList] = useState<string[]>([]);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Email Sent Confirmation Screen
   const [emailSent, setEmailSent] = useState(false);
@@ -47,26 +52,50 @@ export default function Cadastro() {
 
   const onSubmit = async (data: CadastroForm) => {
     setLoading(true);
-    setError(null);
+    setErrorList([]);
+
+    const cleanPhone = data.phone.replace(/\D/g, '');
+    const cleanEmail = data.email.trim().toLowerCase();
+
+    // 1. Validação estrita de senha e confirmação de senha
+    if (data.password !== data.confirmPassword) {
+      setErrorList(['As senhas não coincidem.']);
+      setLoading(false);
+      return;
+    }
+
+    if (cleanPhone.length < 10) {
+      setErrorList(['Telefone inválido. Informe DDD + número (ex: 27999999999).']);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const cleanPhone = data.phone.replace(/\D/g, '');
-      const cleanEmail = data.email.trim().toLowerCase();
+      // 2. Verificação de duplicidade de e-mail e telefone no banco de dados via RPC
+      const { data: availability, error: availError } = await supabase.rpc('check_registration_availability', {
+        p_email: cleanEmail,
+        p_phone: cleanPhone
+      });
 
-      // 1. Proactive check if phone is already registered in tenant_settings
-      const { data: existingSettings } = await supabase
-        .from('tenant_settings')
-        .select('id, phone')
-        .eq('phone', cleanPhone)
-        .limit(1)
-        .maybeSingle();
+      if (!availError && availability) {
+        const foundErrors: string[] = [];
 
-      if (existingSettings) {
-        setError('Este número de telefone/WhatsApp já está vinculado a uma conta existente. Faça login para continuar.');
-        setLoading(false);
-        return;
+        if (availability.email_exists) {
+          foundErrors.push('Este e-mail já está cadastrado.');
+        }
+
+        if (availability.phone_exists) {
+          foundErrors.push('Este número de telefone já está cadastrado.');
+        }
+
+        if (foundErrors.length > 0) {
+          setErrorList(foundErrors);
+          setLoading(false);
+          return;
+        }
       }
 
-      // 2. Perform Supabase Sign Up
+      // 3. Criação de conta no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: data.password,
@@ -81,20 +110,20 @@ export default function Cadastro() {
 
       if (authError) throw authError;
 
-      // 3. Supabase Auth Security Check: If email is already registered, identities will be empty
+      // 4. Checagem de segurança do Supabase Auth: identities vazio indica e-mail já existente
       if (authData.user && Array.isArray(authData.user.identities) && authData.user.identities.length === 0) {
-        setError('Este e-mail já está cadastrado no sistema. Por favor, faça login para acessar sua conta.');
+        setErrorList(['Este e-mail já está cadastrado no sistema. Por favor, faça login.']);
         setLoading(false);
         return;
       }
 
-      // 4. If email confirmation is disabled or session exists, go straight to onboarding!
+      // 5. Se não exigir confirmação por e-mail ou já estiver ativo, vai direto para onboarding
       if (authData.session || (authData.user && authData.user.email_confirmed_at)) {
         navigate('/onboarding', { replace: true });
         return;
       }
 
-      // 5. Show clean Email Confirmation Screen
+      // 6. Exibe tela de confirmação de e-mail
       setSubmittedEmail(cleanEmail);
       setEmailSent(true);
       setResendTimer(60);
@@ -108,29 +137,31 @@ export default function Cadastro() {
         msg.includes('user_already_exists') ||
         msg.includes('already exists')
       ) {
-        setError('Este e-mail já está cadastrado. Por favor, faça login.');
+        setErrorList(['Este e-mail já está cadastrado. Por favor, faça login.']);
       } else if (msg.includes('security purposes') || msg.includes('only request this after')) {
         const match = msg.match(/(\d+) second/);
         const secs = match ? match[1] : 'alguns';
-        setError(`Por segurança, aguarde ${secs} segundos antes de tentar novamente.`);
+        setErrorList([`Por segurança, aguarde ${secs} segundos antes de tentar novamente.`]);
       } else if (msg.includes('Password should be')) {
-        setError('A senha deve ter no mínimo 8 caracteres.');
+        setErrorList(['A senha deve ter no mínimo 8 caracteres.']);
       } else {
-        setError(msg || "Ocorreu um erro ao criar a conta.");
+        setErrorList([msg || 'Ocorreu um erro ao criar a conta.']);
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const [resendError, setResendError] = useState<string | null>(null);
+
   const handleResend = async () => {
     if (resendTimer > 0 || resending) return;
     setResending(true);
-    setError(null);
+    setResendError(null);
     setResendMessage(null);
 
     try {
-      const { error: resendError } = await supabase.auth.resend({
+      const { error: err } = await supabase.auth.resend({
         type: 'signup',
         email: submittedEmail,
         options: {
@@ -138,13 +169,13 @@ export default function Cadastro() {
         }
       });
 
-      if (resendError) throw resendError;
+      if (err) throw err;
 
       setResendMessage('E-mail reenviado com sucesso! Verifique sua caixa de entrada ou spam.');
       setResendTimer(60);
     } catch (err: any) {
       console.error(err);
-      setError(err?.message || 'Erro ao reenviar e-mail. Aguarde alguns instantes.');
+      setResendError(err?.message || 'Erro ao reenviar e-mail. Aguarde alguns instantes.');
     } finally {
       setResending(false);
     }
@@ -200,9 +231,9 @@ export default function Cadastro() {
                   </div>
                 )}
 
-                {error && (
+                {resendError && (
                   <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 text-red-600 text-xs rounded-xl font-medium">
-                    {error}
+                    {resendError}
                   </div>
                 )}
 
@@ -302,11 +333,37 @@ export default function Cadastro() {
                     </div>
                     {errors.password && <p className="text-red-500 text-xs mt-1.5">{errors.password.message}</p>}
                   </div>
+
+                  {/* Confirmar Senha */}
+                  <div>
+                    <label className="block text-sm font-semibold text-[#334155] mb-1.5">Confirmar senha</label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        {...register('confirmPassword')}
+                        className="w-full px-4 py-3 pr-12 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
+                        placeholder="Repita sua senha"
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#334155] transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    {errors.confirmPassword && <p className="text-red-500 text-xs mt-1.5">{errors.confirmPassword.message}</p>}
+                  </div>
                 </div>
 
-                {error && (
-                  <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-600 text-sm rounded-xl font-medium">
-                    {error}
+                {errorList.length > 0 && (
+                  <div className="mt-4 p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl space-y-1">
+                    {errorList.map((errItem, idx) => (
+                      <p key={idx} className="text-red-600 text-xs font-semibold flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-600 flex-shrink-0" />
+                        {errItem}
+                      </p>
+                    ))}
                   </div>
                 )}
 

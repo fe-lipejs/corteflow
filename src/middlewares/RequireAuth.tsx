@@ -7,11 +7,11 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#1A1714] text-white">
-        <div className="animate-pulse flex items-center gap-2">
-          <div className="w-2 h-2 bg-[#C9963B] rounded-full"></div>
-          <div className="w-2 h-2 bg-[#C9963B] rounded-full animation-delay-200"></div>
-          <div className="w-2 h-2 bg-[#C9963B] rounded-full animation-delay-400"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 bg-[#DE870D] rounded-full animate-bounce"></div>
+          <div className="w-2.5 h-2.5 bg-[#DE870D] rounded-full animate-bounce [animation-delay:0.2s]"></div>
+          <div className="w-2.5 h-2.5 bg-[#DE870D] rounded-full animate-bounce [animation-delay:0.4s]"></div>
         </div>
       </div>
     );

@@ -63,9 +63,33 @@ export default function Onboarding() {
     if (!authLoading) {
       if (!user) {
         navigate('/login', { replace: true });
-      } else if (profile?.onboarding_completed || profile?.role === 'super_admin') {
-        navigate('/app', { replace: true });
+        return;
       }
+      
+      if (profile?.role === 'super_admin') {
+        navigate('/admin', { replace: true });
+        return;
+      }
+
+      if (profile?.onboarding_completed || profile?.tenant_id || tenant?.id) {
+        navigate('/app', { replace: true });
+        return;
+      }
+
+      // Verificação direta no banco para garantir que salões já criados não acessem o onboarding
+      const verifyTenant = async () => {
+        const { data: existingTenant } = await supabase
+          .from('tenants')
+          .select('id')
+          .eq('owner_user_id', user.id)
+          .maybeSingle();
+
+        if (existingTenant?.id) {
+          navigate('/app', { replace: true });
+        }
+      };
+
+      verifyTenant();
     }
   }, [user, profile, tenant, authLoading, navigate]);
 
