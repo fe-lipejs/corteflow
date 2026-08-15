@@ -57,9 +57,28 @@ serve(async (req) => {
       .maybeSingle();
     
     // 3. Definir valor final (Custom Price > Plan Price > Fallback)
-    const baseAmount = customPrice ? customPrice.amount_override : (planPrice ? planPrice.amount : 99);
-    const unitAmount = Math.round(baseAmount * 100);
-    const currency = planPrice ? planPrice.currency.toLowerCase() : 'brl';
+    // 4. Verificar se o salão já utilizou o benefício do teste grátis (Single-use trial rule)
+    const { data: tenantData } = await supabase
+      .from('tenants')
+      .select('has_used_trial')
+      .eq('id', tenantId)
+      .single();
+
+    const hasUsedTrial = tenantData?.has_used_trial === true;
+
+    // Se ainda não usou e o plano possui dias de teste, oferece o trial. Caso já tenha usado, COBRA IMEDIATAMENTE.
+    const trialDays = (!hasUsedTrial && plan.trial_days && plan.trial_days > 0) ? plan.trial_days : 0;
+
+    const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
+      metadata: {
+        tenant_id: tenantId,
+        plan_id: plan.id,
+      },
+    };
+
+    if (trialDays > 0) {
+      subscriptionData.trial_period_days = trialDays;
+    }
 
     // Criar a sessão no Stripe
     const session = await stripe.checkout.sessions.create({
@@ -80,6 +99,7 @@ serve(async (req) => {
         },
       ],
       mode: 'subscription',
+      subscription_data: subscriptionData,
       success_url: `${returnUrl}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${returnUrl}`,
       metadata: {
@@ -87,6 +107,11 @@ serve(async (req) => {
         plan_id: plan.id,
       },
     });
+
+    // Se consumiu trial pela primeira vez, marcar permanentemente no banco
+    if (trialDays > 0 && !hasUsedTrial) {
+      await supabase.from('tenants').update({ has_used_trial: true }).eq('id', tenantId);
+    }
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -12,7 +12,6 @@ import { useProfessionals } from '../../hooks/useProfessionals';
 import { useServices } from '../../hooks/useServices';
 import { useCreateBooking, useBookingsRealtime } from '../../hooks/useBookings';
 import BookingModal from './agenda/BookingModal';
-
 export default function Dashboard() {
   const { profile, tenant } = useAuth();
   const { theme } = useTheme();

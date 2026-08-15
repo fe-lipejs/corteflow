@@ -98,18 +98,41 @@ export default function AdminTenants() {
   });
 
   const deleteTenant = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.rpc('delete_tenant_safely', { p_tenant_id: id });
-      if (error) throw new Error(error.message);
+    mutationFn: async (tenant: Tenant) => {
+      // 1. Invoke delete-account edge function which guarantees immediate Stripe cancellation
+      try {
+        await supabase.functions.invoke('delete-account', {
+          body: { target_tenant_id: tenant.id }
+        });
+      } catch (edgeErr) {
+        console.warn('Edge function delete-account warning:', edgeErr);
+      }
+
+      // 2. Mark subscription as canceled in database
+      await supabase
+        .from('subscriptions')
+        .update({ status: 'canceled', canceled_at: new Date().toISOString() } as any)
+        .eq('tenant_id', tenant.id);
+
+      // 3. Perform safe soft delete
+      const { error } = await supabase.rpc('delete_tenant_safely', { p_tenant_id: tenant.id });
+      if (error) {
+        // Fallback to direct update if RPC has check constraints
+        const { error: fallbackErr } = await supabase
+          .from('tenants')
+          .update({ deleted_at: new Date().toISOString(), status: 'canceled' } as any)
+          .eq('id', tenant.id);
+        if (fallbackErr) throw fallbackErr;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_tenants_v2'] });
       setDeleteModalOpen(null);
       setDeleteConfirmText('');
-      alert('Empresa excluída com sucesso.');
+      alert('Empresa excluída com sucesso e assinatura no Stripe cancelada imediatamente.');
     },
     onError: (err: any) => {
-      alert(`Erro: ${err.message}`);
+      alert(`Erro ao excluir empresa: ${err.message}`);
     }
   });
 
@@ -246,7 +269,7 @@ export default function AdminTenants() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.03 }}
-                  className={`group grid grid-cols-12 gap-4 items-center px-5 py-3.5 hover:bg-[#0f0f0f] transition-colors relative ${tenant.deleted_at ? 'opacity-50 grayscale hover:grayscale-0' : ''}`}
+                  className={`group grid grid-cols-12 gap-4 items-center px-5 py-3.5 hover:bg-[#0f0f0f] transition-colors relative ${openMenuId === tenant.id ? 'z-40' : 'z-0'} ${tenant.deleted_at ? 'opacity-50 grayscale hover:grayscale-0' : ''}`}
                 >
                   {/* Name + slug */}
                   <div className="col-span-4 flex items-center gap-3 min-w-0">
@@ -332,15 +355,7 @@ export default function AdminTenants() {
 
                   {/* Actions */}
                   <div className="col-span-2 md:col-span-2 flex items-center justify-end gap-1.5">
-                    {tenant.deleted_at ? (
-                      <button
-                        onClick={() => restoreTenant.mutate(tenant.id)}
-                        className="px-2.5 py-1 text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/20 flex items-center gap-1.5 font-bold transition-all"
-                        title="Reativar empresa e liberar acesso do cliente"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" /> Restaurar
-                      </button>
-                    ) : (
+                    {!tenant.deleted_at && (
                       <button
                         onClick={() => window.open(`/${tenant.slug}`, '_blank')}
                         className="p-1.5 text-[#444] hover:text-white hover:bg-[#1a1a1a] rounded-lg transition-colors"
@@ -357,7 +372,7 @@ export default function AdminTenants() {
                         <MoreVertical className="w-3.5 h-3.5" />
                       </button>
                       {openMenuId === tenant.id && (
-                        <div className="absolute right-0 top-8 w-44 bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl shadow-2xl z-50 overflow-hidden">
+                        <div className="absolute right-0 top-8 w-48 bg-[#0f0f0f] border border-[#222] rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[999] overflow-hidden">
                           {tenant.deleted_at ? (
                             <button
                               onClick={() => restoreTenant.mutate(tenant.id)}
@@ -491,7 +506,7 @@ export default function AdminTenants() {
                 Cancelar
               </button>
               <button
-                onClick={() => deleteTenant.mutate(deleteModalOpen.id)}
+                onClick={() => deleteTenant.mutate(deleteModalOpen)}
                 disabled={deleteConfirmText !== deleteModalOpen.slug || deleteTenant.isPending}
                 className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >

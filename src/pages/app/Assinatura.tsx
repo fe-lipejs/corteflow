@@ -219,6 +219,22 @@ export default function Assinatura() {
         </div>
       )}
 
+      {/* Subscription Canceled Banner */}
+      {subscription?.status === 'canceled' && (
+        <div className="p-5 rounded-2xl border flex items-start gap-3 bg-amber-500/10 border-amber-500/30">
+          <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-400" />
+          <div className="space-y-1">
+            <p className="font-bold text-sm text-amber-400">Assinatura Cancelada</p>
+            <p className="text-xs text-amber-200/90 leading-relaxed">
+              Sua assinatura foi cancelada com sucesso. Seu plano permanecerá <strong>ativo até {formatDate(subscription?.current_period_end || subscription?.trial_ends_at)}</strong> para você usufruir de todo o período já faturado.
+            </p>
+            <p className="text-xs text-emerald-400 font-bold flex items-center gap-1 mt-1">
+              ✓ Nenhuma nova cobrança será realizada no seu cartão de crédito.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Trial active banner */}
       {isTrial && (
         <div className="p-4 rounded-2xl border flex items-start gap-3" style={{ background: `${theme.info}10`, borderColor: `${theme.info}30` }}>

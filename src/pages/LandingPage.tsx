@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { CheckCircle, ArrowRight, Scissors, Star, Calendar, Users, CreditCard, Clock, Globe, Phone, Mail, User } from 'lucide-react';
+import CookieConsentBanner from '../components/cookies/CookieConsentBanner';
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 30 },
@@ -400,7 +401,21 @@ export default function LandingPage() {
               <h4 className="text-white font-bold text-sm mb-5">{col.title}</h4>
               <ul className="space-y-3">
                 {col.items.map(item => (
-                  <li key={item}><a href="#" className="text-xs text-[#666] hover:text-[#C9963B] transition-colors">{item}</a></li>
+                  <li key={item}>
+                    {item === 'Cookies' ? (
+                      <button
+                        onClick={() => {
+                          localStorage.removeItem('navalha_cookie_preferences_v1');
+                          window.location.reload();
+                        }}
+                        className="text-xs text-[#666] hover:text-[#C9963B] transition-colors text-left"
+                      >
+                        Preferências de Cookies
+                      </button>
+                    ) : (
+                      <a href="#" className="text-xs text-[#666] hover:text-[#C9963B] transition-colors">{item}</a>
+                    )}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -410,6 +425,9 @@ export default function LandingPage() {
           © {new Date().getFullYear()} Raffros Corteflow. Todos os direitos reservados.
         </div>
       </footer>
+
+      {/* Cookie Consent Banner */}
+      <CookieConsentBanner />
     </div>
   );
 }

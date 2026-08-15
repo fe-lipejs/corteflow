@@ -3,7 +3,7 @@ import { Outlet, NavLink, Navigate, useNavigate, useLocation } from 'react-route
 import {
   LayoutDashboard, Calendar, Users, Scissors,
   DollarSign, Settings, LogOut, Bell, CreditCard, Shield, Loader2, Menu, X,
-  AlertTriangle, Clock, LifeBuoy
+  AlertTriangle, Clock, LifeBuoy, Compass
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,26 @@ import { supabase } from '../../integrations/supabase/client';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { ConnectionStatus } from '../../components/notifications/ConnectionStatus';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
+import { GuideProvider, useGuide } from '../../contexts/GuideContext';
+import { SpotlightGuideTour } from '../../components/guides/SpotlightGuideTour';
+
+const TourLaunchButton = () => {
+  const { startTour } = useGuide();
+  const { theme } = useTheme();
+
+  return (
+    <button
+      type="button"
+      onClick={startTour}
+      className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold opacity-80 hover:opacity-100 transition-all cursor-pointer mb-2"
+      style={{ background: `${theme.accent}12`, color: theme.accent, border: `1px solid ${theme.accent}25` }}
+      title="Iniciar tour interativo pelos menus"
+    >
+      <Compass className="w-3.5 h-3.5 animate-spin-slow" />
+      <span>Tour Interativo</span>
+    </button>
+  );
+};
 
 export default function AppLayout() {
   const { signOut, tenant, profile, loading } = useAuth();
@@ -58,53 +78,25 @@ export default function AppLayout() {
     navigate('/login');
   };
 
-  if (loading) {
+  const navItems = [
+    { to: '/app', icon: LayoutDashboard, label: 'Visão geral', end: true, guideId: 'nav-visao-geral' },
+    { to: '/app/agenda', icon: Calendar, label: 'Agenda', end: false, guideId: 'nav-agenda' },
+    { to: '/app/equipe', icon: Users, label: 'Equipe', end: false, guideId: 'nav-equipe' },
+    { to: '/app/servicos', icon: Scissors, label: 'Serviços', end: false, guideId: 'nav-servicos' },
+    { to: '/app/clientes', icon: Users, label: 'Clientes', end: false, guideId: 'nav-clientes' },
+    { to: '/app/financeiro', icon: DollarSign, label: 'Financeiro', end: false, guideId: 'nav-financeiro' },
+    { to: '/app/assinatura', icon: CreditCard, label: 'Assinatura', end: false, guideId: 'nav-assinatura' },
+    { to: '/app/suporte', icon: LifeBuoy, label: 'Suporte', end: false, guideId: 'nav-suporte' },
+    { to: '/app/configuracoes', icon: Settings, label: 'Configurações', end: false, guideId: 'nav-configuracoes' },
+  ];
+
+  if (loading || !tenant) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: theme.bg }}>
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: theme.accent }} />
-          <span className="text-sm" style={{ color: theme.textMuted }}>Carregando...</span>
-        </div>
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: theme.accent }} />
       </div>
     );
   }
-
-  if (!tenant) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: theme.bg }}>
-        <div className="max-w-md w-full border rounded-3xl p-8 text-center shadow-2xl space-y-5" style={{ background: theme.cardBg, borderColor: theme.border }}>
-          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto">
-            <AlertTriangle className="w-8 h-8 text-red-400" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold mb-1.5" style={{ color: theme.textPrimary }}>Conta Desativada ou Excluída</h2>
-            <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textSecondary }}>
-              O acesso a este estabelecimento foi desativado pelo administrador da plataforma. Entre em contato com o suporte para reativar seu acesso.
-            </p>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="w-full py-3.5 rounded-xl text-xs uppercase tracking-wider font-bold transition-all border"
-            style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
-          >
-            Sair da Conta
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const navItems = [
-    { to: '/app', icon: LayoutDashboard, label: 'Visão geral', end: true },
-    { to: '/app/agenda', icon: Calendar, label: 'Agenda', end: false },
-    { to: '/app/equipe', icon: Users, label: 'Equipe', end: false },
-    { to: '/app/servicos', icon: Scissors, label: 'Serviços', end: false },
-    { to: '/app/clientes', icon: Users, label: 'Clientes', end: false },
-    { to: '/app/financeiro', icon: DollarSign, label: 'Financeiro', end: false },
-    { to: '/app/assinatura', icon: CreditCard, label: 'Assinatura', end: false },
-    { to: '/app/suporte', icon: LifeBuoy, label: 'Suporte', end: false },
-    { to: '/app/configuracoes', icon: Settings, label: 'Configurações', end: false },
-  ];
 
   const initials = profile?.full_name
     ? profile.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
@@ -147,153 +139,167 @@ export default function AppLayout() {
 
 
   return (
-    <div className="min-h-screen flex" style={{ background: theme.bg }}>
-      
-      {/* Mobile Top Bar */}
-      <div 
-        className="md:hidden fixed top-0 left-0 right-0 h-16 backdrop-blur-xl z-30 flex items-center justify-between px-4"
-        style={{ background: theme.sidebarBg, borderBottom: `1px solid ${theme.border}` }}
-      >
-        <div className="flex items-center gap-2">
-          {tenantSettings?.logo_url ? (
-            <img src={tenantSettings.logo_url} alt="Logo do Salão" className="w-8 h-8 rounded-full object-cover border" style={{ borderColor: theme.border }} />
-          ) : (
-            <div 
-              className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm"
-              style={{ background: theme.accent, color: theme.textInverse }}
-            >
-              {initials}
-            </div>
-          )}
-          <img src="/logo.svg" alt="Raffros Corteflow" className="h-5 w-auto" />
-        </div>
-        <div className="flex items-center gap-3">
-          <NotificationBell align="right" />
-          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} style={{ color: theme.textPrimary }} className="p-2 -mr-2">
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Overlay for mobile */}
-      {isMobileMenuOpen && (
+    <GuideProvider>
+      <div className="min-h-screen flex" style={{ background: theme.bg }}>
+        
+        {/* Mobile Top Bar */}
         <div 
-          className="md:hidden fixed inset-0 z-20 backdrop-blur-sm"
-          style={{ background: theme.bgOverlay }}
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside 
-        className={`navalha-sidebar flex flex-col fixed top-0 left-0 h-full z-30 transform transition-transform duration-300 md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`} 
-        style={{ width: '250px', background: theme.sidebarBg, borderRight: `1px solid ${theme.border}` }}
-      >
-        {/* Logo */}
-        <div className="items-center justify-between px-5 py-5 hidden md:flex" style={{ borderBottom: `1px solid ${theme.border}` }}>
-          <div className="flex items-center gap-3">
-            <img src="/logo.svg" alt="Raffros Corteflow" className="h-8 w-auto flex-shrink-0" />
-            <div>
-              <p className="text-xs leading-tight" style={{ color: theme.textMuted }}>Painel do Salão</p>
-            </div>
-          </div>
-          <NotificationBell align="left" />
-        </div>
-
-        {/* Mobile Spacer */}
-        <div className="md:hidden h-16 flex items-center px-5" style={{ borderBottom: `1px solid ${theme.border}` }}>
-           <span className="font-bold" style={{ color: theme.textPrimary }}>Menu</span>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className={({ isActive }) =>
-                `navalha-nav-item ${isActive ? 'active' : ''}`
-              }
-            >
-              <item.icon className="w-4 h-4 flex-shrink-0" />
-              {item.label}
-            </NavLink>
-          ))}
-
-          {/* Divider */}
-          <div className="my-3" style={{ borderTop: `1px solid ${theme.border}` }} />
-
-          {(profile?.role === 'super_admin' || profile?.role === 'owner') && (
-            <NavLink
-              to="/admin"
-              className={({ isActive }) => `navalha-nav-item ${isActive ? 'active' : ''}`}
-            >
-              <Shield className="w-4 h-4 flex-shrink-0" />
-              <span>Admin <span style={{ color: theme.accent }}>Master</span></span>
-            </NavLink>
-          )}
-        </nav>
-
-        {/* User Footer */}
-        <div className="p-3" style={{ borderTop: `1px solid ${theme.border}` }}>
-          <div 
-            className="flex items-center justify-between p-2 rounded-xl transition-colors cursor-pointer"
-            style={{ ['--hover-bg' as string]: theme.bgHover }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = theme.bgHover)}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-          >
-            <div className="flex items-center gap-3">
+          className="md:hidden fixed top-0 left-0 right-0 h-16 backdrop-blur-xl z-30 flex items-center justify-between px-4"
+          style={{ background: theme.sidebarBg, borderBottom: `1px solid ${theme.border}` }}
+        >
+          <div className="flex items-center gap-2">
+            {tenantSettings?.logo_url ? (
+              <img src={tenantSettings.logo_url} alt="Logo do Salão" className="w-8 h-8 rounded-full object-cover border" style={{ borderColor: theme.border }} />
+            ) : (
               <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm"
                 style={{ background: theme.accent, color: theme.textInverse }}
               >
                 {initials}
               </div>
-              <div className="truncate w-24">
-                <p className="text-xs font-semibold leading-tight truncate" style={{ color: theme.textPrimary }}>{profile?.full_name?.split(' ')[0] || 'Usuário'}</p>
-                <p className="text-xs leading-tight truncate" style={{ color: theme.textMuted }}>{tenant.name}</p>
-              </div>
-            </div>
-            <button 
-              onClick={handleSignOut} 
-              className="ml-2 transition-opacity hover:opacity-80"
-              style={{ color: theme.textMuted }}
-            >
-              {isSigningOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+            )}
+            <img src="/logo.svg" alt="Raffros Corteflow" className="h-5 w-auto" />
+          </div>
+          <div className="flex items-center gap-3">
+            <NotificationBell align="right" />
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} style={{ color: theme.textPrimary }} className="p-2 -mr-2">
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
-      </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 min-w-0 min-h-screen pt-16 md:pt-0 md:ml-[250px] transition-all flex flex-col">
-        <div className="p-4 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden flex-1 flex flex-col">
-          {features.subscription_status === 'past_due' && features.grace_period_ends_at && !isGracePeriodExpired && (
-            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 rounded-xl p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-bold text-sm">Problema com o pagamento</h3>
-                  <p className="text-sm opacity-90">
-                    Identificamos uma pendência no pagamento da sua assinatura. 
-                    Você possui acesso até {new Date(features.grace_period_ends_at).toLocaleDateString('pt-BR')} para regularizar a situação antes da suspensão da conta.
-                  </p>
+        {/* Mobile Backdrop Overlay */}
+        {isMobileMenuOpen && (
+          <div 
+            className="md:hidden fixed inset-0 z-30 backdrop-blur-sm transition-opacity"
+            style={{ background: 'rgba(0,0,0,0.6)' }}
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+        )}
+
+        {/* Sidebar (Desktop fixed & Mobile Drawer) */}
+        <aside 
+          className={`flex flex-col fixed top-0 left-0 h-full z-40 md:z-20 transition-transform duration-300 md:translate-x-0 backdrop-blur-xl ${
+            isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'
+          }`}
+          style={{ width: '250px', background: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}` }}
+        >
+          {/* Logo & Tenant Area */}
+          <div className="p-6 border-b flex items-center justify-between gap-3" style={{ borderColor: theme.sidebarBorder }}>
+            <div className="flex items-center gap-3 truncate flex-1">
+              {tenantSettings?.logo_url ? (
+                <img src={tenantSettings.logo_url} alt="Logo do Salão" className="w-9 h-9 rounded-full object-cover border" style={{ borderColor: theme.border }} />
+              ) : (
+                <div 
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm"
+                  style={{ background: theme.accent, color: theme.textInverse }}
+                >
+                  {initials}
+                </div>
+              )}
+              <div className="truncate flex-1">
+                <h2 className="font-bold text-sm leading-tight truncate" style={{ color: theme.textPrimary }}>{tenant.name}</h2>
+                <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wide inline-block mt-0.5" style={{ background: `${theme.accent}15`, color: theme.accent }}>
+                  {tenant.business_type}
+                </span>
+              </div>
+            </div>
+            {/* Close button for mobile inside drawer */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(false)} 
+              className="md:hidden p-1 rounded-lg hover:opacity-80 transition-opacity"
+              style={{ color: theme.textMuted }}
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="hidden md:block">
+              <NotificationBell />
+            </div>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                data-guide={item.guideId}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
+                    isActive ? 'font-bold shadow-sm' : 'opacity-80 hover:opacity-100'
+                  }`
+                }
+                style={({ isActive }) => ({
+                  background: isActive ? theme.sidebarActiveItemBg : 'transparent',
+                  color: isActive ? theme.sidebarActiveItemText : theme.textPrimary,
+                })}
+              >
+                <item.icon className="w-4 h-4" />
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+
+          {/* User profile footer */}
+          <div className="p-4 border-t" style={{ borderColor: theme.sidebarBorder }}>
+            <TourLaunchButton />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 truncate">
+                <div 
+                  className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
+                  style={{ background: theme.accent, color: theme.textInverse }}
+                >
+                  {initials}
+                </div>
+                <div className="truncate w-24">
+                  <p className="text-xs font-semibold leading-tight truncate" style={{ color: theme.textPrimary }}>{profile?.full_name?.split(' ')[0] || 'Usuário'}</p>
+                  <p className="text-xs leading-tight truncate" style={{ color: theme.textMuted }}>{tenant.name}</p>
                 </div>
               </div>
               <button 
-                onClick={() => navigate('/app/assinatura')}
-                className="whitespace-nowrap px-4 py-2 bg-yellow-500 text-yellow-950 font-bold rounded-lg text-sm transition-opacity hover:opacity-90 w-full md:w-auto text-center"
+                onClick={handleSignOut} 
+                className="ml-2 transition-opacity hover:opacity-80"
+                style={{ color: theme.textMuted }}
               >
-                Regularizar Agora
+                {isSigningOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
               </button>
             </div>
-          )}
-          <Outlet />
-        </div>
-      </main>
-      <ConnectionStatus />
-    </div>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 min-w-0 min-h-screen pt-16 md:pt-0 md:ml-[250px] transition-all flex flex-col">
+          <div className="p-4 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden flex-1 flex flex-col">
+            {features.subscription_status === 'past_due' && features.grace_period_ends_at && !isGracePeriodExpired && (
+              <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 rounded-xl p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-bold text-sm">Problema com o pagamento</h3>
+                    <p className="text-sm opacity-90">
+                      Identificamos uma pendência no pagamento da sua assinatura. 
+                      Você possui acesso até {new Date(features.grace_period_ends_at).toLocaleDateString('pt-BR')} para regularizar a situação antes da suspensão da conta.
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => navigate('/app/assinatura')}
+                  className="whitespace-nowrap px-4 py-2 bg-yellow-500 text-yellow-950 font-bold rounded-lg text-sm transition-opacity hover:opacity-90 w-full md:w-auto text-center"
+                >
+                  Regularizar Agora
+                </button>
+              </div>
+            )}
+            <Outlet />
+          </div>
+        </main>
+
+        <ConnectionStatus />
+        {/* Tour Spotlight Interativo Ancorado com Seta */}
+        <SpotlightGuideTour />
+      </div>
+    </GuideProvider>
   );
 }

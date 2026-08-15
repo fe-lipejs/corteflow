@@ -40,27 +40,35 @@ serve(async (req: Request) => {
       });
     }
 
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from('profiles')
       .select('tenant_id, role')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (profileError || !profile || !profile.tenant_id) {
-      return new Response(JSON.stringify({ error: "Tenant not found or invalid profile" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { data: tenantCheck } = await supabase
+      .from('tenants')
+      .select('id, owner_user_id')
+      .or(`owner_user_id.eq.${user.id},id.eq.${profile?.tenant_id || '00000000-0000-0000-0000-000000000000'}`)
+      .maybeSingle();
 
-    if (profile.role !== 'owner') {
-      return new Response(JSON.stringify({ error: "Only owners can cancel the subscription" }), {
+    const isOwner = profile?.role === 'owner' || tenantCheck?.owner_user_id === user.id || Boolean(tenantCheck?.id);
+    const isSuperAdmin = profile?.role === 'super_admin';
+
+    if (!isSuperAdmin && !isOwner) {
+      return new Response(JSON.stringify({ error: "Apenas o dono da conta pode cancelar a assinatura." }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const tenantId = profile.tenant_id;
+    const tenantId = profile?.tenant_id || tenantCheck?.id;
+    if (!tenantId) {
+      return new Response(JSON.stringify({ error: "Tenant not found" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const { data: sub } = await supabase
       .from('subscriptions')
@@ -68,10 +76,10 @@ serve(async (req: Request) => {
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (!sub || !sub.stripe_subscription_id) {
-      return new Response(JSON.stringify({ error: "No active subscription found" }), {
+      return new Response(JSON.stringify({ error: "Nenhuma assinatura ativa encontrada para este salão." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -81,17 +89,24 @@ serve(async (req: Request) => {
       apiVersion: "2023-10-16",
     });
 
-    // Cancel at period end
-    const updatedSubscription = await stripe.subscriptions.update(sub.stripe_subscription_id, {
-      cancel_at_period_end: true,
-    });
+    // Cancelar assinatura no Stripe
+    await stripe.subscriptions.cancel(sub.stripe_subscription_id);
 
-    return new Response(JSON.stringify({ success: true, status: updatedSubscription.status }), {
+    // Atualizar no Supabase
+    await supabase
+      .from('subscriptions')
+      .update({
+        status: 'canceled',
+        canceled_at: new Date().toISOString(),
+      })
+      .eq('tenant_id', tenantId);
+
+    return new Response(JSON.stringify({ success: true, message: "Assinatura cancelada com sucesso no Stripe e no sistema." }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {
-    console.error("Error:", error);
+    console.error("Cancel subscription error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

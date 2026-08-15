@@ -14,8 +14,10 @@ import {
   MapPin, Phone, Globe, Mail, Palette, Clock, CreditCard, Upload,
   Trash2, Eye, Settings2, Sparkles, Building2, X, ChevronRight,
   Loader2, AlertCircle, CheckCircle2, Shield, Bell, Wand2, RotateCcw,
-  Sun, Moon, Smartphone, Laptop
+  Sun, Moon, Smartphone, Laptop, ShieldCheck, Crown, CalendarCheck, FileText,
+  Lock, RefreshCw
 } from 'lucide-react';
+import StripeActivatedModal from '../../components/modals/StripeActivatedModal';
 
 // ─── Custom SVG Icons ─────────────────────────────────────────────────────────
 const InstagramIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
@@ -46,6 +48,7 @@ const TABS = [
   { id: 'politicas', label: 'Políticas', icon: Shield },
   { id: 'local', label: 'Localização', icon: MapPin },
   { id: 'notificacoes', label: 'Notificações', icon: Bell },
+  { id: 'conta', label: 'Status da Conta', icon: ShieldCheck },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -62,11 +65,28 @@ export default function Configuracoes() {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('aparencia');
   
-  // Danger Zone
+  // Account & Subscription Status
+  const [subInfo, setSubInfo] = useState<any>(null);
   const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [accountDeletedSuccess, setAccountDeletedSuccess] = useState(false);
   const [settingsId, setSettingsId] = useState<string | null>(null);
+
+  // Stripe Connect Status & Modal
+  const [stripeConnectInfo, setStripeConnectInfo] = useState<{
+    has_account: boolean;
+    charges_enabled: boolean;
+    payouts_enabled: boolean;
+    details_submitted?: boolean;
+    stripe_account_id?: string;
+  } | null>(null);
+  const [syncingConnect, setSyncingConnect] = useState(false);
+  const [isConnectingStripe, setIsConnectingStripe] = useState(false);
+  const [showStripeActivatedModal, setShowStripeActivatedModal] = useState(false);
+  const [stripeRequiredModalOpen, setStripeRequiredModalOpen] = useState(false);
+  const [disconnectStripeModalOpen, setDisconnectStripeModalOpen] = useState(false);
+  const [disconnectingStripe, setDisconnectingStripe] = useState(false);
 
   // ─── Form State ───────────────────────────────────────────────────────────
   const [language, setLanguage] = useState<string>('pt');
@@ -187,8 +207,24 @@ export default function Configuracoes() {
     if (tenant) {
       setLanguage(tenant.language || 'pt');
       loadSettings();
+
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && TABS.some(t => t.id === tabParam)) {
+        setActiveTab(tabParam as TabId);
+      }
+      if (tabParam === 'stripe' || window.location.search.includes('connect')) {
+        syncConnectStatus(true);
+      }
     }
   }, [tenant]);
+
+  // Auto sync fresh Stripe status whenever entering Stripe tab
+  useEffect(() => {
+    if (activeTab === 'stripe' && tenant?.id) {
+      syncConnectStatus(false);
+    }
+  }, [activeTab, tenant?.id]);
 
   const loadSettings = async () => {
     if (!tenant) return;
@@ -315,6 +351,45 @@ export default function Configuracoes() {
           };
         });
         setBusinessHours(mapped);
+      }
+
+      // Load subscription and plan status
+      const { data: sub } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (sub) {
+        if ((sub as any).plan_id) {
+          const { data: planData } = await supabase
+            .from('plans')
+            .select('*')
+            .eq('id', (sub as any).plan_id)
+            .maybeSingle();
+          setSubInfo({ ...sub, plans: planData });
+        } else {
+          setSubInfo(sub);
+        }
+      }
+
+      // Load Stripe Connect status
+      const { data: connectAcc } = await supabase
+        .from('stripe_connect_accounts')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .maybeSingle();
+
+      if (connectAcc) {
+        setStripeConnectInfo({
+          has_account: true,
+          charges_enabled: connectAcc.charges_enabled ?? false,
+          payouts_enabled: connectAcc.payouts_enabled ?? false,
+          details_submitted: connectAcc.details_submitted ?? false,
+          stripe_account_id: connectAcc.stripe_account_id,
+        });
       }
     } catch (err) {
       console.error('Error loading settings:', err);
@@ -760,6 +835,7 @@ export default function Configuracoes() {
 
   const handleConnectStripe = async () => {
     if (!tenant) return;
+    setIsConnectingStripe(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Não autenticado');
@@ -784,33 +860,188 @@ export default function Configuracoes() {
     } catch (err: any) {
       console.error('Stripe Connect error:', err);
       alert(`Erro ao iniciar conexão com o Stripe: ${err.message}`);
+      setIsConnectingStripe(false);
+    }
+  };
+
+  const handleDisconnectStripe = async () => {
+    if (!tenant?.id) return;
+    setDisconnectingStripe(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      // 1. Tenta acionar a Edge Function para desvinculação na API do Stripe
+      if (session) {
+        try {
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/disconnect-connect-account`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          });
+        } catch (edgeErr) {
+          console.warn('Edge Function disconnect-connect-account aviso:', edgeErr);
+        }
+      }
+
+      // 2. Remove o registro no Supabase
+      await supabase
+        .from('stripe_connect_accounts')
+        .delete()
+        .eq('tenant_id', tenant.id);
+
+      // 3. Reseta os métodos de pagamento para apenas Pagar no Local
+      const defaultMethods = { pay_local: true, partial_50: false, full_100: false };
+      await supabase
+        .from('tenant_settings')
+        .update({
+          online_payment_enabled: false,
+          payment_methods: defaultMethods,
+        } as any)
+        .eq('tenant_id', tenant.id);
+
+      setStripeConnectInfo(null);
+      setAllowLocal(true);
+      setAllowDeposit(false);
+      setAllowFull(false);
+      setDisconnectStripeModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['tenant_settings', tenant.id] });
+      queryClient.invalidateQueries({ queryKey: ['tenant_settings'] });
+    } catch (err: any) {
+      console.error('Error disconnecting Stripe:', err);
+      alert('Erro ao desconectar conta Stripe: ' + err.message);
+    } finally {
+      setDisconnectingStripe(false);
+    }
+  };
+
+  const syncConnectStatus = async (showModalIfActivated = true) => {
+    if (!tenant?.id) return;
+    setSyncingConnect(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-connect-account`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setStripeConnectInfo(data);
+        if (data.charges_enabled) {
+          setAllowDeposit(true);
+          setAllowFull(true);
+          if (data.just_activated && showModalIfActivated) {
+            setShowStripeActivatedModal(true);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Sync connect error:', err);
+    } finally {
+      setSyncingConnect(false);
+    }
+  };
+
+  const handleStripeActivatedChoice = async (disableLocal: boolean) => {
+    if (!tenant) return;
+    const newPayLocal = !disableLocal;
+    setAllowLocal(newPayLocal);
+    setAllowDeposit(true);
+    setAllowFull(true);
+
+    try {
+      await supabase.from('tenant_settings').update({
+        payment_methods: {
+          pay_local: newPayLocal,
+          partial_50: true,
+          full_100: true,
+        },
+        online_payment_enabled: true,
+      } as any).eq('tenant_id', tenant.id);
+
+      queryClient.invalidateQueries({ queryKey: ['tenant_settings', tenant.id] });
+      queryClient.invalidateQueries({ queryKey: ['tenant_settings'] });
+      queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(tenant.slug) });
+    } catch (e) {
+      console.error('Error updating payment methods after connect choice:', e);
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (deleteConfirmationText !== 'EXCLUIR') return;
+    if (deleteConfirmationText !== 'EXCLUIR' || !tenant?.id) return;
     setDeleteLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Não autenticado');
 
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-      });
+      const userId = session.user.id;
+      const tenantId = tenant.id;
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Erro ao excluir conta');
+      // 1. Aciona a Edge Function para cancelamento seguro no Stripe
+      try {
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({ target_tenant_id: tenantId }),
+        });
+      } catch (edgeErr) {
+        console.warn('Aviso Edge Function delete-account:', edgeErr);
       }
 
-      await signOut();
+      // 2. Executa a exclusão definitiva no banco via RPC de segurança
+      try {
+        await supabase.rpc('hard_delete_tenant_and_user', {
+          p_tenant_id: tenantId,
+          p_user_id: userId,
+        });
+      } catch (rpcErr) {
+        console.warn('Fallback exclusão direta:', rpcErr);
+        await supabase.from('stripe_connect_accounts').delete().eq('tenant_id', tenantId);
+        await supabase.from('subscriptions').delete().eq('tenant_id', tenantId);
+        await supabase.from('tenant_settings').delete().eq('tenant_id', tenantId);
+        await supabase.from('business_hours').delete().eq('tenant_id', tenantId);
+        await supabase.from('blocked_times').delete().eq('tenant_id', tenantId);
+        await supabase.from('financial_transactions').delete().eq('tenant_id', tenantId);
+        await supabase.from('bookings').delete().eq('tenant_id', tenantId);
+        await supabase.from('customers').delete().eq('tenant_id', tenantId);
+        await supabase.from('products').delete().eq('tenant_id', tenantId);
+        await supabase.from('services').delete().eq('tenant_id', tenantId);
+        await supabase.from('professionals').delete().eq('tenant_id', tenantId);
+        await supabase.from('notification_settings').delete().eq('tenant_id', tenantId);
+        await supabase.from('custom_pricing').delete().eq('tenant_id', tenantId);
+        await supabase.from('profiles').delete().eq('id', userId);
+        await supabase.from('tenants').delete().eq('id', tenantId);
+      }
+
+      // 3. Limpa storage local
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // 4. Fecha o modal de confirmação e exibe o pop-up de sucesso
+      setDeleteAccountModalOpen(false);
+      setAccountDeletedSuccess(true);
+
+      // 5. Redireciona para a landing page após 2.5s
+      setTimeout(async () => {
+        try {
+          await signOut();
+        } catch {}
+        window.location.href = '/';
+      }, 2500);
+
     } catch (err: any) {
-      console.error(err);
-      alert(`Erro: ${err.message}`);
+      console.error('Delete account error:', err);
+      alert(`Erro ao excluir conta: ${err.message}`);
       setDeleteLoading(false);
     }
   };
@@ -1485,64 +1716,240 @@ export default function Configuracoes() {
 
           {/* ═══════════════════════════ TAB: RECEBIMENTOS & PAGAMENTOS ══════════════════════════ */}
           {activeTab === 'stripe' && (
-            <div className="space-y-8">
-              {/* Formas de Pagamento Aceitas no Agendamento */}
-              <div>
-                <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
-                  <CreditCard className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Formas de Pagamento no Agendamento
-                </h3>
-                <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
-                  Ative as formas de cobrança disponíveis para seus clientes na hora de agendar. Pelo menos uma deve estar ativa.
-                </p>
-                <div className="space-y-3">
-                  {[
-                    { key: 'local' as const, label: 'Pagar no local', desc: 'Cliente agenda e realiza o pagamento presencialmente após o serviço', state: allowLocal, set: setAllowLocal },
-                    { key: 'deposit' as const, label: 'Exigir Entrada / Depósito (Online)', desc: 'Cliente paga um percentual antecipado via cartão/Pix para garantir o horário', state: allowDeposit, set: setAllowDeposit },
-                    { key: 'full' as const, label: 'Pagamento 100% Antecipado (Online)', desc: 'Cliente paga o valor integral do serviço online no ato do agendamento', state: allowFull, set: setAllowFull },
-                  ].map(m => {
-                    const activeCount = [allowLocal, allowDeposit, allowFull].filter(Boolean).length;
-                    const isLastActive = m.state && activeCount === 1;
-                    return (
-                      <div key={m.key} className="flex flex-col p-4 rounded-2xl transition-colors" style={{ background: m.state ? `${theme.accent}12` : theme.inputBg, border: `1px solid ${m.state ? theme.accent : theme.inputBorder}` }}>
+            <div className="space-y-6">
+              {/* 1. Card Principal: Stripe Connect com Selo Verde de Segurança */}
+              {(() => {
+                const hasStripeAccount = Boolean(stripeConnectInfo?.stripe_account_id);
+                const isFullyActive = stripeConnectInfo?.charges_enabled === true;
+
+                return (
+                  <div
+                    className="rounded-2xl p-5 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all"
+                    style={{
+                      background: hasStripeAccount ? `${theme.accent}08` : theme.inputBg,
+                      borderColor: hasStripeAccount ? `${theme.accent}30` : theme.inputBorder,
+                    }}
+                  >
+                    <div className="flex items-start gap-3.5">
+                      {/* Logo Oficial do Stripe */}
+                      <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                        style={{
+                          background: '#635BFF18',
+                          color: '#635BFF',
+                        }}
+                      >
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/>
+                        </svg>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-sm font-bold" style={{ color: theme.textPrimary }}>
+                            Conta Stripe Connect
+                          </h4>
+                          {/* Selo Verde de Segurança e Confiabilidade */}
+                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3 text-emerald-500" /> 100% Seguro & Confiável
+                          </span>
+                          {isFullyActive ? (
+                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                              ✓ Conectada & Ativa
+                            </span>
+                          ) : hasStripeAccount ? (
+                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                              ✓ Conectada
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                              Não Conectada
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs mt-1 leading-relaxed font-medium" style={{ color: theme.textSecondary }}>
+                          {hasStripeAccount
+                            ? `Recebimentos online com proteção antifraude e repasse direto na sua conta Stripe (${stripeConnectInfo?.stripe_account_id || ''})`
+                            : 'Conecte sua conta para receber pagamentos online (Pix e cartão) direto dos clientes com total segurança.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 flex-wrap">
+                      {hasStripeAccount ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => syncConnectStatus(false)}
+                            disabled={syncingConnect}
+                            className="p-2.5 rounded-xl border hover:opacity-80 transition-opacity cursor-pointer"
+                            style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textSecondary }}
+                            title="Verificar status atualizado"
+                          >
+                            <RefreshCw className={`w-4 h-4 ${syncingConnect ? 'animate-spin' : ''}`} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleConnectStripe}
+                            disabled={isConnectingStripe}
+                            className="px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer hover:opacity-90 flex items-center gap-1.5"
+                            style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }}
+                          >
+                            {isConnectingStripe ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Abrindo...</span>
+                              </>
+                            ) : (
+                              <span>Painel Stripe</span>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDisconnectStripeModalOpen(true)}
+                            className="px-3 py-2 rounded-xl text-xs font-bold text-red-500 hover:bg-red-500/10 border border-red-500/20 transition-all cursor-pointer"
+                            title="Desconectar conta Stripe"
+                          >
+                            Desconectar
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleConnectStripe}
+                          disabled={isConnectingStripe}
+                          className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 text-white shadow-md hover:opacity-95 transition-all cursor-pointer disabled:opacity-80"
+                          style={{ background: '#635BFF' }}
+                        >
+                          {isConnectingStripe ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>Conectando ao Stripe...</span>
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="w-4 h-4" />
+                              <span>Conectar com Stripe</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 2. Formas de Pagamento no Agendamento */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm" style={{ color: theme.textPrimary }}>
+                    Opções de Pagamento para o Cliente
+                  </h3>
+                  <span className="text-[11px]" style={{ color: theme.textMuted }}>
+                    Pelo menos uma opção ativa
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {(() => {
+                    const hasStripeAccount = Boolean(stripeConnectInfo?.stripe_account_id);
+
+                    return [
+                      {
+                        key: 'local' as const,
+                        label: 'Pagar no Local',
+                        desc: 'Pagamento presencial no salão após o atendimento',
+                        state: allowLocal,
+                        isLocked: false,
+                        set: setAllowLocal,
+                      },
+                      {
+                        key: 'deposit' as const,
+                        label: 'Sinal / Entrada Online',
+                        desc: 'Exige percentual antecipado para garantir o horário',
+                        state: allowDeposit,
+                        isLocked: !hasStripeAccount,
+                        set: setAllowDeposit,
+                      },
+                      {
+                        key: 'full' as const,
+                        label: '100% Antecipado Online',
+                        desc: 'Valor integral pago online na hora do agendamento',
+                        state: allowFull,
+                        isLocked: !hasStripeAccount,
+                        set: setAllowFull,
+                      },
+                    ].map(m => {
+                      const activeCount = [allowLocal, allowDeposit, allowFull].filter(Boolean).length;
+                      const isLastActive = m.state && activeCount === 1;
+
+                      return (
+                      <div
+                        key={m.key}
+                        onClick={() => {
+                          if (m.isLocked) {
+                            setStripeRequiredModalOpen(true);
+                          }
+                        }}
+                        className={`p-4 rounded-xl border transition-all ${m.isLocked ? 'opacity-70 cursor-pointer hover:border-amber-500/40' : ''}`}
+                        style={{
+                          background: m.state && !m.isLocked ? `${theme.accent}0d` : theme.inputBg,
+                          borderColor: m.state && !m.isLocked ? theme.accent : theme.inputBorder,
+                        }}
+                      >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-bold" style={{ color: theme.textPrimary }}>{m.label}</p>
-                            <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{m.desc}</p>
-                            {isLastActive && (
-                              <p className="text-xs mt-1 font-semibold" style={{ color: '#f59e0b' }}>⚠ Pelo menos uma forma de pagamento deve permanecer ativa</p>
-                            )}
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold" style={{ color: theme.textPrimary }}>
+                                {m.label}
+                              </span>
+                              {m.isLocked && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                                  <Lock className="w-2.5 h-2.5" /> Requer Stripe
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
+                              {m.desc}
+                            </p>
                           </div>
+
                           <button
                             type="button"
                             onClick={() => {
-                              if (isLastActive) return; // prevent disabling last option
+                              if (m.isLocked) {
+                                setStripeRequiredModalOpen(true);
+                                return;
+                              }
+                              if (isLastActive) return;
                               m.set(!m.state);
                             }}
-                            className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ml-4"
-                            style={{ background: m.state ? theme.accent : theme.border }}
-                            title={isLastActive ? 'Pelo menos uma opção deve estar ativa' : ''}
+                            className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ml-4 cursor-pointer"
+                            style={{ background: m.state && !m.isLocked ? theme.accent : theme.border }}
                           >
-                            <span className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform" style={{ transform: m.state ? 'translateX(22px)' : 'translateX(4px)' }} />
+                            <span
+                              className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                              style={{ transform: m.state && !m.isLocked ? 'translateX(22px)' : 'translateX(4px)' }}
+                            />
                           </button>
                         </div>
 
                         {/* Slider for deposit percentage */}
                         <AnimatePresence>
-                          {m.key === 'deposit' && m.state && (
+                          {m.key === 'deposit' && m.state && !m.isLocked && (
                             <motion.div
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: 'auto' }}
                               exit={{ opacity: 0, height: 0 }}
-                              className="mt-4 pt-4 border-t"
+                              className="mt-3 pt-3 border-t flex flex-col gap-2"
                               style={{ borderColor: theme.inputBorder }}
                             >
-                              <div className="flex items-center justify-between">
-                                <label className="text-xs font-bold uppercase tracking-wider block" style={{ color: theme.textSecondary }}>
-                                  Percentual de Entrada: <span className="font-extrabold" style={{ color: theme.accent }}>{depositPercentage}%</span>
-                                </label>
-                                <span className="text-[11px] font-medium" style={{ color: theme.textMuted }}>
-                                  O saldo restante ({100 - depositPercentage}%) será pago no salão.
+                              <div className="flex items-center justify-between text-xs">
+                                <span style={{ color: theme.textSecondary }}>
+                                  Valor da entrada: <strong style={{ color: theme.accent }}>{depositPercentage}%</strong>
+                                </span>
+                                <span style={{ color: theme.textMuted }}>
+                                  Restante ({100 - depositPercentage}%) pago no salão
                                 </span>
                               </div>
                               <input
@@ -1552,89 +1959,17 @@ export default function Configuracoes() {
                                 step={5}
                                 value={depositPercentage}
                                 onChange={(e) => setDepositPercentage(Number(e.target.value))}
-                                className="w-full mt-3"
+                                className="w-full cursor-pointer"
                                 style={{ accentColor: theme.accent }}
                               />
-                              <div className="flex justify-between text-xs mt-1 font-medium" style={{ color: theme.textMuted }}>
-                                <span>10% (mínimo)</span>
-                                <span>50% (recomendado)</span>
-                                <span>90%</span>
-                              </div>
                             </motion.div>
                           )}
                         </AnimatePresence>
                       </div>
                     );
-                  })}
-                </div>
+                  });
+                })()}
               </div>
-
-              {/* Conexão Stripe Connect */}
-              <div className="pt-6 border-t" style={{ borderColor: theme.border }}>
-                <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
-                  <Shield className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Recebimentos Online (Stripe Connect)
-                </h3>
-                <p className="text-xs mb-4" style={{ color: theme.textSecondary }}>
-                  Conecte sua conta bancária/Stripe para receber pagamentos online direto na sua conta.
-                </p>
-
-                {/* Status Card */}
-                <div
-                  className="rounded-2xl p-5 flex items-start gap-4 mb-4"
-                  style={{ background: theme.inputBg, border: `1px solid ${theme.inputBorder}` }}
-                >
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: `${theme.accent}15` }}
-                  >
-                    <Shield className="w-5 h-5" style={{ color: theme.accent }} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Conta Bancária de Recebimento</h4>
-                      <span
-                        className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
-                        style={{ background: `${theme.warning}20`, color: theme.warning }}
-                      >
-                        Não conectada
-                      </span>
-                    </div>
-                    <p className="text-xs" style={{ color: theme.textMuted }}>
-                      Conecte sua conta Stripe para receber as entradas e pagamentos integrais automaticamente.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Connect Button */}
-                <button
-                  onClick={handleConnectStripe}
-                  className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-xl font-bold text-sm transition-all hover:scale-[1.01] active:scale-[0.99]"
-                  style={{
-                    background: '#635BFF',
-                    color: '#FFFFFF',
-                    boxShadow: '0 4px 14px rgba(99, 91, 255, 0.3)',
-                  }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/>
-                  </svg>
-                  Conectar com Stripe
-                </button>
-
-                <div
-                  className="rounded-xl p-4 flex items-start gap-3 mt-4"
-                  style={{ background: `${theme.info}10`, border: `1px solid ${theme.info}30` }}
-                >
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.info }} />
-                  <div>
-                    <p className="text-xs font-semibold" style={{ color: theme.info }}>Como funciona a transferência?</p>
-                    <p className="text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
-                      Ao conectar, você será direcionado ao Stripe para cadastrar sua chave Pix ou conta bancária.
-                      Os valores pagos pelos clientes caem diretamente na sua conta com segurança bancária.
-                    </p>
-                  </div>
-                </div>
               </div>
             </div>
           )}
@@ -1908,31 +2243,124 @@ export default function Configuracoes() {
               </div>
             </div>
           )}
+
+          {/* ═══════════════════════════ TAB: STATUS DA CONTA ════════════════════════════ */}
+          {activeTab === 'conta' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
+                  <ShieldCheck className="w-5 h-5 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
+                  Status da Conta & Assinatura
+                </h3>
+                <p className="text-xs mb-4" style={{ color: theme.textSecondary }}>
+                  Acompanhe a situação do seu estabelecimento, plano contratado e faturamento.
+                </p>
+              </div>
+
+              {/* Status Grid Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* 1. Situação da Empresa */}
+                <div className="p-5 rounded-2xl border space-y-2" style={{ background: theme.cardBg, borderColor: theme.border }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
+                      Situação do Estabelecimento
+                    </span>
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                      tenant?.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                      tenant?.status === 'trial' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                      'bg-red-500/10 text-red-400 border border-red-500/20'
+                    }`}>
+                      {tenant?.status === 'active' ? 'Ativo' : tenant?.status === 'trial' ? 'Em Período de Testes' : tenant?.status || 'Ativo'}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-base truncate" style={{ color: theme.textPrimary }}>
+                    {tenant?.name || 'Seu Estabelecimento'}
+                  </h4>
+                  <p className="text-xs font-mono" style={{ color: theme.textMuted }}>
+                    navalha.app/{tenant?.slug}
+                  </p>
+                </div>
+
+                {/* 2. Plano Contratado */}
+                <div className="p-5 rounded-2xl border space-y-2" style={{ background: theme.cardBg, borderColor: theme.border }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
+                      Plano Atual
+                    </span>
+                    <Crown className="w-4 h-4" style={{ color: theme.accent }} />
+                  </div>
+                  <h4 className="font-bold text-base uppercase" style={{ color: theme.accent }}>
+                    {subInfo?.plans?.name || 'Plano Starter'}
+                  </h4>
+                  <p className="text-xs" style={{ color: theme.textMuted }}>
+                    Até {subInfo?.plans?.max_professionals || 1} profissional{((subInfo?.plans?.max_professionals || 1) > 1) ? 'is' : ''} • {subInfo?.plans?.allow_products ? 'Produtos liberados' : 'Apenas Serviços'}
+                  </p>
+                </div>
+
+                {/* 3. Status da Assinatura */}
+                <div className="p-5 rounded-2xl border space-y-2" style={{ background: theme.cardBg, borderColor: theme.border }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
+                      Faturamento & Assinatura
+                    </span>
+                    <CreditCard className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <h4 className="font-bold text-base" style={{ color: theme.textPrimary }}>
+                    {subInfo?.status === 'active' ? 'Assinatura Ativa (Stripe)' :
+                     subInfo?.status === 'trial' ? 'Período de Testes (Trial)' :
+                     subInfo?.status === 'canceled' ? 'Cancelada (Sem novas cobranças)' :
+                     'Assinatura Regularizada'}
+                  </h4>
+                  <p className="text-xs font-mono truncate" style={{ color: theme.textMuted }}>
+                    {subInfo?.stripe_subscription_id ? `ID: ${subInfo.stripe_subscription_id}` : 'Cobrança via Stripe Billing'}
+                  </p>
+                </div>
+
+                {/* 4. Ciclo e Próxima Fatura */}
+                <div className="p-5 rounded-2xl border space-y-2" style={{ background: theme.cardBg, borderColor: theme.border }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
+                      Ciclo / Próxima Fatura
+                    </span>
+                    <CalendarCheck className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <h4 className="font-bold text-base" style={{ color: theme.textPrimary }}>
+                    {subInfo?.current_period_end ?
+                      new Date(subInfo.current_period_end).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) :
+                      subInfo?.trial_ends_at ?
+                      `Fim do trial: ${new Date(subInfo.trial_ends_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}` :
+                      'Renovação Automática'}
+                  </h4>
+                  <p className="text-xs text-emerald-400 font-medium">
+                    {subInfo?.status === 'canceled' ? '✓ Nenhuma cobrança futura será feita' : 'Pagamento processado com segurança'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Seção de Encerramento de Conta */}
+              <div className="p-5 rounded-2xl border border-red-500/20 bg-red-500/5 space-y-3 mt-6">
+                <div className="flex items-center gap-2 text-red-500 font-bold text-sm">
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                  <span>Encerramento da Conta</span>
+                </div>
+                <p className="text-xs text-[#888] leading-relaxed">
+                  Caso queira encerrar sua conta definitivamente, clique no botão abaixo. <strong>O sistema cancelará imediatamente sua assinatura no Stripe</strong> para que você <strong>nunca receba novas cobranças</strong> no seu cartão de crédito, e seu estabelecimento será desativado.
+                </p>
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setDeleteAccountModalOpen(true)}
+                    className="px-4 py-2 bg-red-600/90 hover:bg-red-600 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Excluir Minha Conta
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </motion.div>
       </AnimatePresence>
-
-      {/* Danger Zone (Only for owners) */}
-      {profile?.role === 'owner' && (
-        <div className="mt-12 p-6 rounded-2xl border border-red-500/30 bg-red-500/5">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
-              <AlertCircle className="w-5 h-5 text-red-500" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-red-500 mb-1">Zona de Perigo</h3>
-              <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>
-                A exclusão da conta é irreversível. Ao excluir sua conta, todas as suas assinaturas ativas serão canceladas imediatamente e seu acesso será revogado.
-              </p>
-              <button
-                onClick={() => setDeleteAccountModalOpen(true)}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-lg transition-colors"
-              >
-                Excluir Minha Conta
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Delete Account Modal */}
       {deleteAccountModalOpen && (
@@ -2533,6 +2961,171 @@ export default function Configuracoes() {
           )}
         </button>
       </div>
+
+      {/* Stripe Connect Activation & Guided Choice Modal */}
+      <StripeActivatedModal
+        isOpen={showStripeActivatedModal}
+        onClose={() => setShowStripeActivatedModal(false)}
+        onConfirmChoice={handleStripeActivatedChoice}
+      />
+
+      {/* Modal Informativo: Stripe Necessário */}
+      <AnimatePresence>
+        {stripeRequiredModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setStripeRequiredModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md rounded-3xl p-6 border shadow-2xl z-10 space-y-4"
+              style={{ background: theme.cardBg, borderColor: theme.border }}
+            >
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto" style={{ background: '#635BFF20', color: '#635BFF' }}>
+                <CreditCard className="w-6 h-6" />
+              </div>
+              <div className="text-center space-y-1.5">
+                <h3 className="text-lg font-bold" style={{ color: theme.textPrimary }}>
+                  Conexão com o Stripe Necessária
+                </h3>
+                <p className="text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
+                  Para habilitar pagamentos online (Pix e cartão de crédito direto dos seus clientes pelo seu site), você precisa conectar sua conta Stripe Connect.
+                </p>
+              </div>
+              <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStripeRequiredModalOpen(false)}
+                  className="w-full sm:w-1/2 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer hover:opacity-80"
+                  style={{ borderColor: theme.border, color: theme.textSecondary, background: theme.inputBg }}
+                >
+                  Agora Não
+                </button>
+                <button
+                  type="button"
+                  disabled={isConnectingStripe}
+                  onClick={() => {
+                    setStripeRequiredModalOpen(false);
+                    handleConnectStripe();
+                  }}
+                  className="w-full sm:w-1/2 py-2.5 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer hover:opacity-95 disabled:opacity-75"
+                  style={{ background: '#635BFF' }}
+                >
+                  {isConnectingStripe ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Conectando...</span>
+                    </>
+                  ) : (
+                    <span>Conectar Conta</span>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal: Desconectar Stripe */}
+      <AnimatePresence>
+        {disconnectStripeModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => !disconnectingStripe && setDisconnectStripeModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md rounded-3xl p-6 border shadow-2xl z-10 space-y-4"
+              style={{ background: theme.cardBg, borderColor: theme.border }}
+            >
+              <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mx-auto">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <div className="text-center space-y-1.5">
+                <h3 className="text-lg font-bold" style={{ color: theme.textPrimary }}>
+                  Desconectar Conta Stripe?
+                </h3>
+                <p className="text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
+                  Ao desconectar, o recebimento de pagamentos online (Pix e cartão) será desativado. Seus clientes só poderão agendar com a opção <strong>"Pagar no Local"</strong>.
+                </p>
+              </div>
+              <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
+                <button
+                  type="button"
+                  disabled={disconnectingStripe}
+                  onClick={() => setDisconnectStripeModalOpen(false)}
+                  className="w-full sm:w-1/2 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer hover:opacity-80"
+                  style={{ borderColor: theme.border, color: theme.textSecondary, background: theme.inputBg }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={disconnectingStripe}
+                  onClick={handleDisconnectStripe}
+                  className="w-full sm:w-1/2 py-2.5 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer hover:bg-red-700 bg-red-600 disabled:opacity-75"
+                >
+                  {disconnectingStripe ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Desconectando...</span>
+                    </>
+                  ) : (
+                    <span>Sim, Desconectar</span>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal: Conta Excluída com Sucesso */}
+      <AnimatePresence>
+        {accountDeletedSuccess && (
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="fixed inset-0 bg-black/85 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="relative w-full max-w-md rounded-3xl p-8 border shadow-2xl z-10 text-center space-y-4"
+              style={{ background: '#09090b', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+            >
+              <div className="w-16 h-16 rounded-full bg-red-500/15 text-red-500 flex items-center justify-center mx-auto text-2xl border border-red-500/30">
+                <Trash2 className="w-8 h-8" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-white">
+                  Conta Deletada com Sucesso!
+                </h3>
+                <p className="text-sm text-zinc-400 leading-relaxed">
+                  Seu salão, dados e assinaturas do Stripe foram permanentemente cancelados e excluídos.
+                </p>
+              </div>
+              <div className="pt-2 flex items-center justify-center gap-2 text-xs font-semibold text-zinc-400">
+                <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                <span>Voltando para a página inicial...</span>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

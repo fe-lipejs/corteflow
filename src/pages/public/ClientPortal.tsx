@@ -7,7 +7,7 @@ import { format, isBefore, addHours, startOfDay, addDays } from 'date-fns';
 import { generateAvailableSlots } from '../../lib/availability';
 import type { Slot } from '../../lib/availability';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Clock, ArrowLeft, Loader2, ShieldCheck, X } from 'lucide-react';
+import { Calendar, Clock, ArrowLeft, Loader2, ShieldCheck, X, AlertTriangle } from 'lucide-react';
 import { usePhoneFormat } from '../../hooks/usePhoneFormat';
 import { getThemeById } from '../../contexts/ThemeContext';
 import { usePublicStore } from '../../hooks/usePublicStore';
@@ -234,7 +234,29 @@ export default function ClientPortal() {
     }
   };
 
-  if (!tenant) return <div className="flex h-screen items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+  if (loadingStore) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0d0d0d]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#C9963B]" />
+      </div>
+    );
+  }
+
+  const isTenantInactive = !tenant || Boolean(tenant.deleted_at) || ['blocked', 'suspended', 'deleted', 'canceled'].includes(tenant.status) || (tenant.status !== 'active' && tenant.status !== 'trial');
+
+  if (isTenantInactive) {
+    return (
+      <div className="min-h-screen flex flex-col p-6 items-center justify-center text-center max-w-md mx-auto w-full bg-[#0d0d0d] text-white">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 bg-red-500/10 border border-red-500/20">
+          <AlertTriangle className="w-8 h-8 text-red-400" />
+        </div>
+        <h2 className="text-2xl font-bold mb-3 font-serif">Estabelecimento Indisponível</h2>
+        <p className="text-sm mb-6 leading-relaxed text-[#888]">
+          O portal do cliente para este estabelecimento não está acessível pois a conta foi desativada ou excluída.
+        </p>
+      </div>
+    );
+  }
 
   const settings = storeData?.settings;
   const theme = getThemeById(settings?.theme_preset || 'classic');

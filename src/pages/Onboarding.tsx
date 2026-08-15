@@ -208,7 +208,8 @@ export default function Onboarding() {
         name: finalBusinessName,
         slug: finalSlug,
         language: data.language || 'pt',
-        status: 'trial'
+        status: 'trial',
+        has_used_trial: true,
       } as any).select('id').single();
 
       if (tenantError) {
@@ -236,7 +237,7 @@ export default function Onboarding() {
         bannerUrl = await uploadFile(bannerFile, newTenant.id, 'banner');
       }
 
-      // 4. Create tenant_settings with ALL fields (including Google Maps)
+      // 4. Create tenant_settings with initial local-only payments
       const { error: settingsError } = await supabase.from('tenant_settings').insert({
         tenant_id: newTenant.id,
         theme_preset: data.themePreset || 'noir',
@@ -251,6 +252,8 @@ export default function Onboarding() {
         instagram: data.instagramHandle ? data.instagramHandle.replace(/^@/, '') : '',
         map_link: data.googleMapsUrl || '',
         booking_payment_mode: 'local',
+        online_payment_enabled: false,
+        payment_methods: { pay_local: true, partial_50: false, full_100: false },
       } as any);
 
       if (settingsError) {

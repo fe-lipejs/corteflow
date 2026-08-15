@@ -212,6 +212,33 @@ serve(async (req) => {
           charges_enabled: account.charges_enabled,
           payouts_enabled: account.payouts_enabled,
         }).eq('stripe_account_id', account.id);
+
+        // Se a conta Stripe agora está apta a cobrar (charges_enabled = true), liberar automaticamente pagamentos online no salão
+        if (account.charges_enabled) {
+          const { data: connectAcc } = await supabase
+            .from('stripe_connect_accounts')
+            .select('tenant_id')
+            .eq('stripe_account_id', account.id)
+            .maybeSingle();
+
+          if (connectAcc?.tenant_id) {
+            const { data: currentSettings } = await supabase
+              .from('tenant_settings')
+              .select('payment_methods')
+              .eq('tenant_id', connectAcc.tenant_id)
+              .maybeSingle();
+
+            const currentPm = (currentSettings?.payment_methods as any) || {};
+            await supabase.from('tenant_settings').update({
+              payment_methods: {
+                pay_local: currentPm.pay_local !== false,
+                partial_50: true,
+                full_100: true,
+              },
+              online_payment_enabled: true
+            }).eq('tenant_id', connectAcc.tenant_id);
+          }
+        }
         break;
       }
     }

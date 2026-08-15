@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   Info,
   ChevronUp,
+  AlertTriangle,
 } from "lucide-react";
 import { format, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale/pt-BR";
@@ -366,13 +367,45 @@ export default function PublicStore() {
   }), [settings]);
 
   const requestLocation = useCallback(() => {
-    if (!navigator.geolocation) { setGeoStatus("denied"); return; }
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setGeoStatus("denied");
+      return;
+    }
     setGeoStatus("loading");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGeoStatus("ok"); },
-      () => setGeoStatus("denied"),
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+
+    let isResolved = false;
+
+    // Fast fallback watchdog (4.5s) to guarantee UI never freezes on iPhone / poor GPS
+    const timer = setTimeout(() => {
+      if (!isResolved) {
+        isResolved = true;
+        setGeoStatus("denied");
+      }
+    }, 4500);
+
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (isResolved) return;
+          isResolved = true;
+          clearTimeout(timer);
+          setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setGeoStatus("ok");
+        },
+        (err) => {
+          if (isResolved) return;
+          isResolved = true;
+          clearTimeout(timer);
+          console.warn("Geolocation denied or unavailable:", err.message);
+          setGeoStatus("denied");
+        },
+        { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
+      );
+    } catch {
+      isResolved = true;
+      clearTimeout(timer);
+      setGeoStatus("denied");
+    }
   }, []);
 
   const phoneFormat = usePhoneFormat("pt");
@@ -423,6 +456,14 @@ export default function PublicStore() {
 
     const depositPct = settings?.deposit_percentage || 50;
     
+    // Regra Rigorosa: Se o Stripe Connect do salão não estiver ativado, pagamentos online ficam indisponíveis
+    const isStripeActive = storeData?.isStripeEnabled === true;
+    if (!isStripeActive) {
+      allowDeposit = false;
+      allowFull = false;
+      allowLocal = true;
+    }
+
     const all: { key: PaymentScope; label: string; desc: string }[] = [];
     if (allowDeposit) all.push({ key: "partial", label: `Entrada ${depositPct}%`, desc: money(total * (depositPct / 100)) });
     if (allowFull) all.push({ key: "full", label: "Total agora", desc: money(total) });
@@ -430,7 +471,7 @@ export default function PublicStore() {
     // Ensure at least one option exists (safety)
     if (all.length === 0) all.push({ key: "local", label: "No local", desc: "Grátis agora" });
     return all;
-  }, [settings?.payment_methods, settings?.booking_payment_mode, settings?.deposit_percentage, total]);
+  }, [settings?.payment_methods, settings?.booking_payment_mode, settings?.deposit_percentage, total, storeData?.isStripeEnabled]);
 
 
   const distanceKm = useMemo(() => (userPos ? haversineKm(userPos, storeCoords) : null), [userPos, storeCoords]);
@@ -464,21 +505,34 @@ export default function PublicStore() {
     );
   }, [selectedDate, selectedService, selectedPro, professionalsList, servicesList, businessHoursList, storeData]);
 
+  const isAppleDevice = useMemo(() => {
+    if (typeof navigator === 'undefined') return false;
+    return /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
+  }, []);
 
   const mapPreviewUrl = useMemo(() => {
-    if (userPos) return `https://www.google.com/maps?saddr=${userPos.lat},${userPos.lng}&daddr=${storeCoords.lat},${storeCoords.lng}&z=16&output=embed`;
-    return `https://www.google.com/maps?q=${storeCoords.lat},${storeCoords.lng}&z=16&output=embed`;
-  }, [userPos, storeCoords]);
+    return `https://maps.google.com/maps?q=${storeCoords.lat},${storeCoords.lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  }, [storeCoords]);
+
   const mapModalUrl = useMemo(() => {
-    if (userPos) return `https://www.google.com/maps?saddr=${userPos.lat},${userPos.lng}&daddr=${storeCoords.lat},${storeCoords.lng}&z=${mapZoom}&output=embed`;
-    return `https://www.google.com/maps?q=${storeCoords.lat},${storeCoords.lng}&z=${mapZoom}&output=embed`;
-  }, [userPos, storeCoords, mapZoom]);
+    return `https://maps.google.com/maps?q=${storeCoords.lat},${storeCoords.lng}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`;
+  }, [storeCoords, mapZoom]);
 
   const directionsUrl = useMemo(() => {
     if (settings?.map_link) return settings.map_link;
-    if (userPos) return `https://www.google.com/maps/dir/?api=1&origin=${userPos.lat},${userPos.lng}&destination=${storeCoords.lat},${storeCoords.lng}`;
-    return "https://maps.google.com";
-  }, [userPos, storeCoords, settings]);
+
+    if (isAppleDevice) {
+      if (userPos) {
+        return `https://maps.apple.com/?saddr=${userPos.lat},${userPos.lng}&daddr=${storeCoords.lat},${storeCoords.lng}&dirflg=d`;
+      }
+      return `https://maps.apple.com/?daddr=${storeCoords.lat},${storeCoords.lng}&dirflg=d`;
+    }
+
+    if (userPos) {
+      return `https://www.google.com/maps/dir/?api=1&origin=${userPos.lat},${userPos.lng}&destination=${storeCoords.lat},${storeCoords.lng}`;
+    }
+    return `https://www.google.com/maps/dir/?api=1&destination=${storeCoords.lat},${storeCoords.lng}`;
+  }, [userPos, storeCoords, settings, isAppleDevice]);
 
   const whatsappUrl = useMemo(() => {
     if (!bookingCode || !selectedService || !selectedDate || !selectedTime) return "#";
@@ -602,51 +656,18 @@ export default function PublicStore() {
     );
   }
 
-  if (!tenant || tenant.status !== 'active') {
-    return (
-      <div className="min-h-screen flex flex-col p-6" style={{ background: theme.bg }}>
-        <div className="flex-1 flex flex-col items-center justify-center text-center max-w-md mx-auto w-full">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6" style={{ background: `${theme.accent}15`, border: `1px solid ${theme.accent}30` }}>
-            <Calendar className="w-8 h-8" style={{ color: theme.accent }} />
-          </div>
-          <h2 className="text-2xl font-bold mb-3" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>Agenda Fechada</h2>
-          <p className="text-sm mb-10 leading-relaxed" style={{ color: theme.textMuted }}>
-            Este salão não está aceitando agendamentos no momento. Entre em contato diretamente com o estabelecimento para mais informações.
-          </p>
+  const isTenantInactive = !tenant || Boolean(tenant.deleted_at) || ['blocked', 'suspended', 'deleted', 'canceled'].includes(tenant.status) || (tenant.status !== 'active' && tenant.status !== 'trial');
 
-          {storeAddress && (
-            <div className="w-full text-left bg-black/20 rounded-2xl p-4 border" style={{ borderColor: theme.cardBorder }}>
-              <div className="flex items-start gap-3 mb-4">
-                <MapPin className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: theme.accent }} />
-                <div>
-                  <h4 className="font-bold text-sm mb-1" style={{ color: theme.textPrimary }}>Endereço da Loja</h4>
-                  <p className="text-xs leading-relaxed" style={{ color: theme.textMuted }}>{storeAddress}</p>
-                </div>
-              </div>
-              <div className="rounded-xl overflow-hidden border relative" style={{ borderColor: theme.cardBorder, height: 160 }}>
-                {geoStatus !== "loading" ? (
-                  <iframe
-                    title="Mapa"
-                    src={mapPreviewUrl}
-                    className="w-full h-full border-0"
-                    loading="lazy"
-                    allowFullScreen
-                    style={{ filter: (theme as any).mapFilter }}
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/5">
-                    <Loader2 className="w-6 h-6 animate-spin" style={{ color: theme.accent }} />
-                  </div>
-                )}
-              </div>
-              <a href={directionsUrl} target="_blank" rel="noreferrer"
-                className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold border transition-colors"
-                style={{ borderColor: `${theme.accent}40`, color: theme.accent }}>
-                <Navigation className="w-4 h-4" /> Como chegar
-              </a>
-            </div>
-          )}
+  if (isTenantInactive) {
+    return (
+      <div className="min-h-screen flex flex-col p-6 items-center justify-center text-center max-w-md mx-auto w-full" style={{ background: theme.bg }}>
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 bg-red-500/10 border border-red-500/20">
+          <AlertTriangle className="w-8 h-8 text-red-400" />
         </div>
+        <h2 className="text-2xl font-bold mb-3" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>Estabelecimento Indisponível</h2>
+        <p className="text-sm mb-6 leading-relaxed" style={{ color: theme.textMuted }}>
+          Esta página de agendamento não está acessível pois o estabelecimento foi desativado ou encerrou suas atividades.
+        </p>
       </div>
     );
   }

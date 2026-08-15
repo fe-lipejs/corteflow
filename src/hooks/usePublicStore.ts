@@ -10,13 +10,18 @@ async function fetchPublicStore(slug: string) {
   
   if (!tenant) {
     if (slug === 'demo' || !slug) {
-      const { data } = await supabase.from('tenants').select('*').limit(1).maybeSingle();
+      const { data } = await supabase.from('tenants').select('*').is('deleted_at', null).limit(1).maybeSingle();
       tenant = data;
     }
-    
-    if (!tenant) {
-      throw new Error('Barbearia/Salão não encontrado(a)');
-    }
+  }
+
+  // If tenant is soft-deleted or marked blocked/suspended/deleted
+  if (tenant && (tenant.deleted_at || ['blocked', 'suspended', 'deleted', 'canceled'].includes(tenant.status))) {
+    tenant = null;
+  }
+
+  if (!tenant) {
+    throw new Error('Barbearia/Salão não encontrado ou desativado');
   }
 
   const todayStr = startOfDay(new Date()).toISOString();
@@ -30,7 +35,8 @@ async function fetchPublicStore(slug: string) {
     { data: proHoursData },
     { data: blockedData },
     { data: bookingsData },
-    { data: proServicesData }
+    { data: proServicesData },
+    { data: connectData }
   ] = await Promise.all([
     supabase.from('tenant_settings').select('*').eq('tenant_id', tenant.id).maybeSingle(),
     supabase.from('services').select('*').eq('tenant_id', tenant.id),
@@ -39,7 +45,8 @@ async function fetchPublicStore(slug: string) {
     supabase.from('professional_working_hours').select('*').eq('tenant_id', tenant.id),
     supabase.from('professional_blocked_times').select('*').eq('tenant_id', tenant.id).gte('ends_at', todayStr).lte('starts_at', futureStr),
     supabase.from('bookings').select('id, professional_id, scheduled_at, status, service_id').eq('tenant_id', tenant.id).in('status', ['pending', 'confirmed']).gte('scheduled_at', todayStr).lte('scheduled_at', futureStr),
-    supabase.from('professional_services').select('*').eq('tenant_id', tenant.id)
+    supabase.from('professional_services').select('*').eq('tenant_id', tenant.id),
+    supabase.from('stripe_connect_accounts').select('charges_enabled').eq('tenant_id', tenant.id).maybeSingle()
   ]);
 
   // Filtra serviços ativos garantindo compatibilidade caso a flag 'active' seja null no banco antigo
@@ -62,7 +69,8 @@ async function fetchPublicStore(slug: string) {
     professionalWorkingHours: proHoursData || [],
     professionalBlockedTimes: blockedData || [],
     bookings: bookingsData || [],
-    professionalServices: proServicesData || []
+    professionalServices: proServicesData || [],
+    isStripeEnabled: connectData?.charges_enabled === true
   };
 }
 

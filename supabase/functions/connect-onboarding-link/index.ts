@@ -2,7 +2,6 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -17,7 +16,7 @@ serve(async (req) => {
   try {
     const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeSecret) {
-      throw new Error("STRIPE_SECRET_KEY não configurada no backend. Você fez o deploy das secrets no Supabase?");
+      throw new Error("STRIPE_SECRET_KEY não configurada no backend.");
     }
 
     const stripe = new Stripe(stripeSecret, {
@@ -42,11 +41,26 @@ serve(async (req) => {
     // Verificar se já existe uma conta Stripe Connect
     let { data: connectAccount } = await supabase
       .from('stripe_connect_accounts')
-      .select('stripe_account_id')
+      .select('*')
       .eq('tenant_id', tenantId)
       .maybeSingle();
 
     let accountId = connectAccount?.stripe_account_id;
+
+    if (accountId) {
+      try {
+        const existingAccount = await stripe.accounts.retrieve(accountId);
+        if (existingAccount.details_submitted) {
+          const loginLink = await stripe.accounts.createLoginLink(accountId);
+          return new Response(
+            JSON.stringify({ url: loginLink.url }),
+            { headers: { 'Content-Type': 'application/json', ...corsHeaders } },
+          );
+        }
+      } catch (err) {
+        console.warn("Could not create login link, generating onboarding link:", err);
+      }
+    }
 
     if (!accountId) {
       // Criar nova conta Express no Stripe
@@ -83,12 +97,12 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ url: accountLink.url }),
       { headers: { 'Content-Type': 'application/json', ...corsHeaders } },
-    )
+    );
   } catch (err: any) {
     console.error("Stripe Onboarding Error:", err);
     return new Response(
       JSON.stringify({ error: err.message }),
-      { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-    )
+      { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
+    );
   }
-})
+});

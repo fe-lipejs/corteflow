@@ -12,10 +12,10 @@ import {
   type CreateProfessionalInput,
   type UpdateProfessionalInput,
 } from '../../hooks/useProfessionals';
-import type { Professional } from '../../types/database';
 import ProfessionalCard from './equipe/ProfessionalCard';
 import ProfessionalModal from './equipe/ProfessionalModal';
 import { CardSkeleton } from '../../components/ui/Skeleton';
+import type { Professional } from '../../types/database';
 
 // ─── Sort options ─────────────────────────────────────────────────────────────
 type SortKey = 'name_asc' | 'name_desc' | 'newest' | 'oldest' | 'status';
