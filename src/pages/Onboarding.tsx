@@ -437,6 +437,7 @@ export default function Onboarding() {
       // 4. Create tenant_settings with complete contact and address breakdown
       const { error: settingsError } = await supabase.from('tenant_settings').insert({
         tenant_id: newTenant.id,
+        fantasy_name: finalBusinessName,
         theme_preset: data.themePreset || 'elegant',
         custom_palette: { primary: '#DE870D', fontStyle: 'sans' },
         logo_url: logoUrl,
@@ -458,12 +459,14 @@ export default function Onboarding() {
         full_address: computedFullAddress,
         map_link: data.googleMapsUrl || '',
         booking_payment_mode: 'local',
-        online_payment_enabled: false,
+        accept_online_payment: false,
+        accept_local_payment: true,
         payment_methods: { pay_local: true, partial_50: false, full_100: false },
       } as any);
 
       if (settingsError) {
-        console.warn('Aviso ao criar configurações:', settingsError);
+        console.error('Erro ao criar configurações:', settingsError);
+        throw new Error(`Erro ao salvar configurações do salão: ${settingsError.message}`);
       }
 
       // 5. Create default business hours (Monday to Saturday: 09:00 - 19:00)
