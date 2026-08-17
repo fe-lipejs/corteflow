@@ -1797,6 +1797,9 @@ export default function Configuracoes() {
                   className="themed-input"
                   placeholder="Cole o link curto do Google Maps aqui (opcional)"
                 />
+                <p className="text-[10px] mt-1 font-medium" style={{ color: theme.textMuted }}>
+                  Coloque o link do Google para uma localização mais precisa (Ex: https://maps.app.goo.gl/...)
+                </p>
               </div>
 
               {/* Map Preview */}

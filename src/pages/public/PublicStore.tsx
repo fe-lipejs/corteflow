@@ -511,12 +511,24 @@ export default function PublicStore() {
   }, []);
 
   const mapPreviewUrl = useMemo(() => {
-    return `https://maps.google.com/maps?q=${storeCoords.lat},${storeCoords.lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
-  }, [storeCoords]);
+    // Try to extract an iframe src if the user pasted the embed code directly in the link field
+    if (settings?.map_link && settings.map_link.includes('<iframe')) {
+      const match = settings.map_link.match(/src="([^"]+)"/);
+      if (match) return match[1];
+    }
+    // Otherwise rely on the Google Maps native address search using the configured text inputs!
+    const query = storeAddress ? encodeURIComponent(storeAddress) : `${storeCoords.lat},${storeCoords.lng}`;
+    return `https://maps.google.com/maps?q=${query}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  }, [storeCoords, storeAddress, settings?.map_link]);
 
   const mapModalUrl = useMemo(() => {
-    return `https://maps.google.com/maps?q=${storeCoords.lat},${storeCoords.lng}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`;
-  }, [storeCoords, mapZoom]);
+    if (settings?.map_link && settings.map_link.includes('<iframe')) {
+      const match = settings.map_link.match(/src="([^"]+)"/);
+      if (match) return match[1];
+    }
+    const query = storeAddress ? encodeURIComponent(storeAddress) : `${storeCoords.lat},${storeCoords.lng}`;
+    return `https://maps.google.com/maps?q=${query}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`;
+  }, [storeCoords, storeAddress, mapZoom, settings?.map_link]);
 
   const directionsUrl = useMemo(() => {
     if (settings?.map_link) return settings.map_link;

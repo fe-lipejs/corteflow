@@ -305,8 +305,8 @@ function FinanceiroContent() {
 
       {/* ── Modal: Upgrade Plan ── */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
-          <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl glass-card animate-scale-in" style={{ borderColor: theme.border, background: theme.cardBg }}>
+        <div className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md">
+          <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_0_80px_rgba(0,0,0,0.5)] ring-1 ring-white/10 glass-card animate-scale-in" style={{ borderColor: theme.border, background: theme.cardBg }}>
             <div className="relative mb-6">
               <div className="relative w-20 h-20 mx-auto bg-black border rounded-full flex items-center justify-center" style={{ borderColor: theme.accent }}>
                 <Crown className="w-10 h-10" style={{ color: theme.accent }} />

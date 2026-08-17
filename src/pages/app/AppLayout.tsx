@@ -155,7 +155,7 @@ export default function AppLayout() {
       
       {/* Mobile Top Bar */}
       <div 
-        className="md:hidden fixed top-0 left-0 right-0 h-16 backdrop-blur-xl z-30 flex items-center justify-between px-4"
+        className="md:hidden fixed top-0 left-0 right-0 h-16 backdrop-blur-xl z-40 flex items-center justify-between px-4"
         style={{ background: theme.sidebarBg, borderBottom: `1px solid ${theme.border}` }}
       >
         <div className="flex items-center gap-2">
@@ -182,7 +182,7 @@ export default function AppLayout() {
       {/* Mobile Backdrop Overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="md:hidden fixed inset-0 z-30 backdrop-blur-sm transition-opacity"
+          className="md:hidden fixed inset-0 z-40 backdrop-blur-sm transition-opacity"
           style={{ background: 'rgba(0,0,0,0.6)' }}
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -190,7 +190,7 @@ export default function AppLayout() {
 
       {/* Sidebar (Desktop fixed & Mobile Drawer) */}
       <aside 
-        className={`flex flex-col fixed top-0 left-0 h-full z-40 md:z-20 transition-transform duration-300 md:translate-x-0 backdrop-blur-xl ${
+        className={`flex flex-col fixed top-0 left-0 h-full z-50 md:z-50 transition-transform duration-300 md:translate-x-0 backdrop-blur-xl ${
           isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'
         }`}
         style={{ width: '250px', background: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}` }}
