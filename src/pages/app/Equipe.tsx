@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Crown, Users, CheckCircle, Palmtree, XCircle, SlidersHorizontal, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
+import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 import {
   useProfessionals,
   useServices,
@@ -25,6 +26,7 @@ export default function Equipe() {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const tenantId = tenant?.id ?? '';
+  const engine = usePermissionEngine();
 
   // ── Data fetching ──────────────────────────────────────────────────────────
   const { data: professionals = [], isLoading, error } = useProfessionals(tenantId || null);
@@ -88,6 +90,10 @@ export default function Equipe() {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleNewClick = () => {
+    if (!engine.checkLimit('profissionais', professionals.length)) {
+      setShowUpgradeModal(true);
+      return;
+    }
     setEditingPro(null);
     setModalOpen(true);
     setMutationError(null);
@@ -349,9 +355,9 @@ export default function Equipe() {
             <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: theme.accentMuted, color: theme.accent }}>
               <Crown className="w-7 h-7" />
             </div>
-            <h3 className="font-serif text-2xl font-bold mb-2" style={{ color: theme.textPrimary }}>Upgrade para Growth</h3>
+            <h3 className="font-serif text-2xl font-bold mb-2" style={{ color: theme.textPrimary }}>Limite Atingido</h3>
             <p className="text-sm mb-7" style={{ color: theme.textSecondary }}>
-              O plano Starter permite 1 profissional. Faça upgrade para adicionar toda sua equipe sem limites.
+              Seu plano atual permite apenas {engine.getPlanLimit('profissionais') === 'unlimited' ? 'um número ilimitado de' : engine.getPlanLimit('profissionais')} profissional{engine.getPlanLimit('profissionais') !== 1 ? 'is' : ''}. Faça upgrade para adicionar mais profissionais e expandir sua equipe.
             </p>
             <button
               onClick={() => { setShowUpgradeModal(false); navigate('/app/assinatura'); }}

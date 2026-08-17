@@ -14,6 +14,8 @@ interface Plan {
   allow_products: boolean;
   trial_days: number;
   features: any;
+  permissions?: any;
+  limits?: any;
   plan_prices: Array<{ currency: string; amount: number }>;
   is_custom_price?: boolean;
 }
@@ -108,7 +110,7 @@ export default function Assinatura() {
     if (!tenant) return;
     const fetchData = async () => {
       const [{ data: subData }, { data: planData }, { data: customPricingData }] = await Promise.all([
-        supabase.from('subscriptions').select('*').eq('tenant_id', tenant.id).maybeSingle(),
+        supabase.from('subscriptions').select('*, subscription_contracts(*)').eq('tenant_id', tenant.id).maybeSingle(),
         supabase.from('plans').select('*, plan_prices(*)').eq('active', true).order('sort_order', { ascending: true }),
         supabase.from('custom_pricing').select('*').eq('tenant_id', tenant.id)
       ]);
@@ -132,7 +134,18 @@ export default function Assinatura() {
           }
           return plan;
         });
-        setPlans(plansWithCustomPrices as any);
+
+        // Ordenação: Menor valor para maior, mas o Plano Gratuito (is_default) SEMPRE em primeiro
+        const sortedPlans = plansWithCustomPrices.sort((a: any, b: any) => {
+          if (a.is_default) return -1;
+          if (b.is_default) return 1;
+          
+          const aPrice = a.plan_prices?.find((p: any) => p.currency === 'BRL')?.amount || 0;
+          const bPrice = b.plan_prices?.find((p: any) => p.currency === 'BRL')?.amount || 0;
+          return aPrice - bPrice;
+        });
+
+        setPlans(sortedPlans);
       }
       
       setLoading(false);
@@ -310,12 +323,57 @@ export default function Assinatura() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {plans.map((plan) => {
-              const brlPrice = plan.plan_prices?.find(p => p.currency === 'BRL');
-              const displayFeatures = getDisplayFeatures(plan);
-              const flags = getFeatureFlags(plan);
-              const isCurrent = subscription?.plan_id === plan.id;
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {plans.filter(plan => {
+              // Ocultar Plano Gratuito se o usuário tiver uma assinatura paga ativa
+              const isPaidActive = subscription && subscription.status !== 'canceled' && subscription.plan_id !== plan.id && !plan.is_default;
+              const hasActivePaidPlan = subscription && subscription.status !== 'canceled' && plans.some(p => p.id === subscription.plan_id && !p.is_default);
+              
+              if (plan.is_default && hasActivePaidPlan) {
+                return false;
+              }
+              return true;
+            }).map((plan) => {
+              // Se a assinatura está cancelada, o plano atual volta a ser o Gratuito (is_default)
+              const isCanceled = subscription?.status === 'canceled';
+              const isCurrent = (isCanceled && plan.is_default) || (!isCanceled && subscription?.plan_id === plan.id);
+              
+              // Se for o plano atual e existir um contrato, o contrato manda nos limites e preço!
+              let planToDisplay = plan;
+              if (isCurrent && subscription?.subscription_contracts && !Array.isArray(subscription.subscription_contracts)) {
+                const contract = subscription.subscription_contracts as any;
+                planToDisplay = {
+                  ...plan,
+                  max_professionals: contract.max_professionals,
+                  allow_products: contract.allow_products,
+                  features: contract.features,
+                  permissions: contract.permissions,
+                  limits: contract.limits,
+                  plan_prices: [{ currency: contract.currency, amount: contract.price_amount }]
+                };
+              } else if (isCurrent && subscription?.subscription_contracts && Array.isArray(subscription.subscription_contracts) && subscription.subscription_contracts.length > 0) {
+                const contract = subscription.subscription_contracts[0] as any;
+                planToDisplay = {
+                  ...plan,
+                  max_professionals: contract.max_professionals,
+                  allow_products: contract.allow_products,
+                  features: contract.features,
+                  permissions: contract.permissions,
+                  limits: contract.limits,
+                  plan_prices: [{ currency: contract.currency, amount: contract.price_amount }]
+                };
+              }
+
+              const brlPrice = planToDisplay.plan_prices?.find((p: any) => p.currency === 'BRL');
+              const displayFeatures = getDisplayFeatures(planToDisplay);
+              const flags = getFeatureFlags(planToDisplay);
+              
+              const limitsObj = planToDisplay.limits || {};
+              const maxProf = limitsObj.profissionais ?? planToDisplay.max_professionals;
+              const displayMaxProf = maxProf === 'unlimited' || maxProf === -1 || maxProf === 999 
+                ? 'Ilimitados' 
+                : `Até ${maxProf} profissional${maxProf !== 1 ? 'is' : ''}`;
+
               const isLoading = checkoutLoading === plan.id;
 
               return (
@@ -331,14 +389,17 @@ export default function Assinatura() {
                   {/* Plan header */}
                   <div className="p-6 flex-1">
                     <div className="flex items-start justify-between mb-1">
-                      <h3 className="text-xl font-bold" style={{ color: theme.textPrimary }}>{plan.name}</h3>
+                      <h3 className="text-xl font-bold" style={{ color: theme.textPrimary }}>{planToDisplay.name}</h3>
                       {isCurrent && (
-                        <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ background: `${theme.accent}20`, color: theme.accent }}>
-                          Plano Atual
+                        <span className="text-xs font-bold px-2 py-1 rounded-full flex flex-col items-end" style={{ background: `${theme.accent}20`, color: theme.accent }}>
+                          <span>Plano Atual</span>
+                          {subscription?.subscription_contracts && (
+                            <span className="text-[10px] opacity-70">Contrato Preservado</span>
+                          )}
                         </span>
                       )}
                     </div>
-                    <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>{plan.description}</p>
+                    <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>{planToDisplay.description}</p>
 
                     {/* Price */}
                     <div className="mb-4">
@@ -364,7 +425,7 @@ export default function Assinatura() {
                     {/* Trial */}
                     <p className="text-xs mb-4" style={{ color: theme.textSecondary }}>
                       <Clock className="w-3 h-3 inline mr-1" />
-                      {plan.trial_days} dias de teste grátis
+                      {planToDisplay.trial_days} dias de teste grátis
                     </p>
 
                     {/* Feature flags */}
@@ -387,7 +448,7 @@ export default function Assinatura() {
                     {/* Limits */}
                     <div className="text-sm font-medium flex items-center gap-2" style={{ color: theme.textPrimary }}>
                       <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style={{ background: `${theme.accent}20`, color: theme.accent }}>👥</span>
-                      <span>Até {plan.max_professionals} profissional{plan.max_professionals !== 1 ? 'is' : ''}</span>
+                      <span>{displayMaxProf}</span>
                     </div>
 
                     {/* Display features bullets */}
@@ -406,13 +467,13 @@ export default function Assinatura() {
                   {/* Action button */}
                   <div className="p-6 pt-0">
                     <button
-                      onClick={() => handleCheckout(plan.id)}
-                      disabled={isLoading || isCurrent}
+                      onClick={() => !plan.is_default ? handleCheckout(plan.id) : null}
+                      disabled={isLoading || isCurrent || plan.is_default}
                       className="w-full py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 hover:opacity-95 cursor-pointer"
                       style={{
-                        background: isCurrent ? theme.bgHover : theme.accentGradient,
-                        color: isCurrent ? theme.textSecondary : theme.btnPrimaryText,
-                        boxShadow: isCurrent ? 'none' : theme.shadowAccent,
+                        background: isCurrent ? theme.bgHover : (plan.is_default ? theme.bgHover : theme.accentGradient),
+                        color: isCurrent ? theme.textSecondary : (plan.is_default ? theme.textMuted : theme.btnPrimaryText),
+                        boxShadow: isCurrent || plan.is_default ? 'none' : theme.shadowAccent,
                       }}
                     >
                       {isLoading ? (
@@ -422,6 +483,8 @@ export default function Assinatura() {
                         </>
                       ) : isCurrent ? (
                         'Plano Atual'
+                      ) : plan.is_default ? (
+                        'Seu Plano Básico' // If it's not current, but it's default, they can't explicitly 'checkout' to it, they must cancel.
                       ) : (
                         <>
                           <Zap className="w-4 h-4" />

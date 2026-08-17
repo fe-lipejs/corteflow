@@ -153,6 +153,8 @@ export interface Database {
           max_professionals: number;
           allow_products: boolean;
           features: Json;
+          permissions: Json;
+          limits: Json;
           trial_days: number;
           active: boolean;
           sort_order: number;
@@ -173,6 +175,50 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['subscriptions']['Row'], 'id'> & { id?: string };
         Update: Partial<Database['public']['Tables']['subscriptions']['Insert']>;
+      };
+      subscription_contracts: {
+        Row: {
+          subscription_id: string;
+          plan_id: string;
+          price_amount: number;
+          currency: string;
+          max_professionals: number;
+          allow_products: boolean;
+          features: Json;
+          permissions: Json;
+          limits: Json;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['subscription_contracts']['Row'], 'created_at' | 'updated_at'> & { created_at?: string, updated_at?: string };
+        Update: Partial<Database['public']['Tables']['subscription_contracts']['Insert']>;
+      };
+      sys_permissions: {
+        Row: {
+          key: string;
+          module: string;
+          description: string | null;
+        };
+        Insert: Database['public']['Tables']['sys_permissions']['Row'];
+        Update: Partial<Database['public']['Tables']['sys_permissions']['Insert']>;
+      };
+      sys_features: {
+        Row: {
+          key: string;
+          module: string;
+          description: string | null;
+        };
+        Insert: Database['public']['Tables']['sys_features']['Row'];
+        Update: Partial<Database['public']['Tables']['sys_features']['Insert']>;
+      };
+      sys_role_permissions: {
+        Row: {
+          role: string;
+          permission_key: string;
+        };
+        Insert: Database['public']['Tables']['sys_role_permissions']['Row'];
+        Update: Partial<Database['public']['Tables']['sys_role_permissions']['Insert']>;
       };
       professionals: {
         Row: Professional;

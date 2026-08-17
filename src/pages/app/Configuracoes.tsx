@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../integrations/supabase/client';
 import { useAuth } from '../../hooks/useAuth';
+import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 import { useTranslation } from 'react-i18next';
 import { useTheme, THEMES } from '../../contexts/ThemeContext';
 import { useImageUpload } from '../../hooks/useImageUpload';
@@ -10,6 +11,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { generateSmartPaletteFromLogo, generatePaletteFromAccent } from '../../lib/colorExtractor';
 import { useQueryClient } from '@tanstack/react-query';
 import { PUBLIC_STORE_QUERY_KEY } from '../../hooks/usePublicStore';
+import { usePlanFeatures } from '../../hooks/usePlanFeatures';
+import FeatureGate from '../../components/FeatureGate';
 import {
   Save, Check, Link as LinkIcon, Copy, ExternalLink, Image as ImageIcon,
   MapPin, Phone, Globe, Mail, Palette, Clock, CreditCard, Upload,
@@ -56,6 +59,7 @@ type TabId = typeof TABS[number]['id'];
 
 export default function Configuracoes() {
   const { tenant, profile, signOut, refreshProfile } = useAuth();
+  const engine = usePermissionEngine();
   const { i18n } = useTranslation();
   const { theme, setThemeId, themeId, fontStyle, setFontStyle, setCustomPalette: setContextCustomPalette } = useTheme();
   const phoneFormat = usePhoneFormat(tenant?.language || 'pt');
@@ -1370,21 +1374,23 @@ export default function Configuracoes() {
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDraftFontStyle(fontStyle);
-                      setIsCustomizerOpen(true);
-                    }}
-                    className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl text-xs font-extrabold uppercase tracking-wider shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
-                    style={{
-                      background: theme.btnPrimaryBg || theme.accent,
-                      color: theme.btnPrimaryText,
-                    }}
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    <span>Personalizar Visual & Cores</span>
-                  </button>
+                  <FeatureGate feature="custom_colors" inline message="Cores personalizadas e temas no plano superior">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDraftFontStyle(fontStyle);
+                        setIsCustomizerOpen(true);
+                      }}
+                      className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl text-xs font-extrabold uppercase tracking-wider shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
+                      style={{
+                        background: theme.btnPrimaryBg || theme.accent,
+                        color: theme.btnPrimaryText,
+                      }}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Personalizar Visual & Cores</span>
+                    </button>
+                  </FeatureGate>
                 </div>
 
                 {/* Resumo Visual Atual com Muito Respiro */}
@@ -2384,10 +2390,10 @@ export default function Configuracoes() {
                     <Crown className="w-4 h-4" style={{ color: theme.accent }} />
                   </div>
                   <h4 className="font-bold text-base uppercase" style={{ color: theme.accent }}>
-                    {subInfo?.plans?.name || 'Plano Starter'}
+                    {engine.defaultPlan?.name || 'Plano Starter'}
                   </h4>
                   <p className="text-xs" style={{ color: theme.textMuted }}>
-                    Até {subInfo?.plans?.max_professionals || 1} profissional{((subInfo?.plans?.max_professionals || 1) > 1) ? 'is' : ''} • {subInfo?.plans?.allow_products ? 'Produtos liberados' : 'Apenas Serviços'}
+                    {engine.getPlanLimit('profissionais') === 'unlimited' ? 'Profissionais ilimitados' : `Até ${engine.getPlanLimit('profissionais')} profissional${engine.getPlanLimit('profissionais') !== 1 ? 'is' : ''}`} • {engine.hasFeature('produtos') ? 'Produtos liberados' : 'Apenas Serviços'}
                   </p>
                 </div>
 

@@ -88,7 +88,7 @@ export default function AdminLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
   const [profile, setProfile] = useState<{ full_name: string } | null>(null);
-  const { unreadCount } = useAdminNotifications();
+  const { unreadCount, unreadSupportCount } = useAdminNotifications();
 
   useEffect(() => {
     setIsMobileOpen(false);
@@ -165,14 +165,21 @@ export default function AdminLayout() {
                 {group.label}
               </p>
               <div className="space-y-0.5">
-                {group.items.map((item) => (
-                  <NavItemComponent
-                    key={item.to}
-                    item={item}
-                    onClick={() => setIsMobileOpen(false)}
-                    externalBadge={(item as any).badgeKey === 'notifications' && unreadCount > 0 ? unreadCount : undefined}
-                  />
-                ))}
+                {group.items.map(item => {
+                  const badge = (item as any).badgeKey === 'notifications' 
+                    ? (unreadCount > 0 ? unreadCount : undefined)
+                    : (item as any).badgeKey === 'support'
+                      ? (unreadSupportCount > 0 ? unreadSupportCount : undefined)
+                      : undefined;
+                  return (
+                    <NavItemComponent 
+                      key={item.to} 
+                      item={item} 
+                      onClick={() => setIsMobileOpen(false)}
+                      externalBadge={badge} 
+                    />
+                  );
+                })}
               </div>
             </div>
           ))}

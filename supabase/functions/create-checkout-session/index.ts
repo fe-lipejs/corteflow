@@ -57,6 +57,14 @@ serve(async (req) => {
       .maybeSingle();
     
     // 3. Definir valor final (Custom Price > Plan Price > Fallback)
+    const amountFloat = customPrice?.amount_override ?? planPrice?.amount ?? 0;
+    const unitAmount = Math.round(amountFloat * 100);
+    const currency = (planPrice?.currency ?? 'BRL').toLowerCase();
+
+    if (unitAmount <= 0) {
+      throw new Error("O valor do plano não pode ser zero ou negativo para assinaturas no Stripe.");
+    }
+
     // 4. Verificar se o salão já utilizou o benefício do teste grátis (Single-use trial rule)
     const { data: tenantData } = await supabase
       .from('tenants')

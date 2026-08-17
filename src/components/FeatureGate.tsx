@@ -2,12 +2,11 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, Check, ChevronRight, Lock, Package, ArrowUpRight, TrendingUp, DollarSign } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { usePlanFeatures } from '../hooks/usePlanFeatures';
-import type { PlanFeatures } from '../hooks/usePlanFeatures';
+import { usePermissionEngine } from '../hooks/usePermissionEngine';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface FeatureGateProps {
-  feature: keyof PlanFeatures;
+  feature: string;
   children: ReactNode;
   /** Custom upgrade message */
   message?: string;
@@ -16,7 +15,7 @@ interface FeatureGateProps {
 }
 
 /** Rich, Privacy-Protected Teaser Mockup so the user sees the structure and charts, but the data is enticely blurred/censored */
-function TeaserBackdrop({ feature }: { feature: keyof PlanFeatures }) {
+function TeaserBackdrop({ feature }: { feature: string }) {
   const { theme } = useTheme();
 
   if (feature === 'financeiro') {
@@ -163,7 +162,7 @@ function TeaserBackdrop({ feature }: { feature: keyof PlanFeatures }) {
   );
 }
 
-function UpgradeScreen({ feature }: { feature: keyof PlanFeatures }) {
+function UpgradeScreen({ feature }: { feature: string }) {
   const { theme, fontStyle } = useTheme();
 
   // High-converting, commercial copywriting tailored to salon/barbershop owners
@@ -408,17 +407,18 @@ function InlineLock({ message }: { message?: string }) {
 
 export default function FeatureGate({ feature, children, message, inline = false }: FeatureGateProps) {
   const { theme } = useTheme();
-  const { features, isLoading } = usePlanFeatures();
+  const engine = usePermissionEngine();
 
-  if (isLoading) return <>{children}</>;
+  if (engine.isLoading) return <>{children}</>;
 
-  const hasAccess = features[feature];
+  const hasAccess = engine.hasFeature(feature);
 
   if (!hasAccess) {
-    const isTrialExpired = features.subscription_status === 'trial_expired';
-    const noSub = !features.has_subscription;
+    const subStatus = engine.subscription?.status;
+    const isTrialExpired = subStatus === 'trial' && engine.subscription?.trial_ends_at && new Date(engine.subscription.trial_ends_at) < new Date();
+    const noSub = !engine.subscription && !engine.defaultPlan;
 
-    let defaultMessage = 'Este recurso faz parte do plano Growth. Faça upgrade para desbloquear.';
+    let defaultMessage = 'Este recurso faz parte de um plano superior. Faça upgrade para desbloquear.';
     if (isTrialExpired || noSub) {
       defaultMessage = 'Seu período de teste terminou. Escolha um plano para continuar aproveitando todos os recursos.';
     }

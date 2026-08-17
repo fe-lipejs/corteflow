@@ -8,7 +8,7 @@ import {
   Send, ChevronLeft, AlertCircle, Tag, Loader2
 } from 'lucide-react';
 
-type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed' | 'waiting_user' | 'waiting_support';
 type TicketCategory = 'billing' | 'technical' | 'feature' | 'other';
 type TicketPriority = 'low' | 'medium' | 'high';
 
@@ -36,6 +36,8 @@ interface Message {
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; icon: React.ElementType }> = {
   open: { label: 'Aberto', color: '#3B82F6', icon: AlertCircle },
   in_progress: { label: 'Em andamento', color: '#F59E0B', icon: Clock },
+  waiting_user: { label: 'Aguardando Sua Resposta', color: '#8B5CF6', icon: Clock },
+  waiting_support: { label: 'Aguardando Suporte', color: '#EF4444', icon: AlertCircle },
   resolved: { label: 'Resolvido', color: '#10B981', icon: CheckCircle2 },
   closed: { label: 'Fechado', color: '#6B7280', icon: XCircle },
 };
@@ -148,9 +150,19 @@ export default function Suporte() {
       read_by_admin: false,
       read_by_owner: true,
     } as any);
+    if (selectedTicket.status !== 'closed' && selectedTicket.status !== 'resolved') {
+      await updateStatus(selectedTicket.id, 'waiting_support');
+    }
+
     setMessageText('');
     setSending(false);
     fetchMessages(selectedTicket.id);
+  };
+
+  const updateStatus = async (ticketId: string, status: TicketStatus) => {
+    await supabase.from('support_tickets').update({ status }).eq('id', ticketId);
+    setSelectedTicket(prev => prev ? { ...prev, status } : null);
+    setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status } : t));
   };
 
   // ── Create new ticket ─────────────────────────────────────────────────────
@@ -294,6 +306,18 @@ export default function Suporte() {
               </span>
               <span className="text-xs" style={{ color: theme.textMuted }}>Aberto em {formatDate(selectedTicket.created_at)}</span>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {selectedTicket.status !== 'closed' && selectedTicket.status !== 'resolved' && (
+              <button
+                onClick={() => updateStatus(selectedTicket.id, 'resolved')}
+                className="text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-1"
+                style={{ borderColor: theme.success, color: theme.success, background: `${theme.success}10` }}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Marcar como Resolvido
+              </button>
+            )}
           </div>
         </div>
 

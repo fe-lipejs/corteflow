@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import AdminPageHeader from './components/AdminPageHeader';
 
-type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed' | 'waiting_user' | 'waiting_support';
 type TicketCategory = 'billing' | 'technical' | 'feature' | 'other';
 type TicketPriority = 'low' | 'medium' | 'high';
 
@@ -39,6 +39,8 @@ interface Message {
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; icon: React.ElementType }> = {
   open: { label: 'Aberto', color: '#3B82F6', icon: AlertCircle },
   in_progress: { label: 'Em andamento', color: '#F59E0B', icon: Clock },
+  waiting_user: { label: 'Aguardando Cliente', color: '#8B5CF6', icon: Clock },
+  waiting_support: { label: 'Aguardando Suporte', color: '#EF4444', icon: AlertCircle },
   resolved: { label: 'Resolvido', color: '#10B981', icon: CheckCircle2 },
   closed: { label: 'Fechado', color: '#6B7280', icon: XCircle },
 };
@@ -134,6 +136,14 @@ export default function AdminSuporte() {
     setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status } : t));
   };
 
+  const deleteTicket = async (ticketId: string) => {
+    if (!window.confirm('Tem certeza que deseja apagar este chamado? Todas as mensagens serão perdidas.')) return;
+    await supabase.from('support_tickets').delete().eq('id', ticketId);
+    setTickets(prev => prev.filter(t => t.id !== ticketId));
+    setView('list');
+    setSelectedTicket(null);
+  };
+
   // ── Send message ──────────────────────────────────────────────────────────
   const sendMessage = async () => {
     if (!messageText.trim() || !selectedTicket || !profile) return;
@@ -148,9 +158,9 @@ export default function AdminSuporte() {
       read_by_owner: false,
     } as any);
 
-    // Auto-move to in_progress if still open
-    if (selectedTicket.status === 'open') {
-      await updateStatus(selectedTicket.id, 'in_progress');
+    // Auto-move to waiting_user when admin replies
+    if (selectedTicket.status !== 'closed' && selectedTicket.status !== 'resolved') {
+      await updateStatus(selectedTicket.id, 'waiting_user');
     }
 
     setMessageText('');
@@ -204,22 +214,23 @@ export default function AdminSuporte() {
           </div>
 
           {/* Status controls */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {(['open', 'in_progress', 'resolved', 'closed'] as TicketStatus[])
-              .filter(s => s !== selectedTicket.status)
-              .map(s => {
-                const cfg = STATUS_CONFIG[s];
-                return (
-                  <button
-                    key={s}
-                    onClick={() => updateStatus(selectedTicket.id, s)}
-                    className="text-xs px-2 py-1 rounded-lg border transition-colors hover:bg-[#1a1a1a]"
-                    style={{ borderColor: `${cfg.color}40`, color: cfg.color }}
-                  >
-                    → {cfg.label}
-                  </button>
-                );
-              })}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {selectedTicket.status !== 'closed' && (
+              <button
+                onClick={() => updateStatus(selectedTicket.id, 'closed')}
+                className="text-xs px-3 py-1.5 rounded-lg border transition-colors hover:bg-emerald-500/10 font-bold"
+                style={{ borderColor: '#10B981', color: '#10B981' }}
+              >
+                ✓ Concluir Chamado
+              </button>
+            )}
+            <button
+              onClick={() => deleteTicket(selectedTicket.id)}
+              className="text-xs px-3 py-1.5 rounded-lg border transition-colors hover:bg-red-500/10 font-bold"
+              style={{ borderColor: '#EF444440', color: '#EF4444' }}
+            >
+              Apagar
+            </button>
           </div>
         </div>
 

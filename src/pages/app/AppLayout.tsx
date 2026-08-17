@@ -58,6 +58,34 @@ export default function AppLayout() {
     navigate('/login');
   };
 
+  const [unreadSupport, setUnreadSupport] = useState(false);
+
+  useEffect(() => {
+    if (!tenant) return;
+
+    const fetchUnread = async () => {
+      const { count } = await supabase
+        .from('support_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('read_by_owner', false)
+        .neq('sender_role', 'owner');
+      setUnreadSupport((count || 0) > 0);
+    };
+
+    fetchUnread();
+
+    const channel = supabase.channel('app_support_unread')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages' }, () => {
+        fetchUnread();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'support_messages' }, () => {
+        fetchUnread();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [tenant]);
+
   const navItems = [
     { to: '/app', icon: LayoutDashboard, label: 'Visão geral', end: true },
     { to: '/app/agenda', icon: Calendar, label: 'Agenda', end: false },
@@ -66,7 +94,7 @@ export default function AppLayout() {
     { to: '/app/clientes', icon: Users, label: 'Clientes', end: false },
     { to: '/app/financeiro', icon: DollarSign, label: 'Financeiro', end: false },
     { to: '/app/assinatura', icon: CreditCard, label: 'Assinatura', end: false },
-    { to: '/app/suporte', icon: LifeBuoy, label: 'Suporte', end: false },
+    { to: '/app/suporte', icon: LifeBuoy, label: 'Suporte', end: false, badge: unreadSupport },
     { to: '/app/configuracoes', icon: Settings, label: 'Configurações', end: false },
   ];
 
@@ -214,7 +242,10 @@ export default function AppLayout() {
               })}
             >
               <item.icon className="w-4 h-4" />
-              <span>{item.label}</span>
+              <span className="flex-1">{item.label}</span>
+              {(item as any).badge && (
+                <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse"></span>
+              )}
             </NavLink>
           ))}
         </nav>

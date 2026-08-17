@@ -119,12 +119,32 @@ serve(async (req) => {
         if (eventTenantId) {
           const trialEndsAt = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null;
           
-          await supabase.from('subscriptions').update({
+          // Identify the plan_id from the stripe price if it changed (e.g. upgrade/downgrade)
+          let updatedPlanId = undefined;
+          const stripePriceId = sub.items?.data?.[0]?.price?.id;
+          if (stripePriceId) {
+            const { data: priceData } = await supabase
+              .from('plan_prices')
+              .select('plan_id')
+              .eq('stripe_price_id', stripePriceId)
+              .maybeSingle();
+            if (priceData?.plan_id) {
+              updatedPlanId = priceData.plan_id;
+            }
+          }
+
+          const updatePayload: any = {
             status: sub.status,
             trial_ends_at: trialEndsAt,
             current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
             cancel_at_period_end: sub.cancel_at_period_end,
-          }).eq('stripe_subscription_id', sub.id);
+          };
+
+          if (updatedPlanId) {
+            updatePayload.plan_id = updatedPlanId;
+          }
+          
+          await supabase.from('subscriptions').update(updatePayload).eq('stripe_subscription_id', sub.id);
 
           // If it became active/trialing, clear suspension
           if (sub.status === 'active' || sub.status === 'trialing') {

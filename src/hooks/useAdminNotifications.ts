@@ -16,5 +16,20 @@ export function useAdminNotifications() {
     staleTime: 15000,
   });
 
-  return { unreadCount };
+  const { data: unreadSupportCount = 0 } = useQuery({
+    queryKey: ['admin_support_unread'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('support_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('read_by_admin', false)
+        .neq('sender_role', 'super_admin');
+      if (error) return 0;
+      return count ?? 0;
+    },
+    refetchInterval: 30000, // Poll every 30s
+    staleTime: 15000,
+  });
+
+  return { unreadCount, unreadSupportCount };
 }
