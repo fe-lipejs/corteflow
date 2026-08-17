@@ -39,16 +39,16 @@ function getDisplayFeatures(plan: Plan): string[] {
 }
 
 function getFeatureFlags(plan: Plan): Record<string, boolean> {
-  if (!plan.features || Array.isArray(plan.features)) return {};
-  const f = plan.features as Record<string, any>;
+  const permissions = Array.isArray(plan.permissions) ? plan.permissions : [];
+  
   return {
-    agenda: f.agenda ?? true,
-    clientes: f.clientes ?? true,
-    equipe: f.equipe ?? true,
-    servicos: f.servicos ?? true,
-    financeiro: f.financeiro ?? false,
-    relatorios: f.relatorios ?? false,
-    produtos: f.produtos ?? false,
+    agenda: permissions.includes('view_agenda') || permissions.some(p => p.startsWith('agenda.')),
+    clientes: permissions.includes('view_clientes') || permissions.some(p => p.startsWith('clientes.')),
+    equipe: permissions.includes('view_equipe') || permissions.some(p => p.startsWith('equipe.')),
+    servicos: permissions.includes('view_servicos') || permissions.some(p => p.startsWith('catalogo.')),
+    financeiro: permissions.includes('view_financeiro') || permissions.some(p => p.startsWith('financeiro.')),
+    relatorios: permissions.includes('view_relatorios') || permissions.some(p => p.startsWith('relatorios.')),
+    produtos: !!plan.allow_products,
   };
 }
 
