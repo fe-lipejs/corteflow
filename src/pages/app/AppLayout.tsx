@@ -11,7 +11,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { supabase } from '../../integrations/supabase/client';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { ConnectionStatus } from '../../components/notifications/ConnectionStatus';
-import { usePlanFeatures } from '../../hooks/usePlanFeatures';
+import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 
 export default function AppLayout() {
   const { signOut, tenant, profile, loading } = useAuth();
@@ -22,7 +22,12 @@ export default function AppLayout() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [tenantSettings, setTenantSettings] = useState<any>(null);
-  const { features, isLoading: planLoading } = usePlanFeatures();
+  const engine = usePermissionEngine();
+  const features = {
+    subscription_status: engine.subscription?.status,
+    grace_period_ends_at: null, // Grace period not implemented in engine yet, assuming no grace period for now
+    suspension_reason: engine.tenant?.suspension_reason,
+  };
 
   // Pages always accessible regardless of subscription status
   const publicAppPaths = ['/app/assinatura', '/app/configuracoes', '/app/suporte'];
@@ -86,17 +91,24 @@ export default function AppLayout() {
     return () => { supabase.removeChannel(channel); };
   }, [tenant]);
 
-  const navItems = [
-    { to: '/app', icon: LayoutDashboard, label: 'Visão geral', end: true },
-    { to: '/app/agenda', icon: Calendar, label: 'Agenda', end: false },
-    { to: '/app/equipe', icon: Users, label: 'Equipe', end: false },
-    { to: '/app/servicos', icon: Scissors, label: 'Serviços', end: false },
-    { to: '/app/clientes', icon: Users, label: 'Clientes', end: false },
-    { to: '/app/financeiro', icon: DollarSign, label: 'Financeiro', end: false },
-    { to: '/app/assinatura', icon: CreditCard, label: 'Assinatura', end: false },
-    { to: '/app/suporte', icon: LifeBuoy, label: 'Suporte', end: false, badge: unreadSupport },
-    { to: '/app/configuracoes', icon: Settings, label: 'Configurações', end: false },
+  const allNavItems = [
+    { to: '/app', icon: LayoutDashboard, label: 'Visão geral', end: true, permission: 'view_dashboard' },
+    { to: '/app/agenda', icon: Calendar, label: 'Agenda', end: false, permission: 'view_agenda' },
+    { to: '/app/equipe', icon: Users, label: 'Equipe', end: false, permission: 'view_equipe' },
+    { to: '/app/servicos', icon: Scissors, label: 'Serviços', end: false, permission: 'view_servicos' },
+    { to: '/app/clientes', icon: Users, label: 'Clientes', end: false, permission: 'view_clientes' },
+    { to: '/app/financeiro', icon: DollarSign, label: 'Financeiro', end: false, permission: 'view_financeiro' },
+    { to: '/app/assinatura', icon: CreditCard, label: 'Assinatura', end: false, permission: null },
+    { to: '/app/suporte', icon: LifeBuoy, label: 'Suporte', end: false, badge: unreadSupport, permission: null },
+    { to: '/app/configuracoes', icon: Settings, label: 'Configurações', end: false, permission: null },
   ];
+
+  // Filter based on the permissions from the engine.
+  // If it requires a permission, it must have it to show up.
+  const navItems = allNavItems.filter(item => {
+    if (!item.permission) return true;
+    return engine.hasPermission(item.permission);
+  });
 
   if (loading || !tenant) {
     return (
@@ -115,8 +127,8 @@ export default function AppLayout() {
   const tenantStatus = (tenant as any).status as string | undefined;
 
   // Calculate dynamic suspension if grace period expired
-  const isGracePeriodExpired = features.subscription_status === 'past_due' && features.grace_period_ends_at && new Date(features.grace_period_ends_at) < new Date();
-  const isEffectivelySuspended = tenantStatus === 'blocked' || tenantStatus === 'suspended' || isGracePeriodExpired;
+  const isGracePeriodExpired = false; // Grace period removido
+  const isEffectivelySuspended = tenantStatus === 'blocked' || tenantStatus === 'suspended';
   
   const displaySuspensionReason = features.suspension_reason || 'Sua conta foi suspensa. Entre em contato com o suporte.';
 

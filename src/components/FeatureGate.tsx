@@ -165,50 +165,16 @@ function TeaserBackdrop({ feature }: { feature: string }) {
 function UpgradeScreen({ feature }: { feature: string }) {
   const { theme, fontStyle } = useTheme();
 
-  // High-converting, commercial copywriting tailored to salon/barbershop owners
+  // Generic fallback if no specific commercial info is provided.
   const featureDetails = {
-    produtos: {
-      badge: 'Aumento de Faturamento',
-      title: 'Fature até 30% a mais vendendo no balcão',
-      desc: 'Salões que vendem pomadas, óleos e cosméticos no atendimento aumentam seu faturamento sem precisar cortar mais cabelo.',
-      roiPill: '💡 Apenas 1 ou 2 pomadas vendidas por mês já pagam o plano Growth.',
-      benefits: [
-        { title: 'Catálogo de Produtos com Fotos', desc: 'Cadastre marcas, preços promocionais e categorias.' },
-        { title: 'Controle Automático de Estoque', desc: 'Receba alertas antes do produto acabar na prateleira.' },
-        { title: 'Relatório de Produtos Mais Vendidos', desc: 'Descubra quais cosméticos geram maior margem de lucro.' },
-      ],
-    },
-    financeiro: {
-      badge: 'Controle de Lucro Real',
-      title: 'Descubra para onde está indo o dinheiro do seu salão',
-      desc: 'Pare de perder dinheiro em despesas invisíveis. Tenha visão em tempo real de entradas, custos e do lucro que vai para o seu bolso.',
-      roiPill: '💡 Identificar apenas 1 custo desperdiçado já cobre o valor do plano.',
-      benefits: [
-        { title: 'Fluxo de Caixa 100% Automático', desc: 'Cada agendamento é registrado como receita sem trabalho manual.' },
-        { title: 'Lançamento de Despesas & Custos', desc: 'Organize contas de luz, aluguel, produtos e comissões.' },
-        { title: 'Cálculo de Lucro Líquido Real', desc: 'Saiba o quanto sobrou no mês e exporte relatórios em PDF/Excel.' },
-      ],
-    },
-    equipe: {
-      badge: 'Expansão de Capacidade',
-      title: 'Expanda sua equipe para até 10 profissionais',
-      desc: 'Multiplique o número de atendimentos do seu espaço gerenciando múltiplos barbeiros ou cabeleireiros simultaneamente.',
-      roiPill: '💡 Cada profissional a mais pode dobrar a receita de atendimentos do seu salão.',
-      benefits: [
-        { title: 'Até 10 Profissionais Ativos', desc: 'O plano Starter inclui apenas 1 profissional.' },
-        { title: 'Agendas & Horários Individuais', desc: 'Cada membro da equipe tem seus próprios dias e horários de folga.' },
-        { title: 'Foto e Cargo na Página Pública', desc: 'Seus clientes escolhem o profissional preferido na hora de agendar.' },
-      ],
-    },
-  }[feature as 'produtos' | 'financeiro' | 'equipe'] || {
-    badge: 'Recurso Exclusivo Growth',
+    badge: 'Recurso Premium',
     title: 'Desbloqueie o potencial máximo do seu negócio',
-    desc: 'Turbine a gestão com produtos no balcão, múltiplos profissionais na equipe e controle financeiro total.',
-    roiPill: '💡 Faça o upgrade agora e transforme a operação do seu salão.',
+    desc: 'Este recurso não está disponível no seu plano atual. Faça um upgrade para ter acesso a mais funcionalidades.',
+    roiPill: '💡 Transforme a operação do seu salão com novos recursos.',
     benefits: [
-      { title: 'Catálogo de Produtos & Estoque', desc: 'Venda cosméticos e aumente o ticket médio.' },
-      { title: 'Gestão Financeira & Lucro Líquido', desc: 'Controle completo de entradas e despesas.' },
-      { title: 'Até 10 Profissionais na Equipe', desc: 'Escale seu salão com agendas individuais.' },
+      { title: 'Gestão Inteligente', desc: 'Funcionalidades desenhadas para escalar seu faturamento.' },
+      { title: 'Controle Total', desc: 'Tenha domínio sobre todos os aspectos do seu negócio.' },
+      { title: 'Experiência Premium', desc: 'Ofereça o melhor para seus clientes e sua equipe.' },
     ],
   };
 
@@ -264,7 +230,7 @@ function UpgradeScreen({ feature }: { feature: string }) {
               color: theme.textSecondary,
             }}
           >
-            Plano Growth
+            Plano Superior
           </span>
         </div>
 
@@ -326,29 +292,16 @@ function UpgradeScreen({ feature }: { feature: string }) {
 
         {/* Pricing Anchor & Magnetic CTA */}
         <div className="pt-2 border-t" style={{ borderColor: theme.border }}>
-          {/* Price Header */}
           <div className="flex items-baseline justify-between mb-3 px-1">
             <div>
               <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: theme.textMuted }}>
-                Investimento
+                Desbloqueie mais recursos
               </span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-black" style={{ color: theme.textPrimary }}>
-                  R$ 77
-                </span>
-                <span className="text-xs font-bold" style={{ color: theme.textMuted }}>
-                  /mês
+              <div className="flex items-baseline gap-1 mt-1">
+                <span className="text-sm font-bold" style={{ color: theme.textPrimary }}>
+                  Consulte opções e preços
                 </span>
               </div>
-            </div>
-
-            <div className="text-right">
-              <span className="text-xs font-black text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
-                7 Dias Grátis
-              </span>
-              <p className="text-[10px] mt-1 font-semibold" style={{ color: theme.textMuted }}>
-                Menos de R$ 2,60 por dia
-              </p>
             </div>
           </div>
 
@@ -378,7 +331,7 @@ function UpgradeScreen({ feature }: { feature: string }) {
               >
                 <Sparkles className="w-4 h-4" />
               </motion.div>
-              <span>Testar Growth por 7 Dias Grátis</span>
+              <span>Ver opções de upgrade</span>
               <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </motion.div>
@@ -397,7 +350,7 @@ function InlineLock({ message }: { message?: string }) {
   return (
     <div className="flex items-center gap-2 text-sm p-3 rounded-xl border shadow-sm backdrop-blur-md" style={{ background: theme.cardBg, borderColor: theme.cardBorder }}>
       <Lock className="w-4 h-4" style={{ color: theme.accent }} />
-      <span style={{ color: theme.textSecondary }}>{message ?? 'Disponível no plano Growth.'}</span>
+      <span style={{ color: theme.textSecondary }}>{message ?? 'Disponível em um plano superior.'}</span>
       <Link to="/app/assinatura" className="font-bold underline ml-auto text-xs" style={{ color: theme.accent }}>
         Fazer Upgrade
       </Link>
