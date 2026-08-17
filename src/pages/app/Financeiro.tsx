@@ -305,15 +305,13 @@ function FinanceiroContent() {
 
       {/* ── Modal: Upgrade Plan ── */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl glass-card" style={{ borderColor: theme.border }}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+          <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl glass-card animate-scale-in" style={{ borderColor: theme.border, background: theme.cardBg }}>
             <div className="relative mb-6">
-              <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/20 to-orange-500/20 rounded-full blur-xl" />
               <div className="relative w-20 h-20 mx-auto bg-black border rounded-full flex items-center justify-center" style={{ borderColor: theme.accent }}>
-                <div className="absolute inset-0 border-2 rounded-full border-dashed animate-[spin_10s_linear_infinite]" style={{ borderColor: `${theme.accent}40` }} />
                 <Crown className="w-10 h-10" style={{ color: theme.accent }} />
                 <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full border-2 flex items-center justify-center" style={{ background: theme.cardBg, borderColor: theme.border }}>
-                  <Lock className="w-4 h-4" />
+                  <Lock className="w-4 h-4" style={{ color: theme.textSecondary }} />
                 </div>
               </div>
             </div>
