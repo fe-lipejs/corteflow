@@ -91,7 +91,7 @@ export default function AppLayout() {
     return () => { supabase.removeChannel(channel); };
   }, [tenant]);
 
-  const allNavItems = [
+  const navItems = [
     { to: '/app', icon: LayoutDashboard, label: 'Visão geral', end: true, permission: 'view_dashboard' },
     { to: '/app/agenda', icon: Calendar, label: 'Agenda', end: false, permission: 'view_agenda' },
     { to: '/app/equipe', icon: Users, label: 'Equipe', end: false, permission: 'view_equipe' },
@@ -102,13 +102,6 @@ export default function AppLayout() {
     { to: '/app/suporte', icon: LifeBuoy, label: 'Suporte', end: false, badge: unreadSupport, permission: null },
     { to: '/app/configuracoes', icon: Settings, label: 'Configurações', end: false, permission: null },
   ];
-
-  // Filter based on the permissions from the engine.
-  // If it requires a permission, it must have it to show up.
-  const navItems = allNavItems.filter(item => {
-    if (!item.permission) return true;
-    return engine.hasPermission(item.permission);
-  });
 
   if (loading || !tenant) {
     return (

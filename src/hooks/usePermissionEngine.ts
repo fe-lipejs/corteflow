@@ -134,6 +134,11 @@ export function usePermissionEngine(): PermissionEngine {
   // Engine Methods
   const hasFeature = (key: string) => {
     if (isSuperAdmin) return true;
+    if (key === 'produtos') {
+      if (contract) return !!contract.allow_products;
+      if (defaultPlan) return !!defaultPlan.allow_products;
+      return false;
+    }
     return !!featuresObj[key];
   };
 

@@ -104,11 +104,11 @@ export default function AppRoutes() {
           }
         >
           <Route index element={<Dashboard />} />
-          <Route path="agenda" element={<FeatureGate feature="agenda"><Agenda /></FeatureGate>} />
-          <Route path="equipe" element={<Equipe />} />
-          <Route path="servicos" element={<Servicos />} />
-          <Route path="clientes" element={<FeatureGate feature="clientes"><Clientes /></FeatureGate>} />
-          <Route path="financeiro" element={<FeatureGate feature="financeiro"><Financeiro /></FeatureGate>} />
+          <Route path="agenda" element={<FeatureGate permission="view_agenda"><Agenda /></FeatureGate>} />
+          <Route path="equipe" element={<FeatureGate permission="view_equipe"><Equipe /></FeatureGate>} />
+          <Route path="servicos" element={<FeatureGate permission="view_servicos"><Servicos /></FeatureGate>} />
+          <Route path="clientes" element={<FeatureGate permission="view_clientes"><Clientes /></FeatureGate>} />
+          <Route path="financeiro" element={<FeatureGate permission="view_financeiro"><Financeiro /></FeatureGate>} />
           <Route path="configuracoes" element={<Configuracoes />} />
           <Route path="assinatura" element={<Assinatura />} />
           <Route path="suporte" element={<Suporte />} />

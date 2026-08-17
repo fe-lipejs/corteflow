@@ -6,7 +6,8 @@ import { usePermissionEngine } from '../hooks/usePermissionEngine';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface FeatureGateProps {
-  feature: string;
+  feature?: string;
+  permission?: string;
   children: ReactNode;
   /** Custom upgrade message */
   message?: string;
@@ -162,7 +163,7 @@ function TeaserBackdrop({ feature }: { feature: string }) {
   );
 }
 
-function UpgradeScreen({ feature }: { feature: string }) {
+function UpgradeScreen() {
   const { theme, fontStyle } = useTheme();
 
   // Generic fallback if no specific commercial info is provided.
@@ -358,13 +359,13 @@ function InlineLock({ message }: { message?: string }) {
   );
 }
 
-export default function FeatureGate({ feature, children, message, inline = false }: FeatureGateProps) {
+export default function FeatureGate({ feature, permission, children, message, inline = false }: FeatureGateProps) {
   const { theme } = useTheme();
   const engine = usePermissionEngine();
 
   if (engine.isLoading) return <>{children}</>;
 
-  const hasAccess = engine.hasFeature(feature);
+  const hasAccess = permission ? engine.hasPermission(permission) : (feature ? engine.hasFeature(feature) : false);
 
   if (!hasAccess) {
     const subStatus = engine.subscription?.status;
@@ -385,9 +386,11 @@ export default function FeatureGate({ feature, children, message, inline = false
     return (
       <div className="relative w-full min-h-[580px] rounded-3xl overflow-hidden border shadow-inner" style={{ borderColor: theme.border }}>
         {/* Privacy-Protected Teaser Backdrop */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          <TeaserBackdrop feature={feature} />
-        </div>
+        {feature && (
+          <div className="absolute inset-0 z-0 overflow-hidden">
+            <TeaserBackdrop feature={feature} />
+          </div>
+        )}
 
         {/* Clean Glass Pane with Centered High-Converting Sales Card */}
         <div
@@ -400,7 +403,7 @@ export default function FeatureGate({ feature, children, message, inline = false
             WebkitBackdropFilter: 'blur(2px)',
           }}
         >
-          <UpgradeScreen feature={feature} />
+          <UpgradeScreen />
         </div>
       </div>
     );
