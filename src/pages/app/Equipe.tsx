@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Crown, Users, CheckCircle, Palmtree, XCircle, SlidersHorizontal, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Search, Crown, Users, CheckCircle, Palmtree, XCircle, SlidersHorizontal, Loader2, AlertCircle, Lock } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
+import PermissionGate from '../../components/PermissionGate';
 import {
   useProfessionals,
   useServices,
@@ -309,15 +310,21 @@ export default function Equipe() {
 
       {/* ── Modal: Create / Edit ── */}
       {modalOpen && (
-        <ProfessionalModal
-          professional={editingPro}
-          services={services}
-          tenantId={tenantId}
+        <PermissionGate 
+          permission={editingPro ? 'equipe.editar_perfil' : 'equipe.criar'} 
+          type="modal"
           onClose={() => { setModalOpen(false); setEditingPro(null); setMutationError(null); }}
-          onCreate={handleCreate}
-          onUpdate={handleUpdate}
-          isLoading={createMutation.isPending || updateMutation.isPending}
-        />
+        >
+          <ProfessionalModal
+            professional={editingPro}
+            services={services}
+            tenantId={tenantId}
+            onClose={() => { setModalOpen(false); setEditingPro(null); setMutationError(null); }}
+            onCreate={handleCreate}
+            onUpdate={handleUpdate}
+            isLoading={createMutation.isPending || updateMutation.isPending}
+          />
+        </PermissionGate>
       )}
 
       {/* ── Modal: Delete Confirmation ── */}
