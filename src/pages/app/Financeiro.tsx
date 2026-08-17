@@ -8,11 +8,17 @@ import { useAuth } from '../../contexts/AuthContext';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import FeatureGate from '../../components/FeatureGate';
+import { usePermissionEngine } from '../../hooks/usePermissionEngine';
+import { Lock, Crown, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 function FinanceiroContent() {
   const { theme } = useTheme();
   const { tenant } = useAuth();
   const [currentMonth] = useState(new Date());
+  const engine = usePermissionEngine();
+  const navigate = useNavigate();
+  const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['financials', tenant?.id, currentMonth.getMonth()],
@@ -162,9 +168,30 @@ function FinanceiroContent() {
           <p className="mt-1 text-sm" style={{ color: theme.textSecondary }}>Acompanhe as finanças do seu salão.</p>
         </div>
         <div className="flex space-x-3">
-          <button className="flex items-center px-4 py-2 border rounded-xl font-medium transition-all shadow-sm hover:-translate-y-0.5 glass-card"
+          <button 
+            onClick={() => {
+              if (!engine.hasPermission('financeiro.exportar')) {
+                setShowUpgradeModal('Relatórios Avançados');
+                return;
+              }
+              // TODO: implement export
+            }}
+            className="flex items-center px-4 py-2 border rounded-xl font-medium transition-all shadow-sm hover:-translate-y-0.5 glass-card"
             style={{ borderColor: theme.border, color: theme.textPrimary }}>
             <Download className="w-4 h-4 mr-2" /> Relatório
+          </button>
+          <button 
+            onClick={() => {
+              if (!engine.hasPermission('financeiro.criar_lancamento')) {
+                setShowUpgradeModal('Gestão Financeira Manual');
+                return;
+              }
+              // TODO: implement new transaction modal
+            }}
+            className="flex items-center gap-2 px-6 py-2 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.4)]"
+            style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
+          >
+            <Plus className="w-4 h-4 mr-1" /> Novo Lançamento
           </button>
         </div>
       </header>
@@ -275,6 +302,40 @@ function FinanceiroContent() {
           )}
         </div>
       </div>
+
+      {/* ── Modal: Upgrade Plan ── */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl glass-card" style={{ borderColor: theme.border }}>
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/20 to-orange-500/20 rounded-full blur-xl" />
+              <div className="relative w-20 h-20 mx-auto bg-black border rounded-full flex items-center justify-center" style={{ borderColor: theme.accent }}>
+                <div className="absolute inset-0 border-2 rounded-full border-dashed animate-[spin_10s_linear_infinite]" style={{ borderColor: `${theme.accent}40` }} />
+                <Crown className="w-10 h-10" style={{ color: theme.accent }} />
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full border-2 flex items-center justify-center" style={{ background: theme.cardBg, borderColor: theme.border }}>
+                  <Lock className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+            <h3 className="font-serif text-2xl font-bold mb-2" style={{ color: theme.textPrimary }}>
+              Recurso Premium
+            </h3>
+            <p className="text-sm mb-7" style={{ color: theme.textSecondary }}>
+              A funcionalidade de {showUpgradeModal} é exclusiva de planos superiores. Faça o upgrade para desbloquear o controle financeiro total do seu negócio.
+            </p>
+            <button
+              onClick={() => { setShowUpgradeModal(null); navigate('/app/assinatura'); }}
+              className="w-full py-3 rounded-xl mb-3 font-bold transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.4)]"
+              style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
+            >
+              Ver planos
+            </button>
+            <button className="text-sm w-full py-2 transition-colors hover:underline" style={{ color: theme.textSecondary }} onClick={() => setShowUpgradeModal(null)}>
+              Agora não
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

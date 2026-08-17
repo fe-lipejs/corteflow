@@ -41,7 +41,7 @@ export default function Equipe() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPro, setEditingPro] = useState<Professional | null>(null);
   const [deletingPro, setDeletingPro] = useState<Professional | null>(null);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState<'limit' | 'permission' | null>(null);
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('newest');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -90,8 +90,12 @@ export default function Equipe() {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleNewClick = () => {
+    if (!engine.hasPermission('equipe.criar')) {
+      setShowUpgradeModal('permission');
+      return;
+    }
     if (!engine.checkLimit('profissionais', professionals.length)) {
-      setShowUpgradeModal(true);
+      setShowUpgradeModal('limit');
       return;
     }
     setEditingPro(null);
@@ -352,15 +356,26 @@ export default function Equipe() {
       {showUpgradeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl glass-card" style={{ borderColor: theme.border }}>
-            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: theme.accentMuted, color: theme.accent }}>
-              <Crown className="w-7 h-7" />
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/20 to-orange-500/20 rounded-full blur-xl" />
+              <div className="relative w-20 h-20 mx-auto bg-black border rounded-full flex items-center justify-center" style={{ borderColor: theme.accent }}>
+                <div className="absolute inset-0 border-2 rounded-full border-dashed animate-[spin_10s_linear_infinite]" style={{ borderColor: `${theme.accent}40` }} />
+                <Crown className="w-10 h-10" style={{ color: theme.accent }} />
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full border-2 flex items-center justify-center" style={{ background: theme.cardBg, borderColor: theme.border }}>
+                  {showUpgradeModal === 'limit' ? <Plus className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                </div>
+              </div>
             </div>
-            <h3 className="font-serif text-2xl font-bold mb-2" style={{ color: theme.textPrimary }}>Limite Atingido</h3>
+            <h3 className="font-serif text-2xl font-bold mb-2" style={{ color: theme.textPrimary }}>
+              {showUpgradeModal === 'limit' ? 'Limite Atingido' : 'Recurso Premium'}
+            </h3>
             <p className="text-sm mb-7" style={{ color: theme.textSecondary }}>
-              Seu plano atual permite apenas {engine.getPlanLimit('profissionais') === 'unlimited' ? 'um número ilimitado de' : engine.getPlanLimit('profissionais')} profissional{engine.getPlanLimit('profissionais') !== 1 ? 'is' : ''}. Faça upgrade para adicionar mais profissionais e expandir sua equipe.
+              {showUpgradeModal === 'limit' 
+                ? `Seu plano atual permite apenas ${engine.getPlanLimit('profissionais') === 'unlimited' ? 'um número ilimitado de' : engine.getPlanLimit('profissionais')} profissional${engine.getPlanLimit('profissionais') !== 1 ? 'is' : ''}. Faça upgrade para adicionar mais profissionais e expandir sua equipe.`
+                : 'A criação e gestão avançada de profissionais é exclusiva de planos superiores. Faça o upgrade para desbloquear o controle total da sua equipe.'}
             </p>
             <button
-              onClick={() => { setShowUpgradeModal(false); navigate('/app/assinatura'); }}
+              onClick={() => { setShowUpgradeModal(null); navigate('/app/assinatura'); }}
               className="w-full py-3 rounded-xl mb-3 font-bold transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.4)]"
               style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
             >

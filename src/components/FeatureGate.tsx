@@ -8,6 +8,7 @@ import { useTheme } from '../contexts/ThemeContext';
 interface FeatureGateProps {
   feature?: string;
   permission?: string;
+  modulePrefix?: string;
   children: ReactNode;
   /** Custom upgrade message */
   message?: string;
@@ -359,13 +360,20 @@ function InlineLock({ message }: { message?: string }) {
   );
 }
 
-export default function FeatureGate({ feature, permission, children, message, inline = false }: FeatureGateProps) {
+export default function FeatureGate({ feature, permission, modulePrefix, children, message, inline = false }: FeatureGateProps) {
   const { theme } = useTheme();
   const engine = usePermissionEngine();
 
   if (engine.isLoading) return <>{children}</>;
 
-  const hasAccess = permission ? engine.hasPermission(permission) : (feature ? engine.hasFeature(feature) : false);
+  let hasAccess = false;
+  if (permission) {
+    hasAccess = engine.hasPermission(permission);
+  } else if (modulePrefix) {
+    hasAccess = engine.hasAnyPermission(modulePrefix);
+  } else if (feature) {
+    hasAccess = engine.hasFeature(feature);
+  }
 
   if (!hasAccess) {
     const subStatus = engine.subscription?.status;

@@ -5,6 +5,7 @@ import { supabase } from '../integrations/supabase/client';
 export interface PermissionEngine {
   hasFeature: (key: string) => boolean;
   hasPermission: (key: string) => boolean;
+  hasAnyPermission: (prefix: string) => boolean;
   getPlanLimit: (key: string) => number | 'unlimited';
   checkLimit: (key: string, currentUsage: number) => boolean;
   getEffectivePermissions: () => string[];
@@ -158,6 +159,16 @@ export function usePermissionEngine(): PermissionEngine {
     return permissionsArr.includes(key) || permissionsArr.includes('*');
   };
 
+  const hasAnyPermission = (prefix: string) => {
+    if (isSuperAdmin) return true;
+    
+    // Se não há permissões restritas no plano, o legado tem acesso (a regra acima já trata o fallback).
+    if (permissionsArr.length === 0) return true;
+
+    // Verifica se alguma permissão do plano começa com o prefixo (ex: "equipe.")
+    return permissionsArr.some(p => p.startsWith(prefix));
+  };
+
   const getPlanLimit = (key: string): number | 'unlimited' => {
     if (isSuperAdmin) return 'unlimited';
     
@@ -189,6 +200,7 @@ export function usePermissionEngine(): PermissionEngine {
   return {
     hasFeature,
     hasPermission,
+    hasAnyPermission,
     getPlanLimit,
     checkLimit,
     getEffectivePermissions,
