@@ -5,6 +5,9 @@ import type { CreateProfessionalInput, UpdateProfessionalInput } from '../../../
 import { useTheme } from '../../../contexts/ThemeContext';
 import { Modal } from '../../../components/ui/Modal';
 import { normalizeBrazilianPhone, formatPhoneMask } from '../../../lib/phoneUtils';
+import { usePermissionEngine } from '../../../hooks/usePermissionEngine';
+import { Crown, Lock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ROLES = ['Barbeiro', 'Cabeleireiro', 'Manicure', 'Pedicure', 'Esteticista', 'Maquiador', 'Outro'];
@@ -59,6 +62,8 @@ interface Props {
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function ProfessionalModal({ professional, services, onClose, onCreate, onUpdate, isLoading }: Props) {
   const { theme } = useTheme();
+  const engine = usePermissionEngine();
+  const navigate = useNavigate();
   const isEditing = !!professional;
   const [tab, setTab] = useState<'info' | 'hours' | 'services'>('info');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -353,50 +358,93 @@ export default function ProfessionalModal({ professional, services, onClose, onC
 
           {/* ── TAB: WORKING HOURS ── */}
           {tab === 'hours' && (
-            <div className="space-y-3">
-              <p className="text-xs" style={{ color: theme.textSecondary }}>Configure a jornada de trabalho individual deste profissional.</p>
-              {hours.map(h => (
-                <div key={h.weekday} className="rounded-2xl border p-4" style={{ borderColor: theme.border, background: theme.inputBg }}>
-                  <div className="flex items-center gap-3 mb-3">
-                    {/* Toggle */}
-                    <button
-                      type="button"
-                      onClick={() => updateHour(h.weekday, 'is_working', !h.is_working)}
-                      className="w-10 h-6 rounded-full transition-all relative shrink-0"
-                      style={{ background: h.is_working ? theme.accent : theme.border }}
-                    >
-                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${h.is_working ? 'left-5' : 'left-1'}`} />
-                    </button>
-                    <span className={`font-bold text-sm w-8`} style={{ color: h.is_working ? theme.textPrimary : theme.textSecondary }}>{WEEKDAYS[h.weekday]}</span>
-                    {!h.is_working && <span className="text-xs italic" style={{ color: theme.textSecondary }}>Folga</span>}
+            <div className="relative min-h-[350px]">
+              {!engine.hasPermission('equipe.editar_horarios') ? (
+                <div className="relative w-full h-full min-h-[350px]">
+                  {/* Blurred Background Teaser */}
+                  <div className="filter blur-[4px] opacity-40 pointer-events-none select-none space-y-3">
+                    <p className="text-xs" style={{ color: theme.textSecondary }}>Configure a jornada de trabalho individual deste profissional.</p>
+                    {hours.slice(0, 3).map(h => (
+                      <div key={h.weekday} className="rounded-2xl border p-4" style={{ borderColor: theme.border, background: theme.inputBg }}>
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-6 rounded-full relative" style={{ background: theme.accent }} />
+                          <span className="font-bold text-sm" style={{ color: theme.textPrimary }}>{WEEKDAYS[h.weekday]}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
-                  {h.is_working && (
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <label className="font-bold uppercase tracking-wider block mb-1" style={{ color: theme.textSecondary }}>Início</label>
-                        <input type="time" value={h.open_time} onChange={e => updateHour(h.weekday, 'open_time', e.target.value)}
-                          className="w-full border rounded-lg px-3 py-2 focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }} />
+                  {/* Lock Overlay */}
+                  <div className="absolute inset-0 z-20 flex items-center justify-center p-4">
+                    <div className="border rounded-3xl p-6 max-w-xs w-full text-center shadow-[0_0_80px_rgba(0,0,0,0.5)] ring-1 ring-white/10 glass-card animate-scale-in" style={{ borderColor: theme.border, background: theme.cardBg }}>
+                      <div className="relative mb-4">
+                        <div className="relative w-14 h-14 mx-auto bg-black border rounded-full flex items-center justify-center" style={{ borderColor: theme.accent }}>
+                          <Crown className="w-7 h-7" style={{ color: theme.accent }} />
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 flex items-center justify-center" style={{ background: theme.cardBg, borderColor: theme.border }}>
+                            <Lock className="w-3 h-3" style={{ color: theme.textSecondary }} />
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <label className="font-bold uppercase tracking-wider block mb-1" style={{ color: theme.textSecondary }}>Fim</label>
-                        <input type="time" value={h.close_time} onChange={e => updateHour(h.weekday, 'close_time', e.target.value)}
-                          className="w-full border rounded-lg px-3 py-2 focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }} />
-                      </div>
-                      <div>
-                        <label className="font-bold uppercase tracking-wider block mb-1" style={{ color: theme.textSecondary }}>Almoço início</label>
-                        <input type="time" value={h.lunch_start} onChange={e => updateHour(h.weekday, 'lunch_start', e.target.value)}
-                          className="w-full border rounded-lg px-3 py-2 focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }} />
-                      </div>
-                      <div>
-                        <label className="font-bold uppercase tracking-wider block mb-1" style={{ color: theme.textSecondary }}>Almoço fim</label>
-                        <input type="time" value={h.lunch_end} onChange={e => updateHour(h.weekday, 'lunch_end', e.target.value)}
-                          className="w-full border rounded-lg px-3 py-2 focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }} />
-                      </div>
+                      <h4 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>Jornada Personalizada</h4>
+                      <p className="text-xs mb-4" style={{ color: theme.textSecondary }}>Ajustar horários individuais é exclusivo de planos superiores.</p>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/app/assinatura')}
+                        className="w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all shadow-lg"
+                        style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
+                      >
+                        Ver planos
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </div>
-              ))}
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs" style={{ color: theme.textSecondary }}>Configure a jornada de trabalho individual deste profissional.</p>
+                  {hours.map(h => (
+                    <div key={h.weekday} className="rounded-2xl border p-4" style={{ borderColor: theme.border, background: theme.inputBg }}>
+                      <div className="flex items-center gap-3 mb-3">
+                        {/* Toggle */}
+                        <button
+                          type="button"
+                          onClick={() => updateHour(h.weekday, 'is_working', !h.is_working)}
+                          className="w-10 h-6 rounded-full transition-all relative shrink-0"
+                          style={{ background: h.is_working ? theme.accent : theme.border }}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${h.is_working ? 'left-5' : 'left-1'}`} />
+                        </button>
+                        <span className={`font-bold text-sm w-8`} style={{ color: h.is_working ? theme.textPrimary : theme.textSecondary }}>{WEEKDAYS[h.weekday]}</span>
+                        {!h.is_working && <span className="text-xs italic" style={{ color: theme.textSecondary }}>Folga</span>}
+                      </div>
+
+                      {h.is_working && (
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <label className="font-bold uppercase tracking-wider block mb-1" style={{ color: theme.textSecondary }}>Início</label>
+                            <input type="time" value={h.open_time} onChange={e => updateHour(h.weekday, 'open_time', e.target.value)}
+                              className="w-full border rounded-lg px-3 py-2 focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }} />
+                          </div>
+                          <div>
+                            <label className="font-bold uppercase tracking-wider block mb-1" style={{ color: theme.textSecondary }}>Fim</label>
+                            <input type="time" value={h.close_time} onChange={e => updateHour(h.weekday, 'close_time', e.target.value)}
+                              className="w-full border rounded-lg px-3 py-2 focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }} />
+                          </div>
+                          <div>
+                            <label className="font-bold uppercase tracking-wider block mb-1" style={{ color: theme.textSecondary }}>Almoço início</label>
+                            <input type="time" value={h.lunch_start} onChange={e => updateHour(h.weekday, 'lunch_start', e.target.value)}
+                              className="w-full border rounded-lg px-3 py-2 focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }} />
+                          </div>
+                          <div>
+                            <label className="font-bold uppercase tracking-wider block mb-1" style={{ color: theme.textSecondary }}>Almoço fim</label>
+                            <input type="time" value={h.lunch_end} onChange={e => updateHour(h.weekday, 'lunch_end', e.target.value)}
+                              className="w-full border rounded-lg px-3 py-2 focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

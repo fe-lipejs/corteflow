@@ -105,6 +105,10 @@ export default function Equipe() {
   };
 
   const handleEdit = (p: Professional) => {
+    if (!engine.hasPermission('equipe.editar_perfil')) {
+      setShowUpgradeModal('permission');
+      return;
+    }
     setEditingPro(p);
     setModalOpen(true);
     setMutationError(null);
@@ -133,6 +137,11 @@ export default function Equipe() {
 
   const handleDeleteConfirm = async () => {
     if (!deletingPro) return;
+    if (!engine.hasPermission('equipe.inativar')) {
+      setShowUpgradeModal('permission');
+      setDeletingPro(null);
+      return;
+    }
     try {
       await deleteMutation.mutateAsync({ id: deletingPro.id, photoUrl: deletingPro.photo_url });
       setDeletingPro(null);
@@ -386,7 +395,7 @@ export default function Equipe() {
             >
               Ver planos
             </button>
-            <button className="text-sm w-full py-2 transition-colors hover:underline" style={{ color: theme.textSecondary }} onClick={() => setShowUpgradeModal(false)}>
+            <button className="text-sm w-full py-2 transition-colors hover:underline" style={{ color: theme.textSecondary }} onClick={() => setShowUpgradeModal(null)}>
               Agora não
             </button>
           </div>

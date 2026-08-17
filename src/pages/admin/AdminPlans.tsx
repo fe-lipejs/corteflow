@@ -98,9 +98,9 @@ function PlanModal({
       trial_days: plan.trial_days,
       sort_order: plan.sort_order,
       price_brl: existingPrice?.amount ?? 0,
-      is_default: plan.is_default,
+      is_default: !!plan.is_default,
       
-      permissions: Array.isArray(plan.permissions) ? plan.permissions : [],
+      permissions: Array.isArray(plan.permissions) ? (plan.permissions as string[]) : [],
       features: (plan.features as Record<string, boolean>) || {},
       limits: initialLimits,
       
@@ -524,6 +524,8 @@ export default function AdminPlans() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_plans_v2'] });
       queryClient.invalidateQueries({ queryKey: ['plan_features'] });
+      queryClient.invalidateQueries({ queryKey: ['permission_engine'] });
+      queryClient.invalidateQueries({ queryKey: ['plans'] });
       setModalPlan('closed' as any);
     }
   });

@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, SlidersHorizontal, Scissors, Package, AlertCircle, Loader2, Crown, Tag } from 'lucide-react';
+import { Plus, Search, SlidersHorizontal, Scissors, Package, AlertCircle, Loader2, Crown, Lock, Tag } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
+import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 import { useServices, useCreateService, useUpdateService, useDeleteService, type Service, type ServiceInput } from '../../hooks/useServices';
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, type Product, type ProductInput } from '../../hooks/useProducts';
 import { supabase } from '../../integrations/supabase/client';
@@ -19,6 +20,7 @@ export default function Servicos() {
   const { tenant } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const engine = usePermissionEngine();
   const tenantId = tenant?.id ?? '';
 
   const [activeTab, setActiveTab] = useState<'servicos' | 'produtos'>('servicos');
@@ -28,6 +30,7 @@ export default function Servicos() {
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('Todos');
   const [categoriesManagerOpen, setCategoriesManagerOpen] = useState(false);
@@ -140,7 +143,24 @@ export default function Servicos() {
           <p className="text-sm mt-1" style={{ color: theme.textSecondary }}>Gerencie seu catálogo de serviços e produtos.</p>
         </div>
         <button
-          onClick={() => { setEditingService(null); setServiceModalOpen(true); setMutationError(null); }}
+          onClick={() => {
+            if (activeTab === 'servicos') {
+              if (!engine.hasPermission('catalogo.criar')) {
+                setShowUpgradeModal('Cadastrar Novo Serviço');
+                return;
+              }
+              setEditingService(null);
+              setServiceModalOpen(true);
+            } else {
+              if (!engine.hasPermission('produto.criar') && !engine.hasPermission('catalogo.criar')) {
+                setShowUpgradeModal('Cadastrar Novo Produto');
+                return;
+              }
+              setEditingProduct(null);
+              setProductModalOpen(true);
+            }
+            setMutationError(null);
+          }}
           className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all hover:opacity-90 cursor-pointer"
           style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
         >
@@ -254,8 +274,22 @@ export default function Servicos() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {filteredServices.map(svc => (
                 <ServiceCard key={svc.id} service={svc}
-                  onEdit={s => { setEditingService(s); setServiceModalOpen(true); setMutationError(null); }}
-                  onDelete={setDeletingService}
+                  onEdit={s => {
+                    if (!engine.hasPermission('catalogo.editar')) {
+                      setShowUpgradeModal('Editar Serviço');
+                      return;
+                    }
+                    setEditingService(s);
+                    setServiceModalOpen(true);
+                    setMutationError(null);
+                  }}
+                  onDelete={s => {
+                    if (!engine.hasPermission('catalogo.excluir')) {
+                      setShowUpgradeModal('Excluir Serviço');
+                      return;
+                    }
+                    setDeletingService(s);
+                  }}
                 />
               ))}
 
@@ -270,7 +304,13 @@ export default function Servicos() {
                   ) : (
                     <><p className="font-semibold mb-2" style={{ color: theme.textPrimary }}>Nenhum serviço cadastrado</p>
                       <p className="text-sm mb-5" style={{ color: theme.textSecondary }}>Crie o primeiro serviço do seu catálogo.</p>
-                      <button onClick={() => setServiceModalOpen(true)} className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold" style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}>
+                      <button onClick={() => {
+                        if (!engine.hasPermission('catalogo.criar')) {
+                          setShowUpgradeModal('Criar Serviço');
+                          return;
+                        }
+                        setServiceModalOpen(true);
+                      }} className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold" style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}>
                         <Plus className="w-5 h-5" /> Criar Serviço
                       </button>
                     </>
@@ -280,7 +320,14 @@ export default function Servicos() {
 
               {/* Add shortcut card */}
               {filteredServices.length > 0 && (
-                <div onClick={() => { setEditingService(null); setServiceModalOpen(true); }} className="rounded-2xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-all hover:-translate-y-1 group" style={{ minHeight: '260px', borderColor: theme.border, background: theme.inputBg }}>
+                <div onClick={() => {
+                  if (!engine.hasPermission('catalogo.criar')) {
+                    setShowUpgradeModal('Criar Novo Serviço');
+                    return;
+                  }
+                  setEditingService(null);
+                  setServiceModalOpen(true);
+                }} className="rounded-2xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-all hover:-translate-y-1 group" style={{ minHeight: '260px', borderColor: theme.border, background: theme.inputBg }}>
                   <div className="text-center">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3 transition-all" style={{ background: theme.accentMuted, color: theme.accent }}><Plus className="w-5 h-5" /></div>
                     <p className="text-sm font-semibold transition-colors" style={{ color: theme.accent }}>Novo serviço</p>
@@ -358,8 +405,21 @@ export default function Servicos() {
                   {p.promo_price && <p className="text-xs line-through" style={{ color: theme.textSecondary }}>{fmt.format(p.promo_price)}</p>}
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  <button onClick={() => { setEditingProduct(p); setProductModalOpen(true); }} className="text-xs px-3 py-1.5 rounded-lg transition-all hover:bg-[var(--theme-bg-hover)]" style={{ color: theme.textSecondary }}>Editar</button>
-                  <button onClick={() => setDeletingProduct(p)} className="text-xs px-3 py-1.5 rounded-lg transition-all" style={{ color: theme.error, background: `${theme.error}10` }}>Excluir</button>
+                  <button onClick={() => {
+                    if (!engine.hasPermission('produto.editar') && !engine.hasPermission('catalogo.editar')) {
+                      setShowUpgradeModal('Editar Produto');
+                      return;
+                    }
+                    setEditingProduct(p);
+                    setProductModalOpen(true);
+                  }} className="text-xs px-3 py-1.5 rounded-lg transition-all hover:bg-[var(--theme-bg-hover)] cursor-pointer" style={{ color: theme.textSecondary }}>Editar</button>
+                  <button onClick={() => {
+                    if (!engine.hasPermission('produto.excluir') && !engine.hasPermission('catalogo.excluir')) {
+                      setShowUpgradeModal('Excluir Produto');
+                      return;
+                    }
+                    setDeletingProduct(p);
+                  }} className="text-xs px-3 py-1.5 rounded-lg transition-all cursor-pointer" style={{ color: theme.error, background: `${theme.error}10` }}>Excluir</button>
                 </div>
               </div>
             ))}
@@ -368,7 +428,14 @@ export default function Servicos() {
                 <Package className="w-12 h-12 mx-auto mb-4 opacity-30" style={{ color: theme.textSecondary }} />
                 <p className="font-semibold mb-2" style={{ color: theme.textPrimary }}>Nenhum produto cadastrado</p>
                 <p className="text-sm mb-5" style={{ color: theme.textSecondary }}>Controle seu estoque de produtos.</p>
-                <button onClick={() => setProductModalOpen(true)} className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold mx-auto" style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}>
+                <button onClick={() => {
+                  if (!engine.hasPermission('produto.criar') && !engine.hasPermission('catalogo.criar')) {
+                    setShowUpgradeModal('Cadastrar Novo Produto');
+                    return;
+                  }
+                  setEditingProduct(null);
+                  setProductModalOpen(true);
+                }} className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold mx-auto cursor-pointer" style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}>
                   <Plus className="w-5 h-5" /> Criar Produto
                 </button>
               </div>
@@ -434,6 +501,47 @@ export default function Servicos() {
             <div className="flex gap-3">
               <button onClick={() => setDeletingProduct(null)} className="flex-1 py-3 rounded-xl border font-semibold text-sm transition-all hover:bg-[var(--theme-bg-hover)]" style={{ borderColor: theme.border, color: theme.textPrimary }}>Cancelar</button>
               <button onClick={handleDeleteProductConfirm} disabled={deleteProduct.isPending} className="flex-1 py-3 rounded-xl font-bold text-sm disabled:opacity-50 text-white" style={{ background: theme.error }}>Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── Modal: Upgrade Plan ── */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md">
+          <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_0_80px_rgba(0,0,0,0.5)] ring-1 ring-white/10 glass-card animate-scale-in" style={{ borderColor: theme.border, background: theme.cardBg }}>
+            <div className="relative mb-6">
+              <div className="relative w-20 h-20 mx-auto bg-black border rounded-full flex items-center justify-center" style={{ borderColor: theme.accent }}>
+                <Crown className="w-10 h-10" style={{ color: theme.accent }} />
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full border-2 flex items-center justify-center" style={{ background: theme.cardBg, borderColor: theme.border }}>
+                  <Lock className="w-4 h-4" style={{ color: theme.textSecondary }} />
+                </div>
+              </div>
+            </div>
+
+            <h3 className="font-bold text-xl mb-2" style={{ color: theme.textPrimary }}>
+              Recurso Premium
+            </h3>
+            <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>
+              A funcionalidade de <strong>{showUpgradeModal}</strong> é exclusiva de planos superiores. Faça o upgrade para desbloquear o acesso total.
+            </p>
+
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => navigate('/app/assinatura')}
+                className="w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all shadow-lg hover:opacity-90"
+                style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
+              >
+                Ver planos
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(null)}
+                className="w-full py-2 text-xs font-semibold hover:underline"
+                style={{ color: theme.textSecondary }}
+              >
+                Agora não
+              </button>
             </div>
           </div>
         </div>

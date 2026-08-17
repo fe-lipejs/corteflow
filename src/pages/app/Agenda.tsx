@@ -3,8 +3,10 @@ import { format, startOfWeek, addWeeks, subWeeks, addDays, isToday } from 'date-
 import { ptBR } from 'date-fns/locale/pt-BR';
 import {
   ChevronLeft, ChevronRight, Plus, Calendar, RefreshCw,
-  Users, CheckCircle, Clock, DollarSign, Loader2, Bell
+  Users, CheckCircle, Clock, DollarSign, Loader2, Bell, Crown, Lock
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 import { useAuth } from '../../hooks/useAuth';
 import { useBarberSound } from '../../hooks/useBarberSound';
 import { useProfessionals } from '../../hooks/useProfessionals';
@@ -31,6 +33,8 @@ const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL',
 export default function Agenda() {
   const { tenant } = useAuth();
   const { theme } = useTheme();
+  const navigate = useNavigate();
+  const engine = usePermissionEngine();
   const tenantId = tenant?.id ?? '';
   const { play: playChime } = useBarberSound();
 
@@ -39,6 +43,7 @@ export default function Agenda() {
   const [currentDay, setCurrentDay] = useState<Date>(new Date());
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
   const [initialBookingDate, setInitialBookingDate] = useState<Date | undefined>();
   const [businessHours, setBusinessHours] = useState<any[]>([]);
   const [isMobile, setIsMobile] = useState(false);
@@ -98,6 +103,10 @@ export default function Agenda() {
   }, [todayBookings]);
 
   const handleSlotClick = (date: Date, hour: number) => {
+    if (!engine.hasPermission('agenda.criar')) {
+      setShowUpgradeModal('Criar Agendamento Manual');
+      return;
+    }
     const d = new Date(date);
     d.setHours(hour, 0, 0, 0);
     setInitialBookingDate(d);
@@ -105,11 +114,19 @@ export default function Agenda() {
   };
 
   const handleCreate = async (input: CreateBookingInput) => {
+    if (!engine.hasPermission('agenda.criar')) {
+      setShowUpgradeModal('Criar Agendamento Manual');
+      return;
+    }
     await createBooking.mutateAsync(input);
     setBookingModalOpen(false);
   };
 
   const handleStatusChange = async (id: string, status: BookingStatus) => {
+    if (!engine.hasPermission('agenda.mudar_status')) {
+      setShowUpgradeModal('Alterar Status do Agendamento');
+      return;
+    }
     await updateStatus.mutateAsync({ id, status });
     if (selectedBooking?.id === id) {
       setSelectedBooking(prev => prev ? { ...prev, status } : null);
@@ -118,6 +135,10 @@ export default function Agenda() {
 
   const deleteBooking = useDeleteBooking(tenantId);
   const handleDelete = async (id: string) => {
+    if (!engine.hasPermission('agenda.cancelar')) {
+      setShowUpgradeModal('Cancelar Agendamento');
+      return;
+    }
     await deleteBooking.mutateAsync(id);
     if (selectedBooking?.id === id) {
       setSelectedBooking(null); // Fecha a sheet
@@ -189,7 +210,14 @@ export default function Agenda() {
             </button>
 
             <button
-              onClick={() => { setInitialBookingDate(undefined); setBookingModalOpen(true); }}
+              onClick={() => {
+                if (!engine.hasPermission('agenda.criar')) {
+                  setShowUpgradeModal('Criar Agendamento Manual');
+                  return;
+                }
+                setInitialBookingDate(undefined);
+                setBookingModalOpen(true);
+              }}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all"
               style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
             >
@@ -226,7 +254,13 @@ export default function Agenda() {
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               <span className="text-xs font-bold shrink-0 mr-1" style={{ color: theme.textSecondary }}>Filtrar por:</span>
               <button
-                onClick={() => setSelectedProfessionalId(null)}
+                onClick={() => {
+                  if (!engine.hasPermission('agenda.visualizar_todos')) {
+                    setShowUpgradeModal('Visualizar Agenda de Todos');
+                    return;
+                  }
+                  setSelectedProfessionalId(null);
+                }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border`}
                 style={{
                   color: selectedProfessionalId === null ? theme.btnPrimaryText : theme.textSecondary,
@@ -331,6 +365,47 @@ export default function Agenda() {
           onDelete={handleDelete}
           isUpdating={updateStatus.isPending || deleteBooking.isPending}
         />
+      )}
+      {/* ── Modal: Upgrade Plan ── */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md">
+          <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_0_80px_rgba(0,0,0,0.5)] ring-1 ring-white/10 glass-card animate-scale-in" style={{ borderColor: theme.border, background: theme.cardBg }}>
+            <div className="relative mb-6">
+              <div className="relative w-20 h-20 mx-auto bg-black border rounded-full flex items-center justify-center" style={{ borderColor: theme.accent }}>
+                <Crown className="w-10 h-10" style={{ color: theme.accent }} />
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full border-2 flex items-center justify-center" style={{ background: theme.cardBg, borderColor: theme.border }}>
+                  <Lock className="w-4 h-4" style={{ color: theme.textSecondary }} />
+                </div>
+              </div>
+            </div>
+
+            <h3 className="font-bold text-xl mb-2" style={{ color: theme.textPrimary }}>
+              Recurso Premium
+            </h3>
+            <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>
+              A funcionalidade de <strong>{showUpgradeModal}</strong> é exclusiva de planos superiores. Faça o upgrade para desbloquear o acesso total.
+            </p>
+
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => navigate('/app/assinatura')}
+                className="w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all shadow-lg hover:opacity-90"
+                style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
+              >
+                Ver planos
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(null)}
+                className="w-full py-2 text-xs font-semibold hover:underline"
+                style={{ color: theme.textSecondary }}
+              >
+                Agora não
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

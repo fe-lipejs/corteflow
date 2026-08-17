@@ -25,8 +25,8 @@ export default function AppLayout() {
   const engine = usePermissionEngine();
   const features = {
     subscription_status: engine.subscription?.status,
-    grace_period_ends_at: null, // Grace period not implemented in engine yet, assuming no grace period for now
-    suspension_reason: engine.tenant?.suspension_reason,
+    grace_period_ends_at: null,
+    suspension_reason: (tenant as any)?.suspension_reason || engine.subscription?.suspension_reason,
   };
 
   // Pages always accessible regardless of subscription status

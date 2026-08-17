@@ -155,6 +155,7 @@ export interface Database {
           features: Json;
           permissions: Json;
           limits: Json;
+          is_default: boolean;
           trial_days: number;
           active: boolean;
           sort_order: number;

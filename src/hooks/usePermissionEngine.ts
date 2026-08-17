@@ -91,9 +91,9 @@ export function usePermissionEngine(): PermissionEngine {
 
   // Extract raw data
   const isSuperAdmin = role === 'super_admin';
-  const sub = subData?.sub;
-  const defaultPlan = subData?.defaultPlan;
-  const contract = sub?.subscription_contracts;
+  const sub = subData?.sub as any;
+  const defaultPlan = subData?.defaultPlan as any;
+  const contract = Array.isArray(sub?.subscription_contracts) ? sub?.subscription_contracts[0] : sub?.subscription_contracts;
 
   // Resolve active sources (Contract or Default Plan)
   let featuresObj: any = {};
@@ -150,22 +150,21 @@ export function usePermissionEngine(): PermissionEngine {
     const roleHasIt = rolePermissions.includes(key) || rolePermissions.includes('*');
     if (!roleHasIt) return false;
 
-    // AND the plan must allow it
-    // Se o array de permissões do contrato for vazio, fallback para true 
-    // temporariamente dependendo da estratégia, para não quebrar legados que 
-    // ainda não tem permissions no JSONB.
-    if (permissionsArr.length === 0) return true; 
+    // Se o array de permissões do contrato/plano existe (mesmo vazio), validar se a chave está presente
+    if (Array.isArray(permissionsArr)) {
+      return permissionsArr.includes(key) || permissionsArr.includes('*');
+    }
 
-    return permissionsArr.includes(key) || permissionsArr.includes('*');
+    return false;
   };
 
   const hasAnyPermission = (prefix: string) => {
     if (isSuperAdmin) return true;
     
-    // Se não há permissões restritas no plano, o legado tem acesso (a regra acima já trata o fallback).
-    if (permissionsArr.length === 0) return true;
+    if (!Array.isArray(permissionsArr) || permissionsArr.length === 0) return false;
 
-    // Verifica se alguma permissão do plano começa com o prefixo (ex: "equipe.")
+    // Verifica se alguma permissão do plano começa com o prefixo (ex: "equipe.", "agenda.") ou se tem '*'
+    if (permissionsArr.includes('*')) return true;
     return permissionsArr.some(p => p.startsWith(prefix));
   };
 

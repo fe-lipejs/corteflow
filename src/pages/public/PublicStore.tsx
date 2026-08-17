@@ -414,7 +414,22 @@ export default function PublicStore() {
   const accent = settings?.custom_palette?.primary || theme.accent;
   const contrast = useMemo(() => getThemeContrastEngine(theme), [theme]);
   const storeName = settings?.fantasy_name || tenant?.name || "";
-  const storeAddress = settings?.full_address || settings?.address;
+  
+  // Reconstruct full address reliably from any and all address fields
+  const storeAddress = useMemo(() => {
+    if (settings?.full_address && settings.full_address.trim()) return settings.full_address.trim();
+    const parts = [
+      settings?.address ? `${settings.address}${settings.street_number ? `, ${settings.street_number}` : ''}` : '',
+      settings?.complement ? `(${settings.complement})` : '',
+      settings?.neighborhood,
+      settings?.city ? `${settings.city}${settings.state ? ` - ${settings.state}` : ''}` : '',
+      settings?.zip_code ? `CEP: ${settings.zip_code}` : ''
+    ].filter(Boolean);
+    if (parts.length > 0) return parts.join(', ');
+    return settings?.address || '';
+  }, [settings]);
+
+  const hasLocationInfo = Boolean(storeAddress || settings?.map_link);
   const storePhone = settings?.phone || settings?.whatsapp_number;
 
   let storeInsta = settings?.instagram ? settings.instagram.replace("@", "").trim() : null;
@@ -511,12 +526,16 @@ export default function PublicStore() {
   }, []);
 
   const mapPreviewUrl = useMemo(() => {
-    // Try to extract an iframe src if the user pasted the embed code directly in the link field
+    // 1. Try to extract an iframe src if the user pasted embed code
     if (settings?.map_link && settings.map_link.includes('<iframe')) {
       const match = settings.map_link.match(/src="([^"]+)"/);
       if (match) return match[1];
     }
-    // Otherwise rely on the Google Maps native address search using the configured text inputs!
+    // 2. Direct embed url
+    if (settings?.map_link && (settings.map_link.includes('output=embed') || settings.map_link.includes('google.com/maps/embed'))) {
+      return settings.map_link;
+    }
+    // 3. Google Maps native address search using address text
     const query = storeAddress ? encodeURIComponent(storeAddress) : `${storeCoords.lat},${storeCoords.lng}`;
     return `https://maps.google.com/maps?q=${query}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
   }, [storeCoords, storeAddress, settings?.map_link]);
@@ -526,25 +545,34 @@ export default function PublicStore() {
       const match = settings.map_link.match(/src="([^"]+)"/);
       if (match) return match[1];
     }
+    if (settings?.map_link && (settings.map_link.includes('output=embed') || settings.map_link.includes('google.com/maps/embed'))) {
+      return settings.map_link;
+    }
     const query = storeAddress ? encodeURIComponent(storeAddress) : `${storeCoords.lat},${storeCoords.lng}`;
     return `https://maps.google.com/maps?q=${query}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`;
   }, [storeCoords, storeAddress, mapZoom, settings?.map_link]);
 
   const directionsUrl = useMemo(() => {
-    if (settings?.map_link) return settings.map_link;
+    // PRIORITY 1: Owner's configured Google Maps link
+    if (settings?.map_link && settings.map_link.trim().startsWith('http') && !settings.map_link.includes('<iframe')) {
+      return settings.map_link.trim();
+    }
+
+    // PRIORITY 2: Apple Maps or Google Maps directions with origin/destination
+    const destination = storeAddress ? encodeURIComponent(storeAddress) : `${storeCoords.lat},${storeCoords.lng}`;
 
     if (isAppleDevice) {
       if (userPos) {
-        return `https://maps.apple.com/?saddr=${userPos.lat},${userPos.lng}&daddr=${storeCoords.lat},${storeCoords.lng}&dirflg=d`;
+        return `https://maps.apple.com/?saddr=${userPos.lat},${userPos.lng}&daddr=${destination}&dirflg=d`;
       }
-      return `https://maps.apple.com/?daddr=${storeCoords.lat},${storeCoords.lng}&dirflg=d`;
+      return `https://maps.apple.com/?daddr=${destination}&dirflg=d`;
     }
 
     if (userPos) {
-      return `https://www.google.com/maps/dir/?api=1&origin=${userPos.lat},${userPos.lng}&destination=${storeCoords.lat},${storeCoords.lng}`;
+      return `https://www.google.com/maps/dir/?api=1&origin=${userPos.lat},${userPos.lng}&destination=${destination}`;
     }
-    return `https://www.google.com/maps/dir/?api=1&destination=${storeCoords.lat},${storeCoords.lng}`;
-  }, [userPos, storeCoords, settings, isAppleDevice]);
+    return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+  }, [userPos, storeCoords, settings?.map_link, storeAddress, isAppleDevice]);
 
   const whatsappUrl = useMemo(() => {
     if (!bookingCode || !selectedService || !selectedDate || !selectedTime) return "#";
@@ -767,7 +795,7 @@ export default function PublicStore() {
                 )}
 
                 {/* Map */}
-                {storeAddress && (
+                {hasLocationInfo && (
                   <div>
                     <div className="rounded-2xl overflow-hidden border relative" style={{ borderColor: theme.cardBorder, height: 200 }}>
                       <iframe
@@ -1010,16 +1038,16 @@ export default function PublicStore() {
           {/* Seção Inferior: Endereço & Horários */}
           <div className="px-4 sm:px-5 pt-3 pb-6 space-y-3 relative z-10">
             {/* Address */}
-            {storeAddress && (
+            {hasLocationInfo && (
               <button onClick={() => { setShowMapModal(true); if (geoStatus === "idle") requestLocation(); }}
-                className="w-full flex items-start gap-3 text-left p-3.5 rounded-2xl transition-colors border shadow-sm"
+                className="w-full flex items-start gap-3 text-left p-3.5 rounded-2xl transition-colors border shadow-sm cursor-pointer"
                 style={{ background: `${accent}08`, borderColor: `${accent}20` }}
                 onMouseEnter={e => (e.currentTarget.style.background = `${accent}14`)}
                 onMouseLeave={e => (e.currentTarget.style.background = `${accent}08`)}>
                 <MapPin className="w-4 h-4 mt-0.5 shrink-0" style={{ color: accent }} />
                 <div>
                   <p className="text-xs font-semibold mb-0.5" style={{ color: accent }}>Localização</p>
-                  <p className="text-sm leading-snug font-medium" style={{ color: theme.textPrimary }}>{storeAddress}</p>
+                  <p className="text-sm leading-snug font-medium" style={{ color: theme.textPrimary }}>{storeAddress || "Ver no Google Maps"}</p>
                 </div>
               </button>
             )}

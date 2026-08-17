@@ -13,6 +13,7 @@ interface Plan {
   max_professionals: number;
   allow_products: boolean;
   trial_days: number;
+  is_default?: boolean;
   features: any;
   permissions?: any;
   limits?: any;
@@ -28,6 +29,7 @@ interface Subscription {
   current_period_end: string | null;
   stripe_subscription_id: string | null;
   stripe_customer_id: string | null;
+  subscription_contracts?: any;
 }
 
 function getDisplayFeatures(plan: Plan): string[] {

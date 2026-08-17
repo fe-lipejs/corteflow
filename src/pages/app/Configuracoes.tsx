@@ -98,6 +98,7 @@ export default function Configuracoes() {
   const [selectedTheme, setSelectedTheme] = useState('classic');
   const [customPalette, setCustomPalette] = useState<any>(null);
   const [paymentMode, setPaymentMode] = useState('local');
+  const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
   const [depositPercentage, setDepositPercentage] = useState(50);
   // Fix #2: Individual payment option toggles
   const [allowLocal, setAllowLocal] = useState(true);
@@ -1374,23 +1375,25 @@ export default function Configuracoes() {
                     </p>
                   </div>
 
-                  <FeatureGate feature="custom_colors" inline message="Cores personalizadas e temas no plano superior">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDraftFontStyle(fontStyle);
-                        setIsCustomizerOpen(true);
-                      }}
-                      className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl text-xs font-extrabold uppercase tracking-wider shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
-                      style={{
-                        background: theme.btnPrimaryBg || theme.accent,
-                        color: theme.btnPrimaryText,
-                      }}
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>Personalizar Visual & Cores</span>
-                    </button>
-                  </FeatureGate>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!engine.hasPermission('configuracoes.editar_layout') && !engine.hasFeature('custom_colors')) {
+                        setShowUpgradeModal('Personalização de Cores e Visual da Página Pública');
+                        return;
+                      }
+                      setDraftFontStyle(fontStyle);
+                      setIsCustomizerOpen(true);
+                    }}
+                    className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl text-xs font-extrabold uppercase tracking-wider shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
+                    style={{
+                      background: theme.btnPrimaryBg || theme.accent,
+                      color: theme.btnPrimaryText,
+                    }}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Personalizar Visual & Cores</span>
+                  </button>
                 </div>
 
                 {/* Resumo Visual Atual com Muito Respiro */}
@@ -1803,17 +1806,39 @@ export default function Configuracoes() {
               </div>
 
               {/* Map Preview */}
-              {(latitude && longitude) && (
-                <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}`, height: '200px' }}>
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${longitude - 0.005},${latitude - 0.003},${longitude + 0.005},${latitude + 0.003}&layer=mapnik&marker=${latitude},${longitude}`}
-                  />
-                </div>
-              )}
+              {(() => {
+                const queryAddress = [streetAddress, streetNumber, neighborhood, city, state].filter(Boolean).join(', ');
+                let embedUrl = '';
+                if (mapLink && mapLink.includes('<iframe')) {
+                  const match = mapLink.match(/src="([^"]+)"/);
+                  if (match) embedUrl = match[1];
+                } else if (mapLink && (mapLink.includes('output=embed') || mapLink.includes('google.com/maps/embed'))) {
+                  embedUrl = mapLink;
+                } else if (queryAddress) {
+                  embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(queryAddress)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+                } else if (mapLink && mapLink.startsWith('http')) {
+                  embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapLink)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+                }
+
+                if (!embedUrl) return null;
+
+                return (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
+                      Pré-visualização do Mapa
+                    </p>
+                    <div className="rounded-2xl overflow-hidden border shadow-sm" style={{ borderColor: theme.border, height: '220px' }}>
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        src={embedUrl}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -3229,6 +3254,47 @@ export default function Configuracoes() {
           </div>
         )}
       </AnimatePresence>
+      {/* ── Modal: Upgrade Plan ── */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md">
+          <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_0_80px_rgba(0,0,0,0.5)] ring-1 ring-white/10 glass-card animate-scale-in" style={{ borderColor: theme.border, background: theme.cardBg }}>
+            <div className="relative mb-6">
+              <div className="relative w-20 h-20 mx-auto bg-black border rounded-full flex items-center justify-center" style={{ borderColor: theme.accent }}>
+                <Crown className="w-10 h-10" style={{ color: theme.accent }} />
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full border-2 flex items-center justify-center" style={{ background: theme.cardBg, borderColor: theme.border }}>
+                  <Lock className="w-4 h-4" style={{ color: theme.textSecondary }} />
+                </div>
+              </div>
+            </div>
+
+            <h3 className="font-bold text-xl mb-2" style={{ color: theme.textPrimary }}>
+              Recurso Premium
+            </h3>
+            <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>
+              A funcionalidade de <strong>{showUpgradeModal}</strong> é exclusiva de planos superiores. Faça o upgrade para desbloquear o acesso total.
+            </p>
+
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => { setShowUpgradeModal(null); setActiveTab('conta'); }}
+                className="w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all shadow-lg hover:opacity-90"
+                style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
+              >
+                Ver planos
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(null)}
+                className="w-full py-2 text-xs font-semibold hover:underline"
+                style={{ color: theme.textSecondary }}
+              >
+                Agora não
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
