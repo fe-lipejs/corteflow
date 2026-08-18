@@ -224,7 +224,7 @@ export default function AppLayout() {
             <X className="w-5 h-5" />
           </button>
           <div className="hidden md:block">
-            <NotificationBell />
+            <NotificationBell align="sidebar" />
           </div>
         </div>
 

@@ -539,30 +539,46 @@ export default function Assinatura() {
               return (
                 <div
                   key={plan.id}
-                  className="rounded-2xl border flex flex-col overflow-hidden transition-all"
+                  className="rounded-3xl border-2 flex flex-col overflow-hidden transition-all duration-200 shadow-md hover:shadow-xl"
                   style={{
-                    borderColor: isCurrent ? theme.accent : theme.border,
+                    borderColor: isCurrent ? theme.accent : (theme.id === 'elegant' ? '#E2E8F0' : theme.border),
                     background: theme.cardBg,
-                    boxShadow: isCurrent ? theme.shadowAccent : 'none',
+                    boxShadow: isCurrent ? theme.shadowAccent : (theme.id === 'elegant' ? '0 4px 20px -2px rgba(0, 0, 0, 0.06)' : 'none'),
                   }}
                 >
                   {/* Plan header */}
                   <div className="p-6 flex-1">
-                    <div className="flex items-start justify-between mb-1">
+                    <div className="flex items-start justify-between gap-2 mb-1">
                       <h3 className="text-xl font-bold" style={{ color: theme.textPrimary }}>{planToDisplay.name}</h3>
                       {isCurrent && (
-                        <span className="text-xs font-bold px-2 py-1 rounded-full flex flex-col items-end" style={{ background: `${theme.accent}20`, color: theme.accent }}>
-                          <span>Plano Atual</span>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span 
+                            className="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full border shadow-sm flex items-center gap-1.5"
+                            style={{ 
+                              background: `${theme.accent}18`, 
+                              color: theme.accent,
+                              borderColor: `${theme.accent}40`
+                            }}
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Plano Atual
+                          </span>
                           {subscription?.subscription_contracts && (
-                            <span className="text-[10px] opacity-70">Contrato Preservado</span>
+                            <span 
+                              className="text-[10px] font-semibold px-2 py-0.5 rounded-md border"
+                              style={{ 
+                                background: theme.inputBg, 
+                                color: theme.textSecondary,
+                                borderColor: theme.border 
+                              }}
+                            >
+                              Contrato Ativo
+                            </span>
                           )}
-                        </span>
+                        </div>
                       )}
                     </div>
-                    <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>{planToDisplay.description}</p>
-
                     {/* Price */}
-                    <div className="mb-4">
+                    <div className="my-4">
                       {brlPrice ? (
                         <div className="flex flex-col gap-1">
                           {plan.is_custom_price && (
@@ -583,45 +599,46 @@ export default function Assinatura() {
                     </div>
 
                     {/* Trial */}
-                    <p className="text-xs mb-4" style={{ color: theme.textSecondary }}>
-                      <Clock className="w-3 h-3 inline mr-1" />
-                      {planToDisplay.trial_days} dias de teste grátis
+                    <p className="text-xs mb-4 flex items-center gap-1.5" style={{ color: theme.textSecondary }}>
+                      <Clock className="w-3.5 h-3.5" style={{ color: theme.accent }} />
+                      <span>{planToDisplay.trial_days} dias de teste grátis</span>
                     </p>
 
-                    {/* Feature flags */}
-                    <div className="flex flex-wrap gap-1.5 mb-5">
-                      {Object.entries(flags).map(([key, enabled]) => (
-                        <span
-                          key={key}
-                          className="text-xs px-2.5 py-1 rounded-lg border font-medium flex items-center gap-1 transition-all"
-                          style={{
-                            borderColor: enabled ? `${theme.success}30` : theme.border,
-                            color: enabled ? theme.success : theme.textMuted,
-                            background: enabled ? `${theme.success}12` : `${theme.border}30`,
-                          }}
-                        >
-                          {enabled ? '✓' : '✕'} {FEATURE_LABELS[key]}
-                        </span>
-                      ))}
-                    </div>
+                    {/* Dynamic Features List based on Plan Description */}
+                    {(() => {
+                      const descLines = (planToDisplay.description || '')
+                        .split(/[\n\r]+/)
+                        .map((l: string) => l.trim())
+                        .filter((l: string) => Boolean(l));
+
+                      const items = descLines.length > 0 
+                        ? descLines 
+                        : displayFeatures.length > 0 
+                        ? displayFeatures 
+                        : [
+                            'Acesso completo à plataforma',
+                            'Agenda online e link personalizado',
+                            'Gestão de clientes e histórico',
+                            'Suporte prioritário e relatórios'
+                          ];
+
+                      return (
+                        <div className="space-y-2.5 mb-5 border-t border-b py-4" style={{ borderColor: theme.border }}>
+                          {items.map((item: string, idx: number) => (
+                            <div key={idx} className="flex items-center gap-2.5 text-xs font-medium" style={{ color: theme.textPrimary }}>
+                              <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: theme.accent }} />
+                              <span>{item}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
 
                     {/* Limits */}
                     <div className="text-sm font-medium flex items-center gap-2" style={{ color: theme.textPrimary }}>
                       <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style={{ background: `${theme.accent}20`, color: theme.accent }}>👥</span>
                       <span>{displayMaxProf}</span>
                     </div>
-
-                    {/* Display features bullets */}
-                    {displayFeatures.length > 0 && (
-                      <ul className="mt-4 space-y-2 border-t pt-4" style={{ borderColor: theme.border }}>
-                        {displayFeatures.map((f, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs" style={{ color: theme.textSecondary }}>
-                            <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: theme.accent }} />
-                            <span>{f}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
                   </div>
 
                   {/* Action button */}
@@ -629,10 +646,15 @@ export default function Assinatura() {
                     <button
                       onClick={() => !plan.is_default ? handleCheckout(plan.id) : null}
                       disabled={isLoading || isCurrent || plan.is_default}
-                      className="w-full py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 hover:opacity-95 cursor-pointer"
+                      className="w-full py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-85 cursor-pointer"
                       style={{
-                        background: isCurrent ? theme.bgHover : (plan.is_default ? theme.bgHover : theme.accentGradient),
-                        color: isCurrent ? theme.textSecondary : (plan.is_default ? theme.textMuted : theme.btnPrimaryText),
+                        background: isCurrent 
+                          ? (theme.id === 'elegant' ? '#F1F5F9' : `${theme.accent}15`) 
+                          : (plan.is_default ? theme.bgHover : theme.accentGradient),
+                        color: isCurrent 
+                          ? (theme.id === 'elegant' ? '#475569' : theme.accent) 
+                          : (plan.is_default ? theme.textMuted : theme.btnPrimaryText),
+                        border: isCurrent ? `1px solid ${theme.accent}40` : 'none',
                         boxShadow: isCurrent || plan.is_default ? 'none' : theme.shadowAccent,
                       }}
                     >
@@ -642,9 +664,9 @@ export default function Assinatura() {
                           Processando...
                         </>
                       ) : isCurrent ? (
-                        'Plano Atual'
+                        '✓ Seu Plano Atual'
                       ) : plan.is_default ? (
-                        'Seu Plano Básico' // If it's not current, but it's default, they can't explicitly 'checkout' to it, they must cancel.
+                        'Seu Plano Básico'
                       ) : (
                         <>
                           <Zap className="w-4 h-4" />

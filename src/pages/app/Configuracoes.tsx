@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../integrations/supabase/client';
 import { useAuth } from '../../hooks/useAuth';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
@@ -44,6 +45,12 @@ const WhatsAppIcon = ({ className, style }: { className?: string; style?: React.
   </svg>
 );
 
+const StripeIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 28 28" fill="currentColor" className={className} style={style}>
+    <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697.5 12.521.5 5.86.5 1.584 3.977 1.584 9.544c0 6.082 5.679 7.18 8.878 8.371 2.457.915 3.328 1.597 3.328 2.64 0 .972-.947 1.554-2.428 1.554-2.28 0-5.183-1.077-7.147-2.189l-.92 5.584c2.052 1.073 5.378 1.868 8.068 1.868 6.786 0 11.233-3.23 11.233-9.197 0-6.175-5.59-7.25-8.62-8.025z"/>
+  </svg>
+);
+
 const TABS = [
   { id: 'aparencia', label: 'Aparência & Marca', icon: Palette },
   { id: 'stripe', label: 'Recebimentos & Pagamentos', icon: CreditCard },
@@ -58,6 +65,7 @@ const TABS = [
 type TabId = typeof TABS[number]['id'];
 
 export default function Configuracoes() {
+  const navigate = useNavigate();
   const { tenant, profile, signOut, refreshProfile } = useAuth();
   const engine = usePermissionEngine();
   const { i18n } = useTranslation();
@@ -161,6 +169,8 @@ export default function Configuracoes() {
   const [mapLink, setMapLink] = useState('');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [mapLinkStatus, setMapLinkStatus] = useState<'idle' | 'resolving' | 'resolved' | 'error'>('idle');
+  const [resolvedPlaceName, setResolvedPlaceName] = useState<string | null>(null);
 
   // Policies (Intelligent Engine)
   const [allowReschedule, setAllowReschedule] = useState(true);
@@ -628,6 +638,72 @@ export default function Configuracoes() {
       }
     }, 350);
   };
+
+  // ─── Automatic Google Maps Link Resolution (SSOT) ─────────────────────────
+  useEffect(() => {
+    if (!mapLink || !mapLink.trim()) {
+      setMapLinkStatus('idle');
+      setResolvedPlaceName(null);
+      return;
+    }
+
+    const clean = mapLink.trim();
+
+    // 1. Direct coordinate extraction from URL (!3d!4d, @lat,lng, q=lat,lng)
+    const data3dMatch = clean.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+    if (data3dMatch) {
+      setLatitude(parseFloat(data3dMatch[1]));
+      setLongitude(parseFloat(data3dMatch[2]));
+      setMapLinkStatus('resolved');
+      return;
+    }
+
+    const atMatch = clean.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (atMatch) {
+      setLatitude(parseFloat(atMatch[1]));
+      setLongitude(parseFloat(atMatch[2]));
+      setMapLinkStatus('resolved');
+      return;
+    }
+
+    const qMatch = clean.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (qMatch) {
+      setLatitude(parseFloat(qMatch[1]));
+      setLongitude(parseFloat(qMatch[2]));
+      setMapLinkStatus('resolved');
+      return;
+    }
+
+    // 2. Short links (maps.app.goo.gl, goo.gl/maps) or Google Place URLs
+    if (clean.includes('goo.gl') || clean.includes('google.com/maps')) {
+      setMapLinkStatus('resolving');
+      const timer = setTimeout(async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke('resolve-map-link', {
+            body: { url: clean },
+          });
+
+          if (!error && data?.success) {
+            if (data.latitude && data.longitude) {
+              setLatitude(data.latitude);
+              setLongitude(data.longitude);
+              setMapLinkStatus('resolved');
+            }
+            if (data.placeName) {
+              setResolvedPlaceName(data.placeName);
+            }
+          } else {
+            setMapLinkStatus('idle');
+          }
+        } catch (err) {
+          console.warn('Erro ao resolver link do Google Maps:', err);
+          setMapLinkStatus('idle');
+        }
+      }, 350);
+
+      return () => clearTimeout(timer);
+    }
+  }, [mapLink]);
 
   // ─── Handle Phone Formatting ──────────────────────────────────────────────
   const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1897,13 +1973,30 @@ export default function Configuracoes() {
                 <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
                   Link do Google Maps
                 </label>
-                <input
-                  type="text"
-                  value={mapLink}
-                  onChange={e => setMapLink(e.target.value)}
-                  className="themed-input"
-                  placeholder="Cole o link curto do Google Maps aqui (opcional)"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={mapLink}
+                    onChange={e => setMapLink(e.target.value)}
+                    className="themed-input pr-10"
+                    placeholder="Cole o link curto do Google Maps aqui (opcional)"
+                  />
+                  {mapLinkStatus === 'resolving' && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="w-4 h-4 animate-spin text-[#C9963B]" />
+                    </div>
+                  )}
+                  {mapLinkStatus === 'resolved' && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    </div>
+                  )}
+                </div>
+                {resolvedPlaceName && (
+                  <p className="text-[11px] mt-1.5 font-semibold text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Local identificado: {resolvedPlaceName} {latitude && longitude ? `(${latitude.toFixed(4)}, ${longitude.toFixed(4)})` : ''}
+                  </p>
+                )}
                 <p className="text-[10px] mt-1 font-medium" style={{ color: theme.textMuted }}>
                   Coloque o link do Google para uma localização mais precisa (Ex: https://maps.app.goo.gl/...)
                 </p>
@@ -1923,19 +2016,23 @@ export default function Configuracoes() {
                 else if (mapLink && (mapLink.includes('output=embed') || mapLink.includes('google.com/maps/embed'))) {
                   embedUrl = mapLink;
                 } 
-                // 3. Extração direta de coordenadas se o link contiver @lat,lng ou q=lat,lng
-                else if (mapLink && (mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || mapLink.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/))) {
-                  const coordMatch = mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || mapLink.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+                // 3. Coordenadas exatas identificadas (via resolução ou GPS) -> Precisão Máxima
+                else if (latitude && longitude) {
+                  embedUrl = `https://maps.google.com/maps?q=${latitude},${longitude}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
+                }
+                // 4. Extração direta de coordenadas se o link contiver @lat,lng, !3d!4d ou q=lat,lng
+                else if (mapLink && (mapLink.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || mapLink.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/))) {
+                  const coordMatch = mapLink.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || mapLink.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
                   if (coordMatch) {
                     embedUrl = `https://maps.google.com/maps?q=${coordMatch[1]},${coordMatch[2]}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
                   }
                 }
-                // 4. Busca de alta precisão por endereço completo com número, bairro, cidade e CEP
+                // 5. Busca de alta precisão por endereço completo com número, bairro, cidade e CEP
                 else if (queryAddress) {
                   embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(queryAddress)}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
                 } 
-                // 5. Link genérico de fallback
-                else if (mapLink && mapLink.trim().startsWith('http') && !mapLink.includes('goo.gl')) {
+                // 6. Link genérico de fallback
+                else if (mapLink && mapLink.trim().startsWith('http')) {
                   embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapLink.trim())}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
                 }
 
@@ -2601,11 +2698,16 @@ export default function Configuracoes() {
                 </div>
 
                 {/* 5. Recebimento de Pagamentos Online (Stripe Connect) */}
-                <div className="p-5 rounded-2xl border space-y-2 sm:col-span-2" style={{ background: theme.cardBg, borderColor: theme.border }}>
+                <div className="p-5 rounded-2xl border space-y-3 sm:col-span-2" style={{ background: theme.cardBg, borderColor: theme.border }}>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
-                      Recebimento Online (Stripe Connect)
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center font-bold">
+                        <StripeIcon className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#635BFF]">
+                        Recebimento Online (Stripe Connect)
+                      </span>
+                    </div>
                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
                       stripeConnectInfo?.charges_enabled
                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
@@ -2627,22 +2729,38 @@ export default function Configuracoes() {
                     {stripeConnectInfo?.charges_enabled
                       ? 'Seu salão está habilitado a receber pagamentos online (Pix, Cartão) diretamente na sua conta bancária.'
                       : stripeConnectInfo?.stripe_account_id
-                      ? 'Conclua o envio dos seus documentos bancários na aba "Pagamentos" para liberar cobranças online.'
-                      : 'Conecte sua conta Stripe na aba "Pagamentos" para cobrar reservas antecipadas dos seus clientes.'}
+                      ? 'Conclua o envio dos seus documentos bancários na aba "Recebimentos & Pagamentos" para liberar cobranças online.'
+                      : 'Conecte sua conta Stripe na aba "Recebimentos & Pagamentos" para cobrar reservas antecipadas dos seus clientes.'}
                   </p>
+                  {!stripeConnectInfo?.charges_enabled && (
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('stripe')}
+                        className="px-4 py-2 text-xs font-bold rounded-xl text-white transition-all flex items-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] bg-[#635BFF] hover:bg-[#5349e4]"
+                      >
+                        <Zap className="w-3.5 h-3.5" />
+                        {stripeConnectInfo?.stripe_account_id ? 'Completar Verificação Stripe' : 'Conectar Conta Stripe'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Seção de Gerenciamento da Assinatura */}
+              {/* Seção de Gerenciamento da Assinatura (Stripe Billing) */}
               <div className="p-5 rounded-2xl border space-y-4 mt-6" style={{ background: theme.cardBg, borderColor: theme.border }}>
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div className="space-y-1">
-                    <h4 className="text-sm font-bold flex items-center gap-2" style={{ color: theme.textPrimary }}>
-                      <Crown className="w-4 h-4" style={{ color: theme.accent }} />
-                      Gerenciamento de Cobrança & Faturamento
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center font-bold">
+                        <StripeIcon className="w-3.5 h-3.5" />
+                      </div>
+                      <h4 className="text-sm font-bold" style={{ color: theme.textPrimary }}>
+                        Gerenciamento de Cobrança & Faturamento (Stripe)
+                      </h4>
+                    </div>
                     <p className="text-xs" style={{ color: theme.textSecondary }}>
-                      Acesse o portal oficial do Stripe para atualizar cartão de crédito, baixar notas fiscais ou gerenciar sua assinatura.
+                      Acesse o portal oficial do Stripe para atualizar cartão de crédito, baixar notas fiscais ou gerenciar sua assinatura com total segurança.
                     </p>
                   </div>
                   <div className="flex items-center gap-3 flex-wrap">
@@ -2650,25 +2768,13 @@ export default function Configuracoes() {
                       type="button"
                       onClick={handleOpenCustomerPortal}
                       disabled={portalLoading}
-                      className="px-4 py-2 text-xs font-bold rounded-xl border transition-all flex items-center gap-2 cursor-pointer hover:scale-[1.02] disabled:opacity-50"
+                      className="px-4 py-2.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-2 cursor-pointer hover:scale-[1.02] shadow-sm disabled:opacity-50"
                       style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
                     >
+                      <StripeIcon className="w-3.5 h-3.5 text-[#635BFF]" />
                       {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" style={{ color: theme.accent }} />}
                       {portalLoading ? 'Abrindo...' : 'Acessar Portal do Stripe'}
                     </button>
-                    {subInfo?.status === 'active' && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCancelConfirmationText('');
-                          setCancelSubModalOpen(true);
-                        }}
-                        className="px-4 py-2 text-xs font-bold rounded-xl border bg-red-500/10 border-red-500/20 hover:bg-red-500/20 text-red-500 transition-all flex items-center gap-2 cursor-pointer"
-                      >
-                        <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
-                        Cancelar Assinatura
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>
@@ -3538,8 +3644,8 @@ export default function Configuracoes() {
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={() => { setShowUpgradeModal(null); setActiveTab('conta'); }}
-                className="w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all shadow-lg hover:opacity-90"
+                onClick={() => { setShowUpgradeModal(null); navigate('/app/assinatura'); }}
+                className="w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all shadow-lg hover:opacity-90 cursor-pointer"
                 style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
               >
                 Ver planos

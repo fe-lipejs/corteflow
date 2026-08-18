@@ -9,7 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface NotificationBellProps {
-  align?: 'left' | 'right';
+  align?: 'left' | 'right' | 'sidebar';
 }
 
 export function NotificationBell({ align = 'right' }: NotificationBellProps = {}) {
@@ -95,7 +95,13 @@ export function NotificationBell({ align = 'right' }: NotificationBellProps = {}
 
       {isOpen && (
         <div 
-          className={`absolute ${align === 'left' ? 'left-0 sm:left-full sm:ml-2 sm:-top-2 mt-2 sm:mt-0' : 'right-0 mt-2'} w-80 sm:w-96 rounded-xl shadow-2xl overflow-hidden z-50 border`}
+          className={`absolute ${
+            align === 'sidebar'
+              ? 'left-0 md:left-full md:top-0 md:ml-3 mt-2 md:mt-0'
+              : align === 'left'
+              ? 'left-0 mt-2'
+              : 'right-0 mt-2'
+          } w-80 sm:w-96 rounded-2xl shadow-2xl overflow-hidden z-[100] border`}
           style={{ background: theme.bg, borderColor: theme.border }}
         >
           <div className="px-4 py-3 border-b flex justify-between items-center" style={{ borderColor: theme.border }}>

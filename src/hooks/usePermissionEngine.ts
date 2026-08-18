@@ -177,13 +177,15 @@ export function usePermissionEngine(): PermissionEngine {
       permissionsArr = [];
       limitsObj = { profissionais: 0 };
     } else if (contract) {
-      featuresObj = contract.features || {};
-      permissionsArr = Array.isArray(contract.permissions) ? contract.permissions : [];
-      limitsObj = contract.limits || {};
+      featuresObj = { ...(sub.plans?.features || {}), ...(contract.features || {}) };
+      const contractPerms = Array.isArray(contract.permissions) && contract.permissions.length > 0 ? contract.permissions : null;
+      const planPerms = Array.isArray(sub.plans?.permissions) && sub.plans.permissions.length > 0 ? sub.plans.permissions : [];
+      permissionsArr = contractPerms || planPerms;
+      limitsObj = { ...(sub.plans?.limits || {}), ...(contract.limits || {}) };
       
       // Retrocompatibility parsing for limits if max_professionals is used
-      if (!limitsObj.profissionais && contract.max_professionals) {
-        limitsObj.profissionais = contract.max_professionals;
+      if (!limitsObj.profissionais && (contract.max_professionals || sub.plans?.max_professionals)) {
+        limitsObj.profissionais = contract.max_professionals || sub.plans?.max_professionals;
       }
     } else if (sub.plans) {
       featuresObj = sub.plans.features || {};

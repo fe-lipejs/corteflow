@@ -251,7 +251,7 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-white">{tenant.name}</p>
-                      <p className="text-xs text-[#444]">{getTenantPublicUrl(tenant.slug).replace(/https?:///, '')} · {BusinessTypeLabel(tenant.business_type)}</p>
+                      <p className="text-xs text-[#444]">{getTenantPublicUrl(tenant.slug).replace(/^https?:\/\//, '')} · {BusinessTypeLabel(tenant.business_type)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
