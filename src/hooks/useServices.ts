@@ -21,6 +21,8 @@ export interface Service {
   display_order: number;
   created_at: string;
   updated_at: string;
+  service_mode: "instore" | "home" | "both";
+  home_price_extra: number;
 }
 
 export type ServiceInput = Omit<Service, 'id' | 'tenant_id' | 'created_at' | 'updated_at'> & {

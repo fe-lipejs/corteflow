@@ -46,6 +46,10 @@ export default function ServiceModal({ service, professionals = [], tenantId, on
   const [photoPreview, setPhotoPreview] = useState<string | null>(service?.photo_url ?? null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Hybrid Location fields (migration 0046)
+  const [serviceMode, setServiceMode] = useState<'instore' | 'home' | 'both'>(service?.service_mode ?? 'instore');
+  const [homePriceExtra, setHomePriceExtra] = useState(String(service?.home_price_extra ?? 0));
+
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -81,6 +85,8 @@ export default function ServiceModal({ service, professionals = [], tenantId, on
       display_order: Number(displayOrder) || 0,
       photo_url: service?.photo_url ?? null,
       photoFile: photoFile ?? undefined,
+      service_mode: serviceMode,
+      home_price_extra: Number(homePriceExtra) || 0,
     });
   };
 
@@ -144,6 +150,31 @@ export default function ServiceModal({ service, professionals = [], tenantId, on
           <div>
             <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Preço Antigo (Riscado)</label>
             <input type="number" min="0" step="0.01" value={originalPrice} onChange={e => setOriginalPrice(e.target.value)} className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} placeholder="Ex: De R$ 80" />
+          </div>
+        </div>
+
+        {/* Location / Mode */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Onde é realizado?</label>
+            <select value={serviceMode} onChange={e => setServiceMode(e.target.value as 'instore' | 'home' | 'both')} className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}>
+              <option value="instore">🏠 Apenas no estabelecimento</option>
+              <option value="home">🚗 Apenas a domicílio</option>
+              <option value="both">✨ Nos dois (cliente escolhe)</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Acréscimo domicílio (R$)</label>
+            <input 
+              type="number" 
+              min="0" step="0.50" 
+              value={homePriceExtra} 
+              onChange={e => setHomePriceExtra(e.target.value)} 
+              disabled={serviceMode === 'instore'}
+              className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input disabled:opacity-50" 
+              style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
+              placeholder="Ex: 15.00" 
+            />
           </div>
         </div>
 

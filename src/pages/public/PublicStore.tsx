@@ -26,6 +26,8 @@ import {
   CheckCircle2,
   ChevronUp,
   AlertTriangle,
+  Store,
+  Home,
 } from "lucide-react";
 import { format, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale/pt-BR";
@@ -296,9 +298,20 @@ export default function PublicStore() {
 
   const tenant: any = storeData?.tenant;
   const settings: any = storeData?.settings;
-  const servicesList: any[] = storeData?.services || [];
+  const rawServicesList: any[] = storeData?.services || [];
   const professionalsList: any[] = storeData?.professionals || [];
   const businessHoursList: any[] = storeData?.businessHours || [];
+  
+  const [bookingMode, setBookingMode] = useState<'instore' | 'home'>('instore');
+  const [clientAddress, setClientAddress] = useState("");
+
+  const servicesList = useMemo(() => {
+    return rawServicesList.filter(s => {
+      const mode = s.service_mode || 'instore';
+      if (mode === 'both') return true;
+      return mode === bookingMode;
+    });
+  }, [rawServicesList, bookingMode]);
 
   // Theme setup directly using preset defaults (Classic, Noir, Elegant)
   const theme = useMemo(() => {
@@ -445,6 +458,8 @@ export default function PublicStore() {
   // Geo
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "denied" | "ok" | "ignored">("idle");
+  const [clientDistanceKm, setClientDistanceKm] = useState<number | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const todayWeekday = new Date().getDay();
 
   const storeCoords = useMemo(
@@ -454,6 +469,36 @@ export default function PublicStore() {
     }),
     [settings]
   );
+
+  const geocodeAndCheckDistance = async (address: string) => {
+    if (!settings?.latitude || !settings?.longitude) return 0;
+    try {
+      setIsGeocoding(true);
+      setErrorMsg("");
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+      const data = await res.json();
+      if (!data || data.length === 0) {
+        setErrorMsg("Não encontramos este endereço. Verifique se está digitado corretamente.");
+        return null;
+      }
+      const clientLat = parseFloat(data[0].lat);
+      const clientLng = parseFloat(data[0].lon);
+      const dist = haversineKm({ lat: clientLat, lng: clientLng }, storeCoords);
+      
+      if (settings?.home_service_radius_km && dist > settings.home_service_radius_km) {
+        setErrorMsg(`Endereço fora da área de cobertura do salão (máximo ${settings.home_service_radius_km} km).`);
+        return null;
+      }
+      
+      setClientDistanceKm(dist);
+      return dist;
+    } catch (err) {
+      setErrorMsg("Erro ao validar endereço. Tente novamente.");
+      return null;
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
 
   const requestLocation = useCallback(() => {
     if (typeof window === "undefined" || !navigator.geolocation) {
@@ -536,7 +581,32 @@ export default function PublicStore() {
     storeInsta = storeInsta.split("instagram.com/")[1].replace("/", "");
   }
 
-  const total = selectedService?.price ?? 0;
+  const travelFee = useMemo(() => {
+    if (bookingMode !== 'home' || clientDistanceKm === null) return 0;
+    
+    if (selectedPro && selectedPro !== "any" && selectedPro.home_fee != null && selectedPro.home_fee > 0) {
+      return selectedPro.home_fee;
+    }
+    
+    const feeType = settings?.home_service_fee_type || 'fixed';
+    const feeValue = settings?.home_service_fee_value || 0;
+    
+    if (feeType === 'free') return 0;
+    if (feeType === 'fixed') return feeValue;
+    if (feeType === 'per_km') {
+      const baseFee = settings?.home_service_base_fee || 0;
+      const freeRadius = settings?.home_service_free_radius_km || 0;
+      let billableKm = clientDistanceKm;
+      if (freeRadius > 0) {
+        billableKm = Math.max(0, clientDistanceKm - freeRadius);
+      }
+      return baseFee + (billableKm * feeValue);
+    }
+    return 0;
+  }, [bookingMode, clientDistanceKm, selectedPro, settings]);
+
+  const serviceHomeExtra = bookingMode === 'home' ? (selectedService?.home_price_extra ?? 0) : 0;
+  const total = (selectedService?.price ?? 0) + serviceHomeExtra + travelFee;
   const amountPaid = paymentScope === "full" ? total : paymentScope === "partial" ? total / 2 : 0;
   const amountDue = total - amountPaid;
   const proName = selectedPro === "any" ? "Qualquer profissional" : selectedPro?.name ?? "";
@@ -628,29 +698,61 @@ export default function PublicStore() {
     return days;
   }, [businessHoursList]);
 
+  const availableProfessionals = useMemo(() => {
+    let list = professionalsList.filter((p: any) => p.status === 'active' || !p.status);
+    
+    if (selectedService && storeData?.professionalServices) {
+      const allowedProIds = storeData.professionalServices
+        .filter((ps: any) => ps.service_id === selectedService.id)
+        .map((ps: any) => ps.professional_id);
+      
+      list = list.filter((p: any) => allowedProIds.includes(p.id));
+    }
+    
+    if (bookingMode === 'home') {
+      const salonRadius = settings?.home_service_radius_km || 10;
+      list = list.filter((p: any) => {
+        if (!p.offers_home_service) return false;
+        if (clientDistanceKm == null) return true;
+        const effectiveRadius = p.max_home_distance_km && p.max_home_distance_km > 0 
+          ? p.max_home_distance_km 
+          : salonRadius;
+        return clientDistanceKm <= effectiveRadius;
+      });
+    }
+    
+    return list;
+  }, [professionalsList, selectedService, storeData?.professionalServices, bookingMode, clientDistanceKm, settings?.home_service_radius_km]);
+
   const availableSlots: Slot[] = useMemo(() => {
     if (!selectedDate || !selectedService) return [];
     return generateAvailableSlots(
       selectedDate,
       selectedService,
       selectedPro === "any" ? "any" : selectedPro?.id ?? "any",
-      professionalsList,
+      availableProfessionals,
       servicesList,
       businessHoursList,
       storeData?.professionalWorkingHours || [],
       storeData?.professionalBlockedTimes || [],
       storeData?.bookings || [],
       storeData?.professionalServices || [],
-      [selectedService]
+      [selectedService],
+      bookingMode,
+      clientDistanceKm,
+      settings?.home_service_radius_km
     );
   }, [
     selectedDate,
     selectedService,
     selectedPro,
-    professionalsList,
+    availableProfessionals,
     servicesList,
     businessHoursList,
     storeData,
+    bookingMode,
+    clientDistanceKm,
+    settings?.home_service_radius_km
   ]);
 
   const isAppleDevice = useMemo(() => {
@@ -847,6 +949,9 @@ export default function PublicStore() {
             amount_total: total,
             notes: customerNotes,
             access_code: accessCode,
+            service_location: bookingMode,
+            client_address: bookingMode === 'home' ? clientAddress : null,
+            travel_fee: bookingMode === 'home' ? travelFee : 0,
           },
         ])
         .select("id")
@@ -1609,6 +1714,62 @@ export default function PublicStore() {
                       </p>
                     </div>
 
+                    {/* Modo de Atendimento (Se o salão oferecer domicílio) */}
+                    {settings?.offers_home_service && (
+                      <div className="mb-6">
+                        <div className="flex p-1 rounded-xl w-full max-w-sm mb-4" style={{ background: theme.inputBg, border: `1px solid ${theme.borderActive}30` }}>
+                          <button
+                            onClick={() => setBookingMode('instore')}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                              bookingMode === 'instore' ? 'shadow-md' : 'opacity-70'
+                            }`}
+                            style={bookingMode === 'instore' ? { background: theme.accent, color: theme.btnPrimaryText } : { color: theme.textPrimary }}
+                          >
+                            <Store className="w-4 h-4" /> No Salão
+                          </button>
+                          <button
+                            onClick={() => setBookingMode('home')}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                              bookingMode === 'home' ? 'shadow-md' : 'opacity-70'
+                            }`}
+                            style={bookingMode === 'home' ? { background: theme.accent, color: theme.btnPrimaryText } : { color: theme.textPrimary }}
+                          >
+                            <Home className="w-4 h-4" /> A Domicílio
+                          </button>
+                        </div>
+                        
+                        <AnimatePresence>
+                          {bookingMode === 'home' && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="overflow-hidden mb-2"
+                            >
+                              <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>
+                                Endereço de Atendimento *
+                              </label>
+                              <div className="relative">
+                                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: theme.textSecondary }} />
+                                <input
+                                  type="text"
+                                  value={clientAddress}
+                                  onChange={(e) => setClientAddress(e.target.value)}
+                                  placeholder="Rua, Número, Bairro, Cidade - Estado"
+                                  className="w-full border rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none transition-shadow"
+                                  style={{
+                                    borderColor: theme.inputFocusBorder,
+                                    background: theme.bgInput,
+                                    color: theme.textPrimary,
+                                  }}
+                                />
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
+
                     {servicesList.length === 0 ? (
                       <div
                         className="flex flex-col items-center justify-center py-16 px-6 text-center rounded-3xl border"
@@ -1647,7 +1808,16 @@ export default function PublicStore() {
                               transition={{ delay: i * 0.04 }}
                               whileHover={{ y: -3 }}
                               whileTap={{ scale: 0.98 }}
-                              onClick={() => {
+                              onClick={async () => {
+                                if (bookingMode === 'home' && !clientAddress.trim()) {
+                                  setErrorMsg("Por favor, preencha o endereço de atendimento.");
+                                  return;
+                                }
+                                if (bookingMode === 'home') {
+                                  const dist = await geocodeAndCheckDistance(clientAddress);
+                                  if (dist === null) return; // Geocoding failed or distance exceeded
+                                }
+                                setErrorMsg("");
                                 setSelectedService(s);
                                 setStep(2);
                               }}
@@ -1824,7 +1994,7 @@ export default function PublicStore() {
                       </motion.button>
 
                       {/* Professional Cards */}
-                      {professionalsList.map((p, i) => (
+                      {availableProfessionals.map((p, i) => (
                         <motion.button
                           key={p.id}
                           initial={{ opacity: 0, y: 10 }}
@@ -2065,6 +2235,10 @@ export default function PublicStore() {
                             value: selectedDate ? format(selectedDate, "dd 'de' MMMM", { locale: ptBR }) : "",
                           },
                           { icon: Clock, label: "Horário", value: selectedTime || "" },
+                          ...(bookingMode === 'home' ? [
+                            { icon: Home, label: "Atendimento", value: "A Domicílio" },
+                            { icon: MapPin, label: "Endereço", value: clientAddress || "Não informado" }
+                          ] : [])
                         ].map(({ icon: Icon, label, value }) => (
                           <div key={label} className="flex items-start gap-2.5">
                             <div

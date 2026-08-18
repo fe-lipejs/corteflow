@@ -34,11 +34,15 @@ export interface Professional {
   specialties: string[];
   agenda_color: string;
   status: ProfessionalStatus;
-  // New fields
+  // Extended fields
   experience_years: number | null;
   languages: string[] | null;
   created_at: string;
   updated_at: string;
+  // Hybrid location model (migration 0046)
+  offers_home_service: boolean;
+  max_home_distance_km: number;
+  home_fee: number;
   // Relations (joined)
   professional_working_hours?: ProfessionalWorkingHour[];
   professional_services?: ProfessionalService[];
@@ -88,10 +92,13 @@ export interface Service {
   category: string | null;
   color: string | null;
   active: boolean;
-  // New fields
+  // Extended fields
   photo_url: string | null;
   description: string | null;
   original_price: number | null;
+  // Hybrid location model (migration 0046)
+  service_mode: 'instore' | 'home' | 'both';
+  home_price_extra: number;
 }
 
 export interface Database {
@@ -295,6 +302,10 @@ export interface Database {
           past_services: string[] | null;
           favorite_professionals: string[] | null;
           created_at: string;
+          // Hybrid location model (migration 0046)
+          address: string | null;
+          address_lat: number | null;
+          address_lng: number | null;
         };
         Insert: Omit<Database['public']['Tables']['customers']['Row'], 'id' | 'created_at' | 'total_spent' | 'visit_count'> & {
           id?: string;
@@ -326,6 +337,12 @@ export interface Database {
           access_code: string | null;
           reschedule_count: number;
           created_at: string;
+          // Hybrid location model (migration 0046)
+          service_location: 'instore' | 'home';
+          client_address: string | null;
+          client_lat: number | null;
+          client_lng: number | null;
+          travel_fee: number;
         };
         Insert: Omit<Database['public']['Tables']['bookings']['Row'], 'id' | 'created_at' | 'amount_paid' | 'reschedule_count'> & {
           id?: string;
@@ -367,7 +384,7 @@ export interface Database {
           whatsapp_number: string | null;
           booking_payment_mode: string | null;
           deposit_percentage: number | null;
-          // New fields
+          // Extended fields
           fantasy_name: string | null;
           slogan: string | null;
           description: string | null;
@@ -394,6 +411,12 @@ export interface Database {
           max_reschedules: number;
           allow_cancel: boolean;
           cancel_deadline_hours: number;
+          // Hybrid location model (migration 0046)
+          offers_home_service: boolean;
+          home_service_radius_km: number;
+          home_fee_type: 'fixed' | 'per_km' | 'free';
+          home_fee_amount: number;
+          home_fee_per_km: number;
         };
         Insert: Omit<Database['public']['Tables']['tenant_settings']['Row'], 'id'> & {
           id?: string;

@@ -111,6 +111,9 @@ export interface CreateProfessionalInput {
   photoFile?: File;
   workingHours: Omit<ProfessionalWorkingHour, 'id' | 'created_at' | 'professional_id' | 'tenant_id'>[];
   serviceIds: string[];
+  offers_home_service?: boolean;
+  max_home_distance_km?: number;
+  home_fee?: number;
 }
 
 export function useCreateProfessional(tenantId: string) {

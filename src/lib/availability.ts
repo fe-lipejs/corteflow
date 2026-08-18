@@ -40,6 +40,12 @@ export interface AvailabilityInput {
   blockedTimes: any[];
   existingBookings: any[];
   proServices: any[];
+  /** Hybrid location model: 'instore' (default) or 'home' */
+  serviceLocation?: 'instore' | 'home';
+  /** Distance from client to salon in km (used to filter pros by max_home_distance_km) */
+  clientDistanceKm?: number | null;
+  /** Global salon home service radius in km (fallback when pro has no own radius) */
+  salonHomeRadiusKm?: number;
 }
 
 // ─── Internal Types ────────────────────────────────────────────────────────────
@@ -339,7 +345,13 @@ export function generateAvailableSlots(
   blockedTimes: any[],
   existingBookings: any[],
   proServices: any[],
-  selectedServices?: any[]
+  selectedServices?: any[],
+  /** Hybrid location: 'instore' (default) or 'home' */
+  serviceLocation: 'instore' | 'home' = 'instore',
+  /** Distance from client to salon in km */
+  clientDistanceKm?: number | null,
+  /** Global salon home radius (fallback) */
+  salonHomeRadiusKm?: number
 ): Slot[] {
   const services: any[] =
     selectedServices && selectedServices.length > 0
@@ -366,6 +378,25 @@ export function generateAvailableSlots(
     selectedProfessionalId === 'any'
       ? professionals
       : professionals.filter((p) => p.id === selectedProfessionalId);
+
+  // ── Home service filter (migration 0046) ────────────────────────────────────
+  // If the client is booking a home visit, only show professionals that:
+  // 1. Have offers_home_service === true
+  // 2. Can reach the client (within their own radius or the salon's global radius)
+  if (serviceLocation === 'home') {
+    const salonRadius = salonHomeRadiusKm ?? 10;
+    prosToCheck = prosToCheck.filter((pro) => {
+      if (!pro.offers_home_service) return false;
+      if (clientDistanceKm == null) return true; // no coords → show all home-service pros
+      const effectiveRadius =
+        pro.max_home_distance_km && pro.max_home_distance_km > 0
+          ? pro.max_home_distance_km
+          : salonRadius;
+      if (!effectiveRadius || effectiveRadius <= 0) return true;
+      return clientDistanceKm <= effectiveRadius;
+    });
+  }
+  // ────────────────────────────────────────────────────────────────────────────
 
   if (proServices.length > 0) {
     prosToCheck = prosToCheck.filter((pro) => {
@@ -521,6 +552,9 @@ export function generateAvailableSlotsFromInput(input: AvailabilityInput): Slot[
     input.blockedTimes,
     input.existingBookings,
     input.proServices,
-    input.services
+    input.services,
+    input.serviceLocation ?? 'instore',
+    input.clientDistanceKm ?? null,
+    input.salonHomeRadiusKm ?? 10
   );
 }

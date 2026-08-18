@@ -80,6 +80,12 @@ export default function ProfessionalModal({ professional, services, onClose, onC
   const [agendaColor, setAgendaColor] = useState(professional?.agenda_color ?? '#C9963B');
   const [status, setStatus] = useState<Professional['status']>(professional?.status ?? 'active');
   const [specialties, setSpecialties] = useState<string[]>(professional?.specialties ?? []);
+  
+  // Home Service Fields
+  const [offersHomeService, setOffersHomeService] = useState<boolean>(professional?.offers_home_service ?? false);
+  const [maxHomeDistanceKm, setMaxHomeDistanceKm] = useState<string>(String(professional?.max_home_distance_km ?? 10));
+  const [homeFee, setHomeFee] = useState<string>(String(professional?.home_fee ?? 0));
+
   const [hours, setHours] = useState<WorkingHourForm[]>(() => {
     if (professional?.professional_working_hours?.length) {
       return professional.professional_working_hours
@@ -138,6 +144,9 @@ export default function ProfessionalModal({ professional, services, onClose, onC
         currentPhotoUrl: professional?.photo_url,
         workingHours: hoursPayload as any,
         serviceIds: selectedServiceIds,
+        offers_home_service: offersHomeService,
+        max_home_distance_km: Number(maxHomeDistanceKm),
+        home_fee: Number(homeFee) || 0,
       });
     } else if (!isEditing && onCreate) {
       await onCreate({
@@ -153,6 +162,9 @@ export default function ProfessionalModal({ professional, services, onClose, onC
         photoFile: photoFile ?? undefined,
         workingHours: hoursPayload as any,
         serviceIds: selectedServiceIds,
+        offers_home_service: offersHomeService,
+        max_home_distance_km: Number(maxHomeDistanceKm),
+        home_fee: Number(homeFee) || 0,
       });
     }
   };
@@ -313,6 +325,56 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Atendimento a Domicílio (Professional override) */}
+              <div className="rounded-xl p-5" style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Atendimento a Domicílio</h4>
+                    <p className="text-xs" style={{ color: theme.textMuted }}>Este profissional faz atendimento na casa do cliente?</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOffersHomeService(!offersHomeService)}
+                    className="relative w-12 h-6 rounded-full transition-all shrink-0"
+                    style={{ background: offersHomeService ? theme.accent : theme.border }}
+                  >
+                    <span
+                      className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
+                      style={{ left: offersHomeService ? '26px' : '4px' }}
+                    />
+                  </button>
+                </div>
+
+                {offersHomeService && (
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t" style={{ borderColor: theme.border }}>
+                    <div>
+                      <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Limite Máximo (km)</label>
+                      <input 
+                        type="number" 
+                        min="1" 
+                        value={maxHomeDistanceKm} 
+                        onChange={e => setMaxHomeDistanceKm(e.target.value)} 
+                        className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
+                        style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
+                        placeholder="Ex: 10" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Taxa Extra (R$)</label>
+                      <input 
+                        type="number" 
+                        min="0" step="0.50" 
+                        value={homeFee} 
+                        onChange={e => setHomeFee(e.target.value)} 
+                        className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
+                        style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
+                        placeholder="Ex: 0.00" 
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Agenda color + Status */}
