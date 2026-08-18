@@ -1113,24 +1113,28 @@ export default function PublicStore() {
           <aside className="relative lg:w-[400px] lg:h-screen lg:sticky lg:top-0 lg:self-start border-b lg:border-b-0 lg:border-r overflow-y-auto scrollbar-none flex flex-col"
             style={{ background: theme.sidebarBg, borderColor: theme.cardBorder }}>
 
-            {/* Capa Minimalista */}
-            <div className="relative w-full h-36 sm:h-44 shrink-0">
+            {/* Capa Minimalista com Degradê Estendido */}
+            <div className="relative w-full h-44 sm:h-56 shrink-0">
               {settings?.banner_url ? (
-                <img
-                  src={settings.banner_url}
-                  alt="Capa"
-                  className="w-full h-full object-cover"
-                />
+                <>
+                  <img
+                    src={settings.banner_url}
+                    alt="Capa"
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Gradiente suave e estendido, começando do topo e descendo até a cor sólida do fundo */}
+                  <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${theme.sidebarBg} 0%, transparent 85%)` }} />
+                </>
               ) : (
                 <div className="w-full h-full" style={{ background: `linear-gradient(135deg, ${accent}30 0%, ${theme.sidebarBg} 100%)` }} />
               )}
             </div>
 
             {/* Perfil & Informações — Estilo Instagram / Behance */}
-            <div className="px-6 relative z-10 flex flex-col items-center text-center -mt-10 sm:-mt-12 pb-8">
+            <div className="px-6 relative z-10 flex flex-col items-center text-center -mt-16 sm:-mt-20 pb-8">
               
-              {/* Avatar Centralizado */}
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shrink-0 shadow-sm mb-3"
+              {/* Avatar Centralizado - Maior conforme feedback */}
+              <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-full overflow-hidden shrink-0 shadow-sm mb-3"
                 style={{ background: theme.cardBg, border: `4px solid ${theme.sidebarBg}` }}>
                 {settings?.logo_url ? (
                   <img src={settings.logo_url} alt={storeName} className="w-full h-full object-cover" />
@@ -1156,8 +1160,8 @@ export default function PublicStore() {
                 <span className="opacity-80">(Novo)</span>
                 <span className="opacity-50">•</span>
                 <span className="opacity-80 capitalize">
-                  {settings?.business_type === "barbearia" ? "Barbearia" : 
-                   settings?.business_type === "esmalteria" ? "Esmalteria" : 
+                  {tenant?.business_type === "barbearia" ? "Barbearia" : 
+                   tenant?.business_type === "esmalteria" ? "Esmalteria" : 
                    "Salão de Beleza"}
                 </span>
               </div>
@@ -1165,60 +1169,68 @@ export default function PublicStore() {
               {/* Descrição Curta */}
               <p className="mt-4 text-[14px] leading-relaxed max-w-[320px]"
                 style={{ color: contrast.descriptionColor }}>
-                {settings?.slogan || settings?.description || "Agende seu horário com os melhores profissionais."}
+                {settings?.slogan || settings?.custom_palette?.slogan || settings?.short_description || settings?.description || "Agende seu horário com os melhores profissionais."}
               </p>
 
-              {/* Redes Sociais Elegantes */}
-              <div className="flex items-center justify-center gap-3 mt-5">
+              {/* Redes Sociais no Padrão da Imagem (Lado a lado, botões largos) */}
+              <div className="flex items-center justify-center gap-3 mt-6 w-full max-w-[320px]">
                 {storeInsta && (
                   <a href={`https://instagram.com/${storeInsta}`} target="_blank" rel="noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 rounded-full border transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border transition-colors hover:bg-black/5 dark:hover:bg-white/5"
                     style={{ borderColor: theme.cardBorder, color: theme.textPrimary }}>
-                    <InstagramIcon className="w-4 h-4" />
+                    <InstagramIcon className="w-4 h-4" style={{ color: accent }} />
                     <span className="text-[13px] font-semibold">Instagram</span>
                   </a>
                 )}
                 {storePhone && (
                   <a href={`https://wa.me/${onlyDigits(storePhone)}`} target="_blank" rel="noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 rounded-full border transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border transition-colors hover:bg-black/5 dark:hover:bg-white/5"
                     style={{ borderColor: theme.cardBorder, color: theme.textPrimary }}>
-                    <WhatsAppIcon className="w-4 h-4" />
+                    <WhatsAppIcon className="w-4 h-4" style={{ color: accent }} />
                     <span className="text-[13px] font-semibold">WhatsApp</span>
                   </a>
                 )}
               </div>
 
-              {/* Divisor após as informações para separar das ações rápidas */}
-              <div className="w-full h-px mt-7 mb-2 opacity-50" style={{ background: theme.cardBorder }} />
-
-              {/* Ações Minimalistas em Lista */}
-              <div className="w-full mt-2 flex flex-col gap-4">
+              {/* Ações Minimalistas em Grupo de Cards (Estilo iOS Settings) */}
+              <div className="w-full mt-8 flex flex-col rounded-2xl overflow-hidden border shadow-sm" style={{ borderColor: theme.cardBorder, backgroundColor: theme.cardBg }}>
                 {hasLocationInfo && (
                   <button
                     onClick={() => {
                       setShowMapModal(true);
                       if (geoStatus === "idle") requestLocation();
                     }}
-                    className="flex items-start gap-3 text-left group"
+                    className="flex items-center justify-between p-4 text-left group hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-b"
+                    style={{ borderColor: theme.cardBorder }}
                   >
-                    <MapPin className="w-5 h-5 shrink-0 mt-0.5 transition-transform group-hover:scale-110" style={{ color: accent }} />
-                    <div>
-                      <p className="text-[14px] font-semibold" style={{ color: theme.textPrimary }}>Local e Horários</p>
-                      <p className="text-[13px] opacity-70 mt-0.5 group-hover:underline" style={{ color: theme.textPrimary }}>
-                        {storeAddress || "Ver informações do local"}
-                      </p>
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: `${accent}15` }}>
+                        <MapPin className="w-4 h-4" style={{ color: accent }} />
+                      </div>
+                      <div>
+                        <p className="text-[14px] font-bold" style={{ color: theme.textPrimary }}>Local e Horários</p>
+                        <p className="text-[12px] opacity-70 mt-0.5" style={{ color: theme.textPrimary }}>
+                          {storeAddress || "Ver informações do local"}
+                        </p>
+                      </div>
                     </div>
+                    <ChevronRight className="w-4 h-4 opacity-30 shrink-0" style={{ color: theme.textPrimary }} />
                   </button>
                 )}
 
-                <a href={`/${slug}/portal`} className="flex items-start gap-3 text-left group">
-                  <Calendar className="w-5 h-5 shrink-0 mt-0.5 opacity-80 transition-transform group-hover:scale-110" style={{ color: theme.textPrimary }} />
-                  <div>
-                    <p className="text-[14px] font-semibold" style={{ color: theme.textPrimary }}>Meus agendamentos</p>
-                    <p className="text-[13px] opacity-70 mt-0.5 group-hover:underline" style={{ color: theme.textPrimary }}>
-                      Acesse seu histórico e portal
-                    </p>
+                <a href={`/${slug}/portal`} className="flex items-center justify-between p-4 text-left group hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: `${accent}15` }}>
+                      <Calendar className="w-4 h-4" style={{ color: accent }} />
+                    </div>
+                    <div>
+                      <p className="text-[14px] font-bold" style={{ color: theme.textPrimary }}>Meus agendamentos</p>
+                      <p className="text-[12px] opacity-70 mt-0.5" style={{ color: theme.textPrimary }}>
+                        Acesse seu histórico e portal
+                      </p>
+                    </div>
                   </div>
+                  <ChevronRight className="w-4 h-4 opacity-30 shrink-0" style={{ color: theme.textPrimary }} />
                 </a>
               </div>
 

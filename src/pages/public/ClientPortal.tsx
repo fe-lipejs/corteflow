@@ -266,59 +266,61 @@ export default function ClientPortal() {
   const contrast = getThemeContrastEngine(theme);
 
   const storeHeader = (
-    <div className="relative w-full overflow-hidden border-b mb-8" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
-      {/* Banner com Motor de Contraste */}
-      <div className="relative h-44 sm:h-56 w-full overflow-hidden">
+    <div className="relative w-full border-b mb-8" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+      {/* Banner Seco Minimalista */}
+      <div className="relative h-52 sm:h-56 w-full overflow-hidden">
         {settings?.banner_url ? (
-          <img src={settings.banner_url} alt="Banner" className="h-full w-full object-cover" />
+          <>
+            <img src={settings.banner_url} alt="Banner" className="h-full w-full object-cover" />
+            {/* Gradiente suave e estendido, começando do topo e descendo até a cor sólida do fundo */}
+            <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${theme.cardBg} 0%, transparent 85%)` }} />
+          </>
         ) : (
-          <div className="h-full w-full" style={{ background: `linear-gradient(135deg, ${theme.accent}40, ${theme.bg})` }} />
+          <div className="h-full w-full" style={{ background: `linear-gradient(135deg, ${theme.accent}30 0%, ${theme.sidebarBg} 100%)` }} />
         )}
-        {/* Camadas inteligentes de contraste */}
-        <div className="absolute inset-0" style={{ background: contrast.bannerVignette }} />
-        <div className="absolute inset-0" style={{ background: contrast.bannerGradient }} />
 
         {/* Back Button */}
         <button
           onClick={() => navigate(`/${slug}`)}
-          className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/50 backdrop-blur-xl text-white text-[11px] font-medium shadow-xl border border-white/20 transition-all active:scale-95 hover:bg-black/70 font-sans"
+          className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/50 backdrop-blur-xl text-white text-[11px] font-bold shadow-xl border border-white/20 transition-all active:scale-95 hover:bg-black/70 font-sans"
         >
-          <ArrowLeft className="w-3.5 h-3.5 text-white/90" />
+          <ArrowLeft className="w-3.5 h-3.5" />
           <span>Voltar ao Salão</span>
         </button>
       </div>
 
-      {/* Salon Logo + Title Info */}
-      <div className="max-w-4xl mx-auto px-6 pb-6 -mt-16 relative z-10 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4 text-center sm:text-left">
-        <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4">
-          <div className="h-24 w-24 rounded-3xl border-2 overflow-hidden shadow-2xl flex items-center justify-center backdrop-blur-md shrink-0" style={{ borderColor: theme.accent, backgroundColor: theme.cardBg }}>
-            {settings?.logo_url ? (
-              <img src={settings.logo_url} alt="Logo" className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-4xl font-black font-serif uppercase" style={{ color: theme.textPrimary }}>{tenant.name?.charAt(0)}</span>
-            )}
-          </div>
-
-          <div>
-            <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border mb-1" style={{ borderColor: `${theme.accent}40`, backgroundColor: `${theme.accent}15`, color: theme.accent }}>
-              Portal do Cliente
-            </span>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight" style={{ color: theme.textPrimary, textShadow: contrast.titleTextShadow }}>
-              {tenant.name}
-            </h1>
-            <p className="text-xs sm:text-sm mt-0.5 font-medium" style={{ color: contrast.descriptionColor, textShadow: contrast.descriptionTextShadow }}>
-              {settings?.short_description || settings?.address || "Gerencie seus agendamentos e histórico completo."}
-            </p>
-          </div>
+      {/* Perfil & Informações — Centralizado */}
+      <div className="max-w-4xl mx-auto px-6 pb-6 -mt-16 sm:-mt-20 relative z-10 flex flex-col items-center text-center gap-2">
+        
+        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shrink-0 shadow-sm mb-2" style={{ background: theme.cardBg, border: `4px solid ${theme.sidebarBg}` }}>
+          {settings?.logo_url ? (
+            <img src={settings.logo_url} alt="Logo" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center font-black text-3xl" style={{ background: theme.accent, color: theme.btnPrimaryText }}>
+              {tenant.name?.charAt(0)}
+            </div>
+          )}
         </div>
+
+        <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border mb-1" style={{ borderColor: `${theme.accent}40`, backgroundColor: `${theme.accent}15`, color: theme.accent }}>
+          Portal do Cliente
+        </span>
+        
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: contrast.titleColor, fontFamily: theme.fontSerif }}>
+          {tenant.name}
+        </h1>
+        
+        <p className="text-[13px] sm:text-[14px] mt-0.5 font-medium max-w-[320px] leading-relaxed" style={{ color: contrast.descriptionColor }}>
+          {settings?.slogan || settings?.short_description || settings?.address || "Gerencie seus agendamentos e histórico completo."}
+        </p>
 
         {isLogged && (
           <button
             onClick={() => { setIsLogged(false); setCustomerId(null); setPhone(''); }}
-            className="text-xs font-bold underline opacity-80 hover:opacity-100 transition-opacity"
-            style={{ color: contrast.descriptionColor }}
+            className="text-xs font-bold underline opacity-80 hover:opacity-100 transition-opacity mt-2"
+            style={{ color: theme.textSecondary }}
           >
-            Sair da Conta
+            Sair desta conta
           </button>
         )}
       </div>

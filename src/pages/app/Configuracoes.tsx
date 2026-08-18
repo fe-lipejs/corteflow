@@ -23,6 +23,7 @@ import {
   Lock, RefreshCw, Scissors, ShieldAlert
 } from 'lucide-react';
 import StripeActivatedModal from '../../components/modals/StripeActivatedModal';
+import { ImageCropperModal } from '../../components/ImageCropperModal';
 
 // ─── Custom SVG Icons ─────────────────────────────────────────────────────────
 const InstagramIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
@@ -216,11 +217,59 @@ export default function Configuracoes() {
   const logoUpload = useImageUpload({ maxWidth: 800, maxHeight: 800, quality: 0.9 });
   const bannerUpload = useImageUpload({ maxWidth: 1600, maxHeight: 600, quality: 0.85 });
 
+  // Cropper states
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState('');
+  const [cropType, setCropType] = useState<'logo' | 'banner'>('logo');
+
   // Extracted palette & atmosphere states
   const [extractedColors, setExtractedColors] = useState<string[]>([]);
   const [bgMode, setBgMode] = useState<'dark' | 'light'>('dark');
   const [isExtracting, setIsExtracting] = useState(false);
   const [businessType, setBusinessType] = useState<'barbearia' | 'salao' | 'esmalteria'>((tenant?.business_type as any) || 'barbearia');
+
+  // Image Handlers
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'banner') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCropImageSrc(reader.result as string);
+        setCropType(type);
+        setCropModalOpen(true);
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
+
+  const handleCropComplete = async (croppedFile: File) => {
+    setCropModalOpen(false);
+    if (!tenant) return;
+    
+    if (cropType === 'logo') {
+      const url = await logoUpload.upload(croppedFile, `${tenant.id}/logo`);
+      if (url) {
+        setLogoUrl(url);
+        handleMagicExtract(url, bgMode);
+      }
+    } else {
+      const url = await bannerUpload.upload(croppedFile, `${tenant.id}/banner`);
+      if (url) setBannerUrl(url);
+    }
+  };
+
+  const removeLogo = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setLogoUrl('');
+    logoUpload.clearPreview();
+  };
+
+  const removeBanner = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setBannerUrl('');
+    bannerUpload.clearPreview();
+  };
 
   const WEEKDAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
@@ -280,8 +329,8 @@ export default function Configuracoes() {
         setFantasyName(data.fantasy_name || tenant.name || '');
         setTenantName(tenant.name || data.fantasy_name || '');
         setSlug(tenant.slug || '');
-        setSlogan(data.slogan || '');
-        setDescription(data.description || data.short_description || '');
+        setSlogan(data.slogan || data.custom_palette?.slogan || data.short_description || '');
+        setDescription(data.description || data.custom_palette?.description || data.short_description || '');
         setLogoUrl(data.logo_url || '');
         setBannerUrl(data.banner_url || '');
         if (data.logo_url) logoUpload.setPreview(data.logo_url);
@@ -470,17 +519,6 @@ export default function Configuracoes() {
     validateSlugLive(raw);
   };
 
-  // ─── Auto Color Extraction from Logo (Smart AI-like Palette) ──────────────
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0 || !tenant) return;
-    const file = e.target.files[0];
-    const url = await logoUpload.upload(file, `${tenant.id}/logo`);
-    if (url) {
-      setLogoUrl(url);
-      handleMagicExtract(url, bgMode);
-    }
-  };
-
   // Extract smart colors and generate tailored theme (local draft only)
   const handleMagicExtract = async (targetUrlOverride?: string, targetModeOverride?: 'dark' | 'light', chosenAccent?: string) => {
     const targetUrl = targetUrlOverride || logoUrl || logoUpload.preview;
@@ -551,22 +589,6 @@ export default function Configuracoes() {
     setCustomPalette(undefined);
     setDraftFontStyle('serif');
     setSelectedTheme('noir');
-  };
-
-  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0 || !tenant) return;
-    const url = await bannerUpload.upload(e.target.files[0], `${tenant.id}/banner`);
-    if (url) setBannerUrl(url);
-  };
-
-  const removeLogo = () => {
-    setLogoUrl('');
-    logoUpload.clearPreview();
-  };
-
-  const removeBanner = () => {
-    setBannerUrl('');
-    bannerUpload.clearPreview();
   };
 
   // ─── CEP Lookup (Brazil) ──────────────────────────────────────────────────
@@ -885,12 +907,11 @@ export default function Configuracoes() {
       const payload: Record<string, any> = {
         tenant_id: tenant.id,
         theme_preset: selectedTheme,
-        custom_palette: finalPalette,
+        custom_palette: { ...finalPalette, slogan, description },
         payment_methods: paymentModeJson,
         deposit_percentage: allowDeposit ? depositPercentage : null,
         fantasy_name: cleanName,
-        slogan,
-        description,
+        short_description: slogan || description || '',
         logo_url: logoUrl,
         banner_url: bannerUrl,
         whatsapp_number: whatsapp,
@@ -1453,12 +1474,12 @@ export default function Configuracoes() {
               {/* 1. Imagens: Logo & Capa */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {/* Logo */}
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
+                <div className="flex flex-col items-center">
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-center" style={{ color: theme.textSecondary }}>
                     Logo do Salão (Perfil)
                   </label>
                   <div
-                    className="relative h-40 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden group transition-all"
+                    className="relative w-40 h-40 rounded-full border-2 border-dashed flex items-center justify-center overflow-hidden group transition-all mx-auto"
                     style={{
                       borderColor: logoUpload.isUploading ? theme.accent : theme.inputBorder,
                       background: theme.inputBg,
@@ -1466,11 +1487,11 @@ export default function Configuracoes() {
                   >
                     {logoUrl || logoUpload.preview ? (
                       <>
-                        <img src={logoUrl || logoUpload.preview || ''} alt="Logo" className="w-full h-full object-contain p-3" />
+                        <img src={logoUrl || logoUpload.preview || ''} alt="Logo" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
                           <label className="p-2 rounded-full cursor-pointer" style={{ background: theme.accent, color: theme.textInverse }}>
                             <Upload className="w-4 h-4" />
-                            <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                            <input type="file" accept="image/*" onChange={(e) => handleFileSelect(e, 'logo')} className="hidden" />
                           </label>
                           <button onClick={removeLogo} className="p-2 rounded-full bg-red-500 text-white">
                             <Trash2 className="w-4 h-4" />
@@ -1485,22 +1506,22 @@ export default function Configuracoes() {
                           <Upload className="w-7 h-7 mb-2" style={{ color: theme.textMuted }} />
                         )}
                         <p className="text-xs font-medium" style={{ color: theme.textMuted }}>
-                          {logoUpload.isUploading ? 'Enviando...' : 'Enviar Logo do Salão'}
+                          {logoUpload.isUploading ? 'Enviando...' : 'Enviar Logo'}
                         </p>
                         <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Mínimo 400×400px</p>
-                        <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                        <input type="file" accept="image/*" onChange={(e) => handleFileSelect(e, 'logo')} className="hidden" />
                       </label>
                     )}
                   </div>
                 </div>
 
                 {/* Banner Capa */}
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
+                <div className="flex flex-col items-center">
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-center" style={{ color: theme.textSecondary }}>
                     Banner (Capa Superior)
                   </label>
                   <div
-                    className="relative h-40 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden group transition-all"
+                    className="relative w-full h-40 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden group transition-all mx-auto"
                     style={{
                       borderColor: bannerUpload.isUploading ? theme.accent : theme.inputBorder,
                       background: theme.inputBg,
@@ -1512,7 +1533,7 @@ export default function Configuracoes() {
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
                           <label className="p-2 rounded-full cursor-pointer" style={{ background: theme.accent, color: theme.textInverse }}>
                             <Upload className="w-4 h-4" />
-                            <input type="file" accept="image/*" onChange={handleBannerUpload} className="hidden" />
+                            <input type="file" accept="image/*" onChange={(e) => handleFileSelect(e, 'banner')} className="hidden" />
                           </label>
                           <button onClick={removeBanner} className="p-2 rounded-full bg-red-500 text-white">
                             <Trash2 className="w-4 h-4" />
@@ -1530,7 +1551,7 @@ export default function Configuracoes() {
                           {bannerUpload.isUploading ? 'Enviando...' : 'Enviar Foto de Capa'}
                         </p>
                         <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Ideal 1600×600px</p>
-                        <input type="file" accept="image/*" onChange={handleBannerUpload} className="hidden" />
+                        <input type="file" accept="image/*" onChange={(e) => handleFileSelect(e, 'banner')} className="hidden" />
                       </label>
                     )}
                   </div>
@@ -3662,6 +3683,17 @@ export default function Configuracoes() {
           </div>
         </div>
       )}
+
+      {/* ── Modal: Image Cropper ── */}
+      <ImageCropperModal
+        isOpen={cropModalOpen}
+        onClose={() => setCropModalOpen(false)}
+        imageSrc={cropImageSrc}
+        onCropComplete={handleCropComplete}
+        aspect={cropType === 'logo' ? 1 : 16 / 6}
+        shape={cropType === 'logo' ? 'round' : 'rect'}
+        title={cropType === 'logo' ? 'Ajustar Logo' : 'Ajustar Banner'}
+      />
     </div>
   );
 }
