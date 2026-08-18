@@ -34,7 +34,7 @@ serve(async (req) => {
     if (!user) throw new Error("Usuário não autenticado");
 
     const body = await req.json().catch(() => ({}));
-    const returnUrl = body.returnUrl || 'http://localhost:5173/app/assinatura';
+    const returnUrl = body.returnUrl || `${req.headers.get('origin') ?? 'https://app.raffros.com'}/app/assinatura`;
 
     // 1. Buscar perfil e tenant do usuário
     const { data: profile } = await supabaseAdmin

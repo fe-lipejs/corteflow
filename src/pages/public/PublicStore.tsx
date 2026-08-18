@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
+import { useTenantSlug } from "../../hooks/useTenantSlug";
+import { getTenantPortalUrl } from "../../lib/tenantUrl";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Calendar,
@@ -193,7 +195,12 @@ const playSuccessSound = () => {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function PublicStore() {
-  const { slug } = useParams<{ slug: string }>();
+  // useTenantSlug: returns slug from hostname (production) or path param (dev)
+  const slugFromHook = useTenantSlug();
+  // Also read useParams for dev compatibility (useTenantSlug already handles this internally,
+  // but we keep the reference for the PUBLIC_STORE_QUERY_KEY invalidation below)
+  const { slug: paramSlug } = useParams<{ slug?: string }>();
+  const slug = slugFromHook ?? paramSlug ?? undefined;
   const { setThemeId, setCustomPalette, theme: contextTheme } = useTheme();
   const { data: storeData, isLoading: loading } = usePublicStore(slug);
   const queryClient = useQueryClient();
@@ -676,7 +683,7 @@ export default function PublicStore() {
 
       if (paymentScope !== "local" && paymentMethod !== "cash") {
         const { data: checkoutData, error: cErr2 } = await supabase.functions.invoke("create-booking-checkout", {
-          body: { bookingId: newBooking.id, returnUrl: `${window.location.origin}/${slug}/portal` }
+          body: { bookingId: newBooking.id, returnUrl: getTenantPortalUrl(slug ?? '') }
         });
         if (!cErr2 && checkoutData?.url) { window.location.href = checkoutData.url; return; }
       }

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { getTenantPublicUrl } from '../../lib/tenantUrl';
 import { motion } from 'framer-motion';
 import {
   Building2, CheckCircle, Ban, Clock, XCircle,
@@ -250,7 +251,7 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-white">{tenant.name}</p>
-                      <p className="text-xs text-[#444]">/{tenant.slug} · {BusinessTypeLabel(tenant.business_type)}</p>
+                      <p className="text-xs text-[#444]">{getTenantPublicUrl(tenant.slug).replace(/https?:///, '')} · {BusinessTypeLabel(tenant.business_type)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">

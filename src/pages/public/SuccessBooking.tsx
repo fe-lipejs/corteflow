@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useTenantSlug } from '../../hooks/useTenantSlug';
+import { getTenantPublicUrl, getTenantPortalUrl } from '../../lib/tenantUrl';
 import { supabase } from '../../integrations/supabase/client';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 
 export default function SuccessBooking() {
-  const { slug } = useParams<{ slug: string }>();
+  const slugFromHook = useTenantSlug();
+  const { slug: paramSlug } = useParams<{ slug?: string }>();
+  const slug = slugFromHook ?? paramSlug ?? '';
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const session_id = searchParams.get('session_id');
@@ -114,13 +118,13 @@ export default function SuccessBooking() {
         )}
 
         <button 
-          onClick={() => navigate(`/${slug}`)}
+          onClick={() => navigate(getTenantPublicUrl(slug))}
           className="w-full bg-transparent border border-[#3A3530] text-white hover:bg-[#252118] font-bold py-4 rounded-xl transition-colors"
         >
           Voltar para o Salão
         </button>
 
-        <Link to={`/${slug}/portal`} className="mt-6 text-[#A09888] hover:text-white transition-colors text-sm font-medium underline">
+        <Link to={getTenantPortalUrl(slug)} className="mt-6 text-[#A09888] hover:text-white transition-colors text-sm font-medium underline">
           Acessar Meu Histórico
         </Link>
       </motion.div>

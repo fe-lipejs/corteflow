@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTenantSlug } from '../../hooks/useTenantSlug';
 import { supabase } from '../../integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCancelBooking, useRescheduleBooking, useBookingsRealtime } from '../../hooks/useBookings';
@@ -15,7 +16,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getThemeContrastEngine } from '../../lib/themeEngine';
 
 export default function ClientPortal() {
-  const { slug } = useParams();
+  const slugFromHook = useTenantSlug();
+  const { slug: paramSlug } = useParams<{ slug?: string }>();
+  const slug = slugFromHook ?? paramSlug ?? undefined;
   const navigate = useNavigate();
   const qc = useQueryClient();
   const phoneFormat = usePhoneFormat("pt");

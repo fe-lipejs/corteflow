@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { getTenantPublicUrl } from '../../lib/tenantUrl';
 import { supabase } from '../../integrations/supabase/client';
 import { Calendar, DollarSign, UserPlus, Clock, ArrowUpRight, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -266,7 +267,7 @@ export default function Dashboard() {
         </div>
         <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-1">
           <a 
-            href={`/${tenant?.slug}`} 
+            href={tenant?.slug ? getTenantPublicUrl(tenant.slug) : '#'} 
             target="_blank" 
             rel="noreferrer"
             className="flex items-center gap-2 px-4 py-2 font-medium text-sm rounded-xl transition-all"

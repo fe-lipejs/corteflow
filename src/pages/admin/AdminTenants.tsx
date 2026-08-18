@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../integrations/supabase/client';
+import { getTenantPublicUrl } from '../../lib/tenantUrl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
@@ -357,7 +358,7 @@ export default function AdminTenants() {
                   <div className="col-span-2 md:col-span-2 flex items-center justify-end gap-1.5">
                     {!tenant.deleted_at && (
                       <button
-                        onClick={() => window.open(`/${tenant.slug}`, '_blank')}
+                        onClick={() => window.open(getTenantPublicUrl(tenant.slug), '_blank')}
                         className="p-1.5 text-[#444] hover:text-white hover:bg-[#1a1a1a] rounded-lg transition-colors"
                         title="Ver página pública"
                       >
