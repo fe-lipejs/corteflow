@@ -204,8 +204,14 @@ export function ManualTransactionModal({
             <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
               Valor (R$) *
             </label>
-            <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold pointer-events-none" style={{ color: type === 'income' ? '#10b981' : '#ef4444' }}>
+            <div className="flex items-center rounded-xl border overflow-hidden transition-all focus-within:ring-1 focus-within:ring-[#10b981]"
+              style={{ borderColor: theme.border, background: theme.inputBg }}>
+              <span className="px-3.5 py-2.5 text-sm font-bold select-none border-r shrink-0"
+                style={{ 
+                  color: type === 'income' ? '#10b981' : '#ef4444',
+                  borderColor: theme.border,
+                  background: type === 'income' ? '#10b98115' : '#ef444415'
+                }}>
                 R$
               </span>
               <input
@@ -217,8 +223,8 @@ export function ManualTransactionModal({
                   setAmount(val);
                 }}
                 placeholder="0,00"
-                className="w-full pl-12 pr-4 py-2.5 rounded-xl border text-sm font-bold focus:outline-none themed-input"
-                style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
+                className="w-full px-3.5 py-2.5 bg-transparent border-0 text-sm font-bold focus:outline-none"
+                style={{ color: theme.textPrimary }}
                 required
               />
             </div>

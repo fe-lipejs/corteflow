@@ -88,10 +88,15 @@ serve(async (req) => {
       subscriptionData.trial_period_days = trialDays;
     }
 
-    // Criar a sessão no Stripe
-    const session = await stripe.checkout.sessions.create({
+    // 5. Verificar se já existe customer no Stripe para este salão
+    const { data: existingSub } = await supabase
+      .from('subscriptions')
+      .select('stripe_customer_id, stripe_subscription_id, status')
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+
+    const checkoutParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card'],
-      customer_email: user.email,
       line_items: [
         {
           price_data: {
@@ -114,7 +119,17 @@ serve(async (req) => {
         tenant_id: tenantId,
         plan_id: plan.id,
       },
-    });
+    };
+
+    if (existingSub?.stripe_customer_id) {
+      checkoutParams.customer = existingSub.stripe_customer_id;
+      checkoutParams.customer_update = { name: 'auto', address: 'auto' };
+    } else {
+      checkoutParams.customer_email = user.email;
+    }
+
+    // Criar a sessão no Stripe
+    const session = await stripe.checkout.sessions.create(checkoutParams);
 
     // Se consumiu trial pela primeira vez, marcar permanentemente no banco
     if (trialDays > 0 && !hasUsedTrial) {

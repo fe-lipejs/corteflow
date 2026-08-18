@@ -471,15 +471,21 @@ export default function AdminPlans() {
         display_features: form.display_features, // backwards compatibility
       };
 
+      const hasProductPerm = form.permissions?.some(p => p.startsWith('produto.') || p === 'catalogo.criar');
+      const allowProducts = Boolean(form.features.produtos || hasProductPerm);
+
       const planData = {
         name: form.name,
         key: form.key,
         description: form.description || null,
         max_professionals: form.limits.profissionais === 'unlimited' ? 999 : Number(form.limits.profissionais || 1), // fallback for old column
-        allow_products: form.features.produtos ?? false, // fallback
+        allow_products: allowProducts,
         trial_days: form.trial_days,
         sort_order: form.sort_order,
-        features: featuresJsonb,
+        features: {
+          ...featuresJsonb,
+          produtos: allowProducts,
+        },
         permissions: form.permissions,
         limits: form.limits,
         is_default: form.is_default,

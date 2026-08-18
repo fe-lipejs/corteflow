@@ -423,7 +423,8 @@ export default function PublicStore() {
       settings?.complement ? `(${settings.complement})` : '',
       settings?.neighborhood,
       settings?.city ? `${settings.city}${settings.state ? ` - ${settings.state}` : ''}` : '',
-      settings?.zip_code ? `CEP: ${settings.zip_code}` : ''
+      settings?.zip_code ? `CEP ${settings.zip_code}` : '',
+      'Brasil'
     ].filter(Boolean);
     if (parts.length > 0) return parts.join(', ');
     return settings?.address || '';
@@ -535,9 +536,23 @@ export default function PublicStore() {
     if (settings?.map_link && (settings.map_link.includes('output=embed') || settings.map_link.includes('google.com/maps/embed'))) {
       return settings.map_link;
     }
-    // 3. Google Maps native address search using address text
-    const query = storeAddress ? encodeURIComponent(storeAddress) : `${storeCoords.lat},${storeCoords.lng}`;
-    return `https://maps.google.com/maps?q=${query}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    // 3. Extração direta de coordenadas se o link contiver @lat,lng ou q=lat,lng
+    if (settings?.map_link && (settings.map_link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || settings.map_link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/))) {
+      const coordMatch = settings.map_link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || settings.map_link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (coordMatch) {
+        return `https://maps.google.com/maps?q=${coordMatch[1]},${coordMatch[2]}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
+      }
+    }
+    // 4. Busca de alta precisão por endereço completo com número, bairro, cidade e CEP
+    if (storeAddress) {
+      return `https://maps.google.com/maps?q=${encodeURIComponent(storeAddress)}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
+    }
+    // 5. Full URL query if no address fields
+    if (settings?.map_link && settings.map_link.trim().startsWith('http') && !settings.map_link.includes('goo.gl')) {
+      return `https://maps.google.com/maps?q=${encodeURIComponent(settings.map_link.trim())}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
+    }
+    const query = `${storeCoords.lat},${storeCoords.lng}`;
+    return `https://maps.google.com/maps?q=${query}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
   }, [storeCoords, storeAddress, settings?.map_link]);
 
   const mapModalUrl = useMemo(() => {
@@ -548,7 +563,19 @@ export default function PublicStore() {
     if (settings?.map_link && (settings.map_link.includes('output=embed') || settings.map_link.includes('google.com/maps/embed'))) {
       return settings.map_link;
     }
-    const query = storeAddress ? encodeURIComponent(storeAddress) : `${storeCoords.lat},${storeCoords.lng}`;
+    if (settings?.map_link && (settings.map_link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || settings.map_link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/))) {
+      const coordMatch = settings.map_link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || settings.map_link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (coordMatch) {
+        return `https://maps.google.com/maps?q=${coordMatch[1]},${coordMatch[2]}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`;
+      }
+    }
+    if (storeAddress) {
+      return `https://maps.google.com/maps?q=${encodeURIComponent(storeAddress)}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`;
+    }
+    if (settings?.map_link && settings.map_link.trim().startsWith('http') && !settings.map_link.includes('goo.gl')) {
+      return `https://maps.google.com/maps?q=${encodeURIComponent(settings.map_link.trim())}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`;
+    }
+    const query = `${storeCoords.lat},${storeCoords.lng}`;
     return `https://maps.google.com/maps?q=${query}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`;
   }, [storeCoords, storeAddress, mapZoom, settings?.map_link]);
 

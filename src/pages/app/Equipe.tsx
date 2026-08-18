@@ -385,7 +385,7 @@ export default function Equipe() {
             </h3>
             <p className="text-sm mb-7" style={{ color: theme.textSecondary }}>
               {showUpgradeModal === 'limit' 
-                ? `Seu plano atual permite apenas ${engine.getPlanLimit('profissionais') === 'unlimited' ? 'um número ilimitado de' : engine.getPlanLimit('profissionais')} profissional${engine.getPlanLimit('profissionais') !== 1 ? 'is' : ''}. Faça upgrade para adicionar mais profissionais e expandir sua equipe.`
+                ? `Seu plano atual permite apenas ${engine.getPlanLimit('profissionais') === 'unlimited' ? 'um número ilimitado de' : engine.getPlanLimit('profissionais')} ${engine.getPlanLimit('profissionais') === 1 ? 'profissional' : 'profissionais'}. Faça upgrade para adicionar mais profissionais e expandir sua equipe.`
                 : 'A criação e gestão avançada de profissionais é exclusiva de planos superiores. Faça o upgrade para desbloquear o controle total da sua equipe.'}
             </p>
             <button

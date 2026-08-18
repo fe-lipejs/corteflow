@@ -41,15 +41,19 @@ export function usePermissionEngine(): PermissionEngine {
     queryFn: async () => {
       if (role === 'super_admin') return { isSuperAdmin: true };
 
-      const { data: sub } = await supabase
+      const { data: subs } = await supabase
         .from('subscriptions')
         .select(`
+          id,
+          plan_id,
           status,
           trial_ends_at,
           current_period_end,
           grace_period_ends_at,
           suspension_reason,
           canceled_at,
+          updated_at,
+          created_at,
           subscription_contracts (
             max_professionals,
             allow_products,
@@ -58,20 +62,81 @@ export function usePermissionEngine(): PermissionEngine {
             limits
           ),
           plans (
+            id,
             key,
             name,
             max_professionals,
             allow_products,
             features,
             permissions,
-            limits
+            limits,
+            is_default
           )
         `)
         .eq('tenant_id', tenantId!)
-        .in('status', ['active', 'trialing', 'trial', 'past_due', 'canceled'])
-        .order('status', { ascending: false }) // active first
-        .limit(1)
-        .maybeSingle();
+        .order('updated_at', { ascending: false });
+
+      // Always pick active/trialing first, then trial, then past_due, then newest
+      let sub = subs?.find((s: any) => s.status === 'active' || s.status === 'trialing') ||
+                subs?.find((s: any) => s.status === 'trial') ||
+                subs?.find((s: any) => s.status === 'past_due') ||
+                subs?.[0] || null;
+
+      // Se não há assinatura ativa no banco local e o usuário é dono, sincroniza automaticamente com Stripe em background
+      if ((!sub || sub.status !== 'active') && role === 'owner' && tenantId) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const syncRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-stripe-subscription`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+              }
+            });
+            const syncData = await syncRes.json();
+            if (syncData.synced) {
+              const { data: refreshedSubs } = await supabase
+                .from('subscriptions')
+                .select(`
+                  id,
+                  plan_id,
+                  status,
+                  trial_ends_at,
+                  current_period_end,
+                  grace_period_ends_at,
+                  suspension_reason,
+                  canceled_at,
+                  updated_at,
+                  created_at,
+                  subscription_contracts (
+                    max_professionals,
+                    allow_products,
+                    features,
+                    permissions,
+                    limits
+                  ),
+                  plans (
+                    id,
+                    key,
+                    name,
+                    max_professionals,
+                    allow_products,
+                    features,
+                    permissions,
+                    limits,
+                    is_default
+                  )
+                `)
+                .eq('tenant_id', tenantId!)
+                .order('updated_at', { ascending: false });
+
+              const newActiveSub = refreshedSubs?.find((s: any) => s.status === 'active' || s.status === 'trialing');
+              if (newActiveSub) sub = newActiveSub;
+            }
+          }
+        } catch (_) {}
+      }
 
       let defaultPlan = null;
       if (!sub || sub.status === 'canceled') {
@@ -95,7 +160,7 @@ export function usePermissionEngine(): PermissionEngine {
   const defaultPlan = subData?.defaultPlan as any;
   const contract = Array.isArray(sub?.subscription_contracts) ? sub?.subscription_contracts[0] : sub?.subscription_contracts;
 
-  // Resolve active sources (Contract or Default Plan)
+  // Resolve active sources (Contract or Plan or Default Plan)
   let featuresObj: any = {};
   let permissionsArr: string[] = [];
   let limitsObj: any = {};
@@ -120,6 +185,14 @@ export function usePermissionEngine(): PermissionEngine {
       if (!limitsObj.profissionais && contract.max_professionals) {
         limitsObj.profissionais = contract.max_professionals;
       }
+    } else if (sub.plans) {
+      featuresObj = sub.plans.features || {};
+      permissionsArr = Array.isArray(sub.plans.permissions) ? sub.plans.permissions : [];
+      limitsObj = sub.plans.limits || {};
+      
+      if (!limitsObj.profissionais && sub.plans.max_professionals) {
+        limitsObj.profissionais = sub.plans.max_professionals;
+      }
     }
   } else if (defaultPlan) {
     // Fallback to Free/Default plan
@@ -133,21 +206,11 @@ export function usePermissionEngine(): PermissionEngine {
   }
 
   // Engine Methods
-  const hasFeature = (key: string) => {
-    if (isSuperAdmin) return true;
-    if (key === 'produtos') {
-      if (contract) return !!contract.allow_products;
-      if (defaultPlan) return !!defaultPlan.allow_products;
-      return false;
-    }
-    return !!featuresObj[key];
-  };
-
   const hasPermission = (key: string) => {
     if (isSuperAdmin) return true;
     
-    // The role must have it
-    const roleHasIt = rolePermissions.includes(key) || rolePermissions.includes('*');
+    // Role check: owners have all role permissions by default; other roles check sys_role_permissions
+    const roleHasIt = role === 'owner' || role === 'admin' || rolePermissions.includes(key) || rolePermissions.includes('*');
     if (!roleHasIt) return false;
 
     // Se o array de permissões do contrato/plano existe (mesmo vazio), validar se a chave está presente
@@ -158,14 +221,25 @@ export function usePermissionEngine(): PermissionEngine {
     return false;
   };
 
+  const hasFeature = (key: string) => {
+    if (isSuperAdmin) return true;
+    if (key === 'produtos') {
+      if (hasPermission('produto.criar') || hasPermission('produto.editar') || hasPermission('produto.excluir') || hasPermission('catalogo.criar')) return true;
+      if (contract) return !!contract.allow_products || !!featuresObj?.produtos;
+      if (defaultPlan) return !!defaultPlan.allow_products || !!featuresObj?.produtos;
+      return false;
+    }
+    return !!featuresObj[key];
+  };
+
   const hasAnyPermission = (prefix: string) => {
     if (isSuperAdmin) return true;
     
     if (!Array.isArray(permissionsArr) || permissionsArr.length === 0) return false;
 
-    // Verifica se alguma permissão do plano começa com o prefixo (ex: "equipe.", "agenda.") ou se tem '*'
+    // Verifica se alguma permissão do plano começa com o prefixo (ex: "equipe.", "agenda.", "produto.") ou se tem '*'
     if (permissionsArr.includes('*')) return true;
-    return permissionsArr.some(p => p.startsWith(prefix));
+    return permissionsArr.some(p => p.startsWith(prefix) || p.startsWith(`${prefix}.`));
   };
 
   const getPlanLimit = (key: string): number | 'unlimited' => {

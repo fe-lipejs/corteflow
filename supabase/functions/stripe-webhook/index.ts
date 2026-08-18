@@ -29,8 +29,18 @@ serve(async (req) => {
   try {
     event = await stripe.webhooks.constructEventAsync(body, signature, endpointSecret, undefined, cryptoProvider);
   } catch (err: any) {
-    console.error(`Webhook signature verification failed: ${err.message}`);
-    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+    const connectSecret = Deno.env.get('STRIPE_CONNECT_WEBHOOK_SECRET');
+    if (connectSecret) {
+      try {
+        event = await stripe.webhooks.constructEventAsync(body, signature, connectSecret, undefined, cryptoProvider);
+      } catch (err2: any) {
+        console.error(`Webhook signature verification failed: ${err.message} / ${err2.message}`);
+        return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+      }
+    } else {
+      console.error(`Webhook signature verification failed: ${err.message}`);
+      return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+    }
   }
 
   const supabase = createClient(
@@ -84,6 +94,22 @@ serve(async (req) => {
               trialEndsAt = new Date(stripeSub.trial_end * 1000).toISOString();
             }
             currentPeriodEnd = new Date(stripeSub.current_period_end * 1000).toISOString();
+          }
+
+          // Se o salão tinha uma assinatura anterior diferente no Stripe, cancela a anterior para evitar cobrança dupla
+          const { data: previousSub } = await supabase
+            .from('subscriptions')
+            .select('stripe_subscription_id')
+            .eq('tenant_id', eventTenantId)
+            .maybeSingle();
+
+          if (previousSub?.stripe_subscription_id && session.subscription && previousSub.stripe_subscription_id !== session.subscription) {
+            try {
+              await stripe.subscriptions.cancel(previousSub.stripe_subscription_id);
+              console.log(`[Webhook] Assinatura anterior ${previousSub.stripe_subscription_id} cancelada com sucesso no Stripe.`);
+            } catch (cancelErr) {
+              console.warn(`[Webhook] Aviso ao cancelar assinatura anterior no Stripe:`, cancelErr);
+            }
           }
 
           const { error: upsertError } = await supabase.from('subscriptions').upsert({

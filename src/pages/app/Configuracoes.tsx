@@ -19,7 +19,7 @@ import {
   Trash2, Eye, Settings2, Sparkles, Building2, X, ChevronRight,
   Loader2, AlertCircle, CheckCircle2, Shield, Bell, Wand2, RotateCcw,
   Sun, Moon, Smartphone, Laptop, ShieldCheck, Crown, CalendarCheck, FileText,
-  Lock, RefreshCw
+  Lock, RefreshCw, Scissors, ShieldAlert
 } from 'lucide-react';
 import StripeActivatedModal from '../../components/modals/StripeActivatedModal';
 
@@ -72,6 +72,10 @@ export default function Configuracoes() {
   
   // Account & Subscription Status
   const [subInfo, setSubInfo] = useState<any>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [cancelSubModalOpen, setCancelSubModalOpen] = useState(false);
+  const [cancelConfirmationText, setCancelConfirmationText] = useState('');
+  const [cancelSubLoading, setCancelSubLoading] = useState(false);
   const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -339,6 +343,32 @@ export default function Configuracoes() {
           };
         });
         setBusinessHours(mapped);
+      }
+      // Load subscription info
+      const { data: subData } = await supabase
+        .from('subscriptions')
+        .select('*, plans(*), subscription_contracts(*)')
+        .eq('tenant_id', tenant.id)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (subData) {
+        setSubInfo(subData);
+      }
+
+      // Load connect account info
+      const { data: connectData } = await supabase
+        .from('stripe_connect_accounts')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .maybeSingle();
+      if (connectData) {
+        setStripeConnectInfo({
+          has_account: true,
+          charges_enabled: connectData.charges_enabled,
+          payouts_enabled: connectData.payouts_enabled,
+          stripe_account_id: connectData.stripe_account_id,
+        });
       }
     } catch (err) {
       console.error('Error fetching settings:', err);
@@ -773,9 +803,9 @@ export default function Configuracoes() {
         fontStyle: draftFontStyle,
       };
 
-      const computedFullAddress = [streetAddress, streetNumber, neighborhood, city, state].filter(Boolean).join(', ') || fullAddress;
+      const computedFullAddress = [streetAddress, streetNumber ? `nº ${streetNumber}` : '', neighborhood, city, state, zipCode, 'Brasil'].filter(Boolean).join(', ') || fullAddress;
 
-      // Build payload
+      // Build payload (Note: business_type is strictly in 'tenants' table, not in 'tenant_settings')
       const payload: Record<string, any> = {
         tenant_id: tenant.id,
         theme_preset: selectedTheme,
@@ -816,9 +846,17 @@ export default function Configuracoes() {
       };
 
       if (settingsId) {
-        await supabase.from('tenant_settings').update(payload).eq('id', settingsId);
+        const { error: updateErr } = await supabase.from('tenant_settings').update(payload).eq('id', settingsId);
+        if (updateErr) {
+          console.error('Error updating tenant_settings:', updateErr);
+          throw new Error('Falha ao salvar configurações do salão: ' + updateErr.message);
+        }
       } else {
-        const { data } = await supabase.from('tenant_settings').insert([payload]).select().single();
+        const { data, error: insertErr } = await supabase.from('tenant_settings').insert([payload]).select().single();
+        if (insertErr) {
+          console.error('Error inserting tenant_settings:', insertErr);
+          throw new Error('Falha ao criar configurações do salão: ' + insertErr.message);
+        }
         if (data) setSettingsId(data.id);
       }
 
@@ -1021,6 +1059,70 @@ export default function Configuracoes() {
       queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(tenant.slug) });
     } catch (e) {
       console.error('Error updating payment methods after connect choice:', e);
+    }
+  };
+
+  const handleOpenCustomerPortal = async () => {
+    try {
+      setPortalLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Não autenticado');
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ returnUrl: window.location.href })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao abrir portal do cliente');
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      console.error('Portal error:', err);
+      alert(`Erro ao abrir portal de faturamento: ${err.message}`);
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (cancelConfirmationText !== 'CANCELAR' || !tenant?.id) return;
+    setCancelSubLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Não autenticado');
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-subscription`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erro ao cancelar assinatura');
+      }
+
+      setSubInfo((prev: any) => prev ? { ...prev, status: 'canceled' } : null);
+      setCancelSubModalOpen(false);
+      setCancelConfirmationText('');
+      queryClient.invalidateQueries({ queryKey: ['active_subscription_contract'] });
+      queryClient.invalidateQueries({ queryKey: ['permission_engine'] });
+      queryClient.invalidateQueries({ queryKey: ['plan_features'] });
+      await loadSettings();
+      alert('Assinatura cancelada com sucesso. Seu salão retornará ao Plano Gratuito no encerramento do ciclo.');
+    } catch (err: any) {
+      console.error('Cancel sub error:', err);
+      alert(`Erro ao cancelar assinatura: ${err.message}`);
+    } finally {
+      setCancelSubLoading(false);
     }
   };
 
@@ -1475,9 +1577,9 @@ export default function Configuracoes() {
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
-                      { id: 'barbearia', label: 'Barbearia', icon: '💈', desc: 'Cortes, barba e navalha' },
-                      { id: 'salao', label: 'Salão de Beleza', icon: '💇‍♀️', desc: 'Cabelo, estética e coloração' },
-                      { id: 'esmalteria', label: 'Esmalteria / Nails', icon: '💅', desc: 'Manicure, pedicure e unhas' },
+                      { id: 'barbearia', label: 'Barbearia', icon: <Scissors className="w-5 h-5" />, desc: 'Cortes, barba e navalha' },
+                      { id: 'salao', label: 'Salão de Beleza', icon: <Sparkles className="w-5 h-5" />, desc: 'Cabelo, estética e coloração' },
+                      { id: 'esmalteria', label: 'Esmalteria / Nails', icon: <Palette className="w-5 h-5" />, desc: 'Manicure, pedicure e unhas' },
                     ].map((item) => (
                       <button
                         key={item.id}
@@ -1492,7 +1594,9 @@ export default function Configuracoes() {
                           color: theme.textPrimary,
                         }}
                       >
-                        <span className="text-xl">{item.icon}</span>
+                        <span className="p-1.5 rounded-lg shrink-0" style={{ background: businessType === item.id ? `${theme.accent}25` : `${theme.accent}10`, color: theme.accent }}>
+                          {item.icon}
+                        </span>
                         <div>
                           <p className="text-xs font-bold">{item.label}</p>
                           <p className="text-[10px] opacity-70 leading-tight mt-0.5">{item.desc}</p>
@@ -1807,26 +1911,58 @@ export default function Configuracoes() {
 
               {/* Map Preview */}
               {(() => {
-                const queryAddress = [streetAddress, streetNumber, neighborhood, city, state].filter(Boolean).join(', ');
+                const queryAddress = [streetAddress, streetNumber ? `nº ${streetNumber}` : '', neighborhood, city, state, zipCode, 'Brasil'].filter(Boolean).join(', ');
                 let embedUrl = '';
+                
+                // 1. If explicit iframe embed code was pasted
                 if (mapLink && mapLink.includes('<iframe')) {
                   const match = mapLink.match(/src="([^"]+)"/);
                   if (match) embedUrl = match[1];
-                } else if (mapLink && (mapLink.includes('output=embed') || mapLink.includes('google.com/maps/embed'))) {
+                } 
+                // 2. Direct embed url
+                else if (mapLink && (mapLink.includes('output=embed') || mapLink.includes('google.com/maps/embed'))) {
                   embedUrl = mapLink;
-                } else if (queryAddress) {
-                  embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(queryAddress)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
-                } else if (mapLink && mapLink.startsWith('http')) {
-                  embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapLink)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+                } 
+                // 3. Extração direta de coordenadas se o link contiver @lat,lng ou q=lat,lng
+                else if (mapLink && (mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || mapLink.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/))) {
+                  const coordMatch = mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || mapLink.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+                  if (coordMatch) {
+                    embedUrl = `https://maps.google.com/maps?q=${coordMatch[1]},${coordMatch[2]}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
+                  }
+                }
+                // 4. Busca de alta precisão por endereço completo com número, bairro, cidade e CEP
+                else if (queryAddress) {
+                  embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(queryAddress)}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
+                } 
+                // 5. Link genérico de fallback
+                else if (mapLink && mapLink.trim().startsWith('http') && !mapLink.includes('goo.gl')) {
+                  embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapLink.trim())}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
                 }
 
                 if (!embedUrl) return null;
 
+                const directLink = (mapLink && mapLink.trim().startsWith('http')) 
+                  ? mapLink.trim() 
+                  : (queryAddress ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(queryAddress)}` : null);
+
                 return (
                   <div className="space-y-2">
-                    <p className="text-xs font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
-                      Pré-visualização do Mapa
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
+                        Pré-visualização do Mapa
+                      </p>
+                      {directLink && (
+                        <a
+                          href={directLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-bold flex items-center gap-1 hover:underline cursor-pointer"
+                          style={{ color: theme.accent }}
+                        >
+                          Abrir link oficial no Google Maps <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
                     <div className="rounded-2xl overflow-hidden border shadow-sm" style={{ borderColor: theme.border, height: '220px' }}>
                       <iframe
                         width="100%"
@@ -2421,7 +2557,7 @@ export default function Configuracoes() {
                     {engine.defaultPlan?.name || 'Plano Starter'}
                   </h4>
                   <p className="text-xs" style={{ color: theme.textMuted }}>
-                    {engine.getPlanLimit('profissionais') === 'unlimited' ? 'Profissionais ilimitados' : `Até ${engine.getPlanLimit('profissionais')} profissional${engine.getPlanLimit('profissionais') !== 1 ? 'is' : ''}`} • {engine.hasFeature('produtos') ? 'Produtos liberados' : 'Apenas Serviços'}
+                    {engine.getPlanLimit('profissionais') === 'unlimited' ? 'Profissionais ilimitados' : `Até ${engine.getPlanLimit('profissionais')} ${engine.getPlanLimit('profissionais') === 1 ? 'profissional' : 'profissionais'}`} • {engine.hasFeature('produtos') ? 'Produtos liberados' : 'Apenas Serviços'}
                   </p>
                 </div>
 
@@ -2463,6 +2599,78 @@ export default function Configuracoes() {
                     {subInfo?.status === 'canceled' ? '✓ Nenhuma cobrança futura será feita' : 'Pagamento processado com segurança'}
                   </p>
                 </div>
+
+                {/* 5. Recebimento de Pagamentos Online (Stripe Connect) */}
+                <div className="p-5 rounded-2xl border space-y-2 sm:col-span-2" style={{ background: theme.cardBg, borderColor: theme.border }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
+                      Recebimento Online (Stripe Connect)
+                    </span>
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                      stripeConnectInfo?.charges_enabled
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : stripeConnectInfo?.stripe_account_id
+                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        : 'bg-neutral-500/10 text-neutral-400 border border-neutral-500/20'
+                    }`}>
+                      {stripeConnectInfo?.charges_enabled ? 'Habilitado (Ao Vivo)' : stripeConnectInfo?.stripe_account_id ? 'Em Análise / Pendente' : 'Não Conectado'}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-base" style={{ color: theme.textPrimary }}>
+                    {stripeConnectInfo?.charges_enabled
+                      ? 'Conta Bancária Vinculada & Ativa'
+                      : stripeConnectInfo?.stripe_account_id
+                      ? 'Verificação Bancária Pendente'
+                      : 'Pagamentos Online Desativados'}
+                  </h4>
+                  <p className="text-xs" style={{ color: theme.textMuted }}>
+                    {stripeConnectInfo?.charges_enabled
+                      ? 'Seu salão está habilitado a receber pagamentos online (Pix, Cartão) diretamente na sua conta bancária.'
+                      : stripeConnectInfo?.stripe_account_id
+                      ? 'Conclua o envio dos seus documentos bancários na aba "Pagamentos" para liberar cobranças online.'
+                      : 'Conecte sua conta Stripe na aba "Pagamentos" para cobrar reservas antecipadas dos seus clientes.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Seção de Gerenciamento da Assinatura */}
+              <div className="p-5 rounded-2xl border space-y-4 mt-6" style={{ background: theme.cardBg, borderColor: theme.border }}>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                      <Crown className="w-4 h-4" style={{ color: theme.accent }} />
+                      Gerenciamento de Cobrança & Faturamento
+                    </h4>
+                    <p className="text-xs" style={{ color: theme.textSecondary }}>
+                      Acesse o portal oficial do Stripe para atualizar cartão de crédito, baixar notas fiscais ou gerenciar sua assinatura.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={handleOpenCustomerPortal}
+                      disabled={portalLoading}
+                      className="px-4 py-2 text-xs font-bold rounded-xl border transition-all flex items-center gap-2 cursor-pointer hover:scale-[1.02] disabled:opacity-50"
+                      style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
+                    >
+                      {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" style={{ color: theme.accent }} />}
+                      {portalLoading ? 'Abrindo...' : 'Acessar Portal do Stripe'}
+                    </button>
+                    {subInfo?.status === 'active' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCancelConfirmationText('');
+                          setCancelSubModalOpen(true);
+                        }}
+                        className="px-4 py-2 text-xs font-bold rounded-xl border bg-red-500/10 border-red-500/20 hover:bg-red-500/20 text-red-500 transition-all flex items-center gap-2 cursor-pointer"
+                      >
+                        <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
+                        Cancelar Assinatura
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Seção de Encerramento de Conta */}
@@ -2489,6 +2697,59 @@ export default function Configuracoes() {
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* Cancel Subscription Modal */}
+      {cancelSubModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-[#1a1a1a]">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
+                <ShieldAlert className="w-6 h-6 text-amber-500" />
+              </div>
+              <h3 className="text-xl font-bold text-center text-white mb-2">Cancelar Assinatura?</h3>
+              <p className="text-sm text-[#888] text-center leading-relaxed">
+                Ao cancelar, sua assinatura permanecerá ativa até o encerramento do ciclo já pago. Após esse período, seu salão voltará <strong>automaticamente para o Plano Gratuito</strong> e você não receberá nenhuma nova cobrança.
+              </p>
+            </div>
+            
+            <div className="p-6">
+              <label className="block text-sm font-bold text-[#888] mb-2">
+                Para confirmar o cancelamento, digite <strong className="text-amber-400">CANCELAR</strong> abaixo:
+              </label>
+              <input
+                type="text"
+                value={cancelConfirmationText}
+                onChange={(e) => setCancelConfirmationText(e.target.value)}
+                className="w-full px-4 py-3 bg-[#111] border border-[#1a1a1a] rounded-xl text-white outline-none focus:border-amber-500 transition-colors uppercase font-mono"
+                placeholder="CANCELAR"
+                onPaste={e => e.preventDefault()}
+              />
+            </div>
+            
+            <div className="border-t border-[#1a1a1a] p-4 flex justify-end gap-3 bg-[#0a0a0a]">
+              <button
+                type="button"
+                onClick={() => {
+                  setCancelSubModalOpen(false);
+                  setCancelConfirmationText('');
+                }}
+                className="px-4 py-2 text-xs font-semibold text-[#888] hover:text-white transition-colors"
+              >
+                Voltar
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelSubscription}
+                disabled={cancelConfirmationText !== 'CANCELAR' || cancelSubLoading}
+                className="px-5 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-30 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2"
+              >
+                {cancelSubLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldAlert className="w-3.5 h-3.5" />}
+                Confirmar Cancelamento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Account Modal */}
       {deleteAccountModalOpen && (

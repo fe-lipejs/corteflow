@@ -341,7 +341,7 @@ export default function Servicos() {
 
       {/* ── PRODUCTS TAB ── */}
       {activeTab === 'produtos' && (
-        <FeatureGate feature="produtos">
+        <FeatureGate modulePrefix="produto" message="O módulo de produtos e estoque é exclusivo de planos superiores. Faça upgrade para cadastrar e gerenciar produtos.">
         <div className="relative space-y-6">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">

@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../integrations/supabase/client';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
-import { Crown, ExternalLink, CheckCircle, Zap, Clock, AlertTriangle, Loader2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Crown, ExternalLink, CheckCircle, Zap, Clock, AlertTriangle, Loader2, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 interface Plan {
   id: string;
@@ -44,19 +45,19 @@ function getFeatureFlags(plan: Plan): Record<string, boolean> {
   const permissions = Array.isArray(plan.permissions) ? plan.permissions : [];
   
   return {
-    agenda: permissions.includes('view_agenda') || permissions.some(p => p.startsWith('agenda.')),
-    clientes: permissions.includes('view_clientes') || permissions.some(p => p.startsWith('clientes.')),
-    equipe: permissions.includes('view_equipe') || permissions.some(p => p.startsWith('equipe.')),
-    servicos: permissions.includes('view_servicos') || permissions.some(p => p.startsWith('catalogo.')),
-    financeiro: permissions.includes('view_financeiro') || permissions.some(p => p.startsWith('financeiro.')),
-    relatorios: permissions.includes('view_relatorios') || permissions.some(p => p.startsWith('relatorios.')),
-    produtos: !!plan.allow_products,
+    agenda: permissions.some((p: string) => p.startsWith('agenda.')) || plan.features?.agenda,
+    equipe: permissions.some((p: string) => p.startsWith('equipe.')) || plan.features?.equipe,
+    catalogo: permissions.some((p: string) => p.startsWith('catalogo.') || p.startsWith('servico.')) || plan.features?.servicos,
+    produtos: permissions.some((p: string) => p.startsWith('produto.')) || plan.allow_products || plan.features?.produtos,
+    clientes: permissions.some((p: string) => p.startsWith('clientes.')) || plan.features?.clientes,
+    financeiro: permissions.some((p: string) => p.startsWith('financeiro.')) || plan.features?.financeiro,
+    relatorios: permissions.some((p: string) => p.startsWith('relatorios.')) || plan.features?.relatorios,
+    configuracoes: permissions.some((p: string) => p.startsWith('configuracoes.')) || plan.features?.configuracoes,
   };
 }
 
 const FEATURE_LABELS: Record<string, string> = {
   agenda: 'Agenda',
-  clientes: 'Clientes',
   equipe: 'Equipe',
   servicos: 'Serviços',
   financeiro: 'Financeiro',
@@ -68,12 +69,205 @@ export default function Assinatura() {
   const { tenant, profile } = useAuth();
   const { theme } = useTheme();
   const { features } = usePlanFeatures();
+  const queryClient = useQueryClient();
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null); // stores planId being checked out
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncSuccessMessage, setSyncSuccessMessage] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    if (!tenant) return;
+    try {
+      const [{ data: subsData }, { data: planData }, { data: customPricingData }] = await Promise.all([
+        supabase
+          .from('subscriptions')
+          .select('*, subscription_contracts(*), plans(*)')
+          .eq('tenant_id', tenant.id)
+          .order('updated_at', { ascending: false }),
+        supabase.from('plans').select('*, plan_prices(*)').eq('active', true).order('sort_order', { ascending: true }),
+        supabase.from('custom_pricing').select('*').eq('tenant_id', tenant.id)
+      ]);
+
+      let activeSub = subsData?.find((s: any) => s.status === 'active' || s.status === 'trialing') ||
+                      subsData?.find((s: any) => s.status === 'trial') ||
+                      subsData?.find((s: any) => s.status === 'past_due') ||
+                      subsData?.[0] || null;
+
+      // Auto-sync em background com Stripe caso a assinatura não esteja ativa no banco local
+      if ((!activeSub || activeSub.status !== 'active') && tenant) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const syncRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-stripe-subscription`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+              }
+            });
+            const syncData = await syncRes.json();
+            if (syncData.synced) {
+              const { data: refreshedSubs } = await supabase
+                .from('subscriptions')
+                .select('*, subscription_contracts(*), plans(*)')
+                .eq('tenant_id', tenant.id)
+                .order('updated_at', { ascending: false });
+
+              const newActiveSub = refreshedSubs?.find((s: any) => s.status === 'active' || s.status === 'trialing');
+              if (newActiveSub) {
+                activeSub = newActiveSub;
+                queryClient.invalidateQueries({ queryKey: ['active_subscription_contract'] });
+                queryClient.invalidateQueries({ queryKey: ['permission_engine'] });
+                queryClient.invalidateQueries({ queryKey: ['plan_features'] });
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (activeSub) setSubscription(activeSub as any);
+      
+      if (planData) {
+        const plansWithCustomPrices = planData.map((plan: any) => {
+          const customPrice = customPricingData?.find(cp => cp.plan_id === plan.id);
+          if (customPrice && plan.plan_prices) {
+            const brlPriceIndex = plan.plan_prices.findIndex((p: any) => p.currency === 'BRL');
+            if (brlPriceIndex >= 0) {
+              plan.plan_prices[brlPriceIndex].amount = customPrice.amount_override;
+            } else {
+              plan.plan_prices.push({ currency: 'BRL', amount: customPrice.amount_override });
+            }
+            plan.is_custom_price = true;
+          }
+          return plan;
+        });
+
+        const sortedPlans = plansWithCustomPrices.sort((a: any, b: any) => {
+          if (a.is_default) return -1;
+          if (b.is_default) return 1;
+          
+          const aPrice = a.plan_prices?.find((p: any) => p.currency === 'BRL')?.amount || 0;
+          const bPrice = b.plan_prices?.find((p: any) => p.currency === 'BRL')?.amount || 0;
+          return aPrice - bPrice;
+        });
+
+        setPlans(sortedPlans);
+      }
+    } catch (e) {
+      console.error('Erro ao buscar dados de assinatura:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, [tenant, queryClient]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    if (sessionId && tenant) {
+      const verifySession = async () => {
+        try {
+          setSyncing(true);
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) return;
+
+          const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-checkout-session`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({ sessionId })
+          });
+
+          if (res.ok) {
+            setSyncSuccessMessage('🎉 Pagamento confirmado com sucesso! Seu plano foi ativado.');
+            window.history.replaceState({}, document.title, window.location.pathname);
+            queryClient.invalidateQueries({ queryKey: ['active_subscription_contract'] });
+            queryClient.invalidateQueries({ queryKey: ['permission_engine'] });
+            queryClient.invalidateQueries({ queryKey: ['plan_features'] });
+            await fetchData();
+          }
+        } catch (e) {
+          console.error('Erro ao verificar sessão do Stripe:', e);
+        } finally {
+          setSyncing(false);
+        }
+      };
+      verifySession();
+    }
+  }, [tenant, queryClient, fetchData]);
+
+  const handleSyncWithStripe = async () => {
+    if (!tenant) return;
+    try {
+      setSyncing(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Não autenticado');
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-stripe-subscription`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao sincronizar com Stripe');
+
+      if (data.synced) {
+        setSyncSuccessMessage('✅ Assinatura sincronizada com sucesso diretamente do Stripe!');
+        queryClient.invalidateQueries({ queryKey: ['active_subscription_contract'] });
+        queryClient.invalidateQueries({ queryKey: ['permission_engine'] });
+        queryClient.invalidateQueries({ queryKey: ['plan_features'] });
+        await fetchData();
+      } else {
+        alert(data.message || 'Nenhuma assinatura ativa encontrada no Stripe.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(`Erro: ${err.message}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleOpenCustomerPortal = async () => {
+    try {
+      setPortalLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Não autenticado');
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ returnUrl: window.location.href })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao abrir portal do cliente');
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      console.error('Portal error:', err);
+      alert(`Erro ao abrir portal de pagamentos: ${err.message}`);
+    } finally {
+      setPortalLoading(false);
+    }
+  };
 
   const handleCancelSubscription = async () => {
     if (!confirm('Tem certeza que deseja cancelar sua assinatura? O cancelamento ocorrerá ao final do período já pago e você não será mais cobrado.')) return;
@@ -98,8 +292,11 @@ export default function Assinatura() {
 
       alert('Assinatura cancelada com sucesso. Você terá acesso até o final do período atual.');
       
-      // Update UI state locally instead of full refresh immediately
       setSubscription(prev => prev ? { ...prev, status: 'canceled' } : null);
+      queryClient.invalidateQueries({ queryKey: ['active_subscription_contract'] });
+      queryClient.invalidateQueries({ queryKey: ['permission_engine'] });
+      queryClient.invalidateQueries({ queryKey: ['plan_features'] });
+      await fetchData();
     } catch (err: any) {
       console.error(err);
       alert(`Erro: ${err.message}`);
@@ -107,53 +304,6 @@ export default function Assinatura() {
       setCancelLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (!tenant) return;
-    const fetchData = async () => {
-      const [{ data: subData }, { data: planData }, { data: customPricingData }] = await Promise.all([
-        supabase.from('subscriptions').select('*, subscription_contracts(*)').eq('tenant_id', tenant.id).maybeSingle(),
-        supabase.from('plans').select('*, plan_prices(*)').eq('active', true).order('sort_order', { ascending: true }),
-        supabase.from('custom_pricing').select('*').eq('tenant_id', tenant.id)
-      ]);
-
-      if (subData) setSubscription(subData as any);
-      
-      if (planData) {
-        // Merge custom prices if they exist
-        const plansWithCustomPrices = planData.map((plan: any) => {
-          const customPrice = customPricingData?.find(cp => cp.plan_id === plan.id);
-          if (customPrice && plan.plan_prices) {
-            // Override the BRL price with the custom price
-            const brlPriceIndex = plan.plan_prices.findIndex((p: any) => p.currency === 'BRL');
-            if (brlPriceIndex >= 0) {
-              plan.plan_prices[brlPriceIndex].amount = customPrice.amount_override;
-            } else {
-              plan.plan_prices.push({ currency: 'BRL', amount: customPrice.amount_override });
-            }
-            // Add a flag to UI to know it's a custom price
-            plan.is_custom_price = true;
-          }
-          return plan;
-        });
-
-        // Ordenação: Menor valor para maior, mas o Plano Gratuito (is_default) SEMPRE em primeiro
-        const sortedPlans = plansWithCustomPrices.sort((a: any, b: any) => {
-          if (a.is_default) return -1;
-          if (b.is_default) return 1;
-          
-          const aPrice = a.plan_prices?.find((p: any) => p.currency === 'BRL')?.amount || 0;
-          const bPrice = b.plan_prices?.find((p: any) => p.currency === 'BRL')?.amount || 0;
-          return aPrice - bPrice;
-        });
-
-        setPlans(sortedPlans);
-      }
-      
-      setLoading(false);
-    };
-    fetchData();
-  }, [tenant]);
 
   const handleCheckout = async (planId: string) => {
     if (!tenant) return;
@@ -218,8 +368,21 @@ export default function Assinatura() {
     <div className="space-y-8 max-w-5xl mx-auto animate-fade-in pb-12">
       <header>
         <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>Minha Assinatura</p>
-        <h1 className="font-serif text-3xl font-bold" style={{ color: theme.textPrimary }}>Planos</h1>
+        <h1 className="font-serif text-3xl font-bold" style={{ color: theme.textPrimary }}>Planos & Faturamento</h1>
       </header>
+
+      {/* Sync Success Alert */}
+      {syncSuccessMessage && (
+        <div className="p-4 rounded-2xl border flex items-center justify-between gap-3 bg-emerald-500/10 border-emerald-500/30">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            <p className="text-sm font-semibold text-emerald-300">{syncSuccessMessage}</p>
+          </div>
+          <button onClick={() => setSyncSuccessMessage(null)} className="text-xs text-emerald-400 hover:underline">
+            Fechar
+          </button>
+        </div>
+      )}
 
       {/* Trial expired banner */}
       {isTrialExpired && (
@@ -278,21 +441,15 @@ export default function Assinatura() {
               Assinatura ativa • Próxima cobrança: {formatDate(subscription.current_period_end)}
             </p>
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
             <button
-              className="flex items-center justify-center gap-2 px-5 py-2 border rounded-xl text-sm transition-colors"
-              style={{ borderColor: theme.border, color: theme.textPrimary }}
-              onClick={() => window.open('https://billing.stripe.com/p/login', '_blank')}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 border rounded-xl text-sm font-semibold transition-all hover:scale-[1.02] cursor-pointer disabled:opacity-50"
+              style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }}
+              onClick={handleOpenCustomerPortal}
+              disabled={portalLoading}
             >
-              <ExternalLink className="w-4 h-4" style={{ color: theme.accent }} />
-              Portal de Pagamento
-            </button>
-            <button
-              className="flex items-center justify-center gap-2 px-5 py-2 border rounded-xl text-sm transition-colors bg-red-500/10 border-red-500/20 hover:bg-red-500/20 text-red-500 font-bold"
-              onClick={handleCancelSubscription}
-              disabled={cancelLoading}
-            >
-              {cancelLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Cancelar Assinatura'}
+              {portalLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" style={{ color: theme.accent }} />}
+              {portalLoading ? 'Abrindo Portal...' : 'Portal de Pagamento'}
             </button>
           </div>
         </div>
@@ -328,17 +485,18 @@ export default function Assinatura() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {plans.filter(plan => {
               // Ocultar Plano Gratuito se o usuário tiver uma assinatura paga ativa
-              const isPaidActive = subscription && subscription.status !== 'canceled' && subscription.plan_id !== plan.id && !plan.is_default;
-              const hasActivePaidPlan = subscription && subscription.status !== 'canceled' && plans.some(p => p.id === subscription.plan_id && !p.is_default);
+              const hasActivePaidPlan = subscription && (subscription.status === 'active' || subscription.status === 'trialing') && plans.some(p => p.id === subscription.plan_id && !p.is_default);
               
               if (plan.is_default && hasActivePaidPlan) {
                 return false;
               }
               return true;
             }).map((plan) => {
-              // Se a assinatura está cancelada, o plano atual volta a ser o Gratuito (is_default)
               const isCanceled = subscription?.status === 'canceled';
-              const isCurrent = (isCanceled && plan.is_default) || (!isCanceled && subscription?.plan_id === plan.id);
+              const hasActiveSub = subscription && subscription.status !== 'canceled';
+              const isCurrent = hasActiveSub 
+                ? subscription.plan_id === plan.id 
+                : Boolean(plan.is_default);
               
               // Se for o plano atual e existir um contrato, o contrato manda nos limites e preço!
               let planToDisplay = plan;
@@ -374,7 +532,7 @@ export default function Assinatura() {
               const maxProf = limitsObj.profissionais ?? planToDisplay.max_professionals;
               const displayMaxProf = maxProf === 'unlimited' || maxProf === -1 || maxProf === 999 
                 ? 'Ilimitados' 
-                : `Até ${maxProf} profissional${maxProf !== 1 ? 'is' : ''}`;
+                : `Até ${maxProf} ${maxProf === 1 ? 'profissional' : 'profissionais'}`;
 
               const isLoading = checkoutLoading === plan.id;
 
