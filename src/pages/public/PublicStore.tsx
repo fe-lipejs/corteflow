@@ -1304,6 +1304,14 @@ export default function PublicStore() {
                     className="w-full h-full object-cover scale-105"
                     style={{ filter: isDark ? "brightness(0.9)" : "brightness(0.98)" }}
                   />
+                  {isDark && (
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: `linear-gradient(to top, ${sidebarBackground} 0%, rgba(0,0,0,0.7) 30%, transparent 70%)`,
+                      }}
+                    />
+                  )}
                 </>
               ) : (
                 <div
@@ -2609,7 +2617,7 @@ export default function PublicStore() {
                 >
                   <ChevronUp className="w-4 h-4" style={{ color: accent }} />
                   <MapPin className="w-3.5 h-3.5" style={{ color: accent }} />
-                  <span style={{ color: theme.textPrimary }}>
+                  <span style={{ color: theme.textPrimary, display: "none" }}>
                     {distanceKm !== null
                       ? `A ${distanceKm < 1 ? Math.round(distanceKm * 1000) + "m" : distanceKm.toFixed(1) + " km"} • Horários & Local`
                       : "Localização & Horários"}
