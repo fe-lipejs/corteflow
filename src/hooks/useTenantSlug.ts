@@ -19,10 +19,11 @@ export function useTenantSlug(): string | null {
     hostname === 'localhost' ||
     hostname === '127.0.0.1' ||
     hostname.endsWith('.ngrok.io') ||
-    hostname.endsWith('.ngrok-free.app');
+    hostname.endsWith('.ngrok-free.app') ||
+    hostname.endsWith('.netlify.app');
 
   if (isLocalDev) {
-    // Dev mode: use the path param (:slug)
+    // Dev or direct Netlify preview mode: use the path param (:slug)
     return paramSlug ?? null;
   }
 

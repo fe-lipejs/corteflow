@@ -90,6 +90,7 @@ export interface ContrastTokens {
   ratingPillText: string;
   
   // Description & Text Contrast
+  titleColor: string;
   titleTextShadow: string;
   descriptionColor: string;
   descriptionTextShadow: string;
@@ -144,6 +145,7 @@ export function getThemeContrastEngine(theme: ThemeTokens): ContrastTokens {
       ratingPillText: "#FFFFFF",
 
       // Sombras de texto limpas e naturais
+      titleColor: "#FFFFFF",
       titleTextShadow: "0 2px 10px rgba(0, 0, 0, 0.6)",
       descriptionColor: "#CBD5E1", // Slate-300 suave e super nítido
       descriptionTextShadow: "none",
@@ -185,6 +187,7 @@ export function getThemeContrastEngine(theme: ThemeTokens): ContrastTokens {
       ratingPillText: "#1E293B",
 
       // Sombras de texto
+      titleColor: "#0F172A",
       titleTextShadow: "none",
       descriptionColor: "#334155", // Slate-700 escuro e de alta legibilidade
       descriptionTextShadow: "none",

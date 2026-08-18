@@ -15,7 +15,8 @@ function isDevEnvironment(): boolean {
     h === 'localhost' ||
     h === '127.0.0.1' ||
     h.endsWith('.ngrok.io') ||
-    h.endsWith('.ngrok-free.app')
+    h.endsWith('.ngrok-free.app') ||
+    h.endsWith('.netlify.app')
   );
 }
 

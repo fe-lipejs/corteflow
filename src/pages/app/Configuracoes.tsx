@@ -20,7 +20,7 @@ import {
   Trash2, Eye, Settings2, Sparkles, Building2, X, ChevronRight,
   Loader2, AlertCircle, CheckCircle2, Shield, Bell, Wand2, RotateCcw,
   Sun, Moon, Smartphone, Laptop, ShieldCheck, Crown, CalendarCheck, FileText,
-  Lock, RefreshCw, Scissors, ShieldAlert
+  Lock, RefreshCw, Scissors, ShieldAlert, Zap
 } from 'lucide-react';
 import StripeActivatedModal from '../../components/modals/StripeActivatedModal';
 import { ImageCropperModal } from '../../components/ImageCropperModal';

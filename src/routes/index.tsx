@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 // Middlewares
 import RequireAuth from '../middlewares/RequireAuth';
@@ -49,12 +49,13 @@ type AppMode = 'landing' | 'app' | 'admin' | 'tenant' | 'dev';
 function getAppMode(): AppMode {
   const hostname = window.location.hostname;
 
-  // Local development or ngrok: preserve path-based routing (no DNS needed)
+  // Local development, ngrok, or direct Netlify preview URL (no wildcard custom DNS yet)
   if (
     hostname === 'localhost' ||
     hostname === '127.0.0.1' ||
     hostname.endsWith('.ngrok.io') ||
-    hostname.endsWith('.ngrok-free.app')
+    hostname.endsWith('.ngrok-free.app') ||
+    hostname.endsWith('.netlify.app')
   ) {
     return 'dev';
   }
