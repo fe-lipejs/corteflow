@@ -230,27 +230,19 @@ function StepIndicator({
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all"
                   style={{
-                    background: done
+                    background: done || active
                       ? accent
-                      : active
-                      ? isDark
-                        ? "rgba(255,255,255,0.12)"
-                        : "#FFFFFF"
                       : isDark
                       ? "rgba(255,255,255,0.05)"
                       : "#E2E8F0",
-                    color: done
+                    color: done || active
                       ? theme.btnPrimaryText
-                      : active
-                      ? accent
                       : theme.textMuted,
-                    border: active
-                      ? `2px solid ${accent}`
-                      : done
+                    border: done || active
                       ? "none"
                       : `1px solid ${theme.cardBorder}`,
                     boxShadow: active
-                      ? `0 0 16px ${accent}30`
+                      ? `0 0 16px ${accent}40`
                       : "none",
                   }}
                 >
@@ -1421,7 +1413,7 @@ export default function PublicStore() {
                       color: theme.textPrimary,
                     }}
                   >
-                    <InstagramIcon style={{ color: accent }} />
+                    <InstagramIcon style={{ color: isDark ? accent : "#000000" }} />
                     <span>Instagram</span>
                   </motion.a>
                 )}
@@ -1439,7 +1431,7 @@ export default function PublicStore() {
                       color: theme.textPrimary,
                     }}
                   >
-                    <WhatsAppIcon style={{ color: "#25D366" }} />
+                    <WhatsAppIcon style={{ color: isDark ? "#25D366" : "#000000" }} />
                     <span>WhatsApp</span>
                   </motion.a>
                 )}
@@ -1459,21 +1451,21 @@ export default function PublicStore() {
                       setShowMapModal(true);
                       if (geoStatus === "idle") requestLocation();
                     }}
-                    className="flex items-center justify-between p-3.5 transition-colors border-b group cursor-pointer"
+                    className="flex items-center justify-between p-3.5 transition-colors border-b group cursor-pointer w-full text-left"
                     style={{ borderColor: cardBorderColor }}
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0 text-left">
                       <div
                         className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ background: `${accent}15`, color: accent }}
+                        style={{ background: `${accent}15`, color: isDark ? accent : "#000000" }}
                       >
                         <MapPin className="w-4 h-4" />
                       </div>
-                      <div className="min-w-0 pr-2">
-                        <p className="text-xs font-bold leading-none" style={{ color: theme.textPrimary }}>
+                      <div className="min-w-0 pr-2 text-left">
+                        <p className="text-xs font-bold leading-none text-left" style={{ color: theme.textPrimary }}>
                           Local & Horários
                         </p>
-                        <p className="text-[11px] truncate mt-1" style={{ color: theme.textMuted }}>
+                        <p className="text-[11px] truncate mt-1 text-left" style={{ color: theme.textMuted }}>
                           {storeAddress || "Ver no mapa"}
                         </p>
                       </div>
@@ -1487,20 +1479,20 @@ export default function PublicStore() {
 
                 <a
                   href={`/${slug}/portal`}
-                  className="flex items-center justify-between p-3.5 transition-colors group cursor-pointer"
+                  className="flex items-center justify-between p-3.5 transition-colors group cursor-pointer w-full text-left"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0 text-left">
                     <div
                       className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: `${accent}15`, color: accent }}
+                      style={{ background: `${accent}15`, color: isDark ? accent : "#000000" }}
                     >
                       <Calendar className="w-4 h-4" />
                     </div>
-                    <div className="min-w-0 pr-2">
-                      <p className="text-xs font-bold leading-none" style={{ color: theme.textPrimary }}>
+                    <div className="min-w-0 pr-2 text-left">
+                      <p className="text-xs font-bold leading-none text-left" style={{ color: theme.textPrimary }}>
                         Meus Agendamentos
                       </p>
-                      <p className="text-[11px] truncate mt-1" style={{ color: theme.textMuted }}>
+                      <p className="text-[11px] truncate mt-1 text-left" style={{ color: theme.textMuted }}>
                         Acessar portal do cliente
                       </p>
                     </div>
