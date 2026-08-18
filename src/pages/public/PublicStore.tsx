@@ -178,8 +178,8 @@ function SlotGrid({
               boxShadow: isSel
                 ? `0 4px 16px ${accent}40`
                 : isDark
-                ? "none"
-                : "0 1px 4px rgba(0,0,0,0.05)",
+                  ? "none"
+                  : "0 1px 4px rgba(0,0,0,0.05)",
             }}
           >
             {slot.time}
@@ -233,17 +233,15 @@ function StepIndicator({
                     background: done || active
                       ? accent
                       : isDark
-                      ? "rgba(255,255,255,0.05)"
-                      : "#E2E8F0",
+                        ? "rgba(255,255,255,0.05)"
+                        : "#E2E8F0",
                     color: done || active
                       ? theme.btnPrimaryText
                       : theme.textMuted,
                     border: done || active
                       ? "none"
                       : `1px solid ${theme.cardBorder}`,
-                    boxShadow: active
-                      ? `0 0 16px ${accent}40`
-                      : "none",
+                    boxShadow: "none",
                   }}
                 >
                   {done ? <Check className="w-4 h-4 stroke-[2.5]" /> : num}
@@ -257,8 +255,8 @@ function StepIndicator({
                       i === STEP_LABELS.length - 1
                         ? "transparent"
                         : step > num
-                        ? accent
-                        : theme.cardBorder,
+                          ? accent
+                          : theme.cardBorder,
                     opacity: i === STEP_LABELS.length - 1 ? 0 : 1,
                   }}
                 />
@@ -284,7 +282,7 @@ function StepIndicator({
 // ── Audio Helper ────────────────────────────────────────────────────────────
 const playSuccessSound = () => {
   const audio = new Audio("https://actions.google.com/sounds/v1/alarms/dinner_bell_triangle.ogg");
-  audio.play().catch(() => {});
+  audio.play().catch(() => { });
 };
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -842,8 +840,8 @@ export default function PublicStore() {
               paymentScope === "full"
                 ? "full"
                 : paymentScope === "partial"
-                ? "deposit"
-                : "local",
+                  ? "deposit"
+                  : "local",
             amount_paid:
               paymentScope === "local" || paymentMethod === "cash" ? 0 : amountPaid,
             amount_total: total,
@@ -1306,14 +1304,6 @@ export default function PublicStore() {
                     className="w-full h-full object-cover scale-105"
                     style={{ filter: isDark ? "brightness(0.9)" : "brightness(0.98)" }}
                   />
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: `linear-gradient(to top, ${sidebarBackground} 0%, ${
-                        isDark ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.7)"
-                      } 30%, transparent 70%)`,
-                    }}
-                  />
                 </>
               ) : (
                 <div
@@ -1380,8 +1370,8 @@ export default function PublicStore() {
                   {tenant?.business_type === "barbearia"
                     ? "Barbearia"
                     : tenant?.business_type === "esmalteria"
-                    ? "Esmalteria"
-                    : "Salão de Beleza"}
+                      ? "Esmalteria"
+                      : "Salão de Beleza"}
                 </span>
               </div>
 
@@ -1413,7 +1403,7 @@ export default function PublicStore() {
                       color: theme.textPrimary,
                     }}
                   >
-                    <InstagramIcon style={{ color: isDark ? accent : "#000000" }} />
+                    <InstagramIcon style={{ color: accent }} />
                     <span>Instagram</span>
                   </motion.a>
                 )}
@@ -1431,7 +1421,7 @@ export default function PublicStore() {
                       color: theme.textPrimary,
                     }}
                   >
-                    <WhatsAppIcon style={{ color: isDark ? "#25D366" : "#000000" }} />
+                    <WhatsAppIcon style={{ color: accent }} />
                     <span>WhatsApp</span>
                   </motion.a>
                 )}
@@ -1457,9 +1447,9 @@ export default function PublicStore() {
                     <div className="flex items-center gap-3 min-w-0 text-left">
                       <div
                         className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ background: `${accent}15`, color: isDark ? accent : "#000000" }}
+                        style={{ background: `${accent}15`, color: accent }}
                       >
-                        <MapPin className="w-4 h-4" />
+                        <MapPin className="w-4 h-4" style={{ color: accent }} />
                       </div>
                       <div className="min-w-0 pr-2 text-left">
                         <p className="text-xs font-bold leading-none text-left" style={{ color: theme.textPrimary }}>
@@ -1486,7 +1476,7 @@ export default function PublicStore() {
                       className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
                       style={{ background: `${accent}15`, color: isDark ? accent : "#000000" }}
                     >
-                      <Calendar className="w-4 h-4" />
+                      <Calendar className="w-4 h-4" style={{ color: accent }} />
                     </div>
                     <div className="min-w-0 pr-2 text-left">
                       <p className="text-xs font-bold leading-none text-left" style={{ color: theme.textPrimary }}>
