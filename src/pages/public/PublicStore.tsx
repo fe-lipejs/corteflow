@@ -2601,30 +2601,7 @@ export default function PublicStore() {
               </div>
             )}
 
-            {/* Mobile Bottom Peek Bar (Steps 1, 2, 3) */}
-            {step < 4 && (
-              <div
-                className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t backdrop-blur-md"
-                style={{
-                  background: isDark ? `${theme.sidebarBg}ea` : "rgba(255,255,255,0.92)",
-                  borderColor: cardBorderColor,
-                }}
-              >
-                <button
-                  onClick={handleOpenSheet}
-                  className="w-full flex items-center justify-center gap-2 py-3 text-xs font-semibold cursor-pointer"
-                  style={{ color: theme.textMuted }}
-                >
-                  <ChevronUp className="w-4 h-4" style={{ color: accent }} />
-                  <MapPin className="w-3.5 h-3.5" style={{ color: accent }} />
-                  <span style={{ color: theme.textPrimary, display: "none" }}>
-                    {distanceKm !== null
-                      ? `A ${distanceKm < 1 ? Math.round(distanceKm * 1000) + "m" : distanceKm.toFixed(1) + " km"} • Horários & Local`
-                      : "Localização & Horários"}
-                  </span>
-                </button>
-              </div>
-            )}
+
           </main>
         </div>
       </div>
