@@ -6,8 +6,9 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { Modal } from '../../../components/ui/Modal';
 import { normalizeBrazilianPhone, formatPhoneMask } from '../../../lib/phoneUtils';
 import { usePermissionEngine } from '../../../hooks/usePermissionEngine';
-import { Crown, Lock } from 'lucide-react';
+import { Crown, Lock, Key, Shield, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../../integrations/supabase/client';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ROLES = ['Barbeiro', 'Cabeleireiro', 'Manicure', 'Pedicure', 'Esteticista', 'Maquiador', 'Outro'];
@@ -102,8 +103,28 @@ export default function ProfessionalModal({ professional, services, onClose, onC
     return defaultHours();
   });
 
-  const existingServiceIds = professional?.professional_services?.map(ps => ps.service_id) ?? [];
-  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>(existingServiceIds);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>(
+    professional
+      ? professional.professional_services?.map(s => s.service_id) ?? []
+      : services.map(s => s.id) // Default to all services for new professionals
+  );
+
+  // ─── Professional Access State ───
+  const [accessEnabled, setAccessEnabled] = useState(!!professional?.auth_user_id);
+  const [accessPermissions, setAccessPermissions] = useState<Record<string, boolean>>(
+    (professional?.permissions as Record<string, boolean>) ?? {
+      view_own_schedule: true,
+      edit_own_schedule: false,
+      view_financial: false,
+      create_financial_entry: false,
+      view_commission: true,
+      view_clients: false,
+      edit_own_availability: false
+    }
+  );
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [isManagingAccess, setIsManagingAccess] = useState(false);
+  const [accessError, setAccessError] = useState<string | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -189,10 +210,93 @@ export default function ProfessionalModal({ professional, services, onClose, onC
   };
 
   const tabs = [
-    { id: 'info', label: 'Dados Gerais', icon: User },
+    { id: 'info', label: 'Dados', icon: User },
     { id: 'hours', label: 'Jornada', icon: Clock },
     { id: 'services', label: 'Serviços', icon: Scissors },
+    { id: 'access', label: 'Acesso', icon: Lock },
   ] as const;
+
+  const handleCreateAccess = async () => {
+    if (!professional) return;
+    setIsManagingAccess(true);
+    setAccessError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-professional-access`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          professional_id: professional.id,
+          email: email,
+          permissions: accessPermissions
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao criar acesso');
+      setTempPassword(data.tempPassword);
+      setAccessEnabled(true);
+    } catch (err: any) {
+      setAccessError(err.message);
+    } finally {
+      setIsManagingAccess(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!professional) return;
+    setIsManagingAccess(true);
+    setAccessError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-professional-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          professional_id: professional.id
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao resetar senha');
+      setTempPassword(data.tempPassword);
+    } catch (err: any) {
+      setAccessError(err.message);
+    } finally {
+      setIsManagingAccess(false);
+    }
+  };
+
+  const handleToggleAccess = async (enable: boolean) => {
+    if (!professional) return;
+    setIsManagingAccess(true);
+    setAccessError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toggle-professional-access`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          professional_id: professional.id,
+          action: enable ? 'enable' : 'disable'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao alterar acesso');
+      // Apenas atualizar UI local
+      window.location.reload(); // Simplificação para garantir sincronia do active
+    } catch (err: any) {
+      setAccessError(err.message);
+      setIsManagingAccess(false);
+    }
+  };
 
   return (
     <Modal
@@ -548,6 +652,133 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+          {/* ── TAB: ACCESS ── */}
+          {tab === 'access' && (
+            <div className="space-y-5">
+              {!isEditing ? (
+                <div className="p-6 text-center border rounded-xl" style={{ borderColor: theme.border, background: theme.bg }}>
+                  <Shield className="w-10 h-10 mx-auto mb-3 opacity-50" style={{ color: theme.textSecondary }} />
+                  <h3 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Salve o profissional primeiro</h3>
+                  <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>Você precisa criar o cadastro deste profissional antes de poder gerar um acesso para ele.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="p-4 rounded-xl border" style={{ borderColor: theme.border, background: theme.bg }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h3 className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                          <Key className="w-4 h-4" /> Acesso ao Sistema
+                        </h3>
+                        <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>Permite que o profissional faça login com e-mail e senha.</p>
+                      </div>
+                      <div className="text-right">
+                        {professional?.auth_user_id ? (
+                          <span className={`text-xs px-2 py-1 rounded-full font-bold ${professional.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {professional.active ? 'ATIVO' : 'BLOQUEADO'}
+                          </span>
+                        ) : (
+                          <span className="text-xs px-2 py-1 rounded-full font-bold bg-gray-100 text-gray-600">SEM ACESSO</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {accessError && (
+                      <div className="mt-3 p-3 bg-red-50 text-red-600 text-xs rounded-lg border border-red-100 flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0" /> {accessError}
+                      </div>
+                    )}
+
+                    {!professional?.auth_user_id ? (
+                      <div className="mt-4 pt-4 border-t" style={{ borderColor: theme.border }}>
+                        <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>E-mail de Login *</label>
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full p-2.5 rounded-lg border text-sm focus:ring-2 outline-none mb-3"
+                          style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
+                          placeholder="profissional@email.com"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCreateAccess}
+                          disabled={!email || isManagingAccess}
+                          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-opacity disabled:opacity-50"
+                          style={{ background: theme.accent, color: theme.textInverse }}
+                        >
+                          {isManagingAccess ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Criar Acesso'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-4 pt-4 border-t flex gap-2" style={{ borderColor: theme.border }}>
+                        <button
+                          type="button"
+                          onClick={handleResetPassword}
+                          disabled={isManagingAccess}
+                          className="flex-1 py-2 text-xs font-semibold rounded-lg border transition-opacity disabled:opacity-50"
+                          style={{ borderColor: theme.border, color: theme.textPrimary }}
+                        >
+                          Redefinir Senha
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleAccess(!professional.active)}
+                          disabled={isManagingAccess}
+                          className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-opacity disabled:opacity-50 ${professional.active ? 'text-red-600 border-red-200 bg-red-50 hover:bg-red-100' : 'text-green-600 border-green-200 bg-green-50 hover:bg-green-100'}`}
+                        >
+                          {professional.active ? 'Bloquear Acesso' : 'Desbloquear Acesso'}
+                        </button>
+                      </div>
+                    )}
+
+                    {tempPassword && (
+                      <div className="mt-4 p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+                        <p className="text-xs text-yellow-800 mb-1">Senha temporária gerada! Copie e envie para o profissional:</p>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 p-2 bg-white rounded text-sm font-mono text-center border border-yellow-200 select-all">{tempPassword}</code>
+                        </div>
+                        <p className="text-[10px] text-yellow-600 mt-2 text-center">Ele será obrigado a trocar no primeiro login.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-4 rounded-xl border" style={{ borderColor: theme.border, background: theme.bg }}>
+                    <h3 className="font-bold text-sm mb-3" style={{ color: theme.textPrimary }}>Permissões</h3>
+                    
+                    <div className="space-y-2">
+                      {Object.entries({
+                        view_own_schedule: 'Ver própria agenda',
+                        edit_own_schedule: 'Editar própria agenda (criar agendamentos)',
+                        view_financial: 'Ver próprio financeiro',
+                        create_financial_entry: 'Lançar transações no financeiro',
+                        view_commission: 'Ver própria comissão',
+                        view_clients: 'Ver base de clientes',
+                        edit_own_availability: 'Editar próprios horários de trabalho'
+                      }).map(([key, label]) => (
+                        <label key={key} className="flex items-start gap-3 p-2 hover:bg-black/5 rounded-lg cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={accessPermissions[key] || false}
+                            onChange={(e) => {
+                              const newPerms = { ...accessPermissions, [key]: e.target.checked };
+                              setAccessPermissions(newPerms);
+                              // Auto-save se já estiver criado
+                              if (professional?.auth_user_id) {
+                                supabase.from('professionals').update({ permissions: newPerms }).eq('id', professional.id).then();
+                              }
+                            }}
+                            className="mt-0.5 rounded focus:ring-2 transition-all"
+                            style={{ accentColor: theme.accent }}
+                          />
+                          <span className="text-sm select-none" style={{ color: theme.textPrimary }}>{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

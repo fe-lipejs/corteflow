@@ -49,7 +49,7 @@ export interface Booking {
     past_services?: string[] | null;
   };
   professional?: { id: string; name: string; agenda_color: string; photo_url?: string | null };
-  service?: { id: string; name: string; duration_minutes: number; buffer_minutes: number; color?: string | null; price: number };
+  service?: { id: string; name: string; duration_minutes: number; buffer_minutes: number; color?: string | null; price: number; commission_pct?: number };
 }
 
 export interface CreateBookingInput {
@@ -80,20 +80,26 @@ export const BOOKING_STATUS_CONFIG: Record<BookingStatus, { label: string; color
 export const BOOKINGS_KEY = (tenantId: string, dateKey: string) => ['bookings', tenantId, dateKey];
 
 // ─── Fetch bookings for a date range ─────────────────────────────────────────
-async function fetchBookings(tenantId: string, from: Date, to: Date): Promise<Booking[]> {
-  const { data, error } = await supabase
+async function fetchBookings(tenantId: string, from: Date, to: Date, professionalId?: string | null): Promise<Booking[]> {
+  let query = supabase
     .from('bookings')
     .select(`
       *,
       customer:customers(id, name, phone, email, segment, total_spent, visit_count, last_visit, past_services),
       professional:professionals(id, name, agenda_color, photo_url),
-      service:services(id, name, duration_minutes, buffer_minutes, color, price)
+      service:services(id, name, duration_minutes, buffer_minutes, color, price, commission_pct)
     `)
     .eq('tenant_id', tenantId)
     .gte('scheduled_at', from.toISOString())
     .lte('scheduled_at', to.toISOString())
     .not('status', 'in', '("canceled","no_show")')
     .order('scheduled_at', { ascending: true });
+
+  if (professionalId) {
+    query = query.eq('professional_id', professionalId);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return (data ?? []) as unknown as Booking[];
@@ -143,14 +149,14 @@ export async function checkSlotAvailability(
 }
 
 // ─── Hook: useBookingsByWeek ──────────────────────────────────────────────────
-export function useBookingsByWeek(tenantId: string | null, weekStart: Date) {
+export function useBookingsByWeek(tenantId: string | null, weekStart: Date, professionalId?: string | null) {
   const from = startOfWeek(weekStart, { weekStartsOn: 0 });
   const to = endOfWeek(weekStart, { weekStartsOn: 0 });
   const dateKey = format(from, 'yyyy-MM-dd');
 
   return useQuery({
-    queryKey: BOOKINGS_KEY(tenantId ?? '', dateKey),
-    queryFn: () => fetchBookings(tenantId!, from, to),
+    queryKey: [...BOOKINGS_KEY(tenantId ?? '', dateKey), professionalId],
+    queryFn: () => fetchBookings(tenantId!, from, to, professionalId),
     enabled: !!tenantId,
     staleTime: 1000 * 30, // 30s — agenda needs to be fresh
     refetchInterval: 1000 * 60, // auto-refresh every minute
@@ -158,14 +164,14 @@ export function useBookingsByWeek(tenantId: string | null, weekStart: Date) {
 }
 
 // ─── Hook: useBookingsByDay ───────────────────────────────────────────────────
-export function useBookingsByDay(tenantId: string | null, day: Date) {
+export function useBookingsByDay(tenantId: string | null, day: Date, professionalId?: string | null) {
   const from = startOfDay(day);
   const to = endOfDay(day);
   const dateKey = format(day, 'yyyy-MM-dd');
 
   return useQuery({
-    queryKey: BOOKINGS_KEY(tenantId ?? '', dateKey),
-    queryFn: () => fetchBookings(tenantId!, from, to),
+    queryKey: [...BOOKINGS_KEY(tenantId ?? '', dateKey), professionalId],
+    queryFn: () => fetchBookings(tenantId!, from, to, professionalId),
     enabled: !!tenantId,
     staleTime: 1000 * 30,
     refetchInterval: 1000 * 60,

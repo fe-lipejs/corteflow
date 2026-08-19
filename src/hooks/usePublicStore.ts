@@ -44,7 +44,7 @@ async function fetchPublicStore(slug: string) {
     supabase.from('business_hours').select('*').eq('tenant_id', tenant.id),
     supabase.from('professional_working_hours').select('*').eq('tenant_id', tenant.id),
     supabase.from('professional_blocked_times').select('*').eq('tenant_id', tenant.id).gte('ends_at', todayStr).lte('starts_at', futureStr),
-    supabase.from('bookings').select('id, professional_id, scheduled_at, status, service_id').eq('tenant_id', tenant.id).in('status', ['pending', 'confirmed']).gte('scheduled_at', todayStr).lte('scheduled_at', futureStr),
+    supabase.from('bookings').select('id, professional_id, scheduled_at, status, service_id, created_at').eq('tenant_id', tenant.id).in('status', ['pending', 'confirmed']).gte('scheduled_at', todayStr).lte('scheduled_at', futureStr),
     supabase.from('professional_services').select('*').eq('tenant_id', tenant.id),
     supabase.from('stripe_connect_accounts').select('charges_enabled').eq('tenant_id', tenant.id).maybeSingle()
   ]);
@@ -57,8 +57,20 @@ async function fetchPublicStore(slug: string) {
 
   // Filtra profissionais ativos
   const professionals = (proData ?? []).filter((p: any) => 
-    p.status === "active" || p.active === true || (!p.status && p.active !== false)
+    p.status === "active" || !p.status
   ).sort((a: any, b: any) => a.name?.localeCompare(b.name || ''));
+
+  const now = new Date();
+  const validBookings = (bookingsData ?? []).filter((b: any) => {
+    if (b.status === 'confirmed') return true;
+    // For pending, if older than 15 min, consider abandoned
+    if (b.created_at) {
+      const createdAt = new Date(b.created_at);
+      const ageMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+      return ageMinutes <= 15;
+    }
+    return true;
+  });
 
   return {
     tenant,
@@ -68,7 +80,7 @@ async function fetchPublicStore(slug: string) {
     businessHours: hData || [],
     professionalWorkingHours: proHoursData || [],
     professionalBlockedTimes: blockedData || [],
-    bookings: bookingsData || [],
+    bookings: validBookings,
     professionalServices: proServicesData || [],
     isStripeEnabled: connectData?.charges_enabled === true
   };

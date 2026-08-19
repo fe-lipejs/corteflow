@@ -40,6 +40,8 @@ import Financeiro from '../pages/app/Financeiro';
 import Configuracoes from '../pages/app/Configuracoes';
 import Assinatura from '../pages/app/Assinatura';
 import Suporte from '../pages/app/Suporte';
+import ChangePassword from '../pages/app/ChangePassword';
+import MinhaComissao from '../pages/app/MinhaComissao';
 import AdminSuporte from '../pages/admin/AdminSuporte';
 import FeatureGate from '../components/FeatureGate';
 
@@ -113,6 +115,8 @@ function AppRouteTree() {
       <Route path="configuracoes" element={<Configuracoes />} />
       <Route path="assinatura" element={<Assinatura />} />
       <Route path="suporte" element={<Suporte />} />
+      <Route path="change-password" element={<ChangePassword />} />
+      <Route path="minha-comissao" element={<MinhaComissao />} />
     </Route>
   );
 }

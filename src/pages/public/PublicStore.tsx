@@ -706,7 +706,12 @@ export default function PublicStore() {
         .filter((ps: any) => ps.service_id === selectedService.id)
         .map((ps: any) => ps.professional_id);
       
-      list = list.filter((p: any) => allowedProIds.includes(p.id));
+      const proIdsWithAnyMapping = [...new Set(storeData.professionalServices.map((ps: any) => ps.professional_id))];
+
+      list = list.filter((p: any) => {
+        if (!proIdsWithAnyMapping.includes(p.id)) return true; // Fallback: no mapped services, assume they do all
+        return allowedProIds.includes(p.id);
+      });
     }
     
     if (bookingMode === 'home') {
@@ -937,7 +942,7 @@ export default function PublicStore() {
             service_id: selectedService.id,
             order_number: code,
             scheduled_at: scheduledAt,
-            status: "confirmed",
+            status: (paymentScope !== "local" && paymentMethod !== "cash") ? "pending" : "confirmed",
             payment_mode:
               paymentScope === "full"
                 ? "full"

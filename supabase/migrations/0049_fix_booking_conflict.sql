@@ -1,12 +1,6 @@
--- Migration: 0015_prevent_double_booking.sql
--- Adiciona bloqueio de backend para agendamentos simultâneos e configurações de política de cancelamento
+-- Migration: 0049_fix_booking_conflict.sql
+-- Fixes the check_booking_conflict trigger function which was missing v_new_end declaration
 
--- 1. Add cancellation policy fields to tenant_settings
-ALTER TABLE tenant_settings
-ADD COLUMN IF NOT EXISTS cancel_policy_text TEXT,
-ADD COLUMN IF NOT EXISTS cancel_fee_amount NUMERIC DEFAULT 0;
-
--- 2. Create trigger function to check for booking conflicts
 CREATE OR REPLACE FUNCTION check_booking_conflict()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -45,10 +39,3 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
--- 3. Apply the trigger to bookings table
-DROP TRIGGER IF EXISTS trg_check_booking_conflict ON bookings;
-CREATE TRIGGER trg_check_booking_conflict
-BEFORE INSERT OR UPDATE ON bookings
-FOR EACH ROW
-EXECUTE FUNCTION check_booking_conflict();

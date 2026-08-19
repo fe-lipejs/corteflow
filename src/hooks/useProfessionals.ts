@@ -135,11 +135,19 @@ export function useCreateProfessional(tenantId: string) {
           specialties: input.specialties,
           agenda_color: input.agenda_color,
           status: input.status,
+          offers_home_service: input.offers_home_service ?? false,
+          max_home_distance_km: input.max_home_distance_km ?? 0,
+          home_fee: input.home_fee ?? 0,
         } as any)
         .select('*')
         .single();
 
-      if (proErr) throw proErr;
+      if (proErr) {
+        if (proErr.message?.includes('LIMITE_PROFISSIONAIS_ATINGIDO')) {
+          throw new Error('Limite de profissionais ativos atingido no seu plano. Faça um upgrade para adicionar mais.');
+        }
+        throw proErr;
+      }
       const proId = pro.id;
 
       // 2. Upload photo if provided
@@ -212,7 +220,12 @@ export function useUpdateProfessional(tenantId: string) {
         .from('professionals')
         .update(updatePayload as any)
         .eq('id', id);
-      if (upErr) throw upErr;
+      if (upErr) {
+        if (upErr.message?.includes('LIMITE_PROFISSIONAIS_ATINGIDO')) {
+          throw new Error('Limite de profissionais ativos atingido no seu plano. Faça um upgrade para adicionar mais.');
+        }
+        throw upErr;
+      }
 
       // 3. Upsert working hours
       if (workingHours && workingHours.length > 0) {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../integrations/supabase/client';
 import { useAuth } from '../../hooks/useAuth';
@@ -20,7 +20,7 @@ import {
   Trash2, Eye, Settings2, Sparkles, Building2, X, ChevronRight,
   Loader2, AlertCircle, CheckCircle2, Shield, Bell, Wand2, RotateCcw,
   Sun, Moon, Smartphone, Laptop, ShieldCheck, Crown, CalendarCheck, FileText,
-  Lock, RefreshCw, Scissors, ShieldAlert, Zap
+  Lock, RefreshCw, Scissors, ShieldAlert, Zap, Home, Navigation
 } from 'lucide-react';
 import StripeActivatedModal from '../../components/modals/StripeActivatedModal';
 import { ImageCropperModal } from '../../components/ImageCropperModal';
@@ -54,11 +54,11 @@ const StripeIcon = ({ className, style }: { className?: string; style?: React.CS
 
 const TABS = [
   { id: 'aparencia', label: 'Aparência & Marca', icon: Palette },
+  { id: 'local', label: 'Localização', icon: MapPin },
+  { id: 'politicas', label: 'Políticas de Agendamento', icon: Shield },
   { id: 'stripe', label: 'Recebimentos & Pagamentos', icon: CreditCard },
   { id: 'contato', label: 'Contato', icon: Phone },
   { id: 'horarios', label: 'Horários', icon: Clock },
-  { id: 'politicas', label: 'Políticas', icon: Shield },
-  { id: 'local', label: 'Localização', icon: MapPin },
   { id: 'notificacoes', label: 'Notificações', icon: Bell },
   { id: 'conta', label: 'Status da Conta', icon: ShieldCheck },
 ] as const;
@@ -195,6 +195,7 @@ export default function Configuracoes() {
   // Home Service (Hybrid Location Model — migration 0046)
   const [offersHomeService, setOffersHomeService] = useState(false);
   const [homeServiceRadiusKm, setHomeServiceRadiusKm] = useState(10);
+  const [showRadiusMap, setShowRadiusMap] = useState(false);
   const [homeFeeType, setHomeFeeType] = useState<'fixed' | 'per_km' | 'free'>('free');
   const [homeFeeAmount, setHomeFeeAmount] = useState(0);
   const [homeFeePerKm, setHomeFeePerKm] = useState(0);
@@ -2506,7 +2507,7 @@ export default function Configuracoes() {
             </div>
           )}
 
-          {/* ═══════════════════════════ TAB 7: POLÍTICAS ════════════════════════════════ */}
+          {/* ═══════════════════════════ TAB 7: POLÍTICAS DE AGENDAMENTO ═════════════════ */}
           {activeTab === 'politicas' && (
             <div className="space-y-6">
               <div>
@@ -2515,8 +2516,145 @@ export default function Configuracoes() {
                   Políticas de Agendamento
                 </h3>
                 <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>
-                  Configure as regras para cancelamentos e reagendamentos realizados pelos clientes no portal.
+                  Configure as regras de atendimento, domicílio, cancelamentos e reagendamentos.
                 </p>
+              </div>
+
+              {/* ─── Atendimento a Domicílio (PRIMEIRO) ──────────────────────────────────── */}
+              <div className="rounded-xl p-5" style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${theme.accent}18` }}>
+                      <Home className="w-4 h-4" style={{ color: theme.accent }} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Atendimento a Domicílio</h4>
+                      <p className="text-xs" style={{ color: theme.textMuted }}>Habilite para que clientes possam agendar atendimento no endereço deles.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setOffersHomeService(!offersHomeService)}
+                    className="relative w-12 h-6 rounded-full transition-all shrink-0"
+                    style={{ background: offersHomeService ? theme.accent : theme.border }}
+                  >
+                    <span
+                      className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
+                      style={{ left: offersHomeService ? '26px' : '4px' }}
+                    />
+                  </button>
+                </div>
+
+                {offersHomeService && (
+                  <div className="pt-4 border-t space-y-4" style={{ borderColor: theme.border }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Raio de cobertura */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
+                          Raio de Cobertura (km)
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            min="1"
+                            max="200"
+                            value={homeServiceRadiusKm}
+                            onChange={e => setHomeServiceRadiusKm(Number(e.target.value))}
+                            className="themed-input flex-1"
+                            placeholder="Ex: 10"
+                          />
+                          <button
+                            onClick={() => setShowRadiusMap(true)}
+                            title="Ver raio no mapa"
+                            className="px-3 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-all hover:scale-[1.02] shrink-0"
+                            style={{ background: `${theme.accent}15`, borderColor: `${theme.accent}40`, color: theme.accent }}
+                          >
+                            <Navigation className="w-3.5 h-3.5" />
+                            Ver Mapa
+                          </button>
+                        </div>
+                        <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Clientes fora deste raio não conseguirão agendar a domicílio.</p>
+                      </div>
+
+                      {/* Tipo de taxa */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
+                          Taxa de Deslocamento
+                        </label>
+                        <select
+                          value={homeFeeType}
+                          onChange={e => setHomeFeeType(e.target.value as 'fixed' | 'per_km' | 'free')}
+                          className="themed-input w-full"
+                        >
+                          <option value="free">Grátis (sem cobrança)</option>
+                          <option value="fixed">Valor fixo</option>
+                          <option value="per_km">Por quilômetro</option>
+                        </select>
+                      </div>
+
+                      {/* Valor da taxa fixa */}
+                      {homeFeeType === 'fixed' && (
+                        <div>
+                          <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
+                            Valor da Taxa (R$)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.50"
+                            value={homeFeeAmount}
+                            onChange={e => setHomeFeeAmount(Number(e.target.value))}
+                            className="themed-input w-full"
+                            placeholder="Ex: 15.00"
+                          />
+                        </div>
+                      )}
+
+                      {/* Taxa por km */}
+                      {homeFeeType === 'per_km' && (
+                        <>
+                          <div>
+                            <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
+                              Taxa Mínima (R$)
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.50"
+                              value={homeFeeAmount}
+                              onChange={e => setHomeFeeAmount(Number(e.target.value))}
+                              className="themed-input w-full"
+                              placeholder="Ex: 10.00"
+                            />
+                            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Cobrado mesmo para distâncias curtas.</p>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
+                              Valor por km (R$)
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.10"
+                              value={homeFeePerKm}
+                              onChange={e => setHomeFeePerKm(Number(e.target.value))}
+                              className="themed-input w-full"
+                              placeholder="Ex: 2.50"
+                            />
+                            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Total = taxa mínima + distância × valor por km.</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Mapa de raio */}
+                    {!latitude && !longitude && (
+                      <div className="flex items-center gap-2 p-3 rounded-lg text-xs" style={{ background: `${theme.accent}10`, color: theme.accent, border: `1px solid ${theme.accent}30` }}>
+                        <MapPin className="w-3.5 h-3.5 shrink-0" />
+                        <span>Para exibir o mapa de raio, cadastre o endereço do salão na aba <strong>Localização</strong>.</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Reagendamento */}
@@ -2643,119 +2781,99 @@ export default function Configuracoes() {
                   </div>
                 </div>
               </div>
-
-              {/* ─── Atendimento a Domicílio ──────────────────────────────────────────── */}
-              <div className="rounded-xl p-5" style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}>
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Atendimento a Domicílio</h4>
-                    <p className="text-xs" style={{ color: theme.textMuted }}>Habilite para que clientes possam agendar atendimento no endereço deles.</p>
-                  </div>
-                  <button
-                    onClick={() => setOffersHomeService(!offersHomeService)}
-                    className="relative w-12 h-6 rounded-full transition-all shrink-0"
-                    style={{ background: offersHomeService ? theme.accent : theme.border }}
-                  >
-                    <span
-                      className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
-                      style={{ left: offersHomeService ? '26px' : '4px' }}
-                    />
-                  </button>
-                </div>
-
-                {offersHomeService && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t" style={{ borderColor: theme.border }}>
-                    {/* Raio de cobertura */}
-                    <div>
-                      <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                        Raio de Cobertura (km)
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="200"
-                        value={homeServiceRadiusKm}
-                        onChange={e => setHomeServiceRadiusKm(Number(e.target.value))}
-                        className="themed-input w-full"
-                        placeholder="Ex: 10"
-                      />
-                      <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Clientes fora deste raio não conseguirão agendar a domicílio.</p>
-                    </div>
-
-                    {/* Tipo de taxa */}
-                    <div>
-                      <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                        Taxa de Deslocamento
-                      </label>
-                      <select
-                        value={homeFeeType}
-                        onChange={e => setHomeFeeType(e.target.value as 'fixed' | 'per_km' | 'free')}
-                        className="themed-input w-full"
-                      >
-                        <option value="free">Grátis (sem cobrança)</option>
-                        <option value="fixed">Valor fixo</option>
-                        <option value="per_km">Por quilômetro</option>
-                      </select>
-                    </div>
-
-                    {/* Valor da taxa fixa */}
-                    {homeFeeType === 'fixed' && (
-                      <div>
-                        <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                          Valor da Taxa (R$)
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.50"
-                          value={homeFeeAmount}
-                          onChange={e => setHomeFeeAmount(Number(e.target.value))}
-                          className="themed-input w-full"
-                          placeholder="Ex: 15.00"
-                        />
-                      </div>
-                    )}
-
-                    {/* Taxa por km */}
-                    {homeFeeType === 'per_km' && (
-                      <>
-                        <div>
-                          <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                            Taxa Mínima (R$)
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.50"
-                            value={homeFeeAmount}
-                            onChange={e => setHomeFeeAmount(Number(e.target.value))}
-                            className="themed-input w-full"
-                            placeholder="Ex: 10.00"
-                          />
-                          <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Cobrado mesmo para distâncias curtas.</p>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                            Valor por km (R$)
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.10"
-                            value={homeFeePerKm}
-                            onChange={e => setHomeFeePerKm(Number(e.target.value))}
-                            className="themed-input w-full"
-                            placeholder="Ex: 2.50"
-                          />
-                          <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Total = taxa mínima + distância × valor por km.</p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
             </div>
           )}
+
+          {/* ── RADIUS MAP MODAL ── */}
+          <AnimatePresence>
+            {showRadiusMap && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+                style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
+                onClick={() => setShowRadiusMap(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.93, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.93, opacity: 0 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  onClick={e => e.stopPropagation()}
+                  className="w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl"
+                  style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}
+                >
+                  {/* Modal Header */}
+                  <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: theme.border }}>
+                    <div>
+                      <h3 className="font-bold text-base" style={{ color: theme.textPrimary }}>Raio de Atendimento</h3>
+                      <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
+                        {latitude && longitude
+                          ? `Centro: ${latitude.toFixed(4)}, ${longitude.toFixed(4)} · Raio: ${homeServiceRadiusKm} km`
+                          : 'Cadastre o endereço do salão na aba Localização para ver o mapa.'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowRadiusMap(false)}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors"
+                      style={{ background: theme.border, color: theme.textMuted }}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Map Area */}
+                  <div className="relative" style={{ height: 400 }}>
+                    {latitude && longitude ? (
+                      <iframe
+                        key={`${latitude}-${longitude}-${homeServiceRadiusKm}`}
+                        title="Raio de Atendimento"
+                        width="100%"
+                        height="400"
+                        style={{ border: 0, display: 'block' }}
+                        loading="lazy"
+                        allowFullScreen
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${longitude - homeServiceRadiusKm * 0.015},${latitude - homeServiceRadiusKm * 0.009},${longitude + homeServiceRadiusKm * 0.015},${latitude + homeServiceRadiusKm * 0.009}&layer=mapnik&marker=${latitude},${longitude}`}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: theme.textMuted }}>
+                        <MapPin className="w-10 h-10 opacity-30" />
+                        <p className="text-sm font-medium">Localização do salão não cadastrada</p>
+                        <p className="text-xs text-center max-w-xs">
+                          Vá até a aba <strong style={{ color: theme.accent }}>Localização</strong> e insira o endereço ou cole o link do Google Maps.
+                        </p>
+                        <button
+                          onClick={() => { setActiveTab('local'); setShowRadiusMap(false); }}
+                          className="mt-2 px-4 py-2 rounded-xl text-xs font-bold transition-all hover:scale-[1.02]"
+                          style={{ background: theme.accent, color: theme.btnPrimaryText }}
+                        >
+                          Ir para Localização
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer info */}
+                  {latitude && longitude && (
+                    <div className="px-6 py-3 border-t flex items-center gap-3" style={{ borderColor: theme.border }}>
+                      <div className="flex items-center gap-2 text-xs" style={{ color: theme.textMuted }}>
+                        <div className="w-3 h-3 rounded-full border-2" style={{ borderColor: theme.accent, background: `${theme.accent}30` }} />
+                        <span>A área sombreada representa aproximadamente o seu raio de <strong style={{ color: theme.textPrimary }}>{homeServiceRadiusKm} km</strong></span>
+                      </div>
+                      <button
+                        onClick={() => setShowRadiusMap(false)}
+                        className="ml-auto px-4 py-1.5 rounded-xl text-xs font-bold"
+                        style={{ background: theme.accent, color: theme.btnPrimaryText }}
+                      >
+                        Fechar
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* ═══════════════════════════ TAB: STATUS DA CONTA ════════════════════════════ */}
           {activeTab === 'conta' && (

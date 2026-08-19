@@ -2,7 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, forcePasswordChange } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -19,6 +19,10 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (forcePasswordChange && location.pathname !== '/app/change-password') {
+    return <Navigate to="/app/change-password" replace />;
   }
 
   return <>{children}</>;

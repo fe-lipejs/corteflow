@@ -262,8 +262,89 @@ export default function ClientPortal() {
   }
 
   const settings = storeData?.settings;
-  const theme = getThemeById(settings?.theme_preset || 'classic');
-  const contrast = getThemeContrastEngine(theme);
+  const theme = useMemo(() => {
+    const presetId = settings?.theme_preset || "classic";
+    const base = getThemeById(presetId);
+    if (!settings?.custom_palette) return base;
+
+    const palette = settings.custom_palette;
+    let btnTextColor = base.btnPrimaryText;
+    if (palette.primary) {
+      const hex = palette.primary.replace("#", "");
+      const r = parseInt(hex.substring(0, 2), 16) || 201;
+      const g = parseInt(hex.substring(2, 4), 16) || 150;
+      const b = parseInt(hex.substring(4, 6), 16) || 59;
+      const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      btnTextColor = lum > 145 ? "#0F172A" : "#FFFFFF";
+    }
+
+    const isDarkBg = base.bg === "#050505" || base.bg === "#000000";
+    let dynamicTextSecondary = base.textSecondary;
+    let dynamicTextMuted = base.textMuted;
+    let dynamicBorder = base.border;
+
+    if (palette.background) {
+      const hex = palette.background.replace("#", "");
+      const r = parseInt(hex.substring(0, 2), 16) || 255;
+      const g = parseInt(hex.substring(2, 4), 16) || 255;
+      const b = parseInt(hex.substring(4, 6), 16) || 255;
+      const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      const customIsDark = lum < 100;
+      if (customIsDark) {
+        dynamicTextSecondary = "rgba(255,255,255,0.7)";
+        dynamicTextMuted = "rgba(255,255,255,0.5)";
+        dynamicBorder = "rgba(255,255,255,0.1)";
+      } else {
+        dynamicTextSecondary = "rgba(0,0,0,0.6)";
+        dynamicTextMuted = "rgba(0,0,0,0.4)";
+        dynamicBorder = "rgba(0,0,0,0.1)";
+      }
+    }
+
+    let fontSans = base.fontSans;
+    let fontSerif = base.fontSerif;
+    if (palette.font_family) {
+      if (palette.font_family === "Inter") { fontSans = "'Inter', sans-serif"; fontSerif = "'Inter', sans-serif"; }
+      if (palette.font_family === "Playfair") { fontSans = "'Inter', sans-serif"; fontSerif = "'Playfair Display', serif"; }
+      if (palette.font_family === "Outfit") { fontSans = "'Outfit', sans-serif"; fontSerif = "'Outfit', sans-serif"; }
+    }
+
+    return {
+      ...base,
+      fontSans,
+      fontSerif,
+      ...(palette.background && { bg: palette.background }),
+      ...(palette.text && { textPrimary: palette.text }),
+      textSecondary: dynamicTextSecondary,
+      textMuted: dynamicTextMuted,
+      border: dynamicBorder,
+      cardBorder: dynamicBorder,
+      inputBorder: dynamicBorder,
+      ...(palette.card && {
+        cardBg: palette.card,
+        bgCard: palette.card,
+        bgSidebar: palette.card,
+        sidebarBg: palette.card,
+        inputBg: isDarkBg ? "#121417" : "#FFFFFF",
+        bgInput: isDarkBg ? "#121417" : "#FFFFFF",
+      }),
+      ...(palette.primary && {
+        accent: palette.primary,
+        accentLight: adjustColorBrightness(palette.primary, 15),
+        accentHover: adjustColorBrightness(palette.primary, 8),
+        accentMuted: `${palette.primary}25`,
+        accentGradient: `linear-gradient(135deg, ${palette.primary}, ${adjustColorBrightness(palette.primary, 18)})`,
+        btnPrimaryBg: `linear-gradient(135deg, ${palette.primary}, ${adjustColorBrightness(palette.primary, 18)})`,
+        btnPrimaryText: btnTextColor,
+        btnPrimaryHover: `0 0 20px ${palette.primary}60`,
+        borderActive: palette.primary,
+        inputFocusBorder: palette.primary,
+        shadowAccent: `0 0 20px ${palette.primary}40`,
+      }),
+    };
+  }, [settings?.theme_preset, settings?.custom_palette]);
+  
+  const contrast = useMemo(() => getThemeContrastEngine(theme), [theme]);
 
   const storeHeader = (
     <div className="relative w-full border-b mb-8" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
@@ -329,7 +410,7 @@ export default function ClientPortal() {
 
   if (!isLogged) {
     return (
-      <div className="min-h-screen pb-16 transition-colors" style={{ backgroundColor: theme.bg }}>
+      <div className="min-h-screen pb-16 transition-colors" style={{ backgroundColor: theme.bg, fontFamily: theme.fontSans }}>
         {storeHeader}
 
         <div className="max-w-md mx-auto px-4">
@@ -382,7 +463,7 @@ export default function ClientPortal() {
   const pastBookings = bookings.filter((b) => new Date(b.scheduled_at) < new Date() || ['canceled', 'no_show', 'completed'].includes(b.status));
 
   return (
-    <div className="min-h-screen pb-20 transition-colors" style={{ backgroundColor: theme.bg }}>
+    <div className="min-h-screen pb-20 transition-colors" style={{ backgroundColor: theme.bg, fontFamily: theme.fontSans }}>
       {storeHeader}
 
       <div className="max-w-3xl mx-auto px-4 space-y-8">

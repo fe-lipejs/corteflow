@@ -1,7 +1,7 @@
 import React, { createContext, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../integrations/supabase/client';
-import type { Database, UserRole } from '../types/database';
+import type { Database, UserRole, Professional } from '../types/database';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Tenant = Database['public']['Tables']['tenants']['Row'];
@@ -17,6 +17,10 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  // Professional Access
+  professionalProfile: Professional | null;
+  professionalPermissions: Record<string, boolean> | null;
+  forcePasswordChange: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +31,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  const [professionalProfile, setProfessionalProfile] = useState<Professional | null>(null);
+  const [professionalPermissions, setProfessionalPermissions] = useState<Record<string, boolean> | null>(null);
+  const [forcePasswordChange, setForcePasswordChange] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -50,6 +58,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setProfile(null);
           setTenant(null);
+          setProfessionalProfile(null);
+          setProfessionalPermissions(null);
+          setForcePasswordChange(false);
           setLoading(false);
         }
       }
@@ -73,11 +84,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (prof) {
         setProfile(prof);
 
-        if ((prof as any)?.tenant_id) {
+        let resolvedTenantId = (prof as any)?.tenant_id;
+
+        if (prof.role === 'professional') {
+          // Fetch professional record
+          const { data: profRecord, error: profRecordErr } = await supabase
+            .from('professionals')
+            .select('*')
+            .eq('auth_user_id', userId)
+            .maybeSingle();
+            
+          if (profRecord && !profRecordErr) {
+            setProfessionalProfile(profRecord as Professional);
+            setProfessionalPermissions((profRecord.permissions as Record<string, boolean>) || null);
+            setForcePasswordChange(!!profRecord.force_password_change);
+            resolvedTenantId = profRecord.tenant_id;
+          }
+        }
+
+        if (resolvedTenantId) {
           const { data: tenData, error: tenErr } = await supabase
             .from('tenants')
             .select('*')
-            .eq('id', (prof as any).tenant_id)
+            .eq('id', resolvedTenantId)
             .maybeSingle();
           const ten = tenData as any;
             
@@ -89,6 +118,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // If no profile yet (e.g. during onboarding before upsert finishes), reset to null
         setProfile(null);
         setTenant(null);
+        setProfessionalProfile(null);
+        setProfessionalPermissions(null);
+        setForcePasswordChange(false);
       }
     } catch (err) {
       console.error('Error in fetchProfile:', err);
@@ -112,12 +144,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     profile,
     tenant,
-    tenantId: profile?.tenant_id ?? null,
+    tenantId: tenant?.id || profile?.tenant_id || null,
     role: (profile?.role as UserRole) || (profile?.tenant_id ? 'admin' : null),
     onboardingCompleted: Boolean(profile?.onboarding_completed || profile?.tenant_id),
     loading,
     signOut,
     refreshProfile,
+    professionalProfile,
+    professionalPermissions,
+    forcePasswordChange
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

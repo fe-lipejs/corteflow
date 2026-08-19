@@ -14,7 +14,7 @@ import { ConnectionStatus } from '../../components/notifications/ConnectionStatu
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 
 export default function AppLayout() {
-  const { signOut, tenant, profile, loading } = useAuth();
+  const { signOut, tenant, profile, loading, role, professionalPermissions, professionalProfile } = useAuth();
   const { i18n } = useTranslation();
   const { theme, setThemeId, setCustomPalette } = useTheme();
   const navigate = useNavigate();
@@ -91,7 +91,7 @@ export default function AppLayout() {
     return () => { supabase.removeChannel(channel); };
   }, [tenant]);
 
-  const navItems = [
+  let navItems = [
     { to: '/app', icon: LayoutDashboard, label: 'Visão geral', end: true, permission: 'view_dashboard' },
     { to: '/app/agenda', icon: Calendar, label: 'Agenda', end: false, permission: 'view_agenda' },
     { to: '/app/equipe', icon: Users, label: 'Equipe', end: false, permission: 'view_equipe' },
@@ -103,6 +103,19 @@ export default function AppLayout() {
     { to: '/app/configuracoes', icon: Settings, label: 'Configurações', end: false, permission: null },
   ];
 
+  if (role === 'professional') {
+    navItems = [];
+    if (professionalPermissions?.view_own_schedule) {
+      navItems.push({ to: '/app/agenda', icon: Calendar, label: 'Agenda', end: false, permission: null } as any);
+    }
+    if (professionalPermissions?.view_financial) {
+      navItems.push({ to: '/app/financeiro', icon: DollarSign, label: 'Financeiro', end: false, permission: null } as any);
+    }
+    if (professionalPermissions?.view_commission) {
+      navItems.push({ to: '/app/minha-comissao', icon: DollarSign, label: 'Minha Comissão', end: false, permission: null } as any);
+    }
+  }
+
   if (loading || !tenant) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
@@ -111,8 +124,12 @@ export default function AppLayout() {
     );
   }
 
-  const initials = profile?.full_name
-    ? profile.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
+  const displayName = role === 'professional' && professionalProfile?.name 
+    ? professionalProfile.name 
+    : profile?.full_name || 'Usuário';
+
+  const initials = displayName
+    ? displayName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
     : 'CF';
 
   // Subscription guard — allow access to /app/assinatura and /app/configuracoes always
@@ -266,8 +283,8 @@ export default function AppLayout() {
                 {initials}
               </div>
               <div className="truncate w-24">
-                <p className="text-xs font-semibold leading-tight truncate" style={{ color: theme.textPrimary }}>{profile?.full_name?.split(' ')[0] || 'Usuário'}</p>
-                <p className="text-xs leading-tight truncate" style={{ color: theme.textMuted }}>{tenant.name}</p>
+                <p className="text-xs font-semibold leading-tight truncate" style={{ color: theme.textPrimary }}>{displayName.split(' ')[0]}</p>
+                <p className="text-xs leading-tight truncate" style={{ color: theme.textMuted }}>{role === 'professional' ? 'Profissional' : tenant.name}</p>
               </div>
             </div>
             <button 

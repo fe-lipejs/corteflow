@@ -43,6 +43,12 @@ export interface Professional {
   offers_home_service: boolean;
   max_home_distance_km: number;
   home_fee: number;
+  // Professional Access (migration 0047)
+  auth_user_id: string | null;
+  active: boolean;
+  force_password_change: boolean;
+  permissions: Json;
+  bank_info: Json | null;
   // Relations (joined)
   professional_working_hours?: ProfessionalWorkingHour[];
   professional_services?: ProfessionalService[];
@@ -99,6 +105,7 @@ export interface Service {
   // Hybrid location model (migration 0046)
   service_mode: 'instore' | 'home' | 'both';
   home_price_extra: number;
+  commission_pct: number;
 }
 
 export interface Database {
@@ -343,6 +350,8 @@ export interface Database {
           client_lat: number | null;
           client_lng: number | null;
           travel_fee: number;
+          // Professional Access (migration 0047)
+          commission_value: number;
         };
         Insert: Omit<Database['public']['Tables']['bookings']['Row'], 'id' | 'created_at' | 'amount_paid' | 'reschedule_count'> & {
           id?: string;

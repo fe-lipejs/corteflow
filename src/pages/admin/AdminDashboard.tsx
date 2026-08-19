@@ -54,24 +54,34 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     { count: totalBookings },
     { data: recentTenants },
     { data: subs },
+    { data: customPricing }
   ] = await Promise.all([
     supabase.from('tenants').select('status'),
     supabase.from('profiles').select('role'),
     supabase.from('bookings').select('*', { count: 'exact', head: true }),
     supabase.from('tenants').select('id,name,slug,status,business_type,created_at').order('created_at', { ascending: false }).limit(6),
-    supabase.from('subscriptions').select('status, plans(plan_prices(amount, currency))').eq('status', 'active'),
+    supabase.from('subscriptions').select('tenant_id, plan_id, status, plans(plan_prices(amount, currency))').eq('status', 'active'),
+    supabase.from('custom_pricing').select('tenant_id, plan_id, amount_override')
   ]);
 
   const tenantList = tenants ?? [];
   const profileList = profiles ?? [];
   const subsList = (subs ?? []) as any[];
+  const customPricingList = customPricing ?? [];
 
-  // Revenue calculation from active subscriptions
+  // Revenue calculation from active subscriptions (respecting custom overrides)
   let monthlyRevenue = 0;
   subsList.forEach((sub) => {
-    const prices: any[] = sub.plans?.plan_prices ?? [];
-    const brlPrice = prices.find((p: any) => p.currency === 'BRL') ?? prices[0];
-    if (brlPrice) monthlyRevenue += Number(brlPrice.amount ?? 0);
+    // Check if there is an active override for this tenant and plan
+    const override = customPricingList.find(c => c.tenant_id === sub.tenant_id && c.plan_id === sub.plan_id);
+    
+    if (override && override.amount_override !== undefined) {
+      monthlyRevenue += Number(override.amount_override);
+    } else {
+      const prices: any[] = sub.plans?.plan_prices ?? [];
+      const brlPrice = prices.find((p: any) => p.currency === 'BRL') ?? prices[0];
+      if (brlPrice) monthlyRevenue += Number(brlPrice.amount ?? 0);
+    }
   });
 
   return {

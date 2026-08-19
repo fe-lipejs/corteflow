@@ -16,7 +16,7 @@ import { ManualTransactionModal, type FinancialTransaction } from './financeiro/
 
 export default function Financeiro() {
   const { theme } = useTheme();
-  const { tenant, user } = useAuth();
+  const { tenant, user, role, professionalProfile } = useAuth();
   const [currentMonth] = useState(new Date());
   const engine = usePermissionEngine();
   const navigate = useNavigate();
@@ -25,7 +25,7 @@ export default function Financeiro() {
   const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null);
-  const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(null);
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(role === 'professional' ? professionalProfile?.id || null : null);
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
@@ -33,7 +33,7 @@ export default function Financeiro() {
   const tenantId = tenant?.id;
 
   // 1. Fetch Professionals for Filter
-  const { data: professionals = [] } = useQuery({
+  const { data: allProfessionals = [] } = useQuery({
     queryKey: ['professionals_financeiro', tenantId],
     queryFn: async () => {
       const { data } = await supabase
@@ -45,6 +45,10 @@ export default function Financeiro() {
     },
     enabled: !!tenantId
   });
+
+  const professionals = role === 'professional' && professionalProfile
+    ? allProfessionals.filter(p => p.id === professionalProfile.id)
+    : allProfessionals;
 
   // 2. Fetch Combined Financials (Payments, Refunds, Local Bookings, and Manual Financial Transactions)
   const { data, isLoading } = useQuery({
@@ -426,24 +430,26 @@ export default function Financeiro() {
         {professionals.length > 0 && (
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
             <span className="text-xs font-bold shrink-0 mr-1" style={{ color: theme.textSecondary }}>Filtrar Caixa:</span>
-            <button
-              onClick={() => {
-                if (!engine.hasPermission('financeiro.visualizar_caixa_geral')) {
-                  setShowUpgradeModal('Visualizar Caixa Geral de Todos os Profissionais');
-                  return;
-                }
-                setSelectedProfessionalId(null);
-              }}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border cursor-pointer"
-              style={{
-                color: selectedProfessionalId === null ? theme.btnPrimaryText : theme.textSecondary,
-                background: selectedProfessionalId === null ? theme.accentGradient : theme.cardBg,
-                borderColor: selectedProfessionalId === null ? theme.accent : theme.cardBorder,
-                boxShadow: selectedProfessionalId === null ? theme.shadowAccent : 'none',
-              }}
-            >
-              Caixa Geral (Todos)
-            </button>
+            {role !== 'professional' && (
+              <button
+                onClick={() => {
+                  if (!engine.hasPermission('financeiro.visualizar_caixa_geral')) {
+                    setShowUpgradeModal('Visualizar Caixa Geral de Todos os Profissionais');
+                    return;
+                  }
+                  setSelectedProfessionalId(null);
+                }}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border cursor-pointer"
+                style={{
+                  color: selectedProfessionalId === null ? theme.btnPrimaryText : theme.textSecondary,
+                  background: selectedProfessionalId === null ? theme.accentGradient : theme.cardBg,
+                  borderColor: selectedProfessionalId === null ? theme.accent : theme.cardBorder,
+                  boxShadow: selectedProfessionalId === null ? theme.shadowAccent : 'none',
+                }}
+              >
+                Caixa Geral (Todos)
+              </button>
+            )}
             {professionals.map(p => {
               const isSelected = selectedProfessionalId === p.id;
               return (

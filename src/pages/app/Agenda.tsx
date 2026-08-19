@@ -31,7 +31,7 @@ type View = 'week' | 'day';
 const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
 
 export default function Agenda() {
-  const { tenant } = useAuth();
+  const { tenant, role, professionalProfile } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
   const engine = usePermissionEngine();
@@ -65,9 +65,23 @@ export default function Agenda() {
   }, [tenantId]);
 
   // Data fetching
-  const { data: weekBookings = [], isLoading: loadingWeek, refetch: refetchWeek } = useBookingsByWeek(tenantId || null, weekStart);
-  const { data: dayBookings = [], isLoading: loadingDay } = useBookingsByDay(tenantId || null, currentDay);
-  const { data: professionals = [] } = useProfessionals(tenantId || null);
+  const { data: weekBookings = [], isLoading: loadingWeek, refetch: refetchWeek } = useBookingsByWeek(
+    tenantId || null, 
+    weekStart,
+    role === 'professional' ? professionalProfile?.id : undefined
+  );
+  const { data: dayBookings = [], isLoading: loadingDay } = useBookingsByDay(
+    tenantId || null, 
+    currentDay,
+    role === 'professional' ? professionalProfile?.id : undefined
+  );
+  
+  // Se for profissional, filtra a lista de profissionais apenas para ele mesmo para que o seletor da UI exiba apenas ele.
+  const { data: allProfessionals = [] } = useProfessionals(tenantId || null);
+  const professionals = role === 'professional' && professionalProfile
+    ? allProfessionals.filter(p => p.id === professionalProfile.id)
+    : allProfessionals;
+    
   const { data: services = [] } = useServices(tenantId || null);
 
   // Setup Realtime Bookings Listener
