@@ -59,18 +59,20 @@ export default async (request: Request, context: Context) => {
     let html = await indexRes.text();
 
     const businessType = tenant.business_type;
-    let defaultDesc = `Agende seu horário na ${tenant.name} de forma rápida e prática.`;
+    // Removendo os textos genéricos extensos a pedido do usuário
+    // e usando um padrão mais direto.
+    let defaultDesc = `${tenant.name} | Agende agora.`;
 
     if (businessType === 'barbearia') {
-      defaultDesc = `Agende seu corte ou barba na ${tenant.name} sem complicação.`;
+      defaultDesc = `${tenant.name} | Agende agora.`;
     } else if (businessType === 'salao') {
-      defaultDesc = `Realce sua beleza. Agende seu horário no ${tenant.name}.`;
+      defaultDesc = `${tenant.name} | Agende agora.`;
     } else if (businessType === 'esmalteria') {
-      defaultDesc = `Unhas perfeitas esperam por você. Agende na ${tenant.name}.`;
+      defaultDesc = `${tenant.name} | Agende agora.`;
     }
 
     const logoUrl = tenant.tenant_settings?.logo_url || 'https://raffros.com.br/images/RaffrosLogo.png';
-    const title = `${tenant.name} | Agendamento Online`;
+    const title = `${tenant.name} | Agende agora.`;
     const desc = tenant.tenant_settings?.short_description || defaultDesc;
 
     html = html.replace(/<title>(.*?)<\/title>/g, `<title>${title}</title>`);
