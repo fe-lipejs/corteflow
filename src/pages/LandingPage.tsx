@@ -1,471 +1,682 @@
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { CheckCircle, ArrowRight, Scissors, Star, Calendar, Users, CreditCard, Clock, Globe, Phone, Mail, User, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import CookieConsentBanner from '../components/cookies/CookieConsentBanner';
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 30 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: '-50px' },
-  transition: { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
+  transition: { duration: 0.8, delay, ease: [0.22, 0.61, 0.36, 1] as [number, number, number, number] }
 });
-
-const services = [
-  { img: '/service-haircut.png', title: 'Barbearias & Cortes', desc: 'Fade, degradê, barba na toalha e estilo social' },
-  { img: '/service-salon.png', title: 'Salões de Beleza', desc: 'Cortes femininos, coloração, mechas e tratamentos' },
-  { img: '/service-nails.png', title: 'Esmalterias & Studios', desc: 'Manicure, pedicure, alongamento e nail art' },
-];
-
-const testimonials = [
-  { name: 'Rafael Pimentel', role: 'Barbearia Pimentel · SP', text: 'Aumentei meus agendamentos em 40% no primeiro mês. Meus clientes adoraram poder agendar direto pelo celular sem precisar esperar no WhatsApp.', stars: 5 },
-  { name: 'Camila Torres', role: 'Studio CT · RJ', text: 'Acabou a bagunça de cadernos e horários duplicados. Agora tudo fica organizado, sincronizado e eu recebo notificação a cada reserva.', stars: 5 },
-  { name: 'João Bento', role: 'Esmalteria VIP · BH', text: 'Migrei de outro sistema antigo e fiquei impressionado com o design limpo e moderno. Os clientes elogiam todos os dias.', stars: 5 },
-];
-
-const stats = [
-  { value: '2.500+', label: 'Profissionais Ativos' },
-  { value: '150k+', label: 'Agendamentos Realizados' },
-  { value: '4.9/5', label: 'Nota Média de Avaliação' },
-  { value: '99.4%', label: 'Satisfação dos Salões' },
-];
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 30);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <div className="bg-[#F8FAFC] text-[#0F172A] font-sans overflow-x-hidden min-h-screen selection:bg-[#DE870D]/20 selection:text-[#DE870D]">
+    <div className="font-sans text-[#090909] bg-white overflow-x-hidden selection:bg-black selection:text-white">
+      
+      {/* =========================
+           NAVBAR
+      ========================== */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-shadow duration-300 ${isScrolled ? 'shadow-[0_10px_30px_rgba(0,0,0,0.05)]' : ''} bg-white/80 backdrop-blur-[20px] border-b border-black/[0.06] h-[76px]`}>
+        <div className="max-w-[1180px] mx-auto px-6 h-full flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2.5 font-extrabold text-[17px] tracking-tight">
+            <span className="grid place-items-center w-[30px] h-[30px] rounded-[9px] bg-accent text-white text-[15px]">C</span>
+            <span className="font-title">Corte Flow</span>
+          </Link>
+          
+          <div className="hidden md:flex items-center gap-[34px]">
+            <a href="#recursos" className="text-[#707070] text-[13px] font-medium hover:text-accent transition-colors">Recursos</a>
+            <a href="#domicilio" className="text-[#707070] text-[13px] font-medium hover:text-accent transition-colors">Domicílio</a>
+            <a href="#equipe" className="text-[#707070] text-[13px] font-medium hover:text-accent transition-colors">Equipes</a>
+            <a href="#planos" className="text-[#707070] text-[13px] font-medium hover:text-accent transition-colors">Planos</a>
+          </div>
 
-      {/* ─── NAV ─── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/80 border-b border-[#E2E8F0]/80 transition-all">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/">
-              <img src="/logo.svg" alt="Raffros Corteflow" className="h-10 md:h-14 w-auto" />
-            </Link>
+          <div className="hidden md:flex items-center gap-6">
+            <Link to="/login" className="text-[13px] font-semibold text-[#090909] hover:text-accent transition-colors">Entrar</Link>
+            <Link to="/cadastro" className="px-[17px] py-[11px] rounded-full bg-accent text-white text-[12px] font-bold hover:-translate-y-[2px] hover:shadow-lg hover:shadow-accent/30 transition-all">Começar agora</Link>
           </div>
-          <div className="hidden md:flex items-center gap-8 font-medium">
-            <a href="#servicos" className="text-sm text-[#475569] hover:text-[#DE870D] transition-colors">Segmentos</a>
-            <a href="#como-funciona" className="text-sm text-[#475569] hover:text-[#DE870D] transition-colors">Como Funciona</a>
-            <a href="#depoimentos" className="text-sm text-[#475569] hover:text-[#DE870D] transition-colors">Depoimentos</a>
-            <a href="#planos" className="text-sm text-[#475569] hover:text-[#DE870D] transition-colors">Planos & Preços</a>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link to="/login" className="flex items-center gap-2 text-sm font-bold text-[#334155] hover:text-[#DE870D] transition-colors px-3 py-2">
-              <span className="hidden sm:inline">Entrar</span>
-              <User className="w-5 h-5 sm:hidden" />
-            </Link>
-            <Link
-              to="/cadastro"
-              className="text-sm font-bold px-5 py-2.5 rounded-xl text-white transition-all shadow-md shadow-[#DE870D]/25 hover:shadow-lg hover:shadow-[#DE870D]/35 hover:brightness-105 active:scale-[0.98] cursor-pointer"
-              style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
-            >
-              Começar Grátis
-            </Link>
-          </div>
+
+          <button className="md:hidden w-[42px] h-[42px]" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            <span className="block w-[21px] h-[2px] bg-[#090909] mx-auto mb-[5px]"></span>
+            <span className="block w-[21px] h-[2px] bg-[#090909] mx-auto"></span>
+          </button>
         </div>
       </nav>
 
-      {/* ─── HERO ─── */}
-      <section className="relative min-h-[90vh] flex items-center pt-28 pb-16 overflow-hidden">
-        {/* Ambient Light Gradient Glows */}
-        <div className="absolute top-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-[#DE870D]/10 blur-[140px] rounded-full pointer-events-none" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-[#F5A623]/8 blur-[120px] rounded-full pointer-events-none" />
-
-        <div className="relative z-10 max-w-7xl mx-auto px-6 grid lg:grid-cols-12 gap-12 items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:col-span-7 space-y-6"
-          >
-            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-full border border-[#DE870D]/30 text-[#DE870D] bg-[#DE870D]/10">
-              <Sparkles className="w-3.5 h-3.5 text-[#DE870D]" /> Plataforma #1 em Gestão & Agendamento
-            </div>
-            
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.08] tracking-tight text-[#0F172A]">
-              Transforme seu{' '}
-              <span className="bg-gradient-to-r from-[#DE870D] to-[#F5A623] bg-clip-text text-transparent">
-                estabelecimento
-              </span>{' '}
-              em uma máquina de agendamentos.
-            </h1>
-            
-            <p className="text-base sm:text-lg text-[#475569] max-w-xl leading-relaxed font-normal">
-              Agenda online inteligente, cobranças Pix e Cartão no Stripe Connect, gestão de profissionais e sua página pública profissional. Seus clientes agendam 24 horas por dia.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 pt-2">
-              <button
-                onClick={() => navigate('/cadastro')}
-                className="flex items-center justify-center gap-2 text-base font-bold px-8 py-4 rounded-xl text-white transition-all shadow-lg shadow-[#DE870D]/25 hover:shadow-xl hover:shadow-[#DE870D]/35 hover:brightness-105 active:scale-[0.98] cursor-pointer"
-                style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
-              >
-                Experimentar 7 Dias Grátis <ArrowRight className="w-5 h-5" />
-              </button>
-              <a
-                href="#como-funciona"
-                className="flex items-center justify-center gap-2 text-base font-semibold px-8 py-4 rounded-xl border border-[#CBD5E1] bg-white text-[#334155] hover:border-[#DE870D] hover:text-[#DE870D] transition-all shadow-sm"
-              >
-                Como Funciona
-              </a>
-            </div>
-
-            {/* Social proof */}
-            <div className="flex items-center gap-6 pt-6 border-t border-[#E2E8F0]">
-              <div className="flex -space-x-3">
-                {[0, 1, 2, 3].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold text-white shadow-sm" style={{ background: ['#DE870D', '#0F172A', '#F5A623', '#334155'][i] }}>
-                    {['R', 'C', 'J', 'M'][i]}
-                  </div>
-                ))}
-              </div>
-              <div>
-                <div className="flex gap-0.5 mb-1">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-[#DE870D] text-[#DE870D]" />)}
-                </div>
-                <p className="text-xs font-semibold text-[#64748B]">+2.500 profissionais confiam na Raffros Corteflow</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Right side — hero preview card */}
-          <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:col-span-5 relative"
-          >
-            <div className="bg-white border border-[#E2E8F0] rounded-3xl p-6 shadow-2xl space-y-6 relative overflow-hidden">
-              <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#DE870D]/15 text-[#DE870D] flex items-center justify-center font-bold">
-                    <Calendar className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-[#0F172A]">Agenda em Tempo Real</h4>
-                    <p className="text-xs text-[#64748B]">Hoje · Sincronização Automática</p>
-                  </div>
-                </div>
-                <span className="px-2.5 py-1 bg-green-100 text-green-700 font-bold text-xs rounded-full flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse" /> Online
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                {[
-                  { time: '09:00', client: 'Lucas Medeiros', service: 'Corte + Barba', status: 'Confirmado', price: 'R$ 65,00' },
-                  { time: '10:00', client: 'Mariana Lima', service: 'Coloração & Escova', status: 'Sinal Pago', price: 'R$ 140,00' },
-                  { time: '11:15', client: 'Gabriel Castro', service: 'Degradê Navalhado', status: 'Confirmado', price: 'R$ 45,00' },
-                ].map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] hover:border-[#DE870D]/40 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="font-mono text-xs font-bold text-[#DE870D] bg-white px-2 py-1 rounded-lg border border-[#E2E8F0]">
-                        {item.time}
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-[#0F172A]">{item.client}</p>
-                        <p className="text-[11px] text-[#64748B]">{item.service}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-bold text-[#0F172A]">{item.price}</p>
-                      <span className="text-[10px] font-semibold text-green-600">{item.status}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-[#DE870D]/10 to-[#F5A623]/5 border border-[#DE870D]/20 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-[#64748B] font-medium">Recebimentos no Stripe</p>
-                  <p className="text-xl font-black text-[#0F172A]">R$ 1.840,00 <span className="text-xs font-bold text-green-600">+28%</span></p>
-                </div>
-                <div className="w-9 h-9 rounded-xl bg-[#DE870D] text-white flex items-center justify-center shadow-md">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-              </div>
-            </div>
-          </motion.div>
+      {/* =========================
+           MOBILE MENU
+      ========================== */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-x-0 top-[76px] z-[999] bg-white/95 backdrop-blur-[20px] border-b border-[#eeeeee] p-6 flex flex-col gap-5 md:hidden">
+          <a href="#recursos" onClick={() => setIsMobileMenuOpen(false)} className="font-semibold text-[16px]">Recursos</a>
+          <a href="#domicilio" onClick={() => setIsMobileMenuOpen(false)} className="font-semibold text-[16px]">Atendimento a domicílio</a>
+          <a href="#equipe" onClick={() => setIsMobileMenuOpen(false)} className="font-semibold text-[16px]">Equipes</a>
+          <a href="#planos" onClick={() => setIsMobileMenuOpen(false)} className="font-semibold text-[16px]">Planos</a>
+          <Link to="/cadastro" onClick={() => setIsMobileMenuOpen(false)} className="mt-2 p-[15px] text-center rounded-[14px] bg-accent text-white font-semibold">Começar agora</Link>
         </div>
-      </section>
+      )}
 
-      {/* ─── STATS BAR ─── */}
-      <section className="border-y border-[#E2E8F0] bg-white py-12">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((s, i) => (
-            <motion.div key={i} {...fadeUp(i * 0.05)} className="text-center">
-              <p className="text-3xl sm:text-4xl md:text-5xl font-black bg-gradient-to-r from-[#DE870D] to-[#F5A623] bg-clip-text text-transparent">
-                {s.value}
+      <main>
+        {/* =========================
+             HERO
+        ========================== */}
+        <section className="relative min-h-[100vh] flex items-center pt-[150px] pb-[100px] overflow-hidden" style={{ background: 'radial-gradient(circle at 80% 35%, rgba(0,0,0,0.07), transparent 30%), #fafafa' }}>
+          <div className="max-w-[1180px] w-full mx-auto px-6 grid md:grid-cols-[0.95fr_1.05fr] items-center gap-[70px]">
+            
+            <motion.div className="relative z-10 text-center md:text-left" {...fadeUp()}>
+              <div className="inline-flex items-center gap-[9px] px-3 py-2 border border-[#dddddd] rounded-full bg-white/70 text-[#707070] text-[11px] font-semibold mb-7 mx-auto md:mx-0">
+                <span className="w-[7px] h-[7px] rounded-full bg-accent"></span>
+                Gestão inteligente para profissionais de beleza
+              </div>
+
+              <h1 className="font-title text-[clamp(48px,6vw,92px)] leading-[0.94] tracking-[-4px] md:tracking-[-6px] font-extrabold max-w-[700px]">
+                Seu negócio <span className="text-accent">agenda.</span> Você atende.
+              </h1>
+
+              <p className="mt-[30px] text-[#707070] text-[14px] md:text-[17px] leading-[1.7] max-w-[550px] mx-auto md:mx-0">
+                O Corte Flow organiza seus agendamentos, sua equipe e seus
+                clientes para que você pare de administrar tudo pelo celular
+                e volte a focar no que realmente importa.
               </p>
-              <p className="text-xs sm:text-sm text-[#64748B] mt-2 font-semibold">{s.label}</p>
+
+              <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-[13px] mt-[36px]">
+                <Link to="/cadastro" className="inline-flex items-center justify-center gap-[14px] min-h-[50px] px-5 rounded-full text-[13px] font-bold transition-all bg-accent text-white hover:-translate-y-[3px] hover:shadow-lg hover:shadow-accent/30 w-full md:w-auto">
+                  Começar agora <span>→</span>
+                </Link>
+                <a href="#recursos" className="inline-flex items-center justify-center gap-[14px] min-h-[50px] px-5 rounded-full text-[13px] font-bold transition-all border border-[#dddddd] bg-white hover:bg-[#f7f7f7] hover:text-accent hover:border-accent/30 w-full md:w-auto">
+                  Conhecer o Corte Flow
+                </a>
+              </div>
+
+              <div className="flex items-center justify-center md:justify-start gap-5 mt-[60px]">
+                <div className="flex flex-col gap-[3px]">
+                  <strong className="text-[16px] leading-tight">24h</strong>
+                  <span className="text-[#999999] text-[10px]">agendamento online</span>
+                </div>
+                <div className="w-px h-[28px] bg-[#dddddd]"></div>
+                <div className="flex flex-col gap-[3px]">
+                  <strong className="text-[16px] leading-tight">100%</strong>
+                  <span className="text-[#999999] text-[10px]">online</span>
+                </div>
+                <div className="w-px h-[28px] bg-[#dddddd]"></div>
+                <div className="flex flex-col gap-[3px]">
+                  <strong className="text-[16px] leading-tight">∞</strong>
+                  <span className="text-[#999999] text-[10px]">possibilidades</span>
+                </div>
+              </div>
             </motion.div>
-          ))}
-        </div>
-      </section>
 
-      {/* ─── SERVICES / SEGMENTS ─── */}
-      <section id="servicos" className="py-24 bg-[#F8FAFC]">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div {...fadeUp()} className="text-center mb-16 space-y-3">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#DE870D]">Feito sob medida para você</p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#0F172A]">
-              Ideal para qualquer <span className="text-[#DE870D]">negócio de beleza</span>
-            </h2>
-            <p className="text-[#64748B] text-sm max-w-lg mx-auto">
-              Seja uma barbearia clássica, salão de beleza completo ou studio de unhas, o Corteflow adapta todo o catálogo e a experiência.
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {services.map((svc, i) => (
-              <motion.div key={i} {...fadeUp(i * 0.08)} className="group bg-white rounded-3xl overflow-hidden border border-[#E2E8F0] shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
-                <div className="aspect-[4/3] relative overflow-hidden">
-                  <img src={svc.img} alt={svc.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                  <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <h3 className="text-xl font-bold">{svc.title}</h3>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <p className="text-sm text-[#64748B] leading-relaxed">{svc.desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── HOW IT WORKS ─── */}
-      <section id="como-funciona" className="py-24 bg-white border-y border-[#E2E8F0]">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div {...fadeUp()} className="text-center mb-20 space-y-3">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#DE870D]">Simples, Rápido e Sem Complicações</p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#0F172A]">
-              Como funciona o <span className="text-[#DE870D]">Corteflow</span>
-            </h2>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-10">
-            {[
-              { num: '01', icon: Mail, title: '1. Crie sua conta', desc: 'Cadastro em 30 segundos. Teste gratuitamente por 7 dias com todos os recursos liberados.' },
-              { num: '02', icon: Scissors, title: '2. Personalize seu Salão', desc: 'Cadastre seus serviços, equipe, horários e configure sua página pública personalizada.' },
-              { num: '03', icon: Calendar, title: '3. Receba Agendamentos', desc: 'Envie seu link no Instagram e WhatsApp. Receba pagamentos e confirmações no piloto automático.' },
-            ].map((step, i) => (
-              <motion.div key={i} {...fadeUp(i * 0.1)} className="relative p-8 rounded-3xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-4 hover:border-[#DE870D]/40 transition-all">
-                <div className="w-14 h-14 rounded-2xl bg-[#DE870D]/10 border border-[#DE870D]/25 flex items-center justify-center text-[#DE870D]">
-                  <step.icon className="w-7 h-7" />
-                </div>
-                <h3 className="text-xl font-bold text-[#0F172A]">{step.title}</h3>
-                <p className="text-sm text-[#64748B] leading-relaxed">{step.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── FEATURES GRID ─── */}
-      <section className="py-24 bg-[#F8FAFC]">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div {...fadeUp()} className="text-center mb-16 space-y-3">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#DE870D]">Recursos Premium</p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#0F172A]">
-              Tudo o que você precisa para crescer
-            </h2>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { icon: Calendar, title: 'Agenda Online 24/7', desc: 'Seus clientes escolhem o serviço e o horário pelo celular sem esperar atendimento.' },
-              { icon: CreditCard, title: 'Pagamentos no Stripe', desc: 'Receba antecipadamente via Pix ou Cartão e elimine faltas de última hora.' },
-              { icon: Users, title: 'Gestão de Profissionais', desc: 'Agendas individuais, horários personalizados e comissões organizadas.' },
-              { icon: Clock, title: 'Bloqueios e Feriados', desc: 'Trave folgas e horários de almoço com apenas 1 clique.' },
-              { icon: Globe, title: 'Página Pública do Salão', desc: 'Seu link exclusivo para divulgar na bio do Instagram e no WhatsApp.' },
-              { icon: Phone, title: 'Notificações no WhatsApp', desc: 'Lembretes e confirmações automáticas para você e para o cliente.' },
-              { icon: Star, title: 'Segmentação de Clientes', desc: 'Identifique clientes VIPs, fiéis e recupere quem sumiu.' },
-              { icon: Scissors, title: 'Tema e Identidade Visual', desc: 'Personalize cores, logotipo e banner para combinar com a sua marca.' },
-            ].map((feat, i) => (
-              <motion.div key={i} {...fadeUp(i * 0.04)} className="bg-white border border-[#E2E8F0] rounded-3xl p-6 hover:border-[#DE870D]/40 shadow-sm hover:shadow-md transition-all">
-                <div className="w-12 h-12 rounded-2xl bg-[#DE870D]/10 text-[#DE870D] flex items-center justify-center mb-4">
-                  <feat.icon className="w-6 h-6" />
-                </div>
-                <h3 className="font-bold text-[#0F172A] mb-2 text-base">{feat.title}</h3>
-                <p className="text-xs text-[#64748B] leading-relaxed">{feat.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── TESTIMONIALS ─── */}
-      <section id="depoimentos" className="py-24 bg-white border-y border-[#E2E8F0]">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div {...fadeUp()} className="text-center mb-16 space-y-3">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#DE870D]">Resultados Reais</p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#0F172A]">
-              Quem usa, recomenda
-            </h2>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((t, i) => (
-              <motion.div key={i} {...fadeUp(i * 0.08)} className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-3xl p-8 relative flex flex-col justify-between">
+            <motion.div className="relative w-full max-w-[620px] mx-auto" {...fadeUp(0.2)}>
+              <div className="absolute z-10 flex items-center gap-[11px] p-3 px-4 bg-white/90 border border-accent/20 rounded-[16px] shadow-[0_20px_50px_rgba(233,152,37,0.15)] backdrop-blur-[20px] top-[7%] md:top-[12%] -left-[5px] md:-left-[45px]">
+                <span className="grid place-items-center w-[30px] h-[30px] rounded-[9px] bg-accent text-white text-[12px]">✓</span>
                 <div>
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(t.stars)].map((_, si) => <Star key={si} className="w-4 h-4 fill-[#DE870D] text-[#DE870D]" />)}
-                  </div>
-                  <p className="text-sm text-[#334155] leading-relaxed mb-6 font-medium italic">"{t.text}"</p>
+                  <strong className="block text-[9px] md:text-[11px]">Agendamento confirmado</strong>
+                  <small className="block mt-[3px] text-[#999999] text-[8px] md:text-[9px]">Hoje · 14:30</small>
                 </div>
-                <div className="flex items-center gap-3 pt-4 border-t border-[#E2E8F0]">
-                  <div className="w-10 h-10 rounded-full bg-[#DE870D] text-white flex items-center justify-center text-sm font-bold shadow-md">
-                    {t.name.charAt(0)}
+              </div>
+
+              <img src="/images/barbeiro-hero.jpg" alt="Corte Flow" className="aspect-[4/5] object-cover rounded-[30px] md:rounded-[40px] shadow-[0_40px_90px_rgba(0,0,0,0.14)]" />
+
+              <div className="absolute z-10 flex items-center gap-[11px] p-3 px-4 bg-white/90 border border-black/10 rounded-[16px] shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-[20px] bottom-[7%] md:bottom-[12%] -right-[5px] md:-right-[35px]">
+                <div className="flex">
+                  <span className="w-[26px] h-[26px] rounded-full border-2 border-white bg-[#dddddd]"></span>
+                  <span className="w-[26px] h-[26px] rounded-full border-2 border-white bg-[#dddddd] -ml-[6px]"></span>
+                  <span className="w-[26px] h-[26px] rounded-full border-2 border-white bg-[#dddddd] -ml-[6px]"></span>
+                </div>
+                <div>
+                  <strong className="block text-[9px] md:text-[11px]">Equipe conectada</strong>
+                  <small className="block mt-[3px] text-[#999999] text-[8px] md:text-[9px]">Todos os profissionais</small>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* =========================
+             PROBLEM
+        ========================== */}
+        <section className="bg-white py-[95px] md:py-[150px]">
+          <div className="max-w-[1180px] mx-auto px-6">
+            <motion.div className="max-w-[720px] mx-auto text-center" {...fadeUp()}>
+              <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">O problema</span>
+              <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
+                Você começou para atender.<br /> Não para ficar respondendo mensagens.
+              </h2>
+              <p className="max-w-[590px] mx-auto mt-[25px] text-[#707070] text-[16px] leading-[1.7]">
+                WhatsApp, agenda de papel, planilhas, clientes perguntando
+                horário e você tentando organizar tudo ao mesmo tempo.
+              </p>
+            </motion.div>
+
+            <div className="grid md:grid-cols-3 mt-[50px] md:mt-[75px] border-t border-[#dddddd]">
+              <motion.div className="p-[30px_5px] md:p-[45px_35px] border-b md:border-b-0 md:border-r border-[#dddddd] hover:bg-[#f7f7f7] transition-colors" {...fadeUp(0.1)}>
+                <span className="text-accent text-[11px] font-extrabold">01</span>
+                <h3 className="font-title mt-[25px] md:mt-[55px] text-[22px] tracking-[-0.8px] font-bold">“Tem horário amanhã?”</h3>
+                <p className="mt-[13px] text-[#707070] text-[14px] leading-[1.7]">
+                  Enquanto você atende um cliente, chegam várias mensagens
+                  perguntando sobre horários.
+                </p>
+              </motion.div>
+              <motion.div className="p-[30px_5px] md:p-[45px_35px] border-b md:border-b-0 md:border-r border-[#dddddd] hover:bg-[#f7f7f7] transition-colors" {...fadeUp(0.2)}>
+                <span className="text-accent text-[11px] font-extrabold">02</span>
+                <h3 className="font-title mt-[25px] md:mt-[55px] text-[22px] tracking-[-0.8px] font-bold">Agenda desorganizada.</h3>
+                <p className="mt-[13px] text-[#707070] text-[14px] leading-[1.7]">
+                  Horários espalhados, conflitos e aquele medo constante
+                  de marcar duas pessoas no mesmo horário.
+                </p>
+              </motion.div>
+              <motion.div className="p-[30px_5px] md:p-[45px_35px] hover:bg-[#f7f7f7] transition-colors" {...fadeUp(0.3)}>
+                <span className="text-accent text-[11px] font-extrabold">03</span>
+                <h3 className="font-title mt-[25px] md:mt-[55px] text-[22px] tracking-[-0.8px] font-bold">Você faz tudo.</h3>
+                <p className="mt-[13px] text-[#707070] text-[14px] leading-[1.7]">
+                  Cliente, agenda, equipe, serviços, horários e ainda
+                  precisa lembrar quem atende cada pessoa.
+                </p>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* =========================
+             TRANSFORMATION
+        ========================== */}
+        <section id="recursos" className="bg-[#f7f7f7] py-[95px] md:py-[150px]">
+          <div className="max-w-[1180px] mx-auto px-6">
+            <div className="grid md:grid-cols-[0.8fr_1.2fr] gap-[60px] md:gap-[100px] items-center">
+              <motion.div {...fadeUp()}>
+                <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Conheça o Corte Flow</span>
+                <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
+                  Menos mensagens.<br /> Mais tempo para atender.
+                </h2>
+                <p className="max-w-[500px] mt-[25px] text-[#707070] leading-[1.8]">
+                  O Corte Flow transforma seu negócio em uma operação
+                  organizada, onde seu cliente encontra um horário,
+                  agenda sozinho e você acompanha tudo em um só lugar.
+                </p>
+                <a href="#planos" className="inline-flex gap-3 mt-[35px] text-[13px] font-extrabold text-accent hover:opacity-70 transition-opacity">
+                  Quero organizar meu negócio <span>→</span>
+                </a>
+              </motion.div>
+
+              <motion.div className="relative min-h-[430px] md:min-h-[620px]" {...fadeUp(0.2)}>
+                <div className="absolute w-[85%] md:w-[80%] right-0 top-0">
+                  <img src="/images/cliente-app.jpg" alt="Agenda do Corte Flow" className="aspect-[4/5] object-cover rounded-[35px]" />
+                </div>
+                <div className="absolute z-10 w-[50%] md:w-[42%] bottom-0 left-0 p-2 md:p-2.5 bg-white rounded-[28px] shadow-[0_25px_60px_rgba(0,0,0,0.14)]">
+                  <img src="/images/barbearia.jpg" alt="Agendamento" className="rounded-[20px] aspect-square object-cover" />
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* =========================
+             MANAGEMENT ENGINE
+        ========================== */}
+        <section className="bg-white py-[95px] md:py-[150px]">
+          <div className="max-w-[1180px] mx-auto px-6">
+            <motion.div className="max-w-[720px] mx-auto text-center" {...fadeUp()}>
+              <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Muito mais que uma agenda</span>
+              <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
+                Um motor de gestão<br /> para o seu negócio.
+              </h2>
+              <p className="max-w-[590px] mx-auto mt-[25px] text-[#707070] text-[16px] leading-[1.7]">
+                Tudo que você precisa para transformar seus atendimentos
+                em uma operação organizada.
+              </p>
+            </motion.div>
+
+            <div className="grid md:grid-cols-2 gap-[60px] md:gap-[90px] items-center mt-[50px] md:mt-[80px]">
+              <motion.div {...fadeUp(0.2)}>
+                <img src="/images/salao-cachos.jpg" alt="Gestão do Corte Flow" className="aspect-square object-cover rounded-[35px]" />
+              </motion.div>
+
+              <div className="flex flex-col">
+                <motion.article className="grid grid-cols-[35px_1fr] md:grid-cols-[50px_1fr] gap-5 py-[30px] border-t border-b border-[#dddddd] group" {...fadeUp(0.1)}>
+                  <span className="text-accent text-[11px] font-extrabold group-hover:scale-110 transition-transform">01</span>
+                  <div>
+                    <h3 className="font-title text-[19px] tracking-[-0.5px] font-bold">Agenda inteligente</h3>
+                    <p className="mt-[9px] text-[#707070] text-[13px] leading-[1.7]">
+                      Seus clientes encontram os horários disponíveis
+                      e fazem o agendamento sem precisar falar com você.
+                    </p>
+                  </div>
+                </motion.article>
+                <motion.article className="grid grid-cols-[35px_1fr] md:grid-cols-[50px_1fr] gap-5 py-[30px] border-b border-[#dddddd] group" {...fadeUp(0.2)}>
+                  <span className="text-accent text-[11px] font-extrabold group-hover:scale-110 transition-transform">02</span>
+                  <div>
+                    <h3 className="font-title text-[19px] tracking-[-0.5px] font-bold">Serviços organizados</h3>
+                    <p className="mt-[9px] text-[#707070] text-[13px] leading-[1.7]">
+                      Cadastre seus serviços, preços, duração e deixe
+                      tudo pronto para o cliente escolher.
+                    </p>
+                  </div>
+                </motion.article>
+                <motion.article className="grid grid-cols-[35px_1fr] md:grid-cols-[50px_1fr] gap-5 py-[30px] border-b border-[#dddddd] group" {...fadeUp(0.3)}>
+                  <span className="text-accent text-[11px] font-extrabold group-hover:scale-110 transition-transform">03</span>
+                  <div>
+                    <h3 className="font-title text-[19px] tracking-[-0.5px] font-bold">Clientes no lugar certo</h3>
+                    <p className="mt-[9px] text-[#707070] text-[13px] leading-[1.7]">
+                      Tenha sua operação organizada sem depender de
+                      dezenas de conversas espalhadas pelo WhatsApp.
+                    </p>
+                  </div>
+                </motion.article>
+                <motion.article className="grid grid-cols-[35px_1fr] md:grid-cols-[50px_1fr] gap-5 py-[30px] border-b border-[#dddddd] group" {...fadeUp(0.4)}>
+                  <span className="text-accent text-[11px] font-extrabold group-hover:scale-110 transition-transform">04</span>
+                  <div>
+                    <h3 className="font-title text-[19px] tracking-[-0.5px] font-bold">Você no controle</h3>
+                    <p className="mt-[9px] text-[#707070] text-[13px] leading-[1.7]">
+                      Acompanhe tudo de uma única plataforma, onde
+                      sua operação realmente acontece.
+                    </p>
+                  </div>
+                </motion.article>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* =========================
+             TEAM
+        ========================== */}
+        <section id="equipe" className="bg-[#f7f7f7] py-[95px] md:py-[150px]">
+          <div className="max-w-[1180px] mx-auto px-6">
+            <div className="grid md:grid-cols-[0.9fr_1.1fr] gap-[60px] md:gap-[90px] items-center">
+              <motion.div {...fadeUp()}>
+                <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Para equipes</span>
+                <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
+                  Começou sozinho?<br /> <span className="text-[#999999]">Cresceu? Melhor ainda.</span>
+                </h2>
+                <p className="max-w-[500px] mt-[25px] text-[#707070] leading-[1.8]">
+                  Crie sua equipe, cadastre seus profissionais e
+                  organize a agenda de cada um.
+                </p>
+                <p className="max-w-[500px] mt-[15px] text-[#707070] leading-[1.8]">
+                  Cada profissional pode acompanhar seus próprios
+                  agendamentos enquanto você mantém a visão completa
+                  do negócio.
+                </p>
+                <Link to="/cadastro" className="inline-flex items-center justify-center gap-[14px] min-h-[50px] px-5 mt-[35px] rounded-full text-[13px] font-bold transition-all bg-accent text-white hover:-translate-y-[3px] hover:shadow-lg hover:shadow-accent/30 w-full md:w-auto">
+                  Criar minha equipe <span>→</span>
+                </Link>
+              </motion.div>
+
+              <motion.div className="relative" {...fadeUp(0.2)}>
+                <img src="/images/barbeiro-corte.jpg" alt="Equipe de profissionais" className="aspect-[4/3] object-cover rounded-[35px]" />
+                <div className="absolute left-[10px] md:-left-[25px] bottom-[10px] md:bottom-[25px] flex items-center gap-[15px] p-[15px_18px] bg-white/95 rounded-[18px] shadow-[0_20px_50px_rgba(233,152,37,0.15)]">
+                  <div className="flex">
+                    <span className="grid place-items-center w-[30px] h-[30px] -ml-[7px] first:ml-0 border-2 border-white rounded-full bg-[#dddddd] text-[10px]"></span>
+                    <span className="grid place-items-center w-[30px] h-[30px] -ml-[7px] first:ml-0 border-2 border-white rounded-full bg-[#dddddd] text-[10px]"></span>
+                    <span className="grid place-items-center w-[30px] h-[30px] -ml-[7px] first:ml-0 border-2 border-white rounded-full bg-[#dddddd] text-[10px]"></span>
+                    <span className="grid place-items-center w-[30px] h-[30px] -ml-[7px] first:ml-0 border-2 border-white rounded-full bg-accent text-white text-[10px] font-bold">+</span>
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-[#0F172A]">{t.name}</p>
-                    <p className="text-xs text-[#64748B]">{t.role}</p>
+                    <strong className="block text-[12px]">Sua equipe</strong>
+                    <small className="block mt-[3px] text-[#999999] text-[10px]">Todos conectados</small>
                   </div>
                 </div>
               </motion.div>
-            ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ─── PRICING ─── */}
-      <section id="planos" className="py-24 bg-[#F8FAFC]">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div {...fadeUp()} className="text-center mb-16 space-y-3">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#DE870D]">Planos Simples e Transparentes</p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#0F172A]">
-              Escolha o plano ideal para seu momento
-            </h2>
-            <p className="text-[#64748B] text-sm">7 dias de teste gratuito. Sem taxa de adesão ou fidelidade.</p>
-          </motion.div>
+        {/* =========================
+             HOME SERVICE
+        ========================== */}
+        <section id="domicilio" className="pb-[95px] md:pb-[150px] bg-[#f7f7f7]">
+          <div className="max-w-[1180px] mx-auto px-6">
+            <div className="relative grid md:grid-cols-2 gap-[50px] p-[45px_25px] md:p-[90px] rounded-[30px] md:rounded-[45px] overflow-hidden text-white" style={{ background: 'radial-gradient(circle at 80% 30%, rgba(233,152,37,0.15), transparent 35%), #0b0b0b' }}>
+              <div className="absolute w-[400px] h-[400px] right-[-150px] top-[-150px] rounded-full bg-accent/20 blur-[60px]"></div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            {/* Starter */}
-            <motion.div {...fadeUp(0)} className="bg-white border border-[#E2E8F0] rounded-3xl p-8 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-              <div>
-                <p className="font-bold text-sm text-[#64748B] mb-2">Starter</p>
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-5xl font-black text-[#0F172A]">R$ 27</span>
-                  <span className="text-sm font-semibold text-[#64748B]">/mês</span>
+              <motion.div className="relative z-10" {...fadeUp()}>
+                <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Uma novidade que muda o jogo</span>
+                <h2 className="font-title text-[45px] md:text-[clamp(42px,5vw,70px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
+                  Você define o raio.<br />
+                  <span className="text-white/40">O sistema faz o resto.</span>
+                </h2>
+                <p className="max-w-[490px] mt-[25px] text-white/60 text-[15px] leading-[1.8]">
+                  Trabalha a domicílio? Deixe o Corte Flow verificar
+                  automaticamente se o endereço do cliente está dentro
+                  da sua área de atendimento.
+                </p>
+                <Link to="/cadastro" className="inline-flex items-center justify-center gap-[14px] min-h-[50px] px-5 mt-[35px] rounded-full text-[13px] font-bold transition-all bg-accent text-white hover:-translate-y-[3px] shadow-lg shadow-accent/20 w-full md:w-auto">
+                  Quero atender a domicílio <span>→</span>
+                </Link>
+              </motion.div>
+
+              <motion.div className="relative min-h-[350px] md:min-h-[440px]" {...fadeUp(0.2)}>
+                <div className="absolute inset-0 overflow-hidden rounded-[30px] border border-accent/20" style={{ background: 'radial-gradient(circle, rgba(233,152,37,0.15) 1px, transparent 1px)', backgroundSize: '30px 30px' }}>
+                  <div className="absolute inset-0" style={{ background: 'linear-gradient(30deg, transparent 49%, rgba(255,255,255,0.04) 50%, transparent 51%), linear-gradient(-30deg, transparent 49%, rgba(255,255,255,0.04) 50%, transparent 51%)', backgroundSize: '80px 80px' }}></div>
+                  <div className="absolute w-[240px] h-[240px] md:w-[300px] md:h-[300px] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-accent/50 bg-accent/10"></div>
+                  
+                  <div className="absolute p-[9px_13px] rounded-full bg-accent text-white text-[10px] font-bold shadow-[0_15px_40px_rgba(233,152,37,0.4)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <span>Seu negócio</span>
+                  </div>
+                  <div className="absolute p-[9px_13px] rounded-full bg-white text-black text-[10px] font-bold shadow-[0_15px_40px_rgba(0,0,0,0.3)] left-[68%] top-[29%]">
+                    <span>Cliente</span>
+                  </div>
+
+                  <div className="absolute bottom-[22px] left-[22px] p-[14px_17px] bg-black/70 border border-accent/30 rounded-[15px] backdrop-blur-[15px]">
+                    <strong className="block text-[18px] text-accent">8,4 km</strong>
+                    <small className="text-white/70 text-[9px]">Dentro do raio de atendimento</small>
+                  </div>
                 </div>
-                <p className="text-xs text-[#64748B] mb-8">Para profissionais autônomos e barbearias individuais</p>
-                <ul className="space-y-3 mb-8">
-                  {['1 Profissional Ativo', 'Agendamentos Ilimitados', 'Página Pública Personalizada', 'Controle Financeiro Básico', 'Suporte por E-mail'].map(f => (
-                    <li key={f} className="flex items-center gap-3 text-sm text-[#334155] font-medium">
-                      <CheckCircle className="w-4 h-4 flex-shrink-0 text-[#DE870D]" /> {f}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <button
-                onClick={() => navigate('/cadastro')}
-                className="w-full py-3.5 rounded-xl font-bold text-sm border-2 border-[#CBD5E1] text-[#0F172A] hover:border-[#DE870D] hover:text-[#DE870D] transition-all cursor-pointer"
-              >
-                Iniciar 7 Dias Grátis
-              </button>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* =========================
+             HOME SERVICE EXPLANATION
+        ========================== */}
+        <section className="bg-[#f7f7f7] py-[95px] md:py-[150px]">
+          <div className="max-w-[1180px] mx-auto px-6">
+            <motion.div className="max-w-[720px] mx-auto text-center" {...fadeUp()}>
+              <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Atendimento a domicílio</span>
+              <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
+                O cliente escolhe.<br /> O Corte Flow resolve.
+              </h2>
             </motion.div>
 
-            {/* Growth */}
-            <motion.div {...fadeUp(0.08)} className="relative bg-white border-2 border-[#DE870D] rounded-3xl p-8 shadow-xl shadow-[#DE870D]/10 flex flex-col justify-between">
-              <div className="absolute top-5 right-5 text-xs font-bold px-3 py-1 rounded-full bg-[#DE870D] text-white shadow-md">
-                Mais Escolhido
-              </div>
-              <div>
-                <p className="font-bold text-sm text-[#DE870D] mb-2">Growth</p>
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-5xl font-black text-[#0F172A]">R$ 77</span>
-                  <span className="text-sm font-semibold text-[#64748B]">/mês</span>
+            <div className="max-w-[900px] mx-auto mt-[55px] md:mt-[80px]">
+              <motion.div className="grid grid-cols-[50px_1fr] md:grid-cols-[70px_1fr] gap-[18px] md:gap-[30px] items-center" {...fadeUp(0.1)}>
+                <div className="grid place-items-center w-[48px] h-[48px] md:w-[60px] md:h-[60px] rounded-full bg-accent text-white text-[12px] font-extrabold shadow-[0_10px_25px_rgba(233,152,37,0.3)]">01</div>
+                <div>
+                  <h3 className="font-title text-[20px] font-bold">Cliente escolhe o serviço</h3>
+                  <p className="mt-[7px] text-[#707070] text-[13px]">Ele entra no seu site e escolhe o que deseja.</p>
                 </div>
-                <p className="text-xs text-[#64748B] mb-8">Para salões e barbearias em expansão com equipe</p>
-                <ul className="space-y-3 mb-8">
-                  {['Até 10 Profissionais', 'Agendamentos Ilimitados', 'Pagamentos Online (Stripe Connect)', 'Venda de Produtos & Estoque', 'Relatórios Financeiros Avançados', 'Suporte Prioritário WhatsApp'].map(f => (
-                    <li key={f} className="flex items-center gap-3 text-sm text-[#0F172A] font-semibold">
-                      <CheckCircle className="w-4 h-4 flex-shrink-0 text-[#DE870D]" /> {f}
-                    </li>
-                  ))}
-                </ul>
+              </motion.div>
+              <div className="w-px h-[50px] bg-accent/20 ml-[24px] md:ml-[29px] my-2"></div>
+              
+              <motion.div className="grid grid-cols-[50px_1fr] md:grid-cols-[70px_1fr] gap-[18px] md:gap-[30px] items-center" {...fadeUp(0.2)}>
+                <div className="grid place-items-center w-[48px] h-[48px] md:w-[60px] md:h-[60px] rounded-full bg-accent text-white text-[12px] font-extrabold shadow-[0_10px_25px_rgba(233,152,37,0.3)]">02</div>
+                <div>
+                  <h3 className="font-title text-[20px] font-bold">Informa o endereço</h3>
+                  <p className="mt-[7px] text-[#707070] text-[13px]">O cliente escolhe atendimento a domicílio e informa onde está.</p>
+                </div>
+              </motion.div>
+              <div className="w-px h-[50px] bg-accent/20 ml-[24px] md:ml-[29px] my-2"></div>
+              
+              <motion.div className="grid grid-cols-[50px_1fr] md:grid-cols-[70px_1fr] gap-[18px] md:gap-[30px] items-center" {...fadeUp(0.3)}>
+                <div className="grid place-items-center w-[48px] h-[48px] md:w-[60px] md:h-[60px] rounded-full bg-accent text-white text-[12px] font-extrabold shadow-[0_10px_25px_rgba(233,152,37,0.3)]">03</div>
+                <div>
+                  <h3 className="font-title text-[20px] font-bold">O sistema verifica</h3>
+                  <p className="mt-[7px] text-[#707070] text-[13px]">O Corte Flow verifica automaticamente se o endereço está dentro do seu raio.</p>
+                </div>
+              </motion.div>
+              <div className="w-px h-[50px] bg-accent/20 ml-[24px] md:ml-[29px] my-2"></div>
+              
+              <motion.div className="grid grid-cols-[50px_1fr] md:grid-cols-[70px_1fr] gap-[18px] md:gap-[30px] items-center" {...fadeUp(0.4)}>
+                <div className="grid place-items-center w-[48px] h-[48px] md:w-[60px] md:h-[60px] rounded-full bg-accent text-white text-[12px] font-extrabold shadow-[0_10px_25px_rgba(233,152,37,0.3)]">04</div>
+                <div>
+                  <h3 className="font-title text-[20px] font-bold">Agendamento confirmado</h3>
+                  <p className="mt-[7px] text-[#707070] text-[13px]">Pronto. Você recebe o agendamento sem precisar ficar parando o atendimento para organizar tudo.</p>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* =========================
+             FOR EVERY BUSINESS
+        ========================== */}
+        <section className="bg-white py-[95px] md:py-[150px]">
+          <div className="max-w-[1180px] mx-auto px-6">
+            <motion.div className="max-w-[720px]" {...fadeUp()}>
+              <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Feito para quem vive de atendimento</span>
+              <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
+                Seu negócio.<br /> Do seu jeito.
+              </h2>
+            </motion.div>
+
+            <div className="flex flex-col md:grid md:grid-cols-[1.5fr_1fr_1fr] md:grid-rows-[360px_360px] gap-4 mt-[45px] md:mt-[70px]">
+              
+              <motion.article className="relative min-h-[420px] md:min-h-0 md:row-span-2 overflow-hidden rounded-[30px] p-[35px]" {...fadeUp(0.1)}>
+                <img src="/images/barbearia.jpg" alt="Barbearia" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-[35px] flex flex-col justify-end text-white">
+                  <span className="text-accent text-[10px] font-extrabold">01</span>
+                  <h3 className="font-title mt-3 text-[25px] tracking-[-1px] font-bold">Barbearias</h3>
+                  <p className="mt-[7px] text-white/65 text-[12px] leading-[1.6]">Menos mensagens. Mais clientes na cadeira.</p>
+                </div>
+              </motion.article>
+
+              <motion.article className="relative min-h-[330px] md:min-h-0 overflow-hidden rounded-[30px] p-[35px] bg-[#f7f7f7] flex flex-col hover:bg-white hover:shadow-[0_20px_50px_rgba(233,152,37,0.1)] transition-all" {...fadeUp(0.2)}>
+                <div className="text-[30px] mb-[80px] text-accent">✦</div>
+                <div className="mt-auto">
+                  <span className="text-accent text-[10px] font-extrabold">02</span>
+                  <h3 className="font-title mt-3 text-[25px] tracking-[-1px] font-bold">Salões de beleza</h3>
+                  <p className="mt-[7px] text-[#707070] text-[12px] leading-[1.6]">Organize sua equipe e deixe cada profissional cuidar da própria agenda.</p>
+                </div>
+              </motion.article>
+
+              <motion.article className="relative min-h-[330px] md:min-h-0 overflow-hidden rounded-[30px] p-[35px] bg-[#f7f7f7] flex flex-col hover:bg-white hover:shadow-[0_20px_50px_rgba(233,152,37,0.1)] transition-all" {...fadeUp(0.3)}>
+                <div className="text-[30px] mb-[80px] text-accent">✧</div>
+                <div className="mt-auto">
+                  <span className="text-accent text-[10px] font-extrabold">03</span>
+                  <h3 className="font-title mt-3 text-[25px] tracking-[-1px] font-bold">Manicures</h3>
+                  <p className="mt-[7px] text-[#707070] text-[12px] leading-[1.6]">Sua agenda disponível para clientes a qualquer hora.</p>
+                </div>
+              </motion.article>
+
+              <motion.article className="relative min-h-[330px] md:min-h-0 md:col-span-2 overflow-hidden rounded-[30px] p-[35px]" {...fadeUp(0.4)}>
+                <img src="/images/estilo-corte.jpg" alt="Profissional de beleza" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-[35px] flex flex-col justify-end text-white">
+                  <span className="text-accent text-[10px] font-extrabold">04</span>
+                  <h3 className="font-title mt-3 text-[25px] tracking-[-1px] font-bold">Profissionais autônomos</h3>
+                  <p className="mt-[7px] text-white/65 text-[12px] leading-[1.6]">Comece profissional desde o primeiro cliente.</p>
+                </div>
+              </motion.article>
+
+            </div>
+          </div>
+        </section>
+
+        {/* =========================
+             BENEFITS
+        ========================== */}
+        <section className="bg-[#f7f7f7] py-[95px] md:py-[150px]">
+          <div className="max-w-[1180px] mx-auto px-6">
+            <div className="grid md:grid-cols-2 gap-[50px] md:gap-[120px]">
+              
+              <motion.div {...fadeUp()}>
+                <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">O resultado</span>
+                <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
+                  Você não precisa <span className="text-accent/50">trabalhar mais.</span> Precisa trabalhar melhor.
+                </h2>
+              </motion.div>
+
+              <div className="border-t border-[#dddddd]">
+                <motion.div className="grid grid-cols-[50px_1fr] gap-5 py-[30px] border-b border-[#dddddd]" {...fadeUp(0.1)}>
+                  <strong className="text-accent text-[11px]">01</strong>
+                  <div>
+                    <h3 className="font-title text-[18px] font-bold">Mais tempo</h3>
+                    <p className="mt-[8px] text-[#707070] text-[13px] leading-[1.7]">Pare de interromper seus atendimentos para organizar horários.</p>
+                  </div>
+                </motion.div>
+                <motion.div className="grid grid-cols-[50px_1fr] gap-5 py-[30px] border-b border-[#dddddd]" {...fadeUp(0.2)}>
+                  <strong className="text-accent text-[11px]">02</strong>
+                  <div>
+                    <h3 className="font-title text-[18px] font-bold">Mais organização</h3>
+                    <p className="mt-[8px] text-[#707070] text-[13px] leading-[1.7]">Tudo em um só lugar, sem depender de anotações.</p>
+                  </div>
+                </motion.div>
+                <motion.div className="grid grid-cols-[50px_1fr] gap-5 py-[30px] border-b border-[#dddddd]" {...fadeUp(0.3)}>
+                  <strong className="text-accent text-[11px]">03</strong>
+                  <div>
+                    <h3 className="font-title text-[18px] font-bold">Mais autonomia</h3>
+                    <p className="mt-[8px] text-[#707070] text-[13px] leading-[1.7]">Seu cliente agenda sozinho, inclusive fora do horário comercial.</p>
+                  </div>
+                </motion.div>
+                <motion.div className="grid grid-cols-[50px_1fr] gap-5 py-[30px] border-b border-[#dddddd]" {...fadeUp(0.4)}>
+                  <strong className="text-accent text-[11px]">04</strong>
+                  <div>
+                    <h3 className="font-title text-[18px] font-bold">Mais possibilidades</h3>
+                    <p className="mt-[8px] text-[#707070] text-[13px] leading-[1.7]">Cresça de profissional autônomo para uma equipe completa sem perder o controle.</p>
+                  </div>
+                </motion.div>
               </div>
-              <button
-                onClick={() => navigate('/cadastro')}
-                className="w-full py-3.5 rounded-xl font-bold text-sm text-white transition-all shadow-md shadow-[#DE870D]/25 hover:shadow-lg hover:shadow-[#DE870D]/35 hover:brightness-105 active:scale-[0.98] cursor-pointer"
-                style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
-              >
-                Iniciar 7 Dias Grátis
-              </button>
+
+            </div>
+          </div>
+        </section>
+
+        {/* =========================
+             PRICING
+        ========================== */}
+        <section id="planos" className="bg-white py-[95px] md:py-[150px]">
+          <div className="max-w-[1180px] mx-auto px-6">
+            <motion.div className="max-w-[720px] mx-auto text-center" {...fadeUp()}>
+              <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Planos</span>
+              <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
+                Quanto vale recuperar<br /> horas do seu dia?
+              </h2>
+              <p className="max-w-[590px] mx-auto mt-[25px] text-[#707070] text-[16px] leading-[1.7]">
+                Escolha o plano que combina com o momento do seu negócio.
+              </p>
+            </motion.div>
+
+            <div className="grid md:grid-cols-3 gap-[15px] mt-[45px] md:mt-[70px] max-w-[500px] md:max-w-none mx-auto">
+              
+              {/* PLAN 1 */}
+              <motion.article className="p-[30px] md:p-[38px] border border-[#dddddd] bg-white rounded-[28px] transition-all duration-300 hover:-translate-y-[6px] hover:shadow-[0_25px_70px_rgba(233,152,37,0.15)] hover:border-accent/40" {...fadeUp(0.1)}>
+                <span className="font-title text-[17px] font-extrabold">Essencial</span>
+                <p className="mt-2 text-[#999999] text-[12px]">Para quem está começando.</p>
+                <div className="flex items-baseline mt-[35px]">
+                  <small className="text-[14px] font-bold text-accent">R$</small>
+                  <strong className="ml-1 text-[48px] md:text-[54px] tracking-[-3px] text-accent">27</strong>
+                  <span className="ml-[5px] text-[#999999] text-[11px]">/mês</span>
+                </div>
+                <Link to="/cadastro" className="flex items-center justify-center w-full h-[48px] mt-[30px] border border-[#dddddd] rounded-[13px] text-[12px] font-extrabold transition-colors hover:bg-accent/5 hover:border-accent text-accent">Começar agora</Link>
+                <div className="flex flex-col gap-[14px] mt-[35px] pt-[30px] border-t border-[#dddddd]">
+                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Agendamento online</span>
+                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Agenda inteligente</span>
+                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Cadastro de serviços</span>
+                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Gestão de clientes</span>
+                </div>
+              </motion.article>
+
+              {/* PLAN 2 */}
+              <motion.article className="relative p-[30px] md:p-[38px] border-2 border-accent bg-white rounded-[28px] shadow-[0_20px_60px_rgba(233,152,37,0.2)] transition-all duration-300 hover:-translate-y-[6px] hover:shadow-[0_25px_70px_rgba(233,152,37,0.3)]" {...fadeUp(0.2)}>
+                <div className="absolute top-[-12px] left-[30px] p-[6px_11px] rounded-full bg-accent text-white text-[9px] font-extrabold">Mais escolhido</div>
+                <span className="font-title text-[17px] font-extrabold">Profissional</span>
+                <p className="mt-2 text-[#999999] text-[12px]">Para quem quer crescer.</p>
+                <div className="flex items-baseline mt-[35px]">
+                  <small className="text-[14px] font-bold text-accent">R$</small>
+                  <strong className="ml-1 text-[48px] md:text-[54px] tracking-[-3px] text-accent">77</strong>
+                  <span className="ml-[5px] text-[#999999] text-[11px]">/mês</span>
+                </div>
+                <Link to="/cadastro" className="flex items-center justify-center w-full h-[48px] mt-[30px] border border-accent bg-accent text-white rounded-[13px] text-[12px] font-extrabold transition-opacity hover:opacity-90 shadow-[0_10px_20px_rgba(233,152,37,0.3)]">Quero esse plano</Link>
+                <div className="flex flex-col gap-[14px] mt-[35px] pt-[30px] border-t border-[#dddddd]">
+                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Tudo do Essencial</span>
+                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Equipe de profissionais</span>
+                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Agenda individual</span>
+                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Atendimento a domicílio</span>
+                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Raio de atendimento</span>
+                </div>
+              </motion.article>
+
+              {/* PLAN 3 */}
+              <motion.article className="p-[30px] md:p-[38px] border border-[#dddddd] bg-white rounded-[28px] transition-all duration-300 hover:-translate-y-[6px] hover:shadow-[0_25px_70px_rgba(233,152,37,0.15)] hover:border-accent/40" {...fadeUp(0.3)}>
+                <span className="font-title text-[17px] font-extrabold">Negócios</span>
+                <p className="mt-2 text-[#999999] text-[12px]">Para operações maiores.</p>
+                <div className="flex items-baseline mt-[35px]">
+                  <small className="text-[14px] font-bold text-accent">R$</small>
+                  <strong className="ml-1 text-[48px] md:text-[54px] tracking-[-3px] text-accent">197</strong>
+                  <span className="ml-[5px] text-[#999999] text-[11px]">/mês</span>
+                </div>
+                <a href="mailto:contato@corteflow.com" className="flex items-center justify-center w-full h-[48px] mt-[30px] border border-[#dddddd] rounded-[13px] text-[12px] font-extrabold transition-colors hover:bg-accent/5 hover:border-accent text-accent">Falar com time</a>
+                <div className="flex flex-col gap-[14px] mt-[35px] pt-[30px] border-t border-[#dddddd]">
+                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Tudo do Profissional</span>
+                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Gestão avançada</span>
+                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Equipes maiores</span>
+                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Mais controle da operação</span>
+                </div>
+              </motion.article>
+
+            </div>
+
+            <motion.p className="text-center mt-[30px] text-[#999999] text-[11px]" {...fadeUp(0.4)}>
+              Sem complicação. Comece pequeno e evolua conforme seu negócio cresce.
+            </motion.p>
+          </div>
+        </section>
+
+        {/* =========================
+             FINAL CTA
+        ========================== */}
+        <section className="relative py-[110px] md:py-[170px] overflow-hidden bg-[#080808] text-white text-center">
+          <div className="absolute w-[700px] h-[700px] top-[-300px] left-1/2 -translate-x-1/2 rounded-full bg-accent/20 blur-[100px]"></div>
+          
+          <div className="max-w-[1180px] mx-auto px-6 relative z-10">
+            <motion.div {...fadeUp()}>
+              <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Seu próximo cliente pode estar tentando agendar agora.</span>
+              <h2 className="font-title text-[49px] md:text-[clamp(48px,7vw,90px)] leading-[0.95] tracking-[-4px] md:tracking-[-6px] font-bold">
+                Você cuida do cliente.<br />
+                <span className="text-white/40">O Corte Flow cuida da sua agenda.</span>
+              </h2>
+              <p className="mt-[25px] text-white/50">Transforme a maneira como você administra seu negócio.</p>
+              
+              <Link to="/cadastro" className="inline-flex items-center justify-center gap-[14px] min-h-[58px] px-[25px] mt-[35px] rounded-full text-[13px] font-bold transition-all bg-accent text-white hover:-translate-y-[3px] shadow-[0_10px_30px_rgba(233,152,37,0.3)]">
+                Começar agora <span>→</span>
+              </Link>
             </motion.div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ─── FINAL CTA ─── */}
-      <section className="py-24 bg-[#0F172A] text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#DE870D]/15 blur-3xl rounded-full pointer-events-none" />
-        <div className="max-w-3xl mx-auto px-6 text-center relative z-10 space-y-6">
-          <motion.div {...fadeUp()}>
-            <Scissors className="w-10 h-10 mx-auto mb-6 text-[#DE870D]" />
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-4">
-              Pronto para elevar o nível do seu <span className="text-[#DE870D]">salão?</span>
-            </h2>
-            <p className="text-slate-300 mb-8 max-w-lg mx-auto leading-relaxed text-sm sm:text-base">
-              Junte-se a milhares de profissionais que modernizaram seus agendamentos e faturam mais todo mês.
-            </p>
-            <button
-              onClick={() => navigate('/cadastro')}
-              className="inline-flex items-center gap-2 text-base font-bold px-10 py-4 rounded-xl text-white transition-all shadow-xl shadow-[#DE870D]/30 hover:brightness-105 active:scale-[0.98] cursor-pointer"
-              style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
-            >
-              Criar Conta Grátis <ArrowRight className="w-5 h-5" />
-            </button>
-          </motion.div>
-        </div>
-      </section>
+      </main>
 
-      {/* ─── FOOTER ─── */}
-      <footer className="bg-white border-t border-[#E2E8F0]">
-        <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-2 md:grid-cols-4 gap-10">
-          <div>
-            <div className="flex items-center mb-4">
-              <img src="/logo.svg" alt="Raffros Corteflow" className="h-10 md:h-12 w-auto" />
+      {/* =========================
+           FOOTER
+      ========================== */}
+      <footer className="bg-[#080808] text-white border-t border-white/10 pt-[70px] pb-[25px]">
+        <div className="max-w-[1180px] mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between gap-[50px]">
+            <div>
+              <div className="flex items-center gap-2.5 font-extrabold text-[17px] tracking-tight">
+                <span className="grid place-items-center w-[30px] h-[30px] rounded-[9px] bg-accent text-white text-[15px]">C</span>
+                <span className="font-title">Corte Flow</span>
+              </div>
+              <p className="max-w-[280px] mt-[18px] text-white/40 text-[12px] leading-[1.7]">
+                Agendamento e gestão para quem vive de atendimento.
+              </p>
             </div>
-            <p className="text-xs text-[#64748B] leading-relaxed font-medium">O padrão ouro em gestão e agendamento para barbearias, salões de beleza e esmalterias.</p>
+
+            <div className="flex gap-[50px] md:gap-[100px]">
+              <div className="flex flex-col gap-[13px]">
+                <strong className="mb-2 text-[11px] text-accent">Produto</strong>
+                <a href="#recursos" className="text-white/40 text-[11px] hover:text-accent transition-colors">Recursos</a>
+                <a href="#equipe" className="text-white/40 text-[11px] hover:text-accent transition-colors">Equipes</a>
+                <a href="#domicilio" className="text-white/40 text-[11px] hover:text-accent transition-colors">Domicílio</a>
+                <a href="#planos" className="text-white/40 text-[11px] hover:text-accent transition-colors">Planos</a>
+              </div>
+              <div className="flex flex-col gap-[13px]">
+                <strong className="mb-2 text-[11px] text-accent">Empresa</strong>
+                <a href="#" className="text-white/40 text-[11px] hover:text-accent transition-colors">Sobre</a>
+                <a href="#" className="text-white/40 text-[11px] hover:text-accent transition-colors">Contato</a>
+                <a href="#" className="text-white/40 text-[11px] hover:text-accent transition-colors">Privacidade</a>
+              </div>
+            </div>
           </div>
-          {[
-            { title: 'Produto', items: ['Funcionalidades', 'Planos', 'Stripe Connect'] },
-            { title: 'Recursos', items: ['Como Funciona', 'Ajuda', 'Suporte'] },
-            { title: 'Legal', items: ['Termos de Uso', 'Privacidade', 'Cookies'] },
-          ].map(col => (
-            <div key={col.title}>
-              <h4 className="text-[#0F172A] font-bold text-sm mb-4">{col.title}</h4>
-              <ul className="space-y-2.5">
-                {col.items.map(item => (
-                  <li key={item}>
-                    {item === 'Cookies' ? (
-                      <button
-                        onClick={() => {
-                          localStorage.removeItem('navalha_cookie_preferences_v1');
-                          window.location.reload();
-                        }}
-                        className="text-xs text-[#64748B] hover:text-[#DE870D] font-medium transition-colors text-left"
-                      >
-                        Preferências de Cookies
-                      </button>
-                    ) : (
-                      <a href="#" className="text-xs text-[#64748B] hover:text-[#DE870D] font-medium transition-colors">{item}</a>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-        <div className="max-w-7xl mx-auto px-6 pb-8 pt-4 border-t border-[#E2E8F0] text-center text-xs text-[#94A3B8] font-medium">
-          © {new Date().getFullYear()} Raffros Corteflow. Todos os direitos reservados.
+
+          <div className="mt-[70px] pt-[25px] border-t border-white/10 text-white/25 text-[10px]">
+            © {new Date().getFullYear()} Corte Flow. Todos os direitos reservados.
+          </div>
         </div>
       </footer>
 
-      {/* Cookie Consent Banner */}
       <CookieConsentBanner />
     </div>
   );
