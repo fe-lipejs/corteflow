@@ -85,7 +85,7 @@ export default function PlaylistPage() {
                     </Link>
                     <span className="inline-flex items-center gap-[9px] font-display font-bold text-[18px] text-white tracking-tight">
                         <span className="w-[9px] h-[9px] rounded-full bg-[#F59E0B] shadow-[0_0_14px_rgba(245,158,11,0.8)]" />
-                        Corte Flow
+                        Raffros
                     </span>
                 </div>
             </header>
@@ -104,7 +104,7 @@ export default function PlaylistPage() {
                             No som da casa
                         </span>
                         <h1 className="font-display font-semibold text-[clamp(30px,7vw,50px)] leading-[1.08] tracking-[-0.02em] text-white">
-                            O que o Corte Flow<br />
+                            O que a Raffros<br />
                             <em
                                 className="not-italic"
                                 style={{
@@ -158,7 +158,7 @@ export default function PlaylistPage() {
                         {PLAYLIST_ID ? (
                             <div className="rounded-[20px] overflow-hidden border border-white/[0.1] bg-[#0A0A0C]">
                                 <iframe
-                                    title="Playlist do Corte Flow no Spotify"
+                                    title="Playlist da Raffros no Spotify"
                                     src={`https://open.spotify.com/embed/playlist/${PLAYLIST_ID}?theme=0`}
                                     width="100%"
                                     height="380"
@@ -245,14 +245,14 @@ export default function PlaylistPage() {
                             className="inline-flex items-center gap-2 text-[14px] font-medium text-[#A1A1A6] hover:text-[#F59E0B] transition-colors"
                         >
                             <ArrowLeft className="w-4 h-4" />
-                            Voltar para o Corte Flow
+                            Voltar para a Raffros
                         </Link>
                     </div>
                 </div>
             </main>
 
             <footer className="relative z-10 border-t border-white/[0.08] px-6 md:px-12 py-10 text-center">
-                <p className="text-[12px] text-[#71717A]">© {new Date().getFullYear()} Corte Flow. Feito com fé e capricho.</p>
+                <p className="text-[12px] text-[#71717A]">© {new Date().getFullYear()} Raffros. Feito com fé e capricho.</p>
             </footer>
         </div>
     );

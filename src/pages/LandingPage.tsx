@@ -5,7 +5,7 @@ import { MapPin, CheckCircle2, Scissors, Sparkles, Heart, User, Home, Menu, X } 
 import CookieConsentBanner from '../components/cookies/CookieConsentBanner';
 import { trackEvent } from '../lib/analytics';
 import { usePageTracking } from '../hooks/usePageTracking';
-import SpotifyMoodCard, { SpotifyGlyph, FloatingPlaylistBadge } from '../components/SpotifyMoodCard';
+import SpotifyMoodCard, { SpotifyGlyph, HeroPlaylistLine, FloatingPlaylistBadge } from '../components/SpotifyMoodCard';
 
 /* ============================================================
    TOKENS & STYLING (Apple Noir + Pure White + Electric Yellow)
@@ -285,7 +285,7 @@ export default function LandingPage() {
         <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-6">
           <a href="#hero" className="inline-flex items-center gap-[9px] font-display font-bold text-[20px] text-white tracking-tight">
             <span className="w-[10px] h-[10px] rounded-full bg-[#F59E0B] shadow-[0_0_14px_rgba(245,158,11,0.8)]" />
-            Corte Flow
+            Raffros
           </a>
 
           <nav className="hidden md:flex gap-8">
@@ -354,7 +354,7 @@ export default function LandingPage() {
             <div className="flex items-center justify-between w-full border-b border-white/[0.1] pb-4">
               <a href="#hero" onClick={() => { closeMobileNav(); trackEvent('click_mobile_logo'); }} className="inline-flex items-center gap-[9px] font-display font-bold text-[20px] text-white tracking-tight">
                 <span className="w-[10px] h-[10px] rounded-full bg-[#F59E0B] shadow-[0_0_14px_rgba(245,158,11,0.8)]" />
-                Corte Flow
+                Raffros
               </a>
               <button
                 type="button"
@@ -442,15 +442,17 @@ export default function LandingPage() {
           <div className="relative z-10 max-w-[1280px] w-full mx-auto px-6 md:px-12 grid md:grid-cols-[1.05fr_0.95fr] gap-16 md:gap-10 items-center">
 
             <motion.div {...fadeUp()} className="text-left">
-              <Eyebrow>Agendamento &amp; gestão · Beleza e estética</Eyebrow>
+              {/* <Eyebrow>Agendamento &amp; gestão · Beleza e estética</Eyebrow> */}
               <h1 className="font-display font-semibold text-[clamp(40px,9vw,74px)] leading-[1.03] tracking-[-0.02em] m-0 mb-[22px] text-white">
-                Seu negócio agenda.<br />
+                Sua barbearia agenda.<br />
+                <p />
                 <em className="not-italic" style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
                   Você atende.
                 </em>
               </h1>
+              <br />
               <p className="text-[clamp(16px,2vw,19px)] text-[#A1A1A6] max-w-[50ch] mb-[38px] leading-relaxed">
-                O Corte Flow assume sua agenda, organiza sua equipe e confirma atendimento a
+                A Raffros assume sua agenda, organiza sua equipe e confirma atendimento a
                 domicílio sozinho — pra você focar em quem está na cadeira, não no WhatsApp.
               </p>
 
@@ -468,43 +470,13 @@ export default function LandingPage() {
                   onClick={() => trackEvent('click_hero_conhecer')}
                   className="inline-flex items-center justify-center px-8 py-[17px] rounded-full font-semibold text-[16px] text-white border border-white/[0.18] hover:border-[#F59E0B] hover:text-[#F59E0B] transition-all bg-[#0A0A0C]/50"
                 >
-                  Conhecer o Corte Flow
+                  Conhecer a Raffros
                 </a>
               </div>
-
-              {/* Compact Apple Noir Music Card (Aligned with 1st column / Red Box) */}
-              <div className="mt-7 mb-10">
-                <Link
-                  to="/playlist"
-                  onClick={() => trackEvent('click_hero_playlist_pill')}
-                  className="group flex flex-col gap-2 p-3 sm:p-[12px_16px] rounded-[18px] bg-[#101014]/90 hover:bg-[#16161C] border border-white/[0.1] hover:border-amber-500/40 shadow-[0_10px_28px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-300 w-full max-w-[280px] sm:max-w-[310px]"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/25 group-hover:border-amber-500/50 text-[#F59E0B] flex items-center justify-center font-bold text-xs shrink-0 transition-colors shadow-[0_0_10px_rgba(245,158,11,0.2)]">
-                        <SpotifyGlyph className="w-3.5 h-3.5 text-[#F59E0B]" />
-                      </span>
-                      <span className="text-[11px] font-mono uppercase tracking-[0.12em] text-[#F59E0B] font-bold">
-                        No som da casa
-                      </span>
-                    </div>
-
-                    {/* Audio equalizer animation bars from image 2 */}
-                    <div className="flex items-end gap-[2px] h-3 px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25">
-                      <span className="w-[2px] bg-[#F59E0B] rounded-full animate-[pulse_0.8s_infinite_0ms] h-2.5" />
-                      <span className="w-[2px] bg-[#F59E0B] rounded-full animate-[pulse_1.1s_infinite_200ms] h-1.5" />
-                      <span className="w-[2px] bg-[#F59E0B] rounded-full animate-[pulse_0.9s_infinite_400ms] h-3" />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 text-[12.5px] sm:text-[13px] font-semibold text-white/90 group-hover:text-white transition-colors pt-0.5">
-                    <span>Louvor &amp; Palavra do Dia</span>
-                    <span className="text-[#F59E0B] text-xs font-mono group-hover:translate-x-1 transition-transform">
-                      →
-                    </span>
-                  </div>
-                </Link>
-              </div>
+              <br />
+              {/* Playlist: linha discreta, respiro visual (não compete com o CTA) */}
+              <HeroPlaylistLine />
+              <br />
 
               <div className="flex gap-x-[36px] gap-y-6 flex-wrap">
                 <div className="flex flex-col">
@@ -523,7 +495,7 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div {...fadeUp(0.12)} className="relative w-full max-w-[320px] mx-auto md:max-w-none md:mx-0 md:justify-self-end">
-              <PhoneFrame src="/images/custom-dark.png" alt="Agenda do Corte Flow" glow tilt={-4} className="w-[230px] md:w-[260px] mx-auto" />
+              <PhoneFrame src="/images/custom-dark.png" alt="Agenda da Raffros" glow tilt={-4} className="w-[230px] md:w-[260px] mx-auto" />
 
               <div className="absolute top-[6%] -left-[8%] md:-left-[14%] z-20 flex items-center gap-2.5 p-3 px-4 rounded-[18px] bg-[#121216]/95 backdrop-blur-[10px] border border-white/[0.12] shadow-2xl animate-float" style={{ animationDelay: '0.3s' }}>
                 <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
@@ -575,12 +547,12 @@ export default function LandingPage() {
           <div className="max-w-[1280px] mx-auto grid md:grid-cols-2 gap-12 md:gap-[72px] items-center">
 
             <motion.div {...fadeUp()}>
-              <Eyebrow>O Corte Flow</Eyebrow>
+              <Eyebrow>A Raffros</Eyebrow>
               <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] text-white">
                 Não é uma agenda.<br />É o motor do seu negócio.
               </h2>
               <p className="text-[clamp(16px,2vw,18px)] text-[#A1A1A6] max-w-[46ch] mt-5 leading-relaxed">
-                Menos mensagem, menos confusão, mais clientes na cadeira. O Corte Flow assume
+                Menos mensagem, menos confusão, mais clientes na cadeira. A Raffros assume
                 o agendamento, organiza sua equipe e ainda resolve o atendimento a domicílio —
                 sozinho, sem você no meio de cada conversa.
               </p>
@@ -595,7 +567,7 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div {...fadeUp(0.1)} className="rounded-[28px] overflow-hidden border border-white/[0.12] aspect-[16/11] shadow-2xl">
-              <img src="/images/barbearia.jpg" alt="Barbearia usando o Corte Flow" className="w-full h-full object-cover" />
+              <img src="/images/barbearia.jpg" alt="Barbearia usando a Raffros" className="w-full h-full object-cover" />
             </motion.div>
 
           </div>
@@ -611,7 +583,7 @@ export default function LandingPage() {
             <motion.div {...fadeUp()} className="relative flex justify-center items-center py-4">
               <img
                 src="/images/mockup-iphone-light.png"
-                alt="Agendamento Corte Flow no Celular"
+                alt="Agendamento Raffros no Celular"
                 className="w-[260px] md:w-[310px] h-auto max-h-[580px] object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.18)] hover:scale-105 transition-transform duration-500"
               />
             </motion.div>
@@ -668,7 +640,7 @@ export default function LandingPage() {
             <Eyebrow>Motor de gestão</Eyebrow>
             <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] text-white">Administre o negócio inteiro em um lugar.</h2>
             <p className="text-[clamp(16px,2vw,18px)] text-[#A1A1A6] max-w-[46ch] mt-5 mx-auto">
-              Crie profissionais, monte equipes, defina serviços e horários. O Corte Flow
+              Crie profissionais, monte equipes, defina serviços e horários. A Raffros
               conecta cada peça da operação — e cada profissional acompanha só os próprios
               agendamentos.
             </p>
@@ -732,7 +704,7 @@ export default function LandingPage() {
                 próprios agendamentos, enquanto você tem a visão completa do negócio.
               </p>
               <p className="mt-[26px] font-display italic text-[20px] text-[#D97706] font-medium">
-                Seu negócio cresce. O Corte Flow cresce junto.
+                Seu negócio cresce. A Raffros cresce junto.
               </p>
             </motion.div>
 
@@ -748,7 +720,7 @@ export default function LandingPage() {
             <motion.div {...fadeUp()}>
               <Eyebrow>Grande diferencial</Eyebrow>
               <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] text-white">
-                Você define o raio.<br />O Corte Flow faz o resto.
+                Você define o raio.<br />A Raffros faz o resto.
               </h2>
               <p className="text-[clamp(16px,2vw,18px)] text-[#A1A1A6] max-w-[46ch] mt-5 leading-relaxed">
                 Manicures, barbeiros e cabeleireiros que atendem em domicílio não precisam
@@ -794,7 +766,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <p className="text-center font-display italic text-[clamp(21px,3.2vw,28px)] text-[#F59E0B] mt-[68px]">"Você atende. O Corte Flow organiza."</p>
+          <p className="text-center font-display italic text-[clamp(21px,3.2vw,28px)] text-[#F59E0B] mt-[68px]">"Você atende. A Raffros organiza."</p>
         </section>
 
         {/* ============================================================
@@ -806,7 +778,7 @@ export default function LandingPage() {
             <h2 className="font-display font-semibold text-[clamp(26px,5vw,40px)] leading-[1.15] tracking-[-0.01em] text-[#1D1D1F]">A página do seu cliente, com a sua cara.</h2>
             <p className="text-[15.5px] text-[#6E6E73] mt-4 mx-auto max-w-[44ch]">
               Escolha as cores que combinam com o seu negócio. Cada estabelecimento tem uma
-              identidade — o Corte Flow se adapta a ela, não o contrário.
+              identidade — a Raffros se adapta a ela, não o contrário.
             </p>
           </div>
 
@@ -962,7 +934,7 @@ export default function LandingPage() {
           <motion.div {...fadeUp()}>
             <h2 className="font-display font-semibold text-[clamp(30px,6vw,52px)] leading-[1.15] max-w-[18ch] mx-auto mb-[20px] text-white">
               Você cuida do cliente.<br />
-              <em className="not-italic text-[#F59E0B]">O Corte Flow cuida da agenda.</em>
+              <em className="not-italic text-[#F59E0B]">A Raffros cuida da agenda.</em>
             </h2>
             <p className="text-[#A1A1A6] text-[16.5px] mb-9">Seu próximo cliente pode estar tentando agendar agora. Comece hoje.</p>
             <Link
@@ -984,7 +956,7 @@ export default function LandingPage() {
         <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
           <a href="#hero" className="inline-flex items-center gap-[9px] font-display font-bold text-[19px] text-white">
             <span className="w-[9px] h-[9px] rounded-full bg-[#F59E0B] shadow-[0_0_14px_rgba(245,158,11,0.8)]" />
-            Corte Flow
+            Raffros
           </a>
 
           <nav className="flex flex-wrap justify-center gap-6 md:gap-[26px]">
@@ -995,7 +967,7 @@ export default function LandingPage() {
             <a href="#playlist" className="inline-flex items-center gap-1.5 text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors"><SpotifyGlyph className="w-[13px] h-[13px]" />Playlist</a>
           </nav>
 
-          <p className="text-[12px] text-[#71717A]">© {new Date().getFullYear()} Corte Flow. Todos os direitos reservados.</p>
+          <p className="text-[12px] text-[#71717A]">© {new Date().getFullYear()} Raffros. Todos os direitos reservados.</p>
         </div>
       </footer>
 
