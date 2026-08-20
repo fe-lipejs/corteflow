@@ -83,9 +83,9 @@ export default function PlaylistPage() {
                         <ArrowLeft className="w-4 h-4" />
                         Voltar
                     </Link>
-                    <span className="inline-flex items-center gap-[9px] font-display font-bold text-[18px] text-white tracking-tight">
-                        <span className="w-[9px] h-[9px] rounded-full bg-[#F59E0B] shadow-[0_0_14px_rgba(245,158,11,0.8)]" />
-                        Raffros
+                    <span className="inline-flex items-center gap-2.5 font-display font-bold text-[18px] text-white tracking-tight">
+                        <img src="/logo.svg" alt="Raffros" className="h-7 w-auto object-contain drop-shadow-[0_0_10px_rgba(245,158,11,0.35)]" />
+                        <span>Raffros</span>
                     </span>
                 </div>
             </header>

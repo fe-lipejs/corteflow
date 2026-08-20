@@ -283,9 +283,9 @@ export default function LandingPage() {
       <header className={`fixed top-0 left-0 right-0 z-[100] px-6 md:px-12 transition-all duration-300 border-b ${isScrolled ? 'bg-[#000000]/85 backdrop-blur-[16px] border-white/[0.08] py-3' : 'border-transparent py-[18px]'
         }`}>
         <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-6">
-          <a href="#hero" className="inline-flex items-center gap-[9px] font-display font-bold text-[20px] text-white tracking-tight">
-            <span className="w-[10px] h-[10px] rounded-full bg-[#F59E0B] shadow-[0_0_14px_rgba(245,158,11,0.8)]" />
-            Raffros
+          <a href="#hero" className="inline-flex items-center gap-2.5 font-display font-bold text-[20px] text-white tracking-tight group">
+            <img src="/logo.svg" alt="Raffros" className="h-8 md:h-9 w-auto object-contain drop-shadow-[0_0_12px_rgba(245,158,11,0.35)]" />
+            <span>Raffros</span>
           </a>
 
           <nav className="hidden md:flex gap-8">
@@ -352,9 +352,9 @@ export default function LandingPage() {
           >
             {/* Top Bar inside modal */}
             <div className="flex items-center justify-between w-full border-b border-white/[0.1] pb-4">
-              <a href="#hero" onClick={() => { closeMobileNav(); trackEvent('click_mobile_logo'); }} className="inline-flex items-center gap-[9px] font-display font-bold text-[20px] text-white tracking-tight">
-                <span className="w-[10px] h-[10px] rounded-full bg-[#F59E0B] shadow-[0_0_14px_rgba(245,158,11,0.8)]" />
-                Raffros
+              <a href="#hero" onClick={() => { closeMobileNav(); trackEvent('click_mobile_logo'); }} className="inline-flex items-center gap-2.5 font-display font-bold text-[20px] text-white tracking-tight">
+                <img src="/logo.svg" alt="Raffros" className="h-8 w-auto object-contain drop-shadow-[0_0_12px_rgba(245,158,11,0.35)]" />
+                <span>Raffros</span>
               </a>
               <button
                 type="button"
@@ -954,9 +954,9 @@ export default function LandingPage() {
       ============================================================ */}
       <footer className="pt-16 px-6 md:px-12 pb-14 border-t border-white/[0.08] bg-[#000000]">
         <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
-          <a href="#hero" className="inline-flex items-center gap-[9px] font-display font-bold text-[19px] text-white">
-            <span className="w-[9px] h-[9px] rounded-full bg-[#F59E0B] shadow-[0_0_14px_rgba(245,158,11,0.8)]" />
-            Raffros
+          <a href="#hero" className="inline-flex items-center gap-2.5 font-display font-bold text-[19px] text-white">
+            <img src="/logo.svg" alt="Raffros" className="h-7 w-auto object-contain drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]" />
+            <span>Raffros</span>
           </a>
 
           <nav className="flex flex-wrap justify-center gap-6 md:gap-[26px]">
