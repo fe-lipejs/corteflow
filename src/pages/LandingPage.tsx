@@ -1,7 +1,7 @@
-import { motion, animate, useInView, useReducedMotion } from 'framer-motion';
+import { motion, animate, useInView, useReducedMotion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef, type ReactNode } from 'react';
-import { MapPin, CheckCircle2, Scissors, Sparkles, Heart, User, Home } from 'lucide-react';
+import { MapPin, CheckCircle2, Scissors, Sparkles, Heart, User, Home, Menu, X } from 'lucide-react';
 import CookieConsentBanner from '../components/cookies/CookieConsentBanner';
 
 /* ============================================================
@@ -229,6 +229,17 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
+
   const closeMobileNav = () => setIsMobileMenuOpen(false);
 
   const fadeUp = (delay = 0) => (
@@ -294,34 +305,98 @@ export default function LandingPage() {
             </a>
 
             <button
-              aria-label="Abrir menu"
-              className="md:hidden w-10 h-10 flex flex-col items-center justify-center gap-[5px]"
+              type="button"
+              aria-label={isMobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+              className="md:hidden w-10 h-10 rounded-xl bg-white/[0.08] border border-white/[0.12] flex items-center justify-center text-white active:scale-95 transition-all"
               onClick={() => setIsMobileMenuOpen((v) => !v)}
             >
-              <span className={`block w-5 h-[2px] bg-white transition-all duration-300 ${isMobileMenuOpen ? 'translate-y-[7px] rotate-45' : ''}`} />
-              <span className={`block w-5 h-[2px] bg-white transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : ''}`} />
-              <span className={`block w-5 h-[2px] bg-white transition-all duration-300 ${isMobileMenuOpen ? '-translate-y-[7px] -rotate-45' : ''}`} />
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
-
-        {/* Mobile menu */}
-        <div className={`fixed inset-0 top-[60px] bg-[#000000] flex flex-col items-center justify-center gap-[30px] transition-all duration-500 ${isMobileMenuOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-full pointer-events-none'}`}>
-          <a href="#solucao" onClick={closeMobileNav} className="font-display text-[26px]">Solução</a>
-          <a href="#domicilio" onClick={closeMobileNav} className="font-display text-[26px]">Atendimento a domicílio</a>
-          <a href="#para-quem" onClick={closeMobileNav} className="font-display text-[26px]">Para quem é</a>
-          <a href="#planos" onClick={closeMobileNav} className="font-display text-[26px]">Planos</a>
-          <Link to="/login" onClick={closeMobileNav} className="text-[18px] text-[#A1A1A6]">Entrar</Link>
-          <a
-            href="#planos"
-            onClick={closeMobileNav}
-            className="mt-2 px-8 py-4 rounded-full font-bold text-[16px] text-black shadow-lg"
-            style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
-          >
-            Começar agora
-          </a>
-        </div>
       </header>
+
+      {/* =========================
+           MOBILE MENU FULLSCREEN MODAL
+      ========================== */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="fixed inset-0 z-[200] bg-[#000000] flex flex-col justify-between p-6 sm:p-10 h-[100dvh] w-full"
+          >
+            {/* Top Bar inside modal */}
+            <div className="flex items-center justify-between w-full border-b border-white/[0.1] pb-4">
+              <a href="#hero" onClick={closeMobileNav} className="inline-flex items-center gap-[9px] font-display font-bold text-[20px] text-white tracking-tight">
+                <span className="w-[10px] h-[10px] rounded-full bg-[#F59E0B] shadow-[0_0_14px_rgba(245,158,11,0.8)]" />
+                Corte Flow
+              </a>
+              <button
+                type="button"
+                aria-label="Fechar menu"
+                onClick={closeMobileNav}
+                className="w-10 h-10 rounded-xl bg-white/[0.08] border border-white/[0.12] flex items-center justify-center text-white hover:bg-white/[0.15] active:scale-95 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Nav links */}
+            <div className="flex flex-col items-center justify-center gap-7 my-auto text-center">
+              <a
+                href="#solucao"
+                onClick={closeMobileNav}
+                className="font-display font-semibold text-[26px] text-white hover:text-[#F59E0B] transition-colors"
+              >
+                Solução
+              </a>
+              <a
+                href="#domicilio"
+                onClick={closeMobileNav}
+                className="font-display font-semibold text-[26px] text-white hover:text-[#F59E0B] transition-colors"
+              >
+                Atendimento a domicílio
+              </a>
+              <a
+                href="#para-quem"
+                onClick={closeMobileNav}
+                className="font-display font-semibold text-[26px] text-white hover:text-[#F59E0B] transition-colors"
+              >
+                Para quem é
+              </a>
+              <a
+                href="#planos"
+                onClick={closeMobileNav}
+                className="font-display font-semibold text-[26px] text-white hover:text-[#F59E0B] transition-colors"
+              >
+                Planos &amp; Preços
+              </a>
+              <Link
+                to="/login"
+                onClick={closeMobileNav}
+                className="text-[17px] font-mono text-[#A1A1A6] hover:text-white transition-colors mt-2"
+              >
+                Entrar na Conta →
+              </Link>
+            </div>
+
+            {/* Bottom CTA Button */}
+            <div className="w-full pt-4 border-t border-white/[0.1]">
+              <a
+                href="#planos"
+                onClick={closeMobileNav}
+                className="w-full inline-flex items-center justify-center py-4 rounded-full font-bold text-[16px] text-black shadow-[0_20px_40px_-16px_rgba(245,158,11,0.6)]"
+                style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
+              >
+                Começar agora
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main>
         {/* ============================================================
