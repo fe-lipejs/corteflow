@@ -32,10 +32,16 @@ interface AnalyticsEvent {
 export default function AdminAnalytics() {
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<'today' | '24h' | '7d' | '30d' | 'all'>('7d');
+  const [timeRange, setTimeRange] = useState<'today' | '24h' | '7d' | '30d' | 'custom' | 'all'>('7d');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'page_view' | 'conversion' | 'faith' | 'nav'>('all');
   const [isLive, setIsLive] = useState(true);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   // Fetch analytics data
   const fetchAnalytics = async () => {
@@ -59,9 +65,20 @@ export default function AdminAnalytics() {
       } else if (timeRange === '30d') {
         const last30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
         query = query.gte('created_at', last30d);
+      } else if (timeRange === 'custom') {
+        if (customStartDate) {
+          const start = new Date(customStartDate);
+          start.setHours(0, 0, 0, 0);
+          query = query.gte('created_at', start.toISOString());
+        }
+        if (customEndDate) {
+          const end = new Date(customEndDate);
+          end.setHours(23, 59, 59, 999);
+          query = query.lte('created_at', end.toISOString());
+        }
       }
 
-      const { data, error } = await query.limit(1000);
+      const { data, error } = await query.limit(3000);
       if (error) throw error;
       setEvents(data || []);
     } catch (err) {
@@ -73,7 +90,8 @@ export default function AdminAnalytics() {
 
   useEffect(() => {
     fetchAnalytics();
-  }, [timeRange]);
+    setCurrentPage(1); // Reset page on date filter change
+  }, [timeRange, customStartDate, customEndDate]);
 
   // Realtime subscription for incoming visits and clicks
   useEffect(() => {
@@ -273,7 +291,30 @@ export default function AdminAnalytics() {
 
         {/* Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="bg-[#121216] border border-white/[0.08] p-1 rounded-xl flex items-center">
+          {/* Custom Date Filters */}
+          <div className="flex flex-wrap items-center gap-2 mr-2">
+            <input
+              type="date"
+              value={customStartDate}
+              onChange={(e) => {
+                setCustomStartDate(e.target.value);
+                setTimeRange('custom');
+              }}
+              className="bg-[#121216] border border-white/[0.08] rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#F59E0B]"
+            />
+            <span className="text-[#71717A] text-xs">até</span>
+            <input
+              type="date"
+              value={customEndDate}
+              onChange={(e) => {
+                setCustomEndDate(e.target.value);
+                setTimeRange('custom');
+              }}
+              className="bg-[#121216] border border-white/[0.08] rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#F59E0B]"
+            />
+          </div>
+
+          <div className="bg-[#121216] border border-white/[0.08] p-1 rounded-xl flex items-center hidden sm:flex">
             {(['today', '24h', '7d', '30d', 'all'] as const).map((r) => (
               <button
                 key={r}
@@ -650,8 +691,85 @@ export default function AdminAnalytics() {
           </div>
         </div>
 
-        {/* Table Content */}
-        <div className="overflow-x-auto">
+        {/* Mobile Cards (Hidden on Desktop) */}
+        <div className="flex flex-col divide-y divide-white/[0.04] md:hidden">
+          {loading && events.length === 0 ? (
+            <div className="py-12 text-center text-[#71717A]">
+              <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[#F59E0B] mb-2" />
+              Carregando atividades...
+            </div>
+          ) : filteredEvents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).length === 0 ? (
+            <div className="py-12 text-center text-[#71717A] italic">
+              Nenhum evento.
+            </div>
+          ) : (
+            filteredEvents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((evt) => {
+              const date = new Date(evt.created_at);
+              const isToday = new Date().toDateString() === date.toDateString();
+              const timeFormatted = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              const dateFormatted = date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+
+              const isFaithEvent = 
+                evt.page_path === '/playlist' || 
+                evt.event_name.includes('playlist') || 
+                evt.event_name.includes('versiculo') ||
+                evt.event_name.includes('spotify') ||
+                evt.event_name.includes('som_da_casa');
+
+              const isConversionEvent = 
+                evt.event_name.includes('cta') || 
+                evt.event_name.includes('plan') || 
+                evt.event_name.includes('comecar') ||
+                evt.event_name.includes('cadastro');
+
+              return (
+                <div key={evt.id} className="p-4 hover:bg-white/[0.02] transition-colors flex flex-col gap-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-white text-sm">
+                        {formatEventName(evt.event_name)}
+                      </span>
+                      <span className="text-[#A1A1A6] text-xs font-mono">
+                        {evt.page_path}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-white font-semibold text-xs">{timeFormatted}</span>
+                      {!isToday && <span className="text-[10px] text-[#71717A] block">{dateFormatted}</span>}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {evt.event_type === 'page_view' ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/25">
+                        <Eye className="w-2.5 h-2.5" /> Visita
+                      </span>
+                    ) : isConversionEvent ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-[#F59E0B] border border-amber-500/25">
+                        <Sparkles className="w-2.5 h-2.5" /> Conversão
+                      </span>
+                    ) : isFaithEvent ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/25">
+                        <Music2 className="w-2.5 h-2.5" /> Fé
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/[0.08] text-white border border-white/[0.1]">
+                        <MousePointerClick className="w-2.5 h-2.5" /> Clique
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1 text-[10px] text-[#71717A]">
+                      {getDeviceIcon(evt.device_type)}
+                      {evt.utm_source ? `UTM: ${evt.utm_source}` : evt.referrer || 'Direto'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop Table Content (Hidden on Mobile) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-white/[0.06] bg-[#0A0A0C]/50 text-[#71717A] font-mono uppercase tracking-wider">
@@ -674,11 +792,11 @@ export default function AdminAnalytics() {
               ) : filteredEvents.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-[#71717A] italic">
-                    Nenhum evento registrado com os filtros selecionados.
+                    Nenhum evento registrado.
                   </td>
                 </tr>
               ) : (
-                filteredEvents.map((evt) => {
+                filteredEvents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((evt) => {
                   const date = new Date(evt.created_at);
                   const isToday = new Date().toDateString() === date.toDateString();
                   const timeFormatted = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -768,10 +886,29 @@ export default function AdminAnalytics() {
           </table>
         </div>
 
-        {/* Footer info */}
-        <div className="p-4 bg-[#0A0A0C]/50 border-t border-white/[0.06] flex items-center justify-between text-xs text-[#71717A]">
-          <span>Feed com gravação contínua no Supabase</span>
-          <span className="font-mono">{filteredEvents.length} eventos listados</span>
+        {/* Pagination & Footer info */}
+        <div className="p-4 bg-[#0A0A0C]/50 border-t border-white/[0.06] flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-[#71717A]">
+          <span>Feed com gravação contínua no Supabase ({filteredEvents.length} eventos listados)</span>
+          
+          <div className="flex items-center gap-2 bg-[#121216] border border-white/[0.08] rounded-xl p-1">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              className="px-3 py-1.5 rounded-lg text-white hover:bg-white/[0.1] disabled:opacity-30 disabled:hover:bg-transparent font-bold transition-all"
+            >
+              &lt;
+            </button>
+            <span className="font-mono text-white px-2">
+              Pág {currentPage} de {Math.max(1, Math.ceil(filteredEvents.length / itemsPerPage))}
+            </span>
+            <button
+              disabled={currentPage === Math.ceil(filteredEvents.length / itemsPerPage) || Math.ceil(filteredEvents.length / itemsPerPage) === 0}
+              onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredEvents.length / itemsPerPage), p + 1))}
+              className="px-3 py-1.5 rounded-lg text-white hover:bg-white/[0.1] disabled:opacity-30 disabled:hover:bg-transparent font-bold transition-all"
+            >
+              &gt;
+            </button>
+          </div>
         </div>
 
       </div>
