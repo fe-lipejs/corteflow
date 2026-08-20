@@ -8,6 +8,7 @@ import RequireRole from '../middlewares/RequireRole';
 import Login from '../pages/Login';
 import Cadastro from '../pages/Cadastro';
 import LandingPage from '../pages/LandingPage';
+import PlaylistPage from '../pages/PlaylistPage';
 import Onboarding from '../pages/Onboarding';
 import RedefinirSenha from '../pages/RedefinirSenha';
 
@@ -204,6 +205,7 @@ export default function AppRoutes() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/playlist" element={<PlaylistPage />} />
           {AuthRoutes()}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -216,6 +218,7 @@ export default function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/playlist" element={<PlaylistPage />} />
         {AuthRoutes()}
 
         {/* Public tenant routes (path-based in dev) */}

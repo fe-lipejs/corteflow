@@ -239,8 +239,34 @@ export default function ClientPortal() {
 
   if (loadingStore) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0d0d0d]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#C9963B]" />
+      <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
+        <div
+          className="absolute inset-0 pointer-events-none -z-0"
+          style={{ background: 'radial-gradient(60% 50% at 50% 45%, rgba(245,158,11,0.15), transparent 70%)' }}
+        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.16, 0.8, 0.24, 1] }}
+          className="relative z-10 w-full max-w-sm rounded-[28px] border border-white/[0.1] bg-[#0C0C0F]/90 backdrop-blur-2xl p-8 sm:p-10 shadow-2xl text-center flex flex-col items-center"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-[#F59E0B]/30 flex items-center justify-center text-[#F59E0B] shadow-[0_0_35px_rgba(245,158,11,0.25)] mb-6">
+            <Loader2 className="w-8 h-8 animate-spin text-[#F59E0B]" />
+          </div>
+          <span className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.16em] uppercase font-semibold text-[#F59E0B] mb-2">
+            <span className="w-3.5 h-[1.5px] bg-[#F59E0B]" />
+            Portal do Cliente
+          </span>
+          <h3 className="font-display font-bold text-xl text-white tracking-tight">
+            Carregando seus agendamentos
+          </h3>
+          <p className="text-xs text-[#A1A1A6] mt-2 font-mono leading-relaxed">
+            Buscando histórico e reservas ativas…
+          </p>
+          <div className="w-full h-1 rounded-full bg-white/[0.06] overflow-hidden mt-6">
+            <div className="h-full w-1/2 rounded-full bg-gradient-to-r from-[#F59E0B] to-[#FBBF24] animate-[shimmer_1.5s_infinite]" />
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -249,14 +275,45 @@ export default function ClientPortal() {
 
   if (isTenantInactive) {
     return (
-      <div className="min-h-screen flex flex-col p-6 items-center justify-center text-center max-w-md mx-auto w-full bg-[#0d0d0d] text-white">
-        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 bg-red-500/10 border border-red-500/20">
-          <AlertTriangle className="w-8 h-8 text-red-400" />
-        </div>
-        <h2 className="text-2xl font-bold mb-3 font-serif">Estabelecimento Indisponível</h2>
-        <p className="text-sm mb-6 leading-relaxed text-[#888]">
-          O portal do cliente para este estabelecimento não está acessível pois a conta foi desativada ou excluída.
-        </p>
+      <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
+        <div
+          className="absolute inset-0 pointer-events-none -z-0"
+          style={{ background: 'radial-gradient(55% 50% at 50% 40%, rgba(245,158,11,0.12), transparent 70%)' }}
+        />
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 0.8, 0.24, 1] }}
+          className="relative z-10 w-full max-w-md rounded-[28px] border border-white/[0.1] bg-[#0C0C0F] p-8 sm:p-10 shadow-2xl text-center flex flex-col items-center"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-[#F59E0B] shadow-[0_0_30px_rgba(245,158,11,0.2)] mb-6">
+            <AlertTriangle className="w-8 h-8 text-[#F59E0B]" />
+          </div>
+          <span className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.16em] uppercase font-semibold text-[#F59E0B] mb-2">
+            <span className="w-3.5 h-[1.5px] bg-[#F59E0B]" />
+            Aviso de Acesso
+          </span>
+          <h2 className="font-display text-2xl font-bold text-white tracking-tight mb-3">Estabelecimento Indisponível</h2>
+          <p className="text-sm text-[#A1A1A6] leading-relaxed mb-8">
+            O portal do cliente para este estabelecimento não está acessível no momento pois a conta foi desativada ou está temporariamente suspensa.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+            <a
+              href="/"
+              className="w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-bold text-sm text-black shadow-[0_18px_36px_-16px_rgba(245,158,11,0.55)] hover:scale-[1.02] active:scale-[0.99] transition-all"
+              style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
+            >
+              Ir para o Início
+            </a>
+            <button
+              type="button"
+              onClick={() => window.history.back()}
+              className="w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-semibold text-sm text-white border border-white/[0.18] hover:border-[#F59E0B] hover:text-[#F59E0B] transition-all bg-[#141418]"
+            >
+              Voltar
+            </button>
+          </div>
+        </motion.div>
       </div>
     );
   }

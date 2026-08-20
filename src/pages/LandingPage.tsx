@@ -5,6 +5,7 @@ import { MapPin, CheckCircle2, Scissors, Sparkles, Heart, User, Home, Menu, X } 
 import CookieConsentBanner from '../components/cookies/CookieConsentBanner';
 import { trackEvent } from '../lib/analytics';
 import { usePageTracking } from '../hooks/usePageTracking';
+import SpotifyMoodCard, { SpotifyGlyph, FloatingPlaylistBadge } from '../components/SpotifyMoodCard';
 
 /* ============================================================
    TOKENS & STYLING (Apple Noir + Pure White + Electric Yellow)
@@ -103,11 +104,11 @@ function ServiceRadius() {
 ============================================================ */
 function PricingCards({ isLight = false }: { isLight?: boolean }) {
   return (
-    <div className="max-w-[1280px] mx-auto mt-14 grid md:grid-cols-3 gap-[20px] text-left">
+    <div className="max-w-[1280px] mx-auto mt-14 grid md:grid-cols-3 gap-7 md:gap-[20px] text-left">
 
       {/* SOLO */}
       <div
-        className={`rounded-[28px] p-[34px_28px] flex flex-col transition-all hover:-translate-y-1.5 shadow-xl ${isLight
+        className={`rounded-[28px] p-[30px_26px] sm:p-[34px_28px] flex flex-col transition-all hover:-translate-y-1.5 shadow-xl ${isLight
           ? 'bg-[#FFFFFF] border border-black/[0.08] hover:border-black/20'
           : 'bg-[#121216] border border-white/[0.08] hover:border-white/20'
           }`}
@@ -141,7 +142,7 @@ function PricingCards({ isLight = false }: { isLight?: boolean }) {
 
       {/* STUDIO (MAIS ESCOLHIDO) */}
       <div
-        className="relative bg-[#16161C] border-2 border-[#F59E0B] rounded-[28px] p-[34px_28px] flex flex-col transition-all md:scale-105 hover:md:-translate-y-1.5 shadow-[0_20px_60px_-15px_rgba(245,158,11,0.35)] z-10"
+        className="relative bg-[#16161C] border-2 border-[#F59E0B] rounded-[28px] p-[30px_26px] sm:p-[34px_28px] flex flex-col transition-all md:scale-105 hover:md:-translate-y-1.5 shadow-[0_20px_60px_-15px_rgba(245,158,11,0.35)] z-10"
         style={{ background: 'linear-gradient(160deg, rgba(245,158,11,0.12), rgba(18,18,22,0.98) 60%)' }}
       >
         <span
@@ -183,7 +184,7 @@ function PricingCards({ isLight = false }: { isLight?: boolean }) {
 
       {/* EQUIPE */}
       <div
-        className={`rounded-[28px] p-[34px_28px] flex flex-col transition-all hover:-translate-y-1.5 shadow-xl ${isLight
+        className={`rounded-[28px] p-[30px_26px] sm:p-[34px_28px] flex flex-col transition-all hover:-translate-y-1.5 shadow-xl ${isLight
           ? 'bg-[#FFFFFF] border border-black/[0.08] hover:border-black/20'
           : 'bg-[#121216] border border-white/[0.08] hover:border-white/20'
           }`}
@@ -296,6 +297,15 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-[14px]">
             <Link
+              to="/playlist"
+              onClick={() => trackEvent('click_nav_playlist')}
+              className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium text-[#F59E0B] bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 hover:border-amber-500/40 transition-all mr-1"
+            >
+              <SpotifyGlyph className="w-3.5 h-3.5" />
+              Som da Casa
+            </Link>
+
+            <Link
               to="/login"
               onClick={() => trackEvent('click_nav_login')}
               className="hidden md:inline-flex text-[14px] font-medium text-[#A1A1A6] hover:text-white transition-colors mr-2"
@@ -386,6 +396,14 @@ export default function LandingPage() {
               >
                 Planos &amp; Preços
               </a>
+              <a
+                href="#playlist"
+                onClick={() => { closeMobileNav(); trackEvent('click_mobile_link', { metadata: { item: 'playlist' } }); }}
+                className="inline-flex items-center gap-2 font-display font-semibold text-[22px] text-[#F59E0B] hover:opacity-80 transition-opacity"
+              >
+                <SpotifyGlyph className="w-[19px] h-[19px]" />
+                Nossa playlist
+              </a>
               <Link
                 to="/login"
                 onClick={() => { closeMobileNav(); trackEvent('click_mobile_login'); }}
@@ -414,14 +432,14 @@ export default function LandingPage() {
         {/* ============================================================
              01 — HERO (NOIR DARK + ELECTRIC YELLOW)
         ============================================================ */}
-        <section id="hero" className="relative min-h-[100svh] flex flex-col justify-center pt-[110px] bg-[#000000] overflow-hidden">
+        <section id="hero" className="relative min-h-[100svh] flex flex-col justify-center pt-[128px] pb-10 bg-[#000000] overflow-hidden">
 
           <div className="absolute inset-0 z-0">
             <img src="/images/hero-atendimento.jpg" alt="" className="w-full h-full object-cover opacity-[0.14]" />
             <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #000000 0%, rgba(0,0,0,0.7) 40%, #000000 95%), radial-gradient(60% 50% at 85% 10%, rgba(245,158,11,0.18), transparent 60%)' }} />
           </div>
 
-          <div className="relative z-10 max-w-[1280px] w-full mx-auto px-6 md:px-12 grid md:grid-cols-[1.05fr_0.95fr] gap-14 md:gap-10 items-center">
+          <div className="relative z-10 max-w-[1280px] w-full mx-auto px-6 md:px-12 grid md:grid-cols-[1.05fr_0.95fr] gap-16 md:gap-10 items-center">
 
             <motion.div {...fadeUp()} className="text-left">
               <Eyebrow>Agendamento &amp; gestão · Beleza e estética</Eyebrow>
@@ -431,12 +449,12 @@ export default function LandingPage() {
                   Você atende.
                 </em>
               </h1>
-              <p className="text-[clamp(16px,2vw,19px)] text-[#A1A1A6] max-w-[50ch] mb-[34px] leading-relaxed">
+              <p className="text-[clamp(16px,2vw,19px)] text-[#A1A1A6] max-w-[50ch] mb-[38px] leading-relaxed">
                 O Corte Flow assume sua agenda, organiza sua equipe e confirma atendimento a
                 domicílio sozinho — pra você focar em quem está na cadeira, não no WhatsApp.
               </p>
 
-              <div className="flex flex-wrap gap-[14px] mb-[46px]">
+              <div className="flex flex-wrap gap-[14px] mb-[32px]">
                 <a
                   href="#planos"
                   onClick={() => trackEvent('click_hero_comecar_agora')}
@@ -454,7 +472,41 @@ export default function LandingPage() {
                 </a>
               </div>
 
-              <div className="flex gap-[30px] flex-wrap">
+              {/* Compact Apple Noir Music Card (Aligned with 1st column / Red Box) */}
+              <div className="mt-7 mb-10">
+                <Link
+                  to="/playlist"
+                  onClick={() => trackEvent('click_hero_playlist_pill')}
+                  className="group flex flex-col gap-2 p-3 sm:p-[12px_16px] rounded-[18px] bg-[#101014]/90 hover:bg-[#16161C] border border-white/[0.1] hover:border-amber-500/40 shadow-[0_10px_28px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-300 w-full max-w-[280px] sm:max-w-[310px]"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/25 group-hover:border-amber-500/50 text-[#F59E0B] flex items-center justify-center font-bold text-xs shrink-0 transition-colors shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+                        <SpotifyGlyph className="w-3.5 h-3.5 text-[#F59E0B]" />
+                      </span>
+                      <span className="text-[11px] font-mono uppercase tracking-[0.12em] text-[#F59E0B] font-bold">
+                        No som da casa
+                      </span>
+                    </div>
+
+                    {/* Audio equalizer animation bars from image 2 */}
+                    <div className="flex items-end gap-[2px] h-3 px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25">
+                      <span className="w-[2px] bg-[#F59E0B] rounded-full animate-[pulse_0.8s_infinite_0ms] h-2.5" />
+                      <span className="w-[2px] bg-[#F59E0B] rounded-full animate-[pulse_1.1s_infinite_200ms] h-1.5" />
+                      <span className="w-[2px] bg-[#F59E0B] rounded-full animate-[pulse_0.9s_infinite_400ms] h-3" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 text-[12.5px] sm:text-[13px] font-semibold text-white/90 group-hover:text-white transition-colors pt-0.5">
+                    <span>Louvor &amp; Palavra do Dia</span>
+                    <span className="text-[#F59E0B] text-xs font-mono group-hover:translate-x-1 transition-transform">
+                      →
+                    </span>
+                  </div>
+                </Link>
+              </div>
+
+              <div className="flex gap-x-[36px] gap-y-6 flex-wrap">
                 <div className="flex flex-col">
                   <span className="font-display text-[28px] font-bold text-[#F59E0B]"><CountUp to={24} suffix="h" /></span>
                   <span className="text-[12px] text-[#71717A] max-w-[13ch]">devolvidas por mês</span>
@@ -496,7 +548,7 @@ export default function LandingPage() {
 
           </div>
 
-          <div className="relative z-10 flex items-center justify-center gap-2 mt-16 pb-6 font-mono text-[11px] tracking-[0.1em] uppercase text-[#71717A]">
+          <div className="relative z-10 flex items-center justify-center gap-2 mt-20 pb-8 font-mono text-[11px] tracking-[0.1em] uppercase text-[#71717A]">
             <span className="w-[1px] h-6 bg-gradient-to-b from-[#F59E0B] to-transparent animate-scrollcue" />
             role para ver
           </div>
@@ -505,7 +557,7 @@ export default function LandingPage() {
         {/* ============================================================
              02 — DOR (PURE CRISP APPLE WHITE #FFFFFF)
         ============================================================ */}
-        <section className="text-center py-20 md:py-[150px] px-6 bg-[#FFFFFF] text-[#1D1D1F]">
+        <section className="text-center py-24 md:py-[150px] px-6 bg-[#FFFFFF] text-[#1D1D1F]">
           <motion.div {...fadeUp()}>
             <p className="font-mono text-[12.5px] tracking-[0.03em] text-[#86868B] max-w-[46ch] mx-auto mb-5 font-semibold">
               Responder mensagem. Perguntar endereço. Confirmar horário. Torcer pra não esquecer.
@@ -519,7 +571,7 @@ export default function LandingPage() {
         {/* ============================================================
              03 — SOLUÇÃO (NOIR JET BLACK #0A0A0C)
         ============================================================ */}
-        <section id="solucao" className="py-[80px] md:py-[150px] px-6 md:px-12 bg-[#0A0A0C] text-white border-y border-white/[0.08]">
+        <section id="solucao" className="py-[104px] md:py-[150px] px-6 md:px-12 bg-[#0A0A0C] text-white border-y border-white/[0.08]">
           <div className="max-w-[1280px] mx-auto grid md:grid-cols-2 gap-12 md:gap-[72px] items-center">
 
             <motion.div {...fadeUp()}>
@@ -553,7 +605,7 @@ export default function LandingPage() {
              04 — AGENDA ONLINE (CLEAN CRISP WHITE #FFFFFF)
              (Aqui usamos o mockup do iPhone real ultra nítido da img 2!)
         ============================================================ */}
-        <section id="agenda" className="py-[80px] md:py-[150px] px-6 md:px-12 bg-[#FFFFFF] text-[#1D1D1F]">
+        <section id="agenda" className="py-[104px] md:py-[150px] px-6 md:px-12 bg-[#FFFFFF] text-[#1D1D1F]">
           <div className="max-w-[1280px] mx-auto grid md:grid-cols-[0.9fr_1fr] gap-10 md:gap-16 items-center">
 
             <motion.div {...fadeUp()} className="relative flex justify-center items-center py-4">
@@ -594,7 +646,7 @@ export default function LandingPage() {
         {/* ============================================================
              PREÇOS (CHECKPOINT NO MEIO DA PÁGINA)
         ============================================================ */}
-        <section className="py-[80px] md:py-[130px] px-6 md:px-12 text-center bg-[#0A0A0C] text-white border-y border-white/[0.08]">
+        <section className="py-[104px] md:py-[130px] px-6 md:px-12 text-center bg-[#0A0A0C] text-white border-y border-white/[0.08]">
           <motion.div {...fadeUp()}>
             <Eyebrow>Planos simples &amp; transparentes</Eyebrow>
             <h2 className="font-display font-semibold text-[clamp(26px,5vw,42px)] leading-[1.15] tracking-[-0.01em] max-w-[20ch] mx-auto text-white">
@@ -611,8 +663,8 @@ export default function LandingPage() {
         {/* ============================================================
              05 — MOTOR DE GESTÃO (NOIR DARK #000000)
         ============================================================ */}
-        <section id="gestao" className="py-[80px] md:py-[150px] px-6 md:px-12 bg-[#000000] text-white">
-          <div className="max-w-[640px] mx-auto text-center mb-16">
+        <section id="gestao" className="py-[104px] md:py-[150px] px-6 md:px-12 bg-[#000000] text-white">
+          <div className="max-w-[640px] mx-auto text-center mb-[72px]">
             <Eyebrow>Motor de gestão</Eyebrow>
             <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] text-white">Administre o negócio inteiro em um lugar.</h2>
             <p className="text-[clamp(16px,2vw,18px)] text-[#A1A1A6] max-w-[46ch] mt-5 mx-auto">
@@ -622,7 +674,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="relative max-w-[1100px] mx-auto grid md:grid-cols-4 gap-5 md:gap-6 mb-20">
+          <div className="relative max-w-[1100px] mx-auto grid md:grid-cols-4 gap-6 md:gap-6 mb-24">
             <svg className="absolute hidden md:block overflow-visible top-1/2 left-0 w-full h-[2px] z-0" viewBox="0 0 800 4" preserveAspectRatio="none">
               <motion.path
                 d="M0,2 L800,2" fill="none" stroke="url(#flowGradient)" strokeWidth="2"
@@ -640,7 +692,7 @@ export default function LandingPage() {
               { num: '03', title: 'Profissionais', desc: 'Cada um com sua própria agenda, serviços e horários de trabalho.' },
               { num: '04', title: 'Agendamentos', desc: 'Tudo conectado — do primeiro clique do cliente até o atendimento.' },
             ].map((node, i) => (
-              <motion.div key={node.num} {...fadeUp(i * 0.08)} className="relative z-10 bg-[#121216] border border-white/[0.08] rounded-[18px] p-[24px_22px] shadow-lg">
+              <motion.div key={node.num} {...fadeUp(i * 0.08)} className="relative z-10 bg-[#121216] border border-white/[0.08] rounded-[18px] p-[26px_22px] shadow-lg">
                 <span className="inline-flex font-mono text-[12px] font-bold text-[#F59E0B] mb-2.5">{node.num}</span>
                 <h3 className="font-display text-[18px] font-semibold mb-2 text-white">{node.title}</h3>
                 <p className="text-[14px] text-[#A1A1A6]">{node.desc}</p>
@@ -648,7 +700,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <motion.div {...fadeUp()} className="max-w-[1100px] mx-auto rounded-[32px] border border-white/[0.1] bg-[#0C0C0F] p-8 md:p-14 grid md:grid-cols-[1fr_auto] gap-10 items-center shadow-2xl">
+          <motion.div {...fadeUp()} className="max-w-[1100px] mx-auto rounded-[32px] border border-white/[0.1] bg-[#0C0C0F] p-7 sm:p-9 md:p-14 grid md:grid-cols-[1fr_auto] gap-10 md:gap-12 items-center shadow-2xl">
             <div>
               <h3 className="font-display text-[22px] md:text-[26px] font-semibold max-w-[20ch] text-white">O painel que mostra tudo isso, ao vivo.</h3>
               <p className="text-[15px] text-[#A1A1A6] mt-3 max-w-[42ch]">
@@ -663,7 +715,7 @@ export default function LandingPage() {
         {/* ============================================================
              06 — EQUIPES (CLEAN CRISP WHITE #FFFFFF)
         ============================================================ */}
-        <section className="py-[80px] md:py-[150px] px-6 md:px-12 bg-[#FFFFFF] text-[#1D1D1F]">
+        <section className="py-[104px] md:py-[150px] px-6 md:px-12 bg-[#FFFFFF] text-[#1D1D1F]">
           <div className="max-w-[1280px] mx-auto grid md:grid-cols-[1fr_0.85fr] gap-10 md:gap-20 items-center">
 
             <motion.div {...fadeUp(0.1)} className="md:order-2 rounded-[28px] overflow-hidden border border-black/[0.1] shadow-xl">
@@ -690,7 +742,7 @@ export default function LandingPage() {
         {/* ============================================================
              07 — DOMICÍLIO (NOIR DARK #0A0A0C)
         ============================================================ */}
-        <section id="domicilio" className="bg-[#0A0A0C] border-y border-white/[0.08] py-[80px] md:py-[150px] px-6 md:px-12 overflow-hidden text-white">
+        <section id="domicilio" className="bg-[#0A0A0C] border-y border-white/[0.08] py-[104px] md:py-[150px] px-6 md:px-12 overflow-hidden text-white">
           <div className="max-w-[1280px] mx-auto grid md:grid-cols-[1fr_0.8fr] gap-12 md:gap-20 items-center mb-[76px]">
 
             <motion.div {...fadeUp()}>
@@ -716,7 +768,7 @@ export default function LandingPage() {
             </motion.div>
           </div>
 
-          <div className="relative max-w-[1100px] mx-auto grid sm:grid-cols-2 md:grid-cols-5 gap-4 md:gap-[18px]">
+          <div className="relative max-w-[1100px] mx-auto grid sm:grid-cols-2 md:grid-cols-5 gap-5 md:gap-[18px]">
             <svg className="absolute hidden md:block overflow-visible top-1/2 left-0 w-full h-[2px] z-0" viewBox="0 0 800 4" preserveAspectRatio="none">
               <motion.path
                 d="M0,2 L800,2" fill="none" stroke="url(#flowGradient)" strokeWidth="2"
@@ -748,8 +800,8 @@ export default function LandingPage() {
         {/* ============================================================
              08 — PERSONALIZAÇÃO (CLEAN CRISP WHITE #FFFFFF)
         ============================================================ */}
-        <section className="py-[80px] md:py-[140px] px-6 md:px-12 bg-[#FFFFFF] text-[#1D1D1F]">
-          <div className="max-w-[640px] mx-auto text-center mb-14">
+        <section className="py-[104px] md:py-[140px] px-6 md:px-12 bg-[#FFFFFF] text-[#1D1D1F]">
+          <div className="max-w-[640px] mx-auto text-center mb-[72px]">
             <Eyebrow light>Sua marca, do seu jeito</Eyebrow>
             <h2 className="font-display font-semibold text-[clamp(26px,5vw,40px)] leading-[1.15] tracking-[-0.01em] text-[#1D1D1F]">A página do seu cliente, com a sua cara.</h2>
             <p className="text-[15.5px] text-[#6E6E73] mt-4 mx-auto max-w-[44ch]">
@@ -758,7 +810,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-8 md:gap-10">
+          <div className="flex flex-wrap justify-center gap-10 md:gap-10">
             {[
               { src: '/images/custom-pink.png', label: 'Rosé' },
               { src: '/images/custom-dark.png', label: 'Âmbar' },
@@ -775,14 +827,14 @@ export default function LandingPage() {
         {/* ============================================================
              09 — PARA QUEM É (NOIR DARK #000000)
         ============================================================ */}
-        <section id="para-quem" className="py-[80px] md:py-[150px] px-6 md:px-12 bg-[#000000] text-white">
+        <section id="para-quem" className="py-[104px] md:py-[150px] px-6 md:px-12 bg-[#000000] text-white">
           <div className="max-w-[1280px] mx-auto">
             <Eyebrow>Para quem é</Eyebrow>
             <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] max-w-[16ch] text-white">
               Feito para quem vive de deixar gente bonita.
             </h2>
 
-            <div className="mt-14 grid md:grid-cols-3 gap-[16px] md:auto-rows-[minmax(150px,auto)]">
+            <div className="mt-14 grid md:grid-cols-3 gap-5 md:gap-[16px] md:auto-rows-[minmax(150px,auto)]">
 
               <motion.div {...fadeUp(0.1)} className="rounded-[28px] overflow-hidden border border-white/[0.1] md:row-span-2 shadow-2xl">
                 <img src="/images/estilo-corte.jpg" alt="Estilo de corte" className="w-full h-full object-cover aspect-[3/4]" />
@@ -795,7 +847,7 @@ export default function LandingPage() {
               ].map((card, i) => {
                 const IconComponent = card.icon;
                 return (
-                  <motion.div key={card.title} {...fadeUp(0.15 + i * 0.08)} className="bg-[#121216] border border-white/[0.08] rounded-[18px] p-[26px_24px] transition-all hover:border-[#F59E0B]/50 hover:-translate-y-1 shadow-lg">
+                  <motion.div key={card.title} {...fadeUp(0.15 + i * 0.08)} className="bg-[#121216] border border-white/[0.08] rounded-[18px] p-[28px_24px] transition-all hover:border-[#F59E0B]/50 hover:-translate-y-1 shadow-lg">
                     <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3">
                       <IconComponent className="w-5 h-5 text-[#F59E0B]" />
                     </div>
@@ -815,7 +867,7 @@ export default function LandingPage() {
               ].map((card, i) => {
                 const IconComponent = card.icon;
                 return (
-                  <motion.div key={card.title} {...fadeUp(0.6 + i * 0.08)} className="bg-[#121216] border border-white/[0.08] rounded-[18px] p-[26px_24px] transition-all hover:border-[#F59E0B]/50 hover:-translate-y-1 shadow-lg">
+                  <motion.div key={card.title} {...fadeUp(0.6 + i * 0.08)} className="bg-[#121216] border border-white/[0.08] rounded-[18px] p-[28px_24px] transition-all hover:border-[#F59E0B]/50 hover:-translate-y-1 shadow-lg">
                     <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3">
                       <IconComponent className="w-5 h-5 text-[#F59E0B]" />
                     </div>
@@ -830,9 +882,14 @@ export default function LandingPage() {
         </section>
 
         {/* ============================================================
+             09.5 — PLAYLIST / QUEBRA-GELO (NOIR JET BLACK)
+        ============================================================ */}
+        <SpotifyMoodCard />
+
+        {/* ============================================================
              10 — AUTOMAÇÃO (CLEAN CRISP WHITE #FFFFFF)
         ============================================================ */}
-        <section className="py-[80px] md:py-[150px] px-6 md:px-12 text-center bg-[#FFFFFF] text-[#1D1D1F] overflow-hidden">
+        <section className="py-[104px] md:py-[150px] px-6 md:px-12 text-center bg-[#FFFFFF] text-[#1D1D1F] overflow-hidden">
           <motion.div {...fadeUp()}>
             <Eyebrow light>Automação</Eyebrow>
             <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] max-w-[22ch] mx-auto text-[#1D1D1F]">
@@ -840,7 +897,7 @@ export default function LandingPage() {
             </h2>
           </motion.div>
 
-          <div className="relative max-w-[1100px] mx-auto mt-14 grid sm:grid-cols-2 md:grid-cols-5 gap-4 md:gap-[16px]">
+          <div className="relative max-w-[1100px] mx-auto mt-14 grid sm:grid-cols-2 md:grid-cols-5 gap-5 md:gap-[16px]">
             <svg className="absolute hidden md:block overflow-visible top-1/2 left-0 w-full h-[2px] z-0" viewBox="0 0 800 4" preserveAspectRatio="none">
               <motion.path
                 d="M0,2 L800,2" fill="none" stroke="url(#flowGradientLight)" strokeWidth="2"
@@ -866,7 +923,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <motion.div {...fadeUp(0.2)} className="max-w-[720px] mx-auto mt-16 flex flex-col md:flex-row items-center gap-8 bg-[#F5F5F7] border border-black/[0.08] rounded-[28px] p-8 text-left shadow-md">
+          <motion.div {...fadeUp(0.2)} className="max-w-[720px] mx-auto mt-16 flex flex-col md:flex-row items-center gap-8 bg-[#F5F5F7] border border-black/[0.08] rounded-[28px] p-7 sm:p-8 text-left shadow-md">
             <PhoneFrame src="/images/map-dark.png" alt="Local e horários do estabelecimento" lightMode className="w-[140px] shrink-0 mx-auto md:mx-0" />
             <div>
               <h3 className="font-display text-[19px] font-semibold text-[#1D1D1F]">Local, horários e como chegar — tudo automático.</h3>
@@ -881,7 +938,7 @@ export default function LandingPage() {
         {/* ============================================================
              11 — PLANOS (FINAL NOIR DARK #0A0A0C)
         ============================================================ */}
-        <section id="planos" className="py-[80px] md:py-[150px] px-6 md:px-12 text-center bg-[#0A0A0C] text-white border-t border-white/[0.08]">
+        <section id="planos" className="py-[104px] md:py-[150px] px-6 md:px-12 text-center bg-[#0A0A0C] text-white border-t border-white/[0.08]">
           <motion.div {...fadeUp()}>
             <Eyebrow>Planos</Eyebrow>
             <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] max-w-[20ch] mx-auto text-white">
@@ -900,7 +957,7 @@ export default function LandingPage() {
         {/* ============================================================
              12 — CTA FINAL (NOIR DARK #000000)
         ============================================================ */}
-        <section className="relative text-center py-[110px] px-6 bg-[#000000] overflow-hidden">
+        <section className="relative text-center py-[120px] px-6 bg-[#000000] overflow-hidden">
           <div className="absolute inset-0 -z-10" style={{ background: 'radial-gradient(55% 75% at 50% 0%, rgba(245,158,11,0.2), transparent 65%), #000000' }} />
           <motion.div {...fadeUp()}>
             <h2 className="font-display font-semibold text-[clamp(30px,6vw,52px)] leading-[1.15] max-w-[18ch] mx-auto mb-[20px] text-white">
@@ -923,8 +980,8 @@ export default function LandingPage() {
       {/* ============================================================
            FOOTER (NOIR PURE BLACK #000000)
       ============================================================ */}
-      <footer className="pt-14 px-6 md:px-12 pb-12 border-t border-white/[0.08] bg-[#000000]">
-        <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+      <footer className="pt-16 px-6 md:px-12 pb-14 border-t border-white/[0.08] bg-[#000000]">
+        <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
           <a href="#hero" className="inline-flex items-center gap-[9px] font-display font-bold text-[19px] text-white">
             <span className="w-[9px] h-[9px] rounded-full bg-[#F59E0B] shadow-[0_0_14px_rgba(245,158,11,0.8)]" />
             Corte Flow
@@ -935,6 +992,7 @@ export default function LandingPage() {
             <a href="#domicilio" className="text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors">Domicílio</a>
             <a href="#para-quem" className="text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors">Para quem é</a>
             <a href="#planos" className="text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors">Planos</a>
+            <a href="#playlist" className="inline-flex items-center gap-1.5 text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors"><SpotifyGlyph className="w-[13px] h-[13px]" />Playlist</a>
           </nav>
 
           <p className="text-[12px] text-[#71717A]">© {new Date().getFullYear()} Corte Flow. Todos os direitos reservados.</p>
@@ -942,6 +1000,7 @@ export default function LandingPage() {
       </footer>
 
       <CookieConsentBanner />
+      <FloatingPlaylistBadge />
     </div>
   );
 }
