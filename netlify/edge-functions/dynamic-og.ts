@@ -59,30 +59,31 @@ export default async (request: Request, context: Context) => {
     let html = await indexRes.text();
 
     const businessType = tenant.business_type;
-    // Removendo os textos genéricos extensos a pedido do usuário
-    // e usando um padrão mais direto.
-    let defaultDesc = `${tenant.name} | Agende agora.`;
+    // Texto fixo que o usuário pediu para a descrição padrão do lojista
+    let defaultDesc = `Garanta seu atendimento. Faça seu agendamento agora.`;
 
     if (businessType === 'barbearia') {
-      defaultDesc = `${tenant.name} | Agende agora.`;
+      defaultDesc = `Garanta seu atendimento. Faça seu agendamento agora.`;
     } else if (businessType === 'salao') {
-      defaultDesc = `${tenant.name} | Agende agora.`;
+      defaultDesc = `Garanta seu atendimento. Faça seu agendamento agora.`;
     } else if (businessType === 'esmalteria') {
-      defaultDesc = `${tenant.name} | Agende agora.`;
+      defaultDesc = `Garanta seu atendimento. Faça seu agendamento agora.`;
     }
 
     const logoUrl = tenant.tenant_settings?.logo_url || 'https://raffros.com.br/images/RaffrosLogo.png';
     const title = `${tenant.name} | Agende agora.`;
     const desc = tenant.tenant_settings?.short_description || defaultDesc;
 
-    html = html.replace(/<title>(.*?)<\/title>/g, `<title>${title}</title>`);
-    html = html.replace(/<meta property="og:title" content="(.*?)">/g, `<meta property="og:title" content="${title}">`);
-    html = html.replace(/<meta property="og:description" content="(.*?)">/g, `<meta property="og:description" content="${desc}">`);
-    html = html.replace(/<meta property="og:image" content="(.*?)">/g, `<meta property="og:image" content="${logoUrl}">`);
-    html = html.replace(/<meta property="twitter:title" content="(.*?)">/g, `<meta property="twitter:title" content="${title}">`);
-    html = html.replace(/<meta property="twitter:description" content="(.*?)">/g, `<meta property="twitter:description" content="${desc}">`);
-    html = html.replace(/<meta property="twitter:image" content="(.*?)">/g, `<meta property="twitter:image" content="${logoUrl}">`);
-    html = html.replace(/<meta name="description" content="(.*?)">/g, `<meta name="description" content="${desc}">`);
+    // Usando [\s\S]*? para garantir que a quebra de linha no HTML (enter) 
+    // não quebre o Regex (que era o que estava acontecendo)
+    html = html.replace(/<title>[\s\S]*?<\/title>/g, `<title>${title}</title>`);
+    html = html.replace(/<meta property="og:title"[\s\S]*?>/g, `<meta property="og:title" content="${title}">`);
+    html = html.replace(/<meta property="og:description"[\s\S]*?>/g, `<meta property="og:description" content="${desc}">`);
+    html = html.replace(/<meta property="og:image"[\s\S]*?>/g, `<meta property="og:image" content="${logoUrl}">`);
+    html = html.replace(/<meta property="twitter:title"[\s\S]*?>/g, `<meta property="twitter:title" content="${title}">`);
+    html = html.replace(/<meta property="twitter:description"[\s\S]*?>/g, `<meta property="twitter:description" content="${desc}">`);
+    html = html.replace(/<meta property="twitter:image"[\s\S]*?>/g, `<meta property="twitter:image" content="${logoUrl}">`);
+    html = html.replace(/<meta name="description"[\s\S]*?>/g, `<meta name="description" content="${desc}">`);
 
     return new Response(html, {
       status: 200,
