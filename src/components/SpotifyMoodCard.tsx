@@ -32,13 +32,13 @@ export function HeroPlaylistLine() {
                 className="group block rounded-[18px] border border-white/[0.08] bg-white/[0.025] hover:bg-white/[0.045] hover:border-white/[0.16] transition-colors p-5 sm:p-[22px]"
             >
                 <div className="flex items-center gap-4">
-                    <span className="shrink-0 grid place-items-center w-11 h-11 rounded-full border border-white/[0.1] bg-black/40 text-[#A1A1A6] group-hover:text-[#F59E0B] transition-colors">
+                    <span className="shrink-0 grid place-items-center w-11 h-11 rounded-full border border-white/[0.1] bg-black/40 text-[#A1A1A6]/100 group-hover:text-[#F59E0B] transition-colors">
                         <SpotifyGlyph className="w-[21px] h-[21px]" />
                     </span>
 
                     <div className="min-w-0 flex-1">
                         <p className="font-display text-[15.5px] font-medium text-white tracking-[-0.01em]">
-                            Louvor &amp; palavra do dia
+                            Louvor &amp; Palavra do dia
                         </p>
                         <p className="text-[12.5px] text-[#71717A] mt-[3px] leading-snug">
                             A playlist da casa e um verso pra edificar. Só um café.
