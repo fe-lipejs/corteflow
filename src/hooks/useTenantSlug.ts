@@ -22,8 +22,14 @@ export function useTenantSlug(): string | null {
     hostname.endsWith('.ngrok-free.app') ||
     hostname.endsWith('.netlify.app');
 
-  if (isLocalDev) {
-    // Dev or direct Netlify preview mode: use the path param (:slug)
+  const isMainDomain = 
+    hostname === 'raffros.com.br' || 
+    hostname === 'www.raffros.com.br' || 
+    hostname === 'raffros.com' || 
+    hostname === 'www.raffros.com';
+
+  if (isLocalDev || isMainDomain) {
+    // Dev, preview, or main root domain: use the path param (:slug)
     return paramSlug ?? null;
   }
 
