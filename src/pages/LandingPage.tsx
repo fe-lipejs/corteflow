@@ -443,17 +443,14 @@ export default function LandingPage() {
 
             <motion.div {...fadeUp()} className="text-left">
               {/* <Eyebrow>Agendamento &amp; gestão · Beleza e estética</Eyebrow> */}
-              <h1 className="font-display font-semibold text-[clamp(40px,9vw,74px)] leading-[1.03] tracking-[-0.02em] m-0 mb-[22px] text-white">
-                Sua barbearia agenda.<br />
-                <p />
-                <em className="not-italic" style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
-                  Você atende.
+              <h1 className="font-display font-semibold text-[clamp(36px,8vw,64px)] leading-[1.03] tracking-[-0.02em] m-0 mb-[22px] text-white">
+                Pare de perder tempo agendando clientes no <br />
+                <em className="not-italic" style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
+                  WhatsApp.
                 </em>
               </h1>
-              <br />
-              <p className="text-[clamp(16px,2vw,19px)] text-[#A1A1A6] max-w-[50ch] mb-[38px] leading-relaxed">
-                A Raffros assume sua agenda, organiza sua equipe e confirma atendimento a
-                domicílio sozinho — pra você focar em quem está na cadeira, não no WhatsApp.
+              <p className="text-[clamp(16px,2vw,19px)] text-[#A1A1A6] max-w-[48ch] mb-[38px] leading-relaxed">
+                Sua agenda lotada, faturamento garantido e nenhum furo. A plataforma de gestão que trabalha enquanto você foca na cadeira.
               </p>
 
               <div className="flex flex-wrap gap-[14px] mb-[32px]">
@@ -527,187 +524,52 @@ export default function LandingPage() {
         </section>
 
         {/* ============================================================
-             02 — DOR (PURE CRISP APPLE WHITE #FFFFFF)
+             02 — DOR & SOLUÇÃO IMEDIATA (NOIR JET BLACK)
         ============================================================ */}
-        <section className="text-center py-24 md:py-[150px] px-6 bg-[#FFFFFF] text-[#1D1D1F]">
-          <motion.div {...fadeUp()}>
-            <p className="font-mono text-[12.5px] tracking-[0.03em] text-[#86868B] max-w-[46ch] mx-auto mb-5 font-semibold">
-              Responder mensagem. Perguntar endereço. Confirmar horário. Torcer pra não esquecer.
-            </p>
-            <h2 className="font-display text-[clamp(26px,5vw,42px)] font-bold max-w-[20ch] mx-auto leading-[1.2] text-[#1D1D1F]">
-              Sua agenda virou um <em className="not-italic text-[#D97706]">segundo trabalho</em>.
-            </h2>
-          </motion.div>
-        </section>
-
-        {/* ============================================================
-             03 — SOLUÇÃO (NOIR JET BLACK #0A0A0C)
-        ============================================================ */}
-        <section id="solucao" className="py-[104px] md:py-[150px] px-6 md:px-12 bg-[#0A0A0C] text-white border-y border-white/[0.08]">
-          <div className="max-w-[1280px] mx-auto grid md:grid-cols-2 gap-12 md:gap-[72px] items-center">
-
+        <section id="solucao" className="py-24 md:py-[150px] px-6 bg-[#0A0A0C] border-y border-white/[0.08]">
+          <div className="max-w-[1000px] mx-auto text-center mb-16 md:mb-24">
             <motion.div {...fadeUp()}>
-              <Eyebrow>A Raffros</Eyebrow>
-              <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] text-white">
-                Não é uma agenda.<br />É o motor do seu negócio.
+              <h2 className="font-display text-[clamp(28px,5vw,48px)] font-bold leading-[1.1] text-white">
+                Quantos clientes você já perdeu porque <br className="hidden md:block" />
+                não conseguiu responder na hora?
               </h2>
-              <p className="text-[clamp(16px,2vw,18px)] text-[#A1A1A6] max-w-[46ch] mt-5 leading-relaxed">
-                Menos mensagem, menos confusão, mais clientes na cadeira. A Raffros assume
-                o agendamento, organiza sua equipe e ainda resolve o atendimento a domicílio —
-                sozinho, sem você no meio de cada conversa.
+              <p className="text-[#A1A1A6] text-[clamp(16px,2vw,18px)] max-w-[46ch] mx-auto mt-6">
+                O cliente agenda e não aparece. O celular não para de tocar enquanto você atende. 
+                Sua agenda virou um segundo trabalho não remunerado. 
+                <strong className="text-white block mt-3">A Raffros acaba com isso hoje.</strong>
               </p>
-
-              <div className="flex flex-wrap gap-3 mt-[30px]">
-                {['Agenda online', 'Gestão completa', 'Atendimento a domicílio'].map((tag) => (
-                  <span key={tag} className="text-[13px] font-medium px-[16px] py-[9px] rounded-full border border-white/[0.12] bg-[#141418] text-[#D4D4D8]">
-                    {tag}
-                  </span>
-                ))}
-              </div>
             </motion.div>
-
-            <motion.div {...fadeUp(0.1)} className="rounded-[28px] overflow-hidden border border-white/[0.12] aspect-[16/11] shadow-2xl">
-              <img src="/images/barbearia.jpg" alt="Barbearia usando a Raffros" className="w-full h-full object-cover" />
-            </motion.div>
-
-          </div>
-        </section>
-
-        {/* ============================================================
-             04 — AGENDA ONLINE (CLEAN CRISP WHITE #FFFFFF)
-             (Aqui usamos o mockup do iPhone real ultra nítido da img 2!)
-        ============================================================ */}
-        <section id="agenda" className="py-[104px] md:py-[150px] px-6 md:px-12 bg-[#FFFFFF] text-[#1D1D1F]">
-          <div className="max-w-[1280px] mx-auto grid md:grid-cols-[0.9fr_1fr] gap-10 md:gap-16 items-center">
-
-            <motion.div {...fadeUp()} className="relative flex justify-center items-center py-4">
-              <img
-                src="/images/mockup-iphone-light.png"
-                alt="Agendamento Raffros no Celular"
-                className="w-[260px] md:w-[310px] h-auto max-h-[580px] object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.18)] hover:scale-105 transition-transform duration-500"
-              />
-            </motion.div>
-
-            <motion.div {...fadeUp(0.1)}>
-              <Eyebrow light>Agenda online</Eyebrow>
-              <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] text-[#1D1D1F]">
-                Seu cliente agenda sozinho.
-              </h2>
-              <p className="text-[clamp(16px,2vw,18px)] text-[#6E6E73] max-w-[46ch] mt-5 leading-relaxed">
-                Pare de responder mensagem pra marcar horário. O cliente escolhe o serviço,
-                o profissional e o horário — a qualquer hora, sem esperar você ficar livre.
-              </p>
-
-              <ul className="mt-[26px] flex flex-col gap-[14px]">
-                {[
-                  'Sem trocar mensagem pra confirmar disponibilidade',
-                  'Sem cliente esperando resposta e desistindo',
-                  'Sem horário perdido por falta de organização',
-                ].map((item) => (
-                  <li key={item} className="relative pl-[28px] text-[15px] text-[#333336] font-medium">
-                    <span className="absolute left-0 top-[3px] w-[18px] h-[18px] rounded-full bg-amber-500/15 border border-[#D97706]/40 flex items-center justify-center text-[10px] text-[#D97706] font-bold">✓</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-
-          </div>
-        </section>
-
-        {/* ============================================================
-             PREÇOS (CHECKPOINT NO MEIO DA PÁGINA)
-        ============================================================ */}
-        <section className="py-[104px] md:py-[130px] px-6 md:px-12 text-center bg-[#0A0A0C] text-white border-y border-white/[0.08]">
-          <motion.div {...fadeUp()}>
-            <Eyebrow>Planos simples &amp; transparentes</Eyebrow>
-            <h2 className="font-display font-semibold text-[clamp(26px,5vw,42px)] leading-[1.15] tracking-[-0.01em] max-w-[20ch] mx-auto text-white">
-              Comece por menos que o valor de um corte.
-            </h2>
-            <p className="text-[15.5px] text-[#A1A1A6] mt-3 mx-auto max-w-[46ch]">
-              7 dias de teste grátis sem burocracia. Cancele quando quiser.
-            </p>
-          </motion.div>
-
-          <PricingCards />
-        </section>
-
-        {/* ============================================================
-             05 — MOTOR DE GESTÃO (NOIR DARK #000000)
-        ============================================================ */}
-        <section id="gestao" className="py-[104px] md:py-[150px] px-6 md:px-12 bg-[#000000] text-white">
-          <div className="max-w-[640px] mx-auto text-center mb-[72px]">
-            <Eyebrow>Motor de gestão</Eyebrow>
-            <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] text-white">Administre o negócio inteiro em um lugar.</h2>
-            <p className="text-[clamp(16px,2vw,18px)] text-[#A1A1A6] max-w-[46ch] mt-5 mx-auto">
-              Crie profissionais, monte equipes, defina serviços e horários. A Raffros
-              conecta cada peça da operação — e cada profissional acompanha só os próprios
-              agendamentos.
-            </p>
           </div>
 
-          <div className="relative max-w-[1100px] mx-auto grid md:grid-cols-4 gap-6 md:gap-6 mb-24">
-            <svg className="absolute hidden md:block overflow-visible top-1/2 left-0 w-full h-[2px] z-0" viewBox="0 0 800 4" preserveAspectRatio="none">
-              <motion.path
-                d="M0,2 L800,2" fill="none" stroke="url(#flowGradient)" strokeWidth="2"
-                strokeDasharray="820"
-                initial={{ strokeDashoffset: 820 }}
-                whileInView={{ strokeDashoffset: 0 }}
-                viewport={{ once: true, margin: '-20%' }}
-                transition={{ duration: 1.3, ease: EASE }}
-              />
-            </svg>
-
+          <div className="max-w-[1280px] mx-auto grid md:grid-cols-3 gap-6 md:gap-8">
             {[
-              { num: '01', title: 'Administrador', desc: 'Visão completa da operação: agenda, equipe e desempenho do negócio.' },
-              { num: '02', title: 'Equipe', desc: 'Organize quantos profissionais precisar, sob um único negócio.' },
-              { num: '03', title: 'Profissionais', desc: 'Cada um com sua própria agenda, serviços e horários de trabalho.' },
-              { num: '04', title: 'Agendamentos', desc: 'Tudo conectado — do primeiro clique do cliente até o atendimento.' },
-            ].map((node, i) => (
-              <motion.div key={node.num} {...fadeUp(i * 0.08)} className="relative z-10 bg-[#121216] border border-white/[0.08] rounded-[18px] p-[26px_22px] shadow-lg">
-                <span className="inline-flex font-mono text-[12px] font-bold text-[#F59E0B] mb-2.5">{node.num}</span>
-                <h3 className="font-display text-[18px] font-semibold mb-2 text-white">{node.title}</h3>
-                <p className="text-[14px] text-[#A1A1A6]">{node.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.div {...fadeUp()} className="max-w-[1100px] mx-auto rounded-[32px] border border-white/[0.1] bg-[#0C0C0F] p-7 sm:p-9 md:p-14 grid md:grid-cols-[1fr_auto] gap-10 md:gap-12 items-center shadow-2xl">
-            <div>
-              <h3 className="font-display text-[22px] md:text-[26px] font-semibold max-w-[20ch] text-white">O painel que mostra tudo isso, ao vivo.</h3>
-              <p className="text-[15px] text-[#A1A1A6] mt-3 max-w-[42ch]">
-                Agendamentos do dia, faturamento previsto, ocupação e novos clientes — sem
-                precisar abrir uma planilha ou contar no caderno.
-              </p>
-            </div>
-            <PhoneFrame src="/images/dashboard-dark.png" alt="Painel do administrador" className="w-[210px] mx-auto" tilt={2} />
-          </motion.div>
-        </section>
-
-        {/* ============================================================
-             06 — EQUIPES (CLEAN CRISP WHITE #FFFFFF)
-        ============================================================ */}
-        <section className="py-[104px] md:py-[150px] px-6 md:px-12 bg-[#FFFFFF] text-[#1D1D1F]">
-          <div className="max-w-[1280px] mx-auto grid md:grid-cols-[1fr_0.85fr] gap-10 md:gap-20 items-center">
-
-            <motion.div {...fadeUp(0.1)} className="md:order-2 rounded-[28px] overflow-hidden border border-black/[0.1] shadow-xl">
-              <img src="/images/salao-cachos.jpg" alt="Profissional atendendo cliente" className="w-full aspect-[4/5] object-cover" />
-            </motion.div>
-
-            <motion.div {...fadeUp()} className="md:order-1">
-              <Eyebrow light>Equipes</Eyebrow>
-              <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] text-[#1D1D1F]">
-                Começou sozinho? Perfeito.<br />Tem equipe? Melhor ainda.
-              </h2>
-              <p className="text-[clamp(16px,2vw,18px)] text-[#6E6E73] max-w-[46ch] mt-5 leading-relaxed">
-                Cadastre seus profissionais e organize a equipe em minutos. Cada um vê só os
-                próprios agendamentos, enquanto você tem a visão completa do negócio.
-              </p>
-              <p className="mt-[26px] font-display italic text-[20px] text-[#D97706] font-medium">
-                Seu negócio cresce. A Raffros cresce junto.
-              </p>
-            </motion.div>
-
+              {
+                icon: Scissors,
+                title: 'Agenda 100% Automática',
+                desc: 'O cliente entra no seu link, escolhe o serviço e marca sozinho. Você só recebe a notificação da reserva.'
+              },
+              {
+                icon: CheckCircle2,
+                title: 'Sinal Obrigatório (Anti-furo)',
+                desc: 'Exija uma % de garantia via Pix no agendamento. Se o cliente der bolo, o dinheiro fica no seu bolso.'
+              },
+              {
+                icon: Zap,
+                title: 'Gestão Descomplicada',
+                desc: 'Saiba exatamente quanto faturou no dia, na semana e no mês. Sem planilhas, direto na tela do celular.'
+              }
+            ].map((feature, i) => {
+              const Icon = feature.icon;
+              return (
+                <motion.div key={i} {...fadeUp(i * 0.1)} className="bg-[#121216] border border-white/[0.08] p-8 md:p-10 rounded-[28px] hover:border-amber-500/30 transition-colors">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-6">
+                    <Icon className="w-6 h-6 text-[#F59E0B]" />
+                  </div>
+                  <h3 className="text-[20px] font-display font-semibold text-white mb-3">{feature.title}</h3>
+                  <p className="text-[#A1A1A6] text-[15px] leading-relaxed">{feature.desc}</p>
+                </motion.div>
+              );
+            })}
           </div>
         </section>
 
@@ -769,143 +631,7 @@ export default function LandingPage() {
           <p className="text-center font-display italic text-[clamp(21px,3.2vw,28px)] text-[#F59E0B] mt-[68px]">"Você atende. A Raffros organiza."</p>
         </section>
 
-        {/* ============================================================
-             08 — PERSONALIZAÇÃO (CLEAN CRISP WHITE #FFFFFF)
-        ============================================================ */}
-        <section className="py-[104px] md:py-[140px] px-6 md:px-12 bg-[#FFFFFF] text-[#1D1D1F]">
-          <div className="max-w-[640px] mx-auto text-center mb-[72px]">
-            <Eyebrow light>Sua marca, do seu jeito</Eyebrow>
-            <h2 className="font-display font-semibold text-[clamp(26px,5vw,40px)] leading-[1.15] tracking-[-0.01em] text-[#1D1D1F]">A página do seu cliente, com a sua cara.</h2>
-            <p className="text-[15.5px] text-[#6E6E73] mt-4 mx-auto max-w-[44ch]">
-              Escolha as cores que combinam com o seu negócio. Cada estabelecimento tem uma
-              identidade — a Raffros se adapta a ela, não o contrário.
-            </p>
-          </div>
 
-          <div className="flex flex-wrap justify-center gap-10 md:gap-10">
-            {[
-              { src: '/images/custom-pink.png', label: 'Rosé' },
-              { src: '/images/custom-dark.png', label: 'Âmbar' },
-              { src: '/images/custom-light.png', label: 'Clássico' },
-            ].map((theme, i) => (
-              <motion.div key={theme.label} {...fadeUp(i * 0.1)} className="flex flex-col items-center gap-3">
-                <PhoneFrame src={theme.src} alt={`Tema ${theme.label}`} lightMode className="w-[150px] md:w-[170px]" tilt={i === 1 ? 0 : i === 0 ? -3 : 3} />
-                <span className="font-mono text-[11px] uppercase tracking-[0.1em] font-semibold text-[#86868B]">{theme.label}</span>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* ============================================================
-             09 — PARA QUEM É (NOIR DARK #000000)
-        ============================================================ */}
-        <section id="para-quem" className="py-[104px] md:py-[150px] px-6 md:px-12 bg-[#000000] text-white">
-          <div className="max-w-[1280px] mx-auto">
-            <Eyebrow>Para quem é</Eyebrow>
-            <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] max-w-[16ch] text-white">
-              Feito para quem vive de deixar gente bonita.
-            </h2>
-
-            <div className="mt-14 grid md:grid-cols-3 gap-5 md:gap-[16px] md:auto-rows-[minmax(150px,auto)]">
-
-              <motion.div {...fadeUp(0.1)} className="rounded-[28px] overflow-hidden border border-white/[0.1] md:row-span-2 shadow-2xl">
-                <img src="/images/estilo-corte.jpg" alt="Estilo de corte" className="w-full h-full object-cover aspect-[3/4]" />
-              </motion.div>
-
-              {[
-                { icon: Scissors, title: 'Barbearias', desc: 'Mais clientes. Menos mensagens.' },
-                { icon: Sparkles, title: 'Salões de beleza', desc: 'Toda a equipe organizada em um só lugar.' },
-                { icon: Heart, title: 'Manicures', desc: 'Agenda cheia sem ficar respondendo o celular.' },
-              ].map((card, i) => {
-                const IconComponent = card.icon;
-                return (
-                  <motion.div key={card.title} {...fadeUp(0.15 + i * 0.08)} className="bg-[#121216] border border-white/[0.08] rounded-[18px] p-[28px_24px] transition-all hover:border-[#F59E0B]/50 hover:-translate-y-1 shadow-lg">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3">
-                      <IconComponent className="w-5 h-5 text-[#F59E0B]" />
-                    </div>
-                    <h3 className="font-display text-[18px] font-semibold my-2 text-white">{card.title}</h3>
-                    <p className="text-[13.5px] text-[#A1A1A6]">{card.desc}</p>
-                  </motion.div>
-                );
-              })}
-
-              <motion.div {...fadeUp(0.5)} className="rounded-[28px] overflow-hidden border border-white/[0.1] md:row-span-2 shadow-2xl">
-                <img src="/images/barbeiro-corte.jpg" alt="Barbeiro atendendo" className="w-full h-full object-cover aspect-[3/4]" />
-              </motion.div>
-
-              {[
-                { icon: User, title: 'Profissionais autônomos', desc: 'Seu negócio profissional desde o primeiro cliente.' },
-                { icon: Home, title: 'Atendimento a domicílio', desc: 'Você define onde atende. O sistema verifica o resto.' },
-              ].map((card, i) => {
-                const IconComponent = card.icon;
-                return (
-                  <motion.div key={card.title} {...fadeUp(0.6 + i * 0.08)} className="bg-[#121216] border border-white/[0.08] rounded-[18px] p-[28px_24px] transition-all hover:border-[#F59E0B]/50 hover:-translate-y-1 shadow-lg">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3">
-                      <IconComponent className="w-5 h-5 text-[#F59E0B]" />
-                    </div>
-                    <h3 className="font-display text-[18px] font-semibold my-2 text-white">{card.title}</h3>
-                    <p className="text-[13.5px] text-[#A1A1A6]">{card.desc}</p>
-                  </motion.div>
-                );
-              })}
-
-            </div>
-          </div>
-        </section>
-
-        {/* ============================================================
-             09.5 — PLAYLIST / QUEBRA-GELO (NOIR JET BLACK)
-        ============================================================ */}
-        <SpotifyMoodCard />
-
-        {/* ============================================================
-             10 — AUTOMAÇÃO (CLEAN CRISP WHITE #FFFFFF)
-        ============================================================ */}
-        <section className="py-[104px] md:py-[150px] px-6 md:px-12 text-center bg-[#FFFFFF] text-[#1D1D1F] overflow-hidden">
-          <motion.div {...fadeUp()}>
-            <Eyebrow light>Automação</Eyebrow>
-            <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] max-w-[22ch] mx-auto text-[#1D1D1F]">
-              Enquanto você corta, tinge ou faz unha — o sistema trabalha.
-            </h2>
-          </motion.div>
-
-          <div className="relative max-w-[1100px] mx-auto mt-14 grid sm:grid-cols-2 md:grid-cols-5 gap-5 md:gap-[16px]">
-            <svg className="absolute hidden md:block overflow-visible top-1/2 left-0 w-full h-[2px] z-0" viewBox="0 0 800 4" preserveAspectRatio="none">
-              <motion.path
-                d="M0,2 L800,2" fill="none" stroke="url(#flowGradientLight)" strokeWidth="2"
-                strokeDasharray="820"
-                initial={{ strokeDashoffset: 820 }}
-                whileInView={{ strokeDashoffset: 0 }}
-                viewport={{ once: true, margin: '-20%' }}
-                transition={{ duration: 1.3, ease: EASE }}
-              />
-            </svg>
-
-            {[
-              'Cliente agenda',
-              'Sistema registra',
-              'Horário fica ocupado',
-              'Profissional é avisado',
-              'Agenda continua organizada',
-            ].map((step, i) => (
-              <motion.div key={step} {...fadeUp(i * 0.08)} className="relative z-10 flex items-center justify-center gap-2.5 text-[13.5px] font-medium text-[#1D1D1F] bg-[#FFFFFF] border border-black/[0.08] rounded-full px-[16px] py-[11px] shadow-sm">
-                <span className="w-[6px] h-[6px] rounded-full bg-[#D97706] shrink-0" />
-                {step}
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.div {...fadeUp(0.2)} className="max-w-[720px] mx-auto mt-16 flex flex-col md:flex-row items-center gap-8 bg-[#F5F5F7] border border-black/[0.08] rounded-[28px] p-7 sm:p-8 text-left shadow-md">
-            <PhoneFrame src="/images/map-dark.png" alt="Local e horários do estabelecimento" lightMode className="w-[140px] shrink-0 mx-auto md:mx-0" />
-            <div>
-              <h3 className="font-display text-[19px] font-semibold text-[#1D1D1F]">Local, horários e como chegar — tudo automático.</h3>
-              <p className="text-[14px] text-[#6E6E73] mt-2 leading-relaxed">
-                Seu cliente encontra o endereço, o horário de funcionamento e a rota até você,
-                sem precisar perguntar nada.
-              </p>
-            </div>
-          </motion.div>
-        </section>
 
         {/* ============================================================
              11 — PLANOS (FINAL NOIR DARK #0A0A0C)
@@ -914,7 +640,7 @@ export default function LandingPage() {
           <motion.div {...fadeUp()}>
             <Eyebrow>Planos</Eyebrow>
             <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] max-w-[20ch] mx-auto text-white">
-              Quanto vale recuperar horas do seu dia?
+              O sistema que se paga no primeiro furo evitado.
             </h2>
             <p className="text-[16px] text-[#A1A1A6] mt-4 mx-auto">
               Escolha o plano que combina com o seu momento.
