@@ -301,7 +301,7 @@ export default function PublicStore() {
   const rawServicesList: any[] = storeData?.services || [];
   const professionalsList: any[] = storeData?.professionals || [];
   const businessHoursList: any[] = storeData?.businessHours || [];
-  
+
   const [bookingMode, setBookingMode] = useState<'instore' | 'home'>('instore');
   const [clientAddress, setClientAddress] = useState("");
 
@@ -484,12 +484,12 @@ export default function PublicStore() {
       const clientLat = parseFloat(data[0].lat);
       const clientLng = parseFloat(data[0].lon);
       const dist = haversineKm({ lat: clientLat, lng: clientLng }, storeCoords);
-      
+
       if (settings?.home_service_radius_km && dist > settings.home_service_radius_km) {
         setErrorMsg(`Endereço fora da área de cobertura do salão (máximo ${settings.home_service_radius_km} km).`);
         return null;
       }
-      
+
       setClientDistanceKm(dist);
       return dist;
     } catch (err) {
@@ -583,14 +583,14 @@ export default function PublicStore() {
 
   const travelFee = useMemo(() => {
     if (bookingMode !== 'home' || clientDistanceKm === null) return 0;
-    
+
     if (selectedPro && selectedPro !== "any" && selectedPro.home_fee != null && selectedPro.home_fee > 0) {
       return selectedPro.home_fee;
     }
-    
+
     const feeType = settings?.home_service_fee_type || 'fixed';
     const feeValue = settings?.home_service_fee_value || 0;
-    
+
     if (feeType === 'free') return 0;
     if (feeType === 'fixed') return feeValue;
     if (feeType === 'per_km') {
@@ -700,12 +700,12 @@ export default function PublicStore() {
 
   const availableProfessionals = useMemo(() => {
     let list = professionalsList.filter((p: any) => p.status === 'active' || !p.status);
-    
+
     if (selectedService && storeData?.professionalServices) {
       const allowedProIds = storeData.professionalServices
         .filter((ps: any) => ps.service_id === selectedService.id)
         .map((ps: any) => ps.professional_id);
-      
+
       const proIdsWithAnyMapping = [...new Set(storeData.professionalServices.map((ps: any) => ps.professional_id))];
 
       list = list.filter((p: any) => {
@@ -713,19 +713,19 @@ export default function PublicStore() {
         return allowedProIds.includes(p.id);
       });
     }
-    
+
     if (bookingMode === 'home') {
       const salonRadius = settings?.home_service_radius_km || 10;
       list = list.filter((p: any) => {
         if (!p.offers_home_service) return false;
         if (clientDistanceKm == null) return true;
-        const effectiveRadius = p.max_home_distance_km && p.max_home_distance_km > 0 
-          ? p.max_home_distance_km 
+        const effectiveRadius = p.max_home_distance_km && p.max_home_distance_km > 0
+          ? p.max_home_distance_km
           : salonRadius;
         return clientDistanceKm <= effectiveRadius;
       });
     }
-    
+
     return list;
   }, [professionalsList, selectedService, storeData?.professionalServices, bookingMode, clientDistanceKm, settings?.home_service_radius_km]);
 
@@ -1019,12 +1019,12 @@ export default function PublicStore() {
     return (
       <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-6 font-sans">
         <Loader2 className="w-8 h-8 animate-spin text-[#F59E0B] mb-6" />
-        
-        <img src="/logo.svg" alt="Raffros" className="h-6 w-auto object-contain mb-4 opacity-80" />
+        {/* 
+        <img src="/logo.svg" alt="Raffros" className="h-12 w-auto object-contain mb-5 opacity-90" />
 
         <h3 className="font-display font-bold text-xl text-white tracking-tight">
           Carregando experiência
-        </h3>
+        </h3> */}
         <p className="text-xs text-[#A1A1A6] mt-2 font-mono leading-relaxed text-center max-w-xs">
           Preparando serviços, equipe e horários disponíveis…
         </p>
@@ -1048,11 +1048,11 @@ export default function PublicStore() {
       <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-6 text-center font-sans">
         <AlertTriangle className="w-8 h-8 text-[#F59E0B] mb-6 opacity-80" />
 
-        <img src="/logo.svg" alt="Raffros" className="h-6 w-auto object-contain mb-4" />
+        {/* <img src="/logo.svg" alt="Raffros" className="h-12 w-auto object-contain mb-5 opacity-90" /> */}
 
-        <h2 className="font-display text-2xl font-bold text-white tracking-tight mb-3">
+        {/* <h2 className="font-display text-2xl font-bold text-white tracking-tight mb-3">
           Estabelecimento Indisponível
-        </h2>
+        </h2> */}
         <p className="text-sm text-[#A1A1A6] leading-relaxed mb-8 max-w-xs mx-auto">
           Esta página de agendamento não está acessível no momento. O estabelecimento pode estar em manutenção ou temporariamente desativado.
         </p>
@@ -1727,24 +1727,22 @@ export default function PublicStore() {
                         <div className="flex p-1 rounded-xl w-full max-w-sm mb-4" style={{ background: theme.inputBg, border: `1px solid ${theme.borderActive}30` }}>
                           <button
                             onClick={() => setBookingMode('instore')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                              bookingMode === 'instore' ? 'shadow-md' : 'opacity-70'
-                            }`}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${bookingMode === 'instore' ? 'shadow-md' : 'opacity-70'
+                              }`}
                             style={bookingMode === 'instore' ? { background: theme.accent, color: theme.btnPrimaryText } : { color: theme.textPrimary }}
                           >
                             <Store className="w-4 h-4" /> No Salão
                           </button>
                           <button
                             onClick={() => setBookingMode('home')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                              bookingMode === 'home' ? 'shadow-md' : 'opacity-70'
-                            }`}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${bookingMode === 'home' ? 'shadow-md' : 'opacity-70'
+                              }`}
                             style={bookingMode === 'home' ? { background: theme.accent, color: theme.btnPrimaryText } : { color: theme.textPrimary }}
                           >
                             <Home className="w-4 h-4" /> A Domicílio
                           </button>
                         </div>
-                        
+
                         <AnimatePresence>
                           {bookingMode === 'home' && (
                             <motion.div
