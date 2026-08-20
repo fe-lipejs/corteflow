@@ -60,14 +60,14 @@ export default async (request: Request, context: Context) => {
 
     const businessType = tenant.business_type;
     // Texto fixo que o usuário pediu para a descrição padrão do lojista
-    let defaultDesc = `Garanta seu atendimento. Faça seu agendamento agora.`;
+    let defaultDesc = `Garanta seu atendimento. Faça seu agendamento agora. 📱`;
 
     if (businessType === 'barbearia') {
-      defaultDesc = `Garanta seu atendimento. Faça seu agendamento agora.`;
+      defaultDesc = `Garanta seu atendimento. Faça seu agendamento agora. 📱`;
     } else if (businessType === 'salao') {
-      defaultDesc = `Garanta seu atendimento. Faça seu agendamento agora.`;
+      defaultDesc = `Garanta seu atendimento. Faça seu agendamento agora. 📱`;
     } else if (businessType === 'esmalteria') {
-      defaultDesc = `Garanta seu atendimento. Faça seu agendamento agora.`;
+      defaultDesc = `Garanta seu atendimento. Faça seu agendamento agora. 📱`;
     }
 
     const logoUrl = tenant.tenant_settings?.logo_url || 'https://raffros.com.br/images/RaffrosLogo.png';
