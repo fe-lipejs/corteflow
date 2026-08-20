@@ -1014,51 +1014,23 @@ export default function PublicStore() {
     setCardExp(d);
   };
 
-  // ── Loading (Apple Noir + Amber Glow) ──────────────────────────────────────
+  // ── Loading (Minimalist) ──────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
-        {/* Background radial glow */}
-        <div
-          className="absolute inset-0 pointer-events-none -z-0"
-          style={{ background: 'radial-gradient(60% 50% at 50% 45%, rgba(245,158,11,0.15), transparent 70%)' }}
-        />
+      <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-6 font-sans">
+        <Loader2 className="w-8 h-8 animate-spin text-[#F59E0B] mb-6" />
+        
+        <img src="/logo.svg" alt="Raffros" className="h-6 w-auto object-contain mb-4 opacity-80" />
 
-        {/* Card Container */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, ease: [0.16, 0.8, 0.24, 1] }}
-          className="relative z-10 w-full max-w-sm rounded-[28px] border border-white/[0.1] bg-[#0C0C0F]/90 backdrop-blur-2xl p-8 sm:p-10 shadow-2xl text-center flex flex-col items-center"
-        >
-          {/* Glowing Animated Spinner Icon */}
-          <div className="relative mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-[#F59E0B]/30 flex items-center justify-center text-[#F59E0B] shadow-[0_0_35px_rgba(245,158,11,0.25)]">
-              <Loader2 className="w-8 h-8 animate-spin text-[#F59E0B]" />
-            </div>
-          </div>
+        <h3 className="font-display font-bold text-xl text-white tracking-tight">
+          Carregando experiência
+        </h3>
+        <p className="text-xs text-[#A1A1A6] mt-2 font-mono leading-relaxed text-center max-w-xs">
+          Preparando serviços, equipe e horários disponíveis…
+        </p>
 
-          {/* Eyebrow */}
-          <span className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.16em] uppercase font-semibold text-[#F59E0B] mb-2">
-            <span className="w-3.5 h-[1.5px] bg-[#F59E0B]" />
-            Corte Flow
-          </span>
-
-          <h3 className="font-display font-bold text-xl text-white tracking-tight">
-            Carregando experiência
-          </h3>
-          <p className="text-xs text-[#A1A1A6] mt-2 font-mono leading-relaxed">
-            Preparando serviços, equipe e horários disponíveis…
-          </p>
-
-          <div className="w-full h-1 rounded-full bg-white/[0.06] overflow-hidden mt-6">
-            <div className="h-full w-1/2 rounded-full bg-gradient-to-r from-[#F59E0B] to-[#FBBF24] animate-[shimmer_1.5s_infinite]" />
-          </div>
-        </motion.div>
-
-        {/* Brand Footer */}
-        <div className="relative z-10 flex items-center gap-2 mt-8 text-xs font-mono text-[#71717A]">
-          <span className="w-2 h-2 rounded-full bg-[#F59E0B] shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
+        <div className="flex items-center gap-2 mt-12 text-[10px] font-mono text-[#71717A]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
           Agendamento Inteligente
         </div>
       </div>
@@ -1073,57 +1045,29 @@ export default function PublicStore() {
 
   if (isTenantInactive) {
     return (
-      <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
-        {/* Background radial glow */}
-        <div
-          className="absolute inset-0 pointer-events-none -z-0"
-          style={{ background: 'radial-gradient(55% 50% at 50% 40%, rgba(245,158,11,0.12), transparent 70%)' }}
-        />
+      <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-6 text-center font-sans">
+        <AlertTriangle className="w-8 h-8 text-[#F59E0B] mb-6 opacity-80" />
 
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 0.8, 0.24, 1] }}
-          className="relative z-10 w-full max-w-md rounded-[28px] border border-white/[0.1] bg-[#0C0C0F] p-8 sm:p-10 shadow-2xl text-center flex flex-col items-center"
+        <img src="/logo.svg" alt="Raffros" className="h-6 w-auto object-contain mb-4" />
+
+        <h2 className="font-display text-2xl font-bold text-white tracking-tight mb-3">
+          Estabelecimento Indisponível
+        </h2>
+        <p className="text-sm text-[#A1A1A6] leading-relaxed mb-8 max-w-xs mx-auto">
+          Esta página de agendamento não está acessível no momento. O estabelecimento pode estar em manutenção ou temporariamente desativado.
+        </p>
+
+        <button
+          type="button"
+          onClick={() => window.history.back()}
+          className="px-8 py-3 rounded-full font-medium text-sm text-[#A1A1A6] border border-white/[0.08] hover:bg-white/[0.04] hover:text-white transition-colors"
         >
-          {/* Icon Badge */}
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-[#F59E0B] shadow-[0_0_30px_rgba(245,158,11,0.2)] mb-6">
-            <AlertTriangle className="w-8 h-8 text-[#F59E0B]" />
-          </div>
+          Voltar
+        </button>
 
-          <span className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.16em] uppercase font-semibold text-[#F59E0B] mb-2">
-            <span className="w-3.5 h-[1.5px] bg-[#F59E0B]" />
-            Aviso de Acesso
-          </span>
-
-          <h2 className="font-display text-2xl font-bold text-white tracking-tight mb-3">
-            Estabelecimento Indisponível
-          </h2>
-          <p className="text-sm text-[#A1A1A6] leading-relaxed mb-8">
-            Esta página de agendamento não está acessível no momento. O estabelecimento pode estar em manutenção ou temporariamente desativado.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
-            <a
-              href="/"
-              className="w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-bold text-sm text-black shadow-[0_18px_36px_-16px_rgba(245,158,11,0.55)] hover:scale-[1.02] active:scale-[0.99] transition-all"
-              style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
-            >
-              Conhecer o Corte Flow
-            </a>
-            <button
-              type="button"
-              onClick={() => window.history.back()}
-              className="w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-semibold text-sm text-white border border-white/[0.18] hover:border-[#F59E0B] hover:text-[#F59E0B] transition-all bg-[#141418]"
-            >
-              Voltar
-            </button>
-          </div>
-        </motion.div>
-
-        <div className="relative z-10 flex items-center gap-2 mt-8 text-xs font-mono text-[#71717A]">
-          <span className="w-2 h-2 rounded-full bg-[#F59E0B] shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
-          Corte Flow · Gestão &amp; Agendamento
+        <div className="flex items-center gap-2 mt-12 text-[10px] font-mono text-[#71717A]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
+          Raffros · Gestão &amp; Agendamento
         </div>
       </div>
     );
