@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { normalizeBrazilianPhone, formatPhoneMask } from '../lib/phoneUtils';
+import { usePageTracking } from '../hooks/usePageTracking';
+import { trackEvent } from '../lib/analytics';
 
 const cadastroSchema = z.object({
   fullName: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
@@ -22,6 +24,7 @@ const cadastroSchema = z.object({
 type CadastroForm = z.infer<typeof cadastroSchema>;
 
 export default function Cadastro() {
+  usePageTracking();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [errorList, setErrorList] = useState<string[]>([]);

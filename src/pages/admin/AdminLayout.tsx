@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Building2, CreditCard, DollarSign,
   Users, ScrollText, Bell, Settings, Shield,
-  LogOut, Menu, X, ChevronRight, Zap, LifeBuoy
+  LogOut, Menu, X, ChevronRight, Zap, LifeBuoy, Activity
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../integrations/supabase/client';
@@ -22,6 +22,7 @@ const navGroups = [
     label: 'Visão Geral',
     items: [
       { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/admin/analytics', icon: Activity, label: 'Visitas & Cliques' },
     ],
   },
   {

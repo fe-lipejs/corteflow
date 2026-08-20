@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { MapPin, CheckCircle2, Scissors, Sparkles, Heart, User, Home, Menu, X } from 'lucide-react';
 import CookieConsentBanner from '../components/cookies/CookieConsentBanner';
+import { trackEvent } from '../lib/analytics';
+import { usePageTracking } from '../hooks/usePageTracking';
 
 /* ============================================================
    TOKENS & STYLING (Apple Noir + Pure White + Electric Yellow)
@@ -127,6 +129,7 @@ function PricingCards({ isLight = false }: { isLight?: boolean }) {
         </ul>
         <Link
           to="/cadastro"
+          onClick={() => trackEvent('click_plano_solo', { metadata: { plano: 'Solo', preco: 49, secao: isLight ? 'meio' : 'final' } })}
           className={`mt-7 w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-semibold text-[14.5px] transition-all ${isLight
             ? 'border border-black/[0.15] text-[#1D1D1F] hover:border-[#F59E0B] hover:text-[#F59E0B]'
             : 'border border-white/20 text-white hover:border-[#F59E0B] hover:text-[#F59E0B]'
@@ -170,6 +173,7 @@ function PricingCards({ isLight = false }: { isLight?: boolean }) {
         </ul>
         <Link
           to="/cadastro"
+          onClick={() => trackEvent('click_plano_studio', { metadata: { plano: 'Studio', preco: 89, secao: isLight ? 'meio' : 'final' } })}
           className="mt-7 w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-bold text-[14.5px] text-black shadow-[0_20px_40px_-16px_rgba(245,158,11,0.6)] hover:scale-105 transition-all"
           style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
         >
@@ -206,6 +210,7 @@ function PricingCards({ isLight = false }: { isLight?: boolean }) {
         </ul>
         <Link
           to="/cadastro"
+          onClick={() => trackEvent('click_plano_equipe', { metadata: { plano: 'Equipe', preco: 149, secao: isLight ? 'meio' : 'final' } })}
           className={`mt-7 w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-semibold text-[14.5px] transition-all ${isLight
             ? 'border border-black/[0.15] text-[#1D1D1F] hover:border-[#F59E0B] hover:text-[#F59E0B]'
             : 'border border-white/20 text-white hover:border-[#F59E0B] hover:text-[#F59E0B]'
@@ -219,6 +224,7 @@ function PricingCards({ isLight = false }: { isLight?: boolean }) {
 }
 
 export default function LandingPage() {
+  usePageTracking();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const shouldReduce = useReducedMotion();
@@ -282,15 +288,16 @@ export default function LandingPage() {
           </a>
 
           <nav className="hidden md:flex gap-8">
-            <a href="#solucao" className="text-[14px] text-[#A1A1A6] hover:text-[#F59E0B] transition-colors font-medium">Solução</a>
-            <a href="#domicilio" className="text-[14px] text-[#A1A1A6] hover:text-[#F59E0B] transition-colors font-medium">Domicílio</a>
-            <a href="#para-quem" className="text-[14px] text-[#A1A1A6] hover:text-[#F59E0B] transition-colors font-medium">Para quem é</a>
-            <a href="#planos" className="text-[14px] text-[#A1A1A6] hover:text-[#F59E0B] transition-colors font-medium">Planos</a>
+            <a href="#solucao" onClick={() => trackEvent('click_nav_link', { metadata: { item: 'solucao' } })} className="text-[14px] text-[#A1A1A6] hover:text-[#F59E0B] transition-colors font-medium">Solução</a>
+            <a href="#domicilio" onClick={() => trackEvent('click_nav_link', { metadata: { item: 'domicilio' } })} className="text-[14px] text-[#A1A1A6] hover:text-[#F59E0B] transition-colors font-medium">Domicílio</a>
+            <a href="#para-quem" onClick={() => trackEvent('click_nav_link', { metadata: { item: 'para-quem' } })} className="text-[14px] text-[#A1A1A6] hover:text-[#F59E0B] transition-colors font-medium">Para quem é</a>
+            <a href="#planos" onClick={() => trackEvent('click_nav_link', { metadata: { item: 'planos' } })} className="text-[14px] text-[#A1A1A6] hover:text-[#F59E0B] transition-colors font-medium">Planos</a>
           </nav>
 
           <div className="flex items-center gap-[14px]">
             <Link
               to="/login"
+              onClick={() => trackEvent('click_nav_login')}
               className="hidden md:inline-flex text-[14px] font-medium text-[#A1A1A6] hover:text-white transition-colors mr-2"
             >
               Entrar
@@ -298,6 +305,7 @@ export default function LandingPage() {
 
             <a
               href="#planos"
+              onClick={() => trackEvent('click_nav_comecar_agora')}
               className="hidden md:inline-flex items-center justify-center px-5 py-2.5 rounded-full font-bold text-[13px] text-black shadow-[0_14px_30px_-10px_rgba(245,158,11,0.5)] hover:scale-105 transition-all"
               style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
             >
@@ -308,7 +316,11 @@ export default function LandingPage() {
               type="button"
               aria-label={isMobileMenuOpen ? "Fechar menu" : "Abrir menu"}
               className="md:hidden w-10 h-10 rounded-xl bg-white/[0.08] border border-white/[0.12] flex items-center justify-center text-white active:scale-95 transition-all"
-              onClick={() => setIsMobileMenuOpen((v) => !v)}
+              onClick={() => {
+                const next = !isMobileMenuOpen;
+                setIsMobileMenuOpen(next);
+                trackEvent(next ? 'open_mobile_menu' : 'close_mobile_menu');
+              }}
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -330,14 +342,14 @@ export default function LandingPage() {
           >
             {/* Top Bar inside modal */}
             <div className="flex items-center justify-between w-full border-b border-white/[0.1] pb-4">
-              <a href="#hero" onClick={closeMobileNav} className="inline-flex items-center gap-[9px] font-display font-bold text-[20px] text-white tracking-tight">
+              <a href="#hero" onClick={() => { closeMobileNav(); trackEvent('click_mobile_logo'); }} className="inline-flex items-center gap-[9px] font-display font-bold text-[20px] text-white tracking-tight">
                 <span className="w-[10px] h-[10px] rounded-full bg-[#F59E0B] shadow-[0_0_14px_rgba(245,158,11,0.8)]" />
                 Corte Flow
               </a>
               <button
                 type="button"
                 aria-label="Fechar menu"
-                onClick={closeMobileNav}
+                onClick={() => { closeMobileNav(); trackEvent('close_mobile_menu'); }}
                 className="w-10 h-10 rounded-xl bg-white/[0.08] border border-white/[0.12] flex items-center justify-center text-white hover:bg-white/[0.15] active:scale-95 transition-all"
               >
                 <X className="w-5 h-5" />
@@ -348,35 +360,35 @@ export default function LandingPage() {
             <div className="flex flex-col items-center justify-center gap-7 my-auto text-center">
               <a
                 href="#solucao"
-                onClick={closeMobileNav}
+                onClick={() => { closeMobileNav(); trackEvent('click_mobile_link', { metadata: { item: 'solucao' } }); }}
                 className="font-display font-semibold text-[26px] text-white hover:text-[#F59E0B] transition-colors"
               >
                 Solução
               </a>
               <a
                 href="#domicilio"
-                onClick={closeMobileNav}
+                onClick={() => { closeMobileNav(); trackEvent('click_mobile_link', { metadata: { item: 'domicilio' } }); }}
                 className="font-display font-semibold text-[26px] text-white hover:text-[#F59E0B] transition-colors"
               >
                 Atendimento a domicílio
               </a>
               <a
                 href="#para-quem"
-                onClick={closeMobileNav}
+                onClick={() => { closeMobileNav(); trackEvent('click_mobile_link', { metadata: { item: 'para-quem' } }); }}
                 className="font-display font-semibold text-[26px] text-white hover:text-[#F59E0B] transition-colors"
               >
                 Para quem é
               </a>
               <a
                 href="#planos"
-                onClick={closeMobileNav}
+                onClick={() => { closeMobileNav(); trackEvent('click_mobile_link', { metadata: { item: 'planos' } }); }}
                 className="font-display font-semibold text-[26px] text-white hover:text-[#F59E0B] transition-colors"
               >
                 Planos &amp; Preços
               </a>
               <Link
                 to="/login"
-                onClick={closeMobileNav}
+                onClick={() => { closeMobileNav(); trackEvent('click_mobile_login'); }}
                 className="text-[17px] font-mono text-[#A1A1A6] hover:text-white transition-colors mt-2"
               >
                 Entrar na Conta →
@@ -387,7 +399,7 @@ export default function LandingPage() {
             <div className="w-full pt-4 border-t border-white/[0.1]">
               <a
                 href="#planos"
-                onClick={closeMobileNav}
+                onClick={() => { closeMobileNav(); trackEvent('click_mobile_comecar_agora'); }}
                 className="w-full inline-flex items-center justify-center py-4 rounded-full font-bold text-[16px] text-black shadow-[0_20px_40px_-16px_rgba(245,158,11,0.6)]"
                 style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
               >
@@ -427,6 +439,7 @@ export default function LandingPage() {
               <div className="flex flex-wrap gap-[14px] mb-[46px]">
                 <a
                   href="#planos"
+                  onClick={() => trackEvent('click_hero_comecar_agora')}
                   className="inline-flex items-center justify-center px-8 py-[17px] rounded-full font-bold text-[16px] text-black shadow-[0_20px_40px_-16px_rgba(245,158,11,0.55)] hover:scale-105 transition-all"
                   style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
                 >
@@ -434,6 +447,7 @@ export default function LandingPage() {
                 </a>
                 <a
                   href="#solucao"
+                  onClick={() => trackEvent('click_hero_conhecer')}
                   className="inline-flex items-center justify-center px-8 py-[17px] rounded-full font-semibold text-[16px] text-white border border-white/[0.18] hover:border-[#F59E0B] hover:text-[#F59E0B] transition-all bg-[#0A0A0C]/50"
                 >
                   Conhecer o Corte Flow
@@ -896,6 +910,7 @@ export default function LandingPage() {
             <p className="text-[#A1A1A6] text-[16.5px] mb-9">Seu próximo cliente pode estar tentando agendar agora. Comece hoje.</p>
             <Link
               to="/cadastro"
+              onClick={() => trackEvent('click_footer_comecar_agora')}
               className="inline-flex items-center justify-center px-8 py-[17px] rounded-full font-bold text-[16px] text-black shadow-[0_20px_40px_-16px_rgba(245,158,11,0.6)] hover:scale-105 transition-all"
               style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
             >

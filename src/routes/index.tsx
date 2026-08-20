@@ -28,6 +28,7 @@ import AdminUsuarios from '../pages/admin/AdminUsuarios';
 import AdminAuditoria from '../pages/admin/AdminAuditoria';
 import AdminNotificacoes from '../pages/admin/AdminNotificacoes';
 import AdminSeguranca from '../pages/admin/AdminSeguranca';
+import AdminAnalytics from '../pages/admin/AdminAnalytics';
 
 // App Pages (Tenant Admin/Manager/Professional)
 import AppLayout from '../pages/app/AppLayout';
@@ -135,6 +136,7 @@ function AdminRouteTree() {
       }
     >
       <Route index element={<AdminDashboard />} />
+      <Route path="analytics" element={<AdminAnalytics />} />
       <Route path="tenants" element={<AdminTenants />} />
       <Route path="plans" element={<AdminPlans />} />
       <Route path="custom-pricing" element={<AdminCustomPricing />} />
