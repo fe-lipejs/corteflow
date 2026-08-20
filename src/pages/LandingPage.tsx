@@ -1,7 +1,7 @@
 import { motion, animate, useInView, useReducedMotion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef, type ReactNode } from 'react';
-import { MapPin, CheckCircle2, Scissors, Sparkles, Heart, User, Home, Menu, X } from 'lucide-react';
+import { MapPin, CheckCircle2, Scissors, Sparkles, Heart, User, Home, Menu, X, Zap } from 'lucide-react';
 import CookieConsentBanner from '../components/cookies/CookieConsentBanner';
 import { trackEvent } from '../lib/analytics';
 import { usePageTracking } from '../hooks/usePageTracking';
@@ -524,19 +524,19 @@ export default function LandingPage() {
         </section>
 
         {/* ============================================================
-             02 — DOR & SOLUÇÃO IMEDIATA (NOIR JET BLACK)
+             02 — DOR & SOLUÇÃO IMEDIATA (CLEAN CRISP WHITE)
         ============================================================ */}
-        <section id="solucao" className="py-24 md:py-[150px] px-6 bg-[#0A0A0C] border-y border-white/[0.08]">
+        <section id="solucao" className="py-24 md:py-[150px] px-6 bg-[#FFFFFF] border-y border-black/[0.08]">
           <div className="max-w-[1000px] mx-auto text-center mb-16 md:mb-24">
             <motion.div {...fadeUp()}>
-              <h2 className="font-display text-[clamp(28px,5vw,48px)] font-bold leading-[1.1] text-white">
+              <h2 className="font-display text-[clamp(28px,5vw,48px)] font-bold leading-[1.1] text-[#1D1D1F]">
                 Quantos clientes você já perdeu porque <br className="hidden md:block" />
                 não conseguiu responder na hora?
               </h2>
-              <p className="text-[#A1A1A6] text-[clamp(16px,2vw,18px)] max-w-[46ch] mx-auto mt-6">
+              <p className="text-[#6E6E73] text-[clamp(16px,2vw,18px)] max-w-[46ch] mx-auto mt-6">
                 O cliente agenda e não aparece. O celular não para de tocar enquanto você atende. 
                 Sua agenda virou um segundo trabalho não remunerado. 
-                <strong className="text-white block mt-3">A Raffros acaba com isso hoje.</strong>
+                <strong className="text-[#1D1D1F] block mt-3">A Raffros acaba com isso hoje.</strong>
               </p>
             </motion.div>
           </div>
@@ -561,12 +561,12 @@ export default function LandingPage() {
             ].map((feature, i) => {
               const Icon = feature.icon;
               return (
-                <motion.div key={i} {...fadeUp(i * 0.1)} className="bg-[#121216] border border-white/[0.08] p-8 md:p-10 rounded-[28px] hover:border-amber-500/30 transition-colors">
+                <motion.div key={i} {...fadeUp(i * 0.1)} className="bg-[#F5F5F7] border border-black/[0.05] p-8 md:p-10 rounded-[28px] hover:border-[#F59E0B]/30 hover:shadow-lg transition-all">
                   <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-6">
-                    <Icon className="w-6 h-6 text-[#F59E0B]" />
+                    <Icon className="w-6 h-6 text-[#D97706]" />
                   </div>
-                  <h3 className="text-[20px] font-display font-semibold text-white mb-3">{feature.title}</h3>
-                  <p className="text-[#A1A1A6] text-[15px] leading-relaxed">{feature.desc}</p>
+                  <h3 className="text-[20px] font-display font-semibold text-[#1D1D1F] mb-3">{feature.title}</h3>
+                  <p className="text-[#6E6E73] text-[15px] leading-relaxed">{feature.desc}</p>
                 </motion.div>
               );
             })}
@@ -632,6 +632,33 @@ export default function LandingPage() {
         </section>
 
 
+
+        {/* ============================================================
+             08 — PERSONALIZAÇÃO (CLEAN CRISP WHITE #FFFFFF)
+        ============================================================ */}
+        <section className="py-[104px] md:py-[140px] px-6 md:px-12 bg-[#FFFFFF] text-[#1D1D1F]">
+          <div className="max-w-[640px] mx-auto text-center mb-[72px]">
+            <Eyebrow light>Sua marca, do seu jeito</Eyebrow>
+            <h2 className="font-display font-semibold text-[clamp(26px,5vw,40px)] leading-[1.15] tracking-[-0.01em] text-[#1D1D1F]">A página do seu cliente, com a sua cara.</h2>
+            <p className="text-[15.5px] text-[#6E6E73] mt-4 mx-auto max-w-[44ch]">
+              Escolha as cores que combinam com o seu negócio. Cada estabelecimento tem uma
+              identidade — a Raffros se adapta a ela, não o contrário.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-10 md:gap-10">
+            {[
+              { src: '/images/custom-pink.png', label: 'Rosé' },
+              { src: '/images/custom-dark.png', label: 'Âmbar' },
+              { src: '/images/custom-light.png', label: 'Clássico' },
+            ].map((theme, i) => (
+              <motion.div key={theme.label} {...fadeUp(i * 0.1)} className="flex flex-col items-center gap-3">
+                <PhoneFrame src={theme.src} alt={`Tema ${theme.label}`} lightMode className="w-[150px] md:w-[170px]" tilt={i === 1 ? 0 : i === 0 ? -3 : 3} />
+                <span className="font-mono text-[11px] uppercase tracking-[0.1em] font-semibold text-[#86868B]">{theme.label}</span>
+              </motion.div>
+            ))}
+          </div>
+        </section>
 
         {/* ============================================================
              11 — PLANOS (FINAL NOIR DARK #0A0A0C)
