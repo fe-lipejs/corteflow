@@ -450,7 +450,9 @@ export default function LandingPage() {
                 </em>
               </h1>
               <p className="text-[clamp(16px,2vw,19px)] text-[#A1A1A6] max-w-[48ch] mb-[38px] leading-relaxed">
-                A plataforma de gestão definitiva para quem vive da beleza. Agenda automática, faturamento na palma da mão e sem dores de cabeça com furos.
+                {/* A plataforma de gestão definitiva para quem vive da beleza. */}
+
+                Agenda personalizada com link para seu cliente. Faturamento na palma da mão e sem dores de cabeça com furos.
               </p>
 
               <div className="flex flex-wrap gap-[14px] mb-[32px]">
