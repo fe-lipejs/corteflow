@@ -207,6 +207,8 @@ export default function AppRoutes() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/playlist" element={<PlaylistPage />} />
           {AuthRoutes()}
+          {AppRouteTree()}
+          {AdminRouteTree()}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
