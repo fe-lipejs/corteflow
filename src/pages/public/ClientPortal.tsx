@@ -10,7 +10,7 @@ import type { Slot } from '../../lib/availability';
 import { ptBR } from 'date-fns/locale';
 import { Calendar, Clock, ArrowLeft, Loader2, ShieldCheck, X, AlertTriangle } from 'lucide-react';
 import { usePhoneFormat } from '../../hooks/usePhoneFormat';
-import { getThemeById } from '../../contexts/ThemeContext';
+import { getThemeById, adjustColorBrightness } from '../../contexts/ThemeContext';
 import { usePublicStore } from '../../hooks/usePublicStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getThemeContrastEngine } from '../../lib/themeEngine';

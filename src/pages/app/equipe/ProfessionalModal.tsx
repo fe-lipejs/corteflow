@@ -66,7 +66,7 @@ export default function ProfessionalModal({ professional, services, onClose, onC
   const engine = usePermissionEngine();
   const navigate = useNavigate();
   const isEditing = !!professional;
-  const [tab, setTab] = useState<'info' | 'hours' | 'services'>('info');
+  const [tab, setTab] = useState<'info' | 'hours' | 'services' | 'access'>('info');
   const fileRef = useRef<HTMLInputElement>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(professional?.photo_url ?? null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
