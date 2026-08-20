@@ -1,14 +1,31 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, animate, useMotionValue, useTransform } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import CookieConsentBanner from '../components/cookies/CookieConsentBanner';
 
 const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 30 },
+  initial: { opacity: 0, y: 28 },
   whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: '-50px' },
-  transition: { duration: 0.8, delay, ease: [0.22, 0.61, 0.36, 1] as [number, number, number, number] }
+  viewport: { once: true, margin: '-8%' },
+  transition: { duration: 0.9, delay, ease: [0.16, 0.8, 0.24, 1] as [number, number, number, number] }
 });
+
+function CountUp({ to, duration = 1.1 }: { to: number; duration?: number }) {
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, Math.round);
+  
+  return (
+    <motion.span 
+      whileInView={() => {
+        const controls = animate(count, to, { duration, ease: [0.33, 1, 0.68, 1] });
+        return controls.stop;
+      }}
+      viewport={{ once: true, margin: '-10%' }}
+    >
+      {rounded}
+    </motion.span>
+  );
+}
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -17,663 +34,562 @@ export default function LandingPage() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 30);
+      setIsScrolled(window.scrollY > 24);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const closeMobileNav = () => setIsMobileMenuOpen(false);
+
   return (
-    <div className="font-sans text-[#090909] bg-white overflow-x-hidden selection:bg-black selection:text-white">
+    <div className="font-body bg-background text-text selection:bg-gold/30 selection:text-white min-h-screen overflow-x-hidden">
       
-      {/* =========================
-           NAVBAR
-      ========================== */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-shadow duration-300 ${isScrolled ? 'shadow-[0_10px_30px_rgba(0,0,0,0.05)]' : ''} bg-white/80 backdrop-blur-[20px] border-b border-black/[0.06] h-[76px]`}>
-        <div className="max-w-[1180px] mx-auto px-6 h-full flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5 font-extrabold text-[17px] tracking-tight">
-            <span className="grid place-items-center w-[30px] h-[30px] rounded-[9px] bg-accent text-white text-[15px]">C</span>
-            <span className="font-title">Corte Flow</span>
-          </Link>
-          
-          <div className="hidden md:flex items-center gap-[34px]">
-            <a href="#recursos" className="text-[#707070] text-[13px] font-medium hover:text-accent transition-colors">Recursos</a>
-            <a href="#domicilio" className="text-[#707070] text-[13px] font-medium hover:text-accent transition-colors">Domicílio</a>
-            <a href="#equipe" className="text-[#707070] text-[13px] font-medium hover:text-accent transition-colors">Equipes</a>
-            <a href="#planos" className="text-[#707070] text-[13px] font-medium hover:text-accent transition-colors">Planos</a>
-          </div>
-
-          <div className="hidden md:flex items-center gap-6">
-            <Link to="/login" className="text-[13px] font-semibold text-[#090909] hover:text-accent transition-colors">Entrar</Link>
-            <Link to="/cadastro" className="px-[17px] py-[11px] rounded-full bg-accent text-white text-[12px] font-bold hover:-translate-y-[2px] hover:shadow-lg hover:shadow-accent/30 transition-all">Começar agora</Link>
-          </div>
-
-          <button className="md:hidden w-[42px] h-[42px]" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-            <span className="block w-[21px] h-[2px] bg-[#090909] mx-auto mb-[5px]"></span>
-            <span className="block w-[21px] h-[2px] bg-[#090909] mx-auto"></span>
-          </button>
-        </div>
-      </nav>
+      {/* SVG Gradient definition for paths */}
+      <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
+        <defs>
+          <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#D4A24C"/>
+            <stop offset="100%" stopColor="#E58C9E"/>
+          </linearGradient>
+        </defs>
+      </svg>
 
       {/* =========================
-           MOBILE MENU
+           NAV
       ========================== */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-x-0 top-[76px] z-[999] bg-white/95 backdrop-blur-[20px] border-b border-[#eeeeee] p-6 flex flex-col gap-5 md:hidden">
-          <a href="#recursos" onClick={() => setIsMobileMenuOpen(false)} className="font-semibold text-[16px]">Recursos</a>
-          <a href="#domicilio" onClick={() => setIsMobileMenuOpen(false)} className="font-semibold text-[16px]">Atendimento a domicílio</a>
-          <a href="#equipe" onClick={() => setIsMobileMenuOpen(false)} className="font-semibold text-[16px]">Equipes</a>
-          <a href="#planos" onClick={() => setIsMobileMenuOpen(false)} className="font-semibold text-[16px]">Planos</a>
-          <Link to="/cadastro" onClick={() => setIsMobileMenuOpen(false)} className="mt-2 p-[15px] text-center rounded-[14px] bg-accent text-white font-semibold">Começar agora</Link>
+      <header className={`fixed top-0 left-0 right-0 z-[100] px-6 md:px-12 transition-all duration-300 border-b ${isScrolled ? 'bg-[#0B0D10]/80 backdrop-blur-[14px] border-line py-3' : 'border-transparent py-[18px]'}`}>
+        <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-6">
+          <a href="#hero" className="inline-flex items-center gap-[9px] font-display font-semibold text-[19px] text-text">
+            <span className="w-[9px] h-[9px] rounded-full bg-gradient-flow shadow-[0_0_14px_rgba(212,162,76,0.7)]"></span>
+            Corte Flow
+          </a>
+
+          <nav className="hidden md:flex gap-8">
+            <a href="#solucao" className="text-[14.5px] text-text-dim hover:text-gold-soft transition-colors">Solução</a>
+            <a href="#domicilio" className="text-[14.5px] text-text-dim hover:text-gold-soft transition-colors">Domicílio</a>
+            <a href="#para-quem" className="text-[14.5px] text-text-dim hover:text-gold-soft transition-colors">Para quem é</a>
+            <a href="#planos" className="text-[14.5px] text-text-dim hover:text-gold-soft transition-colors">Planos</a>
+          </nav>
+
+          <div className="flex items-center gap-[14px]">
+            <a href="#planos" className="hidden md:inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full font-semibold text-[13px] bg-gradient-flow text-[#16110A] shadow-card hover:-translate-y-[2px] hover:shadow-[0_20px_40px_-16px_rgba(212,162,76,0.45)] transition-all">
+              Começar agora
+            </a>
+            
+            <button className="md:hidden w-10 h-10 flex flex-col items-center justify-center gap-[5px]" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+              <span className={`block w-5 h-[2px] bg-text transition-all duration-300 ${isMobileMenuOpen ? 'translate-y-[7px] rotate-45' : ''}`}></span>
+              <span className={`block w-5 h-[2px] bg-text transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
+              <span className={`block w-5 h-[2px] bg-text transition-all duration-300 ${isMobileMenuOpen ? '-translate-y-[7px] -rotate-45' : ''}`}></span>
+            </button>
+          </div>
         </div>
-      )}
+
+        {/* Mobile Menu */}
+        <div className={`fixed inset-0 top-[60px] bg-background flex flex-col items-center justify-center gap-[30px] transition-all duration-500 ease-[cubic-bezier(0.16,0.8,0.24,1)] ${isMobileMenuOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-full pointer-events-none'}`}>
+          <a href="#solucao" onClick={closeMobileNav} className="font-display text-[26px]">Solução</a>
+          <a href="#domicilio" onClick={closeMobileNav} className="font-display text-[26px]">Atendimento a domicílio</a>
+          <a href="#para-quem" onClick={closeMobileNav} className="font-display text-[26px]">Para quem é</a>
+          <a href="#planos" onClick={closeMobileNav} className="font-display text-[26px]">Planos</a>
+          <a href="#planos" onClick={closeMobileNav} className="mt-4 px-8 py-4 rounded-full font-semibold text-[16px] bg-gradient-flow text-[#16110A] shadow-card">Começar agora</a>
+        </div>
+      </header>
 
       <main>
         {/* =========================
-             HERO
+             01 - HERO
         ========================== */}
-        <section className="relative min-h-[100vh] flex items-center pt-[150px] pb-[100px] overflow-hidden" style={{ background: 'radial-gradient(circle at 80% 35%, rgba(0,0,0,0.07), transparent 30%), #fafafa' }}>
-          <div className="max-w-[1180px] w-full mx-auto px-6 grid md:grid-cols-[0.95fr_1.05fr] items-center gap-[70px]">
+        <section id="hero" className="relative min-h-[100svh] flex flex-col justify-center pt-[120px]" 
+          style={{ background: 'radial-gradient(60% 50% at 85% 10%, rgba(212,162,76,0.14), transparent 60%), radial-gradient(50% 40% at 10% 90%, rgba(229,140,158,0.10), transparent 60%), #0B0D10' }}>
+          
+          <div className="max-w-[1280px] w-full mx-auto px-6 md:px-12 grid md:grid-cols-[1.05fr_0.95fr] gap-14 md:gap-10 items-center">
             
-            <motion.div className="relative z-10 text-center md:text-left" {...fadeUp()}>
-              <div className="inline-flex items-center gap-[9px] px-3 py-2 border border-[#dddddd] rounded-full bg-white/70 text-[#707070] text-[11px] font-semibold mb-7 mx-auto md:mx-0">
-                <span className="w-[7px] h-[7px] rounded-full bg-accent"></span>
-                Gestão inteligente para profissionais de beleza
-              </div>
-
-              <h1 className="font-title text-[clamp(48px,6vw,92px)] leading-[0.94] tracking-[-4px] md:tracking-[-6px] font-extrabold max-w-[700px]">
-                Seu negócio <span className="text-accent">agenda.</span> Você atende.
+            <motion.div {...fadeUp()} className="text-left">
+              <span className="inline-block font-mono text-[12px] tracking-[0.12em] uppercase text-gold mb-[18px]">
+                Agendamento + Gestão · Beleza & Estética
+              </span>
+              <h1 className="font-display font-semibold text-[clamp(40px,9vw,76px)] leading-[1.03] tracking-[-0.02em] m-0 mb-[22px]">
+                Seu negócio agenda.<br />
+                <em className="not-italic bg-gradient-flow text-transparent bg-clip-text">Você atende.</em>
               </h1>
-
-              <p className="mt-[30px] text-[#707070] text-[14px] md:text-[17px] leading-[1.7] max-w-[550px] mx-auto md:mx-0">
-                O Corte Flow organiza seus agendamentos, sua equipe e seus
-                clientes para que você pare de administrar tudo pelo celular
-                e volte a focar no que realmente importa.
+              <p className="text-[clamp(16px,2vw,19px)] text-text-muted max-w-[52ch] mb-[34px]">
+                O Corte Flow automatiza os agendamentos e organiza profissionais, serviços,
+                horários e clientes — para o seu negócio funcionar sozinho enquanto você
+                cuida de quem senta na cadeira.
               </p>
 
-              <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-[13px] mt-[36px]">
-                <Link to="/cadastro" className="inline-flex items-center justify-center gap-[14px] min-h-[50px] px-5 rounded-full text-[13px] font-bold transition-all bg-accent text-white hover:-translate-y-[3px] hover:shadow-lg hover:shadow-accent/30 w-full md:w-auto">
-                  Começar agora <span>→</span>
-                </Link>
-                <a href="#recursos" className="inline-flex items-center justify-center gap-[14px] min-h-[50px] px-5 rounded-full text-[13px] font-bold transition-all border border-[#dddddd] bg-white hover:bg-[#f7f7f7] hover:text-accent hover:border-accent/30 w-full md:w-auto">
+              <div className="flex flex-wrap gap-[14px] mb-[48px]">
+                <a href="#planos" className="inline-flex items-center justify-center px-8 py-[17px] rounded-full font-semibold text-[16px] bg-gradient-flow text-[#16110A] shadow-card hover:-translate-y-[2px] hover:shadow-[0_20px_40px_-16px_rgba(212,162,76,0.45)] transition-all">
+                  Começar agora
+                </a>
+                <a href="#solucao" className="inline-flex items-center justify-center px-8 py-[17px] rounded-full font-semibold text-[16px] text-text border border-line-strong hover:border-gold-soft hover:text-gold-soft transition-all">
                   Conhecer o Corte Flow
                 </a>
               </div>
 
-              <div className="flex items-center justify-center md:justify-start gap-5 mt-[60px]">
-                <div className="flex flex-col gap-[3px]">
-                  <strong className="text-[16px] leading-tight">24h</strong>
-                  <span className="text-[#999999] text-[10px]">agendamento online</span>
+              <div className="flex gap-[34px] flex-wrap">
+                <div className="flex flex-col">
+                  <span className="font-display text-[30px] font-semibold text-gold-soft"><CountUp to={24} /></span>
+                  <span className="text-[12.5px] text-text-muted max-w-[12ch]">horas devolvidas / mês</span>
                 </div>
-                <div className="w-px h-[28px] bg-[#dddddd]"></div>
-                <div className="flex flex-col gap-[3px]">
-                  <strong className="text-[16px] leading-tight">100%</strong>
-                  <span className="text-[#999999] text-[10px]">online</span>
+                <div className="flex flex-col">
+                  <span className="font-display text-[30px] font-semibold text-gold-soft"><CountUp to={10} /></span>
+                  <span className="text-[12.5px] text-text-muted max-w-[12ch]">km de raio configurável</span>
                 </div>
-                <div className="w-px h-[28px] bg-[#dddddd]"></div>
-                <div className="flex flex-col gap-[3px]">
-                  <strong className="text-[16px] leading-tight">∞</strong>
-                  <span className="text-[#999999] text-[10px]">possibilidades</span>
+                <div className="flex flex-col">
+                  <span className="font-display text-[30px] font-semibold text-gold-soft"><CountUp to={100} /></span>
+                  <span className="text-[12.5px] text-text-muted max-w-[12ch]">% da agenda automática</span>
                 </div>
               </div>
             </motion.div>
 
-            <motion.div className="relative w-full max-w-[620px] mx-auto" {...fadeUp(0.2)}>
-              <div className="absolute z-10 flex items-center gap-[11px] p-3 px-4 bg-white/90 border border-accent/20 rounded-[16px] shadow-[0_20px_50px_rgba(233,152,37,0.15)] backdrop-blur-[20px] top-[7%] md:top-[12%] -left-[5px] md:-left-[45px]">
-                <span className="grid place-items-center w-[30px] h-[30px] rounded-[9px] bg-accent text-white text-[12px]">✓</span>
+            <motion.div {...fadeUp(0.1)} className="relative w-full max-w-[460px] mx-auto md:max-w-none md:m-0">
+              <div className="absolute inset-[-10%_-10%_auto_auto] w-[70%] aspect-square bg-gradient-flow blur-[90px] opacity-25 rounded-full z-0"></div>
+              
+              <div className="relative z-10 bg-bg-elevated rounded-[32px] shadow-soft border border-line overflow-hidden aspect-[4/5] -rotate-[1.5deg]">
+                <img src="/images/hero-atendimento.jpg" alt="Atendimento" className="w-full h-full object-cover" />
+              </div>
+              
+              <div className="absolute top-[8%] -left-[6%] z-20 flex items-center gap-2.5 p-3 px-4 rounded-[20px] bg-[#15181D]/90 backdrop-blur-[10px] animate-float" style={{ animationDelay: '0.3s' }}>
+                <span className="text-[18px]">📍</span>
                 <div>
-                  <strong className="block text-[9px] md:text-[11px]">Agendamento confirmado</strong>
-                  <small className="block mt-[3px] text-[#999999] text-[8px] md:text-[9px]">Hoje · 14:30</small>
+                  <strong className="block text-[13px] font-semibold">Dentro do raio</strong>
+                  <span className="block text-[11.5px] text-text-muted">Atendimento confirmado</span>
                 </div>
               </div>
-
-              <img src="/images/barbeiro-hero.jpg" alt="Corte Flow" className="aspect-[4/5] object-cover rounded-[30px] md:rounded-[40px] shadow-[0_40px_90px_rgba(0,0,0,0.14)]" />
-
-              <div className="absolute z-10 flex items-center gap-[11px] p-3 px-4 bg-white/90 border border-black/10 rounded-[16px] shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-[20px] bottom-[7%] md:bottom-[12%] -right-[5px] md:-right-[35px]">
-                <div className="flex">
-                  <span className="w-[26px] h-[26px] rounded-full border-2 border-white bg-[#dddddd]"></span>
-                  <span className="w-[26px] h-[26px] rounded-full border-2 border-white bg-[#dddddd] -ml-[6px]"></span>
-                  <span className="w-[26px] h-[26px] rounded-full border-2 border-white bg-[#dddddd] -ml-[6px]"></span>
-                </div>
+              
+              <div className="absolute bottom-[10%] -right-[8%] z-20 flex items-center gap-2.5 p-3 px-4 rounded-[20px] bg-[#15181D]/90 backdrop-blur-[10px] animate-float" style={{ animationDelay: '1.1s' }}>
+                <span className="text-[18px]">🗓️</span>
                 <div>
-                  <strong className="block text-[9px] md:text-[11px]">Equipe conectada</strong>
-                  <small className="block mt-[3px] text-[#999999] text-[8px] md:text-[9px]">Todos os profissionais</small>
+                  <strong className="block text-[13px] font-semibold">18:30 reservado</strong>
+                  <span className="block text-[11.5px] text-text-muted">Agenda atualizada sozinha</span>
                 </div>
               </div>
             </motion.div>
+
           </div>
-        </section>
-
-        {/* =========================
-             PROBLEM
-        ========================== */}
-        <section className="bg-white py-[95px] md:py-[150px]">
-          <div className="max-w-[1180px] mx-auto px-6">
-            <motion.div className="max-w-[720px] mx-auto text-center" {...fadeUp()}>
-              <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">O problema</span>
-              <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
-                Você começou para atender.<br /> Não para ficar respondendo mensagens.
-              </h2>
-              <p className="max-w-[590px] mx-auto mt-[25px] text-[#707070] text-[16px] leading-[1.7]">
-                WhatsApp, agenda de papel, planilhas, clientes perguntando
-                horário e você tentando organizar tudo ao mesmo tempo.
-              </p>
-            </motion.div>
-
-            <div className="grid md:grid-cols-3 mt-[50px] md:mt-[75px] border-t border-[#dddddd]">
-              <motion.div className="p-[30px_5px] md:p-[45px_35px] border-b md:border-b-0 md:border-r border-[#dddddd] hover:bg-[#f7f7f7] transition-colors" {...fadeUp(0.1)}>
-                <span className="text-accent text-[11px] font-extrabold">01</span>
-                <h3 className="font-title mt-[25px] md:mt-[55px] text-[22px] tracking-[-0.8px] font-bold">“Tem horário amanhã?”</h3>
-                <p className="mt-[13px] text-[#707070] text-[14px] leading-[1.7]">
-                  Enquanto você atende um cliente, chegam várias mensagens
-                  perguntando sobre horários.
-                </p>
-              </motion.div>
-              <motion.div className="p-[30px_5px] md:p-[45px_35px] border-b md:border-b-0 md:border-r border-[#dddddd] hover:bg-[#f7f7f7] transition-colors" {...fadeUp(0.2)}>
-                <span className="text-accent text-[11px] font-extrabold">02</span>
-                <h3 className="font-title mt-[25px] md:mt-[55px] text-[22px] tracking-[-0.8px] font-bold">Agenda desorganizada.</h3>
-                <p className="mt-[13px] text-[#707070] text-[14px] leading-[1.7]">
-                  Horários espalhados, conflitos e aquele medo constante
-                  de marcar duas pessoas no mesmo horário.
-                </p>
-              </motion.div>
-              <motion.div className="p-[30px_5px] md:p-[45px_35px] hover:bg-[#f7f7f7] transition-colors" {...fadeUp(0.3)}>
-                <span className="text-accent text-[11px] font-extrabold">03</span>
-                <h3 className="font-title mt-[25px] md:mt-[55px] text-[22px] tracking-[-0.8px] font-bold">Você faz tudo.</h3>
-                <p className="mt-[13px] text-[#707070] text-[14px] leading-[1.7]">
-                  Cliente, agenda, equipe, serviços, horários e ainda
-                  precisa lembrar quem atende cada pessoa.
-                </p>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* =========================
-             TRANSFORMATION
-        ========================== */}
-        <section id="recursos" className="bg-[#f7f7f7] py-[95px] md:py-[150px]">
-          <div className="max-w-[1180px] mx-auto px-6">
-            <div className="grid md:grid-cols-[0.8fr_1.2fr] gap-[60px] md:gap-[100px] items-center">
-              <motion.div {...fadeUp()}>
-                <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Conheça o Corte Flow</span>
-                <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
-                  Menos mensagens.<br /> Mais tempo para atender.
-                </h2>
-                <p className="max-w-[500px] mt-[25px] text-[#707070] leading-[1.8]">
-                  O Corte Flow transforma seu negócio em uma operação
-                  organizada, onde seu cliente encontra um horário,
-                  agenda sozinho e você acompanha tudo em um só lugar.
-                </p>
-                <a href="#planos" className="inline-flex gap-3 mt-[35px] text-[13px] font-extrabold text-accent hover:opacity-70 transition-opacity">
-                  Quero organizar meu negócio <span>→</span>
-                </a>
-              </motion.div>
-
-              <motion.div className="relative min-h-[430px] md:min-h-[620px]" {...fadeUp(0.2)}>
-                <div className="absolute w-[85%] md:w-[80%] right-0 top-0">
-                  <img src="/images/cliente-app.jpg" alt="Agenda do Corte Flow" className="aspect-[4/5] object-cover rounded-[35px]" />
-                </div>
-                <div className="absolute z-10 w-[50%] md:w-[42%] bottom-0 left-0 p-2 md:p-2.5 bg-white rounded-[28px] shadow-[0_25px_60px_rgba(0,0,0,0.14)]">
-                  <img src="/images/barbearia.jpg" alt="Agendamento" className="rounded-[20px] aspect-square object-cover" />
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* =========================
-             MANAGEMENT ENGINE
-        ========================== */}
-        <section className="bg-white py-[95px] md:py-[150px]">
-          <div className="max-w-[1180px] mx-auto px-6">
-            <motion.div className="max-w-[720px] mx-auto text-center" {...fadeUp()}>
-              <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Muito mais que uma agenda</span>
-              <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
-                Um motor de gestão<br /> para o seu negócio.
-              </h2>
-              <p className="max-w-[590px] mx-auto mt-[25px] text-[#707070] text-[16px] leading-[1.7]">
-                Tudo que você precisa para transformar seus atendimentos
-                em uma operação organizada.
-              </p>
-            </motion.div>
-
-            <div className="grid md:grid-cols-2 gap-[60px] md:gap-[90px] items-center mt-[50px] md:mt-[80px]">
-              <motion.div {...fadeUp(0.2)}>
-                <img src="/images/salao-cachos.jpg" alt="Gestão do Corte Flow" className="aspect-square object-cover rounded-[35px]" />
-              </motion.div>
-
-              <div className="flex flex-col">
-                <motion.article className="grid grid-cols-[35px_1fr] md:grid-cols-[50px_1fr] gap-5 py-[30px] border-t border-b border-[#dddddd] group" {...fadeUp(0.1)}>
-                  <span className="text-accent text-[11px] font-extrabold group-hover:scale-110 transition-transform">01</span>
-                  <div>
-                    <h3 className="font-title text-[19px] tracking-[-0.5px] font-bold">Agenda inteligente</h3>
-                    <p className="mt-[9px] text-[#707070] text-[13px] leading-[1.7]">
-                      Seus clientes encontram os horários disponíveis
-                      e fazem o agendamento sem precisar falar com você.
-                    </p>
-                  </div>
-                </motion.article>
-                <motion.article className="grid grid-cols-[35px_1fr] md:grid-cols-[50px_1fr] gap-5 py-[30px] border-b border-[#dddddd] group" {...fadeUp(0.2)}>
-                  <span className="text-accent text-[11px] font-extrabold group-hover:scale-110 transition-transform">02</span>
-                  <div>
-                    <h3 className="font-title text-[19px] tracking-[-0.5px] font-bold">Serviços organizados</h3>
-                    <p className="mt-[9px] text-[#707070] text-[13px] leading-[1.7]">
-                      Cadastre seus serviços, preços, duração e deixe
-                      tudo pronto para o cliente escolher.
-                    </p>
-                  </div>
-                </motion.article>
-                <motion.article className="grid grid-cols-[35px_1fr] md:grid-cols-[50px_1fr] gap-5 py-[30px] border-b border-[#dddddd] group" {...fadeUp(0.3)}>
-                  <span className="text-accent text-[11px] font-extrabold group-hover:scale-110 transition-transform">03</span>
-                  <div>
-                    <h3 className="font-title text-[19px] tracking-[-0.5px] font-bold">Clientes no lugar certo</h3>
-                    <p className="mt-[9px] text-[#707070] text-[13px] leading-[1.7]">
-                      Tenha sua operação organizada sem depender de
-                      dezenas de conversas espalhadas pelo WhatsApp.
-                    </p>
-                  </div>
-                </motion.article>
-                <motion.article className="grid grid-cols-[35px_1fr] md:grid-cols-[50px_1fr] gap-5 py-[30px] border-b border-[#dddddd] group" {...fadeUp(0.4)}>
-                  <span className="text-accent text-[11px] font-extrabold group-hover:scale-110 transition-transform">04</span>
-                  <div>
-                    <h3 className="font-title text-[19px] tracking-[-0.5px] font-bold">Você no controle</h3>
-                    <p className="mt-[9px] text-[#707070] text-[13px] leading-[1.7]">
-                      Acompanhe tudo de uma única plataforma, onde
-                      sua operação realmente acontece.
-                    </p>
-                  </div>
-                </motion.article>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* =========================
-             TEAM
-        ========================== */}
-        <section id="equipe" className="bg-[#f7f7f7] py-[95px] md:py-[150px]">
-          <div className="max-w-[1180px] mx-auto px-6">
-            <div className="grid md:grid-cols-[0.9fr_1.1fr] gap-[60px] md:gap-[90px] items-center">
-              <motion.div {...fadeUp()}>
-                <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Para equipes</span>
-                <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
-                  Começou sozinho?<br /> <span className="text-[#999999]">Cresceu? Melhor ainda.</span>
-                </h2>
-                <p className="max-w-[500px] mt-[25px] text-[#707070] leading-[1.8]">
-                  Crie sua equipe, cadastre seus profissionais e
-                  organize a agenda de cada um.
-                </p>
-                <p className="max-w-[500px] mt-[15px] text-[#707070] leading-[1.8]">
-                  Cada profissional pode acompanhar seus próprios
-                  agendamentos enquanto você mantém a visão completa
-                  do negócio.
-                </p>
-                <Link to="/cadastro" className="inline-flex items-center justify-center gap-[14px] min-h-[50px] px-5 mt-[35px] rounded-full text-[13px] font-bold transition-all bg-accent text-white hover:-translate-y-[3px] hover:shadow-lg hover:shadow-accent/30 w-full md:w-auto">
-                  Criar minha equipe <span>→</span>
-                </Link>
-              </motion.div>
-
-              <motion.div className="relative" {...fadeUp(0.2)}>
-                <img src="/images/barbeiro-corte.jpg" alt="Equipe de profissionais" className="aspect-[4/3] object-cover rounded-[35px]" />
-                <div className="absolute left-[10px] md:-left-[25px] bottom-[10px] md:bottom-[25px] flex items-center gap-[15px] p-[15px_18px] bg-white/95 rounded-[18px] shadow-[0_20px_50px_rgba(233,152,37,0.15)]">
-                  <div className="flex">
-                    <span className="grid place-items-center w-[30px] h-[30px] -ml-[7px] first:ml-0 border-2 border-white rounded-full bg-[#dddddd] text-[10px]"></span>
-                    <span className="grid place-items-center w-[30px] h-[30px] -ml-[7px] first:ml-0 border-2 border-white rounded-full bg-[#dddddd] text-[10px]"></span>
-                    <span className="grid place-items-center w-[30px] h-[30px] -ml-[7px] first:ml-0 border-2 border-white rounded-full bg-[#dddddd] text-[10px]"></span>
-                    <span className="grid place-items-center w-[30px] h-[30px] -ml-[7px] first:ml-0 border-2 border-white rounded-full bg-accent text-white text-[10px] font-bold">+</span>
-                  </div>
-                  <div>
-                    <strong className="block text-[12px]">Sua equipe</strong>
-                    <small className="block mt-[3px] text-[#999999] text-[10px]">Todos conectados</small>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* =========================
-             HOME SERVICE
-        ========================== */}
-        <section id="domicilio" className="pb-[95px] md:pb-[150px] bg-[#f7f7f7]">
-          <div className="max-w-[1180px] mx-auto px-6">
-            <div className="relative grid md:grid-cols-2 gap-[50px] p-[45px_25px] md:p-[90px] rounded-[30px] md:rounded-[45px] overflow-hidden text-white" style={{ background: 'radial-gradient(circle at 80% 30%, rgba(233,152,37,0.15), transparent 35%), #0b0b0b' }}>
-              <div className="absolute w-[400px] h-[400px] right-[-150px] top-[-150px] rounded-full bg-accent/20 blur-[60px]"></div>
-
-              <motion.div className="relative z-10" {...fadeUp()}>
-                <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Uma novidade que muda o jogo</span>
-                <h2 className="font-title text-[45px] md:text-[clamp(42px,5vw,70px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
-                  Você define o raio.<br />
-                  <span className="text-white/40">O sistema faz o resto.</span>
-                </h2>
-                <p className="max-w-[490px] mt-[25px] text-white/60 text-[15px] leading-[1.8]">
-                  Trabalha a domicílio? Deixe o Corte Flow verificar
-                  automaticamente se o endereço do cliente está dentro
-                  da sua área de atendimento.
-                </p>
-                <Link to="/cadastro" className="inline-flex items-center justify-center gap-[14px] min-h-[50px] px-5 mt-[35px] rounded-full text-[13px] font-bold transition-all bg-accent text-white hover:-translate-y-[3px] shadow-lg shadow-accent/20 w-full md:w-auto">
-                  Quero atender a domicílio <span>→</span>
-                </Link>
-              </motion.div>
-
-              <motion.div className="relative min-h-[350px] md:min-h-[440px]" {...fadeUp(0.2)}>
-                <div className="absolute inset-0 overflow-hidden rounded-[30px] border border-accent/20" style={{ background: 'radial-gradient(circle, rgba(233,152,37,0.15) 1px, transparent 1px)', backgroundSize: '30px 30px' }}>
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(30deg, transparent 49%, rgba(255,255,255,0.04) 50%, transparent 51%), linear-gradient(-30deg, transparent 49%, rgba(255,255,255,0.04) 50%, transparent 51%)', backgroundSize: '80px 80px' }}></div>
-                  <div className="absolute w-[240px] h-[240px] md:w-[300px] md:h-[300px] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-accent/50 bg-accent/10"></div>
-                  
-                  <div className="absolute p-[9px_13px] rounded-full bg-accent text-white text-[10px] font-bold shadow-[0_15px_40px_rgba(233,152,37,0.4)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <span>Seu negócio</span>
-                  </div>
-                  <div className="absolute p-[9px_13px] rounded-full bg-white text-black text-[10px] font-bold shadow-[0_15px_40px_rgba(0,0,0,0.3)] left-[68%] top-[29%]">
-                    <span>Cliente</span>
-                  </div>
-
-                  <div className="absolute bottom-[22px] left-[22px] p-[14px_17px] bg-black/70 border border-accent/30 rounded-[15px] backdrop-blur-[15px]">
-                    <strong className="block text-[18px] text-accent">8,4 km</strong>
-                    <small className="text-white/70 text-[9px]">Dentro do raio de atendimento</small>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* =========================
-             HOME SERVICE EXPLANATION
-        ========================== */}
-        <section className="bg-[#f7f7f7] py-[95px] md:py-[150px]">
-          <div className="max-w-[1180px] mx-auto px-6">
-            <motion.div className="max-w-[720px] mx-auto text-center" {...fadeUp()}>
-              <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Atendimento a domicílio</span>
-              <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
-                O cliente escolhe.<br /> O Corte Flow resolve.
-              </h2>
-            </motion.div>
-
-            <div className="max-w-[900px] mx-auto mt-[55px] md:mt-[80px]">
-              <motion.div className="grid grid-cols-[50px_1fr] md:grid-cols-[70px_1fr] gap-[18px] md:gap-[30px] items-center" {...fadeUp(0.1)}>
-                <div className="grid place-items-center w-[48px] h-[48px] md:w-[60px] md:h-[60px] rounded-full bg-accent text-white text-[12px] font-extrabold shadow-[0_10px_25px_rgba(233,152,37,0.3)]">01</div>
-                <div>
-                  <h3 className="font-title text-[20px] font-bold">Cliente escolhe o serviço</h3>
-                  <p className="mt-[7px] text-[#707070] text-[13px]">Ele entra no seu site e escolhe o que deseja.</p>
-                </div>
-              </motion.div>
-              <div className="w-px h-[50px] bg-accent/20 ml-[24px] md:ml-[29px] my-2"></div>
-              
-              <motion.div className="grid grid-cols-[50px_1fr] md:grid-cols-[70px_1fr] gap-[18px] md:gap-[30px] items-center" {...fadeUp(0.2)}>
-                <div className="grid place-items-center w-[48px] h-[48px] md:w-[60px] md:h-[60px] rounded-full bg-accent text-white text-[12px] font-extrabold shadow-[0_10px_25px_rgba(233,152,37,0.3)]">02</div>
-                <div>
-                  <h3 className="font-title text-[20px] font-bold">Informa o endereço</h3>
-                  <p className="mt-[7px] text-[#707070] text-[13px]">O cliente escolhe atendimento a domicílio e informa onde está.</p>
-                </div>
-              </motion.div>
-              <div className="w-px h-[50px] bg-accent/20 ml-[24px] md:ml-[29px] my-2"></div>
-              
-              <motion.div className="grid grid-cols-[50px_1fr] md:grid-cols-[70px_1fr] gap-[18px] md:gap-[30px] items-center" {...fadeUp(0.3)}>
-                <div className="grid place-items-center w-[48px] h-[48px] md:w-[60px] md:h-[60px] rounded-full bg-accent text-white text-[12px] font-extrabold shadow-[0_10px_25px_rgba(233,152,37,0.3)]">03</div>
-                <div>
-                  <h3 className="font-title text-[20px] font-bold">O sistema verifica</h3>
-                  <p className="mt-[7px] text-[#707070] text-[13px]">O Corte Flow verifica automaticamente se o endereço está dentro do seu raio.</p>
-                </div>
-              </motion.div>
-              <div className="w-px h-[50px] bg-accent/20 ml-[24px] md:ml-[29px] my-2"></div>
-              
-              <motion.div className="grid grid-cols-[50px_1fr] md:grid-cols-[70px_1fr] gap-[18px] md:gap-[30px] items-center" {...fadeUp(0.4)}>
-                <div className="grid place-items-center w-[48px] h-[48px] md:w-[60px] md:h-[60px] rounded-full bg-accent text-white text-[12px] font-extrabold shadow-[0_10px_25px_rgba(233,152,37,0.3)]">04</div>
-                <div>
-                  <h3 className="font-title text-[20px] font-bold">Agendamento confirmado</h3>
-                  <p className="mt-[7px] text-[#707070] text-[13px]">Pronto. Você recebe o agendamento sem precisar ficar parando o atendimento para organizar tudo.</p>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* =========================
-             FOR EVERY BUSINESS
-        ========================== */}
-        <section className="bg-white py-[95px] md:py-[150px]">
-          <div className="max-w-[1180px] mx-auto px-6">
-            <motion.div className="max-w-[720px]" {...fadeUp()}>
-              <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Feito para quem vive de atendimento</span>
-              <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
-                Seu negócio.<br /> Do seu jeito.
-              </h2>
-            </motion.div>
-
-            <div className="flex flex-col md:grid md:grid-cols-[1.5fr_1fr_1fr] md:grid-rows-[360px_360px] gap-4 mt-[45px] md:mt-[70px]">
-              
-              <motion.article className="relative min-h-[420px] md:min-h-0 md:row-span-2 overflow-hidden rounded-[30px] p-[35px]" {...fadeUp(0.1)}>
-                <img src="/images/barbearia.jpg" alt="Barbearia" className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-[35px] flex flex-col justify-end text-white">
-                  <span className="text-accent text-[10px] font-extrabold">01</span>
-                  <h3 className="font-title mt-3 text-[25px] tracking-[-1px] font-bold">Barbearias</h3>
-                  <p className="mt-[7px] text-white/65 text-[12px] leading-[1.6]">Menos mensagens. Mais clientes na cadeira.</p>
-                </div>
-              </motion.article>
-
-              <motion.article className="relative min-h-[330px] md:min-h-0 overflow-hidden rounded-[30px] p-[35px] bg-[#f7f7f7] flex flex-col hover:bg-white hover:shadow-[0_20px_50px_rgba(233,152,37,0.1)] transition-all" {...fadeUp(0.2)}>
-                <div className="text-[30px] mb-[80px] text-accent">✦</div>
-                <div className="mt-auto">
-                  <span className="text-accent text-[10px] font-extrabold">02</span>
-                  <h3 className="font-title mt-3 text-[25px] tracking-[-1px] font-bold">Salões de beleza</h3>
-                  <p className="mt-[7px] text-[#707070] text-[12px] leading-[1.6]">Organize sua equipe e deixe cada profissional cuidar da própria agenda.</p>
-                </div>
-              </motion.article>
-
-              <motion.article className="relative min-h-[330px] md:min-h-0 overflow-hidden rounded-[30px] p-[35px] bg-[#f7f7f7] flex flex-col hover:bg-white hover:shadow-[0_20px_50px_rgba(233,152,37,0.1)] transition-all" {...fadeUp(0.3)}>
-                <div className="text-[30px] mb-[80px] text-accent">✧</div>
-                <div className="mt-auto">
-                  <span className="text-accent text-[10px] font-extrabold">03</span>
-                  <h3 className="font-title mt-3 text-[25px] tracking-[-1px] font-bold">Manicures</h3>
-                  <p className="mt-[7px] text-[#707070] text-[12px] leading-[1.6]">Sua agenda disponível para clientes a qualquer hora.</p>
-                </div>
-              </motion.article>
-
-              <motion.article className="relative min-h-[330px] md:min-h-0 md:col-span-2 overflow-hidden rounded-[30px] p-[35px]" {...fadeUp(0.4)}>
-                <img src="/images/estilo-corte.jpg" alt="Profissional de beleza" className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-[35px] flex flex-col justify-end text-white">
-                  <span className="text-accent text-[10px] font-extrabold">04</span>
-                  <h3 className="font-title mt-3 text-[25px] tracking-[-1px] font-bold">Profissionais autônomos</h3>
-                  <p className="mt-[7px] text-white/65 text-[12px] leading-[1.6]">Comece profissional desde o primeiro cliente.</p>
-                </div>
-              </motion.article>
-
-            </div>
-          </div>
-        </section>
-
-        {/* =========================
-             BENEFITS
-        ========================== */}
-        <section className="bg-[#f7f7f7] py-[95px] md:py-[150px]">
-          <div className="max-w-[1180px] mx-auto px-6">
-            <div className="grid md:grid-cols-2 gap-[50px] md:gap-[120px]">
-              
-              <motion.div {...fadeUp()}>
-                <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">O resultado</span>
-                <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
-                  Você não precisa <span className="text-accent/50">trabalhar mais.</span> Precisa trabalhar melhor.
-                </h2>
-              </motion.div>
-
-              <div className="border-t border-[#dddddd]">
-                <motion.div className="grid grid-cols-[50px_1fr] gap-5 py-[30px] border-b border-[#dddddd]" {...fadeUp(0.1)}>
-                  <strong className="text-accent text-[11px]">01</strong>
-                  <div>
-                    <h3 className="font-title text-[18px] font-bold">Mais tempo</h3>
-                    <p className="mt-[8px] text-[#707070] text-[13px] leading-[1.7]">Pare de interromper seus atendimentos para organizar horários.</p>
-                  </div>
-                </motion.div>
-                <motion.div className="grid grid-cols-[50px_1fr] gap-5 py-[30px] border-b border-[#dddddd]" {...fadeUp(0.2)}>
-                  <strong className="text-accent text-[11px]">02</strong>
-                  <div>
-                    <h3 className="font-title text-[18px] font-bold">Mais organização</h3>
-                    <p className="mt-[8px] text-[#707070] text-[13px] leading-[1.7]">Tudo em um só lugar, sem depender de anotações.</p>
-                  </div>
-                </motion.div>
-                <motion.div className="grid grid-cols-[50px_1fr] gap-5 py-[30px] border-b border-[#dddddd]" {...fadeUp(0.3)}>
-                  <strong className="text-accent text-[11px]">03</strong>
-                  <div>
-                    <h3 className="font-title text-[18px] font-bold">Mais autonomia</h3>
-                    <p className="mt-[8px] text-[#707070] text-[13px] leading-[1.7]">Seu cliente agenda sozinho, inclusive fora do horário comercial.</p>
-                  </div>
-                </motion.div>
-                <motion.div className="grid grid-cols-[50px_1fr] gap-5 py-[30px] border-b border-[#dddddd]" {...fadeUp(0.4)}>
-                  <strong className="text-accent text-[11px]">04</strong>
-                  <div>
-                    <h3 className="font-title text-[18px] font-bold">Mais possibilidades</h3>
-                    <p className="mt-[8px] text-[#707070] text-[13px] leading-[1.7]">Cresça de profissional autônomo para uma equipe completa sem perder o controle.</p>
-                  </div>
-                </motion.div>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        {/* =========================
-             PRICING
-        ========================== */}
-        <section id="planos" className="bg-white py-[95px] md:py-[150px]">
-          <div className="max-w-[1180px] mx-auto px-6">
-            <motion.div className="max-w-[720px] mx-auto text-center" {...fadeUp()}>
-              <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Planos</span>
-              <h2 className="font-title text-[43px] md:text-[clamp(40px,5vw,68px)] leading-none tracking-[-3px] md:tracking-[-4px] font-bold">
-                Quanto vale recuperar<br /> horas do seu dia?
-              </h2>
-              <p className="max-w-[590px] mx-auto mt-[25px] text-[#707070] text-[16px] leading-[1.7]">
-                Escolha o plano que combina com o momento do seu negócio.
-              </p>
-            </motion.div>
-
-            <div className="grid md:grid-cols-3 gap-[15px] mt-[45px] md:mt-[70px] max-w-[500px] md:max-w-none mx-auto">
-              
-              {/* PLAN 1 */}
-              <motion.article className="p-[30px] md:p-[38px] border border-[#dddddd] bg-white rounded-[28px] transition-all duration-300 hover:-translate-y-[6px] hover:shadow-[0_25px_70px_rgba(233,152,37,0.15)] hover:border-accent/40" {...fadeUp(0.1)}>
-                <span className="font-title text-[17px] font-extrabold">Essencial</span>
-                <p className="mt-2 text-[#999999] text-[12px]">Para quem está começando.</p>
-                <div className="flex items-baseline mt-[35px]">
-                  <small className="text-[14px] font-bold text-accent">R$</small>
-                  <strong className="ml-1 text-[48px] md:text-[54px] tracking-[-3px] text-accent">27</strong>
-                  <span className="ml-[5px] text-[#999999] text-[11px]">/mês</span>
-                </div>
-                <Link to="/cadastro" className="flex items-center justify-center w-full h-[48px] mt-[30px] border border-[#dddddd] rounded-[13px] text-[12px] font-extrabold transition-colors hover:bg-accent/5 hover:border-accent text-accent">Começar agora</Link>
-                <div className="flex flex-col gap-[14px] mt-[35px] pt-[30px] border-t border-[#dddddd]">
-                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Agendamento online</span>
-                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Agenda inteligente</span>
-                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Cadastro de serviços</span>
-                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Gestão de clientes</span>
-                </div>
-              </motion.article>
-
-              {/* PLAN 2 */}
-              <motion.article className="relative p-[30px] md:p-[38px] border-2 border-accent bg-white rounded-[28px] shadow-[0_20px_60px_rgba(233,152,37,0.2)] transition-all duration-300 hover:-translate-y-[6px] hover:shadow-[0_25px_70px_rgba(233,152,37,0.3)]" {...fadeUp(0.2)}>
-                <div className="absolute top-[-12px] left-[30px] p-[6px_11px] rounded-full bg-accent text-white text-[9px] font-extrabold">Mais escolhido</div>
-                <span className="font-title text-[17px] font-extrabold">Profissional</span>
-                <p className="mt-2 text-[#999999] text-[12px]">Para quem quer crescer.</p>
-                <div className="flex items-baseline mt-[35px]">
-                  <small className="text-[14px] font-bold text-accent">R$</small>
-                  <strong className="ml-1 text-[48px] md:text-[54px] tracking-[-3px] text-accent">77</strong>
-                  <span className="ml-[5px] text-[#999999] text-[11px]">/mês</span>
-                </div>
-                <Link to="/cadastro" className="flex items-center justify-center w-full h-[48px] mt-[30px] border border-accent bg-accent text-white rounded-[13px] text-[12px] font-extrabold transition-opacity hover:opacity-90 shadow-[0_10px_20px_rgba(233,152,37,0.3)]">Quero esse plano</Link>
-                <div className="flex flex-col gap-[14px] mt-[35px] pt-[30px] border-t border-[#dddddd]">
-                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Tudo do Essencial</span>
-                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Equipe de profissionais</span>
-                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Agenda individual</span>
-                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Atendimento a domicílio</span>
-                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Raio de atendimento</span>
-                </div>
-              </motion.article>
-
-              {/* PLAN 3 */}
-              <motion.article className="p-[30px] md:p-[38px] border border-[#dddddd] bg-white rounded-[28px] transition-all duration-300 hover:-translate-y-[6px] hover:shadow-[0_25px_70px_rgba(233,152,37,0.15)] hover:border-accent/40" {...fadeUp(0.3)}>
-                <span className="font-title text-[17px] font-extrabold">Negócios</span>
-                <p className="mt-2 text-[#999999] text-[12px]">Para operações maiores.</p>
-                <div className="flex items-baseline mt-[35px]">
-                  <small className="text-[14px] font-bold text-accent">R$</small>
-                  <strong className="ml-1 text-[48px] md:text-[54px] tracking-[-3px] text-accent">197</strong>
-                  <span className="ml-[5px] text-[#999999] text-[11px]">/mês</span>
-                </div>
-                <a href="mailto:contato@corteflow.com" className="flex items-center justify-center w-full h-[48px] mt-[30px] border border-[#dddddd] rounded-[13px] text-[12px] font-extrabold transition-colors hover:bg-accent/5 hover:border-accent text-accent">Falar com time</a>
-                <div className="flex flex-col gap-[14px] mt-[35px] pt-[30px] border-t border-[#dddddd]">
-                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Tudo do Profissional</span>
-                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Gestão avançada</span>
-                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Equipes maiores</span>
-                  <span className="text-[#707070] text-[12px]"><strong className="text-accent">✓</strong> Mais controle da operação</span>
-                </div>
-              </motion.article>
-
-            </div>
-
-            <motion.p className="text-center mt-[30px] text-[#999999] text-[11px]" {...fadeUp(0.4)}>
-              Sem complicação. Comece pequeno e evolua conforme seu negócio cresce.
-            </motion.p>
-          </div>
-        </section>
-
-        {/* =========================
-             FINAL CTA
-        ========================== */}
-        <section className="relative py-[110px] md:py-[170px] overflow-hidden bg-[#080808] text-white text-center">
-          <div className="absolute w-[700px] h-[700px] top-[-300px] left-1/2 -translate-x-1/2 rounded-full bg-accent/20 blur-[100px]"></div>
           
-          <div className="max-w-[1180px] mx-auto px-6 relative z-10">
-            <motion.div {...fadeUp()}>
-              <span className="block mb-5 text-accent text-[11px] font-extrabold uppercase tracking-[1.6px]">Seu próximo cliente pode estar tentando agendar agora.</span>
-              <h2 className="font-title text-[49px] md:text-[clamp(48px,7vw,90px)] leading-[0.95] tracking-[-4px] md:tracking-[-6px] font-bold">
-                Você cuida do cliente.<br />
-                <span className="text-white/40">O Corte Flow cuida da sua agenda.</span>
-              </h2>
-              <p className="mt-[25px] text-white/50">Transforme a maneira como você administra seu negócio.</p>
-              
-              <Link to="/cadastro" className="inline-flex items-center justify-center gap-[14px] min-h-[58px] px-[25px] mt-[35px] rounded-full text-[13px] font-bold transition-all bg-accent text-white hover:-translate-y-[3px] shadow-[0_10px_30px_rgba(233,152,37,0.3)]">
-                Começar agora <span>→</span>
-              </Link>
-            </motion.div>
+          <div className="flex items-center justify-center gap-2 mt-16 font-mono text-[11px] tracking-[0.1em] uppercase text-text-muted">
+            <span className="w-[1px] h-6 bg-gradient-to-b from-gold to-transparent animate-scrollcue"></span>
+            role para ver
           </div>
         </section>
 
+        {/* =========================
+             02 - DOR
+        ========================== */}
+        <section className="text-center py-16 md:py-[160px] px-6">
+          <motion.div {...fadeUp()}>
+            <p className="font-mono text-[13px] tracking-[0.04em] text-text-muted max-w-[44ch] mx-auto mb-5">
+              Responder mensagem. Perguntar horário. Confirmar endereço. Torcer pra não esquecer.
+            </p>
+            <h2 className="font-display text-[clamp(26px,5vw,40px)] font-medium max-w-[20ch] mx-auto">
+              Sua agenda não deveria ser um <em className="not-italic text-rose-soft">segundo trabalho</em>.
+            </h2>
+          </motion.div>
+        </section>
+
+        {/* =========================
+             03 - SOLUÇÃO
+        ========================== */}
+        <section id="solucao" className="py-[88px] md:py-[160px] px-6 md:px-12">
+          <div className="max-w-[1280px] mx-auto grid md:grid-cols-2 gap-12 md:gap-[72px] items-center">
+            
+            <motion.div {...fadeUp()}>
+              <span className="inline-block font-mono text-[12px] tracking-[0.12em] uppercase text-gold mb-[18px]">O Corte Flow</span>
+              <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,46px)] leading-[1.15] tracking-[-0.01em]">
+                Não é só uma agenda.<br />É o motor do seu negócio.
+              </h2>
+              <p className="text-[clamp(16px,2vw,18px)] text-text-muted max-w-[46ch] mt-5">
+                Menos mensagem, menos confusão, mais clientes. O Corte Flow cuida do
+                agendamento, organiza sua equipe e ainda resolve o atendimento a domicílio
+                — automaticamente, sem você precisar estar no meio de cada conversa.
+              </p>
+              
+              <div className="flex flex-wrap gap-3 mt-[30px]">
+                <a href="#agenda" className="text-[13.5px] font-medium px-[18px] py-[10px] rounded-full border border-line-strong text-text-dim hover:border-gold-soft hover:text-gold-soft transition-all">Agenda online</a>
+                <a href="#gestao" className="text-[13.5px] font-medium px-[18px] py-[10px] rounded-full border border-line-strong text-text-dim hover:border-gold-soft hover:text-gold-soft transition-all">Gestão completa</a>
+                <a href="#domicilio" className="text-[13.5px] font-medium px-[18px] py-[10px] rounded-full border border-line-strong text-text-dim hover:border-gold-soft hover:text-gold-soft transition-all">Atendimento a domicílio</a>
+              </div>
+            </motion.div>
+
+            <motion.div {...fadeUp(0.1)} className="rounded-[32px] overflow-hidden shadow-soft border border-line aspect-[16/11]">
+              <img src="/images/barbearia.jpg" alt="Barbearia" className="w-full h-full object-cover" />
+            </motion.div>
+
+          </div>
+        </section>
+
+        {/* =========================
+             04 - AGENDA ONLINE
+        ========================== */}
+        <section id="agenda" className="py-[88px] md:py-[160px] px-6 md:px-12">
+          <div className="max-w-[1280px] mx-auto grid md:grid-cols-[0.85fr_1fr] gap-10 md:gap-20 items-center">
+            
+            <motion.div {...fadeUp()} className="rounded-[32px] overflow-hidden shadow-soft border border-line">
+              <img src="/images/cliente-app.jpg" alt="Cliente no App" className="w-full aspect-[4/5] object-cover" />
+            </motion.div>
+
+            <motion.div {...fadeUp(0.1)}>
+              <span className="inline-block font-mono text-[12px] tracking-[0.12em] uppercase text-gold mb-[18px]">Agenda online</span>
+              <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,46px)] leading-[1.15] tracking-[-0.01em]">Seu cliente agenda sozinho.</h2>
+              <p className="text-[clamp(16px,2vw,18px)] text-text-muted max-w-[46ch] mt-5">
+                Pare de perder tempo respondendo mensagem pra marcar horário. O cliente
+                escolhe o serviço, o profissional e o horário — sozinho, a qualquer hora do dia.
+              </p>
+              
+              <ul className="mt-[26px] flex flex-col gap-[14px]">
+                <li className="relative pl-[30px] text-[15.5px] text-text-dim">
+                  <div className="absolute left-0 top-[5px] w-[18px] h-[18px] rounded-full bg-gradient-flow" style={{ WebkitMask: 'radial-gradient(circle 4px at 9px 9px, transparent 98%, #000 100%)', mask: 'radial-gradient(circle 4px at 9px 9px, transparent 98%, #000 100%)' }}></div>
+                  Sem trocar mensagem pra confirmar disponibilidade
+                </li>
+                <li className="relative pl-[30px] text-[15.5px] text-text-dim">
+                  <div className="absolute left-0 top-[5px] w-[18px] h-[18px] rounded-full bg-gradient-flow" style={{ WebkitMask: 'radial-gradient(circle 4px at 9px 9px, transparent 98%, #000 100%)', mask: 'radial-gradient(circle 4px at 9px 9px, transparent 98%, #000 100%)' }}></div>
+                  Sem cliente esperando resposta e desistindo
+                </li>
+                <li className="relative pl-[30px] text-[15.5px] text-text-dim">
+                  <div className="absolute left-0 top-[5px] w-[18px] h-[18px] rounded-full bg-gradient-flow" style={{ WebkitMask: 'radial-gradient(circle 4px at 9px 9px, transparent 98%, #000 100%)', mask: 'radial-gradient(circle 4px at 9px 9px, transparent 98%, #000 100%)' }}></div>
+                  Sem horário perdido por falta de organização
+                </li>
+              </ul>
+            </motion.div>
+
+          </div>
+        </section>
+
+        {/* =========================
+             05 - MOTOR DE GESTÃO
+        ========================== */}
+        <section id="gestao" className="bg-bg-soft py-[88px] md:py-[160px] px-6 md:px-12">
+          <div className="max-w-[640px] mx-auto text-center mb-16">
+            <span className="inline-block font-mono text-[12px] tracking-[0.12em] uppercase text-gold mb-[18px]">Motor de gestão</span>
+            <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,46px)] leading-[1.15] tracking-[-0.01em]">Administre seu negócio inteiro em um só lugar.</h2>
+            <p className="text-[clamp(16px,2vw,18px)] text-text-muted max-w-[46ch] mt-5 mx-auto">
+              Crie profissionais, monte equipes, defina serviços e horários. O Corte Flow
+              conecta cada peça da sua operação — e cada profissional acompanha só os
+              próprios agendamentos.
+            </p>
+          </div>
+
+          <div className="relative max-w-[1100px] mx-auto grid md:grid-cols-4 gap-5 md:gap-6">
+            <svg className="absolute hidden md:block overflow-visible top-1/2 left-0 w-full h-[2px] z-0" viewBox="0 0 800 4" preserveAspectRatio="none">
+              <motion.path 
+                d="M0,2 L800,2" 
+                fill="none" stroke="url(#flowGradient)" strokeWidth="2"
+                strokeDasharray="820"
+                initial={{ strokeDashoffset: 820 }}
+                whileInView={{ strokeDashoffset: 0 }}
+                viewport={{ once: true, margin: '-20%' }}
+                transition={{ duration: 1.4, ease: [0.16, 0.8, 0.24, 1] }}
+              />
+            </svg>
+
+            {[
+              { num: '01', title: 'Administrador', desc: 'Visão completa da operação: agenda, equipe e desempenho do negócio.' },
+              { num: '02', title: 'Equipe', desc: 'Organize quantos profissionais precisar, sob um único negócio.' },
+              { num: '03', title: 'Profissionais', desc: 'Cada um com sua própria agenda, serviços e horários de trabalho.' },
+              { num: '04', title: 'Agendamentos', desc: 'Tudo conectado — do primeiro clique do cliente até o atendimento.' }
+            ].map((node, i) => (
+              <motion.div key={node.num} {...fadeUp(i * 0.1)} className="relative z-10 bg-bg-card border border-line rounded-[20px] p-[26px_24px]">
+                <span className="inline-flex font-mono text-[12px] text-gold mb-2.5">{node.num}</span>
+                <h3 className="font-display text-[19px] font-semibold mb-2">{node.title}</h3>
+                <p className="text-[14.5px] text-text-muted">{node.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* =========================
+             06 - EQUIPES
+        ========================== */}
+        <section className="py-[88px] md:py-[160px] px-6 md:px-12">
+          <div className="max-w-[1280px] mx-auto grid md:grid-cols-[1fr_0.85fr] gap-10 md:gap-20 items-center">
+            
+            <motion.div {...fadeUp(0.1)} className="md:order-2 rounded-[32px] overflow-hidden shadow-soft border border-line">
+              <img src="/images/salao-cachos.jpg" alt="Equipe de Salão" className="w-full aspect-[4/5] object-cover" />
+            </motion.div>
+
+            <motion.div {...fadeUp()} className="md:order-1">
+              <span className="inline-block font-mono text-[12px] tracking-[0.12em] uppercase text-gold mb-[18px]">Equipes</span>
+              <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,46px)] leading-[1.15] tracking-[-0.01em]">Começou sozinho? Perfeito.<br />Tem equipe? Melhor ainda.</h2>
+              <p className="text-[clamp(16px,2vw,18px)] text-text-muted max-w-[46ch] mt-5">
+                Cadastre seus profissionais e organize a equipe em minutos. Cada um vê
+                só os próprios agendamentos, enquanto você tem a visão completa do negócio.
+              </p>
+              <p className="mt-[28px] font-display italic text-[21px] text-gold-soft">
+                Seu negócio cresce. O Corte Flow cresce junto.
+              </p>
+            </motion.div>
+
+          </div>
+        </section>
+
+        {/* =========================
+             07 - DOMICÍLIO
+        ========================== */}
+        <section id="domicilio" className="bg-bg-elevated border-y border-line py-[88px] md:py-[160px] px-6 md:px-12 overflow-hidden">
+          <div className="max-w-[1280px] mx-auto grid md:grid-cols-[1fr_0.8fr] gap-12 md:gap-20 items-center mb-[80px]">
+            
+            <motion.div {...fadeUp()}>
+              <span className="inline-block font-mono text-[12px] tracking-[0.12em] uppercase text-gold-soft mb-[18px]">Grande diferencial</span>
+              <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,46px)] leading-[1.15] tracking-[-0.01em] text-text">
+                Você define o raio.<br />O Corte Flow faz o resto.
+              </h2>
+              <p className="text-[clamp(16px,2vw,18px)] text-[#F5F3EF]/70 max-w-[46ch] mt-5">
+                Manicures, barbeiros e cabeleireiros que atendem em domicílio não precisam
+                mais perguntar endereço, verificar distância e combinar horário no
+                WhatsApp. O cliente informa onde está — o sistema confere se está dentro
+                da área de atendimento e libera o horário na hora.
+              </p>
+
+              <div className="relative w-[220px] h-[220px] mt-10 mb-3">
+                <span className="absolute inset-[66px] rounded-full border border-dashed border-gold/30 animate-pulse-ring"></span>
+                <span className="absolute inset-[33px] rounded-full border border-dashed border-gold/30 animate-pulse-ring" style={{ animationDelay: '0.5s' }}></span>
+                <span className="absolute inset-0 rounded-full border border-dashed border-gold/30 animate-pulse-ring" style={{ animationDelay: '1s' }}></span>
+                
+                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[54px] h-[54px] rounded-full bg-gradient-flow flex items-center justify-center font-mono text-[10.5px] font-semibold text-[#16110A] shadow-[0_0_30px_rgba(212,162,76,0.5)]">Você</span>
+                
+                <span className="absolute top-[12%] -right-[4%] font-mono text-[10.5px] px-2.5 py-1.5 rounded-full whitespace-nowrap bg-gold/15 text-gold-soft border border-gold/40">Dentro do raio</span>
+                <span className="absolute bottom-[4%] -left-[10%] font-mono text-[10.5px] px-2.5 py-1.5 rounded-full whitespace-nowrap bg-[#F5F3EF]/5 text-text-muted border border-line-strong">Fora do raio</span>
+              </div>
+              <p className="text-[13.5px] text-text-muted italic">Ex.: “Atendo clientes em um raio de até 10 km.”</p>
+            </motion.div>
+
+            <motion.div {...fadeUp(0.1)} className="rounded-[32px] overflow-hidden shadow-soft border border-line md:order-2">
+              <img src="/images/manicure-celular.jpg" alt="Domicílio" className="w-full aspect-[4/5] object-cover" />
+            </motion.div>
+          </div>
+
+          <div className="relative max-w-[1100px] mx-auto grid md:grid-cols-5 gap-5 md:gap-[22px]">
+            <svg className="absolute hidden md:block overflow-visible top-1/2 left-0 w-full h-[2px] z-0" viewBox="0 0 800 4" preserveAspectRatio="none">
+              <motion.path 
+                d="M0,2 L800,2" 
+                fill="none" stroke="url(#flowGradient)" strokeWidth="2"
+                strokeDasharray="820"
+                initial={{ strokeDashoffset: 820 }}
+                whileInView={{ strokeDashoffset: 0 }}
+                viewport={{ once: true, margin: '-20%' }}
+                transition={{ duration: 1.4, ease: [0.16, 0.8, 0.24, 1] }}
+              />
+            </svg>
+
+            {[
+              "Cliente escolhe o serviço",
+              "Informa o endereço",
+              "Sistema verifica a distância",
+              "Horário disponível aparece",
+              "Agendamento confirmado"
+            ].map((step, i) => (
+              <motion.div key={i} {...fadeUp(i * 0.1)} className="relative z-10 flex items-center gap-3 text-[14.5px] text-text-dim bg-[#F5F3EF]/[0.03] border border-line rounded-full px-[18px] py-3">
+                <span className="inline-flex items-center justify-center w-[22px] h-[22px] rounded-full bg-gradient-flow text-[#16110A] text-[11px] font-bold font-mono shrink-0">{i + 1}</span>
+                {step}
+              </motion.div>
+            ))}
+          </div>
+
+          <p className="text-center font-display italic text-[clamp(22px,3.5vw,30px)] text-gold-soft mt-[72px]">“Você atende. O Corte Flow organiza.”</p>
+        </section>
+
+        {/* =========================
+             08 - PARA QUEM É
+        ========================== */}
+        <section id="para-quem" className="py-[88px] md:py-[160px] px-6 md:px-12">
+          <div className="max-w-[1280px] mx-auto">
+            <span className="inline-block font-mono text-[12px] tracking-[0.12em] uppercase text-gold mb-[18px]">Para quem é</span>
+            <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,46px)] leading-[1.15] tracking-[-0.01em] max-w-[16ch]">
+              Feito para quem vive de deixar gente bonita.
+            </h2>
+
+            <div className="mt-14 grid md:grid-cols-3 gap-[18px] md:auto-rows-[minmax(160px,auto)]">
+              
+              <motion.div {...fadeUp(0.1)} className="rounded-[32px] overflow-hidden border border-line md:row-span-2">
+                <img src="/images/estilo-corte.jpg" alt="Estilo" className="w-full h-full object-cover aspect-[3/4]" />
+              </motion.div>
+
+              <motion.div {...fadeUp(0.2)} className="bg-bg-card border border-line rounded-[20px] p-[30px_26px] transition-all hover:border-gold/40 hover:-translate-y-1">
+                <span className="text-[26px]">💈</span>
+                <h3 className="font-display text-[19px] font-semibold my-3">Barbearias</h3>
+                <p className="text-[14px] text-text-muted">Mais clientes. Menos mensagens.</p>
+              </motion.div>
+
+              <motion.div {...fadeUp(0.3)} className="bg-bg-card border border-line rounded-[20px] p-[30px_26px] transition-all hover:border-gold/40 hover:-translate-y-1">
+                <span className="text-[26px]">💇</span>
+                <h3 className="font-display text-[19px] font-semibold my-3">Salões de beleza</h3>
+                <p className="text-[14px] text-text-muted">Toda a equipe organizada em um só lugar.</p>
+              </motion.div>
+
+              <motion.div {...fadeUp(0.4)} className="bg-bg-card border border-line rounded-[20px] p-[30px_26px] transition-all hover:border-gold/40 hover:-translate-y-1">
+                <span className="text-[26px]">💅</span>
+                <h3 className="font-display text-[19px] font-semibold my-3">Manicures</h3>
+                <p className="text-[14px] text-text-muted">Agenda cheia sem ficar respondendo o celular.</p>
+              </motion.div>
+
+              <motion.div {...fadeUp(0.5)} className="rounded-[32px] overflow-hidden border border-line md:row-span-2">
+                <img src="/images/barbeiro-corte.jpg" alt="Barbeiro" className="w-full h-full object-cover aspect-[3/4]" />
+              </motion.div>
+
+              <motion.div {...fadeUp(0.6)} className="bg-bg-card border border-line rounded-[20px] p-[30px_26px] transition-all hover:border-gold/40 hover:-translate-y-1">
+                <span className="text-[26px]">✂️</span>
+                <h3 className="font-display text-[19px] font-semibold my-3">Profissionais autônomos</h3>
+                <p className="text-[14px] text-text-muted">Seu negócio profissional desde o primeiro cliente.</p>
+              </motion.div>
+
+              <motion.div {...fadeUp(0.7)} className="bg-bg-card border border-line rounded-[20px] p-[30px_26px] transition-all hover:border-gold/40 hover:-translate-y-1">
+                <span className="text-[26px]">🏠</span>
+                <h3 className="font-display text-[19px] font-semibold my-3">Atendimento a domicílio</h3>
+                <p className="text-[14px] text-text-muted">Você define onde atende. O sistema verifica o resto.</p>
+              </motion.div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* =========================
+             09 - AUTOMAÇÃO
+        ========================== */}
+        <section className="bg-bg-soft py-[88px] md:py-[160px] px-6 md:px-12 text-center overflow-hidden">
+          <motion.div {...fadeUp()}>
+            <span className="inline-block font-mono text-[12px] tracking-[0.12em] uppercase text-gold mb-[18px]">Automação</span>
+            <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,46px)] leading-[1.15] tracking-[-0.01em] max-w-[22ch] mx-auto">
+              Enquanto você trabalha, o sistema trabalha por você.
+            </h2>
+          </motion.div>
+
+          <div className="relative max-w-[1100px] mx-auto mt-14 grid md:grid-cols-5 gap-[18px]">
+            <svg className="absolute hidden md:block overflow-visible top-1/2 left-0 w-full h-[2px] z-0" viewBox="0 0 800 4" preserveAspectRatio="none">
+              <motion.path 
+                d="M0,2 L800,2" 
+                fill="none" stroke="url(#flowGradient)" strokeWidth="2"
+                strokeDasharray="820"
+                initial={{ strokeDashoffset: 820 }}
+                whileInView={{ strokeDashoffset: 0 }}
+                viewport={{ once: true, margin: '-20%' }}
+                transition={{ duration: 1.4, ease: [0.16, 0.8, 0.24, 1] }}
+              />
+            </svg>
+
+            {[
+              "Cliente agenda",
+              "Sistema registra",
+              "Horário fica ocupado",
+              "Profissional é avisado",
+              "Agenda continua organizada"
+            ].map((step, i) => (
+              <motion.div key={i} {...fadeUp(i * 0.1)} className="relative z-10 flex items-center gap-3 text-[14.5px] text-text-dim bg-[#F5F3EF]/[0.03] border border-line rounded-full px-[18px] py-3">
+                <span className="inline-flex items-center justify-center w-[22px] h-[22px] rounded-full bg-gradient-flow text-[#16110A] text-[11px] font-bold font-mono shrink-0">·</span>
+                {step}
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* =========================
+             10 - PLANOS
+        ========================== */}
+        <section id="planos" className="py-[88px] md:py-[160px] px-6 md:px-12 text-center">
+          <motion.div {...fadeUp()}>
+            <span className="inline-block font-mono text-[12px] tracking-[0.12em] uppercase text-gold mb-[18px]">Planos</span>
+            <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,46px)] leading-[1.15] tracking-[-0.01em] max-w-[20ch] mx-auto">
+              Quanto vale recuperar horas do seu dia?
+            </h2>
+            <p className="text-[clamp(16px,2vw,18px)] text-text-muted mt-4 mx-auto">
+              Escolha o plano que combina com o seu momento.
+            </p>
+          </motion.div>
+
+          <div className="max-w-[1280px] mx-auto mt-14 grid md:grid-cols-3 gap-[22px] text-left">
+            
+            {/* PLANO SOLO */}
+            <motion.div {...fadeUp(0.1)} className="bg-bg-card border border-line rounded-[32px] p-[38px_30px] flex flex-col transition-all hover:-translate-y-1.5">
+              <h3 className="font-display text-[24px] font-semibold">Solo</h3>
+              <p className="text-[14px] text-text-muted mt-2.5 min-h-[42px]">Pra quem trabalha sozinho e quer parar de agendar pelo WhatsApp.</p>
+              <p className="font-display text-[44px] font-semibold mt-6">
+                <span className="text-[20px] align-super mr-0.5">R$</span>49<small className="text-[14px] font-normal text-text-muted">/mês</small>
+              </p>
+              <ul className="mt-[26px] flex flex-col gap-3 grow">
+                {['Agenda online ilimitada', '1 profissional', 'Atendimento a domicílio', 'Lembretes automáticos'].map((item) => (
+                  <li key={item} className="text-[14px] text-text-dim pl-[22px] relative">
+                    <span className="absolute left-0 text-gold-soft font-bold">+</span>{item}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/cadastro" className="mt-7 w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-semibold text-[15px] border border-line-strong text-text hover:border-gold-soft hover:text-gold-soft transition-all">Começar agora</Link>
+            </motion.div>
+
+            {/* PLANO STUDIO */}
+            <motion.div {...fadeUp(0.2)} className="relative bg-bg-card border border-gold/50 rounded-[32px] p-[38px_30px] flex flex-col transition-all md:scale-105 hover:md:scale-105 hover:md:-translate-y-1.5" style={{ background: 'linear-gradient(160deg, rgba(212,162,76,0.08), rgba(229,140,158,0.04) 60%), #191D23' }}>
+              <span className="absolute -top-[13px] left-[30px] bg-gradient-flow text-[#16110A] font-mono text-[11px] font-semibold px-3.5 py-1.5 rounded-full">Mais escolhido</span>
+              <h3 className="font-display text-[24px] font-semibold">Studio</h3>
+              <p className="text-[14px] text-text-muted mt-2.5 min-h-[42px]">Pra quem já tem equipe e quer o negócio inteiro organizado.</p>
+              <p className="font-display text-[44px] font-semibold mt-6">
+                <span className="text-[20px] align-super mr-0.5">R$</span>89<small className="text-[14px] font-normal text-text-muted">/mês</small>
+              </p>
+              <ul className="mt-[26px] flex flex-col gap-3 grow">
+                {['Tudo do plano Solo', 'Até 5 profissionais', 'Gestão de equipe completa', 'Relatórios de desempenho', 'Suporte prioritário'].map((item) => (
+                  <li key={item} className="text-[14px] text-text-dim pl-[22px] relative">
+                    <span className="absolute left-0 text-gold-soft font-bold">+</span>{item}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/cadastro" className="mt-7 w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-semibold text-[15px] bg-gradient-flow text-[#16110A] shadow-card hover:-translate-y-[2px] hover:shadow-[0_20px_40px_-16px_rgba(212,162,76,0.45)] transition-all">Começar agora</Link>
+            </motion.div>
+
+            {/* PLANO EQUIPE */}
+            <motion.div {...fadeUp(0.3)} className="bg-bg-card border border-line rounded-[32px] p-[38px_30px] flex flex-col transition-all hover:-translate-y-1.5">
+              <h3 className="font-display text-[24px] font-semibold">Equipe</h3>
+              <p className="text-[14px] text-text-muted mt-2.5 min-h-[42px]">Pra estabelecimentos maiores, com operação em escala.</p>
+              <p className="font-display text-[44px] font-semibold mt-6">
+                <span className="text-[20px] align-super mr-0.5">R$</span>149<small className="text-[14px] font-normal text-text-muted">/mês</small>
+              </p>
+              <ul className="mt-[26px] flex flex-col gap-3 grow">
+                {['Tudo do plano Studio', 'Profissionais ilimitados', 'Múltiplas unidades', 'Gerente de conta dedicado'].map((item) => (
+                  <li key={item} className="text-[14px] text-text-dim pl-[22px] relative">
+                    <span className="absolute left-0 text-gold-soft font-bold">+</span>{item}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/cadastro" className="mt-7 w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-semibold text-[15px] border border-line-strong text-text hover:border-gold-soft hover:text-gold-soft transition-all">Começar agora</Link>
+            </motion.div>
+
+          </div>
+          <p className="text-[12.5px] text-text-muted mt-7">Preços ilustrativos — ajuste conforme sua tabela real.</p>
+        </section>
+
+        {/* =========================
+             11 - CTA FINAL
+        ========================== */}
+        <section className="text-center py-[120px] px-6" style={{ background: 'radial-gradient(60% 80% at 50% 0%, rgba(212,162,76,0.12), transparent 65%), #0B0D10' }}>
+          <motion.div {...fadeUp()}>
+            <h2 className="font-display font-semibold text-[clamp(30px,6vw,54px)] leading-[1.15] max-w-[18ch] mx-auto mb-[22px]">
+              Você cuida do seu cliente.<br />
+              <em className="not-italic text-gold-soft">O Corte Flow cuida da sua agenda.</em>
+            </h2>
+            <p className="text-text-muted text-[17px] mb-9">Comece a transformar a maneira como você administra seu negócio.</p>
+            <Link to="/cadastro" className="inline-flex items-center justify-center px-8 py-[17px] rounded-full font-semibold text-[16px] bg-gradient-flow text-[#16110A] shadow-card hover:-translate-y-[2px] hover:shadow-[0_20px_40px_-16px_rgba(212,162,76,0.45)] transition-all">
+              Começar agora
+            </Link>
+          </motion.div>
+        </section>
       </main>
 
       {/* =========================
            FOOTER
       ========================== */}
-      <footer className="bg-[#080808] text-white border-t border-white/10 pt-[70px] pb-[25px]">
-        <div className="max-w-[1180px] mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between gap-[50px]">
-            <div>
-              <div className="flex items-center gap-2.5 font-extrabold text-[17px] tracking-tight">
-                <span className="grid place-items-center w-[30px] h-[30px] rounded-[9px] bg-accent text-white text-[15px]">C</span>
-                <span className="font-title">Corte Flow</span>
-              </div>
-              <p className="max-w-[280px] mt-[18px] text-white/40 text-[12px] leading-[1.7]">
-                Agendamento e gestão para quem vive de atendimento.
-              </p>
-            </div>
-
-            <div className="flex gap-[50px] md:gap-[100px]">
-              <div className="flex flex-col gap-[13px]">
-                <strong className="mb-2 text-[11px] text-accent">Produto</strong>
-                <a href="#recursos" className="text-white/40 text-[11px] hover:text-accent transition-colors">Recursos</a>
-                <a href="#equipe" className="text-white/40 text-[11px] hover:text-accent transition-colors">Equipes</a>
-                <a href="#domicilio" className="text-white/40 text-[11px] hover:text-accent transition-colors">Domicílio</a>
-                <a href="#planos" className="text-white/40 text-[11px] hover:text-accent transition-colors">Planos</a>
-              </div>
-              <div className="flex flex-col gap-[13px]">
-                <strong className="mb-2 text-[11px] text-accent">Empresa</strong>
-                <a href="#" className="text-white/40 text-[11px] hover:text-accent transition-colors">Sobre</a>
-                <a href="#" className="text-white/40 text-[11px] hover:text-accent transition-colors">Contato</a>
-                <a href="#" className="text-white/40 text-[11px] hover:text-accent transition-colors">Privacidade</a>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-[70px] pt-[25px] border-t border-white/10 text-white/25 text-[10px]">
-            © {new Date().getFullYear()} Corte Flow. Todos os direitos reservados.
-          </div>
+      <footer className="pt-14 px-6 md:px-12 pb-12 border-t border-line">
+        <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+          <a href="#hero" className="inline-flex items-center gap-[9px] font-display font-semibold text-[19px] text-text">
+            <span className="w-[9px] h-[9px] rounded-full bg-gradient-flow shadow-[0_0_14px_rgba(212,162,76,0.7)]"></span>
+            Corte Flow
+          </a>
+          
+          <nav className="flex flex-wrap justify-center gap-6 md:gap-[26px]">
+            <a href="#solucao" className="text-[13.5px] text-text-muted hover:text-gold-soft transition-colors">Solução</a>
+            <a href="#domicilio" className="text-[13.5px] text-text-muted hover:text-gold-soft transition-colors">Domicílio</a>
+            <a href="#para-quem" className="text-[13.5px] text-text-muted hover:text-gold-soft transition-colors">Para quem é</a>
+            <a href="#planos" className="text-[13.5px] text-text-muted hover:text-gold-soft transition-colors">Planos</a>
+          </nav>
+          
+          <p className="text-[12px] text-text-muted">© {new Date().getFullYear()} Corte Flow. Todos os direitos reservados.</p>
         </div>
       </footer>
 
