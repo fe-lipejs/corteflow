@@ -960,11 +960,11 @@ export default function LandingPage() {
           </a>
 
           <nav className="flex flex-wrap justify-center gap-6 md:gap-[26px]">
-            <a href="#solucao" className="text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors">Solução</a>
-            <a href="#domicilio" className="text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors">Domicílio</a>
-            <a href="#para-quem" className="text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors">Para quem é</a>
-            <a href="#planos" className="text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors">Planos</a>
-            <a href="#playlist" className="inline-flex items-center gap-1.5 text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors"><SpotifyGlyph className="w-[13px] h-[13px]" />Playlist</a>
+            <a href="#solucao" onClick={() => trackEvent('click_footer_link', { metadata: { item: 'solucao' } })} className="text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors">Solução</a>
+            <a href="#domicilio" onClick={() => trackEvent('click_footer_link', { metadata: { item: 'domicilio' } })} className="text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors">Domicílio</a>
+            <a href="#para-quem" onClick={() => trackEvent('click_footer_link', { metadata: { item: 'para-quem' } })} className="text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors">Para quem é</a>
+            <a href="#planos" onClick={() => trackEvent('click_footer_link', { metadata: { item: 'planos' } })} className="text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors">Planos</a>
+            <a href="#playlist" onClick={() => trackEvent('click_footer_playlist')} className="inline-flex items-center gap-1.5 text-[13px] text-[#71717A] hover:text-[#F59E0B] transition-colors"><SpotifyGlyph className="w-[13px] h-[13px]" />Playlist</a>
           </nav>
 
           <p className="text-[12px] text-[#71717A]">© {new Date().getFullYear()} Raffros. Todos os direitos reservados.</p>

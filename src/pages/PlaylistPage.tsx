@@ -146,6 +146,7 @@ export default function PlaylistPage() {
                                     href={PLAYLIST_URL}
                                     target="_blank"
                                     rel="noreferrer noopener"
+                                    onClick={() => trackEvent('click_spotify_abrir_externo', { metadata: { url: PLAYLIST_URL } })}
                                     className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-bold text-[14px] text-black shadow-[0_18px_36px_-16px_rgba(245,158,11,0.55)] hover:scale-[1.03] transition-all shrink-0"
                                     style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
                                 >
@@ -216,7 +217,10 @@ export default function PlaylistPage() {
                         <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3.5">
                             <button
                                 type="button"
-                                onClick={sortear}
+                                onClick={() => {
+                                    sortear();
+                                    trackEvent('click_sortear_versiculo', { metadata: { verso: verso.ref } });
+                                }}
                                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-full font-bold text-[15px] text-black shadow-[0_20px_40px_-16px_rgba(245,158,11,0.6)] hover:scale-[1.03] active:scale-[0.99] transition-all"
                                 style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
                             >
@@ -226,7 +230,10 @@ export default function PlaylistPage() {
 
                             <button
                                 type="button"
-                                onClick={compartilhar}
+                                onClick={() => {
+                                    compartilhar();
+                                    trackEvent('click_compartilhar_versiculo', { metadata: { verso: verso.ref } });
+                                }}
                                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-full font-semibold text-[15px] text-white border border-white/[0.18] hover:border-[#F59E0B] hover:text-[#F59E0B] transition-all bg-[#0A0A0C]/60"
                             >
                                 <Share2 className="w-4 h-4" />
@@ -242,6 +249,7 @@ export default function PlaylistPage() {
                     <div className="mt-14 text-center">
                         <Link
                             to="/"
+                            onClick={() => trackEvent('click_voltar_da_playlist')}
                             className="inline-flex items-center gap-2 text-[14px] font-medium text-[#A1A1A6] hover:text-[#F59E0B] transition-colors"
                         >
                             <ArrowLeft className="w-4 h-4" />

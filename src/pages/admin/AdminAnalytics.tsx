@@ -3,9 +3,11 @@ import { motion } from 'framer-motion';
 import {
   Activity, Users, Eye, MousePointerClick, TrendingUp, Smartphone,
   Monitor, Tablet, RefreshCw, Filter, ArrowUpRight, Search, Globe,
-  ShieldCheck, Sparkles, Clock, CheckCircle2, ChevronRight
+  ShieldCheck, Sparkles, Clock, CheckCircle2, ChevronRight, Music2,
+  Share2, Shuffle, Download, ExternalLink, Flame
 } from 'lucide-react';
 import { supabase } from '../../integrations/supabase/client';
+import { SpotifyGlyph } from '../../components/SpotifyMoodCard';
 
 interface AnalyticsEvent {
   id: string;
@@ -32,7 +34,7 @@ export default function AdminAnalytics() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'today' | '24h' | '7d' | '30d' | 'all'>('7d');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedEventType, setSelectedEventType] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'page_view' | 'conversion' | 'faith' | 'nav'>('all');
   const [isLive, setIsLive] = useState(true);
 
   // Fetch analytics data
@@ -59,7 +61,7 @@ export default function AdminAnalytics() {
         query = query.gte('created_at', last30d);
       }
 
-      const { data, error } = await query.limit(500);
+      const { data, error } = await query.limit(1000);
       if (error) throw error;
       setEvents(data || []);
     } catch (err) {
@@ -84,7 +86,7 @@ export default function AdminAnalytics() {
         { event: 'INSERT', schema: 'public', table: 'analytics_events' },
         (payload) => {
           const newEvent = payload.new as AnalyticsEvent;
-          setEvents((prev) => [newEvent, ...prev.slice(0, 499)]);
+          setEvents((prev) => [newEvent, ...prev.slice(0, 999)]);
         }
       )
       .subscribe();
@@ -98,14 +100,24 @@ export default function AdminAnalytics() {
   const totalPageViews = events.filter((e) => e.event_type === 'page_view').length;
   const uniqueVisitors = new Set(events.map((e) => e.visitor_id)).size;
   const totalClicks = events.filter((e) => e.event_type === 'click').length;
+  
   const conversionClicks = events.filter((e) => 
     e.event_name.includes('cta') || 
     e.event_name.includes('plan') || 
     e.event_name.includes('comecar') ||
-    e.event_name.includes('cadastro')
+    e.event_name.includes('cadastro') ||
+    e.event_name.includes('checkout')
   ).length;
 
   const conversionRate = uniqueVisitors > 0 ? ((conversionClicks / uniqueVisitors) * 100).toFixed(1) : '0';
+
+  // Faith & Playlist metrics
+  const playlistViews = events.filter((e) => e.page_path === '/playlist' && e.event_type === 'page_view').length;
+  const playlistHeroPillClicks = events.filter((e) => e.event_name.includes('playlist') || e.event_name.includes('som_da_casa')).length;
+  const verseDrawClicks = events.filter((e) => e.event_name === 'click_sortear_versiculo').length;
+  const verseShareClicks = events.filter((e) => e.event_name === 'click_compartilhar_versiculo').length;
+  const spotifyExternalClicks = events.filter((e) => e.event_name === 'click_spotify_abrir_externo').length;
+  const totalFaithInteractions = playlistViews + playlistHeroPillClicks + verseDrawClicks + verseShareClicks + spotifyExternalClicks;
 
   // Device breakdown
   const deviceCounts = events.reduce((acc, e) => {
@@ -118,6 +130,30 @@ export default function AdminAnalytics() {
   const desktopCount = deviceCounts['desktop'] || 0;
   const tabletCount = deviceCounts['tablet'] || 0;
   const totalDeviceEvents = mobileCount + desktopCount + tabletCount || 1;
+
+  // Traffic Origin (Instagram, WhatsApp, Google, Direct)
+  const originCounts = events.reduce((acc, e) => {
+    let source = 'Direto';
+    const ref = (e.referrer || '').toLowerCase();
+    const utmSource = (e.utm_source || '').toLowerCase();
+
+    if (ref.includes('instagram') || utmSource.includes('instagram') || utmSource.includes('ig')) {
+      source = 'Instagram Bio / Ads';
+    } else if (ref.includes('whatsapp') || ref.includes('wa.me') || utmSource.includes('whatsapp')) {
+      source = 'WhatsApp';
+    } else if (ref.includes('google') || utmSource.includes('google')) {
+      source = 'Google Busca';
+    } else if (ref.includes('facebook') || ref.includes('fb') || utmSource.includes('facebook')) {
+      source = 'Facebook';
+    } else if (ref && ref !== 'localhost' && ref !== 'direto') {
+      source = 'Outros Sites';
+    }
+
+    acc[source] = (acc[source] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const totalOrigins = Object.values(originCounts).reduce((a, b) => a + b, 0) || 1;
 
   // Plan clicks breakdown
   const planClicks = {
@@ -146,12 +182,57 @@ export default function AdminAnalytics() {
       e.page_path.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (e.browser && e.browser.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (e.os && e.os.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (e.referrer && e.referrer.toLowerCase().includes(searchTerm.toLowerCase()));
+      (e.referrer && e.referrer.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (e.metadata && JSON.stringify(e.metadata).toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesType = selectedEventType === 'all' || e.event_type === selectedEventType;
+    let matchesCategory = true;
+    if (selectedCategory === 'page_view') {
+      matchesCategory = e.event_type === 'page_view';
+    } else if (selectedCategory === 'conversion') {
+      matchesCategory = 
+        e.event_name.includes('cta') || 
+        e.event_name.includes('plan') || 
+        e.event_name.includes('comecar') ||
+        e.event_name.includes('cadastro');
+    } else if (selectedCategory === 'faith') {
+      matchesCategory = 
+        e.page_path === '/playlist' || 
+        e.event_name.includes('playlist') || 
+        e.event_name.includes('versiculo') ||
+        e.event_name.includes('spotify') ||
+        e.event_name.includes('som_da_casa');
+    } else if (selectedCategory === 'nav') {
+      matchesCategory = e.event_name.includes('nav') || e.event_name.includes('menu');
+    }
 
-    return matchesSearch && matchesType;
+    return matchesSearch && matchesCategory;
   });
+
+  // Export to CSV
+  const exportToCSV = () => {
+    const headers = ['Data/Hora', 'Tipo', 'Evento', 'Pagina', 'Dispositivo', 'SO', 'Navegador', 'Origem', 'Referrer', 'Metadata'];
+    const rows = filteredEvents.map((e) => [
+      new Date(e.created_at).toLocaleString(),
+      e.event_type,
+      e.event_name,
+      e.page_path,
+      e.device_type || 'desktop',
+      e.os || '',
+      e.browser || '',
+      e.utm_source || 'Direto',
+      e.referrer || '',
+      JSON.stringify(e.metadata || {})
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `raffros_analytics_${timeRange}_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const formatEventName = (name: string) => {
     return name
@@ -176,17 +257,17 @@ export default function AdminAnalytics() {
           <div className="flex items-center gap-3">
             <h1 className="text-2xl md:text-3xl font-bold font-display tracking-tight text-white flex items-center gap-2.5">
               <Activity className="w-7 h-7 text-[#F59E0B]" />
-              Motor de Visitas &amp; Cliques
+              Motor de Visitas, Cliques &amp; Engajamento
             </h1>
             {isLive && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 AO VIVO
               </span>
             )}
           </div>
           <p className="text-sm text-[#A1A1A6] mt-1">
-            Acompanhe em tempo real quem visita sua landing page, quais botões clica e o funil de interesse nos planos.
+            Métricas em tempo real da Landing Page, tráfego do Instagram, intenção de planos e interações com a Playlist &amp; Palavra de Fé.
           </p>
         </div>
 
@@ -209,6 +290,15 @@ export default function AdminAnalytics() {
           </div>
 
           <button
+            onClick={exportToCSV}
+            className="p-2.5 px-3.5 rounded-xl bg-[#121216] border border-white/[0.08] text-[#A1A1A6] hover:text-white hover:border-amber-500/40 transition-all flex items-center gap-1.5 text-xs font-medium"
+            title="Exportar dados para CSV"
+          >
+            <Download className="w-4 h-4 text-[#F59E0B]" />
+            <span className="hidden sm:inline">Exportar CSV</span>
+          </button>
+
+          <button
             onClick={fetchAnalytics}
             disabled={loading}
             className="p-2.5 rounded-xl bg-[#121216] border border-white/[0.08] text-[#A1A1A6] hover:text-white hover:border-white/20 transition-all flex items-center gap-1 text-xs font-medium"
@@ -219,8 +309,8 @@ export default function AdminAnalytics() {
         </div>
       </div>
 
-      {/* ── KPI METRICS CARDS ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── 5 KPI METRICS CARDS ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Pageviews */}
         <div className="bg-[#121216] border border-white/[0.08] rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-white/20 transition-all">
           <div className="flex items-center justify-between">
@@ -230,7 +320,7 @@ export default function AdminAnalytics() {
             </div>
           </div>
           <p className="text-3xl font-display font-bold text-white mt-3">{totalPageViews}</p>
-          <p className="text-xs text-[#71717A] mt-1">Páginas acessadas no período</p>
+          <p className="text-xs text-[#71717A] mt-1">Páginas acessadas</p>
         </div>
 
         {/* Unique Visitors */}
@@ -242,49 +332,61 @@ export default function AdminAnalytics() {
             </div>
           </div>
           <p className="text-3xl font-display font-bold text-[#F59E0B] mt-3">{uniqueVisitors}</p>
-          <p className="text-xs text-[#71717A] mt-1">Pessoas diferentes que acessaram</p>
+          <p className="text-xs text-[#71717A] mt-1">Visitantes únicos</p>
         </div>
 
         {/* Total Clicks / Interactivity */}
         <div className="bg-[#121216] border border-white/[0.08] rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-white/20 transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[#A1A1A6]">Cliques &amp; Ações</span>
+            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[#A1A1A6]">Cliques Gerais</span>
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
               <MousePointerClick className="w-4 h-4 text-emerald-400" />
             </div>
           </div>
           <p className="text-3xl font-display font-bold text-white mt-3">{totalClicks}</p>
-          <p className="text-xs text-[#71717A] mt-1">Interações com botões e planos</p>
+          <p className="text-xs text-[#71717A] mt-1">Interações em botões</p>
         </div>
 
         {/* Conversion Rate */}
         <div className="bg-[#121216] border border-[#F59E0B]/30 rounded-2xl p-5 shadow-lg relative overflow-hidden" style={{ background: 'linear-gradient(145deg, rgba(245,158,11,0.08), rgba(18,18,22,0.98))' }}>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[#FBBF24]">Taxa de Conversão</span>
+            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[#FBBF24]">Intenção Compra</span>
             <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
               <TrendingUp className="w-4 h-4 text-[#FBBF24]" />
             </div>
           </div>
           <p className="text-3xl font-display font-bold text-white mt-3">{conversionRate}%</p>
-          <p className="text-xs text-[#A1A1A6] mt-1">{conversionClicks} cliques para começar</p>
+          <p className="text-xs text-[#A1A1A6] mt-1">{conversionClicks} cliques nos planos</p>
+        </div>
+
+        {/* Faith & Playlist Engagements */}
+        <div className="bg-[#121216] border border-white/[0.08] rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-amber-500/30 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[#A1A1A6]">Playlist &amp; Fé</span>
+            <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-[#F59E0B]" />
+            </div>
+          </div>
+          <p className="text-3xl font-display font-bold text-[#F59E0B] mt-3">{totalFaithInteractions}</p>
+          <p className="text-xs text-[#71717A] mt-1">Louvores e mensagens de fé</p>
         </div>
       </div>
 
-      {/* ── PLAN INTEREST & DEVICE BREAKDOWN ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* ── 4 INTELLIGENT BREAKDOWN CARDS ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
 
-        {/* PLAN POPULARITY RANKING */}
+        {/* 1. PLAN POPULARITY RANKING */}
         <div className="bg-[#121216] border border-white/[0.08] rounded-2xl p-6 shadow-xl flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display font-semibold text-lg text-white flex items-center gap-2">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display font-semibold text-base text-white flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-[#F59E0B]" />
                 Interesse por Plano
               </h3>
-              <span className="text-xs text-[#71717A] font-mono">Cliques em CTA</span>
+              <span className="text-[11px] text-[#71717A] font-mono">Planos</span>
             </div>
-            <p className="text-xs text-[#A1A1A6] mb-6">
-              Distribuição de intenção de compra quando o cliente clica em "Começar agora" nos cartões de preço.
+            <p className="text-xs text-[#A1A1A6] mb-5">
+              Distribuição de intenção de compra ao clicar em "Começar agora" nos planos.
             </p>
 
             <div className="space-y-4">
@@ -293,11 +395,11 @@ export default function AdminAnalytics() {
                 <div className="flex justify-between text-xs font-semibold mb-1">
                   <span className="text-[#FBBF24] flex items-center gap-1.5">
                     Studio (R$ 89)
-                    <span className="text-[9px] bg-amber-500/20 border border-amber-500/40 text-[#F59E0B] px-1.5 py-0.5 rounded">Mais escolhido</span>
+                    <span className="text-[9px] bg-amber-500/20 border border-amber-500/40 text-[#F59E0B] px-1 py-0.2 rounded">Mais buscado</span>
                   </span>
-                  <span className="text-white">{planClicks.Studio} cliques ({Math.round((planClicks.Studio / totalPlanClicks) * 100)}%)</span>
+                  <span className="text-white font-mono">{planClicks.Studio} ({Math.round((planClicks.Studio / totalPlanClicks) * 100)}%)</span>
                 </div>
-                <div className="w-full h-2.5 rounded-full bg-white/[0.05] overflow-hidden">
+                <div className="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-[#F59E0B] to-[#FBBF24]"
                     style={{ width: `${Math.max(4, Math.round((planClicks.Studio / totalPlanClicks) * 100))}%` }}
@@ -309,9 +411,9 @@ export default function AdminAnalytics() {
               <div>
                 <div className="flex justify-between text-xs font-semibold mb-1">
                   <span className="text-[#D4D4D8]">Solo (R$ 49)</span>
-                  <span className="text-white">{planClicks.Solo} cliques ({Math.round((planClicks.Solo / totalPlanClicks) * 100)}%)</span>
+                  <span className="text-white font-mono">{planClicks.Solo} ({Math.round((planClicks.Solo / totalPlanClicks) * 100)}%)</span>
                 </div>
-                <div className="w-full h-2.5 rounded-full bg-white/[0.05] overflow-hidden">
+                <div className="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden">
                   <div
                     className="h-full rounded-full bg-blue-500"
                     style={{ width: `${Math.max(4, Math.round((planClicks.Solo / totalPlanClicks) * 100))}%` }}
@@ -323,9 +425,9 @@ export default function AdminAnalytics() {
               <div>
                 <div className="flex justify-between text-xs font-semibold mb-1">
                   <span className="text-[#D4D4D8]">Equipe (R$ 149)</span>
-                  <span className="text-white">{planClicks.Equipe} cliques ({Math.round((planClicks.Equipe / totalPlanClicks) * 100)}%)</span>
+                  <span className="text-white font-mono">{planClicks.Equipe} ({Math.round((planClicks.Equipe / totalPlanClicks) * 100)}%)</span>
                 </div>
-                <div className="w-full h-2.5 rounded-full bg-white/[0.05] overflow-hidden">
+                <div className="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden">
                   <div
                     className="h-full rounded-full bg-purple-500"
                     style={{ width: `${Math.max(4, Math.round((planClicks.Equipe / totalPlanClicks) * 100))}%` }}
@@ -335,90 +437,161 @@ export default function AdminAnalytics() {
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-white/[0.08] text-xs text-[#71717A] flex items-center justify-between">
-            <span>Total de interações em planos</span>
+          <div className="mt-6 pt-3 border-t border-white/[0.08] text-xs text-[#71717A] flex items-center justify-between">
+            <span>Total de cliques em planos</span>
             <span className="font-mono font-bold text-white">{planClicks.Solo + planClicks.Studio + planClicks.Equipe}</span>
           </div>
         </div>
 
-        {/* DEVICE & OS BREAKDOWN */}
-        <div className="bg-[#121216] border border-white/[0.08] rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+        {/* 2. FAITH & PLAYLIST ENGAGEMENT (NEW) */}
+        <div className="bg-[#121216] border border-amber-500/20 rounded-2xl p-6 shadow-xl flex flex-col justify-between" style={{ background: 'linear-gradient(180deg, rgba(245,158,11,0.03), rgba(18,18,22,1))' }}>
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display font-semibold text-lg text-white flex items-center gap-2">
-                <Smartphone className="w-4 h-4 text-emerald-400" />
-                Dispositivos dos Visitantes
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display font-semibold text-base text-white flex items-center gap-2">
+                <Music2 className="w-4 h-4 text-[#F59E0B]" />
+                Louvor &amp; Palavra de Fé
               </h3>
-              <span className="text-xs text-[#71717A] font-mono">Mobile vs Desktop</span>
+              <span className="text-[11px] text-[#F59E0B] font-mono font-bold">Impacto</span>
             </div>
+            <p className="text-xs text-[#A1A1A6] mb-4">
+              Visitantes que ouviram a playlist ou pegaram uma mensagem de fé.
+            </p>
 
-            <div className="grid grid-cols-3 gap-3 my-6 text-center">
-              <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                <Smartphone className="w-5 h-5 text-amber-400 mx-auto mb-1.5" />
-                <p className="text-lg font-bold font-display text-white">{mobileCount}</p>
-                <p className="text-[11px] text-[#71717A]">Celulares</p>
-                <p className="text-[10px] text-amber-400 font-mono mt-0.5">{Math.round((mobileCount / totalDeviceEvents) * 100)}%</p>
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-xs">
+                <span className="flex items-center gap-2 text-[#D4D4D8]">
+                  <Eye className="w-3.5 h-3.5 text-blue-400" />
+                  Acessos à Página /playlist
+                </span>
+                <span className="font-mono font-bold text-white">{playlistViews}</span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                <Monitor className="w-5 h-5 text-blue-400 mx-auto mb-1.5" />
-                <p className="text-lg font-bold font-display text-white">{desktopCount}</p>
-                <p className="text-[11px] text-[#71717A]">Computadores</p>
-                <p className="text-[10px] text-blue-400 font-mono mt-0.5">{Math.round((desktopCount / totalDeviceEvents) * 100)}%</p>
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-xs">
+                <span className="flex items-center gap-2 text-[#D4D4D8]">
+                  <Shuffle className="w-3.5 h-3.5 text-[#F59E0B]" />
+                  Mensagens Sorteadas
+                </span>
+                <span className="font-mono font-bold text-white">{verseDrawClicks}</span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                <Tablet className="w-5 h-5 text-purple-400 mx-auto mb-1.5" />
-                <p className="text-lg font-bold font-display text-white">{tabletCount}</p>
-                <p className="text-[11px] text-[#71717A]">Tablets</p>
-                <p className="text-[10px] text-purple-400 font-mono mt-0.5">{Math.round((tabletCount / totalDeviceEvents) * 100)}%</p>
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-xs">
+                <span className="flex items-center gap-2 text-[#D4D4D8]">
+                  <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+                  Versículos Compartilhados
+                </span>
+                <span className="font-mono font-bold text-white">{verseShareClicks}</span>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-xs">
+                <span className="flex items-center gap-2 text-[#D4D4D8]">
+                  <ExternalLink className="w-3.5 h-3.5 text-[#1DB954]" />
+                  Aberturas no Spotify
+                </span>
+                <span className="font-mono font-bold text-white">{spotifyExternalClicks}</span>
               </div>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-white/[0.08] text-xs text-[#A1A1A6] flex items-center justify-between">
-            <span>Experiência mobile</span>
-            <span className="font-mono text-emerald-400 font-semibold">100% Otimizada</span>
+          <div className="mt-4 pt-3 border-t border-white/[0.08] text-xs text-[#71717A] flex items-center justify-between">
+            <span>Taxa de acolhimento</span>
+            <span className="font-mono font-bold text-[#F59E0B]">
+              {uniqueVisitors > 0 ? Math.round((totalFaithInteractions / uniqueVisitors) * 100) : 0}% dos visitantes
+            </span>
           </div>
         </div>
 
-        {/* TOP CLICKED BUTTONS / CTAS */}
+        {/* 3. TRAFFIC ORIGINS (INSTAGRAM BIO FOCUS) */}
         <div className="bg-[#121216] border border-white/[0.08] rounded-2xl p-6 shadow-xl flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display font-semibold text-lg text-white flex items-center gap-2">
-                <MousePointerClick className="w-4 h-4 text-purple-400" />
-                Top Botões Mais Clicados
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display font-semibold text-base text-white flex items-center gap-2">
+                <Globe className="w-4 h-4 text-pink-400" />
+                Origem do Tráfego
               </h3>
-              <span className="text-xs text-[#71717A] font-mono">Ranking</span>
+              <span className="text-[11px] text-[#71717A] font-mono">Canais</span>
             </div>
+            <p className="text-xs text-[#A1A1A6] mb-4">
+              De onde vêm os visitantes (Instagram, WhatsApp, Busca, Direto).
+            </p>
 
-            <div className="space-y-2.5 mt-4">
-              {topEvents.length === 0 ? (
-                <p className="text-xs text-[#71717A] italic text-center py-6">Nenhum clique registrado ainda.</p>
-              ) : (
-                topEvents.map(([name, count], index) => (
-                  <div key={name} className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04] text-xs">
-                    <span className="flex items-center gap-2 text-[#D4D4D8] truncate max-w-[200px]">
-                      <span className="w-5 h-5 rounded-full bg-white/[0.06] flex items-center justify-center text-[10px] font-mono font-bold text-[#F59E0B]">
-                        {index + 1}
+            <div className="space-y-2.5">
+              {Object.entries(originCounts).map(([source, count]) => {
+                const pct = Math.round((count / totalOrigins) * 100);
+                const isInstagram = source.includes('Instagram');
+                return (
+                  <div key={source} className="text-xs">
+                    <div className="flex justify-between font-semibold mb-1">
+                      <span className={isInstagram ? 'text-pink-400 font-bold flex items-center gap-1.5' : 'text-[#D4D4D8]'}>
+                        {source}
+                        {isInstagram && <Flame className="w-3 h-3 text-pink-400" />}
                       </span>
-                      {formatEventName(name)}
-                    </span>
-                    <span className="font-mono font-bold text-white px-2 py-0.5 rounded bg-white/[0.05]">
-                      {count} {count === 1 ? 'clique' : 'cliques'}
-                    </span>
+                      <span className="font-mono text-white">{count} ({pct}%)</span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          isInstagram 
+                            ? 'bg-gradient-to-r from-pink-500 to-amber-500' 
+                            : source === 'WhatsApp' 
+                            ? 'bg-emerald-500' 
+                            : 'bg-zinc-500'
+                        }`}
+                        style={{ width: `${Math.max(4, pct)}%` }}
+                      />
+                    </div>
                   </div>
-                ))
-              )}
+                );
+              })}
             </div>
           </div>
 
-          <div className="pt-4 border-t border-white/[0.08] text-xs text-[#71717A] flex items-center justify-between">
-            <span>Rastreamento ativo</span>
-            <span className="text-emerald-400 flex items-center gap-1 font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Conectado
-            </span>
+          <div className="mt-4 pt-3 border-t border-white/[0.08] text-xs text-[#71717A] flex items-center justify-between">
+            <span>Rastreamento de Bio</span>
+            <span className="font-mono text-emerald-400 font-semibold">Ativo</span>
+          </div>
+        </div>
+
+        {/* 4. DEVICES & RESOLUTION */}
+        <div className="bg-[#121216] border border-white/[0.08] rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display font-semibold text-base text-white flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-emerald-400" />
+                Dispositivos
+              </h3>
+              <span className="text-[11px] text-[#71717A] font-mono">Mobile/Desktop</span>
+            </div>
+            <p className="text-xs text-[#A1A1A6] mb-4">
+              Distribuição de acessos por tipo de tela.
+            </p>
+
+            <div className="grid grid-cols-3 gap-2.5 my-3 text-center">
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                <Smartphone className="w-4 h-4 text-amber-400 mx-auto mb-1" />
+                <p className="text-base font-bold font-display text-white">{mobileCount}</p>
+                <p className="text-[10px] text-[#71717A]">Celular</p>
+                <p className="text-[9px] text-amber-400 font-mono mt-0.5">{Math.round((mobileCount / totalDeviceEvents) * 100)}%</p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                <Monitor className="w-4 h-4 text-blue-400 mx-auto mb-1" />
+                <p className="text-base font-bold font-display text-white">{desktopCount}</p>
+                <p className="text-[10px] text-[#71717A]">PC</p>
+                <p className="text-[9px] text-blue-400 font-mono mt-0.5">{Math.round((desktopCount / totalDeviceEvents) * 100)}%</p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                <Tablet className="w-4 h-4 text-purple-400 mx-auto mb-1" />
+                <p className="text-base font-bold font-display text-white">{tabletCount}</p>
+                <p className="text-[10px] text-[#71717A]">Tablet</p>
+                <p className="text-[9px] text-purple-400 font-mono mt-0.5">{Math.round((tabletCount / totalDeviceEvents) * 100)}%</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-white/[0.08] text-xs text-[#A1A1A6] flex items-center justify-between">
+            <span>Experiência mobile</span>
+            <span className="font-mono text-emerald-400 font-semibold">100% Fluida</span>
           </div>
         </div>
 
@@ -435,7 +608,7 @@ export default function AdminAnalytics() {
               Feed de Acessos &amp; Ações em Tempo Real
             </h2>
             <p className="text-xs text-[#A1A1A6] mt-0.5">
-              Cada visita e clique registrado de forma anônima e segura.
+              Cada visita, clique em botão, sorteio de versículo e acesso a planos gravado no banco de dados.
             </p>
           </div>
 
@@ -445,26 +618,28 @@ export default function AdminAnalytics() {
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A]" />
               <input
                 type="text"
-                placeholder="Buscar por ação, SO, browser..."
+                placeholder="Buscar ação, verso, dispositivo..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="bg-[#0A0A0C] border border-white/[0.1] rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-[#71717A] focus:outline-none focus:border-[#F59E0B] w-[220px]"
               />
             </div>
 
-            {/* Type Selector */}
-            <div className="bg-[#0A0A0C] border border-white/[0.1] rounded-xl p-1 flex items-center">
+            {/* Category Quick Selector */}
+            <div className="bg-[#0A0A0C] border border-white/[0.1] rounded-xl p-1 flex items-center flex-wrap gap-1">
               {[
                 { key: 'all', label: 'Todos' },
                 { key: 'page_view', label: 'Visitas' },
-                { key: 'click', label: 'Cliques' },
+                { key: 'conversion', label: 'Planos & Vendas' },
+                { key: 'faith', label: 'Playlist & Fé' },
+                { key: 'nav', label: 'Navegação' },
               ].map((t) => (
                 <button
                   key={t.key}
-                  onClick={() => setSelectedEventType(t.key)}
+                  onClick={() => setSelectedCategory(t.key as any)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                    selectedEventType === t.key
-                      ? 'bg-white/[0.12] text-white'
+                    selectedCategory === t.key
+                      ? 'bg-[#F59E0B] text-black font-bold shadow'
                       : 'text-[#71717A] hover:text-white'
                   }`}
                 >
@@ -485,7 +660,7 @@ export default function AdminAnalytics() {
                 <th className="py-3.5 px-5">Ação / Evento</th>
                 <th className="py-3.5 px-5">Página</th>
                 <th className="py-3.5 px-5">Dispositivo &amp; Navegador</th>
-                <th className="py-3.5 px-5">Origem</th>
+                <th className="py-3.5 px-5">Origem / Referrer</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
@@ -509,6 +684,19 @@ export default function AdminAnalytics() {
                   const timeFormatted = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                   const dateFormatted = date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
 
+                  const isFaithEvent = 
+                    evt.page_path === '/playlist' || 
+                    evt.event_name.includes('playlist') || 
+                    evt.event_name.includes('versiculo') ||
+                    evt.event_name.includes('spotify') ||
+                    evt.event_name.includes('som_da_casa');
+
+                  const isConversionEvent = 
+                    evt.event_name.includes('cta') || 
+                    evt.event_name.includes('plan') || 
+                    evt.event_name.includes('comecar') ||
+                    evt.event_name.includes('cadastro');
+
                   return (
                     <tr key={evt.id} className="hover:bg-white/[0.02] transition-colors">
                       {/* Date / Time */}
@@ -523,9 +711,13 @@ export default function AdminAnalytics() {
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/25">
                             <Eye className="w-2.5 h-2.5" /> Visita
                           </span>
-                        ) : evt.event_name.includes('cta') || evt.event_name.includes('plan') ? (
+                        ) : isConversionEvent ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-[#F59E0B] border border-amber-500/25">
                             <Sparkles className="w-2.5 h-2.5" /> Conversão
+                          </span>
+                        ) : isFaithEvent ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/25">
+                            <Music2 className="w-2.5 h-2.5" /> Louvor / Fé
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/[0.08] text-white border border-white/[0.1]">
@@ -535,10 +727,10 @@ export default function AdminAnalytics() {
                       </td>
 
                       {/* Event Name */}
-                      <td className="py-3 px-5 font-medium text-white max-w-[220px] truncate">
+                      <td className="py-3 px-5 font-medium text-white max-w-[260px] truncate">
                         {formatEventName(evt.event_name)}
                         {evt.metadata && Object.keys(evt.metadata).length > 0 && (
-                          <span className="text-[10px] text-[#71717A] block truncate font-mono">
+                          <span className="text-[10px] text-[#A1A1A6] block truncate font-mono mt-0.5">
                             {JSON.stringify(evt.metadata)}
                           </span>
                         )}
@@ -546,7 +738,9 @@ export default function AdminAnalytics() {
 
                       {/* Page */}
                       <td className="py-3 px-5 font-mono text-[#D4D4D8] whitespace-nowrap">
-                        {evt.page_path}
+                        <span className={`px-1.5 py-0.5 rounded text-[11px] ${evt.page_path === '/playlist' ? 'bg-amber-500/10 text-[#F59E0B]' : 'bg-white/[0.04]'}`}>
+                          {evt.page_path}
+                        </span>
                       </td>
 
                       {/* Device & Browser */}
@@ -563,7 +757,7 @@ export default function AdminAnalytics() {
                       <td className="py-3 px-5 text-[#A1A1A6] whitespace-nowrap">
                         <span className="inline-flex items-center gap-1">
                           <Globe className="w-3 h-3 text-[#71717A]" />
-                          {evt.referrer || 'Direto'}
+                          {evt.utm_source ? `UTM: ${evt.utm_source}` : evt.referrer || 'Direto'}
                         </span>
                       </td>
                     </tr>
@@ -576,8 +770,8 @@ export default function AdminAnalytics() {
 
         {/* Footer info */}
         <div className="p-4 bg-[#0A0A0C]/50 border-t border-white/[0.06] flex items-center justify-between text-xs text-[#71717A]">
-          <span>Exibindo até 500 eventos mais recentes</span>
-          <span className="font-mono">{filteredEvents.length} resultados filtrados</span>
+          <span>Feed com gravação contínua no Supabase</span>
+          <span className="font-mono">{filteredEvents.length} eventos listados</span>
         </div>
 
       </div>

@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { getTenantPublicUrl } from '../../lib/tenantUrl';
 import { motion } from 'framer-motion';
 import {
   Building2, CheckCircle, Ban, Clock, XCircle,
   Users, UserCheck, Briefcase, Calendar,
   DollarSign, TrendingUp, BarChart3, CreditCard,
-  ArrowUpRight, ArrowDownRight, Minus
+  ArrowUpRight, ArrowDownRight, Minus, Activity
 } from 'lucide-react';
 import { supabase } from '../../integrations/supabase/client';
 import AdminPageHeader from './components/AdminPageHeader';
@@ -197,6 +198,35 @@ export default function AdminDashboard() {
         subtitle="Visão global da plataforma"
         icon={<BarChart3 className="w-5 h-5" />}
       />
+
+      {/* ── Live Analytics Shortcut Banner ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-gradient-to-r from-amber-500/10 via-[#121216] to-[#121216] border border-amber-500/30 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl"
+      >
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-[#F59E0B] shrink-0">
+            <Activity className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-display font-semibold text-base text-white flex items-center gap-2">
+              Motor de Visitas, Cliques &amp; Tráfego Ativo
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            </h3>
+            <p className="text-xs text-[#A1A1A6]">
+              Acompanhe em tempo real os acessos à Landing Page, tráfego do Instagram e engajamento com a Playlist &amp; Mensagens de Fé.
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/admin/analytics"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#F59E0B] text-black font-bold text-xs hover:bg-[#FBBF24] transition-all shadow-md shrink-0"
+        >
+          <span>Ver Motor de Visitas</span>
+          <ArrowUpRight className="w-4 h-4" />
+        </Link>
+      </motion.div>
 
       {/* ── Empresas ── */}
       <section>
