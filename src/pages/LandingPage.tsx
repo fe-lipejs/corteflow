@@ -534,8 +534,8 @@ export default function LandingPage() {
                 não conseguiu responder na hora?
               </h2>
               <p className="text-[#6E6E73] text-[clamp(16px,2vw,18px)] max-w-[46ch] mx-auto mt-6">
-                O cliente agenda e não aparece. O celular não para de tocar enquanto você atende. 
-                Sua agenda virou um segundo trabalho não remunerado. 
+                O cliente agenda e não aparece. O celular não para de tocar enquanto você atende.
+                Sua agenda virou um segundo trabalho não remunerado.
                 <strong className="text-[#1D1D1F] block mt-3">A Raffros acaba com isso hoje.</strong>
               </p>
             </motion.div>
@@ -570,6 +570,64 @@ export default function LandingPage() {
                 </motion.div>
               );
             })}
+          </div>
+        </section>
+
+        {/* ============================================================
+             09 — PARA QUEM É (NOIR DARK #000000)
+        ============================================================ */}
+        <section id="para-quem" className="py-[104px] md:py-[150px] px-6 md:px-12 bg-[#000000] text-white">
+          <div className="max-w-[1280px] mx-auto">
+            <Eyebrow>Para quem é</Eyebrow>
+            <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] max-w-[16ch] text-white">
+              Feito para quem vive de deixar gente bonita.
+            </h2>
+
+            <div className="mt-14 grid md:grid-cols-3 gap-5 md:gap-[16px] md:auto-rows-[minmax(150px,auto)]">
+
+              <motion.div {...fadeUp(0.1)} className="rounded-[28px] overflow-hidden border border-white/[0.1] md:row-span-2 shadow-2xl">
+                <img src="/images/barbeiro-corte.jpg" alt="Barbeiro atendendo" className="w-full h-full object-cover aspect-[3/4]" />
+
+              </motion.div>
+
+              {[
+                { icon: Scissors, title: 'Barbearias', desc: 'Mais clientes. Menos mensagens.' },
+                { icon: Sparkles, title: 'Salões de beleza', desc: 'Toda a equipe organizada em um só lugar.' },
+                { icon: Heart, title: 'Manicures e Esmalterias', desc: 'Agenda cheia sem ficar respondendo o celular.' },
+              ].map((card, i) => {
+                const IconComponent = card.icon;
+                return (
+                  <motion.div key={card.title} {...fadeUp(0.15 + i * 0.08)} className="bg-[#121216] border border-white/[0.08] rounded-[18px] p-[28px_24px] transition-all hover:border-[#F59E0B]/50 hover:-translate-y-1 shadow-lg">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3">
+                      <IconComponent className="w-5 h-5 text-[#F59E0B]" />
+                    </div>
+                    <h3 className="font-display text-[18px] font-semibold my-2 text-white">{card.title}</h3>
+                    <p className="text-[13.5px] text-[#A1A1A6]">{card.desc}</p>
+                  </motion.div>
+                );
+              })}
+
+              <motion.div {...fadeUp(0.5)} className="rounded-[28px] overflow-hidden border border-white/[0.1] md:row-span-2 shadow-2xl">
+                <img src="/images/salao-cachos.jpg" alt="Salão de beleza" className="w-full h-full object-cover aspect-[3/4]" />
+              </motion.div>
+
+              {[
+                { icon: User, title: 'Profissionais autônomos', desc: 'Seu negócio profissional desde o primeiro cliente.' },
+                { icon: Home, title: 'Atendimento a domicílio', desc: 'Você define onde atende. O sistema verifica o resto.' },
+              ].map((card, i) => {
+                const IconComponent = card.icon;
+                return (
+                  <motion.div key={card.title} {...fadeUp(0.6 + i * 0.08)} className="bg-[#121216] border border-white/[0.08] rounded-[18px] p-[28px_24px] transition-all hover:border-[#F59E0B]/50 hover:-translate-y-1 shadow-lg">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3">
+                      <IconComponent className="w-5 h-5 text-[#F59E0B]" />
+                    </div>
+                    <h3 className="font-display text-[18px] font-semibold my-2 text-white">{card.title}</h3>
+                    <p className="text-[13.5px] text-[#A1A1A6]">{card.desc}</p>
+                  </motion.div>
+                );
+              })}
+
+            </div>
           </div>
         </section>
 
@@ -657,63 +715,6 @@ export default function LandingPage() {
                 <span className="font-mono text-[11px] uppercase tracking-[0.1em] font-semibold text-[#86868B]">{theme.label}</span>
               </motion.div>
             ))}
-          </div>
-        </section>
-
-        {/* ============================================================
-             09 — PARA QUEM É (NOIR DARK #000000)
-        ============================================================ */}
-        <section id="para-quem" className="py-[104px] md:py-[150px] px-6 md:px-12 bg-[#000000] text-white">
-          <div className="max-w-[1280px] mx-auto">
-            <Eyebrow>Para quem é</Eyebrow>
-            <h2 className="font-display font-semibold text-[clamp(28px,5.5vw,44px)] leading-[1.15] tracking-[-0.01em] max-w-[16ch] text-white">
-              Feito para quem vive de deixar gente bonita.
-            </h2>
-
-            <div className="mt-14 grid md:grid-cols-3 gap-5 md:gap-[16px] md:auto-rows-[minmax(150px,auto)]">
-
-              <motion.div {...fadeUp(0.1)} className="rounded-[28px] overflow-hidden border border-white/[0.1] md:row-span-2 shadow-2xl">
-                <img src="/images/salao-cachos.jpg" alt="Salão de beleza" className="w-full h-full object-cover aspect-[3/4]" />
-              </motion.div>
-
-              {[
-                { icon: Scissors, title: 'Barbearias', desc: 'Mais clientes. Menos mensagens.' },
-                { icon: Sparkles, title: 'Salões de beleza', desc: 'Toda a equipe organizada em um só lugar.' },
-                { icon: Heart, title: 'Manicures e Esmalterias', desc: 'Agenda cheia sem ficar respondendo o celular.' },
-              ].map((card, i) => {
-                const IconComponent = card.icon;
-                return (
-                  <motion.div key={card.title} {...fadeUp(0.15 + i * 0.08)} className="bg-[#121216] border border-white/[0.08] rounded-[18px] p-[28px_24px] transition-all hover:border-[#F59E0B]/50 hover:-translate-y-1 shadow-lg">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3">
-                      <IconComponent className="w-5 h-5 text-[#F59E0B]" />
-                    </div>
-                    <h3 className="font-display text-[18px] font-semibold my-2 text-white">{card.title}</h3>
-                    <p className="text-[13.5px] text-[#A1A1A6]">{card.desc}</p>
-                  </motion.div>
-                );
-              })}
-
-              <motion.div {...fadeUp(0.5)} className="rounded-[28px] overflow-hidden border border-white/[0.1] md:row-span-2 shadow-2xl">
-                <img src="/images/barbeiro-corte.jpg" alt="Barbeiro atendendo" className="w-full h-full object-cover aspect-[3/4]" />
-              </motion.div>
-
-              {[
-                { icon: User, title: 'Profissionais autônomos', desc: 'Seu negócio profissional desde o primeiro cliente.' },
-                { icon: Home, title: 'Atendimento a domicílio', desc: 'Você define onde atende. O sistema verifica o resto.' },
-              ].map((card, i) => {
-                const IconComponent = card.icon;
-                return (
-                  <motion.div key={card.title} {...fadeUp(0.6 + i * 0.08)} className="bg-[#121216] border border-white/[0.08] rounded-[18px] p-[28px_24px] transition-all hover:border-[#F59E0B]/50 hover:-translate-y-1 shadow-lg">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3">
-                      <IconComponent className="w-5 h-5 text-[#F59E0B]" />
-                    </div>
-                    <h3 className="font-display text-[18px] font-semibold my-2 text-white">{card.title}</h3>
-                    <p className="text-[13.5px] text-[#A1A1A6]">{card.desc}</p>
-                  </motion.div>
-                );
-              })}
-
-            </div>
           </div>
         </section>
 
