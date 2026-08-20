@@ -29,7 +29,7 @@ export default async (request: Request, context: Context) => {
   }
 
   try {
-    const res = await fetch(`${supabaseUrl}/rest/v1/tenants?slug=eq.${slug}&select=name,tenant_settings(logo_url,short_description)`, {
+    const res = await fetch(`${supabaseUrl}/rest/v1/tenants?slug=eq.${slug}&select=name,business_type,tenant_settings(logo_url,short_description)`, {
       headers: {
         'apikey': supabaseKey,
         'Authorization': `Bearer ${supabaseKey}`,
@@ -47,20 +47,31 @@ export default async (request: Request, context: Context) => {
       return context.next();
     }
 
-    // Get the actual HTML response that Netlify would normally serve (index.html)
-    const response = await context.next();
+    // Fetch the base index.html directly instead of relying on context.next() 
+    // which can conflict with Netlify's SPA redirects.
+    const indexUrl = new URL('/index.html', request.url);
+    const indexRes = await fetch(indexUrl.toString());
     
-    // Only process HTML responses
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("text/html")) {
-      return response;
+    if (!indexRes.ok) {
+      return context.next();
     }
 
-    let html = await response.text();
+    let html = await indexRes.text();
+
+    const businessType = tenant.business_type;
+    let defaultDesc = `Agende seu horário na ${tenant.name} de forma rápida e prática.`;
+
+    if (businessType === 'barbearia') {
+      defaultDesc = `Agende seu corte ou barba na ${tenant.name} sem complicação.`;
+    } else if (businessType === 'salao') {
+      defaultDesc = `Realce sua beleza. Agende seu horário no ${tenant.name}.`;
+    } else if (businessType === 'esmalteria') {
+      defaultDesc = `Unhas perfeitas esperam por você. Agende na ${tenant.name}.`;
+    }
 
     const logoUrl = tenant.tenant_settings?.logo_url || 'https://raffros.com.br/images/RaffrosLogo.png';
     const title = `${tenant.name} | Agendamento Online`;
-    const desc = tenant.tenant_settings?.short_description || `Agende seu horário na ${tenant.name} de forma rápida e prática.`;
+    const desc = tenant.tenant_settings?.short_description || defaultDesc;
 
     html = html.replace(/<title>(.*?)<\/title>/g, `<title>${title}</title>`);
     html = html.replace(/<meta property="og:title" content="(.*?)">/g, `<meta property="og:title" content="${title}">`);
@@ -71,7 +82,7 @@ export default async (request: Request, context: Context) => {
     html = html.replace(/<meta property="twitter:image" content="(.*?)">/g, `<meta property="twitter:image" content="${logoUrl}">`);
     html = html.replace(/<meta name="description" content="(.*?)">/g, `<meta name="description" content="${desc}">`);
 
-    const newResponse = new Response(html, response);
+    const newResponse = new Response(html, indexRes);
     // Explicitly set the headers again just to be safe
     newResponse.headers.set("content-type", "text/html; charset=utf-8");
     return newResponse;
