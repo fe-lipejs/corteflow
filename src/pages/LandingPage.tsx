@@ -477,16 +477,16 @@ export default function LandingPage() {
 
               <div className="flex gap-x-[36px] gap-y-6 flex-wrap">
                 <div className="flex flex-col">
-                  <span className="font-display text-[28px] font-bold text-[#F59E0B]"><CountUp to={24} suffix="h" /></span>
-                  <span className="text-[12px] text-[#71717A] max-w-[13ch]">devolvidas por mês</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-display text-[28px] font-bold text-[#F59E0B]"><CountUp to={10} suffix="km" /></span>
-                  <span className="text-[12px] text-[#71717A] max-w-[13ch]">de raio configurável</span>
-                </div>
-                <div className="flex flex-col">
                   <span className="font-display text-[28px] font-bold text-[#F59E0B]"><CountUp to={100} suffix="%" /></span>
-                  <span className="text-[12px] text-[#71717A] max-w-[13ch]">da agenda no automático</span>
+                  <span className="text-[12px] text-[#71717A] max-w-[14ch]">da sua agenda rodando no piloto automático.</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-display text-[28px] font-bold text-[#F59E0B]"><CountUp to={30} suffix=" dias" /></span>
+                  <span className="text-[12px] text-[#71717A] max-w-[14ch]">de controle financeiro na palma da mão, todo mês.</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-display text-[28px] font-bold text-[#F59E0B]"><CountUp to={10} suffix="x" /></span>
+                  <span className="text-[12px] text-[#71717A] max-w-[14ch]">mais rapidez para o cliente agendar e confirmar.</span>
                 </div>
               </div>
             </motion.div>
