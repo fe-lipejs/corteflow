@@ -1,11 +1,12 @@
 import { motion, animate, useInView, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { MapPin, CheckCircle2, Scissors, Sparkles, Heart, User, Home } from 'lucide-react';
 import CookieConsentBanner from '../components/cookies/CookieConsentBanner';
 
 /* ============================================================
    TOKENS & STYLING (Apple Noir + Pure White + Electric Yellow)
-   Noir Dark:    #000000  /  #0A0A0C  /  Cards: #141418  /  Borders: rgba(255,255,255,0.08)
+   Noir Dark:    #000000  /  #0A0A0C  /  Cards: #121216  /  Borders: rgba(255,255,255,0.08)
    Clean White:  #FFFFFF  /  #F5F5F7  /  Cards: #FFFFFF  /  Borders: rgba(0,0,0,0.08)
    Accent:       #F59E0B  /  Soft: #FBBF24  /  Dark Accent: #D97706
    ============================================================ */
@@ -47,16 +48,14 @@ function PhoneFrame({
   return (
     <div className={className} style={tilt ? { transform: `rotate(${tilt}deg)` } : undefined}>
       <div
-        className={`relative rounded-[2.3rem] p-[7px] transition-transform duration-500 ${
-          lightMode 
-            ? 'border border-black/[0.12] bg-[#FFFFFF] shadow-[0_30px_70px_-20px_rgba(0,0,0,0.18)]' 
-            : 'border border-white/[0.12] bg-[#0A0A0C] shadow-[0_50px_90px_-35px_rgba(0,0,0,0.9)]'
-        }`}
+        className={`relative rounded-[2.3rem] p-[7px] transition-transform duration-500 ${lightMode
+          ? 'border border-black/[0.12] bg-[#FFFFFF] shadow-[0_30px_70px_-20px_rgba(0,0,0,0.18)]'
+          : 'border border-white/[0.12] bg-[#0A0A0C] shadow-[0_50px_90px_-35px_rgba(0,0,0,0.9)]'
+          }`}
         style={glow ? { boxShadow: '0 50px 90px -35px rgba(0,0,0,0.9), 0 0 60px -10px rgba(245,158,11,0.3)' } : undefined}
       >
-        <span className={`absolute left-1/2 top-[9px] -translate-x-1/2 w-14 h-[12px] rounded-full z-10 ${
-          lightMode ? 'bg-[#1D1D1F] border border-black/10' : 'bg-[#000000] border border-white/10'
-        }`} />
+        <span className={`absolute left-1/2 top-[9px] -translate-x-1/2 w-14 h-[12px] rounded-full z-10 ${lightMode ? 'bg-[#1D1D1F] border border-black/10' : 'bg-[#000000] border border-white/10'
+          }`} />
         <div className="relative rounded-[1.8rem] overflow-hidden aspect-[9/19]">
           <img src={src} alt={alt} className="absolute inset-0 w-full h-full object-cover object-top" />
           <div className={`absolute inset-0 pointer-events-none ${lightMode ? 'bg-gradient-to-t from-black/10 via-transparent to-white/[0.04]' : 'bg-gradient-to-t from-black/30 via-transparent to-white/[0.04]'}`} />
@@ -93,6 +92,128 @@ function ServiceRadius() {
       <span className="absolute bottom-[6%] -left-[12%] font-mono text-[10px] px-3 py-[6px] rounded-full whitespace-nowrap bg-white/[0.05] text-[#71717A] border border-white/10">
         Fora do raio
       </span>
+    </div>
+  );
+}
+
+/* ============================================================
+   REUSABLE PRICING CARDS COMPONENT (Image 1 Style)
+============================================================ */
+function PricingCards({ isLight = false }: { isLight?: boolean }) {
+  return (
+    <div className="max-w-[1280px] mx-auto mt-14 grid md:grid-cols-3 gap-[20px] text-left">
+
+      {/* SOLO */}
+      <div
+        className={`rounded-[28px] p-[34px_28px] flex flex-col transition-all hover:-translate-y-1.5 shadow-xl ${isLight
+          ? 'bg-[#FFFFFF] border border-black/[0.08] hover:border-black/20'
+          : 'bg-[#121216] border border-white/[0.08] hover:border-white/20'
+          }`}
+      >
+        <h3 className={`font-display text-[22px] font-semibold ${isLight ? 'text-[#1D1D1F]' : 'text-white'}`}>Solo</h3>
+        <p className={`text-[13.5px] mt-2.5 min-h-[42px] ${isLight ? 'text-[#6E6E73]' : 'text-[#A1A1A6]'}`}>
+          Pra quem trabalha sozinho e quer parar de agendar pelo WhatsApp.
+        </p>
+        <p className={`font-display text-[40px] font-semibold mt-6 ${isLight ? 'text-[#1D1D1F]' : 'text-white'}`}>
+          <span className="text-[18px] align-super mr-0.5">R$</span>49
+          <small className={`text-[13px] font-normal ${isLight ? 'text-[#86868B]' : 'text-[#71717A]'}`}>/mês</small>
+        </p>
+        <ul className="mt-[24px] flex flex-col gap-3 grow">
+          {['Agenda online ilimitada', '1 profissional', 'Atendimento a domicílio', 'Lembretes automáticos'].map((item) => (
+            <li key={item} className={`text-[13.5px] pl-[20px] relative ${isLight ? 'text-[#333336]' : 'text-[#D4D4D8]'}`}>
+              <span className="absolute left-0 text-[#F59E0B] font-bold">+</span>{item}
+            </li>
+          ))}
+        </ul>
+        <Link
+          to="/cadastro"
+          className={`mt-7 w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-semibold text-[14.5px] transition-all ${isLight
+            ? 'border border-black/[0.15] text-[#1D1D1F] hover:border-[#F59E0B] hover:text-[#F59E0B]'
+            : 'border border-white/20 text-white hover:border-[#F59E0B] hover:text-[#F59E0B]'
+            }`}
+        >
+          Começar agora
+        </Link>
+      </div>
+
+      {/* STUDIO (MAIS ESCOLHIDO) */}
+      <div
+        className="relative bg-[#16161C] border-2 border-[#F59E0B] rounded-[28px] p-[34px_28px] flex flex-col transition-all md:scale-105 hover:md:-translate-y-1.5 shadow-[0_20px_60px_-15px_rgba(245,158,11,0.35)] z-10"
+        style={{ background: 'linear-gradient(160deg, rgba(245,158,11,0.12), rgba(18,18,22,0.98) 60%)' }}
+      >
+        <span
+          className="absolute -top-[12px] left-1/2 -translate-x-1/2 text-black font-mono text-[10.5px] font-bold px-4 py-1 rounded-full shadow-lg whitespace-nowrap"
+          style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
+        >
+          Mais escolhido
+        </span>
+        <h3 className="font-display text-[22px] font-semibold text-white">Studio</h3>
+        <p className="text-[13.5px] text-[#D4D4D8] mt-2.5 min-h-[42px]">
+          Pra quem já tem equipe e quer o negócio inteiro organizado.
+        </p>
+        <p className="font-display text-[40px] font-semibold mt-6 text-[#F59E0B]">
+          <span className="text-[18px] align-super mr-0.5">R$</span>89
+          <small className="text-[13px] font-normal text-[#A1A1A6]">/mês</small>
+        </p>
+        <ul className="mt-[24px] flex flex-col gap-3 grow">
+          {[
+            'Tudo do plano Solo',
+            'Até 5 profissionais',
+            'Gestão de equipe completa',
+            'Relatórios de desempenho',
+            'Suporte prioritário',
+          ].map((item) => (
+            <li key={item} className="text-[13.5px] text-white font-medium pl-[20px] relative">
+              <span className="absolute left-0 text-[#F59E0B] font-bold">+</span>{item}
+            </li>
+          ))}
+        </ul>
+        <Link
+          to="/cadastro"
+          className="mt-7 w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-bold text-[14.5px] text-black shadow-[0_20px_40px_-16px_rgba(245,158,11,0.6)] hover:scale-105 transition-all"
+          style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
+        >
+          Começar agora
+        </Link>
+      </div>
+
+      {/* EQUIPE */}
+      <div
+        className={`rounded-[28px] p-[34px_28px] flex flex-col transition-all hover:-translate-y-1.5 shadow-xl ${isLight
+          ? 'bg-[#FFFFFF] border border-black/[0.08] hover:border-black/20'
+          : 'bg-[#121216] border border-white/[0.08] hover:border-white/20'
+          }`}
+      >
+        <h3 className={`font-display text-[22px] font-semibold ${isLight ? 'text-[#1D1D1F]' : 'text-white'}`}>Equipe</h3>
+        <p className={`text-[13.5px] mt-2.5 min-h-[42px] ${isLight ? 'text-[#6E6E73]' : 'text-[#A1A1A6]'}`}>
+          Pra estabelecimentos maiores, com operação em escala.
+        </p>
+        <p className={`font-display text-[40px] font-semibold mt-6 ${isLight ? 'text-[#1D1D1F]' : 'text-white'}`}>
+          <span className="text-[18px] align-super mr-0.5">R$</span>149
+          <small className={`text-[13px] font-normal ${isLight ? 'text-[#86868B]' : 'text-[#71717A]'}`}>/mês</small>
+        </p>
+        <ul className="mt-[24px] flex flex-col gap-3 grow">
+          {[
+            'Tudo do plano Studio',
+            'Profissionais ilimitados',
+            'Múltiplas unidades',
+            'Gerente de conta dedicado',
+          ].map((item) => (
+            <li key={item} className={`text-[13.5px] pl-[20px] relative ${isLight ? 'text-[#333336]' : 'text-[#D4D4D8]'}`}>
+              <span className="absolute left-0 text-[#F59E0B] font-bold">+</span>{item}
+            </li>
+          ))}
+        </ul>
+        <Link
+          to="/cadastro"
+          className={`mt-7 w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-semibold text-[14.5px] transition-all ${isLight
+            ? 'border border-black/[0.15] text-[#1D1D1F] hover:border-[#F59E0B] hover:text-[#F59E0B]'
+            : 'border border-white/20 text-white hover:border-[#F59E0B] hover:text-[#F59E0B]'
+            }`}
+        >
+          Começar agora
+        </Link>
+      </div>
     </div>
   );
 }
@@ -141,9 +262,8 @@ export default function LandingPage() {
       {/* =========================
            NAVBAR (Apple Noir Glass)
       ========================== */}
-      <header className={`fixed top-0 left-0 right-0 z-[100] px-6 md:px-12 transition-all duration-300 border-b ${
-        isScrolled ? 'bg-[#000000]/85 backdrop-blur-[16px] border-white/[0.08] py-3' : 'border-transparent py-[18px]'
-      }`}>
+      <header className={`fixed top-0 left-0 right-0 z-[100] px-6 md:px-12 transition-all duration-300 border-b ${isScrolled ? 'bg-[#000000]/85 backdrop-blur-[16px] border-white/[0.08] py-3' : 'border-transparent py-[18px]'
+        }`}>
         <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-6">
           <a href="#hero" className="inline-flex items-center gap-[9px] font-display font-bold text-[20px] text-white tracking-tight">
             <span className="w-[10px] h-[10px] rounded-full bg-[#F59E0B] shadow-[0_0_14px_rgba(245,158,11,0.8)]" />
@@ -164,7 +284,7 @@ export default function LandingPage() {
             >
               Entrar
             </Link>
-            
+
             <a
               href="#planos"
               className="hidden md:inline-flex items-center justify-center px-5 py-2.5 rounded-full font-bold text-[13px] text-black shadow-[0_14px_30px_-10px_rgba(245,158,11,0.5)] hover:scale-105 transition-all"
@@ -265,7 +385,9 @@ export default function LandingPage() {
               <PhoneFrame src="/images/custom-dark.png" alt="Agenda do Corte Flow" glow tilt={-4} className="w-[230px] md:w-[260px] mx-auto" />
 
               <div className="absolute top-[6%] -left-[8%] md:-left-[14%] z-20 flex items-center gap-2.5 p-3 px-4 rounded-[18px] bg-[#121216]/95 backdrop-blur-[10px] border border-white/[0.12] shadow-2xl animate-float" style={{ animationDelay: '0.3s' }}>
-                <span className="text-[16px]">📍</span>
+                <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
+                  <MapPin className="w-3.5 h-3.5 text-[#F59E0B]" />
+                </div>
                 <div>
                   <strong className="block text-[12.5px] font-semibold text-white">Dentro do raio</strong>
                   <span className="block text-[10.5px] text-[#A1A1A6]">Atendimento confirmado</span>
@@ -273,7 +395,9 @@ export default function LandingPage() {
               </div>
 
               <div className="absolute bottom-[4%] -right-[6%] md:-right-[12%] z-20 flex items-center gap-2.5 p-3 px-4 rounded-[18px] bg-[#121216]/95 backdrop-blur-[10px] border border-white/[0.12] shadow-2xl animate-float" style={{ animationDelay: '1.1s' }}>
-                <span className="text-[16px]">✅</span>
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                </div>
                 <div>
                   <strong className="block text-[12.5px] font-semibold text-white">09:03 reservado</strong>
                   <span className="block text-[10.5px] text-[#A1A1A6]">Agenda atualizada sozinha</span>
@@ -338,15 +462,17 @@ export default function LandingPage() {
 
         {/* ============================================================
              04 — AGENDA ONLINE (CLEAN CRISP WHITE #FFFFFF)
+             (Aqui usamos o mockup do iPhone real ultra nítido da img 2!)
         ============================================================ */}
         <section id="agenda" className="py-[80px] md:py-[150px] px-6 md:px-12 bg-[#FFFFFF] text-[#1D1D1F]">
-          <div className="max-w-[1280px] mx-auto grid md:grid-cols-[0.85fr_1fr] gap-10 md:gap-20 items-center">
+          <div className="max-w-[1280px] mx-auto grid md:grid-cols-[0.9fr_1fr] gap-10 md:gap-16 items-center">
 
-            <motion.div {...fadeUp()} className="relative flex justify-center">
-              <div className="absolute inset-0 rounded-[32px] overflow-hidden -z-10 opacity-15">
-                <img src="/images/cliente-app.jpg" alt="" className="w-full h-full object-cover object-top blur-[2px]" />
-              </div>
-              <PhoneFrame src="/images/custom-light.png" alt="Página do cliente no Corte Flow" lightMode className="w-[230px] my-6" />
+            <motion.div {...fadeUp()} className="relative flex justify-center items-center py-4">
+              <img
+                src="/images/mockup-iphone-light.png"
+                alt="Agendamento Corte Flow no Celular"
+                className="w-[260px] md:w-[310px] h-auto max-h-[580px] object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.18)] hover:scale-105 transition-transform duration-500"
+              />
             </motion.div>
 
             <motion.div {...fadeUp(0.1)}>
@@ -374,6 +500,23 @@ export default function LandingPage() {
             </motion.div>
 
           </div>
+        </section>
+
+        {/* ============================================================
+             PREÇOS (CHECKPOINT NO MEIO DA PÁGINA)
+        ============================================================ */}
+        <section className="py-[80px] md:py-[130px] px-6 md:px-12 text-center bg-[#0A0A0C] text-white border-y border-white/[0.08]">
+          <motion.div {...fadeUp()}>
+            <Eyebrow>Planos simples &amp; transparentes</Eyebrow>
+            <h2 className="font-display font-semibold text-[clamp(26px,5vw,42px)] leading-[1.15] tracking-[-0.01em] max-w-[20ch] mx-auto text-white">
+              Comece por menos que o valor de um corte.
+            </h2>
+            <p className="text-[15.5px] text-[#A1A1A6] mt-3 mx-auto max-w-[46ch]">
+              7 dias de teste grátis sem burocracia. Cancele quando quiser.
+            </p>
+          </motion.div>
+
+          <PricingCards />
         </section>
 
         {/* ============================================================
@@ -557,31 +700,41 @@ export default function LandingPage() {
               </motion.div>
 
               {[
-                { icon: '💈', title: 'Barbearias', desc: 'Mais clientes. Menos mensagens.' },
-                { icon: '💇', title: 'Salões de beleza', desc: 'Toda a equipe organizada em um só lugar.' },
-                { icon: '💅', title: 'Manicures', desc: 'Agenda cheia sem ficar respondendo o celular.' },
-              ].map((card, i) => (
-                <motion.div key={card.title} {...fadeUp(0.15 + i * 0.08)} className="bg-[#121216] border border-white/[0.08] rounded-[18px] p-[26px_24px] transition-all hover:border-[#F59E0B]/50 hover:-translate-y-1 shadow-lg">
-                  <span className="text-[24px]">{card.icon}</span>
-                  <h3 className="font-display text-[18px] font-semibold my-2.5 text-white">{card.title}</h3>
-                  <p className="text-[13.5px] text-[#A1A1A6]">{card.desc}</p>
-                </motion.div>
-              ))}
+                { icon: Scissors, title: 'Barbearias', desc: 'Mais clientes. Menos mensagens.' },
+                { icon: Sparkles, title: 'Salões de beleza', desc: 'Toda a equipe organizada em um só lugar.' },
+                { icon: Heart, title: 'Manicures', desc: 'Agenda cheia sem ficar respondendo o celular.' },
+              ].map((card, i) => {
+                const IconComponent = card.icon;
+                return (
+                  <motion.div key={card.title} {...fadeUp(0.15 + i * 0.08)} className="bg-[#121216] border border-white/[0.08] rounded-[18px] p-[26px_24px] transition-all hover:border-[#F59E0B]/50 hover:-translate-y-1 shadow-lg">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3">
+                      <IconComponent className="w-5 h-5 text-[#F59E0B]" />
+                    </div>
+                    <h3 className="font-display text-[18px] font-semibold my-2 text-white">{card.title}</h3>
+                    <p className="text-[13.5px] text-[#A1A1A6]">{card.desc}</p>
+                  </motion.div>
+                );
+              })}
 
               <motion.div {...fadeUp(0.5)} className="rounded-[28px] overflow-hidden border border-white/[0.1] md:row-span-2 shadow-2xl">
                 <img src="/images/barbeiro-corte.jpg" alt="Barbeiro atendendo" className="w-full h-full object-cover aspect-[3/4]" />
               </motion.div>
 
               {[
-                { icon: '✂️', title: 'Profissionais autônomos', desc: 'Seu negócio profissional desde o primeiro cliente.' },
-                { icon: '🏠', title: 'Atendimento a domicílio', desc: 'Você define onde atende. O sistema verifica o resto.' },
-              ].map((card, i) => (
-                <motion.div key={card.title} {...fadeUp(0.6 + i * 0.08)} className="bg-[#121216] border border-white/[0.08] rounded-[18px] p-[26px_24px] transition-all hover:border-[#F59E0B]/50 hover:-translate-y-1 shadow-lg">
-                  <span className="text-[24px]">{card.icon}</span>
-                  <h3 className="font-display text-[18px] font-semibold my-2.5 text-white">{card.title}</h3>
-                  <p className="text-[13.5px] text-[#A1A1A6]">{card.desc}</p>
-                </motion.div>
-              ))}
+                { icon: User, title: 'Profissionais autônomos', desc: 'Seu negócio profissional desde o primeiro cliente.' },
+                { icon: Home, title: 'Atendimento a domicílio', desc: 'Você define onde atende. O sistema verifica o resto.' },
+              ].map((card, i) => {
+                const IconComponent = card.icon;
+                return (
+                  <motion.div key={card.title} {...fadeUp(0.6 + i * 0.08)} className="bg-[#121216] border border-white/[0.08] rounded-[18px] p-[26px_24px] transition-all hover:border-[#F59E0B]/50 hover:-translate-y-1 shadow-lg">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3">
+                      <IconComponent className="w-5 h-5 text-[#F59E0B]" />
+                    </div>
+                    <h3 className="font-display text-[18px] font-semibold my-2 text-white">{card.title}</h3>
+                    <p className="text-[13.5px] text-[#A1A1A6]">{card.desc}</p>
+                  </motion.div>
+                );
+              })}
 
             </div>
           </div>
@@ -637,7 +790,7 @@ export default function LandingPage() {
         </section>
 
         {/* ============================================================
-             11 — PLANOS (NOIR DARK #0A0A0C)
+             11 — PLANOS (FINAL NOIR DARK #0A0A0C)
         ============================================================ */}
         <section id="planos" className="py-[80px] md:py-[150px] px-6 md:px-12 text-center bg-[#0A0A0C] text-white border-t border-white/[0.08]">
           <motion.div {...fadeUp()}>
@@ -650,77 +803,8 @@ export default function LandingPage() {
             </p>
           </motion.div>
 
-          <div className="max-w-[1280px] mx-auto mt-14 grid md:grid-cols-3 gap-[20px] text-left">
+          <PricingCards />
 
-            {/* SOLO */}
-            <motion.div {...fadeUp(0.1)} className="bg-[#121216] border border-white/[0.08] rounded-[28px] p-[34px_28px] flex flex-col transition-all hover:border-white/20 hover:-translate-y-1.5 shadow-xl">
-              <h3 className="font-display text-[22px] font-semibold text-white">Solo</h3>
-              <p className="text-[13.5px] text-[#A1A1A6] mt-2.5 min-h-[42px]">Pra quem trabalha sozinho e quer parar de agendar pelo WhatsApp.</p>
-              <p className="font-display text-[40px] font-semibold mt-6 text-white">
-                <span className="text-[18px] align-super mr-0.5">R$</span>49<small className="text-[13px] font-normal text-[#71717A]">/mês</small>
-              </p>
-              <ul className="mt-[24px] flex flex-col gap-3 grow">
-                {['Agenda online ilimitada', '1 profissional', 'Atendimento a domicílio', 'Lembretes automáticos'].map((item) => (
-                  <li key={item} className="text-[13.5px] text-[#D4D4D8] pl-[20px] relative">
-                    <span className="absolute left-0 text-[#F59E0B] font-bold">+</span>{item}
-                  </li>
-                ))}
-              </ul>
-              <Link to="/cadastro" className="mt-7 w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-semibold text-[14.5px] border border-white/20 text-white hover:border-[#F59E0B] hover:text-[#F59E0B] transition-all">
-                Começar agora
-              </Link>
-            </motion.div>
-
-            {/* STUDIO (FEATURED) */}
-            <motion.div
-              {...fadeUp(0.2)}
-              className="relative bg-[#16161C] border-2 border-[#F59E0B] rounded-[28px] p-[34px_28px] flex flex-col transition-all md:scale-105 hover:md:-translate-y-1.5 shadow-[0_20px_60px_-15px_rgba(245,158,11,0.3)] z-10"
-              style={{ background: 'linear-gradient(160deg, rgba(245,158,11,0.12), rgba(18,18,22,0.95) 60%)' }}
-            >
-              <span className="absolute -top-[12px] left-[28px] text-black font-mono text-[10.5px] font-bold px-3.5 py-1.5 rounded-full shadow-lg" style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}>
-                Mais escolhido
-              </span>
-              <h3 className="font-display text-[22px] font-semibold text-white">Studio</h3>
-              <p className="text-[13.5px] text-[#D4D4D8] mt-2.5 min-h-[42px]">Pra quem já tem equipe e quer o negócio inteiro organizado.</p>
-              <p className="font-display text-[40px] font-semibold mt-6 text-[#F59E0B]">
-                <span className="text-[18px] align-super mr-0.5">R$</span>89<small className="text-[13px] font-normal text-[#A1A1A6]">/mês</small>
-              </p>
-              <ul className="mt-[24px] flex flex-col gap-3 grow">
-                {['Tudo do plano Solo', 'Até 5 profissionais', 'Gestão de equipe completa', 'Relatórios de desempenho', 'Suporte prioritário'].map((item) => (
-                  <li key={item} className="text-[13.5px] text-white font-medium pl-[20px] relative">
-                    <span className="absolute left-0 text-[#F59E0B] font-bold">+</span>{item}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to="/cadastro"
-                className="mt-7 w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-bold text-[14.5px] text-black shadow-[0_20px_40px_-16px_rgba(245,158,11,0.6)] hover:scale-105 transition-all"
-                style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
-              >
-                Começar agora
-              </Link>
-            </motion.div>
-
-            {/* EQUIPE */}
-            <motion.div {...fadeUp(0.3)} className="bg-[#121216] border border-white/[0.08] rounded-[28px] p-[34px_28px] flex flex-col transition-all hover:border-white/20 hover:-translate-y-1.5 shadow-xl">
-              <h3 className="font-display text-[22px] font-semibold text-white">Equipe</h3>
-              <p className="text-[13.5px] text-[#A1A1A6] mt-2.5 min-h-[42px]">Pra estabelecimentos maiores, com operação em escala.</p>
-              <p className="font-display text-[40px] font-semibold mt-6 text-white">
-                <span className="text-[18px] align-super mr-0.5">R$</span>149<small className="text-[13px] font-normal text-[#71717A]">/mês</small>
-              </p>
-              <ul className="mt-[24px] flex flex-col gap-3 grow">
-                {['Tudo do plano Studio', 'Profissionais ilimitados', 'Múltiplas unidades', 'Gerente de conta dedicado'].map((item) => (
-                  <li key={item} className="text-[13.5px] text-[#D4D4D8] pl-[20px] relative">
-                    <span className="absolute left-0 text-[#F59E0B] font-bold">+</span>{item}
-                  </li>
-                ))}
-              </ul>
-              <Link to="/cadastro" className="mt-7 w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full font-semibold text-[14.5px] border border-white/20 text-white hover:border-[#F59E0B] hover:text-[#F59E0B] transition-all">
-                Começar agora
-              </Link>
-            </motion.div>
-
-          </div>
           <p className="text-[12px] text-[#71717A] mt-7 font-mono">Preços ilustrativos — ajuste conforme sua tabela real.</p>
         </section>
 
