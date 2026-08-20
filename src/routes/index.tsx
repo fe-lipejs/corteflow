@@ -209,6 +209,11 @@ export default function AppRoutes() {
           {AuthRoutes()}
           {AppRouteTree()}
           {AdminRouteTree()}
+          
+          <Route path="/:slug/portal" element={<ClientPortal />} />
+          <Route path="/:slug/sucesso" element={<SuccessBooking />} />
+          <Route path="/:slug" element={<PublicStore />} />
+          
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
