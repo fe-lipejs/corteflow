@@ -84,10 +84,13 @@ export default async (request: Request, context: Context) => {
     html = html.replace(/<meta property="twitter:image" content="(.*?)">/g, `<meta property="twitter:image" content="${logoUrl}">`);
     html = html.replace(/<meta name="description" content="(.*?)">/g, `<meta name="description" content="${desc}">`);
 
-    const newResponse = new Response(html, indexRes);
-    // Explicitly set the headers again just to be safe
-    newResponse.headers.set("content-type", "text/html; charset=utf-8");
-    return newResponse;
+    return new Response(html, {
+      status: 200,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "public, max-age=0, must-revalidate"
+      }
+    });
 
   } catch (err) {
     console.error('Edge Function Error:', err);
