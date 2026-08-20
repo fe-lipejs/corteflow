@@ -2,6 +2,10 @@
   command = "npm run build"
   publish = "dist"
 
+[[edge_functions]]
+  path = "/*"
+  function = "dynamic-og"
+
 # ── Compatibility Redirects ────────────────────────────────────────────────────
 # Redirect old path-based URLs to their new subdomain equivalents.
 # These fire only when the request lands on the root domain (raffros.com).
