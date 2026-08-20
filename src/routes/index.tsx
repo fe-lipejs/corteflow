@@ -130,7 +130,7 @@ function AdminRouteTree() {
       path="/admin"
       element={
         <RequireAuth>
-          <RequireRole allowedRoles={['super_admin', 'owner']}>
+          <RequireRole allowedRoles={['super_admin']}>
             <AdminLayout />
           </RequireRole>
         </RequireAuth>

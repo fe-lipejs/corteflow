@@ -32,8 +32,7 @@ export default function RequireRole({ children, allowedRoles }: { children: Reac
     return <Navigate to="/onboarding" replace />;
   }
 
-  // Se não tem role válida permitida
-  if (!effectiveRole || (!allowedRoles.includes(effectiveRole as UserRole) && effectiveRole !== 'admin' && effectiveRole !== 'owner')) {
+  if (!effectiveRole || !allowedRoles.includes(effectiveRole as UserRole)) {
     return <Navigate to="/app" replace />;
   }
 
