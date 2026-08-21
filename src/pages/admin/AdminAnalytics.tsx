@@ -267,24 +267,24 @@ export default function AdminAnalytics() {
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 bg-[#000000] text-white">
+    <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-8 bg-[#000000] text-white overflow-hidden">
 
       {/* ── TOP HEADER ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl md:text-3xl font-bold font-display tracking-tight text-white flex items-center gap-2.5">
-              <Activity className="w-7 h-7 text-[#F59E0B]" />
-              Motor de Visitas, Cliques &amp; Engajamento
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl md:text-3xl font-bold font-display tracking-tight text-white flex flex-wrap items-center gap-2.5">
+              <Activity className="w-7 h-7 text-[#F59E0B] flex-shrink-0" />
+              <span className="break-words">Motor de Visitas, Cliques &amp; Engajamento</span>
             </h1>
             {isLive && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+              <span className="inline-flex flex-shrink-0 items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 AO VIVO
               </span>
             )}
           </div>
-          <p className="text-sm text-[#A1A1A6] mt-1">
+          <p className="text-sm text-[#A1A1A6] mt-2 break-words">
             Métricas em tempo real da Landing Page, tráfego do Instagram, intenção de planos e interações com a Playlist &amp; Palavra de Fé.
           </p>
         </div>
