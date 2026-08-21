@@ -267,7 +267,7 @@ export default function AdminAnalytics() {
   };
 
   return (
-    <div className="p-4 md:p-10 w-full min-w-0 max-w-[100vw] lg:max-w-7xl mx-auto space-y-8 bg-[#000000] text-white overflow-x-hidden">
+    <div className="space-y-8 bg-[#000000] text-white">
 
       {/* ── TOP HEADER ── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
