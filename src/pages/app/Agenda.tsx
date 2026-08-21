@@ -49,6 +49,7 @@ export default function Agenda() {
   const [initialBookingDate, setInitialBookingDate] = useState<Date | undefined>();
   const [businessHours, setBusinessHours] = useState<any[]>([]);
   const [isMobile, setIsMobile] = useState(false);
+  const [hasScrolledCards, setHasScrolledCards] = useState(false);
 
   // Detect mobile
   useEffect(() => {
@@ -246,35 +247,52 @@ export default function Agenda() {
         {/* Professional Filters & Stats row */}
         <div className="flex flex-col gap-3">
           {/* Stats cards */}
-          <div className="flex overflow-x-auto md:grid md:grid-cols-5 gap-3 pb-2 md:pb-0 scrollbar-none snap-x">
-            {[
-              { label: 'Hoje', value: stats.total, icon: Calendar, color: theme.accent },
-              { label: 'Confirmados (Hoje)', value: stats.pending, icon: Clock, color: '#f59e0b' },
-              { label: 'Esquecidos / Pendentes', value: 'Ver Lista', icon: Bell, color: '#ef4444', isButton: true },
-              { label: 'Finalizados', value: stats.completed, icon: CheckCircle, color: theme.success },
-              { label: 'Em atendimento', value: stats.inProgress, icon: Users, color: '#a78bfa' }, // Keeping standard status colors
-              { label: 'Próximo', value: nextBooking ? format(new Date(nextBooking.scheduled_at), 'HH:mm') : '—', icon: Clock, color: theme.info },
-              { label: 'Receita prevista', value: fmt.format(stats.revenue), icon: DollarSign, color: theme.warning },
-            ].map((s, i) => (
-              <div 
-                key={i} 
-                onClick={() => s.isButton ? setShowPendingModal(true) : undefined}
-                className={`flex flex-col flex-shrink-0 min-w-[140px] p-3 rounded-2xl border glass-card ${s.isButton ? 'cursor-pointer hover:scale-105 transition-transform bg-red-500/5 border-red-500/20' : ''}`} 
-                style={{ borderColor: s.isButton ? undefined : theme.border }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl" style={{ backgroundColor: `${s.color}15`, color: s.color }}>
-                    <s.icon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className={`text-xl font-bold font-display ${s.isButton ? 'text-sm mt-1' : ''}`} style={{ color: s.isButton ? s.color : theme.textPrimary }}>
-                      {isLoading && !s.isButton ? '—' : s.value}
-                    </p>
-                    <p className="text-[10px] font-bold uppercase tracking-wider opacity-80" style={{ color: theme.textSecondary }}>{s.label}</p>
+          <div className="relative">
+            <div 
+              onScroll={() => setHasScrolledCards(true)}
+              className="flex overflow-x-auto md:grid md:grid-cols-5 gap-3 pb-2 md:pb-0 scrollbar-none snap-x relative z-10"
+            >
+              {[
+                { label: 'Hoje', value: stats.total, icon: Calendar, color: theme.accent },
+                { label: 'Confirmados (Hoje)', value: stats.pending, icon: Clock, color: '#f59e0b' },
+                { label: 'Esquecidos / Pendentes', value: 'Ver Lista', icon: Bell, color: '#ef4444', isButton: true },
+                { label: 'Finalizados', value: stats.completed, icon: CheckCircle, color: theme.success },
+                { label: 'Em atendimento', value: stats.inProgress, icon: Users, color: '#a78bfa' }, // Keeping standard status colors
+                { label: 'Próximo', value: nextBooking ? format(new Date(nextBooking.scheduled_at), 'HH:mm') : '—', icon: Clock, color: theme.info },
+                { label: 'Receita prevista', value: fmt.format(stats.revenue), icon: DollarSign, color: theme.warning },
+              ].map((s, i) => (
+                <div 
+                  key={i} 
+                  onClick={() => s.isButton ? setShowPendingModal(true) : undefined}
+                  className={`flex flex-col flex-shrink-0 min-w-[140px] p-3 rounded-2xl border glass-card ${s.isButton ? 'cursor-pointer hover:scale-105 transition-transform bg-red-500/5 border-red-500/20' : ''}`} 
+                  style={{ borderColor: s.isButton ? undefined : theme.border }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl" style={{ backgroundColor: `${s.color}15`, color: s.color }}>
+                      <s.icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className={`text-xl font-bold font-display ${s.isButton ? 'text-sm mt-1' : ''}`} style={{ color: s.isButton ? s.color : theme.textPrimary }}>
+                        {isLoading && !s.isButton ? '—' : s.value}
+                      </p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider opacity-80" style={{ color: theme.textSecondary }}>{s.label}</p>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+            
+            {/* Swipe indicator */}
+            {!hasScrolledCards && isMobile && (
+              <div 
+                className="absolute right-0 top-0 bottom-2 w-16 z-20 pointer-events-none flex items-center justify-end pr-1"
+                style={{ background: `linear-gradient(to left, ${theme.bg}, transparent)` }}
+              >
+                <div className="w-6 h-6 rounded-full bg-white/10 backdrop-blur flex items-center justify-center animate-pulse">
+                  <ChevronRight className="w-4 h-4 text-white" />
+                </div>
               </div>
-            ))}
+            )}
           </div>
 
           {/* Professional Filter Chips (Desktop & Mobile) */}

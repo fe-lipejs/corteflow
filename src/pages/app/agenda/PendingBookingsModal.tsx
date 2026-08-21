@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../../integrations/supabase/client";
-import { X, Clock, AlertCircle, CheckCircle } from "lucide-react";
+import { X, Clock, AlertCircle, CheckCircle, ArrowDownUp } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale/pt-BR";
+import { useState, useMemo } from "react";
 import { useTheme } from "../../../contexts/ThemeContext";
 
 interface Props {
@@ -13,6 +13,7 @@ interface Props {
 
 export default function PendingBookingsModal({ tenantId, onClose, onBookingClick }: Props) {
   const { theme } = useTheme();
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ["forgotten-bookings", tenantId],
@@ -28,12 +29,19 @@ export default function PendingBookingsModal({ tenantId, onClose, onBookingClick
         `)
         .eq("tenant_id", tenantId)
         .in("status", ["pending", "confirmed", "arrived", "in_progress"])
-        .lt("scheduled_at", now)
-        .order("scheduled_at", { ascending: false });
+        .lt("scheduled_at", now);
       if (error) throw error;
       return data || [];
     }
   });
+
+  const sortedBookings = useMemo(() => {
+    return [...bookings].sort((a, b) => {
+      const timeA = new Date(a.scheduled_at).getTime();
+      const timeB = new Date(b.scheduled_at).getTime();
+      return sortOrder === 'asc' ? timeA - timeB : timeB - timeA;
+    });
+  }, [bookings, sortOrder]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
@@ -44,17 +52,28 @@ export default function PendingBookingsModal({ tenantId, onClose, onBookingClick
               <AlertCircle className="w-5 h-5 text-amber-500" />
               Agendamentos Esquecidos
             </h2>
-            <p className="text-xs" style={{ color: theme.textMuted }}>Atendimentos do passado que ainda est„o abertos</p>
+            <p className="text-xs" style={{ color: theme.textMuted }}>Atendimentos do passado que ainda est√£o abertos</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg transition-colors hover:bg-white/5" style={{ color: theme.textSecondary }}>
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        <div className="px-4 pt-3 flex justify-end">
+          <button 
+            onClick={() => setSortOrder(s => s === 'asc' ? 'desc' : 'asc')}
+            className="flex items-center gap-2 text-xs font-semibold transition-colors opacity-80 hover:opacity-100" 
+            style={{ color: theme.textSecondary }}
+          >
+            <ArrowDownUp className="w-3.5 h-3.5" />
+            Ordenar: {sortOrder === 'desc' ? 'Mais recentes' : 'Mais antigos'}
+          </button>
+        </div>
+
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {isLoading ? (
             <div className="flex justify-center p-8"><Clock className="w-6 h-6 animate-spin text-amber-500" /></div>
-          ) : bookings.length === 0 ? (
+          ) : sortedBookings.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mb-3">
                 <CheckCircle className="w-6 h-6 text-green-500" />
@@ -63,12 +82,11 @@ export default function PendingBookingsModal({ tenantId, onClose, onBookingClick
               <p className="text-xs" style={{ color: theme.textMuted }}>Nenhum agendamento pendente no passado.</p>
             </div>
           ) : (
-            bookings.map((b: any) => (
+            sortedBookings.map((b: any) => (
               <div 
                 key={b.id}
                 onClick={() => {
                   onBookingClick(b);
-                  onClose();
                 }}
                 className="p-3 rounded-xl border cursor-pointer transition-all hover:scale-[1.02]"
                 style={{ borderColor: theme.border, background: theme.cardBg }}
@@ -95,4 +113,3 @@ export default function PendingBookingsModal({ tenantId, onClose, onBookingClick
     </div>
   );
 }
-
