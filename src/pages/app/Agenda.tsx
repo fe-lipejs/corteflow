@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { format, startOfWeek, addWeeks, subWeeks, addDays, isToday } from 'date-fns';
+import { format, startOfWeek, addWeeks, subWeeks, addDays, isToday, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import {
   ChevronLeft, ChevronRight, Plus, Calendar, RefreshCw,
@@ -25,6 +25,7 @@ import DayView from './agenda/DayView';
 import MobileTimeline from './agenda/MobileTimeline';
 import BookingModal from './agenda/BookingModal';
 import BookingDetailSheet from './agenda/BookingDetailSheet';
+import PendingBookingsModal from './agenda/PendingBookingsModal';
 
 type View = 'week' | 'day';
 
@@ -43,6 +44,7 @@ export default function Agenda() {
   const [currentDay, setCurrentDay] = useState<Date>(new Date());
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [showPendingModal, setShowPendingModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
   const [initialBookingDate, setInitialBookingDate] = useState<Date | undefined>();
   const [businessHours, setBusinessHours] = useState<any[]>([]);
@@ -252,14 +254,21 @@ export default function Agenda() {
               { label: 'Em atendimento', value: stats.inProgress, icon: Users, color: '#a78bfa' }, // Keeping standard status colors
               { label: 'Próximo', value: nextBooking ? format(new Date(nextBooking.scheduled_at), 'HH:mm') : '—', icon: Clock, color: theme.info },
               { label: 'Receita prevista', value: fmt.format(stats.revenue), icon: DollarSign, color: theme.warning },
-            ].map(s => (
-              <div key={s.label} className="shrink-0 w-[160px] md:w-auto snap-start rounded-2xl p-3 border flex items-center gap-3 glass-card">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${s.color}15` }}>
-                  <s.icon className="w-4 h-4" style={{ color: s.color }} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-base font-bold leading-tight truncate" style={{ color: theme.textPrimary }}>{isLoading ? '—' : s.value}</p>
-                  <p className="text-[10px] truncate" style={{ color: theme.textSecondary }}>{s.label}</p>
+            ].map((s, i) => (
+              <div 
+                key={i} 
+                onClick={() => s.label === 'Confirmados' ? setShowPendingModal(true) : undefined}
+                className={`flex flex-col flex-shrink-0 min-w-[140px] p-3 rounded-2xl border glass-card ${s.label === 'Confirmados' ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`} 
+                style={{ borderColor: theme.border }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl" style={{ backgroundColor: `${s.color}15`, color: s.color }}>
+                    <s.icon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold font-display" style={{ color: theme.textPrimary }}>{isLoading ? '—' : s.value}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider opacity-80" style={{ color: theme.textSecondary }}>{s.label}</p>
+                  </div>
                 </div>
               </div>
             ))}
@@ -422,6 +431,14 @@ export default function Agenda() {
             </div>
           </div>
         </div>
+      )}
+
+      {showPendingModal && (
+        <PendingBookingsModal 
+          tenantId={tenantId} 
+          onClose={() => setShowPendingModal(false)}
+          onBookingClick={(b) => setSelectedBooking(b)}
+        />
       )}
     </div>
   );
