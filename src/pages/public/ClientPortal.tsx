@@ -348,8 +348,12 @@ export default function ClientPortal() {
 
 
 
+  const isDark = contrast.isDark;
+  const sidebarBackground = isDark ? theme.sidebarBg : "#FFFFFF";
+  const cardBorderColor = isDark ? theme.cardBorder : "#E5E7EB";
+  const storeName = settings?.fantasy_name || tenant?.name || "";
+
   const storeHeader = (
-    <div className="relative w-full border-b mb-8" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
     <div className="relative mb-6">
       {/* Cover Banner */}
       <div className="relative w-full h-44 sm:h-52 shrink-0 overflow-hidden bg-neutral-900">
@@ -446,7 +450,7 @@ export default function ClientPortal() {
 
   if (!isLogged) {
     return (
-      <div className="min-h-screen pb-16 transition-colors" style={{ backgroundColor: theme.bg, fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" }}>
+      <div className="min-h-screen pb-16 transition-colors" style={{ backgroundColor: theme.bg, color: theme.textPrimary, fontFamily: theme.fontSerif }}>
         {storeHeader}
 
         <div className="max-w-md mx-auto px-4">
@@ -499,7 +503,7 @@ export default function ClientPortal() {
   const pastBookings = bookings.filter((b) => new Date(b.scheduled_at) < new Date() || ['canceled', 'no_show', 'completed'].includes(b.status));
 
   return (
-    <div className="min-h-screen pb-20 transition-colors" style={{ backgroundColor: theme.bg, fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" }}>
+    <div className="min-h-screen pb-20 transition-colors" style={{ backgroundColor: theme.bg, color: theme.textPrimary, fontFamily: theme.fontSerif }}>
       {storeHeader}
 
       <div className="max-w-3xl mx-auto px-4 space-y-8">
