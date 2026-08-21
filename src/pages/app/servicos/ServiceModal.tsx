@@ -252,3 +252,4 @@ export default function ServiceModal({ service, professionals = [], tenantId, on
     </Modal>
   );
 }
+

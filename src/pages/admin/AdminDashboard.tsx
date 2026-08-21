@@ -220,7 +220,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <Link
-          to="/admin/analytics"
+          to="/platform/analytics"
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#F59E0B] text-black font-bold text-xs hover:bg-[#FBBF24] transition-all shadow-md shrink-0"
         >
           <span>Ver Motor de Visitas</span>
@@ -309,3 +309,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+

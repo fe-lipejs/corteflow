@@ -54,3 +54,4 @@ describe('normalizeBrazilianPhone — Suite Oficial de Testes', () => {
     expect(normalizeBrazilianPhone('51944443333').normalized).toBe('51944443333'); // RS
   });
 });
+

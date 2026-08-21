@@ -195,3 +195,4 @@ export function extractProCapacity(pro: any): ProfessionalHomeCapacity {
     homeFee: pro?.home_fee ?? 0,
   };
 }
+

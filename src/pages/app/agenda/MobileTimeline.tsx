@@ -192,3 +192,4 @@ export default function MobileTimeline({ currentDay, bookings, onDayChange, onBo
     </div>
   );
 }
+

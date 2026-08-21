@@ -58,3 +58,4 @@ export function TableRowSkeleton({ count = 5, cols = 4 }: { count?: number; cols
     </>
   );
 }
+

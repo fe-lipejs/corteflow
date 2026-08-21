@@ -410,3 +410,4 @@ export function useBookingsRealtime(tenantId: string | null) {
   }, [tenantId, queryClient, play]);
 }
 
+

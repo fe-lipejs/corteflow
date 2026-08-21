@@ -375,3 +375,4 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
     </>
   );
 }
+

@@ -120,3 +120,4 @@ export default function ServiceCard({ service: s, onEdit, onDelete }: Props) {
     </div>
   );
 }
+

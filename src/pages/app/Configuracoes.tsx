@@ -3925,7 +3925,7 @@ export default function Configuracoes() {
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={() => { setShowUpgradeModal(null); navigate('/app/assinatura'); }}
+                onClick={() => { setShowUpgradeModal(null); navigate('/admin/assinatura'); }}
                 className="w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all shadow-lg hover:opacity-90 cursor-pointer"
                 style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
               >
@@ -3957,3 +3957,4 @@ export default function Configuracoes() {
     </div>
   );
 }
+

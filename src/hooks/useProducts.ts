@@ -109,3 +109,4 @@ export function useDeleteProduct(tenantId: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY(tenantId) }),
   });
 }
+

@@ -163,3 +163,4 @@ export function NotificationBell({ align = 'right' }: NotificationBellProps = {}
     </div>
   );
 }
+

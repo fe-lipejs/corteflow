@@ -125,12 +125,12 @@ export default function Onboarding() {
       }
       
       if (profile?.role === 'super_admin') {
-        navigate('/admin', { replace: true });
+        navigate('/platform', { replace: true });
         return;
       }
 
       if (profile?.onboarding_completed || profile?.tenant_id || tenant?.id) {
-        navigate('/app', { replace: true });
+        navigate('/admin', { replace: true });
         return;
       }
 
@@ -143,7 +143,7 @@ export default function Onboarding() {
           .maybeSingle();
 
         if (existingTenant?.id) {
-          navigate('/app', { replace: true });
+          navigate('/admin', { replace: true });
         }
       };
 
@@ -387,7 +387,7 @@ export default function Onboarding() {
           onboarding_completed: true,
         } as any);
         await refreshProfile();
-        window.location.href = '/app';
+        window.location.href = '/admin';
         return;
       }
 
@@ -516,7 +516,7 @@ export default function Onboarding() {
 
       // 9. Refresh context and redirect to /app
       await refreshProfile();
-      window.location.href = '/app';
+      window.location.href = '/admin';
 
     } catch (err: any) {
       console.error('Erro no onboarding:', err);
@@ -1055,3 +1055,4 @@ export default function Onboarding() {
     </div>
   );
 }
+

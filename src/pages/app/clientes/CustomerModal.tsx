@@ -241,3 +241,4 @@ export function CustomerModal({ customer, onClose, tenantId }: CustomerModalProp
     </div>
   );
 }
+

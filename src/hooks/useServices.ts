@@ -114,3 +114,4 @@ export function useDeleteService(tenantId: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: SERVICES_QUERY_KEY(tenantId) }),
   });
 }
+

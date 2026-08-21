@@ -552,3 +552,4 @@ export function useTheme() {
 export function getThemeById(id: string): ThemeTokens {
   return THEMES[id] || THEME_CLASSIC;
 }
+

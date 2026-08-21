@@ -356,3 +356,4 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
     </div>
   );
 }
+

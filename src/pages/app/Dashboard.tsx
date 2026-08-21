@@ -298,7 +298,7 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 relative z-10">
             <button 
-              onClick={() => navigate('/app/servicos')}
+              onClick={() => navigate('/admin/servicos')}
               className="flex items-center gap-4 p-4 rounded-xl text-left transition-all hover:scale-[1.02]" 
               style={{ background: theme.bgHover, border: `1px solid ${theme.border}` }}
             >
@@ -312,7 +312,7 @@ export default function Dashboard() {
             </button>
 
             <button 
-              onClick={() => navigate('/app/equipe')}
+              onClick={() => navigate('/admin/equipe')}
               className="flex items-center gap-4 p-4 rounded-xl text-left transition-all hover:scale-[1.02]" 
               style={{ background: theme.bgHover, border: `1px solid ${theme.border}` }}
             >
@@ -361,7 +361,7 @@ export default function Dashboard() {
               <h3 className="font-bold text-lg" style={{ color: theme.textPrimary }}>Agenda de hoje</h3>
               <p className="text-xs" style={{ color: theme.textMuted }}>{todayBookings.length} horários confirmados</p>
             </div>
-            <button onClick={() => navigate('/app/agenda')} className="flex items-center gap-1 text-xs font-semibold" style={{ color: theme.accent }}>
+            <button onClick={() => navigate('/admin/agenda')} className="flex items-center gap-1 text-xs font-semibold" style={{ color: theme.accent }}>
               Ver semana <ArrowRight className="w-3 h-3" />
             </button>
           </div>
@@ -476,3 +476,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

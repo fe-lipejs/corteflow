@@ -55,7 +55,7 @@ export default function ChangePassword() {
       await refreshProfile();
       
       setTimeout(() => {
-        navigate('/app');
+        navigate('/admin');
       }, 2000);
 
     } catch (err: any) {
@@ -154,3 +154,4 @@ export default function ChangePassword() {
     </div>
   );
 }
+

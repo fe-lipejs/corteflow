@@ -320,3 +320,4 @@ export async function generateSmartPaletteFromLogo(
     extractedPalette: palette,
   };
 }
+

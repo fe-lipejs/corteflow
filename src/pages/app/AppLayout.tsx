@@ -30,7 +30,7 @@ export default function AppLayout() {
   };
 
   // Pages always accessible regardless of subscription status
-  const publicAppPaths = ['/app/assinatura', '/app/configuracoes', '/app/suporte'];
+  const publicAppPaths = ['/admin/assinatura', '/admin/configuracoes', '/admin/suporte'];
 
   // Sync theme with tenant settings from DB
   useEffect(() => {
@@ -92,27 +92,27 @@ export default function AppLayout() {
   }, [tenant]);
 
   let navItems = [
-    { to: '/app', icon: LayoutDashboard, label: 'Visão geral', end: true, permission: 'view_dashboard' },
-    { to: '/app/agenda', icon: Calendar, label: 'Agenda', end: false, permission: 'view_agenda' },
-    { to: '/app/equipe', icon: Users, label: 'Equipe', end: false, permission: 'view_equipe' },
-    { to: '/app/servicos', icon: Scissors, label: 'Serviços', end: false, permission: 'view_servicos' },
-    { to: '/app/clientes', icon: Users, label: 'Clientes', end: false, permission: 'view_clientes' },
-    { to: '/app/financeiro', icon: DollarSign, label: 'Financeiro', end: false, permission: 'view_financeiro' },
-    { to: '/app/assinatura', icon: CreditCard, label: 'Assinatura', end: false, permission: null },
-    { to: '/app/suporte', icon: LifeBuoy, label: 'Suporte', end: false, badge: unreadSupport, permission: null },
-    { to: '/app/configuracoes', icon: Settings, label: 'Configurações', end: false, permission: null },
+    { to: '/admin', icon: LayoutDashboard, label: 'Visão geral', end: true, permission: 'view_dashboard' },
+    { to: '/admin/agenda', icon: Calendar, label: 'Agenda', end: false, permission: 'view_agenda' },
+    { to: '/admin/equipe', icon: Users, label: 'Equipe', end: false, permission: 'view_equipe' },
+    { to: '/admin/servicos', icon: Scissors, label: 'Serviços', end: false, permission: 'view_servicos' },
+    { to: '/admin/clientes', icon: Users, label: 'Clientes', end: false, permission: 'view_clientes' },
+    { to: '/admin/financeiro', icon: DollarSign, label: 'Financeiro', end: false, permission: 'view_financeiro' },
+    { to: '/admin/assinatura', icon: CreditCard, label: 'Assinatura', end: false, permission: null },
+    { to: '/admin/suporte', icon: LifeBuoy, label: 'Suporte', end: false, badge: unreadSupport, permission: null },
+    { to: '/admin/configuracoes', icon: Settings, label: 'Configurações', end: false, permission: null },
   ];
 
   if (role === 'professional') {
     navItems = [];
     if (professionalPermissions?.view_own_schedule) {
-      navItems.push({ to: '/app/agenda', icon: Calendar, label: 'Agenda', end: false, permission: null } as any);
+      navItems.push({ to: '/admin/agenda', icon: Calendar, label: 'Agenda', end: false, permission: null } as any);
     }
     if (professionalPermissions?.view_financial) {
-      navItems.push({ to: '/app/financeiro', icon: DollarSign, label: 'Financeiro', end: false, permission: null } as any);
+      navItems.push({ to: '/admin/financeiro', icon: DollarSign, label: 'Financeiro', end: false, permission: null } as any);
     }
     if (professionalPermissions?.view_commission) {
-      navItems.push({ to: '/app/minha-comissao', icon: DollarSign, label: 'Minha Comissão', end: false, permission: null } as any);
+      navItems.push({ to: '/admin/minha-comissao', icon: DollarSign, label: 'Minha Comissão', end: false, permission: null } as any);
     }
   }
 
@@ -154,7 +154,7 @@ export default function AppLayout() {
           <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>{displaySuspensionReason}</p>
           <div className="flex flex-col gap-3">
             {features.subscription_status === 'past_due' && (
-              <button onClick={() => navigate('/app/assinatura')} className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl w-full" style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}>
+              <button onClick={() => navigate('/admin/assinatura')} className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl w-full" style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}>
                 <CreditCard className="w-4 h-4" /> Regularizar Assinatura
               </button>
             )}
@@ -314,7 +314,7 @@ export default function AppLayout() {
                 </div>
               </div>
               <button 
-                onClick={() => navigate('/app/assinatura')}
+                onClick={() => navigate('/admin/assinatura')}
                 className="whitespace-nowrap px-4 py-2 bg-yellow-500 text-yellow-950 font-bold rounded-lg text-sm transition-opacity hover:opacity-90 w-full md:w-auto text-center"
               >
                 Regularizar Agora
@@ -329,3 +329,4 @@ export default function AppLayout() {
     </div>
   );
 }
+

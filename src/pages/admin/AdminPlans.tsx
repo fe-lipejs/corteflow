@@ -669,3 +669,4 @@ export default function AdminPlans() {
     </div>
   );
 }
+

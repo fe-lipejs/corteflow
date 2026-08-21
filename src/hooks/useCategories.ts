@@ -95,3 +95,4 @@ export function useCategories(tenantId: string | null) {
     isDeleting: deleteMutation.isPending,
   };
 }
+

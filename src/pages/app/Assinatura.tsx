@@ -473,7 +473,7 @@ export default function Assinatura() {
             </p>
             {profile?.role === 'super_admin' && (
               <a
-                href="/admin/planos"
+                href="/platform/planos"
                 className="inline-flex items-center gap-2 mt-4 px-6 py-3 rounded-xl font-bold text-sm"
                 style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
               >
@@ -703,3 +703,4 @@ export default function Assinatura() {
     </div>
   );
 }
+

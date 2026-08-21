@@ -340,3 +340,4 @@ export function ManualTransactionModal({
     </Modal>
   );
 }
+

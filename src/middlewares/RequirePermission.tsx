@@ -32,8 +32,9 @@ export default function RequirePermission({
 
   if (!hasPermission(permission)) {
     // Redireciona de volta para o dashboard caso tente acessar uma rota sem permissão
-    return <Navigate to="/app" replace />;
+    return <Navigate to="/admin" replace />;
   }
 
   return <>{children}</>;
 }
+

@@ -197,9 +197,9 @@ export default function Login() {
       const isCompleted = profileData?.onboarding_completed || Boolean(profileData?.tenant_id);
 
       if (isSuperAdminMode || profileData?.role === 'super_admin') {
-        navigate('/admin');
+        navigate('/platform');
       } else if (isCompleted) {
-        navigate('/app');
+        navigate('/admin');
       } else {
         navigate('/onboarding');
       }
@@ -558,3 +558,4 @@ export default function Login() {
     </div>
   );
 }
+

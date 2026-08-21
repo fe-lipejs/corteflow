@@ -558,3 +558,4 @@ export function generateAvailableSlotsFromInput(input: AvailabilityInput): Slot[
     input.salonHomeRadiusKm ?? 10
   );
 }
+

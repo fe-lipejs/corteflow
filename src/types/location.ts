@@ -92,3 +92,4 @@ export interface LocationOption {
   description: string;
   icon: string; // emoji ou nome de ícone lucide
 }
+

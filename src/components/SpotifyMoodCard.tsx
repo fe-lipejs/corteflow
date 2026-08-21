@@ -105,3 +105,4 @@ export default function SpotifyMoodCard() {
 export function FloatingPlaylistBadge() {
     return null;
 }
+

@@ -89,3 +89,4 @@ export default async function getCroppedImg(
     }, 'image/png')
   })
 }
+

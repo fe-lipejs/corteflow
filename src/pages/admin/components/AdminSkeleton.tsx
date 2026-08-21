@@ -56,3 +56,4 @@ export default function AdminSkeleton({ rows = 5, type = 'table', cols = 4 }: Ad
   if (type === 'stat') return <AdminStatSkeleton />;
   return <AdminTableSkeleton rows={rows} />;
 }
+

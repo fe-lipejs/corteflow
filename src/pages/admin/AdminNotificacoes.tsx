@@ -87,7 +87,7 @@ export default function AdminNotificacoes() {
   const handleNotifClick = (notif: Notification) => {
     if (!notif.read) markRead.mutate(notif.id);
     if (notif.type === 'new_ticket') {
-      navigate('/admin/suporte');
+      navigate('/platform/suporte');
     }
   };
 
@@ -230,3 +230,4 @@ export default function AdminNotificacoes() {
     </div>
   );
 }
+

@@ -61,10 +61,10 @@ export const SpotlightGuideTour: React.FC = () => {
 
   // Navigate to screen if requested
   const handleGoToScreen = () => {
-    if (tourStep === 0) navigate('/app/configuracoes');
-    if (tourStep === 1) navigate('/app/agenda');
-    if (tourStep === 2) navigate('/app/servicos');
-    if (tourStep === 3) navigate('/app/equipe');
+    if (tourStep === 0) navigate('/admin/configuracoes');
+    if (tourStep === 1) navigate('/admin/agenda');
+    if (tourStep === 2) navigate('/admin/servicos');
+    if (tourStep === 3) navigate('/admin/equipe');
     stopTour();
   };
 
@@ -319,3 +319,4 @@ export const SpotlightGuideTour: React.FC = () => {
     </>
   );
 };
+

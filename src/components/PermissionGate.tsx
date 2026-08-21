@@ -48,7 +48,7 @@ export default function PermissionGate({ permission, children, fallback = null, 
             </p>
             
             <button
-              onClick={() => { navigate('/app/assinatura'); }}
+              onClick={() => { navigate('/admin/assinatura'); }}
               className="w-full py-3 rounded-xl mb-3 font-bold transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.4)]"
               style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
             >
@@ -64,7 +64,7 @@ export default function PermissionGate({ permission, children, fallback = null, 
                 } else if (type === 'page') {
                   navigate(-1);
                 } else {
-                  navigate('/app');
+                  navigate('/admin');
                 }
               }}
             >
@@ -80,3 +80,4 @@ export default function PermissionGate({ permission, children, fallback = null, 
 
   return <>{children}</>;
 }
+

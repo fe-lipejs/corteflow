@@ -247,3 +247,4 @@ export default function DayView({ day, bookings, businessHours, onBookingClick, 
     </div>
   );
 }
+

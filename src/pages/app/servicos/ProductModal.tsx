@@ -184,3 +184,4 @@ export default function ProductModal({ product, tenantId, onClose, onSave, isLoa
     </Modal>
   );
 }
+

@@ -141,3 +141,4 @@ export function CategoriesManagerModal({ tenantId, isOpen, onClose }: Props) {
     </AnimatePresence>
   );
 }
+

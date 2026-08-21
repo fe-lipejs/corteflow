@@ -280,3 +280,4 @@ export function useDeleteProfessional(tenantId: string) {
     },
   });
 }
+

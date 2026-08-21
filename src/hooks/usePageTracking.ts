@@ -17,3 +17,4 @@ export function usePageTracking() {
     return () => clearTimeout(timeout);
   }, [location.pathname, location.search]);
 }
+

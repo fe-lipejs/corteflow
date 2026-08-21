@@ -47,3 +47,4 @@ export default function AdminBadge({ variant = 'neutral', label, value, dot = fa
     </span>
   );
 }
+

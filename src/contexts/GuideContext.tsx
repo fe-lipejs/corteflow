@@ -16,28 +16,28 @@ export const TOUR_STEPS: TourStep[] = [
     title: 'Configurações do Estabelecimento ⚙️',
     description: 'Aqui você personaliza a identidade visual, define horários de funcionamento e conecta o Stripe para receber pagamentos online (Pix e cartão).',
     badge: 'Passo 1 de 4',
-    route: '/app',
+    route: '/admin',
   },
   {
     target: '[data-guide="nav-agenda"]',
     title: 'Sua Agenda Inteligente 📅',
     description: 'Acompanhe agendamentos diários e semanais da sua equipe em tempo real, crie novos horários e veja a ocupação do salão.',
     badge: 'Passo 2 de 4',
-    route: '/app',
+    route: '/admin',
   },
   {
     target: '[data-guide="nav-servicos"]',
     title: 'Serviços & Produtos ✂️',
     description: 'Cadastre os serviços que seus clientes poderão agendar pelo seu site com preços, duração e fotos.',
     badge: 'Passo 3 de 4',
-    route: '/app',
+    route: '/admin',
   },
   {
     target: '[data-guide="nav-equipe"]',
     title: 'Gestão da sua Equipe 💈',
     description: 'Cadastre seus profissionais e barbeiros com horários individuais de trabalho e serviços que cada um realiza.',
     badge: 'Passo 4 de 4',
-    route: '/app',
+    route: '/admin',
   },
 ];
 
@@ -220,3 +220,4 @@ export const useGuide = () => {
   }
   return context;
 };
+

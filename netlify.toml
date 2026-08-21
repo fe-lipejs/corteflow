@@ -6,43 +6,8 @@
   path = "/*"
   function = "dynamic-og"
 
-# ── Compatibility Redirects ────────────────────────────────────────────────────
-# Redirect old path-based URLs to their new subdomain equivalents.
-# These fire only when the request lands on the root domain (raffros.com).
-
-[[redirects]]
-  from = "/app"
-  to = "https://app.raffros.com/app"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/app/*"
-  to = "https://app.raffros.com/app/:splat"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/admin"
-  to = "https://admin.raffros.com/admin"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/admin/*"
-  to = "https://admin.raffros.com/admin/:splat"
-  status = 301
-  force = true
-
-# NOTE: Redirecting /kauan-barbearia → kauan-barbearia.raffros.com requires a
-# Netlify Edge Function (dynamic logic). For now, old tenant URLs continue to
-# work via the SPA catch-all below — the path-based routing is still active
-# on the root domain as a fallback. A future edge function can add the 301.
-
 # ── SPA Catch-all ─────────────────────────────────────────────────────────────
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-

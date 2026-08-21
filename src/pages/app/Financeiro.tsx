@@ -702,7 +702,7 @@ export default function Financeiro() {
               O controle de caixa e relatórios financeiros é exclusivo de planos superiores. Faça upgrade para desbloquear.
             </p>
             <button
-              onClick={() => navigate('/app/assinatura')}
+              onClick={() => navigate('/admin/assinatura')}
               className="w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all shadow-lg hover:opacity-90"
               style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
             >
@@ -747,7 +747,7 @@ export default function Financeiro() {
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={() => navigate('/app/assinatura')}
+                onClick={() => navigate('/admin/assinatura')}
                 className="w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all shadow-lg hover:opacity-90"
                 style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
               >
@@ -768,3 +768,4 @@ export default function Financeiro() {
     </div>
   );
 }
+

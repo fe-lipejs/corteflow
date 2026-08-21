@@ -147,3 +147,4 @@ export function trackPageView(pagePath?: string, metadata?: Record<string, any>)
     metadata,
   });
 }
+

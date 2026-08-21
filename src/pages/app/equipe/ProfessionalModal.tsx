@@ -555,7 +555,7 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                       <p className="text-xs mb-4" style={{ color: theme.textSecondary }}>Ajustar horários individuais é exclusivo de planos superiores.</p>
                       <button
                         type="button"
-                        onClick={() => navigate('/app/assinatura')}
+                        onClick={() => navigate('/admin/assinatura')}
                         className="w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all shadow-lg"
                         style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
                       >
@@ -805,3 +805,4 @@ export default function ProfessionalModal({ professional, services, onClose, onC
     </Modal>
   );
 }
+

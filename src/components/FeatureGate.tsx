@@ -21,7 +21,7 @@ function InlineLock({ message }: { message?: string }) {
     <div className="flex items-center gap-2 text-sm p-3 rounded-xl border shadow-sm backdrop-blur-md" style={{ background: theme.cardBg, borderColor: theme.cardBorder }}>
       <Lock className="w-4 h-4" style={{ color: theme.accent }} />
       <span style={{ color: theme.textSecondary }}>{message ?? 'Disponível em um plano superior.'}</span>
-      <Link to="/app/assinatura" className="font-bold underline ml-auto text-xs" style={{ color: theme.accent }}>
+      <Link to="/admin/assinatura" className="font-bold underline ml-auto text-xs" style={{ color: theme.accent }}>
         Fazer Upgrade
       </Link>
     </div>
@@ -88,7 +88,7 @@ export default function FeatureGate({ feature, permission, modulePrefix, childre
             </p>
             
             <button
-              onClick={() => { navigate('/app/assinatura'); }}
+              onClick={() => { navigate('/admin/assinatura'); }}
               className="w-full py-3 rounded-xl mb-3 font-bold transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.4)]"
               style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
             >
@@ -98,7 +98,7 @@ export default function FeatureGate({ feature, permission, modulePrefix, childre
             <button 
               className="text-sm w-full py-2 transition-colors hover:underline" 
               style={{ color: theme.textSecondary }} 
-              onClick={() => navigate('/app')}
+              onClick={() => navigate('/admin')}
             >
               Agora não
             </button>
@@ -110,4 +110,5 @@ export default function FeatureGate({ feature, permission, modulePrefix, childre
 
   return <>{children}</>;
 }
+
 

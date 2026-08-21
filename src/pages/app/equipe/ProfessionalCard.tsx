@@ -159,3 +159,4 @@ export default function ProfessionalCard({ professional: p, onEdit, onDelete, on
     </div>
   );
 }
+

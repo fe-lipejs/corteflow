@@ -34,7 +34,7 @@ export default function RedefinirSenha() {
       supabase.auth.getSession().then(({ data: { session }, error: sessionErr }) => {
         if (session) {
           // Usuário já está logado normalmente, barra o acesso e manda pro painel
-          navigate('/app');
+          navigate('/admin');
         } else {
           // Não está logado e não tem hash: link inválido ou acesso direto
           // Espera um tempinho pro Supabase Auth terminar de carregar os eventos antes de mostrar erro
@@ -255,3 +255,4 @@ export default function RedefinirSenha() {
     </div>
   );
 }
+

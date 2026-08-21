@@ -22,7 +22,7 @@ export default function RequireRole({ children, allowedRoles }: { children: Reac
   // Super admin tem acesso direto à área master
   if (effectiveRole === 'super_admin') {
     if (!allowedRoles.includes('super_admin')) {
-      return <Navigate to="/admin" replace />;
+      return <Navigate to="/platform" replace />;
     }
     return <>{children}</>;
   }
@@ -33,8 +33,9 @@ export default function RequireRole({ children, allowedRoles }: { children: Reac
   }
 
   if (!effectiveRole || !allowedRoles.includes(effectiveRole as UserRole)) {
-    return <Navigate to="/app" replace />;
+    return <Navigate to="/admin" replace />;
   }
 
   return <>{children}</>;
 }
+

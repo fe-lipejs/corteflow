@@ -30,6 +30,7 @@ import AdminAuditoria from '../pages/admin/AdminAuditoria';
 import AdminNotificacoes from '../pages/admin/AdminNotificacoes';
 import AdminSeguranca from '../pages/admin/AdminSeguranca';
 import AdminAnalytics from '../pages/admin/AdminAnalytics';
+import AdminSuporte from '../pages/admin/AdminSuporte';
 
 // App Pages (Tenant Admin/Manager/Professional)
 import AppLayout from '../pages/app/AppLayout';
@@ -44,36 +45,7 @@ import Assinatura from '../pages/app/Assinatura';
 import Suporte from '../pages/app/Suporte';
 import ChangePassword from '../pages/app/ChangePassword';
 import MinhaComissao from '../pages/app/MinhaComissao';
-import AdminSuporte from '../pages/admin/AdminSuporte';
 import FeatureGate from '../components/FeatureGate';
-
-// ─── Subdomain Detection ──────────────────────────────────────────────────────
-type AppMode = 'landing' | 'app' | 'admin' | 'tenant' | 'dev';
-
-function getAppMode(): AppMode {
-  const hostname = window.location.hostname;
-
-  // Local development, ngrok, or direct Netlify preview URL (no wildcard custom DNS yet)
-  if (
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname.endsWith('.ngrok.io') ||
-    hostname.endsWith('.ngrok-free.app') ||
-    hostname.endsWith('.netlify.app')
-  ) {
-    return 'dev';
-  }
-
-  const subdomain = hostname.split('.')[0];
-
-  if (subdomain === 'app') return 'app';
-  if (subdomain === 'admin') return 'admin';
-  if (hostname === 'raffros.com' || hostname === 'www.raffros.com') return 'landing';
-  // Any other subdomain (e.g. kauan-barbearia.raffros.com) → public tenant page
-  if (hostname.includes('.raffros.com') && subdomain !== 'www') return 'tenant';
-
-  return 'landing';
-}
 
 // ─── Shared Auth/Onboarding Routes ────────────────────────────────────────────
 function AuthRoutes() {
@@ -95,11 +67,11 @@ function AuthRoutes() {
   );
 }
 
-// ─── App Route Tree ───────────────────────────────────────────────────────────
+// ─── App Route Tree (Now /admin) ───────────────────────────────────────────────
 function AppRouteTree() {
   return (
     <Route
-      path="/app"
+      path="/admin"
       element={
         <RequireAuth>
           <RequireRole allowedRoles={['admin', 'manager', 'professional', 'owner', 'super_admin']}>
@@ -123,11 +95,11 @@ function AppRouteTree() {
   );
 }
 
-// ─── Admin Route Tree ─────────────────────────────────────────────────────────
+// ─── Admin Route Tree (Now /platform) ─────────────────────────────────────────
 function AdminRouteTree() {
   return (
     <Route
-      path="/admin"
+      path="/platform"
       element={
         <RequireAuth>
           <RequireRole allowedRoles={['super_admin']}>
@@ -154,92 +126,29 @@ function AdminRouteTree() {
 
 // ─── Main Router ──────────────────────────────────────────────────────────────
 export default function AppRoutes() {
-  const mode = getAppMode();
-
-  // ── Tenant subdomain: kauan-barbearia.raffros.com ──
-  // Slug comes from the hostname. No /:slug prefix in routes.
-  if (mode === 'tenant') {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<PublicStore />} />
-          <Route path="/portal" element={<ClientPortal />} />
-          <Route path="/sucesso" element={<SuccessBooking />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-
-  // ── app.raffros.com — Painel do dono ──
-  if (mode === 'app') {
-    return (
-      <BrowserRouter>
-        <Routes>
-          {AuthRoutes()}
-          {AppRouteTree()}
-          <Route path="/" element={<Navigate to="/app" replace />} />
-          <Route path="*" element={<Navigate to="/app" replace />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-
-  // ── admin.raffros.com — Painel super admin ──
-  if (mode === 'admin') {
-    return (
-      <BrowserRouter>
-        <Routes>
-          {AuthRoutes()}
-          {AdminRouteTree()}
-          <Route path="/" element={<Navigate to="/admin" replace />} />
-          <Route path="*" element={<Navigate to="/admin" replace />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-
-  // ── raffros.com — Landing page ──
-  if (mode === 'landing') {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/playlist" element={<PlaylistPage />} />
-          {AuthRoutes()}
-          {AppRouteTree()}
-          {AdminRouteTree()}
-          
-          <Route path="/:slug/portal" element={<ClientPortal />} />
-          <Route path="/:slug/sucesso" element={<SuccessBooking />} />
-          <Route path="/:slug" element={<PublicStore />} />
-          
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-
-  // ── localhost / ngrok — Dev mode: all routes (original path-based behaviour) ──
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/playlist" element={<PlaylistPage />} />
         {AuthRoutes()}
+        
+        {/* Tenant Admin (Barbearia/Salão) */}
+        {AppRouteTree()}
 
-        {/* Public tenant routes (path-based in dev) */}
+        {/* Super Admin (Dono da Plataforma) */}
+        {AdminRouteTree()}
+
+        {/* Public tenant routes (path-based) */}
         <Route path="/:slug/portal" element={<ClientPortal />} />
         <Route path="/:slug/sucesso" element={<SuccessBooking />} />
         <Route path="/:slug" element={<PublicStore />} />
 
-        {AdminRouteTree()}
-        {AppRouteTree()}
-
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
 }
+
 
 

@@ -31,7 +31,7 @@ export default function LimitGate({ limitKey, currentUsage, children, fallbackMe
           {fallbackMessage || `Seu plano atual permite apenas ${max} item(ns) deste tipo.`}
         </p>
         <Link 
-          to="/app/assinatura" 
+          to="/admin/assinatura" 
           className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors uppercase tracking-wider"
         >
           Fazer Upgrade
@@ -42,3 +42,4 @@ export default function LimitGate({ limitKey, currentUsage, children, fallbackMe
 
   return <>{children}</>;
 }
+

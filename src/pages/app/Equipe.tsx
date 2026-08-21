@@ -152,7 +152,7 @@ export default function Equipe() {
   };
 
   const handleViewAgenda = (p: Professional) => {
-    navigate(`/app/agenda?professional=${p.id}`);
+    navigate(`/admin/agenda?professional=${p.id}`);
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -389,7 +389,7 @@ export default function Equipe() {
                 : 'A criação e gestão avançada de profissionais é exclusiva de planos superiores. Faça o upgrade para desbloquear o controle total da sua equipe.'}
             </p>
             <button
-              onClick={() => { setShowUpgradeModal(null); navigate('/app/assinatura'); }}
+              onClick={() => { setShowUpgradeModal(null); navigate('/admin/assinatura'); }}
               className="w-full py-3 rounded-xl mb-3 font-bold transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.4)]"
               style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
             >
@@ -404,3 +404,4 @@ export default function Equipe() {
     </div>
   );
 }
+

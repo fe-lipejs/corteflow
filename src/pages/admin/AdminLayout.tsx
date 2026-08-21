@@ -21,32 +21,32 @@ const navGroups = [
   {
     label: 'Visão Geral',
     items: [
-      { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-      { to: '/admin/analytics', icon: Activity, label: 'Visitas & Cliques' },
+      { to: '/platform', icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/platform/analytics', icon: Activity, label: 'Visitas & Cliques' },
     ],
   },
   {
     label: 'Plataforma',
     items: [
-      { to: '/admin/tenants', icon: Building2, label: 'Empresas' },
-      { to: '/admin/plans', icon: CreditCard, label: 'Planos' },
-      { to: '/admin/financeiro', icon: DollarSign, label: 'Financeiro' },
+      { to: '/platform/tenants', icon: Building2, label: 'Empresas' },
+      { to: '/platform/plans', icon: CreditCard, label: 'Planos' },
+      { to: '/platform/financeiro', icon: DollarSign, label: 'Financeiro' },
     ],
   },
   {
     label: 'Gestão',
     items: [
-      { to: '/admin/usuarios', icon: Users, label: 'Usuários' },
-      { to: '/admin/auditoria', icon: ScrollText, label: 'Auditoria' },
-      { to: '/admin/notificacoes', icon: Bell, label: 'Notificações', badgeKey: 'notifications' },
-      { to: '/admin/suporte', icon: LifeBuoy, label: 'Suporte', badgeKey: 'support' },
+      { to: '/platform/usuarios', icon: Users, label: 'Usuários' },
+      { to: '/platform/auditoria', icon: ScrollText, label: 'Auditoria' },
+      { to: '/platform/notificacoes', icon: Bell, label: 'Notificações', badgeKey: 'notifications' },
+      { to: '/platform/suporte', icon: LifeBuoy, label: 'Suporte', badgeKey: 'support' },
     ],
   },
   {
     label: 'Sistema',
     items: [
-      { to: '/admin/seguranca', icon: Shield, label: 'Segurança' },
-      { to: '/admin/settings', icon: Settings, label: 'Configurações' },
+      { to: '/platform/seguranca', icon: Shield, label: 'Segurança' },
+      { to: '/platform/settings', icon: Settings, label: 'Configurações' },
     ],
   },
 ];
@@ -55,7 +55,7 @@ function NavItemComponent({ item, onClick, externalBadge }: { item: NavItem; onC
   return (
     <NavLink
       to={item.to}
-      end={item.to === '/admin'}
+      end={item.to === '/platform'}
       onClick={onClick}
       className={({ isActive }) =>
         `group flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
@@ -283,3 +283,4 @@ function BreadcrumbFromPath() {
     </nav>
   );
 }
+
