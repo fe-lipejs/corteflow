@@ -249,7 +249,8 @@ export default function Agenda() {
           <div className="flex overflow-x-auto md:grid md:grid-cols-5 gap-3 pb-2 md:pb-0 scrollbar-none snap-x">
             {[
               { label: 'Hoje', value: stats.total, icon: Calendar, color: theme.accent },
-              { label: 'Confirmados', value: stats.pending, icon: Clock, color: '#f59e0b' },
+              { label: 'Confirmados (Hoje)', value: stats.pending, icon: Clock, color: '#f59e0b' },
+              { label: 'Esquecidos / Pendentes', value: 'Ver Lista', icon: Bell, color: '#ef4444', isButton: true },
               { label: 'Finalizados', value: stats.completed, icon: CheckCircle, color: theme.success },
               { label: 'Em atendimento', value: stats.inProgress, icon: Users, color: '#a78bfa' }, // Keeping standard status colors
               { label: 'Próximo', value: nextBooking ? format(new Date(nextBooking.scheduled_at), 'HH:mm') : '—', icon: Clock, color: theme.info },
@@ -257,16 +258,18 @@ export default function Agenda() {
             ].map((s, i) => (
               <div 
                 key={i} 
-                onClick={() => s.label === 'Confirmados' ? setShowPendingModal(true) : undefined}
-                className={`flex flex-col flex-shrink-0 min-w-[140px] p-3 rounded-2xl border glass-card ${s.label === 'Confirmados' ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`} 
-                style={{ borderColor: theme.border }}
+                onClick={() => s.isButton ? setShowPendingModal(true) : undefined}
+                className={`flex flex-col flex-shrink-0 min-w-[140px] p-3 rounded-2xl border glass-card ${s.isButton ? 'cursor-pointer hover:scale-105 transition-transform bg-red-500/5 border-red-500/20' : ''}`} 
+                style={{ borderColor: s.isButton ? undefined : theme.border }}
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-xl" style={{ backgroundColor: `${s.color}15`, color: s.color }}>
                     <s.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-xl font-bold font-display" style={{ color: theme.textPrimary }}>{isLoading ? '—' : s.value}</p>
+                    <p className={`text-xl font-bold font-display ${s.isButton ? 'text-sm mt-1' : ''}`} style={{ color: s.isButton ? s.color : theme.textPrimary }}>
+                      {isLoading && !s.isButton ? '—' : s.value}
+                    </p>
                     <p className="text-[10px] font-bold uppercase tracking-wider opacity-80" style={{ color: theme.textSecondary }}>{s.label}</p>
                   </div>
                 </div>
