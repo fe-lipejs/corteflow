@@ -23,8 +23,8 @@ export function useTenantSlug(): string | null {
     hostname.endsWith('.netlify.app');
 
   const isMainDomain = 
-    hostname === 'raffros.com.br' || 
-    hostname === 'www.raffros.com.br' || 
+    hostname === 'raffros.com' || 
+    hostname === 'www.raffros.com' || 
     hostname === 'raffros.com' || 
     hostname === 'www.raffros.com';
 
@@ -47,3 +47,5 @@ export function useTenantSlug(): string | null {
   // Fallback: if somehow on app/admin subdomain, no tenant slug
   return null;
 }
+
+

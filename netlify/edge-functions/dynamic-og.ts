@@ -70,7 +70,7 @@ export default async (request: Request, context: Context) => {
       defaultDesc = `Garanta seu atendimento. Faça seu agendamento agora. 📱`;
     }
 
-    const logoUrl = tenant.tenant_settings?.logo_url || 'https://raffros.com.br/images/RaffrosLogo.png';
+    const logoUrl = tenant.tenant_settings?.logo_url || 'https://raffros.com/images/RaffrosLogo.png';
     const title = `${tenant.name} | Agende agora.`;
     const desc = tenant.tenant_settings?.short_description || defaultDesc;
 
@@ -98,3 +98,5 @@ export default async (request: Request, context: Context) => {
     return context.next();
   }
 };
+
+

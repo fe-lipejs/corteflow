@@ -40,3 +40,5 @@ export function getTenantSuccessUrl(slug: string): string {
   if (isDevEnvironment()) return `${window.location.origin}/${slug}/sucesso`;
   return `${window.location.protocol}//${slug}.${PRODUCTION_DOMAIN}/sucesso`;
 }
+
+

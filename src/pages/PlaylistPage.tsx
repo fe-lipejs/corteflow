@@ -118,7 +118,7 @@ export default function PlaylistPage() {
                             </em>
                         </h1>
                         <p className="text-[16px] leading-relaxed text-[#A1A1A6] max-w-[48ch] mx-auto mt-6">
-                            Dá o play, respira e leva uma palavra com você. Aqui é o nosso cafezinho
+                            Dá o play, respire e leva uma palavra com você. Aqui é o nosso cafezinho
                             digital — música pra trabalhar leve e versos pra edificar o dia.
                         </p>
                     </motion.div>
