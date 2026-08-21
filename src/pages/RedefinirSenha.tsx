@@ -21,28 +21,35 @@ export default function RedefinirSenha() {
       if (event === 'PASSWORD_RECOVERY') {
         setIsRecoverySession(true);
         setError(null);
-      } else if (session) {
-        setIsRecoverySession(true);
       }
     });
 
-    // 2. Verifica se já existe uma sessão de recuperação ativa
-    supabase.auth.getSession().then(({ data: { session }, error: sessionErr }) => {
-      if (sessionErr || !session) {
-        // Se após 1.5s não detectar sessão, assume link inválido/expirado
-        const timer = setTimeout(() => {
-          setIsRecoverySession(prev => (prev === null ? false : prev));
-        }, 1500);
-        return () => clearTimeout(timer);
-      } else {
-        setIsRecoverySession(true);
-      }
-    });
+    // 2. Verifica se a URL contém o hash de recuperação antes que o Supabase o limpe
+    const hasRecoveryHash = window.location.hash.includes('type=recovery');
+
+    if (hasRecoveryHash) {
+      setIsRecoverySession(true);
+    } else {
+      // 3. Se não tem hash, vamos checar a sessão atual
+      supabase.auth.getSession().then(({ data: { session }, error: sessionErr }) => {
+        if (session) {
+          // Usuário já está logado normalmente, barra o acesso e manda pro painel
+          navigate('/app');
+        } else {
+          // Não está logado e não tem hash: link inválido ou acesso direto
+          // Espera um tempinho pro Supabase Auth terminar de carregar os eventos antes de mostrar erro
+          const timer = setTimeout(() => {
+            setIsRecoverySession(prev => (prev === null ? false : prev));
+          }, 1500);
+          return () => clearTimeout(timer);
+        }
+      });
+    }
 
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
