@@ -65,7 +65,15 @@ export default function AdminTenants() {
         `)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Tenant[];
+      
+      const normalizedData = (data ?? []).map((tenant: any) => ({
+        ...tenant,
+        subscriptions: Array.isArray(tenant.subscriptions) 
+          ? tenant.subscriptions 
+          : (tenant.subscriptions ? [tenant.subscriptions] : [])
+      }));
+      
+      return normalizedData as unknown as Tenant[];
     }
   });
 

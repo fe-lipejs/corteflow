@@ -66,7 +66,8 @@ export default function AdminUsuarios() {
           .in('id', tenantIds as string[]);
 
         (tenants ?? []).forEach((t: any) => {
-          const latestSub = t.subscriptions?.[0];
+          const subsArray = Array.isArray(t.subscriptions) ? t.subscriptions : (t.subscriptions ? [t.subscriptions] : []);
+          const latestSub = subsArray[0];
           tenantMap[t.id] = {
             name: t.name,
             slug: t.slug,
