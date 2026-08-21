@@ -415,17 +415,17 @@ export default function Dashboard() {
             <p className="text-xs mb-5" style={{ color: theme.textMuted }}>faturamento previsto</p>
 
             {/* Mini bar chart */}
-            <div className="flex items-end gap-1.5 h-16">
+            <div className="flex items-end gap-1.5 h-16 mt-auto">
               {futureWeekHeights.every(h => h === 0) ? (
                 <div className="w-full flex items-center justify-center text-xs opacity-70" style={{ color: theme.textSecondary }}>
                   Nenhuma previsão disponível
                 </div>
               ) : (
                 futureWeekHeights.map((h, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <div key={i} className="flex-1 flex flex-col items-center justify-end gap-1 h-full">
                     <div
                       className="chart-bar w-full"
-                      style={{ height: `${h}%`, opacity: i === futureWeekHeights.indexOf(Math.max(...futureWeekHeights)) ? 1 : 0.45, background: theme.accent, borderRadius: '2px' }}
+                      style={{ height: `${Math.max(4, h)}%`, opacity: i === futureWeekHeights.indexOf(Math.max(...futureWeekHeights)) ? 1 : 0.45, background: theme.accent, borderRadius: '2px' }}
                     />
                     <span className="text-[9px]" style={{ color: theme.textMuted }}>{weekDays[i]}</span>
                   </div>

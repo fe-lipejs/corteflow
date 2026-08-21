@@ -29,7 +29,7 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
   const { theme } = useTheme();
   
   const days = useMemo(() =>
-    Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(weekStart, { weekStartsOn: 0 }), i)),
+    Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
     [weekStart]
   );
 

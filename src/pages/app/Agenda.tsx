@@ -39,7 +39,7 @@ export default function Agenda() {
   const { play: playChime } = useBarberSound();
 
   const [view, setView] = useState<View>('week');
-  const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 0 }));
+  const [weekStart, setWeekStart] = useState<Date>(() => startOfDay(new Date()));
   const [currentDay, setCurrentDay] = useState<Date>(new Date());
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -104,8 +104,9 @@ export default function Agenda() {
     const revenue = todayBookings.reduce((s, b) => s + (b.amount_total || 0), 0);
     const completed = todayBookings.filter(b => b.status === 'completed').length;
     const inProgress = todayBookings.filter(b => b.status === 'in_progress' || b.status === 'arrived').length;
+    const pending = todayBookings.filter(b => b.status === 'pending' || b.status === 'confirmed').length;
     const total = todayBookings.length;
-    return { total, completed, inProgress, revenue };
+    return { total, completed, inProgress, pending, revenue };
   }, [todayBookings]);
 
   // Next booking
@@ -179,7 +180,7 @@ export default function Agenda() {
               <button onClick={() => view === 'week' ? setWeekStart(w => subWeeks(w, 1)) : setCurrentDay(d => addDays(d, -1))} className="p-2 rounded-lg transition-all hover:bg-[var(--theme-bg-hover)]" style={{ color: theme.textSecondary }}>
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <button onClick={() => { setWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 })); setCurrentDay(new Date()); }} className="px-3 py-1.5 text-xs font-bold transition-colors" style={{ color: theme.textPrimary }}>
+              <button onClick={() => { setWeekStart(startOfDay(new Date())); setCurrentDay(new Date()); }} className="px-3 py-1.5 text-xs font-bold transition-colors" style={{ color: theme.textPrimary }}>
                 Hoje
               </button>
               <span className="px-2 text-sm font-semibold min-w-[130px] text-center" style={{ color: theme.textPrimary }}>
@@ -246,6 +247,7 @@ export default function Agenda() {
           <div className="flex overflow-x-auto md:grid md:grid-cols-5 gap-3 pb-2 md:pb-0 scrollbar-none snap-x">
             {[
               { label: 'Hoje', value: stats.total, icon: Calendar, color: theme.accent },
+              { label: 'Confirmados', value: stats.pending, icon: Clock, color: '#f59e0b' },
               { label: 'Finalizados', value: stats.completed, icon: CheckCircle, color: theme.success },
               { label: 'Em atendimento', value: stats.inProgress, icon: Users, color: '#a78bfa' }, // Keeping standard status colors
               { label: 'Próximo', value: nextBooking ? format(new Date(nextBooking.scheduled_at), 'HH:mm') : '—', icon: Clock, color: theme.info },
