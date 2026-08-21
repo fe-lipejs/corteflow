@@ -178,9 +178,9 @@ export function usePermissionEngine(): PermissionEngine {
       limitsObj = { profissionais: 0 };
     } else if (contract) {
       featuresObj = { ...(sub.plans?.features || {}), ...(contract.features || {}) };
-      const contractPerms = Array.isArray(contract.permissions) && contract.permissions.length > 0 ? contract.permissions : null;
-      const planPerms = Array.isArray(sub.plans?.permissions) && sub.plans.permissions.length > 0 ? sub.plans.permissions : [];
-      permissionsArr = contractPerms || planPerms;
+      const contractPerms = Array.isArray(contract.permissions) ? contract.permissions : [];
+      const planPerms = Array.isArray(sub.plans?.permissions) ? sub.plans.permissions : [];
+      permissionsArr = Array.from(new Set([...planPerms, ...contractPerms]));
       limitsObj = { ...(sub.plans?.limits || {}), ...(contract.limits || {}) };
       
       // Retrocompatibility parsing for limits if max_professionals is used

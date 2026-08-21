@@ -290,9 +290,9 @@ export default function AdminAnalytics() {
         </div>
 
         {/* Controls */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 w-full lg:w-auto mt-4 md:mt-0">
           {/* Custom Date Filters */}
-          <div className="flex flex-wrap items-center gap-2 mr-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <input
               type="date"
               value={customStartDate}
@@ -300,7 +300,7 @@ export default function AdminAnalytics() {
                 setCustomStartDate(e.target.value);
                 setTimeRange('custom');
               }}
-              className="bg-[#121216] border border-white/[0.08] rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#F59E0B]"
+              className="flex-1 min-w-0 bg-[#121216] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#F59E0B]"
             />
             <span className="text-[#71717A] text-xs">até</span>
             <input
@@ -310,11 +310,11 @@ export default function AdminAnalytics() {
                 setCustomEndDate(e.target.value);
                 setTimeRange('custom');
               }}
-              className="bg-[#121216] border border-white/[0.08] rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#F59E0B]"
+              className="flex-1 min-w-0 bg-[#121216] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#F59E0B]"
             />
           </div>
 
-          <div className="bg-[#121216] border border-white/[0.08] p-1 rounded-xl flex items-center hidden sm:flex">
+          <div className="hidden sm:flex bg-[#121216] border border-white/[0.08] p-1 rounded-xl items-center">
             {(['today', '24h', '7d', '30d', 'all'] as const).map((r) => (
               <button
                 key={r}
@@ -330,23 +330,25 @@ export default function AdminAnalytics() {
             ))}
           </div>
 
-          <button
-            onClick={exportToCSV}
-            className="p-2.5 px-3.5 rounded-xl bg-[#121216] border border-white/[0.08] text-[#A1A1A6] hover:text-white hover:border-amber-500/40 transition-all flex items-center gap-1.5 text-xs font-medium"
-            title="Exportar dados para CSV"
-          >
-            <Download className="w-4 h-4 text-[#F59E0B]" />
-            <span className="hidden sm:inline">Exportar CSV</span>
-          </button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button
+              onClick={exportToCSV}
+              className="flex-1 sm:flex-none justify-center p-2.5 px-3.5 rounded-xl bg-[#121216] border border-white/[0.08] text-[#A1A1A6] hover:text-white hover:border-amber-500/40 transition-all flex items-center gap-1.5 text-xs font-medium"
+              title="Exportar dados para CSV"
+            >
+              <Download className="w-4 h-4 text-[#F59E0B]" />
+              <span className="sm:inline">CSV</span>
+            </button>
 
-          <button
-            onClick={fetchAnalytics}
-            disabled={loading}
-            className="p-2.5 rounded-xl bg-[#121216] border border-white/[0.08] text-[#A1A1A6] hover:text-white hover:border-white/20 transition-all flex items-center gap-1 text-xs font-medium"
-            title="Atualizar dados"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#F59E0B]' : ''}`} />
-          </button>
+            <button
+              onClick={fetchAnalytics}
+              disabled={loading}
+              className="flex-none p-2.5 rounded-xl bg-[#121216] border border-white/[0.08] text-[#A1A1A6] hover:text-white hover:border-white/20 transition-all flex items-center justify-center gap-1 text-xs font-medium"
+              title="Atualizar dados"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#F59E0B]' : ''}`} />
+            </button>
+          </div>
         </div>
       </div>
 

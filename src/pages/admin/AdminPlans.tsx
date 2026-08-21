@@ -326,14 +326,22 @@ function PlanModal({
           {/* Aba: Permissões de Tela */}
           {activeTab === 'permissoes' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
                 <p className="text-xs text-[#888]">Controle de acesso restrito (RBAC). O que não estiver marcado, será bloqueado pelo PermissionGate.</p>
-                <button 
-                  onClick={() => setForm(f => ({...f, permissions: sysPermissions.map(p => p.key)}))}
-                  className="text-xs text-emerald-400 hover:text-emerald-300"
-                >
-                  Selecionar Tudo
-                </button>
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => setForm(f => ({...f, permissions: sysPermissions.map(p => p.key)}))}
+                    className="text-xs text-emerald-400 hover:text-emerald-300 font-medium"
+                  >
+                    Selecionar Tudo
+                  </button>
+                  <button 
+                    onClick={() => setForm(f => ({...f, permissions: []}))}
+                    className="text-xs text-red-400 hover:text-red-300 font-medium"
+                  >
+                    Desmarcar Tudo
+                  </button>
+                </div>
               </div>
 
               {sysPermissions.length === 0 ? (
