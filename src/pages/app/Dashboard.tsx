@@ -165,7 +165,7 @@ export default function Dashboard() {
       dark: true,
     },
     {
-      label: 'Faturamento previsto',
+      label: 'Faturamento do dia',
       value: formatCurrency(totalRevenueToday),
       sub: 'hoje',
       icon: DollarSign,
