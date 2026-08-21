@@ -1886,13 +1886,22 @@ export default function PublicStore() {
 
                               {/* Service Details */}
                               <div className="p-4 sm:p-5 flex flex-col flex-1">
-                                <div className="flex items-start justify-between gap-2 mb-1.5">
+                                <div className="flex items-start justify-between gap-2 mb-1">
                                   <h3
                                     className="text-base font-bold leading-snug"
                                     style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
                                   >
                                     {s.name}
                                   </h3>
+                                </div>
+                                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-medium" style={{ color: theme.textSecondary }}>
+                                  {s.service_mode === 'home' ? (
+                                    <><Home className="w-3 h-3" /> <span>À Domicílio</span></>
+                                  ) : s.service_mode === 'both' ? (
+                                    <><MapPin className="w-3 h-3" /> <span>Local ou Domicílio</span></>
+                                  ) : (
+                                    <><Store className="w-3 h-3" /> <span>No Local</span></>
+                                  )}
                                 </div>
 
                                 {s.description && (

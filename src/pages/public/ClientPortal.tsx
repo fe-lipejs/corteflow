@@ -116,40 +116,24 @@ export default function ClientPortal() {
       btnTextColor = lum > 145 ? "#0F172A" : "#FFFFFF";
     }
 
-    const isDarkBg = base.bg === "#050505" || base.bg === "#000000";
-    let dynamicTextSecondary = base.textSecondary;
-    let dynamicTextMuted = base.textMuted;
-    let dynamicBorder = base.border;
+    const bgHex = (palette.background || base.bg).replace("#", "");
+    const bgR = parseInt(bgHex.substring(0, 2), 16) || 14;
+    const bgG = parseInt(bgHex.substring(2, 4), 16) || 16;
+    const bgB = parseInt(bgHex.substring(4, 6), 16) || 19;
+    const bgLum = 0.2126 * bgR + 0.7152 * bgG + 0.0722 * bgB;
+    const isDarkBg = bgLum < 135;
 
-    if (palette.background) {
-      const hex = palette.background.replace("#", "");
-      const r = parseInt(hex.substring(0, 2), 16) || 255;
-      const g = parseInt(hex.substring(2, 4), 16) || 255;
-      const b = parseInt(hex.substring(4, 6), 16) || 255;
-      const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-      const customIsDark = lum < 100;
-      if (customIsDark) {
-        dynamicTextSecondary = "rgba(255,255,255,0.7)";
-        dynamicTextMuted = "rgba(255,255,255,0.5)";
-        dynamicBorder = "rgba(255,255,255,0.1)";
-      } else {
-        dynamicTextSecondary = "rgba(0,0,0,0.6)";
-        dynamicTextMuted = "rgba(0,0,0,0.4)";
-        dynamicBorder = "rgba(0,0,0,0.1)";
-      }
-    }
+    const dynamicBorder = isDarkBg ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0";
+    const dynamicTextSecondary = isDarkBg ? "#A1A1AA" : "#475569";
+    const dynamicTextMuted = isDarkBg ? "#71717A" : "#64748B";
 
-    let fontSans = base.fontSans;
-    let fontSerif = base.fontSerif;
-    if (palette.font_family) {
-      if (palette.font_family === "Inter") { fontSans = "'Inter', sans-serif"; fontSerif = "'Inter', sans-serif"; }
-      if (palette.font_family === "Playfair") { fontSans = "'Inter', sans-serif"; fontSerif = "'Playfair Display', serif"; }
-      if (palette.font_family === "Outfit") { fontSans = "'Outfit', sans-serif"; fontSerif = "'Outfit', sans-serif"; }
-    }
+    const fontSerif =
+      palette.fontStyle === "sans"
+        ? "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif"
+        : "'Playfair Display', Georgia, serif";
 
     return {
       ...base,
-      fontSans,
       fontSerif,
       ...(palette.background && { bg: palette.background }),
       ...(palette.text && { textPrimary: palette.text }),
@@ -366,16 +350,33 @@ export default function ClientPortal() {
 
   const storeHeader = (
     <div className="relative w-full border-b mb-8" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
-      {/* Banner Seco Minimalista */}
-      <div className="relative h-52 sm:h-56 w-full overflow-hidden">
+    <div className="relative mb-6">
+      {/* Cover Banner */}
+      <div className="relative w-full h-44 sm:h-52 shrink-0 overflow-hidden bg-neutral-900">
         {settings?.banner_url ? (
           <>
-            <img src={settings.banner_url} alt="Banner" className="h-full w-full object-cover" />
-            {/* Gradiente suave e estendido, começando do topo e descendo até a cor sólida do fundo */}
-            <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${theme.cardBg} 0%, transparent 85%)` }} />
+            <img
+              src={settings.banner_url}
+              alt="Capa"
+              className="w-full h-full object-cover scale-105"
+              style={{ filter: isDark ? "brightness(0.9)" : "brightness(0.98)" }}
+            />
+            {isDark && (
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: `linear-gradient(to top, ${sidebarBackground} 0%, rgba(0,0,0,0.7) 30%, transparent 70%)`,
+                }}
+              />
+            )}
           </>
         ) : (
-          <div className="h-full w-full" style={{ background: `linear-gradient(135deg, ${theme.accent}30 0%, ${theme.sidebarBg} 100%)` }} />
+          <div
+            className="w-full h-full relative"
+            style={{
+              background: `linear-gradient(135deg, ${theme.accent}25 0%, ${sidebarBackground} 100%)`,
+            }}
+          />
         )}
 
         {/* Back Button */}
@@ -388,17 +389,34 @@ export default function ClientPortal() {
         </button>
       </div>
 
-      {/* Perfil & Informações — Centralizado */}
-      <div className="max-w-4xl mx-auto px-6 pb-6 -mt-16 sm:-mt-20 relative z-10 flex flex-col items-center text-center gap-2">
-        
-        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shrink-0 shadow-sm mb-2" style={{ background: theme.cardBg, border: `4px solid ${theme.sidebarBg}` }}>
-          {settings?.logo_url ? (
-            <img src={settings.logo_url} alt="Logo" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center font-black text-3xl" style={{ background: theme.accent, color: theme.btnPrimaryText }}>
-              {tenant.name?.charAt(0)}
-            </div>
-          )}
+      {/* Profile & Info Content */}
+      <div className="px-6 sm:px-8 relative z-10 flex flex-col items-center text-center -mt-16 sm:-mt-20 pb-8">
+        {/* Avatar */}
+        <div className="relative mb-3.5">
+          <div
+            className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl overflow-hidden relative"
+            style={{
+              border: `4px solid ${sidebarBackground}`,
+              background: isDark ? "#1A1A1A" : "#F1F5F9",
+              boxShadow: isDark
+                ? `0 12px 36px -4px rgba(0,0,0,0.7), 0 0 0 1px ${cardBorderColor}`
+                : `0 12px 30px -4px rgba(0,0,0,0.1), 0 0 0 1px ${cardBorderColor}`,
+            }}
+          >
+            {settings?.logo_url ? (
+              <img src={settings.logo_url} alt={storeName} className="w-full h-full object-cover" />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center font-black text-3xl sm:text-4xl"
+                style={{
+                  background: `linear-gradient(135deg, ${theme.accent}, ${theme.accent}dd)`,
+                  color: theme.btnPrimaryText,
+                }}
+              >
+                {storeName.charAt(0)}
+              </div>
+            )}
+          </div>
         </div>
 
         <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border mb-1" style={{ borderColor: `${theme.accent}40`, backgroundColor: `${theme.accent}15`, color: theme.accent }}>
@@ -406,7 +424,7 @@ export default function ClientPortal() {
         </span>
         
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: contrast.titleColor, fontFamily: theme.fontSerif }}>
-          {tenant.name}
+          {storeName}
         </h1>
         
         <p className="text-[13px] sm:text-[14px] mt-0.5 font-medium max-w-[320px] leading-relaxed" style={{ color: contrast.descriptionColor }}>
@@ -428,7 +446,7 @@ export default function ClientPortal() {
 
   if (!isLogged) {
     return (
-      <div className="min-h-screen pb-16 transition-colors" style={{ backgroundColor: theme.bg, fontFamily: theme.fontSans }}>
+      <div className="min-h-screen pb-16 transition-colors" style={{ backgroundColor: theme.bg, fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" }}>
         {storeHeader}
 
         <div className="max-w-md mx-auto px-4">
@@ -481,7 +499,7 @@ export default function ClientPortal() {
   const pastBookings = bookings.filter((b) => new Date(b.scheduled_at) < new Date() || ['canceled', 'no_show', 'completed'].includes(b.status));
 
   return (
-    <div className="min-h-screen pb-20 transition-colors" style={{ backgroundColor: theme.bg, fontFamily: theme.fontSans }}>
+    <div className="min-h-screen pb-20 transition-colors" style={{ backgroundColor: theme.bg, fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" }}>
       {storeHeader}
 
       <div className="max-w-3xl mx-auto px-4 space-y-8">

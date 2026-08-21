@@ -1,4 +1,4 @@
-import { Clock, Tag, Edit, Trash2, ImageOff } from 'lucide-react';
+import { Clock, Tag, Edit, Trash2, ImageOff, Home, Store, MapPin } from 'lucide-react';
 import type { Service } from '../../../hooks/useServices';
 import { useTheme } from '../../../contexts/ThemeContext';
 
@@ -66,6 +66,22 @@ export default function ServiceCard({ service: s, onEdit, onDelete }: Props) {
           {s.buffer_minutes > 0 && (
             <div className="flex items-center gap-1 opacity-70">
               <span className="text-[10px]">+{s.buffer_minutes} min buffer</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 text-xs mb-3 font-medium">
+          {s.service_mode === 'home' ? (
+            <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+              <Home className="w-3 h-3" /> À Domicílio
+            </div>
+          ) : s.service_mode === 'both' ? (
+            <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md">
+              <MapPin className="w-3 h-3" /> Híbrido
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400 bg-zinc-500/10 px-2 py-0.5 rounded-md">
+              <Store className="w-3 h-3" /> No Local
             </div>
           )}
         </div>

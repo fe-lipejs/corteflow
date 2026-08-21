@@ -54,8 +54,8 @@ const StripeIcon = ({ className, style }: { className?: string; style?: React.CS
 
 const TABS = [
   { id: 'aparencia', label: 'Aparência & Marca', icon: Palette },
-  { id: 'local', label: 'Localização', icon: MapPin },
   { id: 'politicas', label: 'Políticas de Agendamento', icon: Shield },
+  { id: 'local', label: 'Localização', icon: MapPin },
   { id: 'stripe', label: 'Recebimentos & Pagamentos', icon: CreditCard },
   { id: 'contato', label: 'Contato', icon: Phone },
   { id: 'horarios', label: 'Horários', icon: Clock },
@@ -874,7 +874,7 @@ export default function Configuracoes() {
       const cleanName = tenantName.trim() || fantasyName.trim() || tenant.name;
 
       // Update tenant name, slug, language and business_type
-      const { error: tenantErr } = await (supabase as any)
+      const { data: updatedTenant, error: tenantErr } = await (supabase as any)
         .from('tenants')
         .update({
           name: cleanName,
@@ -882,7 +882,14 @@ export default function Configuracoes() {
           language,
           business_type: businessType,
         })
-        .eq('id', tenant.id);
+        .eq('id', tenant.id)
+        .select();
+
+      if (!tenantErr && (!updatedTenant || updatedTenant.length === 0)) {
+        alert('Erro ao salvar as configurações: Permissão negada pelo banco de dados (RLS). Certifique-se de que a migração 0052_fix_tenants_rls.sql foi aplicada!');
+        setLoading(false);
+        return;
+      }
 
       if (tenantErr) {
         if (tenantErr.code === '23505') {
@@ -891,6 +898,9 @@ export default function Configuracoes() {
           return;
         }
         console.error('Erro ao atualizar dados do salão:', tenantErr);
+        alert('Erro ao atualizar dados do salão: ' + tenantErr.message);
+        setLoading(false);
+        return;
       }
 
       i18n.changeLanguage(language);
