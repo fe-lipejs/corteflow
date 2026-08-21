@@ -455,6 +455,7 @@ export default function Configuracoes() {
   useEffect(() => {
     if (tenant) {
       setLanguage(tenant.language || 'pt');
+      setBusinessType(tenant.business_type as any || 'barbearia');
       loadSettings();
 
       const params = new URLSearchParams(window.location.search);
