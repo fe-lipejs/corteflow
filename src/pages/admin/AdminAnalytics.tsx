@@ -644,43 +644,43 @@ export default function AdminAnalytics() {
       <div className="bg-[#121216] border border-white/[0.08] rounded-2xl shadow-xl overflow-hidden">
         
         {/* Table Filters & Header */}
-        <div className="p-5 md:p-6 border-b border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="font-display font-semibold text-lg text-white flex items-center gap-2">
-              <Clock className="w-4 h-4 text-[#F59E0B]" />
-              Feed de Acessos &amp; Ações em Tempo Real
+        <div className="p-4 md:p-6 border-b border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="font-display font-semibold text-lg text-white flex flex-wrap items-center gap-2">
+              <Clock className="w-4 h-4 text-[#F59E0B] flex-shrink-0" />
+              <span className="break-words">Feed de Acessos &amp; Ações em Tempo Real</span>
             </h2>
-            <p className="text-xs text-[#A1A1A6] mt-0.5">
+            <p className="text-xs text-[#A1A1A6] mt-1 break-words">
               Cada visita, clique em botão, sorteio de versículo e acesso a planos gravado no banco de dados.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full md:w-auto">
             {/* Search Input */}
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A]" />
               <input
                 type="text"
-                placeholder="Buscar ação, verso, dispositivo..."
+                placeholder="Buscar ação, verso..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-[#0A0A0C] border border-white/[0.1] rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-[#71717A] focus:outline-none focus:border-[#F59E0B] w-[220px]"
+                className="bg-[#0A0A0C] border border-white/[0.1] rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-[#71717A] focus:outline-none focus:border-[#F59E0B] w-full sm:w-[220px]"
               />
             </div>
 
             {/* Category Quick Selector */}
-            <div className="bg-[#0A0A0C] border border-white/[0.1] rounded-xl p-1 flex items-center flex-wrap gap-1">
+            <div className="bg-[#0A0A0C] border border-white/[0.1] rounded-xl p-1 flex items-center flex-wrap gap-1 w-full sm:w-auto">
               {[
                 { key: 'all', label: 'Todos' },
                 { key: 'page_view', label: 'Visitas' },
-                { key: 'conversion', label: 'Planos & Vendas' },
-                { key: 'faith', label: 'Playlist & Fé' },
-                { key: 'nav', label: 'Navegação' },
+                { key: 'conversion', label: 'Vendas' },
+                { key: 'faith', label: 'Fé' },
+                { key: 'nav', label: 'Nav' },
               ].map((t) => (
                 <button
                   key={t.key}
                   onClick={() => setSelectedCategory(t.key as any)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  className={`flex-1 sm:flex-none px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all text-center ${
                     selectedCategory === t.key
                       ? 'bg-[#F59E0B] text-black font-bold shadow'
                       : 'text-[#71717A] hover:text-white'
