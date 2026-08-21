@@ -292,7 +292,7 @@ export default function AdminAnalytics() {
         {/* Controls */}
         <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 w-full lg:w-auto mt-4 md:mt-0">
           {/* Custom Date Filters */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
             <input
               type="date"
               value={customStartDate}
@@ -300,9 +300,9 @@ export default function AdminAnalytics() {
                 setCustomStartDate(e.target.value);
                 setTimeRange('custom');
               }}
-              className="flex-1 min-w-0 bg-[#121216] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#F59E0B]"
+              className="w-full sm:w-32 min-w-0 bg-[#121216] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#F59E0B]"
             />
-            <span className="text-[#71717A] text-xs">até</span>
+            <span className="hidden sm:block text-[#71717A] text-xs">até</span>
             <input
               type="date"
               value={customEndDate}
@@ -310,7 +310,7 @@ export default function AdminAnalytics() {
                 setCustomEndDate(e.target.value);
                 setTimeRange('custom');
               }}
-              className="flex-1 min-w-0 bg-[#121216] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#F59E0B]"
+              className="w-full sm:w-32 min-w-0 bg-[#121216] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#F59E0B]"
             />
           </div>
 
