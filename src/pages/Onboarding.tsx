@@ -794,7 +794,7 @@ export default function Onboarding() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs font-semibold text-[#334155] mb-1.5">Logo (Perfil)</label>
-                          <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+                          <input ref={logoInputRef} type="file" accept="image/jpeg, image/png, image/webp" onChange={handleLogoChange} className="hidden" />
                           <div 
                             onClick={() => logoInputRef.current?.click()} 
                             className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#DE870D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white"
@@ -812,7 +812,7 @@ export default function Onboarding() {
 
                         <div>
                           <label className="block text-xs font-semibold text-[#334155] mb-1.5">Banner (Capa Superior)</label>
-                          <input ref={bannerInputRef} type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
+                          <input ref={bannerInputRef} type="file" accept="image/jpeg, image/png, image/webp" onChange={handleBannerChange} className="hidden" />
                           <div 
                             onClick={() => bannerInputRef.current?.click()} 
                             className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#DE870D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white"

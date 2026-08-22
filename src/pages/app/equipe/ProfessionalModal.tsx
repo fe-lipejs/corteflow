@@ -347,7 +347,7 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                       </div>
                     )}
                   </div>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                  <input ref={fileRef} type="file" accept="image/jpeg, image/png, image/webp" className="hidden" onChange={handlePhotoChange} />
                 </div>
                 <div className="flex-1 space-y-3">
                   <div>
