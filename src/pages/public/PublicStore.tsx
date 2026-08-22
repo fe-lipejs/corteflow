@@ -306,14 +306,11 @@ export default function PublicStore() {
   const [bookingMode, setBookingMode] = useState<'instore' | 'home'>('instore');
   const [isHomeLocationValidated, setIsHomeLocationValidated] = useState(false);
   const [homeLocationData, setHomeLocationData] = useState<LocationWizardResult | null>(null);
+  const [showModeSelectionFor, setShowModeSelectionFor] = useState<any | null>(null);
   
   const servicesList = useMemo(() => {
-    return rawServicesList.filter(s => {
-      const mode = s.service_mode || 'instore';
-      if (mode === 'both') return true;
-      return mode === bookingMode;
-    });
-  }, [rawServicesList, bookingMode]);
+    return rawServicesList;
+  }, [rawServicesList]);
 
   // Theme setup directly using preset defaults (Classic, Noir, Elegant)
   const theme = useMemo(() => {
@@ -1071,8 +1068,87 @@ export default function PublicStore() {
           fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif",
         }}
       >
-        {/* ── MAP MODAL ── */}
-        <AnimatePresence>
+        {/* MAP MODAL */}
+      <AnimatePresence>
+        {showModeSelectionFor && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowModeSelectionFor(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-sm overflow-hidden rounded-3xl shadow-2xl border"
+              style={{
+                background: cardBackground,
+                borderColor: cardBorderColor,
+              }}
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-5">
+                  <h3 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
+                    Onde será o atendimento?
+                  </h3>
+                  <button
+                    onClick={() => setShowModeSelectionFor(null)}
+                    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                  >
+                    <X className="w-5 h-5" style={{ color: theme.textSecondary }} />
+                  </button>
+                </div>
+                <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>
+                  O serviço <strong>{showModeSelectionFor.name}</strong> pode ser realizado tanto no estabelecimento quanto a domicílio.
+                </p>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => {
+                      setBookingMode('instore');
+                      setSelectedService(showModeSelectionFor);
+                      setShowModeSelectionFor(null);
+                      setStep(2);
+                    }}
+                    className="flex items-center gap-4 p-4 rounded-2xl border hover:border-transparent transition-all"
+                    style={{ borderColor: cardBorderColor, background: theme.inputBg }}
+                  >
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: `${accent}15`, color: accent }}>
+                      <Store className="w-5 h-5" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold text-sm" style={{ color: theme.textPrimary }}>No Estabelecimento</p>
+                      <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>Ir até o salão</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setBookingMode('home');
+                      setSelectedService(showModeSelectionFor);
+                      setShowModeSelectionFor(null);
+                      // Don't advance to step 2; the wizard will appear.
+                    }}
+                    className="flex items-center gap-4 p-4 rounded-2xl border hover:border-transparent transition-all"
+                    style={{ borderColor: cardBorderColor, background: theme.inputBg }}
+                  >
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: `${accent}15`, color: accent }}>
+                      <Home className="w-5 h-5" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold text-sm" style={{ color: theme.textPrimary }}>A Domicílio</p>
+                      <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>Receber no meu endereço</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
           {showMapModal && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -1702,30 +1778,7 @@ export default function PublicStore() {
                       </p>
                     </div>
 
-                    {/* Modo de Atendimento (Se o salão oferecer domicílio) */}
-                    {settings?.offers_home_service && (
-                      <div className="mb-6">
-                        <div className="flex p-1 rounded-xl w-full max-w-sm mb-4" style={{ background: theme.inputBg, border: `1px solid ${theme.borderActive}30` }}>
-                          <button
-                            onClick={() => setBookingMode('instore')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${bookingMode === 'instore' ? 'shadow-md' : 'opacity-70'
-                              }`}
-                            style={bookingMode === 'instore' ? { background: theme.accent, color: theme.btnPrimaryText } : { color: theme.textPrimary }}
-                          >
-                            <Store className="w-4 h-4" /> No Salão
-                          </button>
-                          <button
-                            onClick={() => setBookingMode('home')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${bookingMode === 'home' ? 'shadow-md' : 'opacity-70'
-                              }`}
-                            style={bookingMode === 'home' ? { background: theme.accent, color: theme.btnPrimaryText } : { color: theme.textPrimary }}
-                          >
-                            <Home className="w-4 h-4" /> A Domicílio
-                          </button>
-                        </div>
-
-                      </div>
-                    )}
+                    {/* Mode selector moved to individual service clicks */}
 
                     <AnimatePresence>
                           {bookingMode === 'home' && !isHomeLocationValidated && (
@@ -1744,9 +1797,11 @@ export default function PublicStore() {
                                 onSuccess={(result) => {
                                   setHomeLocationData(result);
                                   setIsHomeLocationValidated(true);
+                                  setStep(2);
                                 }}
                                 onCancel={() => {
                                   setBookingMode('instore');
+                                  setSelectedService(null);
                                 }}
                               />
                             </motion.div>
@@ -1795,17 +1850,18 @@ export default function PublicStore() {
                               whileHover={{ y: -3 }}
                               whileTap={{ scale: 0.98 }}
                               onClick={async () => {
-                                if (bookingMode === 'home' && !(homeLocationData?.address ?? "").trim()) {
-                                  setErrorMsg("Por favor, preencha o endereço de atendimento.");
-                                  return;
+                                const mode = s.service_mode || 'instore';
+                                if (mode === 'both') {
+                                  setShowModeSelectionFor(s);
+                                } else if (mode === 'home') {
+                                  setBookingMode('home');
+                                  setSelectedService(s);
+                                  // Don't advance to step 2 yet; the Location Wizard will render and handle the rest.
+                                } else {
+                                  setBookingMode('instore');
+                                  setSelectedService(s);
+                                  setStep(2);
                                 }
-                                if (bookingMode === 'home') {
-                                  const dist = await geocodeAndCheckDistance((homeLocationData?.address ?? ""));
-                                  if (dist === null) return; // Geocoding failed or distance exceeded
-                                }
-                                setErrorMsg("");
-                                setSelectedService(s);
-                                setStep(2);
                               }}
                               className="group relative text-left rounded-3xl overflow-hidden border transition-all duration-200 flex flex-col cursor-pointer"
                               style={{

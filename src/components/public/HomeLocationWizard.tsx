@@ -156,7 +156,7 @@ export function HomeLocationWizard({ theme, storeCoords, maxRadiusKm, feeConfig,
     
     const coords = extractLatLngFromGoogleMapsUrl(mapsUrl);
     if (!coords) {
-      setErrorMsg('Link inválido ou não contém coordenadas exatas. Certifique-se de copiar o link longo do Google Maps.');
+      setErrorMsg('Links curtos (maps.app.goo.gl) não são suportados automaticamente. Por favor, cole o link longo (que contém as coordenadas na URL) ou use a opção de "Completar endereço" manualmente.');
       setIsLoading(false);
       return;
     }
@@ -175,7 +175,12 @@ export function HomeLocationWizard({ theme, storeCoords, maxRadiusKm, feeConfig,
         
         {step === 'cep' && (
           <motion.div key="cep" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <h3 className="text-sm font-bold mb-1" style={{ color: theme.textPrimary }}>Onde será o atendimento?</h3>
+            <div className="flex items-center gap-2 mb-4">
+              <button onClick={onCancel} className="p-1.5 -ml-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                <ArrowLeft className="w-4 h-4" style={{ color: theme.textSecondary }} />
+              </button>
+              <h3 className="text-sm font-bold" style={{ color: theme.textPrimary }}>Onde será o atendimento?</h3>
+            </div>
             <p className="text-xs mb-4" style={{ color: theme.textSecondary }}>Digite o CEP do seu endereço para verificarmos se atendemos sua região.</p>
             
             <div className="relative mb-2">
