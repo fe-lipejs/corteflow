@@ -726,16 +726,16 @@ export default function AdminAnalytics() {
 
               return (
                 <div key={evt.id} className="p-4 hover:bg-white/[0.02] transition-colors flex flex-col gap-3">
-                  <div className="flex justify-between items-start">
-                    <div className="flex flex-col min-w-0">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex flex-col min-w-0 flex-1">
                       <span className="font-medium text-white text-sm">
                         {formatEventName(evt.event_name)}
                       </span>
-                      <span className="text-[#A1A1A6] text-xs font-mono truncate max-w-full" title={evt.page_path}>
+                      <span className="text-[#A1A1A6] text-xs font-mono truncate w-full" title={evt.page_path}>
                         {evt.page_path}
                       </span>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <span className="text-white font-semibold text-xs">{timeFormatted}</span>
                       {!isToday && <span className="text-[10px] text-[#71717A] block">{dateFormatted}</span>}
                     </div>
