@@ -210,7 +210,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* ── Main Content ── */}
-      <main className="flex-1 min-h-screen md:ml-60 flex flex-col">
+      <main className="flex-1 min-w-0 w-full min-h-screen md:ml-60 flex flex-col">
         {/* Top Header */}
         <header className="sticky top-0 z-30 h-14 bg-[#000]/80 backdrop-blur-xl border-b border-[#111] hidden md:flex items-center justify-between px-8">
           {/* Breadcrumb */}
@@ -224,7 +224,7 @@ export default function AdminLayout() {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 p-6 md:p-8 pt-20 md:pt-8 max-w-screen-2xl">
+        <div className="flex-1 min-w-0 w-full p-6 md:p-8 pt-20 md:pt-8 max-w-screen-2xl">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}

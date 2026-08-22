@@ -272,10 +272,10 @@ export default function AdminAnalytics() {
       {/* ── TOP HEADER ── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl md:text-3xl font-bold font-display tracking-tight text-white flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-3 min-w-0">
+            <h1 className="text-2xl md:text-3xl font-bold font-display tracking-tight text-white flex items-center gap-2.5 min-w-0 w-full">
               <Activity className="w-7 h-7 text-[#F59E0B] flex-shrink-0" />
-              <span className="break-words">Motor de Visitas, Cliques &amp; Engajamento</span>
+              <span className="break-words truncate md:whitespace-normal">Motor de Visitas, Cliques &amp; Engajamento</span>
             </h1>
             {isLive && (
               <span className="inline-flex flex-shrink-0 items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
@@ -646,9 +646,9 @@ export default function AdminAnalytics() {
         {/* Table Filters & Header */}
         <div className="p-4 md:p-6 border-b border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="font-display font-semibold text-lg text-white flex flex-wrap items-center gap-2">
+            <h2 className="font-display font-semibold text-lg text-white flex items-center gap-2 min-w-0 w-full">
               <Clock className="w-4 h-4 text-[#F59E0B] flex-shrink-0" />
-              <span className="break-words">Feed de Acessos &amp; Ações em Tempo Real</span>
+              <span className="truncate">Feed de Acessos &amp; Ações em Tempo Real</span>
             </h2>
             <p className="text-xs text-[#A1A1A6] mt-1 break-words">
               Cada visita, clique em botão, sorteio de versículo e acesso a planos gravado no banco de dados.
