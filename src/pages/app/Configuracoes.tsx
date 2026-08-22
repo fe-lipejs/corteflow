@@ -9,7 +9,6 @@ import { useImageUpload } from '../../hooks/useImageUpload';
 import { usePhoneFormat } from '../../hooks/usePhoneFormat';
 import { normalizeBrazilianPhone, formatPhoneMask } from '../../lib/phoneUtils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { generateSlug, applyTenantTheme, predefinedPalettes, ColorPalette } from '../../lib/utils';
 import { processFileIfHeic } from '../../lib/imageHelper';
 import { generateSmartPaletteFromLogo, generatePaletteFromAccent } from '../../lib/colorExtractor';
 import { useQueryClient } from '@tanstack/react-query';
