@@ -4,6 +4,79 @@ export interface GeocodingResult {
   formattedAddress: string;
 }
 
+export interface ViaCepResult {
+  cep: string;
+  logradouro: string;
+  complemento: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+  erro?: boolean;
+}
+
+/**
+ * Busca o endereço completo no ViaCEP através de um CEP
+ */
+export async function fetchViaCEP(cep: string): Promise<ViaCepResult | null> {
+  const cleanCep = cep.replace(/\D/g, '');
+  if (cleanCep.length !== 8) return null;
+
+  try {
+    const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    
+    if (data.erro) return null;
+    
+    return data as ViaCepResult;
+  } catch (error) {
+    console.error('Erro na consulta do ViaCEP:', error);
+    return null;
+  }
+}
+
+/**
+ * Extrai coordenadas (latitude e longitude) de uma URL longa do Google Maps
+ */
+export function extractLatLngFromGoogleMapsUrl(url: string): { lat: number, lng: number } | null {
+  if (!url || typeof url !== 'string') return null;
+  
+  // Tenta extrair da sintaxe padrão @lat,lng,z
+  const regexAt = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
+  const matchAt = url.match(regexAt);
+  if (matchAt && matchAt.length >= 3) {
+    return {
+      lat: parseFloat(matchAt[1]),
+      lng: parseFloat(matchAt[2])
+    };
+  }
+
+  // Tenta extrair da sintaxe query ?q=lat,lng ou ?ll=lat,lng
+  const regexQuery = /[?&](q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/;
+  const matchQuery = url.match(regexQuery);
+  if (matchQuery && matchQuery.length >= 4) {
+    return {
+      lat: parseFloat(matchQuery[2]),
+      lng: parseFloat(matchQuery[3])
+    };
+  }
+
+  // Tenta extrair do path /place/lat,lng
+  const regexPlace = /\/place\/(-?\d+\.\d+),(-?\d+\.\d+)/;
+  const matchPlace = url.match(regexPlace);
+  if (matchPlace && matchPlace.length >= 3) {
+    return {
+      lat: parseFloat(matchPlace[1]),
+      lng: parseFloat(matchPlace[2])
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Converte um endereço em coordenadas via Nominatim (OpenStreetMap)
+ */
 export async function geocodeAddress(addressQuery: string): Promise<GeocodingResult | null> {
   if (!addressQuery || !addressQuery.trim()) return null;
 
@@ -14,9 +87,12 @@ export async function geocodeAddress(addressQuery: string): Promise<GeocodingRes
     url.searchParams.append('limit', '1');
     url.searchParams.append('countrycodes', 'br');
 
+    // A API do Nominatim exige o envio de User-Agent e restringe requisições muito agressivas.
+    // Usamos um user-agent personalizado genérico para evitar bloqueio.
     const response = await fetch(url.toString(), {
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'User-Agent': 'Navalha-Booking-App/1.0'
       }
     });
 
@@ -39,22 +115,4 @@ export async function geocodeAddress(addressQuery: string): Promise<GeocodingRes
     console.error('Erro de Geocoding:', error);
     return null;
   }
-}
-
-export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; 
-  const dLat = deg2rad(lat2 - lat1);
-  const dLon = deg2rad(lon2 - lon1); 
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2)
-    ; 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-  const d = R * c; 
-  return d;
-}
-
-function deg2rad(deg: number): number {
-  return deg * (Math.PI/180);
 }

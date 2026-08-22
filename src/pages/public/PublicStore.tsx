@@ -39,6 +39,7 @@ import { useTheme, getThemeById, adjustColorBrightness } from "../../contexts/Th
 import { usePublicStore, PUBLIC_STORE_QUERY_KEY } from "../../hooks/usePublicStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { getThemeContrastEngine } from "../../lib/themeEngine";
+import { HomeLocationWizard, type LocationWizardResult } from "../../components/public/HomeLocationWizard";
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const InstagramIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
@@ -303,8 +304,9 @@ export default function PublicStore() {
   const businessHoursList: any[] = storeData?.businessHours || [];
 
   const [bookingMode, setBookingMode] = useState<'instore' | 'home'>('instore');
-  const [clientAddress, setClientAddress] = useState("");
-
+  const [isHomeLocationValidated, setIsHomeLocationValidated] = useState(false);
+  const [homeLocationData, setHomeLocationData] = useState<LocationWizardResult | null>(null);
+  
   const servicesList = useMemo(() => {
     return rawServicesList.filter(s => {
       const mode = s.service_mode || 'instore';
@@ -458,10 +460,7 @@ export default function PublicStore() {
   // Geo
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "denied" | "ok" | "ignored">("idle");
-  const [clientDistanceKm, setClientDistanceKm] = useState<number | null>(null);
-  const [clientCoords, setClientCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [isGeocoding, setIsGeocoding] = useState(false);
-  const todayWeekday = new Date().getDay();
+        const todayWeekday = new Date().getDay();
 
   const storeCoords = useMemo(
     () => ({
@@ -474,7 +473,7 @@ export default function PublicStore() {
   const geocodeAndCheckDistance = async (address: string) => {
     if (!settings?.latitude || !settings?.longitude) return 0;
     try {
-      setIsGeocoding(true);
+      
       setErrorMsg("");
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
       const data = await res.json();
@@ -491,14 +490,14 @@ export default function PublicStore() {
         return null;
       }
 
-      setClientDistanceKm(dist);
-      setClientCoords({ lat: clientLat, lng: clientLng });
+      
+      
       return dist;
     } catch (err) {
       setErrorMsg("Erro ao validar endereço. Tente novamente.");
       return null;
     } finally {
-      setIsGeocoding(false);
+      
     }
   };
 
@@ -583,29 +582,7 @@ export default function PublicStore() {
     storeInsta = storeInsta.split("instagram.com/")[1].replace("/", "");
   }
 
-  const travelFee = useMemo(() => {
-    if (bookingMode !== 'home' || clientDistanceKm === null) return 0;
-
-    if (selectedPro && selectedPro !== "any" && selectedPro.home_fee != null && selectedPro.home_fee > 0) {
-      return selectedPro.home_fee;
-    }
-
-    const feeType = settings?.home_service_fee_type || 'fixed';
-    const feeValue = settings?.home_service_fee_value || 0;
-
-    if (feeType === 'free') return 0;
-    if (feeType === 'fixed') return feeValue;
-    if (feeType === 'per_km') {
-      const baseFee = settings?.home_service_base_fee || 0;
-      const freeRadius = settings?.home_service_free_radius_km || 0;
-      let billableKm = clientDistanceKm;
-      if (freeRadius > 0) {
-        billableKm = Math.max(0, clientDistanceKm - freeRadius);
-      }
-      return baseFee + (billableKm * feeValue);
-    }
-    return 0;
-  }, [bookingMode, clientDistanceKm, selectedPro, settings]);
+  const travelFee = homeLocationData?.travelFee ?? 0;
 
   const serviceHomeExtra = bookingMode === 'home' ? (selectedService?.home_price_extra ?? 0) : 0;
   const total = (selectedService?.price ?? 0) + serviceHomeExtra + travelFee;
@@ -720,16 +697,16 @@ export default function PublicStore() {
       const salonRadius = settings?.home_service_radius_km || 10;
       list = list.filter((p: any) => {
         if (!p.offers_home_service) return false;
-        if (clientDistanceKm == null) return true;
+        if ((homeLocationData?.distanceKm ?? null) == null) return true;
         const effectiveRadius = p.max_home_distance_km && p.max_home_distance_km > 0
           ? p.max_home_distance_km
           : salonRadius;
-        return clientDistanceKm <= effectiveRadius;
+        return homeLocationData!.distanceKm! <= effectiveRadius;
       });
     }
 
     return list;
-  }, [professionalsList, selectedService, storeData?.professionalServices, bookingMode, clientDistanceKm, settings?.home_service_radius_km]);
+  }, [professionalsList, selectedService, storeData?.professionalServices, bookingMode, (homeLocationData?.distanceKm ?? null), settings?.home_service_radius_km]);
 
   const availableSlots: Slot[] = useMemo(() => {
     if (!selectedDate || !selectedService) return [];
@@ -746,7 +723,7 @@ export default function PublicStore() {
       storeData?.professionalServices || [],
       [selectedService],
       bookingMode,
-      clientDistanceKm,
+      (homeLocationData?.distanceKm ?? null),
       settings?.home_service_radius_km
     );
   }, [
@@ -758,7 +735,7 @@ export default function PublicStore() {
     businessHoursList,
     storeData,
     bookingMode,
-    clientDistanceKm,
+    (homeLocationData?.distanceKm ?? null),
     settings?.home_service_radius_km
   ]);
 
@@ -957,9 +934,9 @@ export default function PublicStore() {
             notes: customerNotes,
             access_code: accessCode,
             service_location: bookingMode,
-            client_address: bookingMode === 'home' ? clientAddress : null,
-            client_lat: bookingMode === 'home' && clientCoords ? clientCoords.lat : null,
-            client_lng: bookingMode === 'home' && clientCoords ? clientCoords.lng : null,
+            client_address: bookingMode === 'home' ? (homeLocationData?.address ?? "") : null,
+            client_lat: bookingMode === 'home' && homeLocationData ? homeLocationData?.lat : null,
+            client_lng: bookingMode === 'home' && homeLocationData ? homeLocationData?.lng : null,
             travel_fee: bookingMode === 'home' ? travelFee : 0,
           },
         ])
@@ -1747,37 +1724,37 @@ export default function PublicStore() {
                           </button>
                         </div>
 
-                        <AnimatePresence>
-                          {bookingMode === 'home' && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="overflow-hidden mb-2"
-                            >
-                              <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>
-                                Endereço de Atendimento *
-                              </label>
-                              <div className="relative">
-                                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: theme.textSecondary }} />
-                                <input
-                                  type="text"
-                                  value={clientAddress}
-                                  onChange={(e) => setClientAddress(e.target.value)}
-                                  placeholder="Rua, Número, Bairro, Cidade - Estado"
-                                  className="w-full border rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none transition-shadow"
-                                  style={{
-                                    borderColor: theme.inputFocusBorder,
-                                    background: theme.bgInput,
-                                    color: theme.textPrimary,
-                                  }}
-                                />
-                              </div>
+                      </div>
+                    )}
+
+                    <AnimatePresence>
+                          {bookingMode === 'home' && !isHomeLocationValidated && (
+                            <motion.div initial={{opacity:0, height:0}} animate={{opacity:1, height:'auto'}} exit={{opacity:0, height:0}}>
+                              <HomeLocationWizard
+                                theme={theme}
+                                storeCoords={storeCoords}
+                                maxRadiusKm={settings?.home_service_radius_km || 10}
+                                feeConfig={{
+                                  enabled: true,
+                                  feeType: settings?.home_fee_type || 'fixed',
+                                  feeAmount: settings?.home_fee_amount || 0,
+                                  feePerKm: settings?.home_fee_per_km || 0,
+                                  radiusKm: settings?.home_service_radius_km || 10
+                                }}
+                                onSuccess={(result) => {
+                                  setHomeLocationData(result);
+                                  setIsHomeLocationValidated(true);
+                                }}
+                                onCancel={() => {
+                                  setBookingMode('instore');
+                                }}
+                              />
                             </motion.div>
                           )}
                         </AnimatePresence>
-                      </div>
-                    )}
+                        
+                        {(bookingMode === 'instore' || isHomeLocationValidated) && (
+                          <>
 
                     {servicesList.length === 0 ? (
                       <div
@@ -1818,12 +1795,12 @@ export default function PublicStore() {
                               whileHover={{ y: -3 }}
                               whileTap={{ scale: 0.98 }}
                               onClick={async () => {
-                                if (bookingMode === 'home' && !clientAddress.trim()) {
+                                if (bookingMode === 'home' && !(homeLocationData?.address ?? "").trim()) {
                                   setErrorMsg("Por favor, preencha o endereço de atendimento.");
                                   return;
                                 }
                                 if (bookingMode === 'home') {
-                                  const dist = await geocodeAndCheckDistance(clientAddress);
+                                  const dist = await geocodeAndCheckDistance((homeLocationData?.address ?? ""));
                                   if (dist === null) return; // Geocoding failed or distance exceeded
                                 }
                                 setErrorMsg("");
@@ -1950,6 +1927,8 @@ export default function PublicStore() {
                         })}
                       </div>
                     )}
+                    </>
+                  )}
                   </motion.div>
                 )}
 
@@ -2255,7 +2234,7 @@ export default function PublicStore() {
                           { icon: Clock, label: "Horário", value: selectedTime || "" },
                           ...(bookingMode === 'home' ? [
                             { icon: Home, label: "Atendimento", value: "A Domicílio" },
-                            { icon: MapPin, label: "Endereço", value: clientAddress || "Não informado" }
+                            { icon: MapPin, label: "Endereço", value: (homeLocationData?.address ?? "") || "Não informado" }
                           ] : [])
                         ].map(({ icon: Icon, label, value }) => (
                           <div key={label} className="flex items-start gap-2.5">
