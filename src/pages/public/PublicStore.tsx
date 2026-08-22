@@ -1834,7 +1834,7 @@ export default function PublicStore() {
                         </p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {servicesList.map((s, i) => {
                           const hasDiscount = s.original_price && s.original_price > s.price;
                           const discountPct = hasDiscount
@@ -1872,7 +1872,7 @@ export default function PublicStore() {
                             >
                               {/* Service Photo */}
                               {s.photo_url ? (
-                                <div className="relative h-44 sm:h-48 overflow-hidden bg-neutral-900">
+                                <div className="relative h-56 sm:h-64 overflow-hidden bg-neutral-900">
                                   <img
                                     src={s.photo_url}
                                     alt={s.name}
@@ -2010,8 +2010,28 @@ export default function PublicStore() {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 sm:gap-4">
-                      {/* Anyone Option */}
+                    {availableProfessionals.length === 0 && bookingMode === 'home' ? (
+                      <div className="p-6 rounded-3xl border text-center" style={{ borderColor: theme.borderActive, background: theme.inputBg }}>
+                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: `${theme.accent}15`, color: theme.accent }}>
+                          <Store className="w-6 h-6" />
+                        </div>
+                        <h3 className="text-base font-bold mb-2" style={{ color: theme.textPrimary }}>
+                          Não há profissionais para o seu endereço
+                        </h3>
+                        <p className="text-xs sm:text-sm mb-5 max-w-md mx-auto" style={{ color: theme.textSecondary }}>
+                          Nenhum profissional está disponível para realizar este serviço na sua localização atual. Que tal realizar o atendimento no estabelecimento?
+                        </p>
+                        <button
+                          onClick={() => setBookingMode('instore')}
+                          className="px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-sm"
+                          style={{ background: theme.accent, color: theme.btnPrimaryText }}
+                        >
+                          Ir ao estabelecimento
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 sm:gap-4">
+                        {/* Anyone Option */}
                       <motion.button
                         whileHover={{ y: -3 }}
                         whileTap={{ scale: 0.98 }}
@@ -2070,17 +2090,17 @@ export default function PublicStore() {
                             <img
                               src={p.photo_url}
                               alt={p.name}
-                              className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover mb-3 shadow-md"
+                              className="h-32 sm:h-36 w-full rounded-2xl object-cover mb-3 shadow-md"
                             />
                           ) : (
                             <div
-                              className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-3 border"
+                              className="h-32 sm:h-36 w-full rounded-2xl flex items-center justify-center mb-3 border"
                               style={{
                                 borderColor: cardBorderColor,
                                 background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
                               }}
                             >
-                              <User className="w-6 h-6" style={{ color: theme.textMuted }} />
+                              <User className="w-12 h-12" style={{ color: theme.textMuted }} />
                             </div>
                           )}
                           <p
@@ -2095,6 +2115,7 @@ export default function PublicStore() {
                         </motion.button>
                       ))}
                     </div>
+                    )}
                   </motion.div>
                 )}
 

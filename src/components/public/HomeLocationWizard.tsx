@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Search, CheckCircle2, AlertTriangle, ArrowLeft, Map, Loader2 } from 'lucide-react';
+import { MapPin, Search, CheckCircle2, AlertTriangle, ArrowLeft, ChevronUp, Map, Loader2 } from 'lucide-react';
 import { fetchViaCEP, geocodeAddress, extractLatLngFromGoogleMapsUrl, type ViaCepResult } from '../../lib/geocoding';
 import { haversineKm, computeTravelFee } from '../../lib/locationEngine';
+import { supabase } from '../../integrations/supabase/client';
 
 export interface LocationWizardResult {
   address: string;
@@ -154,9 +155,24 @@ export function HomeLocationWizard({ theme, storeCoords, maxRadiusKm, feeConfig,
     setIsLoading(true);
     setErrorMsg('');
     
-    const coords = extractLatLngFromGoogleMapsUrl(mapsUrl);
+    let coords = extractLatLngFromGoogleMapsUrl(mapsUrl);
+    
+    // Fallback: If it's a short link or unknown format, try edge function
+    if (!coords && (mapsUrl.includes('goo.gl') || mapsUrl.includes('google.com/maps'))) {
+      try {
+        const { data, error } = await supabase.functions.invoke('resolve-map-link', {
+          body: { url: mapsUrl },
+        });
+        if (!error && data?.success && data.latitude && data.longitude) {
+          coords = { lat: data.latitude, lng: data.longitude };
+        }
+      } catch (err) {
+        console.error('Error resolving short map link:', err);
+      }
+    }
+
     if (!coords) {
-      setErrorMsg('Links curtos (maps.app.goo.gl) não são suportados automaticamente. Por favor, cole o link longo (que contém as coordenadas na URL) ou use a opção de "Completar endereço" manualmente.');
+      setErrorMsg('Não foi possível ler as coordenadas desse link. Por favor, cole o link longo ou use a opção de "Completar endereço" manualmente.');
       setIsLoading(false);
       return;
     }
@@ -170,16 +186,22 @@ export function HomeLocationWizard({ theme, storeCoords, maxRadiusKm, feeConfig,
   };
 
   return (
-    <div className="w-full mt-4 bg-white/5 rounded-2xl border p-4 shadow-sm" style={{ borderColor: theme.borderActive }}>
+    <div className="w-full max-w-lg mx-auto mt-4 bg-white/5 rounded-2xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.borderActive }}>
       <AnimatePresence mode="wait">
         
         {step === 'cep' && (
           <motion.div key="cep" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <div className="flex items-center gap-2 mb-4">
-              <button onClick={onCancel} className="p-1.5 -ml-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                <ArrowLeft className="w-4 h-4" style={{ color: theme.textSecondary }} />
+            <div className="flex items-center gap-3 mb-5">
+              <button 
+                onClick={onCancel} 
+                className="w-10 h-10 rounded-2xl sm:rounded-full border flex items-center justify-center shrink-0 transition-colors shadow-sm"
+                style={{ borderColor: theme.borderActive, background: theme.inputBg, color: theme.textPrimary }}
+              >
+                <ChevronUp className="w-5 h-5 -rotate-90" />
               </button>
-              <h3 className="text-sm font-bold" style={{ color: theme.textPrimary }}>Onde será o atendimento?</h3>
+              <div>
+                <h3 className="text-base font-bold" style={{ color: theme.textPrimary }}>Onde será o atendimento?</h3>
+              </div>
             </div>
             <p className="text-xs mb-4" style={{ color: theme.textSecondary }}>Digite o CEP do seu endereço para verificarmos se atendemos sua região.</p>
             
