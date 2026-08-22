@@ -23,12 +23,12 @@ const BUCKET = 'public_assets';
 
 // ─── Upload photo to Storage ──────────────────────────────────────────────────
 async function uploadPhoto(file: File, tenantId: string, professionalId: string): Promise<string> {
-  const ext = file.name.split('.').pop();
+  const ext = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
   const path = `${tenantId}/professional_${professionalId}.${ext}`;
 
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(path, file, { upsert: true, contentType: file.type });
+    .upload(path, file, { upsert: true, contentType: file.type || 'image/jpeg' });
 
   if (error) throw error;
 

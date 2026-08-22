@@ -32,9 +32,9 @@ export type ServiceInput = Omit<Service, 'id' | 'tenant_id' | 'created_at' | 'up
 const BUCKET = 'public_assets';
 
 async function uploadServicePhoto(file: File, tenantId: string, serviceId: string): Promise<string> {
-  const ext = file.name.split('.').pop();
+  const ext = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
   const path = `${tenantId}/service_${serviceId}.${ext}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true, contentType: file.type });
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true, contentType: file.type || 'image/jpeg' });
   if (error) throw error;
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return `${data.publicUrl}?t=${Date.now()}`;

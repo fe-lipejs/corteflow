@@ -1523,7 +1523,7 @@ export default function Configuracoes() {
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
                           <label className="p-2 rounded-full cursor-pointer" style={{ background: theme.accent, color: theme.textInverse }}>
                             <Upload className="w-4 h-4" />
-                            <input type="file" accept="image/jpeg, image/png, image/webp" onChange={(e) => handleFileSelect(e, 'logo')} className="hidden" />
+                            <input type="file" accept="image/*" onChange={(e) => handleFileSelect(e, 'logo')} className="hidden" />
                           </label>
                           <button onClick={removeLogo} className="p-2 rounded-full bg-red-500 text-white">
                             <Trash2 className="w-4 h-4" />
@@ -1541,7 +1541,7 @@ export default function Configuracoes() {
                           {logoUpload.isUploading ? 'Enviando...' : 'Enviar Logo'}
                         </p>
                         <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Mínimo 400×400px</p>
-                        <input type="file" accept="image/jpeg, image/png, image/webp" onChange={(e) => handleFileSelect(e, 'logo')} className="hidden" />
+                        <input type="file" accept="image/*" onChange={(e) => handleFileSelect(e, 'logo')} className="hidden" />
                       </label>
                     )}
                   </div>
@@ -1565,7 +1565,7 @@ export default function Configuracoes() {
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
                           <label className="p-2 rounded-full cursor-pointer" style={{ background: theme.accent, color: theme.textInverse }}>
                             <Upload className="w-4 h-4" />
-                            <input type="file" accept="image/jpeg, image/png, image/webp" onChange={(e) => handleFileSelect(e, 'banner')} className="hidden" />
+                            <input type="file" accept="image/*" onChange={(e) => handleFileSelect(e, 'banner')} className="hidden" />
                           </label>
                           <button onClick={removeBanner} className="p-2 rounded-full bg-red-500 text-white">
                             <Trash2 className="w-4 h-4" />
@@ -1583,7 +1583,7 @@ export default function Configuracoes() {
                           {bannerUpload.isUploading ? 'Enviando...' : 'Enviar Foto de Capa'}
                         </p>
                         <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Ideal 1600×600px</p>
-                        <input type="file" accept="image/jpeg, image/png, image/webp" onChange={(e) => handleFileSelect(e, 'banner')} className="hidden" />
+                        <input type="file" accept="image/*" onChange={(e) => handleFileSelect(e, 'banner')} className="hidden" />
                       </label>
                     )}
                   </div>

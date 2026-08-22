@@ -106,7 +106,7 @@ export default function ServiceModal({ service, professionals = [], tenantId, on
           <div onClick={() => fileRef.current?.click()} className="w-20 h-20 rounded-2xl border-2 border-dashed cursor-pointer overflow-hidden flex items-center justify-center transition-colors" style={{ borderColor: theme.border, background: theme.inputBg }}>
             {photoPreview ? <img src={photoPreview} alt="preview" className="w-full h-full object-cover" /> : <Upload className="w-6 h-6" style={{ color: theme.textSecondary }} />}
           </div>
-          <input ref={fileRef} type="file" accept="image/jpeg, image/png, image/webp" className="hidden" onChange={handlePhotoChange} />
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
           <div className="flex-1">
             <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Nome do Serviço *</label>
             <input value={name} onChange={e => setName(e.target.value)} className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" style={{ borderColor: errors.name ? theme.error : theme.border, background: theme.inputBg, color: theme.textPrimary }} placeholder="Ex: Corte Masculino" />
