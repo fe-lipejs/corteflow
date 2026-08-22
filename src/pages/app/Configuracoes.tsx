@@ -9,6 +9,8 @@ import { useImageUpload } from '../../hooks/useImageUpload';
 import { usePhoneFormat } from '../../hooks/usePhoneFormat';
 import { normalizeBrazilianPhone, formatPhoneMask } from '../../lib/phoneUtils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { generateSlug, applyTenantTheme, predefinedPalettes, ColorPalette } from '../../lib/utils';
+import { processFileIfHeic } from '../../lib/imageHelper';
 import { generateSmartPaletteFromLogo, generatePaletteFromAccent } from '../../lib/colorExtractor';
 import { useQueryClient } from '@tanstack/react-query';
 import { PUBLIC_STORE_QUERY_KEY } from '../../hooks/usePublicStore';
@@ -237,9 +239,10 @@ export default function Configuracoes() {
   const [businessType, setBusinessType] = useState<'barbearia' | 'salao' | 'esmalteria'>((tenant?.business_type as any) || 'barbearia');
 
   // Image Handlers
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'banner') => {
-    const file = e.target.files?.[0];
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'banner') => {
+    let file = e.target.files?.[0];
     if (file) {
+      file = await processFileIfHeic(file);
       const reader = new FileReader();
       reader.onload = () => {
         setCropImageSrc(reader.result as string);

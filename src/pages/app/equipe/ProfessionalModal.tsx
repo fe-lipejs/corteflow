@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
-import { Upload, User, Clock, Scissors, Check, Loader2 } from 'lucide-react';
+import { X, Upload, Plus, Trash2, Camera, CalendarClock, User, Clock, Scissors, Check, Loader2 } from 'lucide-react';
+import { processFileIfHeic } from '../../../lib/imageHelper';
 import type { Professional, ProfessionalWorkingHour, Service } from '../../../types/database';
 import type { CreateProfessionalInput, UpdateProfessionalInput } from '../../../hooks/useProfessionals';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -190,11 +191,13 @@ export default function ProfessionalModal({ professional, services, onClose, onC
     }
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    let file = e.target.files?.[0];
+    if (file) {
+      file = await processFileIfHeic(file);
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
   };
 
   const toggleSpecialty = (s: string) => {

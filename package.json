@@ -17,6 +17,7 @@
     "autoprefixer": "^10.5.4",
     "date-fns": "^4.4.0",
     "framer-motion": "^12.42.2",
+    "heic2any": "^0.0.4",
     "i18next": "^26.3.6",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.26.0",

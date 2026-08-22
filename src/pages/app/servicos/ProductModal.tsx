@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Upload, Loader2, Check } from 'lucide-react';
+import { processFileIfHeic } from '../../../lib/imageHelper';
 import type { Product, ProductInput } from '../../../hooks/useProducts';
 import { useCategories } from '../../../hooks/useCategories';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -40,11 +41,13 @@ export default function ProductModal({ product, tenantId, onClose, onSave, isLoa
   const [photoPreview, setPhotoPreview] = useState<string | null>(product?.photo_url ?? null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    let file = e.target.files?.[0];
+    if (file) {
+      file = await processFileIfHeic(file);
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
   };
 
   const validate = () => {

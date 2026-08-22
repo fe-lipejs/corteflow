@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
-import { Upload, Loader2, Check } from 'lucide-react';
+import { X, Upload, Plus, Trash2, Camera, CalendarClock, Loader2, Check } from 'lucide-react';
+import { processFileIfHeic } from '../../../lib/imageHelper';
 import { useServices, type Service, type ServiceInput } from '../../../hooks/useServices';
 import { useCategories } from '../../../hooks/useCategories';
 import type { Professional } from '../../../types/database';
@@ -50,11 +51,13 @@ export default function ServiceModal({ service, professionals = [], tenantId, on
   const [serviceMode, setServiceMode] = useState<'instore' | 'home' | 'both'>(service?.service_mode ?? 'instore');
   const [homePriceExtra, setHomePriceExtra] = useState(String(service?.home_price_extra ?? 0));
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    let file = e.target.files?.[0];
+    if (file) {
+      file = await processFileIfHeic(file);
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
   };
 
   const validate = () => {
