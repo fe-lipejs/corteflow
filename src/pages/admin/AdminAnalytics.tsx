@@ -727,11 +727,11 @@ export default function AdminAnalytics() {
               return (
                 <div key={evt.id} className="p-4 hover:bg-white/[0.02] transition-colors flex flex-col gap-3">
                   <div className="flex justify-between items-start">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col min-w-0">
                       <span className="font-medium text-white text-sm">
                         {formatEventName(evt.event_name)}
                       </span>
-                      <span className="text-[#A1A1A6] text-xs font-mono">
+                      <span className="text-[#A1A1A6] text-xs font-mono truncate max-w-full" title={evt.page_path}>
                         {evt.page_path}
                       </span>
                     </div>
@@ -857,10 +857,10 @@ export default function AdminAnalytics() {
                       </td>
 
                       {/* Page */}
-                      <td className="py-3 px-5 font-mono text-[#D4D4D8] whitespace-nowrap">
-                        <span className={`px-1.5 py-0.5 rounded text-[11px] ${evt.page_path === '/playlist' ? 'bg-amber-500/10 text-[#F59E0B]' : 'bg-white/[0.04]'}`}>
+                      <td className="py-3 px-5 font-mono text-[#D4D4D8] max-w-[200px]" title={evt.page_path}>
+                        <div className={`px-1.5 py-0.5 rounded text-[11px] truncate w-full ${evt.page_path === '/playlist' ? 'bg-amber-500/10 text-[#F59E0B]' : 'bg-white/[0.04]'}`}>
                           {evt.page_path}
-                        </span>
+                        </div>
                       </td>
 
                       {/* Device & Browser */}
