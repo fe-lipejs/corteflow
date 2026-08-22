@@ -57,11 +57,10 @@ export function Modal({ isOpen, onClose, title, subtitle, children, maxWidth = '
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className={`relative w-full ${maxWidthClass} rounded-3xl border shadow-2xl flex flex-col overflow-hidden glass-card`}
+            className={`relative w-full ${maxWidthClass} rounded-3xl border shadow-2xl flex flex-col overflow-hidden glass-card max-h-full`}
             style={{ 
               background: theme.cardBg, 
-              borderColor: theme.border,
-              maxHeight: '92vh'
+              borderColor: theme.border
             }}
           >
             {/* Header */}

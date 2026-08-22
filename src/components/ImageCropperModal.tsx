@@ -51,15 +51,15 @@ export function ImageCropperModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-[#111] border border-[#222] rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-scale-in">
-        <div className="flex items-center justify-between p-4 border-b border-[#222]">
+      <div className="bg-[#111] border border-[#222] rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-scale-in max-h-full flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-[#222] shrink-0">
           <h3 className="text-white font-bold text-lg">{title}</h3>
           <button onClick={onClose} className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="relative w-full h-[60vh] bg-black/50">
+        <div className="relative w-full h-[60vh] sm:h-[500px] bg-black/50 shrink">
           <Cropper
             image={imageSrc}
             crop={crop}
@@ -73,7 +73,7 @@ export function ImageCropperModal({
           />
         </div>
 
-        <div className="p-5 space-y-5 bg-[#111]">
+        <div className="p-5 space-y-5 bg-[#111] shrink-0">
           <div className="flex items-center gap-4">
             <ZoomOut className="w-5 h-5 text-gray-400 shrink-0" />
             <input

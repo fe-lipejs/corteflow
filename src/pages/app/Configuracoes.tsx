@@ -3239,7 +3239,7 @@ export default function Configuracoes() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-4xl h-[92vh] sm:h-auto sm:max-h-[90vh] rounded-3xl border shadow-2xl flex flex-col overflow-hidden overscroll-contain"
+              className="relative w-full max-w-4xl h-full sm:h-auto max-h-full sm:max-h-[90vh] rounded-3xl border shadow-2xl flex flex-col overflow-hidden overscroll-contain"
               style={{
                 background: theme.cardBg,
                 borderColor: theme.cardBorder,
