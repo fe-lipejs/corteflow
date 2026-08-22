@@ -86,7 +86,7 @@ BEGIN
 
     -- 1. Verifica Raio Efetivo
     v_effective_radius := CASE 
-                            WHEN v_pro_max_distance > 0 THEN v_pro_max_distance 
+                            WHEN v_pro_max_distance > 0 THEN LEAST(v_pro_max_distance, v_salon_radius)
                             ELSE v_salon_radius 
                           END;
                           

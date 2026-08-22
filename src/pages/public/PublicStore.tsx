@@ -699,7 +699,7 @@ export default function PublicStore() {
         if (!p.offers_home_service) return false;
         if ((homeLocationData?.distanceKm ?? null) == null) return true;
         const effectiveRadius = p.max_home_distance_km && p.max_home_distance_km > 0
-          ? p.max_home_distance_km
+          ? Math.min(p.max_home_distance_km, salonRadius)
           : salonRadius;
         return homeLocationData!.distanceKm! <= effectiveRadius;
       });

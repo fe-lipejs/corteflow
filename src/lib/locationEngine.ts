@@ -148,7 +148,7 @@ export function filterHomeServiceProfessionals(
     // 3. Raio efetivo: usa o do profissional se > 0, senão usa o do salão
     const effectiveRadius =
       pro.max_home_distance_km && pro.max_home_distance_km > 0
-        ? pro.max_home_distance_km
+        ? Math.min(pro.max_home_distance_km, salonRadiusKm)
         : salonRadiusKm;
 
     // 0 = sem limite de raio
