@@ -7,7 +7,7 @@ import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, CheckCircle2, Upload, Image, Scissors, MapPin, AtSign, Phone as PhoneIcon, FileText, Sparkles, Star, Mail, Globe } from 'lucide-react';
+import { ChevronRight, ChevronLeft, CheckCircle2, Upload, Image, Scissors, MapPin, AtSign, Phone as PhoneIcon, FileText, Sparkles, Star, Mail, Globe, Loader2 } from 'lucide-react';
 import { normalizeBrazilianPhone, formatPhoneMask } from '../lib/phoneUtils';
 
 const onboardingSchema = z.object({
@@ -55,8 +55,12 @@ export default function Onboarding() {
   const [error, setError] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isProcessingLogo, setIsProcessingLogo] = useState(false);
+  const [logoSize, setLogoSize] = useState<string | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [isProcessingBanner, setIsProcessingBanner] = useState(false);
+  const [bannerSize, setBannerSize] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();

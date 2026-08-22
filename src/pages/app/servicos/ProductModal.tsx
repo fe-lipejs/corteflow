@@ -105,8 +105,8 @@ export default function ProductModal({ product, tenantId, onClose, onSave, isLoa
           <div onClick={() => !isProcessingPhoto && fileRef.current?.click()} className="relative w-20 h-20 rounded-2xl border-2 border-dashed cursor-pointer overflow-hidden flex items-center justify-center transition-colors" style={{ borderColor: theme.border, background: theme.inputBg }}>
             {isProcessingPhoto ? (
               <div className="flex flex-col items-center text-center">
-                <Loader2 className="w-5 h-5 animate-spin mb-1" style={{ color: theme.primary }} />
-                <span className="text-[8px] font-bold" style={{ color: theme.primary }}>LENDO...</span>
+                <Loader2 className="w-5 h-5 animate-spin mb-1" style={{ color: theme.accent }} />
+                <span className="text-[8px] font-bold" style={{ color: theme.accent }}>LENDO...</span>
               </div>
             ) : photoPreview ? (
               <img src={photoPreview} alt="preview" className="w-full h-full object-cover" />

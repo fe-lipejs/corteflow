@@ -376,8 +376,8 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                   >
                     {isProcessingPhoto ? (
                       <div className="text-center flex flex-col items-center">
-                        <Loader2 className="w-6 h-6 animate-spin mb-1" style={{ color: theme.primary }} />
-                        <span className="text-[9px] font-bold" style={{ color: theme.primary }}>LENDO...</span>
+                        <Loader2 className="w-6 h-6 animate-spin mb-1" style={{ color: theme.accent }} />
+                        <span className="text-[9px] font-bold" style={{ color: theme.accent }}>LENDO...</span>
                       </div>
                     ) : photoPreview ? (
                       <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
@@ -827,6 +827,7 @@ export default function ProfessionalModal({ professional, services, onClose, onC
               )}
             </div>
           )}
+        </div>
       </div>
     </Modal>
   );
