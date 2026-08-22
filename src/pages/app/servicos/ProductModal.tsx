@@ -39,14 +39,26 @@ export default function ProductModal({ product, tenantId, onClose, onSave, isLoa
   const [displayOrder, setDisplayOrder] = useState(String(product?.display_order ?? 0));
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(product?.photo_url ?? null);
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
+  const [photoSize, setPhotoSize] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const formatSize = (bytes: number) => {
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  };
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     let file = e.target.files?.[0];
     if (file) {
-      file = await processFileIfHeic(file);
-      setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
+      setIsProcessingPhoto(true);
+      try {
+        file = await processFileIfHeic(file);
+        setPhotoFile(file);
+        setPhotoPreview(URL.createObjectURL(file));
+        setPhotoSize(formatSize(file.size));
+      } finally {
+        setIsProcessingPhoto(false);
+      }
     }
   };
 
@@ -90,8 +102,22 @@ export default function ProductModal({ product, tenantId, onClose, onSave, isLoa
       <div className="space-y-5">
         {/* Photo */}
         <div className="flex items-center gap-4">
-          <div onClick={() => fileRef.current?.click()} className="w-20 h-20 rounded-2xl border-2 border-dashed cursor-pointer overflow-hidden flex items-center justify-center transition-colors" style={{ borderColor: theme.border, background: theme.inputBg }}>
-            {photoPreview ? <img src={photoPreview} alt="preview" className="w-full h-full object-cover" /> : <Upload className="w-6 h-6" style={{ color: theme.textSecondary }} />}
+          <div onClick={() => !isProcessingPhoto && fileRef.current?.click()} className="relative w-20 h-20 rounded-2xl border-2 border-dashed cursor-pointer overflow-hidden flex items-center justify-center transition-colors" style={{ borderColor: theme.border, background: theme.inputBg }}>
+            {isProcessingPhoto ? (
+              <div className="flex flex-col items-center text-center">
+                <Loader2 className="w-5 h-5 animate-spin mb-1" style={{ color: theme.primary }} />
+                <span className="text-[8px] font-bold" style={{ color: theme.primary }}>LENDO...</span>
+              </div>
+            ) : photoPreview ? (
+              <img src={photoPreview} alt="preview" className="w-full h-full object-cover" />
+            ) : (
+              <Upload className="w-6 h-6" style={{ color: theme.textSecondary }} />
+            )}
+            {photoSize && !isProcessingPhoto && (
+              <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[8px] px-1 py-0.5 rounded font-medium backdrop-blur-sm">
+                {photoSize}
+              </div>
+            )}
           </div>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
           <div className="flex-1">

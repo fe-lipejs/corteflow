@@ -799,15 +799,25 @@ export default function Onboarding() {
                           <label className="block text-xs font-semibold text-[#334155] mb-1.5">Logo (Perfil)</label>
                           <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                           <div 
-                            onClick={() => logoInputRef.current?.click()} 
-                            className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#DE870D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white"
+                            onClick={() => !isProcessingLogo && logoInputRef.current?.click()} 
+                            className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#DE870D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative"
                           >
-                            {logoPreview ? (
+                            {isProcessingLogo ? (
+                              <div className="flex flex-col items-center gap-2 text-[#DE870D]">
+                                <Loader2 className="w-6 h-6 animate-spin" />
+                                <span className="text-[10px] font-bold">PROCESSANDO...</span>
+                              </div>
+                            ) : logoPreview ? (
                               <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-2" />
                             ) : (
                               <div className="flex flex-col items-center gap-1 text-[#94A3B8]">
                                 <Upload className="w-5 h-5" />
                                 <span className="text-xs font-medium">Enviar Logo</span>
+                              </div>
+                            )}
+                            {logoSize && !isProcessingLogo && (
+                              <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded font-medium backdrop-blur-sm">
+                                {logoSize}
                               </div>
                             )}
                           </div>
@@ -817,15 +827,25 @@ export default function Onboarding() {
                           <label className="block text-xs font-semibold text-[#334155] mb-1.5">Banner (Capa Superior)</label>
                           <input ref={bannerInputRef} type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
                           <div 
-                            onClick={() => bannerInputRef.current?.click()} 
-                            className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#DE870D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white"
+                            onClick={() => !isProcessingBanner && bannerInputRef.current?.click()} 
+                            className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#DE870D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative"
                           >
-                            {bannerPreview ? (
+                            {isProcessingBanner ? (
+                              <div className="flex flex-col items-center gap-2 text-[#DE870D]">
+                                <Loader2 className="w-6 h-6 animate-spin" />
+                                <span className="text-[10px] font-bold">PROCESSANDO...</span>
+                              </div>
+                            ) : bannerPreview ? (
                               <img src={bannerPreview} alt="Banner" className="w-full h-full object-cover" />
                             ) : (
                               <div className="flex flex-col items-center gap-1 text-[#94A3B8]">
                                 <Image className="w-5 h-5" />
                                 <span className="text-xs font-medium">Enviar Capa</span>
+                              </div>
+                            )}
+                            {bannerSize && !isProcessingBanner && (
+                              <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded font-medium backdrop-blur-sm">
+                                {bannerSize}
                               </div>
                             )}
                           </div>

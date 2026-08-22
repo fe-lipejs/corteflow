@@ -71,6 +71,8 @@ export default function ProfessionalModal({ professional, services, onClose, onC
   const fileRef = useRef<HTMLInputElement>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(professional?.photo_url ?? null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
+  const [photoSize, setPhotoSize] = useState<string | null>(null);
 
   // Form fields
   const [name, setName] = useState(professional?.name ?? '');
@@ -191,12 +193,22 @@ export default function ProfessionalModal({ professional, services, onClose, onC
     }
   };
 
+  const formatSize = (bytes: number) => {
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  };
+
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     let file = e.target.files?.[0];
     if (file) {
-      file = await processFileIfHeic(file);
-      setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
+      setIsProcessingPhoto(true);
+      try {
+        file = await processFileIfHeic(file);
+        setPhotoFile(file);
+        setPhotoPreview(URL.createObjectURL(file));
+        setPhotoSize(formatSize(file.size));
+      } finally {
+        setIsProcessingPhoto(false);
+      }
     }
   };
 
@@ -337,16 +349,26 @@ export default function ProfessionalModal({ professional, services, onClose, onC
               <div className="flex items-center gap-5">
                 <div className="relative shrink-0">
                   <div
-                    onClick={() => fileRef.current?.click()}
-                    className="w-24 h-24 rounded-2xl border-2 border-dashed cursor-pointer overflow-hidden flex items-center justify-center transition-colors"
+                    onClick={() => !isProcessingPhoto && fileRef.current?.click()}
+                    className="w-24 h-24 rounded-2xl border-2 border-dashed cursor-pointer overflow-hidden flex items-center justify-center transition-colors relative"
                     style={{ borderColor: theme.border, background: theme.inputBg }}
                   >
-                    {photoPreview ? (
+                    {isProcessingPhoto ? (
+                      <div className="text-center flex flex-col items-center">
+                        <Loader2 className="w-6 h-6 animate-spin mb-1" style={{ color: theme.primary }} />
+                        <span className="text-[9px] font-bold" style={{ color: theme.primary }}>LENDO...</span>
+                      </div>
+                    ) : photoPreview ? (
                       <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
                       <div className="text-center">
                         <Upload className="w-6 h-6 mx-auto mb-1" style={{ color: theme.textSecondary }} />
                         <span className="text-[10px]" style={{ color: theme.textSecondary }}>Foto</span>
+                      </div>
+                    )}
+                    {photoSize && !isProcessingPhoto && (
+                      <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1 py-0.5 rounded font-medium backdrop-blur-sm">
+                        {photoSize}
                       </div>
                     )}
                   </div>

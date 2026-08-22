@@ -231,24 +231,42 @@ export default function Configuracoes() {
   const [cropImageSrc, setCropImageSrc] = useState('');
   const [cropType, setCropType] = useState<'logo' | 'banner'>('logo');
 
-  // Extracted palette & atmosphere states
   const [extractedColors, setExtractedColors] = useState<string[]>([]);
   const [bgMode, setBgMode] = useState<'dark' | 'light'>('dark');
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isProcessingLogo, setIsProcessingLogo] = useState(false);
+  const [logoSize, setLogoSize] = useState<string | null>(null);
+  const [isProcessingBanner, setIsProcessingBanner] = useState(false);
+  const [bannerSize, setBannerSize] = useState<string | null>(null);
   const [businessType, setBusinessType] = useState<'barbearia' | 'salao' | 'esmalteria'>((tenant?.business_type as any) || 'barbearia');
 
-  // Image Handlers
+  const formatSize = (bytes: number) => {
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'banner') => {
     let file = e.target.files?.[0];
     if (file) {
-      file = await processFileIfHeic(file);
-      const reader = new FileReader();
-      reader.onload = () => {
-        setCropImageSrc(reader.result as string);
-        setCropType(type);
-        setCropModalOpen(true);
-      };
-      reader.readAsDataURL(file);
+      if (type === 'logo') setIsProcessingLogo(true);
+      else setIsProcessingBanner(true);
+      
+      try {
+        file = await processFileIfHeic(file);
+        
+        if (type === 'logo') setLogoSize(formatSize(file.size));
+        else setBannerSize(formatSize(file.size));
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          setCropImageSrc(reader.result as string);
+          setCropType(type);
+          setCropModalOpen(true);
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        if (type === 'logo') setIsProcessingLogo(false);
+        else setIsProcessingBanner(false);
+      }
     }
     e.target.value = '';
   };
@@ -1519,7 +1537,12 @@ export default function Configuracoes() {
                       background: theme.inputBg,
                     }}
                   >
-                    {logoUrl || logoUpload.preview ? (
+                    {isProcessingLogo ? (
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <Loader2 className="w-7 h-7 animate-spin mb-2" style={{ color: theme.accent }} />
+                        <span className="text-[10px] font-bold uppercase" style={{ color: theme.accent }}>Lendo...</span>
+                      </div>
+                    ) : logoUrl || logoUpload.preview ? (
                       <>
                         <img src={logoUrl || logoUpload.preview || ''} alt="Logo" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
@@ -1531,6 +1554,11 @@ export default function Configuracoes() {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
+                        {logoSize && !isProcessingLogo && (
+                          <div className="absolute bottom-1 right-1/2 translate-x-1/2 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full font-medium backdrop-blur-sm pointer-events-none whitespace-nowrap">
+                            {logoSize}
+                          </div>
+                        )}
                       </>
                     ) : (
                       <label className="text-center p-4 cursor-pointer w-full h-full flex flex-col items-center justify-center">
@@ -1561,7 +1589,12 @@ export default function Configuracoes() {
                       background: theme.inputBg,
                     }}
                   >
-                    {bannerUrl || bannerUpload.preview ? (
+                    {isProcessingBanner ? (
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <Loader2 className="w-7 h-7 animate-spin mb-2" style={{ color: theme.accent }} />
+                        <span className="text-[10px] font-bold uppercase" style={{ color: theme.accent }}>Lendo...</span>
+                      </div>
+                    ) : bannerUrl || bannerUpload.preview ? (
                       <>
                         <img src={bannerUrl || bannerUpload.preview || ''} alt="Banner" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
@@ -1573,6 +1606,11 @@ export default function Configuracoes() {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
+                        {bannerSize && !isProcessingBanner && (
+                          <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-md font-medium backdrop-blur-sm pointer-events-none">
+                            {bannerSize}
+                          </div>
+                        )}
                       </>
                     ) : (
                       <label className="text-center p-4 cursor-pointer w-full h-full flex flex-col items-center justify-center">
