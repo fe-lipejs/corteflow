@@ -161,7 +161,7 @@ export default function BookingModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg rounded-3xl border shadow-2xl flex flex-col" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)', maxHeight: '92vh' }}>
+      <div className="relative w-full max-w-lg rounded-3xl border shadow-2xl flex flex-col" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)', maxHeight: '85vh' }}>
 
         {/* Header */}
         <div className="p-6 pb-4 shrink-0 border-b" style={{ borderColor: 'var(--theme-border)' }}>
