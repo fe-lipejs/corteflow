@@ -313,6 +313,26 @@ export default function ProfessionalModal({ professional, services, onClose, onC
     }
   };
 
+  const footerContent = (
+    <div className="flex w-full gap-3">
+      <button onClick={onClose} className="flex-1 py-3 px-2 rounded-xl font-semibold text-sm transition-all text-center" style={{ background: theme.inputBg, color: theme.textPrimary }}>
+        Cancelar
+      </button>
+      <button
+        onClick={handleSubmit}
+        disabled={isLoading}
+        className="flex-1 py-3 px-2 rounded-xl font-bold text-sm transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.4)] disabled:opacity-50 flex items-center justify-center gap-2 text-center"
+        style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
+      >
+        {isLoading ? (
+          <><Loader2 className="w-4 h-4 animate-spin" /> <span className="hidden sm:inline">Salvando...</span></>
+        ) : (
+          isEditing ? 'Salvar Alterações' : 'Criar Profissional'
+        )}
+      </button>
+    </div>
+  );
+
   return (
     <Modal
       isOpen={true}
@@ -320,27 +340,28 @@ export default function ProfessionalModal({ professional, services, onClose, onC
       title={isEditing ? 'Editar Profissional' : 'Novo Profissional'}
       subtitle={isEditing ? `Editando ${professional?.name}` : 'Preencha os dados abaixo'}
       maxWidth="2xl"
+      footer={footerContent}
     >
-      <div className="flex flex-col h-full space-y-5">
+      <div className="flex flex-col space-y-5">
         {/* Tabs */}
-        <div className="flex gap-1 p-1 rounded-xl shrink-0" style={{ background: theme.inputBg }}>
+        <div className="flex gap-1 p-1 rounded-xl shrink-0 overflow-x-auto no-scrollbar scroll-smooth" style={{ background: theme.inputBg }}>
           {tabs.map(t => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex-1 shrink-0 whitespace-nowrap min-w-[110px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all ${
                 tab === t.id ? 'shadow-lg' : ''
               }`}
               style={tab === t.id ? { background: theme.accentGradient, color: theme.btnPrimaryText } : { color: theme.textSecondary }}
             >
-              <t.icon className="w-4 h-4" />
+              <t.icon className="w-4 h-4 shrink-0" />
               {t.label}
             </button>
           ))}
         </div>
 
-        {/* Scrollable Body */}
-        <div className="overflow-y-auto flex-1 space-y-5 py-2 pr-1">
+        {/* Body */}
+        <div className="space-y-5">
 
           {/* ── TAB: INFO ── */}
           {tab === 'info' && (
@@ -806,26 +827,6 @@ export default function ProfessionalModal({ professional, services, onClose, onC
               )}
             </div>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex gap-3 pt-4 shrink-0 border-t mt-auto" style={{ borderColor: theme.border }}>
-          <button onClick={onClose} className="flex-1 py-3 rounded-xl border font-semibold text-sm transition-all hover:bg-[var(--theme-bg-hover)]" style={{ borderColor: theme.border, color: theme.textPrimary }}>
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="flex-1 py-3 rounded-xl font-bold text-sm transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.4)] disabled:opacity-50 flex items-center justify-center gap-2"
-            style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
-          >
-            {isLoading ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
-            ) : (
-              isEditing ? 'Salvar Alterações' : 'Criar Profissional'
-            )}
-          </button>
-        </div>
       </div>
     </Modal>
   );

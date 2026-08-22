@@ -107,6 +107,15 @@ export default function ServiceModal({ service, professionals = [], tenantId, on
 
   const totalTime = (Number(duration) || 0) + (Number(buffer) || 0);
 
+  const footerContent = (
+    <div className="flex w-full gap-3">
+      <button onClick={onClose} className="flex-1 py-3 px-2 rounded-xl border font-semibold text-sm transition-all hover:bg-[var(--theme-bg-hover)] text-center" style={{ borderColor: theme.border, color: theme.textPrimary }}>Cancelar</button>
+      <button onClick={handleSave} disabled={isLoading} className="flex-1 py-3 px-2 rounded-xl font-bold text-sm transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.4)] disabled:opacity-50 flex items-center justify-center gap-2 text-center" style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}>
+        {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> <span className="hidden sm:inline">Salvando...</span></> : <><Check className="w-4 h-4 shrink-0" /> {isEdit ? 'Salvar' : 'Criar Serviço'}</>}
+      </button>
+    </div>
+  );
+
   return (
     <Modal
       isOpen={true}
@@ -114,6 +123,7 @@ export default function ServiceModal({ service, professionals = [], tenantId, on
       title={isEdit ? 'Editar Serviço' : 'Novo Serviço'}
       subtitle="Preencha os detalhes do serviço"
       maxWidth="xl"
+      footer={footerContent}
     >
       <div className="space-y-5">
         {/* Photo */}
@@ -270,15 +280,7 @@ export default function ServiceModal({ service, professionals = [], tenantId, on
           </button>
         </div>
 
-        {/* Footer */}
-        <div className="flex gap-3 pt-4 border-t mt-4" style={{ borderColor: theme.border }}>
-          <button onClick={onClose} className="flex-1 py-3 rounded-xl border font-semibold text-sm transition-all hover:bg-[var(--theme-bg-hover)]" style={{ borderColor: theme.border, color: theme.textPrimary }}>Cancelar</button>
-          <button onClick={handleSave} disabled={isLoading} className="flex-1 py-3 rounded-xl font-bold text-sm transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.4)] disabled:opacity-50 flex items-center justify-center gap-2" style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}>
-            {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</> : <><Check className="w-4 h-4" /> {isEdit ? 'Salvar' : 'Criar Serviço'}</>}
-          </button>
-        </div>
       </div>
     </Modal>
   );
 }
-

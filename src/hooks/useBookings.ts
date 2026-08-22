@@ -34,6 +34,13 @@ export interface Booking {
   pro_color: string;
   duration_minutes: number;
   buffer_minutes: number;
+  // Hybrid Location (Migration 0046)
+  service_location?: 'instore' | 'home';
+  client_address?: string | null;
+  client_lat?: number | null;
+  client_lng?: number | null;
+  travel_fee?: number;
+
   created_at: string;
   updated_at: string;
   // Joined
@@ -63,6 +70,13 @@ export interface CreateBookingInput {
   buffer_minutes: number;
   notes?: string;
   pro_color?: string;
+  
+  // Hybrid Location (Migration 0046)
+  service_location?: 'instore' | 'home';
+  client_address?: string | null;
+  client_lat?: number | null;
+  client_lng?: number | null;
+  travel_fee?: number;
 }
 
 // ─── Status config ────────────────────────────────────────────────────────────

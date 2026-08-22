@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
-import { X, User, Scissors, Clock, CreditCard, MessageSquare, Phone, Mail, Loader2, CalendarClock, ChevronDown } from 'lucide-react';
+import { X, User, Scissors, Clock, CreditCard, MessageSquare, Phone, Mail, Loader2, CalendarClock, ChevronDown, MapPin } from 'lucide-react';
 import { BOOKING_STATUS_CONFIG, type Booking, type BookingStatus } from '../../../hooks/useBookings';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../integrations/supabase/client';
@@ -176,8 +176,16 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                 photo: null,
                 color: null,
               },
-            ].map(item => (
-              <div key={item.label} className="flex items-start gap-4 p-4 rounded-2xl border" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
+              ...(booking.service_location === 'home' ? [{
+                icon: MapPin,
+                label: 'Endereço (Domicílio)',
+                value: booking.client_address ?? 'Não informado',
+                sub: booking.travel_fee ? `Taxa de deslocamento: ${fmt.format(booking.travel_fee)}` : 'Sem taxa de deslocamento',
+                photo: null,
+                color: '#facc15',
+              }] : []),
+            ].map((item, idx) => (
+              <div key={idx} className="flex items-start gap-4 p-4 rounded-2xl border" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
                 {/* Fix #4: Show professional photo if available, else colored icon */}
                 {item.photo ? (
                   <img

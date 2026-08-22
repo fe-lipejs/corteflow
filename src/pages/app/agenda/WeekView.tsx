@@ -325,6 +325,11 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
 
                             {/* Service Title */}
                             <p className="text-[11px] font-bold truncate flex items-center gap-1 leading-tight" style={{ color: proAccent }}>
+                              {b.service_location === 'home' ? (
+                                <span title="A domicílio">🏠</span>
+                              ) : (
+                                <span title="No Salão">📍</span>
+                              )}
                               <Scissors className="w-3 h-3 shrink-0 opacity-85" />
                               <span className="truncate">{b.service?.name || 'Serviço'}</span>
                             </p>

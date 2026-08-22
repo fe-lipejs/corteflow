@@ -11,6 +11,7 @@ import { normalizeBrazilianPhone, formatPhoneMask } from '../../lib/phoneUtils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { processFileIfHeic } from '../../lib/imageHelper';
 import { generateSmartPaletteFromLogo, generatePaletteFromAccent } from '../../lib/colorExtractor';
+import { geocodeAddress } from '../../lib/geocoding';
 import { useQueryClient } from '@tanstack/react-query';
 import { PUBLIC_STORE_QUERY_KEY } from '../../hooks/usePublicStore';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
@@ -641,6 +642,23 @@ export default function Configuracoes() {
         if (data.localidade) setCity(data.localidade);
         if (data.uf) setState(data.uf);
         setCountry('Brasil');
+
+        // Tenta obter as coordenadas (Ancoragem do ponto zero da Barbearia)
+        const query = `${data.logradouro || ''}, ${data.bairro || ''}, ${data.localidade || ''}, ${data.uf || ''}, Brasil`.replace(/^[,\s]+|[,\s]+$/g, '').replace(/,\s*,/g, ',');
+        const geoResult = await geocodeAddress(query);
+        if (geoResult) {
+          setLatitude(geoResult.latitude);
+          setLongitude(geoResult.longitude);
+          setMapLinkStatus('resolved'); // Marca como resolvido no visual
+        } else {
+          // Fallback se não encontrar o endereço completo, tenta só pelo CEP
+          const geoResultFallback = await geocodeAddress(`${digits}, Brasil`);
+          if (geoResultFallback) {
+            setLatitude(geoResultFallback.latitude);
+            setLongitude(geoResultFallback.longitude);
+            setMapLinkStatus('resolved');
+          }
+        }
       }
     } catch (err) {
       console.error('ViaCEP error:', err);
@@ -3233,13 +3251,13 @@ export default function Configuracoes() {
       {/* ═══════════════════════════ STUDIO DE IDENTIDADE VISUAL (POP-UP MODAL) ════════════════════════════════ */}
       <AnimatePresence>
         {isCustomizerOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/80 backdrop-blur-md overflow-hidden touch-none">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 md:p-6 pb-6 pt-16 bg-black/80 backdrop-blur-md overflow-hidden touch-none">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-4xl h-full sm:h-auto max-h-[85vh] sm:max-h-[90vh] rounded-3xl border shadow-2xl flex flex-col overflow-hidden overscroll-contain"
+              className="relative w-full max-w-4xl h-full sm:h-auto max-h-[85dvh] sm:max-h-[90vh] rounded-3xl border shadow-2xl flex flex-col overflow-hidden overscroll-contain mt-auto sm:mt-0"
               style={{
                 background: theme.cardBg,
                 borderColor: theme.cardBorder,

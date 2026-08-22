@@ -459,6 +459,7 @@ export default function PublicStore() {
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "denied" | "ok" | "ignored">("idle");
   const [clientDistanceKm, setClientDistanceKm] = useState<number | null>(null);
+  const [clientCoords, setClientCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const todayWeekday = new Date().getDay();
 
@@ -491,6 +492,7 @@ export default function PublicStore() {
       }
 
       setClientDistanceKm(dist);
+      setClientCoords({ lat: clientLat, lng: clientLng });
       return dist;
     } catch (err) {
       setErrorMsg("Erro ao validar endereço. Tente novamente.");
@@ -956,6 +958,8 @@ export default function PublicStore() {
             access_code: accessCode,
             service_location: bookingMode,
             client_address: bookingMode === 'home' ? clientAddress : null,
+            client_lat: bookingMode === 'home' && clientCoords ? clientCoords.lat : null,
+            client_lng: bookingMode === 'home' && clientCoords ? clientCoords.lng : null,
             travel_fee: bookingMode === 'home' ? travelFee : 0,
           },
         ])

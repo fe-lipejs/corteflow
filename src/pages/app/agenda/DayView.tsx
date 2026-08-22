@@ -210,6 +210,11 @@ export default function DayView({ day, bookings, businessHours, onBookingClick, 
                       </div>
 
                       <p className="text-xs font-semibold mt-0.5 flex items-center gap-1.5" style={{ color: proAccent }}>
+                        {b.service_location === 'home' ? (
+                          <span title="A domicílio">🏠</span>
+                        ) : (
+                          <span title="No Salão">📍</span>
+                        )}
                         <Scissors className="w-3.5 h-3.5 shrink-0 opacity-75" />
                         {b.service?.name || 'Serviço'}
                       </p>
