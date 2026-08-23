@@ -50,14 +50,7 @@ export default function ClientPortal() {
     queryKey: ['customer-bookings', customerId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          services (id, name, price, duration_minutes),
-          professionals (id, name, photo_url)
-        `)
-        .eq('customer_id', customerId)
-        .order('scheduled_at', { ascending: false });
+        .rpc('get_customer_bookings_secure', { p_customer_id: customerId });
       if (error) throw error;
       return data as any[];
     },
@@ -188,15 +181,11 @@ export default function ClientPortal() {
       // FIX #5: bookings save phone as raw digits only (cleanPhone = customerPhone.replace(/\D/g, ''))
       // So we must search with digits-only too — NOT with the formatted mask version
       const cleanPhone = phone.replace(/\D/g, '');
-      const { data, error } = await supabase
-        .from('customers')
-        .select('id')
-        .eq('tenant_id', tenant.id)
-        .eq('phone', cleanPhone)
-        .maybeSingle();
+      const { data: customerIdData, error } = await supabase
+        .rpc('get_customer_by_phone', { p_tenant_id: tenant.id, p_phone: cleanPhone });
 
-      if (data) {
-        setCustomerId(data.id);
+      if (customerIdData) {
+        setCustomerId(customerIdData);
         setIsLogged(true);
       } else {
         alert('Nenhum agendamento encontrado para este telefone.');

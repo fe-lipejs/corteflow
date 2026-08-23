@@ -479,7 +479,13 @@ export default function AdminPlans() {
         display_features: form.display_features, // backwards compatibility
       };
 
-      const hasProductPerm = form.permissions?.some(p => p.startsWith('produto.') || p === 'catalogo.criar');
+      // Se a feature produtos estiver desligada, limpamos as permissões residuais
+      let finalPermissions = form.permissions || [];
+      if (!form.features.produtos) {
+        finalPermissions = finalPermissions.filter(p => !p.startsWith('produto.') && p !== 'catalogo.criar');
+      }
+
+      const hasProductPerm = finalPermissions.some(p => p.startsWith('produto.') || p === 'catalogo.criar');
       const allowProducts = Boolean(form.features.produtos || hasProductPerm);
 
       const planData = {
@@ -494,7 +500,7 @@ export default function AdminPlans() {
           ...featuresJsonb,
           produtos: allowProducts,
         },
-        permissions: form.permissions,
+        permissions: finalPermissions,
         limits: form.limits,
         is_default: form.is_default,
         active: true,

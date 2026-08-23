@@ -44,7 +44,7 @@ async function fetchPublicStore(slug: string) {
     supabase.from('business_hours').select('*').eq('tenant_id', tenant.id),
     supabase.from('professional_working_hours').select('*').eq('tenant_id', tenant.id),
     supabase.from('professional_blocked_times').select('*').eq('tenant_id', tenant.id).gte('ends_at', todayStr).lte('starts_at', futureStr),
-    supabase.from('bookings').select('id, professional_id, scheduled_at, status, service_id, created_at').eq('tenant_id', tenant.id).in('status', ['pending', 'confirmed']).gte('scheduled_at', todayStr).lte('scheduled_at', futureStr),
+    supabase.rpc('get_public_booking_slots', { p_tenant_id: tenant.id, p_start: todayStr, p_end: futureStr }),
     supabase.from('professional_services').select('*').eq('tenant_id', tenant.id),
     supabase.from('stripe_connect_accounts').select('charges_enabled').eq('tenant_id', tenant.id).maybeSingle()
   ]);

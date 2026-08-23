@@ -49,7 +49,8 @@ serve(async (req) => {
     }
 
     const price = Math.round(amountToCharge * 100); // centavos
-    const applicationFee = Math.round(price * 0.05); // 5% fee da plataforma
+    const platformFeePercentage = parseFloat(Deno.env.get('PLATFORM_FEE_PERCENTAGE') || '0.05');
+    const applicationFee = Math.round(price * platformFeePercentage); // fee da plataforma
 
     // Criar a sessão no Stripe (Connect - Destination Charge)
     const session = await stripe.checkout.sessions.create({
@@ -97,6 +98,8 @@ serve(async (req) => {
          booking_id: booking.id,
          stripe_payment_intent_id: piId,
          amount: amountToCharge,
+         platform_fee: applicationFee / 100,
+         net_amount: amountToCharge - (applicationFee / 100),
          status: 'pending'
        });
     }

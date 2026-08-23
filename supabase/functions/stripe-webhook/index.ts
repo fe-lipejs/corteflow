@@ -130,10 +130,38 @@ serve(async (req) => {
 
           await supabase.from('tenants').update({ status: 'active' }).eq('id', eventTenantId);
         } else if (session.metadata?.booking_id) {
+          const amountPaid = (session.amount_total ?? 0) / 100;
           await supabase.from('bookings').update({
             status: 'confirmed',
-            amount_paid: (session.amount_total ?? 0) / 100,
+            amount_paid: amountPaid,
+            payment_status: 'paid'
           }).eq('id', session.metadata.booking_id);
+
+          // Update the payment record
+          if (session.payment_intent) {
+            const piId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent.id;
+            
+            let stripeFee = 0;
+            let netAmount = amountPaid;
+            
+            try {
+              const pi = await stripe.paymentIntents.retrieve(piId, { expand: ['latest_charge.balance_transaction'] });
+              const charge = pi.latest_charge as any;
+              if (charge?.balance_transaction?.fee) {
+                stripeFee = charge.balance_transaction.fee / 100;
+              }
+              const applicationFee = charge?.application_fee_amount ? (charge.application_fee_amount / 100) : 0;
+              netAmount = amountPaid - stripeFee - applicationFee;
+            } catch (err) {
+              console.warn("Could not retrieve balance transaction", err);
+            }
+
+            await supabase.from('payments').update({
+              status: 'succeeded',
+              stripe_fee: stripeFee,
+              net_amount: netAmount
+            }).eq('stripe_payment_intent_id', piId);
+          }
         }
         break;
       }

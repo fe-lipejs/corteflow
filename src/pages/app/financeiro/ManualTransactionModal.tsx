@@ -23,6 +23,7 @@ interface Props {
   transaction?: FinancialTransaction | null;
   tenantId: string;
   isLoading?: boolean;
+  isRecurringMode?: boolean;
 }
 
 const INCOME_CATEGORIES = [
@@ -59,7 +60,8 @@ export function ManualTransactionModal({
   onSave,
   transaction,
   tenantId,
-  isLoading
+  isLoading,
+  isRecurringMode = false
 }: Props) {
   const { theme } = useTheme();
   const isEditing = !!transaction?.id;
@@ -88,7 +90,7 @@ export function ManualTransactionModal({
   });
 
   useEffect(() => {
-    if (transaction) {
+      if (transaction) {
       setType(transaction.type);
       setAmount(transaction.amount.toString());
       setDescription(transaction.description || '');
@@ -98,6 +100,9 @@ export function ManualTransactionModal({
       if (transaction.date) {
         setDate(transaction.date.split('T')[0]);
       }
+    } else if (isRecurringMode) {
+      setType('expense');
+      setCategory('Aluguel / Condomínio');
     } else {
       setType('income');
       setAmount('');
@@ -167,6 +172,7 @@ export function ManualTransactionModal({
           <button
             type="button"
             onClick={() => handleTypeChange('income')}
+            disabled={isRecurringMode}
             className={`py-2.5 rounded-lg text-sm font-bold transition-all ${
               type === 'income' ? 'shadow-md text-white' : 'opacity-70 hover:opacity-100'
             }`}
@@ -180,6 +186,7 @@ export function ManualTransactionModal({
           <button
             type="button"
             onClick={() => handleTypeChange('expense')}
+            disabled={isRecurringMode}
             className={`py-2.5 rounded-lg text-sm font-bold transition-all ${
               type === 'expense' ? 'shadow-md text-white' : 'opacity-70 hover:opacity-100'
             }`}
@@ -230,19 +237,21 @@ export function ManualTransactionModal({
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
-              Data *
-            </label>
-            <input
-              type="date"
-              value={date}
-              onChange={e => setDate(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none themed-input"
-              style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
-              required
-            />
-          </div>
+          {!isRecurringMode && (
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
+                Data *
+              </label>
+              <input
+                type="date"
+                value={date}
+                onChange={e => setDate(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none themed-input"
+                style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
+                required
+              />
+            </div>
+          )}
         </div>
 
         {/* Descrição */}
@@ -297,22 +306,24 @@ export function ManualTransactionModal({
         </div>
 
         {/* Profissional Vinculado (Opcional) */}
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
-            Profissional Vinculado (Opcional)
-          </label>
-          <select
-            value={professionalId}
-            onChange={e => setProfessionalId(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none themed-input cursor-pointer"
-            style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
-          >
-            <option value="">Geral (Salão todo)</option>
-            {professionals.map((p: any) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        </div>
+        {!isRecurringMode && (
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
+              Profissional Vinculado (Opcional)
+            </label>
+            <select
+              value={professionalId}
+              onChange={e => setProfessionalId(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none themed-input cursor-pointer"
+              style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
+            >
+              <option value="">Geral (Salão todo)</option>
+              {professionals.map((p: any) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Botões de Ação */}
         <div className="flex gap-3 pt-3 border-t" style={{ borderColor: theme.border }}>

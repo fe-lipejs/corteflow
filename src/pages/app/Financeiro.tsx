@@ -13,6 +13,8 @@ import { ptBR } from 'date-fns/locale';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 import { useNavigate } from 'react-router-dom';
 import { ManualTransactionModal, type FinancialTransaction } from './financeiro/ManualTransactionModal';
+import { CommissionsTab } from './financeiro/CommissionsTab';
+import { RecurringExpensesTab } from './financeiro/RecurringExpensesTab';
 
 export default function Financeiro() {
   const { theme } = useTheme();
@@ -27,6 +29,7 @@ export default function Financeiro() {
   const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null);
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(role === 'professional' ? professionalProfile?.id || null : null);
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
+  const [activeTab, setActiveTab] = useState<'fluxo' | 'comissoes' | 'despesas_fixas'>('fluxo');
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
 
@@ -122,6 +125,7 @@ export default function Financeiro() {
         .from('financial_transactions')
         .select('*')
         .eq('tenant_id', tenantId)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (selectedProfessionalId) {
@@ -151,12 +155,12 @@ export default function Financeiro() {
           return;
         }
         if (p.status === 'succeeded' || p.status === 'refunded') {
-          entradas += Number(p.amount);
+          entradas += Number(p.net_amount || p.amount);
         }
         transactions.push({
           id: p.id,
           type: 'income',
-          amount: Number(p.amount),
+          amount: Number(p.net_amount || p.amount),
           status: p.status,
           method: p.payment_method || 'Cartão (Online)',
           date: p.created_at,
@@ -189,18 +193,21 @@ export default function Financeiro() {
 
       // Process Local Bookings
       localBookings?.forEach((b: any) => {
-        entradas += Number(b.amount_total || 0);
-        transactions.push({
-          id: b.id,
-          type: 'income',
-          amount: Number(b.amount_total || 0),
+        const val = Number(b.amount_paid || 0);
+        if (val > 0) {
+          entradas += val;
+          transactions.push({
+            id: b.id,
+            type: 'income',
+            amount: val,
           status: 'succeeded',
           method: 'Local (Balcão)',
           date: b.scheduled_at,
           customer_name: b.customers?.name || 'Cliente',
           description: b.services?.name || 'Serviço',
           isManual: false,
-        });
+          });
+        }
       });
 
       // Process Manual Transactions
@@ -214,10 +221,14 @@ export default function Financeiro() {
         }
 
         const val = Number(m.amount || 0);
-        if (m.type === 'income') {
-          entradas += val;
-        } else {
-          saidas += val;
+        const isRealized = !m.status || m.status === 'succeeded' || m.status === 'approved';
+
+        if (isRealized) {
+          if (m.type === 'income') {
+            entradas += val;
+          } else {
+            saidas += val;
+          }
         }
         transactions.push({
           id: m.id,
@@ -402,285 +413,340 @@ export default function Financeiro() {
       {/* ── Se não tiver nenhuma permissão, mostra teaser com blur ── */}
       <div className={`space-y-6 h-full flex flex-col animate-fade-in ${!canAccessFinanceiro ? 'filter blur-[5px] opacity-40 pointer-events-none select-none' : ''}`}>
         {/* HEADER */}
+        {/* HEADER */}
         <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>Gestão</p>
-            <h1 className="text-3xl font-bold font-sans" style={{ color: theme.textPrimary }}>Financeiro & Fluxo de Caixa</h1>
-            <p className="mt-1 text-sm" style={{ color: theme.textSecondary }}>Controle entradas, despesas manuais e lucro líquido.</p>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: theme.textPrimary }}>Financeiro & Fluxo de Caixa</h1>
+            <p className="text-sm mt-1" style={{ color: theme.textSecondary }}>Controle de receitas, despesas, comissões e gastos fixos.</p>
           </div>
+          
           <div className="flex space-x-3">
             <button
               onClick={handleExport}
               className="flex items-center px-4 py-2 border rounded-xl font-medium transition-all shadow-sm hover:-translate-y-0.5 glass-card cursor-pointer"
               style={{ borderColor: theme.border, color: theme.textPrimary }}
             >
-              <Download className="w-4 h-4 mr-2" /> Exportar Relatório
+              <Download className="w-4 h-4 mr-2" /> Exportar
             </button>
-            <button
-              onClick={handleNewTransactionClick}
-              className="flex items-center gap-2 px-6 py-2 rounded-xl font-bold transition-all shadow-lg hover:opacity-90 cursor-pointer"
-              style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
-            >
-              <Plus className="w-4 h-4 mr-1" /> Novo Lançamento
-            </button>
+
+            {engine.hasPermission('financeiro.lancar_manual') && (
+              <button
+                onClick={() => {
+                  setEditingTransaction(null);
+                  setModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 active:translate-y-0 w-full md:w-auto justify-center"
+                style={{ background: theme.accent, color: theme.bg }}
+              >
+                <Plus className="w-5 h-5" />
+                Nova Transação
+              </button>
+            )}
           </div>
         </header>
 
-        {/* Professional Filter Bar */}
-        {professionals.length > 0 && (
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            <span className="text-xs font-bold shrink-0 mr-1" style={{ color: theme.textSecondary }}>Filtrar Caixa:</span>
-            {role !== 'professional' && (
-              <button
-                onClick={() => {
-                  if (!engine.hasPermission('financeiro.visualizar_caixa_geral')) {
-                    setShowUpgradeModal('Visualizar Caixa Geral de Todos os Profissionais');
-                    return;
-                  }
-                  setSelectedProfessionalId(null);
-                }}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border cursor-pointer"
-                style={{
-                  color: selectedProfessionalId === null ? theme.btnPrimaryText : theme.textSecondary,
-                  background: selectedProfessionalId === null ? theme.accentGradient : theme.cardBg,
-                  borderColor: selectedProfessionalId === null ? theme.accent : theme.cardBorder,
-                  boxShadow: selectedProfessionalId === null ? theme.shadowAccent : 'none',
-                }}
-              >
-                Caixa Geral (Todos)
-              </button>
-            )}
-            {professionals.map(p => {
-              const isSelected = selectedProfessionalId === p.id;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => setSelectedProfessionalId(isSelected ? null : p.id)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border cursor-pointer"
-                  style={{
-                    color: isSelected ? theme.btnPrimaryText : theme.textSecondary,
-                    background: isSelected ? theme.accentGradient : theme.cardBg,
-                    borderColor: isSelected ? theme.accent : theme.border,
-                  }}
-                >
-                  {p.name}
-                </button>
-              );
-            })}
-          </div>
+        {/* TABS */}
+        <div className="flex gap-2 overflow-x-auto pb-2 border-b" style={{ borderColor: theme.border }}>
+          <button
+            onClick={() => setActiveTab('fluxo')}
+            className={`px-4 py-2 font-medium text-sm transition-all whitespace-nowrap rounded-t-lg ${activeTab === 'fluxo' ? 'border-b-2' : 'opacity-70 hover:opacity-100'}`}
+            style={{ 
+              color: activeTab === 'fluxo' ? theme.accent : theme.textSecondary,
+              borderColor: activeTab === 'fluxo' ? theme.accent : 'transparent'
+            }}
+          >
+            Fluxo de Caixa (DRE)
+          </button>
+          <button
+            onClick={() => setActiveTab('comissoes')}
+            className={`px-4 py-2 font-medium text-sm transition-all whitespace-nowrap rounded-t-lg ${activeTab === 'comissoes' ? 'border-b-2' : 'opacity-70 hover:opacity-100'}`}
+            style={{ 
+              color: activeTab === 'comissoes' ? theme.accent : theme.textSecondary,
+              borderColor: activeTab === 'comissoes' ? theme.accent : 'transparent'
+            }}
+          >
+            Comissões a Pagar
+          </button>
+          <button
+            onClick={() => setActiveTab('despesas_fixas')}
+            className={`px-4 py-2 font-medium text-sm transition-all whitespace-nowrap rounded-t-lg ${activeTab === 'despesas_fixas' ? 'border-b-2' : 'opacity-70 hover:opacity-100'}`}
+            style={{ 
+              color: activeTab === 'despesas_fixas' ? theme.accent : theme.textSecondary,
+              borderColor: activeTab === 'despesas_fixas' ? theme.accent : 'transparent'
+            }}
+          >
+            Gastos Fixos
+          </button>
+        </div>
+
+        {activeTab === 'comissoes' && tenantId && (
+          <CommissionsTab tenantId={tenantId} />
         )}
 
-        {/* KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-6 rounded-2xl shadow-2xl border glass-card" style={{ borderColor: theme.border }}>
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: `${theme.success}15`, color: theme.success }}>
-                <ArrowUpRight className="w-6 h-6" />
+        {activeTab === 'despesas_fixas' && tenantId && (
+          <RecurringExpensesTab tenantId={tenantId} />
+        )}
+
+        {activeTab === 'fluxo' && (
+          <div className="space-y-8">
+            {/* Professional Filter Bar */}
+            {professionals.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                <span className="text-xs font-bold shrink-0 mr-1" style={{ color: theme.textSecondary }}>Filtrar Caixa:</span>
+                {role !== 'professional' && (
+                  <button
+                    onClick={() => {
+                      if (!engine.hasPermission('financeiro.visualizar_caixa_geral')) {
+                        setShowUpgradeModal('Visualizar Caixa Geral de Todos os Profissionais');
+                        return;
+                      }
+                      setSelectedProfessionalId(null);
+                    }}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border cursor-pointer"
+                    style={{
+                      color: selectedProfessionalId === null ? theme.btnPrimaryText : theme.textSecondary,
+                      background: selectedProfessionalId === null ? theme.accentGradient : theme.cardBg,
+                      borderColor: selectedProfessionalId === null ? theme.accent : theme.cardBorder,
+                      boxShadow: selectedProfessionalId === null ? theme.shadowAccent : 'none',
+                    }}
+                  >
+                    Caixa Geral (Todos)
+                  </button>
+                )}
+                {professionals.map(p => {
+                  const isSelected = selectedProfessionalId === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setSelectedProfessionalId(isSelected ? null : p.id)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border cursor-pointer"
+                      style={{
+                        color: isSelected ? theme.btnPrimaryText : theme.textSecondary,
+                        background: isSelected ? theme.accentGradient : theme.cardBg,
+                        borderColor: isSelected ? theme.accent : theme.border,
+                      }}
+                    >
+                      {p.name}
+                    </button>
+                  );
+                })}
               </div>
-              <span className="text-xs font-semibold px-2 py-1 border rounded-full" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textSecondary }}>Este Mês</span>
-            </div>
-            <p className="text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Entradas Totais (Receitas)</p>
-            <h3 className="text-3xl font-bold" style={{ color: theme.textPrimary }}>
-              {isLoading ? <div className="h-9 w-32 skeleton skeleton-text mt-1" /> : money(data?.entradas || 0)}
-            </h3>
-          </div>
-
-          <div className="p-6 rounded-2xl shadow-2xl border glass-card" style={{ borderColor: theme.border }}>
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: `${theme.error}15`, color: theme.error }}>
-                <ArrowDownRight className="w-6 h-6" />
-              </div>
-              <span className="text-xs font-semibold px-2 py-1 border rounded-full" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textSecondary }}>Este Mês</span>
-            </div>
-            <p className="text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Saídas Totais (Despesas/Estornos)</p>
-            <h3 className="text-3xl font-bold" style={{ color: theme.textPrimary }}>
-              {isLoading ? <div className="h-9 w-32 skeleton skeleton-text mt-1" /> : money(data?.saidas || 0)}
-            </h3>
-          </div>
-
-          <div className="p-6 rounded-2xl shadow-2xl border relative overflow-hidden" style={{ background: theme.accentGradient, borderColor: theme.accent, color: theme.btnPrimaryText }}>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-            <div className="flex justify-between items-start mb-4 relative z-10">
-              <div className="w-12 h-12 rounded-full bg-black/10 flex items-center justify-center backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>
-                <DollarSign className="w-6 h-6" />
-              </div>
-              <span className="text-xs font-bold px-2 py-1 bg-black/20 rounded-full backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>Resultado</span>
-            </div>
-            <p className="text-sm font-bold opacity-80 mb-1 relative z-10">Lucro Líquido</p>
-            <h3 className="text-3xl font-black relative z-10">
-              {isLoading ? <div className="h-9 w-32 bg-white/20 rounded animate-pulse mt-1" /> : money(data?.liquido || 0)}
-            </h3>
-          </div>
-        </div>
-
-        {/* LISTA DE TRANSAÇÕES */}
-        <div className="border rounded-2xl shadow-2xl flex-1 p-6 glass-card" style={{ borderColor: theme.border }}>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-            <h3 className="font-bold text-lg" style={{ color: theme.textPrimary }}>Lançamentos & Transações</h3>
-
-            {/* Type Filters */}
-            <div className="flex gap-1 p-1 rounded-xl border text-xs" style={{ borderColor: theme.border, background: theme.inputBg }}>
-              {[
-                { id: 'all', label: 'Todas' },
-                { id: 'income', label: 'Receitas' },
-                { id: 'expense', label: 'Despesas' },
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setFilterType(tab.id as any)}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all ${filterType === tab.id ? 'shadow' : 'opacity-70 hover:opacity-100'}`}
-                  style={{
-                    background: filterType === tab.id ? theme.accentGradient : 'transparent',
-                    color: filterType === tab.id ? theme.btnPrimaryText : theme.textSecondary,
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="w-full overflow-x-auto">
-            {isLoading ? (
-              <table className="w-full text-left">
-                <tbody>
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <TableRowSkeleton key={i} cols={5} />
-                  ))}
-                </tbody>
-              </table>
-            ) : filteredTransactions.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed rounded-xl flex flex-col items-center justify-center" style={{ borderColor: theme.border, color: theme.textSecondary }}>
-                <p className="font-semibold mb-1">Nenhum lançamento encontrado neste período.</p>
-                <p className="text-xs">Clique em "+ Novo Lançamento" para cadastrar uma entrada ou despesa manual.</p>
-              </div>
-            ) : (
-              <table className="w-full text-left text-sm border-collapse">
-                <thead>
-                  <tr className="border-b" style={{ borderColor: theme.border, color: theme.textSecondary }}>
-                    <th className="py-3 px-4 font-semibold">Data</th>
-                    <th className="py-3 px-4 font-semibold">Descrição</th>
-                    <th className="py-3 px-4 font-semibold">Origem / Categoria</th>
-                    <th className="py-3 px-4 font-semibold">Forma / Status</th>
-                    <th className="py-3 px-4 font-semibold text-right">Valor</th>
-                    <th className="py-3 px-4 font-semibold text-center w-20">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedTransactions.map((tx: any) => (
-                    <tr key={tx.id} className="border-b last:border-b-0 hover:bg-black/5 transition-colors" style={{ borderColor: theme.border }}>
-                      <td className="py-4 px-4 font-medium whitespace-nowrap" style={{ color: theme.textPrimary }}>
-                        {format(new Date(tx.date), "dd 'de' MMM, HH:mm", { locale: ptBR })}
-                      </td>
-                      <td className="py-4 px-4 font-semibold" style={{ color: theme.textPrimary }}>
-                        {tx.description}
-                      </td>
-                      <td className="py-4 px-4" style={{ color: theme.textSecondary }}>
-                        {tx.customer_name}
-                      </td>
-                      <td className="py-4 px-4">
-                        <span
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                          style={{
-                            background: tx.type === 'income' ? '#10b98115' : '#ef444415',
-                            color: tx.type === 'income' ? '#10b981' : '#ef4444',
-                            border: `1px solid ${tx.type === 'income' ? '#10b98130' : '#ef444430'}`
-                          }}
-                        >
-                          {tx.method}
-                        </span>
-                      </td>
-                      <td className={`py-4 px-4 text-right font-bold whitespace-nowrap ${tx.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                        {tx.type === 'income' ? '+' : '-'}{money(tx.amount)}
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        {tx.isManual ? (
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => handleEditClick(tx)}
-                              className="p-1.5 rounded-lg border hover:bg-[var(--theme-bg-hover)] transition-colors cursor-pointer"
-                              style={{ borderColor: theme.border, color: theme.textSecondary }}
-                              title="Editar Lançamento"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(tx)}
-                              className="p-1.5 rounded-lg border hover:bg-rose-500/10 transition-colors cursor-pointer"
-                              style={{ borderColor: '#ef444430', color: '#ef4444' }}
-                              title="Excluir Lançamento"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-[10px] uppercase font-bold tracking-wider opacity-40">Automático</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             )}
 
-            {/* Pagination Controls */}
-            {filteredTransactions.length > 0 && (
-              <div className="pt-6 border-t mt-6 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: theme.border }}>
-                <p className="text-xs font-medium" style={{ color: theme.textSecondary }}>
-                  Mostrando <strong style={{ color: theme.textPrimary }}>{(currentPage - 1) * PAGE_SIZE + 1}</strong> a <strong style={{ color: theme.textPrimary }}>{Math.min(currentPage * PAGE_SIZE, filteredTransactions.length)}</strong> de <strong style={{ color: theme.textPrimary }}>{filteredTransactions.length}</strong> transações
-                </p>
+            {/* KPIs */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-6 rounded-2xl shadow-2xl border glass-card" style={{ borderColor: theme.border }}>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: `${theme.success}15`, color: theme.success }}>
+                    <ArrowUpRight className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-semibold px-2 py-1 border rounded-full" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textSecondary }}>Este Mês</span>
+                </div>
+                <p className="text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Entradas Totais (Receitas)</p>
+                <h3 className="text-3xl font-bold" style={{ color: theme.textPrimary }}>
+                  {isLoading ? <div className="h-9 w-32 skeleton skeleton-text mt-1" /> : money(data?.entradas || 0)}
+                </h3>
+              </div>
 
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5 cursor-pointer"
-                    style={{ borderColor: theme.border, color: theme.textPrimary }}
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" /> Anterior
-                  </button>
+              <div className="p-6 rounded-2xl shadow-2xl border glass-card" style={{ borderColor: theme.border }}>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: `${theme.error}15`, color: theme.error }}>
+                    <ArrowDownRight className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-semibold px-2 py-1 border rounded-full" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textSecondary }}>Este Mês</span>
+                </div>
+                <p className="text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Saídas Totais (Despesas/Estornos)</p>
+                <h3 className="text-3xl font-bold" style={{ color: theme.textPrimary }}>
+                  {isLoading ? <div className="h-9 w-32 skeleton skeleton-text mt-1" /> : money(data?.saidas || 0)}
+                </h3>
+              </div>
 
-                  {Array.from({ length: totalPages }).map((_, i) => {
-                    const pageNum = i + 1;
-                    if (
-                      pageNum === 1 ||
-                      pageNum === totalPages ||
-                      (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-                    ) {
-                      const isActive = pageNum === currentPage;
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${isActive ? 'shadow-sm' : 'hover:bg-black/5'}`}
-                          style={{
-                            background: isActive ? theme.accentGradient : 'transparent',
-                            color: isActive ? theme.btnPrimaryText : theme.textSecondary,
-                            border: `1px solid ${isActive ? theme.accent : theme.border}`
-                          }}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
-                      return <span key={pageNum} className="px-1 text-xs opacity-50">...</span>;
-                    }
-                    return null;
-                  })}
+              <div className="p-6 rounded-2xl shadow-2xl border relative overflow-hidden" style={{ background: theme.accentGradient, borderColor: theme.accent, color: theme.btnPrimaryText }}>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+                <div className="flex justify-between items-start mb-4 relative z-10">
+                  <div className="w-12 h-12 rounded-full bg-black/10 flex items-center justify-center backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>
+                    <DollarSign className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-bold px-2 py-1 bg-black/20 rounded-full backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>Resultado</span>
+                </div>
+                <p className="text-sm font-bold opacity-80 mb-1 relative z-10">Lucro Líquido</p>
+                <h3 className="text-3xl font-black relative z-10">
+                  {isLoading ? <div className="h-9 w-32 bg-white/20 rounded animate-pulse mt-1" /> : money(data?.liquido || 0)}
+                </h3>
+              </div>
+            </div>
 
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5 cursor-pointer"
-                    style={{ borderColor: theme.border, color: theme.textPrimary }}
-                  >
-                    Próximo <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
+            {/* LISTA DE TRANSAÇÕES */}
+            <div className="border rounded-2xl shadow-2xl flex-1 p-6 glass-card" style={{ borderColor: theme.border }}>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                <h3 className="font-bold text-lg" style={{ color: theme.textPrimary }}>Lançamentos & Transações</h3>
+
+                {/* Type Filters */}
+                <div className="flex gap-1 p-1 rounded-xl border text-xs" style={{ borderColor: theme.border, background: theme.inputBg }}>
+                  {[
+                    { id: 'all', label: 'Todas' },
+                    { id: 'income', label: 'Receitas' },
+                    { id: 'expense', label: 'Despesas' },
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setFilterType(tab.id as any)}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all ${filterType === tab.id ? 'shadow' : 'opacity-70 hover:opacity-100'}`}
+                      style={{
+                        background: filterType === tab.id ? theme.accentGradient : 'transparent',
+                        color: filterType === tab.id ? theme.btnPrimaryText : theme.textSecondary,
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-            )}
+
+              <div className="w-full overflow-x-auto">
+                {isLoading ? (
+                  <table className="w-full text-left">
+                    <tbody>
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <TableRowSkeleton key={i} cols={5} />
+                      ))}
+                    </tbody>
+                  </table>
+                ) : filteredTransactions.length === 0 ? (
+                  <div className="text-center py-12 border-2 border-dashed rounded-xl flex flex-col items-center justify-center" style={{ borderColor: theme.border, color: theme.textSecondary }}>
+                    <p className="font-semibold mb-1">Nenhum lançamento encontrado neste período.</p>
+                    <p className="text-xs">Clique em "+ Novo Lançamento" para cadastrar uma entrada ou despesa manual.</p>
+                  </div>
+                ) : (
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b" style={{ borderColor: theme.border, color: theme.textSecondary }}>
+                        <th className="py-3 px-4 font-semibold">Data</th>
+                        <th className="py-3 px-4 font-semibold">Descrição</th>
+                        <th className="py-3 px-4 font-semibold">Origem / Categoria</th>
+                        <th className="py-3 px-4 font-semibold">Forma / Status</th>
+                        <th className="py-3 px-4 font-semibold text-right">Valor</th>
+                        <th className="py-3 px-4 font-semibold text-center w-20">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedTransactions.map((tx: any) => (
+                        <tr key={tx.id} className="border-b last:border-b-0 hover:bg-black/5 transition-colors" style={{ borderColor: theme.border }}>
+                          <td className="py-4 px-4 font-medium whitespace-nowrap" style={{ color: theme.textPrimary }}>
+                            {format(new Date(tx.date), "dd 'de' MMM, HH:mm", { locale: ptBR })}
+                          </td>
+                          <td className="py-4 px-4 font-semibold" style={{ color: theme.textPrimary }}>
+                            {tx.description}
+                          </td>
+                          <td className="py-4 px-4" style={{ color: theme.textSecondary }}>
+                            {tx.customer_name}
+                          </td>
+                          <td className="py-4 px-4">
+                            <span
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                              style={{
+                                background: tx.type === 'income' ? '#10b98115' : '#ef444415',
+                                color: tx.type === 'income' ? '#10b981' : '#ef4444',
+                                border: `1px solid ${tx.type === 'income' ? '#10b98130' : '#ef444430'}`
+                              }}
+                            >
+                              {tx.method}
+                            </span>
+                          </td>
+                          <td className={`py-4 px-4 text-right font-bold whitespace-nowrap ${tx.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {tx.type === 'income' ? '+' : '-'}{money(tx.amount)}
+                          </td>
+                          <td className="py-4 px-4 text-center">
+                            {tx.isManual ? (
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  onClick={() => handleEditClick(tx)}
+                                  className="p-1.5 rounded-lg border hover:bg-[var(--theme-bg-hover)] transition-colors cursor-pointer"
+                                  style={{ borderColor: theme.border, color: theme.textSecondary }}
+                                  title="Editar Lançamento"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteClick(tx)}
+                                  className="p-1.5 rounded-lg border hover:bg-rose-500/10 transition-colors cursor-pointer"
+                                  style={{ borderColor: '#ef444430', color: '#ef4444' }}
+                                  title="Excluir Lançamento"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] uppercase font-bold tracking-wider opacity-40">Automático</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+
+                {/* Pagination Controls */}
+                {filteredTransactions.length > 0 && (
+                  <div className="pt-6 border-t mt-6 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: theme.border }}>
+                    <p className="text-xs font-medium" style={{ color: theme.textSecondary }}>
+                      Mostrando <strong style={{ color: theme.textPrimary }}>{(currentPage - 1) * PAGE_SIZE + 1}</strong> a <strong style={{ color: theme.textPrimary }}>{Math.min(currentPage * PAGE_SIZE, filteredTransactions.length)}</strong> de <strong style={{ color: theme.textPrimary }}>{filteredTransactions.length}</strong> transações
+                    </p>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5 cursor-pointer"
+                        style={{ borderColor: theme.border, color: theme.textPrimary }}
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" /> Anterior
+                      </button>
+
+                      {Array.from({ length: totalPages }).map((_, i) => {
+                        const pageNum = i + 1;
+                        if (
+                          pageNum === 1 ||
+                          pageNum === totalPages ||
+                          (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                        ) {
+                          const isActive = pageNum === currentPage;
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${isActive ? 'shadow-sm' : 'hover:bg-black/5'}`}
+                              style={{
+                                background: isActive ? theme.accentGradient : 'transparent',
+                                color: isActive ? theme.btnPrimaryText : theme.textSecondary,
+                                border: `1px solid ${isActive ? theme.accent : theme.border}`
+                              }}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                          return <span key={pageNum} className="px-1 text-xs opacity-50">...</span>;
+                        }
+                        return null;
+                      })}
+
+                      <button
+                        onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5 cursor-pointer"
+                        style={{ borderColor: theme.border, color: theme.textPrimary }}
+                      >
+                        Próximo <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* ── Overlay de Bloqueio se não tiver permissão alguma ── */}

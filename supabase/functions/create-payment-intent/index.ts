@@ -43,7 +43,8 @@ serve(async (req) => {
     // Calculate Application Fee (e.g., 5% platform fee)
     // Em produção, isso pode vir de uma tabela de configurações globais
     const amount = Math.round(service.price * 100);
-    const applicationFeeAmount = Math.round(amount * 0.05);
+    const platformFeePercentage = parseFloat(Deno.env.get('PLATFORM_FEE_PERCENTAGE') || '0.05');
+    const applicationFeeAmount = Math.round(amount * platformFeePercentage);
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount, // Stripe usa centavos
