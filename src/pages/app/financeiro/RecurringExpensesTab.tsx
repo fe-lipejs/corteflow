@@ -77,7 +77,7 @@ export function RecurringExpensesTab({ tenantId }: Props) {
               <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center" style={{ color: theme.textSecondary }}>Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y" style={{ divideColor: theme.border }}>
+          <tbody className="divide-y" style={{ borderColor: theme.border }}>
             {expenses?.length === 0 ? (
               <tr>
                 <td colSpan={6} className="p-8 text-center text-sm" style={{ color: theme.textSecondary }}>

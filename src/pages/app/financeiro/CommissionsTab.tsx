@@ -91,7 +91,7 @@ export function CommissionsTab({ tenantId }: Props) {
               <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center" style={{ color: theme.textSecondary }}>Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y" style={{ divideColor: theme.border }}>
+          <tbody className="divide-y" style={{ borderColor: theme.border }}>
             {commissions?.length === 0 ? (
               <tr>
                 <td colSpan={5} className="p-8 text-center text-sm" style={{ color: theme.textSecondary }}>
