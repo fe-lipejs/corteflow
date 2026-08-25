@@ -1220,7 +1220,7 @@ function DomicilioSection() {
   return (
     <section id="domicilio" className="overflow-hidden bg-[#0D0D0F] px-6 py-[104px] text-white md:px-12 md:py-[160px]">
       <div className="mx-auto max-w-[1360px]">
-        <div className="grid items-center gap-16 md:grid-cols-2 md:gap-20">
+        <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
           <div>
             <Reveal>
               <Eyebrow>Atendimento a domicílio</Eyebrow>
@@ -1236,7 +1236,7 @@ function DomicilioSection() {
                 Manicures, barbeiros e cabeleireiros que atendem em domicílio não precisam mais perguntar
                 endereço, verificar distância e combinar no WhatsApp.
               </p>
-              <p className="mt-4 text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#8A8A8F]">
+              <p className="mt-4 max-w-[44ch] text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#8A8A8F]">
                 O cliente informa onde está — o sistema confere se está dentro da área de atendimento e
                 libera o horário na hora.
               </p>
@@ -1261,20 +1261,21 @@ function DomicilioSection() {
 
           {/* Mockup + Radar visual */}
           <Reveal delay={0.15}>
-            <div className="relative flex h-[500px] w-full items-center justify-center">
+            <div className="relative flex h-[480px] w-full items-center justify-center md:h-[540px]">
+              
               {/* Radar in background right */}
-              <div className="absolute right-[-10%] md:right-[-25%] z-0 scale-75 opacity-60 md:scale-90 md:opacity-100">
+              <div className="absolute right-[-20%] sm:right-[-10%] md:right-[-15%] lg:right-[-25%] z-0 flex shrink-0 items-center justify-center">
                 <RadarVisual />
               </div>
-              
+
               {/* Phone in foreground left */}
-              <div className="absolute left-[5%] md:left-0 z-10 w-[240px] md:w-[280px]">
+              <div className="absolute left-[0%] sm:left-[10%] md:left-[0%] lg:left-[5%] z-10 w-[200px] sm:w-[240px] md:w-[260px] lg:w-[280px]">
                 <div
-                  className="relative rounded-[3rem] border border-white/[0.12] bg-[#0D0D0F] p-[8px] shadow-[0_50px_90px_-30px_rgba(0,0,0,0.8),0_0_50px_-10px_rgba(245,158,11,0.2)]"
+                  className="relative rounded-[2.6rem] sm:rounded-[3rem] border border-white/[0.12] bg-[#0D0D0F] p-[6px] sm:p-[8px] shadow-[0_50px_90px_-30px_rgba(0,0,0,0.8),0_0_50px_-10px_rgba(245,158,11,0.2)]"
                   style={{ transform: 'perspective(1200px) rotateY(6deg) rotateX(2deg)' }}
                 >
-                  <span className="absolute left-1/2 top-[10px] z-10 h-[13px] w-[56px] -translate-x-1/2 rounded-full border border-white/10 bg-black" />
-                  <div className="relative aspect-[9/19.5] overflow-hidden rounded-[2.5rem]">
+                  <span className="absolute left-1/2 top-[10px] z-20 h-[11px] sm:h-[13px] w-12 sm:w-[56px] -translate-x-1/2 rounded-full border border-white/10 bg-black" />
+                  <div className="relative aspect-[9/19.5] overflow-hidden rounded-[2.2rem] sm:rounded-[2.5rem]">
                     <img
                       src={M.phoneDomicilio}
                       alt="Tela de escolha de atendimento a domicílio"
@@ -1284,6 +1285,7 @@ function DomicilioSection() {
                   </div>
                 </div>
               </div>
+
             </div>
           </Reveal>
         </div>
@@ -1298,69 +1300,104 @@ function DomicilioSection() {
 
 function RadarVisual() {
   const reduce = useReducedMotion();
-  
+
   return (
-    <div className="relative flex h-[340px] w-[340px] md:h-[420px] md:w-[420px] items-center justify-center">
-      {/* Background Rings */}
-      <div className="absolute inset-0 rounded-full border border-amber-500/20 border-dashed" />
-      <div className="absolute inset-[18%] rounded-full border border-amber-500/10" />
-      <div className="absolute inset-[38%] rounded-full border border-amber-500/10" />
-      
-      {/* Static radar arc background (conic gradient) */}
-      <div 
-        className="absolute inset-0 rounded-full opacity-30"
-        style={{ background: 'conic-gradient(from 240deg, rgba(245,158,11,0.8) 0deg, rgba(245,158,11,0) 60deg, transparent 60deg)' }} 
-      />
+    <div className="relative flex h-[340px] w-[340px] sm:h-[400px] sm:w-[400px] md:h-[460px] md:w-[460px] shrink-0 flex-col items-center justify-center">
+      {/* Radar Main Circle Area */}
+      <div className="relative h-full w-full flex items-center justify-center">
+        {/* Ambient background glow */}
+        <div
+          className="absolute inset-[10%] rounded-full opacity-25 blur-3xl pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.7), transparent 70%)' }}
+        />
 
-      {/* Animated Sweep Line & Arc */}
-      {!reduce && (
-        <motion.div
-          className="absolute inset-0 rounded-full"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+        {/* Outer Ring (Dashed Amber) */}
+        <div className="absolute inset-0 rounded-full border border-dashed border-[#F59E0B]/35 pointer-events-none" />
+
+        {/* Middle Ring (Solid Amber) */}
+        <div className="absolute inset-[16%] rounded-full border border-[#F59E0B]/20 pointer-events-none" />
+
+        {/* Inner Ring (Solid Amber) */}
+        <div className="absolute inset-[32%] rounded-full border border-[#F59E0B]/15 pointer-events-none" />
+
+        {/* Pulsing Sonar Waves */}
+        {!reduce && (
+          <>
+            <motion.div
+              className="absolute rounded-full border border-[#F59E0B]/30 pointer-events-none"
+              animate={{ inset: ['40%', '0%'], opacity: [0.8, 0] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeOut' }}
+            />
+            <motion.div
+              className="absolute rounded-full border border-[#F59E0B]/30 pointer-events-none"
+              animate={{ inset: ['40%', '0%'], opacity: [0.8, 0] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeOut', delay: 1.75 }}
+            />
+          </>
+        )}
+
+        {/* Animated Sweep Line & Rotating Ray Beam */}
+        {!reduce && (
+          <motion.div
+            className="absolute inset-0 rounded-full pointer-events-none"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+          >
+            {/* Sweep fading cone trail */}
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background:
+                  'conic-gradient(from 0deg, rgba(245,158,11,0.35) 0deg, rgba(245,158,11,0.08) 40deg, transparent 60deg)',
+              }}
+            />
+            {/* Bright leading ray line */}
+            <div className="absolute top-0 left-1/2 w-[2px] h-[50%] -translate-x-1/2 bg-gradient-to-t from-[#F59E0B] to-amber-200 shadow-[0_0_10px_#F59E0B] origin-bottom" />
+          </motion.div>
+        )}
+
+        {/* Center "Você" Circle */}
+        <div className="relative z-20 flex h-[58px] w-[58px] sm:h-[66px] sm:w-[66px] items-center justify-center rounded-full bg-gradient-to-b from-[#FBBF24] to-[#D97706] shadow-[0_0_28px_rgba(245,158,11,0.6)]">
+          <span className="font-display text-[13px] sm:text-[14px] font-bold text-[#140F00] tracking-tight">
+            Você
+          </span>
+        </div>
+
+        {/* Client Ping Point (Glowing White Dot on Radar) */}
+        <div
+          className="absolute z-20 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-white shadow-[0_0_14px_4px_rgba(255,255,255,0.95)]"
+          style={{ bottom: '16%', right: '18%' }}
         >
-          {/* Animated conic gradient */}
-          <div 
-            className="absolute inset-0 rounded-full"
-            style={{ background: 'conic-gradient(from 0deg, rgba(245,158,11,0.5) 0deg, rgba(245,158,11,0) 60deg, transparent 60deg)' }}
-          />
-          {/* Leading sweep line */}
-          <div className="absolute top-0 left-1/2 w-[2px] h-[50%] bg-amber-500/80 -translate-x-1/2 origin-bottom" />
-        </motion.div>
-      )}
+          {!reduce && (
+            <motion.span
+              className="absolute inset-[-4px] rounded-full border border-white/70"
+              animate={{ scale: [1, 2.2], opacity: [0.9, 0] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
+            />
+          )}
+        </div>
 
-      {/* Center circle */}
-      <div className="relative z-10 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#F59E0B] shadow-[0_0_30px_rgba(245,158,11,0.4)]">
-        <span className="font-display text-[15px] font-bold text-[#1D1D1F]">Você</span>
+        {/* "Dentro do raio" Badge (Top Right) */}
+        <div className="absolute top-[6%] right-[0%] sm:right-[2%] z-20">
+          <div className="rounded-full border border-amber-500/50 bg-[#1c1500]/95 px-3 py-1 sm:px-3.5 sm:py-1.5 shadow-[0_0_16px_rgba(245,158,11,0.3)] backdrop-blur-md">
+            <span className="font-mono text-[10px] sm:text-[11.5px] font-bold text-[#FBBF24] tracking-tight">
+              Dentro do raio
+            </span>
+          </div>
+        </div>
+
+        {/* "Fora do raio" Badge (Bottom Left) */}
+        <div className="absolute bottom-[8%] left-[0%] sm:left-[2%] z-20">
+          <div className="rounded-full border border-white/10 bg-[#16161a]/95 px-3 py-1 sm:px-3.5 sm:py-1.5 backdrop-blur-md shadow-sm">
+            <span className="font-mono text-[10px] sm:text-[11.5px] font-medium text-[#71717A] tracking-tight">
+              Fora do raio
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Small orbiting dot */}
-      {!reduce && (
-        <motion.div
-          className="absolute inset-0"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-        >
-          <div className="absolute top-[28%] left-1/2 w-4 h-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.9)]" />
-        </motion.div>
-      )}
-
-      {/* "Dentro do raio" label — upper right */}
-      <div className="absolute right-[2%] top-[20%]">
-        <span className="rounded-full border border-amber-400/40 bg-[#1A1500] px-3.5 py-1.5 font-mono text-[11px] font-bold text-[#F59E0B]">
-          Dentro do raio
-        </span>
-      </div>
-
-      {/* "Fora do raio" label — lower left */}
-      <div className="absolute bottom-[22%] left-[2%]">
-        <span className="rounded-full border border-white/[0.1] bg-[#1C1C1E] px-3.5 py-1.5 font-mono text-[11px] font-bold text-[#71717A]">
-          Fora do raio
-        </span>
-      </div>
-
-      {/* Bottom example text */}
-      <p className="absolute -bottom-8 left-0 right-0 text-center font-display text-[13px] italic text-[#71717A]">
+      {/* Caption text matching reference */}
+      <p className="absolute -bottom-8 left-0 right-0 mt-7 text-center font-display text-[13px] sm:text-[14px] italic text-[#8A8A8F]">
         Ex.: &ldquo;Atendo clientes em um raio de até 10 km.&rdquo;
       </p>
     </div>
