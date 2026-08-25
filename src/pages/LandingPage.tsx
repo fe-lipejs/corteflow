@@ -1960,12 +1960,12 @@ function MobileCTA() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
           transition={{ duration: 0.45, ease: EASE }}
-          className="fixed inset-x-0 bottom-0 z-[90] border-t border-white/[0.08] bg-black/92 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur-2xl md:hidden"
+          className="fixed inset-x-0 bottom-0 z-[90] bg-gradient-to-t from-[#000000] via-[#000000]/90 to-transparent pt-16 pb-[calc(env(safe-area-inset-bottom)+16px)] px-4 md:hidden pointer-events-none"
         >
           <Link
             to="/cadastro"
             onClick={() => trackEvent('click_mobile_sticky_cta')}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-[14px] font-bold text-black shadow-[0_0_20px_rgba(245,158,11,0.4)]"
+            className="pointer-events-auto flex h-14 w-full items-center justify-center gap-2 rounded-full text-[15px] font-bold text-black shadow-[0_0_24px_rgba(245,158,11,0.5)]"
             style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
           >
             Começar agora
@@ -1991,7 +1991,7 @@ function ScrollProgressBar() {
 
   return (
     <motion.div
-      className="fixed top-0 left-0 right-0 h-1.5 md:h-1 z-[1000] origin-left pointer-events-none"
+      className="fixed top-0 left-0 right-0 h-[2px] z-[1000] origin-left pointer-events-none"
       style={{ 
         scaleX,
         background: 'linear-gradient(90deg, #F59E0B, #FBBF24, #F59E0B)'

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Quote, RefreshCw, Share2 } from 'lucide-react';
@@ -41,6 +41,10 @@ export default function PlaylistPage() {
     const [index, setIndex] = useState(() => Math.floor(Math.random() * VERSOS.length));
     const [copiado, setCopiado] = useState(false);
     const verso = VERSOS[index]!;
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     const sortear = () => {
         setCopiado(false);
