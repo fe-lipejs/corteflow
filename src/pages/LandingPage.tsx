@@ -754,24 +754,30 @@ function SolutionSection() {
           </Reveal>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-3 md:gap-6 lg:gap-8">
+        <div className="space-y-3">
           {steps.map((step, i) => {
             const Icon = step.icon;
             return (
-              <Reveal key={step.label} delay={i * 0.08}>
-                <div className="group relative flex flex-col gap-4 rounded-[24px] border border-black/[0.06] bg-[#F5F5F7] p-8 transition-all duration-300 hover:border-amber-400/30 hover:shadow-[0_16px_48px_-16px_rgba(245,158,11,0.15)] md:p-9">
-                  <div className="flex items-center justify-between">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-500/10 transition-all duration-200 group-hover:bg-amber-500/18">
-                      <Icon className="h-5 w-5 text-[#D97706]" />
-                    </div>
-                    <span className="font-mono text-[32px] font-bold text-black/[0.05] transition-colors duration-200 group-hover:text-black/[0.09]">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
+              <Reveal key={step.label} delay={i * 0.06}>
+                <div className="group flex items-center gap-5 rounded-[18px] border border-black/[0.06] bg-[#F9F9FA] px-5 py-4 transition-all duration-200 hover:border-amber-400/30 hover:bg-white hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)]">
+                  {/* Step number */}
+                  <span
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold text-[#D97706]"
+                    style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}
+                  >
+                    {i + 1}
+                  </span>
+                  {/* Icon */}
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/[0.05] bg-white shadow-sm">
+                    <Icon className="h-4 w-4 text-[#D97706]" />
                   </div>
-                  <div>
-                    <h3 className="font-display text-[18px] font-semibold text-[#1D1D1F]">{step.label}</h3>
-                    <p className="mt-2 text-[14px] text-[#6E6E73]">{step.sub}</p>
+                  {/* Text */}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-[16px] font-semibold text-[#1D1D1F] leading-snug">{step.label}</h3>
+                    <p className="text-[13px] text-[#8A8A8F] leading-snug mt-0.5">{step.sub}</p>
                   </div>
+                  {/* Arrow on hover */}
+                  <ArrowRight className="h-4 w-4 shrink-0 text-[#D0D0D5] transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-[#D97706]" />
                 </div>
               </Reveal>
             );
@@ -1297,115 +1303,160 @@ function DomicilioSection() {
    ============================================================ */
 
 const THEMES = [
-  { img: M.themeA, label: 'Tema Clássico', desc: 'Escuro, dourado. Para quem quer imponência.' },
-  { img: M.themeB, label: 'Tema Noir', desc: 'Preto absoluto com detalhes dourados.' },
-  { img: M.themeC, label: 'Tema Elegante', desc: 'Terroso, sofisticado e feminino.' },
+  { img: M.themeA, label: 'Tema Clássico', desc: 'Escuro e dourado.' },
+  { img: M.themeB, label: 'Tema Noir', desc: 'Preto absoluto.' },
+  { img: M.themeC, label: 'Tema Elegante', desc: 'Sofisticado e feminino.' },
 ];
 
-function PersonalizationSection() {
-  const [active, setActive] = useState(0);
-  const reduce = useReducedMotion();
-
+function PhoneShell({
+  src,
+  alt,
+  size = 'md',
+  tilt = 0,
+  className = '',
+}: {
+  src: string;
+  alt: string;
+  size?: 'sm' | 'md' | 'lg';
+  tilt?: number;
+  className?: string;
+}) {
+  const widths = { sm: 'w-[120px] md:w-[140px]', md: 'w-[160px] md:w-[180px]', lg: 'w-[200px] md:w-[230px]' };
+  const radii = { sm: 'rounded-[2.2rem]', md: 'rounded-[2.5rem]', lg: 'rounded-[3rem]' };
+  const notchW = { sm: 'w-10', md: 'w-12', lg: 'w-14' };
+  const notchH = { sm: 'h-[10px]', md: 'h-[11px]', lg: 'h-[13px]' };
   return (
-    <section className="overflow-hidden bg-[#0A0A0C] px-6 py-[104px] text-white md:px-12 md:py-[160px]">
+    <div
+      className={cn(widths[size], className)}
+      style={tilt ? { transform: `perspective(1000px) rotateY(${tilt}deg) rotateZ(${tilt > 0 ? 2 : -2}deg)` } : {}}
+    >
+      <div
+        className={cn(
+          'relative border bg-white p-[6px]',
+          radii[size],
+          size === 'lg'
+            ? 'border-black/[0.12] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.18),0_0_40px_-8px_rgba(245,158,11,0.10)]'
+            : 'border-black/[0.08] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.12)]',
+        )}
+      >
+        <span
+          className={cn(
+            'absolute left-1/2 top-[8px] z-10 -translate-x-1/2 rounded-full border border-black/10 bg-[#1D1D1F]',
+            notchH[size],
+            notchW[size],
+          )}
+        />
+        <div className={cn('relative overflow-hidden aspect-[9/19.5]', size === 'lg' ? 'rounded-[2.4rem]' : size === 'md' ? 'rounded-[2rem]' : 'rounded-[1.7rem]')}>
+          <img
+            src={src}
+            alt={alt}
+            className="absolute inset-0 h-full w-full object-cover object-top"
+            loading="lazy"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PersonalizationSection() {
+  return (
+    <section className="overflow-hidden bg-white px-6 py-[104px] md:px-12 md:py-[160px]">
       <div className="mx-auto max-w-[1360px]">
-        <div className="mb-16 grid items-end gap-8 md:grid-cols-[1fr_0.7fr]">
+        {/* Header */}
+        <div className="mb-20 grid items-end gap-8 md:grid-cols-[1fr_0.65fr]">
           <Reveal>
-            <Eyebrow>Personalização</Eyebrow>
-            <h2 className="font-display text-[clamp(26px,5vw,50px)] font-bold leading-[1.07] tracking-[-0.03em]">
+            <Eyebrow dark>Personalização</Eyebrow>
+            <h2 className="font-display text-[clamp(26px,5vw,50px)] font-bold leading-[1.07] tracking-[-0.03em] text-[#1D1D1F]">
               Seu negócio tem
               <br />
-              <span className="text-[#F59E0B]">sua identidade.</span>
+              <span style={{ color: '#D97706' }}>sua identidade.</span>
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
-            <p className="max-w-[38ch] text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#8A8A8F]">
-              Cada estabelecimento tem uma personalidade. A Raffros se adapta a ela, não o contrário.
+            <p className="max-w-[38ch] text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#6E6E73]">
+              Cada estabelecimento tem uma personalidade.
+              A Raffros se adapta a ela — não o contrário.
               Escolha o tema que combina com o seu negócio.
             </p>
           </Reveal>
         </div>
 
-        <div className="grid items-center gap-16 md:grid-cols-[auto_1fr]">
-          {/* Phone */}
-          <div className="mx-auto shrink-0 w-[220px] md:w-[250px]">
-            <div className="relative rounded-[3rem] border border-white/[0.14] bg-[#0A0A0C] p-[8px] shadow-[0_60px_120px_-30px_rgba(0,0,0,0.9),0_0_60px_-12px_rgba(245,158,11,0.2)]">
-              <span className="absolute left-1/2 top-[10px] z-10 h-[13px] w-[56px] -translate-x-1/2 rounded-full border border-white/10 bg-black" />
-              <div className="relative overflow-hidden rounded-[2.5rem] aspect-[9/19.5]">
-                <AnimatePresence mode="wait">
-                  <motion.img
-                    key={active}
-                    src={THEMES[active].img}
-                    alt={THEMES[active].label}
-                    className="absolute inset-0 h-full w-full object-cover object-top"
-                    initial={{ opacity: 0, scale: reduce ? 1 : 1.05 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: reduce ? 1 : 0.96 }}
-                    transition={{ duration: reduce ? 0.15 : 0.4, ease: EASE }}
-                  />
-                </AnimatePresence>
+        {/* 3 iPhones side by side */}
+        <Reveal delay={0.08}>
+          <div className="relative flex items-end justify-center gap-4 md:gap-6">
+            {/* Left phone — smaller, tilted outward */}
+            <div className="hidden sm:flex flex-col items-center gap-5 self-end mb-4">
+              <PhoneShell src={THEMES[0].img} alt={THEMES[0].label} size="sm" tilt={-12} />
+              <div className="text-center">
+                <p className="font-display text-[13px] font-semibold text-[#1D1D1F]">{THEMES[0].label}</p>
+                <p className="mt-0.5 text-[11px] text-[#86868B]">{THEMES[0].desc}</p>
+              </div>
+            </div>
+
+            {/* Center phone — larger, straight, glowed */}
+            <div className="flex flex-col items-center gap-5 z-10">
+              <div className="relative">
+                <div
+                  className="absolute inset-[-30px] -z-10 rounded-full opacity-20 blur-[60px]"
+                  style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.6), transparent 70%)' }}
+                />
+                <PhoneShell src={THEMES[1].img} alt={THEMES[1].label} size="lg" />
+              </div>
+              <div className="text-center">
+                <span
+                  className="mb-2 inline-flex items-center rounded-full px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-black"
+                  style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
+                >
+                  Mais escolhido
+                </span>
+                <p className="font-display text-[15px] font-semibold text-[#1D1D1F]">{THEMES[1].label}</p>
+                <p className="mt-0.5 text-[12px] text-[#86868B]">{THEMES[1].desc}</p>
+              </div>
+            </div>
+
+            {/* Right phone — smaller, tilted outward */}
+            <div className="hidden sm:flex flex-col items-center gap-5 self-end mb-4">
+              <PhoneShell src={THEMES[2].img} alt={THEMES[2].label} size="sm" tilt={12} />
+              <div className="text-center">
+                <p className="font-display text-[13px] font-semibold text-[#1D1D1F]">{THEMES[2].label}</p>
+                <p className="mt-0.5 text-[11px] text-[#86868B]">{THEMES[2].desc}</p>
               </div>
             </div>
           </div>
+        </Reveal>
 
-          {/* Theme selectors */}
-          <div className="flex flex-col gap-4">
-            {THEMES.map((theme, i) => (
-              <button
-                type="button"
-                key={theme.label}
-                onClick={() => {
-                  setActive(i);
-                  trackEvent('click_theme_selector', { metadata: { theme: theme.label } });
-                }}
-                className={cn(
-                  'flex items-center gap-5 rounded-[20px] border p-6 text-left transition-all duration-300',
-                  active === i
-                    ? 'border-[#F59E0B]/40 bg-[#F59E0B]/[0.06]'
-                    : 'border-white/[0.07] hover:border-white/[0.14]'
-                )}
-              >
-                {/* Thumbnail */}
-                <div className="h-16 w-10 shrink-0 overflow-hidden rounded-[10px] border border-white/[0.1]">
-                  <img
-                    src={theme.img}
-                    alt={theme.label}
-                    className="h-full w-full object-cover object-top"
-                    loading="lazy"
-                  />
+        {/* Mobile: show all 3 horizontally scrollable */}
+        <Reveal delay={0.12} className="mt-8 sm:hidden">
+          <div className="flex gap-4 overflow-x-auto pb-4 px-1 snap-x snap-mandatory">
+            {THEMES.map((t) => (
+              <div key={t.label} className="flex shrink-0 snap-center flex-col items-center gap-3 w-[42vw]">
+                <div className="relative w-full rounded-[2.2rem] border border-black/[0.08] bg-white p-[6px] shadow-md">
+                  <span className="absolute left-1/2 top-[8px] z-10 h-[10px] w-10 -translate-x-1/2 rounded-full border border-black/10 bg-[#1D1D1F]" />
+                  <div className="relative overflow-hidden rounded-[1.8rem] aspect-[9/19.5]">
+                    <img src={t.img} alt={t.label} className="absolute inset-0 h-full w-full object-cover object-top" loading="lazy" />
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <h3 className={cn(
-                    'font-display text-[17px] font-semibold transition-colors',
-                    active === i ? 'text-white' : 'text-[#8A8A8F]'
-                  )}>
-                    {theme.label}
-                  </h3>
-                  <p className={cn(
-                    'mt-1 text-[13.5px] transition-colors',
-                    active === i ? 'text-[#A1A1A6]' : 'text-[#52525B]'
-                  )}>
-                    {theme.desc}
-                  </p>
-                </div>
-                <div className={cn(
-                  'ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all',
-                  active === i
-                    ? 'border-[#F59E0B] bg-[#F59E0B]'
-                    : 'border-white/[0.2] bg-transparent'
-                )}>
-                  {active === i && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="h-2 w-2 rounded-full bg-black"
-                    />
-                  )}
-                </div>
-              </button>
+                <p className="font-display text-[13px] font-semibold text-[#1D1D1F]">{t.label}</p>
+              </div>
             ))}
           </div>
-        </div>
+        </Reveal>
+
+        {/* Bottom tagline */}
+        <Reveal delay={0.2} className="mt-16 text-center">
+          <p className="mx-auto max-w-[40ch] text-[clamp(14px,1.5vw,16px)] text-[#6E6E73]">
+            Cores, logo e banner personalizados. A página do seu cliente com a cara do seu negócio.
+          </p>
+          <Link
+            to="/cadastro"
+            onClick={() => trackEvent('click_personalizacao_comecar')}
+            className="group mt-8 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-7 py-3.5 text-[14.5px] font-semibold text-[#D97706] transition-all hover:bg-amber-500/18"
+          >
+            Personalizar minha página
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </Reveal>
       </div>
     </section>
   );
@@ -1481,30 +1532,38 @@ function ParaQuemSection() {
           </Reveal>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-2.5">
           {audiences.map(({ icon: Icon, title, pct, desc, highlight }, i) => (
-            <Reveal key={title} delay={i * 0.07}>
+            <Reveal key={title} delay={i * 0.06}>
               <div
                 className={cn(
-                  'group relative flex h-full flex-col rounded-[24px] border p-8 transition-all duration-300 hover:-translate-y-1',
+                  'group flex items-center gap-4 rounded-[16px] border px-5 py-4 transition-all duration-200',
                   highlight
-                    ? 'border-amber-400/30 bg-amber-50 hover:border-amber-400/60 hover:shadow-[0_16px_40px_-16px_rgba(245,158,11,0.2)]'
-                    : 'border-black/[0.06] bg-[#F5F5F7] hover:border-black/[0.12] hover:shadow-md'
+                    ? 'border-amber-400/30 bg-amber-50 hover:border-amber-400/50 hover:shadow-[0_8px_24px_-8px_rgba(245,158,11,0.15)]'
+                    : 'border-black/[0.06] bg-[#F9F9FA] hover:border-black/[0.12] hover:bg-white hover:shadow-sm'
                 )}
               >
-                {pct && (
-                  <span className="absolute right-6 top-6 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-amber-500/70">
-                    {pct} dos usuários
-                  </span>
-                )}
+                {/* Icon */}
                 <div className={cn(
-                  'mb-5 flex h-11 w-11 items-center justify-center rounded-2xl border',
-                  highlight ? 'border-amber-400/30 bg-amber-500/15' : 'border-amber-500/15 bg-amber-500/8'
+                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border',
+                  highlight ? 'border-amber-400/30 bg-amber-500/12' : 'border-amber-500/15 bg-amber-500/8'
                 )}>
-                  <Icon className="h-5 w-5 text-[#D97706]" />
+                  <Icon className="h-4 w-4 text-[#D97706]" />
                 </div>
-                <h3 className="font-display text-[19px] font-semibold text-[#1D1D1F]">{title}</h3>
-                <p className="mt-3 flex-1 text-[14px] leading-relaxed text-[#6E6E73]">{desc}</p>
+                {/* Text */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display text-[16px] font-semibold text-[#1D1D1F] leading-snug">{title}</h3>
+                    {pct && (
+                      <span className="hidden sm:inline-flex rounded-full border border-amber-400/30 bg-amber-50 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-600">
+                        {pct}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 truncate text-[13px] text-[#8A8A8F] sm:whitespace-normal sm:truncate-none">{desc}</p>
+                </div>
+                {/* Arrow */}
+                <ArrowRight className="h-4 w-4 shrink-0 text-[#D0D0D5] transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-[#D97706]" />
               </div>
             </Reveal>
           ))}
