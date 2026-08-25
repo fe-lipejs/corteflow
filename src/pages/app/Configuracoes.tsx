@@ -358,8 +358,8 @@ export default function Configuracoes() {
         setFantasyName(data.fantasy_name || tenant.name || '');
         setTenantName(tenant.name || data.fantasy_name || '');
         setSlug(tenant.slug || '');
-        setSlogan(data.slogan || data.custom_palette?.slogan || data.short_description || '');
-        setDescription(data.description || data.custom_palette?.description || data.short_description || '');
+        setSlogan(data.slogan ?? data.custom_palette?.slogan ?? data.short_description ?? '');
+        setDescription(data.description ?? data.custom_palette?.description ?? data.short_description ?? '');
         setLogoUrl(data.logo_url || '');
         setBannerUrl(data.banner_url || '');
         if (data.logo_url) logoUpload.setPreview(data.logo_url);

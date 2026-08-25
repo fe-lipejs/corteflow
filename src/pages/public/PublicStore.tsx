@@ -1552,17 +1552,25 @@ export default function PublicStore() {
                 </span>
               </div>
 
+              {/* Slogan */}
+              {(settings?.custom_palette?.slogan ?? settings?.slogan) && (
+                <p
+                  className="mt-3.5 text-sm sm:text-base font-semibold max-w-[320px]"
+                  style={{ color: theme.textPrimary }}
+                >
+                  {settings?.custom_palette?.slogan ?? settings?.slogan}
+                </p>
+              )}
+
               {/* Bio / Description */}
-              <p
-                className="mt-3.5 text-xs sm:text-sm leading-relaxed max-w-[320px] font-medium"
-                style={{ color: theme.textSecondary }}
-              >
-                {settings?.slogan ||
-                  settings?.custom_palette?.slogan ||
-                  settings?.short_description ||
-                  settings?.description ||
-                  "Agende seu horário com os melhores profissionais."}
-              </p>
+              {(settings?.custom_palette?.description ?? settings?.description ?? settings?.short_description) !== '' && (
+                <p
+                  className={`${(settings?.custom_palette?.slogan ?? settings?.slogan) ? 'mt-1.5' : 'mt-3.5'} text-xs sm:text-sm leading-relaxed max-w-[320px] font-medium`}
+                  style={{ color: theme.textSecondary }}
+                >
+                  {settings?.custom_palette?.description ?? settings?.description ?? settings?.short_description ?? "Agende seu horário com os melhores profissionais."}
+                </p>
+              )}
 
               {/* Social Pill Buttons */}
               <div className="flex items-center justify-center gap-2.5 mt-5 w-full max-w-[320px]">
