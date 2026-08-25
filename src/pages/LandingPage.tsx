@@ -1,4 +1,4 @@
-import {
+﻿import {
   motion,
   animate,
   useInView,
@@ -680,7 +680,7 @@ function ProblemSection() {
               {/* WhatsApp bar */}
               <div className="relative z-10 flex items-center gap-3 border-b border-white/[0.07] bg-[#128C7E]/20 px-4 py-3 backdrop-blur">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#128C7E]">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" /></svg>
                 </div>
                 <div>
                   <p className="text-[12px] font-bold text-white">Barbearia do João</p>
@@ -1262,7 +1262,7 @@ function DomicilioSection() {
           {/* Mockup + Radar visual */}
           <Reveal delay={0.15}>
             <div className="relative flex h-[480px] w-full items-center justify-center md:h-[540px]">
-              
+
               {/* Radar in background right */}
               <div className="absolute right-[-20%] sm:right-[-10%] md:right-[-15%] lg:right-[-25%] z-0 flex shrink-0 items-center justify-center">
                 <RadarVisual />
@@ -1479,13 +1479,13 @@ function PersonalizationSection() {
               <span style={{ color: '#D97706' }}>sua identidade.</span>
             </h2>
           </Reveal>
-        <Reveal delay={0.1}>
-          <p className="max-w-[38ch] text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#6E6E73]">
-            Não existe tema fixo. A página do seu cliente tem as
-            <strong className="text-[#1D1D1F]"> cores que você escolher</strong>, com logo e banner do
-            seu negócio. Cada estabelecimento com a sua cara.
-          </p>
-        </Reveal>
+          <Reveal delay={0.1}>
+            <p className="max-w-[38ch] text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#6E6E73]">
+              Não existe tema fixo. A página do seu cliente tem as
+              <strong className="text-[#1D1D1F]"> cores que você escolher</strong>, com logo e banner do
+              seu negócio. Cada estabelecimento com a sua cara.
+            </p>
+          </Reveal>
         </div>
 
         {/* 3 iPhones — fan float layout */}
@@ -1960,7 +1960,7 @@ function MobileCTA() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
           transition={{ duration: 0.45, ease: EASE }}
-          className="fixed inset-x-0 bottom-0 z-[90] bg-gradient-to-t from-[#000000] via-[#000000]/90 to-transparent pt-16 pb-[calc(env(safe-area-inset-bottom)+16px)] px-4 md:hidden pointer-events-none"
+          className="fixed inset-x-0 bottom-0 z-[90] bg-gradient-to-t from-[#000000] via-[#000000]/80 to-transparent pt-10 pb-[calc(env(safe-area-inset-bottom)+16px)] px-4 md:hidden pointer-events-none"
         >
           <Link
             to="/cadastro"
@@ -1992,7 +1992,7 @@ function ScrollProgressBar() {
   return (
     <motion.div
       className="fixed top-0 left-0 right-0 h-[2px] z-[1000] origin-left pointer-events-none"
-      style={{ 
+      style={{
         scaleX,
         background: 'linear-gradient(90deg, #F59E0B, #FBBF24, #F59E0B)'
       }}
