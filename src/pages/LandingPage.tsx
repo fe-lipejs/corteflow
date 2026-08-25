@@ -1218,25 +1218,25 @@ function PaymentSection() {
 
 function DomicilioSection() {
   return (
-    <section id="domicilio" className="overflow-hidden bg-white px-6 py-[104px] md:px-12 md:py-[160px]">
+    <section id="domicilio" className="overflow-hidden bg-[#0D0D0F] px-6 py-[104px] text-white md:px-12 md:py-[160px]">
       <div className="mx-auto max-w-[1360px]">
         <div className="grid items-center gap-16 md:grid-cols-2 md:gap-20">
           <div>
             <Reveal>
-              <Eyebrow dark>Atendimento a domicílio</Eyebrow>
-              <h2 className="font-display text-[clamp(26px,4.5vw,46px)] font-bold leading-[1.08] tracking-[-0.03em] text-[#1D1D1F]">
+              <Eyebrow>Atendimento a domicílio</Eyebrow>
+              <h2 className="font-display text-[clamp(26px,4.5vw,46px)] font-bold leading-[1.08] tracking-[-0.03em] text-white">
                 Você define o raio.
                 <br />
-                <span style={{ color: '#D97706' }}>A Raffros faz o resto.</span>
+                <span style={{ color: '#F59E0B' }}>A Raffros faz o resto.</span>
               </h2>
             </Reveal>
 
             <Reveal delay={0.1}>
-              <p className="mt-6 max-w-[44ch] text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#6E6E73]">
+              <p className="mt-6 max-w-[44ch] text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#8A8A8F]">
                 Manicures, barbeiros e cabeleireiros que atendem em domicílio não precisam mais perguntar
                 endereço, verificar distância e combinar no WhatsApp.
               </p>
-              <p className="mt-4 text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#6E6E73]">
+              <p className="mt-4 text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#8A8A8F]">
                 O cliente informa onde está — o sistema confere se está dentro da área de atendimento e
                 libera o horário na hora.
               </p>
@@ -1251,50 +1251,155 @@ function DomicilioSection() {
                   'Mapa integrado para você visualizar',
                 ].map((item) => (
                   <div key={item} className="flex items-center gap-3">
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-[#D97706]" />
-                    <span className="text-[14.5px] text-[#6E6E73]">{item}</span>
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-[#F59E0B]" />
+                    <span className="text-[14.5px] text-[#A1A1A6]">{item}</span>
                   </div>
                 ))}
               </div>
             </Reveal>
           </div>
 
-          {/* Domicilio phone */}
-          <Reveal delay={0.15}>
-            <div className="relative mx-auto max-w-[260px] md:max-w-none md:w-[280px] lg:w-[320px]">
-              <div
-                className="relative rounded-[3rem] border border-black/[0.12] bg-white p-[8px] shadow-[0_50px_90px_-30px_rgba(0,0,0,0.18),0_0_50px_-10px_rgba(245,158,11,0.12)]"
-                style={{ transform: 'perspective(1200px) rotateY(-6deg) rotateX(2deg)' }}
-              >
-                <span className="absolute left-1/2 top-[10px] z-10 h-[13px] w-[56px] -translate-x-1/2 rounded-full border border-black/10 bg-[#1D1D1F]" />
-                <div className="relative overflow-hidden rounded-[2.5rem] aspect-[9/19.5]">
-                  <img
-                    src={M.phoneDomicilio}
-                    alt="Tela de escolha de atendimento a domicílio"
-                    className="absolute inset-0 h-full w-full object-cover object-top"
-                    loading="lazy"
-                  />
-                </div>
-              </div>
-              {/* Radius rings visual */}
-              <div className="absolute -right-12 -top-8 -z-10 h-48 w-48 opacity-30">
-                {[0, 16, 32].map((inset) => (
-                  <span
-                    key={inset}
-                    className="absolute rounded-full border border-dashed border-amber-500/50"
-                    style={{ inset }}
-                  />
-                ))}
-                <div
-                  className="absolute inset-[40px] rounded-full"
-                  style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.4), transparent 70%)' }}
-                />
-              </div>
-            </div>
+          {/* Radar visual */}
+          <Reveal delay={0.15} className="flex items-center justify-center">
+            <RadarVisual />
           </Reveal>
         </div>
       </div>
     </section>
+  );
+}
+
+/* ============================================================
+   RADAR VISUAL — Domicilio
+   ============================================================ */
+
+function RadarVisual() {
+  const reduce = useReducedMotion();
+  const SIZE = 360;
+  const CX = SIZE / 2;
+  const CY = SIZE / 2;
+  // Rings as % of radius from center
+  const rings = [0.28, 0.52, 0.75, 1.0];
+  const outerR = SIZE * 0.48;
+
+  return (
+    <div
+      className="relative flex items-center justify-center"
+      style={{ width: SIZE, height: SIZE + 56 }}
+    >
+      {/* Main SVG radar */}
+      <svg
+        width={SIZE}
+        height={SIZE}
+        viewBox={`0 0 ${SIZE} ${SIZE}`}
+        className="absolute top-0 overflow-visible"
+      >
+        {/* Filled sector — "inside radius" golden arc */}
+        {!reduce && (
+          <motion.path
+            d={`M${CX},${CY} L${CX},${CY - outerR} A${outerR},${outerR} 0 0,1 ${CX + outerR * Math.sin(Math.PI * 0.72)},${CY - outerR * Math.cos(Math.PI * 0.72)} Z`}
+            fill="rgba(245,158,11,0.18)"
+            animate={{ rotate: [0, 360] }}
+            style={{ originX: `${CX}px`, originY: `${CY}px` }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+          />
+        )}
+
+        {/* Static filled "inside" sector (always visible) */}
+        <path
+          d={`M${CX},${CY} L${CX + outerR * Math.sin(-Math.PI * 0.3)},${CY - outerR * Math.cos(Math.PI * 0.3)} A${outerR},${outerR} 0 0,1 ${CX + outerR * Math.sin(Math.PI * 0.45)},${CY - outerR * Math.cos(Math.PI * 0.45)} Z`}
+          fill="rgba(180,120,0,0.22)"
+        />
+
+        {/* Concentric rings */}
+        {rings.map((pct, i) => {
+          const r = outerR * pct;
+          const isDashed = i === rings.length - 1;
+          return (
+            <circle
+              key={i}
+              cx={CX}
+              cy={CY}
+              r={r}
+              fill="none"
+              stroke={isDashed ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.20)'}
+              strokeWidth={isDashed ? 1.5 : 1}
+              strokeDasharray={isDashed ? '6 5' : undefined}
+            />
+          );
+        })}
+
+        {/* Sweep line */}
+        {!reduce && (
+          <motion.line
+            x1={CX}
+            y1={CY}
+            x2={CX}
+            y2={CY - outerR}
+            stroke="rgba(245,158,11,0.7)"
+            strokeWidth="2"
+            animate={{ rotate: [0, 360] }}
+            style={{ originX: `${CX}px`, originY: `${CY}px` }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+          />
+        )}
+
+        {/* Center circle — "Você" */}
+        <circle cx={CX} cy={CY} r={36} fill="#F59E0B" />
+        <circle cx={CX} cy={CY} r={36} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={2} />
+        <text
+          x={CX}
+          y={CY + 5}
+          textAnchor="middle"
+          fontSize="14"
+          fontWeight="700"
+          fontFamily="system-ui, sans-serif"
+          fill="white"
+        >
+          Você
+        </text>
+
+        {/* Animated client dot */}
+        {!reduce && (
+          <motion.circle
+            cx={CX}
+            cy={CY - outerR * 0.62}
+            r={7}
+            fill="white"
+            stroke="rgba(245,158,11,0.8)"
+            strokeWidth={2}
+            animate={{ rotate: [0, 360] }}
+            style={{ originX: `${CX}px`, originY: `${CY}px` }}
+            transition={{ duration: 9, repeat: Infinity, ease: 'linear' }}
+          />
+        )}
+      </svg>
+
+      {/* "Dentro do raio" label — upper right */}
+      <div
+        className="absolute right-0 top-[18%]"
+        style={{ transform: 'translateX(8px)' }}
+      >
+        <span className="rounded-full border border-amber-400/40 bg-[#1A1500] px-3.5 py-1.5 font-mono text-[11px] font-bold text-[#F59E0B]">
+          Dentro do raio
+        </span>
+      </div>
+
+      {/* "Fora do raio" label — lower left */}
+      <div
+        className="absolute bottom-[25%] left-0"
+        style={{ transform: 'translateX(-8px)' }}
+      >
+        <span className="rounded-full border border-white/[0.1] bg-[#1C1C1E] px-3.5 py-1.5 font-mono text-[11px] font-bold text-[#71717A]">
+          Fora do raio
+        </span>
+      </div>
+
+      {/* Bottom example text */}
+      <p className="absolute bottom-0 left-0 right-0 text-center font-display text-[13px] italic text-[#71717A]">
+        Ex.: &ldquo;Atendo clientes em um raio de até 10 km.&rdquo;
+      </p>
+    </div>
   );
 }
 
@@ -1373,80 +1478,102 @@ function PersonalizationSection() {
               <span style={{ color: '#D97706' }}>sua identidade.</span>
             </h2>
           </Reveal>
-          <Reveal delay={0.1}>
-            <p className="max-w-[38ch] text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#6E6E73]">
-              Cada estabelecimento tem uma personalidade.
-              A Raffros se adapta a ela — não o contrário.
-              Escolha o tema que combina com o seu negócio.
-            </p>
-          </Reveal>
+        <Reveal delay={0.1}>
+          <p className="max-w-[38ch] text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#6E6E73]">
+            Não existe tema fixo. A página do seu cliente tem as
+            <strong className="text-[#1D1D1F]"> cores que você escolher</strong>, com logo e banner do
+            seu negócio. Cada estabelecimento com a sua cara.
+          </p>
+        </Reveal>
         </div>
 
-        {/* 3 iPhones side by side */}
+        {/* 3 iPhones — fan float layout */}
         <Reveal delay={0.08}>
-          <div className="relative flex items-end justify-center gap-4 md:gap-6">
-            {/* Left phone — smaller, tilted outward */}
-            <div className="hidden sm:flex flex-col items-center gap-5 self-end mb-4">
-              <PhoneShell src={THEMES[0].img} alt={THEMES[0].label} size="sm" tilt={-12} />
-              <div className="text-center">
-                <p className="font-display text-[13px] font-semibold text-[#1D1D1F]">{THEMES[0].label}</p>
-                <p className="mt-0.5 text-[11px] text-[#86868B]">{THEMES[0].desc}</p>
-              </div>
-            </div>
+          <div className="relative mx-auto flex justify-center" style={{ height: 480, maxWidth: 580 }}>
 
-            {/* Center phone — larger, straight, glowed */}
-            <div className="flex flex-col items-center gap-5 z-10">
-              <div className="relative">
-                <div
-                  className="absolute inset-[-30px] -z-10 rounded-full opacity-20 blur-[60px]"
-                  style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.6), transparent 70%)' }}
-                />
-                <PhoneShell src={THEMES[1].img} alt={THEMES[1].label} size="lg" />
-              </div>
-              <div className="text-center">
-                <span
-                  className="mb-2 inline-flex items-center rounded-full px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-black"
-                  style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
-                >
-                  Mais escolhido
-                </span>
-                <p className="font-display text-[15px] font-semibold text-[#1D1D1F]">{THEMES[1].label}</p>
-                <p className="mt-0.5 text-[12px] text-[#86868B]">{THEMES[1].desc}</p>
-              </div>
-            </div>
-
-            {/* Right phone — smaller, tilted outward */}
-            <div className="hidden sm:flex flex-col items-center gap-5 self-end mb-4">
-              <PhoneShell src={THEMES[2].img} alt={THEMES[2].label} size="sm" tilt={12} />
-              <div className="text-center">
-                <p className="font-display text-[13px] font-semibold text-[#1D1D1F]">{THEMES[2].label}</p>
-                <p className="mt-0.5 text-[11px] text-[#86868B]">{THEMES[2].desc}</p>
-              </div>
-            </div>
-          </div>
-        </Reveal>
-
-        {/* Mobile: show all 3 horizontally scrollable */}
-        <Reveal delay={0.12} className="mt-8 sm:hidden">
-          <div className="flex gap-4 overflow-x-auto pb-4 px-1 snap-x snap-mandatory">
-            {THEMES.map((t) => (
-              <div key={t.label} className="flex shrink-0 snap-center flex-col items-center gap-3 w-[42vw]">
-                <div className="relative w-full rounded-[2.2rem] border border-black/[0.08] bg-white p-[6px] shadow-md">
-                  <span className="absolute left-1/2 top-[8px] z-10 h-[10px] w-10 -translate-x-1/2 rounded-full border border-black/10 bg-[#1D1D1F]" />
-                  <div className="relative overflow-hidden rounded-[1.8rem] aspect-[9/19.5]">
-                    <img src={t.img} alt={t.label} className="absolute inset-0 h-full w-full object-cover object-top" loading="lazy" />
+            {/* LEFT phone */}
+            <motion.div
+              className="absolute z-[1]"
+              style={{
+                left: '0%',
+                bottom: 0,
+                transform: 'perspective(900px) rotateY(22deg) rotateZ(-4deg)',
+                transformOrigin: 'bottom center',
+              }}
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
+            >
+              <div className="w-[140px] md:w-[165px]">
+                <div className="relative rounded-[2.4rem] border border-black/[0.15] bg-[#1A1A1A] p-[6px] shadow-[0_30px_60px_-16px_rgba(0,0,0,0.30)]">
+                  <span className="absolute left-1/2 top-[9px] z-10 h-[11px] w-9 -translate-x-1/2 rounded-full bg-[#0A0A0C]" />
+                  <div className="relative overflow-hidden rounded-[2rem] aspect-[9/19.5]">
+                    <img src={M.themeA} alt="Personalização da página" className="absolute inset-0 h-full w-full object-cover object-top" loading="lazy" />
                   </div>
                 </div>
-                <p className="font-display text-[13px] font-semibold text-[#1D1D1F]">{t.label}</p>
               </div>
-            ))}
+            </motion.div>
+
+            {/* CENTER phone */}
+            <motion.div
+              className="absolute z-10 left-1/2 -translate-x-1/2"
+              style={{ bottom: 0 }}
+              animate={{ y: [0, -16, 0] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <div className="w-[190px] md:w-[220px]">
+                {/* Glow */}
+                <div
+                  className="absolute inset-[-50px] -z-10 rounded-full blur-[70px] opacity-20"
+                  style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.8), transparent 70%)' }}
+                />
+                <div className="relative rounded-[3rem] border border-black/[0.2] bg-[#1A1A1A] p-[7px] shadow-[0_60px_100px_-24px_rgba(0,0,0,0.40),0_0_40px_-8px_rgba(245,158,11,0.12)]">
+                  <span className="absolute left-1/2 top-[10px] z-10 h-[13px] w-[52px] -translate-x-1/2 rounded-full bg-[#0A0A0C]" />
+                  <div className="relative overflow-hidden rounded-[2.5rem] aspect-[9/19.5]">
+                    <img src={M.themeB} alt="Personalização da página" className="absolute inset-0 h-full w-full object-cover object-top" loading="lazy" />
+                  </div>
+                </div>
+              </div>
+              {/* Label below center phone */}
+              <div className="mt-4 text-center">
+                <span
+                  className="inline-flex items-center rounded-full px-4 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-black shadow-[0_4px_14px_-4px_rgba(245,158,11,0.5)]"
+                  style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
+                >
+                  A sua cara
+                </span>
+              </div>
+            </motion.div>
+
+            {/* RIGHT phone */}
+            <motion.div
+              className="absolute z-[1]"
+              style={{
+                right: '0%',
+                bottom: 0,
+                transform: 'perspective(900px) rotateY(-22deg) rotateZ(4deg)',
+                transformOrigin: 'bottom center',
+              }}
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1.6 }}
+            >
+              <div className="w-[140px] md:w-[165px]">
+                <div className="relative rounded-[2.4rem] border border-black/[0.15] bg-[#1A1A1A] p-[6px] shadow-[0_30px_60px_-16px_rgba(0,0,0,0.30)]">
+                  <span className="absolute left-1/2 top-[9px] z-10 h-[11px] w-9 -translate-x-1/2 rounded-full bg-[#0A0A0C]" />
+                  <div className="relative overflow-hidden rounded-[2rem] aspect-[9/19.5]">
+                    <img src={M.themeC} alt="Personalização da página" className="absolute inset-0 h-full w-full object-cover object-top" loading="lazy" />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
           </div>
         </Reveal>
 
         {/* Bottom tagline */}
-        <Reveal delay={0.2} className="mt-16 text-center">
-          <p className="mx-auto max-w-[40ch] text-[clamp(14px,1.5vw,16px)] text-[#6E6E73]">
-            Cores, logo e banner personalizados. A página do seu cliente com a cara do seu negócio.
+        <Reveal delay={0.2} className="mt-20 text-center">
+          <p className="mx-auto max-w-[44ch] text-[clamp(14px,1.5vw,16px)] text-[#6E6E73]">
+            Cores, logo, banner e estilo personalizados. A página do seu cliente com a cara
+            do <strong className="text-[#1D1D1F]">seu</strong> negócio — não de mais ninguém.
           </p>
           <Link
             to="/cadastro"
