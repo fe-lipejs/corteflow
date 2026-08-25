@@ -54,7 +54,8 @@ export default function Servicos() {
 
   // Filtered services
   const filteredServices = useMemo(() => {
-    let list = [...services];
+    // Only show active services (filter out soft-deleted)
+    let list = services.filter(s => s.active !== false);
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(s => s.name.toLowerCase().includes(q) || s.category?.toLowerCase().includes(q) || s.tags?.some(t => t.toLowerCase().includes(q)));

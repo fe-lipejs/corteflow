@@ -46,7 +46,7 @@ async function fetchPublicStore(slug: string) {
     supabase.from('professional_blocked_times').select('*').eq('tenant_id', tenant.id).gte('ends_at', todayStr).lte('starts_at', futureStr),
     supabase.rpc('get_public_booking_slots', { p_tenant_id: tenant.id, p_start: todayStr, p_end: futureStr }),
     supabase.from('professional_services').select('*').eq('tenant_id', tenant.id),
-    supabase.from('stripe_connect_accounts').select('charges_enabled').eq('tenant_id', tenant.id).maybeSingle()
+    supabase.from('stripe_connect_accounts').select('charges_enabled, stripe_account_id').eq('tenant_id', tenant.id).maybeSingle()
   ]);
 
   // Filtra serviços ativos garantindo compatibilidade caso a flag 'active' seja null no banco antigo
@@ -82,7 +82,7 @@ async function fetchPublicStore(slug: string) {
     professionalBlockedTimes: blockedData || [],
     bookings: validBookings,
     professionalServices: proServicesData || [],
-    isStripeEnabled: connectData?.charges_enabled === true
+    isStripeEnabled: !!connectData?.stripe_account_id
   };
 }
 

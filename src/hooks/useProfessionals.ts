@@ -271,8 +271,8 @@ export function useDeleteProfessional(tenantId: string) {
       // 1. Remove photo from Storage first
       if (photoUrl) await deletePhoto(photoUrl);
 
-      // 2. Delete the row (cascades to hours, services, blocked_times)
-      const { error } = await supabase.from('professionals').delete().eq('id', id);
+      // 2. Soft delete the row (set status to inactive) instead of hard delete
+      const { error } = await supabase.from('professionals').update({ status: 'inactive' } as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {

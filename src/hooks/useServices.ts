@@ -108,7 +108,8 @@ export function useDeleteService(tenantId: string) {
   return useMutation({
     mutationFn: async ({ id, photoUrl }: { id: string; photoUrl: string | null }) => {
       if (photoUrl) await deleteServicePhoto(photoUrl);
-      const { error } = await supabase.from('services').delete().eq('id', id);
+      // Soft delete the row instead of hard delete
+      const { error } = await supabase.from('services').update({ active: false } as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: SERVICES_QUERY_KEY(tenantId) }),
