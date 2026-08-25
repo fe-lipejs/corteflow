@@ -1261,11 +1261,11 @@ function DomicilioSection() {
 
           {/* Mockup + Radar visual */}
           <Reveal delay={0.15}>
-            <div className="relative flex h-[480px] w-full flex-col items-center justify-center md:h-[540px]">
+            <div className="relative flex h-[480px] w-full flex-col items-center justify-center md:h-[540px] pb-8">
 
               <div className="relative flex h-full w-full items-center justify-center">
                 {/* Radar in background right */}
-                <div className="absolute right-[-10%] sm:right-[-5%] md:right-[-15%] lg:right-[-25%] z-0 flex shrink-0 items-center justify-center">
+                <div className="absolute right-[-5%] sm:right-[0%] md:right-[-5%] lg:right-[0%] z-0 flex shrink-0 items-center justify-center">
                   <RadarVisual />
                 </div>
 
@@ -1289,9 +1289,9 @@ function DomicilioSection() {
               </div>
 
               {/* Caption text centered for the whole section */}
-              <p className="absolute -bottom-10 left-0 right-0 text-center font-display text-[11px] sm:text-[12px] italic text-[#8A8A8F]">
+              {/* <p className="absolute bottom-[-60px] left-0 right-0 text-center font-display text-[11px] sm:text-[12px] italic text-[#8A8A8F]">
                 Ex.: &ldquo;Atendo clientes em um raio de até 10 km.&rdquo;
-              </p>
+              </p> */}
             </div>
           </Reveal>
         </div>
@@ -1393,7 +1393,7 @@ function RadarVisual() {
         </div>
 
         {/* "Fora do raio" Badge (Bottom Center-Right) */}
-        <div className="absolute bottom-[2%] right-[15%] sm:right-[40%] sm:bottom-[-12%] z-20">
+        <div className="absolute bottom-[2%] right-[15%] sm:right-[40%] sm:bottom-[-%] z-20">
           <div className="rounded-full border border-white/10 bg-[#16161a]/95 px-2.5 py-1 sm:px-3 sm:py-1 backdrop-blur-md shadow-sm">
             <span className="font-mono text-[9px] sm:text-[10px] font-medium text-[#71717A] tracking-tight">
               Fora do raio
