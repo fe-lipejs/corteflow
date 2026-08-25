@@ -1259,9 +1259,32 @@ function DomicilioSection() {
             </Reveal>
           </div>
 
-          {/* Radar visual */}
-          <Reveal delay={0.15} className="flex items-center justify-center">
-            <RadarVisual />
+          {/* Mockup + Radar visual */}
+          <Reveal delay={0.15}>
+            <div className="relative flex h-[500px] w-full items-center justify-center">
+              {/* Radar in background right */}
+              <div className="absolute right-[-10%] md:right-[-25%] z-0 scale-75 opacity-60 md:scale-90 md:opacity-100">
+                <RadarVisual />
+              </div>
+              
+              {/* Phone in foreground left */}
+              <div className="absolute left-[5%] md:left-0 z-10 w-[240px] md:w-[280px]">
+                <div
+                  className="relative rounded-[3rem] border border-white/[0.12] bg-[#0D0D0F] p-[8px] shadow-[0_50px_90px_-30px_rgba(0,0,0,0.8),0_0_50px_-10px_rgba(245,158,11,0.2)]"
+                  style={{ transform: 'perspective(1200px) rotateY(6deg) rotateX(2deg)' }}
+                >
+                  <span className="absolute left-1/2 top-[10px] z-10 h-[13px] w-[56px] -translate-x-1/2 rounded-full border border-white/10 bg-black" />
+                  <div className="relative aspect-[9/19.5] overflow-hidden rounded-[2.5rem]">
+                    <img
+                      src={M.phoneDomicilio}
+                      alt="Tela de escolha de atendimento a domicílio"
+                      className="absolute inset-0 h-full w-full object-cover object-top"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </Reveal>
         </div>
       </div>
@@ -1275,128 +1298,69 @@ function DomicilioSection() {
 
 function RadarVisual() {
   const reduce = useReducedMotion();
-  const SIZE = 360;
-  const CX = SIZE / 2;
-  const CY = SIZE / 2;
-  // Rings as % of radius from center
-  const rings = [0.28, 0.52, 0.75, 1.0];
-  const outerR = SIZE * 0.48;
-
+  
   return (
-    <div
-      className="relative flex items-center justify-center"
-      style={{ width: SIZE, height: SIZE + 56 }}
-    >
-      {/* Main SVG radar */}
-      <svg
-        width={SIZE}
-        height={SIZE}
-        viewBox={`0 0 ${SIZE} ${SIZE}`}
-        className="absolute top-0 overflow-visible"
-      >
-        {/* Filled sector — "inside radius" golden arc */}
-        {!reduce && (
-          <motion.path
-            d={`M${CX},${CY} L${CX},${CY - outerR} A${outerR},${outerR} 0 0,1 ${CX + outerR * Math.sin(Math.PI * 0.72)},${CY - outerR * Math.cos(Math.PI * 0.72)} Z`}
-            fill="rgba(245,158,11,0.18)"
-            animate={{ rotate: [0, 360] }}
-            style={{ originX: `${CX}px`, originY: `${CY}px` }}
-            transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-          />
-        )}
+    <div className="relative flex h-[340px] w-[340px] md:h-[420px] md:w-[420px] items-center justify-center">
+      {/* Background Rings */}
+      <div className="absolute inset-0 rounded-full border border-amber-500/20 border-dashed" />
+      <div className="absolute inset-[18%] rounded-full border border-amber-500/10" />
+      <div className="absolute inset-[38%] rounded-full border border-amber-500/10" />
+      
+      {/* Static radar arc background (conic gradient) */}
+      <div 
+        className="absolute inset-0 rounded-full opacity-30"
+        style={{ background: 'conic-gradient(from 240deg, rgba(245,158,11,0.8) 0deg, rgba(245,158,11,0) 60deg, transparent 60deg)' }} 
+      />
 
-        {/* Static filled "inside" sector (always visible) */}
-        <path
-          d={`M${CX},${CY} L${CX + outerR * Math.sin(-Math.PI * 0.3)},${CY - outerR * Math.cos(Math.PI * 0.3)} A${outerR},${outerR} 0 0,1 ${CX + outerR * Math.sin(Math.PI * 0.45)},${CY - outerR * Math.cos(Math.PI * 0.45)} Z`}
-          fill="rgba(180,120,0,0.22)"
-        />
-
-        {/* Concentric rings */}
-        {rings.map((pct, i) => {
-          const r = outerR * pct;
-          const isDashed = i === rings.length - 1;
-          return (
-            <circle
-              key={i}
-              cx={CX}
-              cy={CY}
-              r={r}
-              fill="none"
-              stroke={isDashed ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.20)'}
-              strokeWidth={isDashed ? 1.5 : 1}
-              strokeDasharray={isDashed ? '6 5' : undefined}
-            />
-          );
-        })}
-
-        {/* Sweep line */}
-        {!reduce && (
-          <motion.line
-            x1={CX}
-            y1={CY}
-            x2={CX}
-            y2={CY - outerR}
-            stroke="rgba(245,158,11,0.7)"
-            strokeWidth="2"
-            animate={{ rotate: [0, 360] }}
-            style={{ originX: `${CX}px`, originY: `${CY}px` }}
-            transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-          />
-        )}
-
-        {/* Center circle — "Você" */}
-        <circle cx={CX} cy={CY} r={36} fill="#F59E0B" />
-        <circle cx={CX} cy={CY} r={36} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={2} />
-        <text
-          x={CX}
-          y={CY + 5}
-          textAnchor="middle"
-          fontSize="14"
-          fontWeight="700"
-          fontFamily="system-ui, sans-serif"
-          fill="white"
+      {/* Animated Sweep Line & Arc */}
+      {!reduce && (
+        <motion.div
+          className="absolute inset-0 rounded-full"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
         >
-          Você
-        </text>
-
-        {/* Animated client dot */}
-        {!reduce && (
-          <motion.circle
-            cx={CX}
-            cy={CY - outerR * 0.62}
-            r={7}
-            fill="white"
-            stroke="rgba(245,158,11,0.8)"
-            strokeWidth={2}
-            animate={{ rotate: [0, 360] }}
-            style={{ originX: `${CX}px`, originY: `${CY}px` }}
-            transition={{ duration: 9, repeat: Infinity, ease: 'linear' }}
+          {/* Animated conic gradient */}
+          <div 
+            className="absolute inset-0 rounded-full"
+            style={{ background: 'conic-gradient(from 0deg, rgba(245,158,11,0.5) 0deg, rgba(245,158,11,0) 60deg, transparent 60deg)' }}
           />
-        )}
-      </svg>
+          {/* Leading sweep line */}
+          <div className="absolute top-0 left-1/2 w-[2px] h-[50%] bg-amber-500/80 -translate-x-1/2 origin-bottom" />
+        </motion.div>
+      )}
+
+      {/* Center circle */}
+      <div className="relative z-10 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#F59E0B] shadow-[0_0_30px_rgba(245,158,11,0.4)]">
+        <span className="font-display text-[15px] font-bold text-[#1D1D1F]">Você</span>
+      </div>
+
+      {/* Small orbiting dot */}
+      {!reduce && (
+        <motion.div
+          className="absolute inset-0"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+        >
+          <div className="absolute top-[28%] left-1/2 w-4 h-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.9)]" />
+        </motion.div>
+      )}
 
       {/* "Dentro do raio" label — upper right */}
-      <div
-        className="absolute right-0 top-[18%]"
-        style={{ transform: 'translateX(8px)' }}
-      >
+      <div className="absolute right-[2%] top-[20%]">
         <span className="rounded-full border border-amber-400/40 bg-[#1A1500] px-3.5 py-1.5 font-mono text-[11px] font-bold text-[#F59E0B]">
           Dentro do raio
         </span>
       </div>
 
       {/* "Fora do raio" label — lower left */}
-      <div
-        className="absolute bottom-[25%] left-0"
-        style={{ transform: 'translateX(-8px)' }}
-      >
+      <div className="absolute bottom-[22%] left-[2%]">
         <span className="rounded-full border border-white/[0.1] bg-[#1C1C1E] px-3.5 py-1.5 font-mono text-[11px] font-bold text-[#71717A]">
           Fora do raio
         </span>
       </div>
 
       {/* Bottom example text */}
-      <p className="absolute bottom-0 left-0 right-0 text-center font-display text-[13px] italic text-[#71717A]">
+      <p className="absolute -bottom-8 left-0 right-0 text-center font-display text-[13px] italic text-[#71717A]">
         Ex.: &ldquo;Atendo clientes em um raio de até 10 km.&rdquo;
       </p>
     </div>
