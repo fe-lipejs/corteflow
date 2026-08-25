@@ -1302,12 +1302,12 @@ function RadarVisual() {
   const reduce = useReducedMotion();
 
   return (
-    <div className="relative flex h-[340px] w-[340px] sm:h-[400px] sm:w-[400px] md:h-[460px] md:w-[460px] shrink-0 flex-col items-center justify-center">
+    <div className="relative flex h-[240px] w-[240px] sm:h-[280px] sm:w-[280px] md:h-[320px] md:w-[320px] shrink-0 flex-col items-center justify-center">
       {/* Radar Main Circle Area */}
       <div className="relative h-full w-full flex items-center justify-center">
         {/* Ambient background glow */}
         <div
-          className="absolute inset-[10%] rounded-full opacity-25 blur-3xl pointer-events-none"
+          className="absolute inset-[10%] rounded-full opacity-25 blur-2xl pointer-events-none"
           style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.7), transparent 70%)' }}
         />
 
@@ -1352,20 +1352,20 @@ function RadarVisual() {
               }}
             />
             {/* Bright leading ray line */}
-            <div className="absolute top-0 left-1/2 w-[2px] h-[50%] -translate-x-1/2 bg-gradient-to-t from-[#F59E0B] to-amber-200 shadow-[0_0_10px_#F59E0B] origin-bottom" />
+            <div className="absolute top-0 left-1/2 w-[2px] h-[50%] -translate-x-1/2 bg-gradient-to-t from-[#F59E0B] to-amber-200 shadow-[0_0_8px_#F59E0B] origin-bottom" />
           </motion.div>
         )}
 
         {/* Center "Você" Circle */}
-        <div className="relative z-20 flex h-[58px] w-[58px] sm:h-[66px] sm:w-[66px] items-center justify-center rounded-full bg-gradient-to-b from-[#FBBF24] to-[#D97706] shadow-[0_0_28px_rgba(245,158,11,0.6)]">
-          <span className="font-display text-[13px] sm:text-[14px] font-bold text-[#140F00] tracking-tight">
+        <div className="relative z-20 flex h-[40px] w-[40px] sm:h-[46px] sm:w-[46px] items-center justify-center rounded-full bg-gradient-to-b from-[#FBBF24] to-[#D97706] shadow-[0_0_20px_rgba(245,158,11,0.6)]">
+          <span className="font-display text-[10px] sm:text-[11px] font-bold text-[#140F00] tracking-tight">
             Você
           </span>
         </div>
 
         {/* Client Ping Point (Glowing White Dot on Radar) */}
         <div
-          className="absolute z-20 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-white shadow-[0_0_14px_4px_rgba(255,255,255,0.95)]"
+          className="absolute z-20 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white shadow-[0_0_10px_3px_rgba(255,255,255,0.95)]"
           style={{ bottom: '16%', right: '18%' }}
         >
           {!reduce && (
@@ -1378,18 +1378,18 @@ function RadarVisual() {
         </div>
 
         {/* "Dentro do raio" Badge (Top Right) */}
-        <div className="absolute top-[6%] right-[0%] sm:right-[2%] z-20">
-          <div className="rounded-full border border-amber-500/50 bg-[#1c1500]/95 px-3 py-1 sm:px-3.5 sm:py-1.5 shadow-[0_0_16px_rgba(245,158,11,0.3)] backdrop-blur-md">
-            <span className="font-mono text-[10px] sm:text-[11.5px] font-bold text-[#FBBF24] tracking-tight">
+        <div className="absolute top-[2%] right-[-10%] sm:right-[-5%] z-20">
+          <div className="rounded-full border border-amber-500/50 bg-[#1c1500]/95 px-2.5 py-1 sm:px-3 sm:py-1 shadow-[0_0_12px_rgba(245,158,11,0.3)] backdrop-blur-md">
+            <span className="font-mono text-[9px] sm:text-[10px] font-bold text-[#FBBF24] tracking-tight">
               Dentro do raio
             </span>
           </div>
         </div>
 
         {/* "Fora do raio" Badge (Bottom Left) */}
-        <div className="absolute bottom-[8%] left-[0%] sm:left-[2%] z-20">
-          <div className="rounded-full border border-white/10 bg-[#16161a]/95 px-3 py-1 sm:px-3.5 sm:py-1.5 backdrop-blur-md shadow-sm">
-            <span className="font-mono text-[10px] sm:text-[11.5px] font-medium text-[#71717A] tracking-tight">
+        <div className="absolute bottom-[4%] left-[-10%] sm:left-[-5%] z-20">
+          <div className="rounded-full border border-white/10 bg-[#16161a]/95 px-2.5 py-1 sm:px-3 sm:py-1 backdrop-blur-md shadow-sm">
+            <span className="font-mono text-[9px] sm:text-[10px] font-medium text-[#71717A] tracking-tight">
               Fora do raio
             </span>
           </div>
@@ -1397,7 +1397,7 @@ function RadarVisual() {
       </div>
 
       {/* Caption text matching reference */}
-      <p className="absolute -bottom-8 left-0 right-0 mt-7 text-center font-display text-[13px] sm:text-[14px] italic text-[#8A8A8F]">
+      <p className="absolute -bottom-8 left-0 right-0 mt-7 text-center font-display text-[11px] sm:text-[12px] italic text-[#8A8A8F]">
         Ex.: &ldquo;Atendo clientes em um raio de até 10 km.&rdquo;
       </p>
     </div>
@@ -1960,7 +1960,7 @@ function MobileCTA() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
           transition={{ duration: 0.45, ease: EASE }}
-          className="fixed inset-x-0 bottom-0 z-[90] bg-gradient-to-t from-[#000000] via-[#000000]/80 to-transparent pt-10 pb-[calc(env(safe-area-inset-bottom)+16px)] px-4 md:hidden pointer-events-none"
+          className="fixed inset-x-0 bottom-0 z-[90] bg-gradient-to-t from-[#000000] via-[#000000]/80 to-transparent pt-5 pb-[calc(env(safe-area-inset-bottom)+16px)] px-4 md:hidden pointer-events-none"
         >
           <Link
             to="/cadastro"
