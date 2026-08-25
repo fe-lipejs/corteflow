@@ -1261,31 +1261,37 @@ function DomicilioSection() {
 
           {/* Mockup + Radar visual */}
           <Reveal delay={0.15}>
-            <div className="relative flex h-[480px] w-full items-center justify-center md:h-[540px]">
+            <div className="relative flex h-[480px] w-full flex-col items-center justify-center md:h-[540px]">
 
-              {/* Radar in background right */}
-              <div className="absolute right-[-20%] sm:right-[-10%] md:right-[-15%] lg:right-[-25%] z-0 flex shrink-0 items-center justify-center">
-                <RadarVisual />
-              </div>
+              <div className="relative flex h-full w-full items-center justify-center">
+                {/* Radar in background right */}
+                <div className="absolute right-[-10%] sm:right-[-5%] md:right-[-15%] lg:right-[-25%] z-0 flex shrink-0 items-center justify-center">
+                  <RadarVisual />
+                </div>
 
-              {/* Phone in foreground left */}
-              <div className="absolute left-[0%] sm:left-[10%] md:left-[0%] lg:left-[5%] z-10 w-[200px] sm:w-[240px] md:w-[260px] lg:w-[280px]">
-                <div
-                  className="relative rounded-[2.6rem] sm:rounded-[3rem] border border-white/[0.12] bg-[#0D0D0F] p-[6px] sm:p-[8px] shadow-[0_50px_90px_-30px_rgba(0,0,0,0.8),0_0_50px_-10px_rgba(245,158,11,0.2)]"
-                  style={{ transform: 'perspective(1200px) rotateY(6deg) rotateX(2deg)' }}
-                >
-                  <span className="absolute left-1/2 top-[10px] z-20 h-[11px] sm:h-[13px] w-12 sm:w-[56px] -translate-x-1/2 rounded-full border border-white/10 bg-black" />
-                  <div className="relative aspect-[9/19.5] overflow-hidden rounded-[2.2rem] sm:rounded-[2.5rem]">
-                    <img
-                      src={M.phoneDomicilio}
-                      alt="Tela de escolha de atendimento a domicílio"
-                      className="absolute inset-0 h-full w-full object-cover object-top"
-                      loading="lazy"
-                    />
+                {/* Phone in foreground left */}
+                <div className="absolute left-[0%] sm:left-[10%] md:left-[0%] lg:left-[5%] z-10 w-[200px] sm:w-[240px] md:w-[260px] lg:w-[280px]">
+                  <div
+                    className="relative rounded-[2.6rem] sm:rounded-[3rem] border border-white/[0.12] bg-[#0D0D0F] p-[6px] sm:p-[8px] shadow-[0_50px_90px_-30px_rgba(0,0,0,0.8),0_0_50px_-10px_rgba(245,158,11,0.2)]"
+                    style={{ transform: 'perspective(1200px) rotateY(6deg) rotateX(2deg)' }}
+                  >
+                    <span className="absolute left-1/2 top-[10px] z-20 h-[11px] sm:h-[13px] w-12 sm:w-[56px] -translate-x-1/2 rounded-full border border-white/10 bg-black" />
+                    <div className="relative aspect-[9/19.5] overflow-hidden rounded-[2.2rem] sm:rounded-[2.5rem]">
+                      <img
+                        src={M.phoneDomicilio}
+                        alt="Tela de escolha de atendimento a domicílio"
+                        className="absolute inset-0 h-full w-full object-cover object-top"
+                        loading="lazy"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
+              {/* Caption text centered for the whole section */}
+              <p className="absolute -bottom-10 left-0 right-0 text-center font-display text-[11px] sm:text-[12px] italic text-[#8A8A8F]">
+                Ex.: &ldquo;Atendo clientes em um raio de até 10 km.&rdquo;
+              </p>
             </div>
           </Reveal>
         </div>
@@ -1366,7 +1372,7 @@ function RadarVisual() {
         {/* Client Ping Point (Glowing White Dot on Radar) */}
         <div
           className="absolute z-20 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white shadow-[0_0_10px_3px_rgba(255,255,255,0.95)]"
-          style={{ bottom: '16%', right: '18%' }}
+          style={{ bottom: '70%', right: '40%' }}
         >
           {!reduce && (
             <motion.span
@@ -1378,7 +1384,7 @@ function RadarVisual() {
         </div>
 
         {/* "Dentro do raio" Badge (Top Right) */}
-        <div className="absolute top-[2%] right-[-10%] sm:right-[-5%] z-20">
+        <div className="absolute top-[2%] right-[5%] sm:right-[10%] z-20">
           <div className="rounded-full border border-amber-500/50 bg-[#1c1500]/95 px-2.5 py-1 sm:px-3 sm:py-1 shadow-[0_0_12px_rgba(245,158,11,0.3)] backdrop-blur-md">
             <span className="font-mono text-[9px] sm:text-[10px] font-bold text-[#FBBF24] tracking-tight">
               Dentro do raio
@@ -1386,8 +1392,8 @@ function RadarVisual() {
           </div>
         </div>
 
-        {/* "Fora do raio" Badge (Bottom Left) */}
-        <div className="absolute bottom-[4%] left-[-10%] sm:left-[-5%] z-20">
+        {/* "Fora do raio" Badge (Bottom Center-Right) */}
+        <div className="absolute bottom-[2%] right-[15%] sm:right-[40%] sm:bottom-[-12%] z-20">
           <div className="rounded-full border border-white/10 bg-[#16161a]/95 px-2.5 py-1 sm:px-3 sm:py-1 backdrop-blur-md shadow-sm">
             <span className="font-mono text-[9px] sm:text-[10px] font-medium text-[#71717A] tracking-tight">
               Fora do raio
@@ -1395,11 +1401,6 @@ function RadarVisual() {
           </div>
         </div>
       </div>
-
-      {/* Caption text matching reference */}
-      <p className="absolute -bottom-8 left-0 right-0 mt-7 text-center font-display text-[11px] sm:text-[12px] italic text-[#8A8A8F]">
-        Ex.: &ldquo;Atendo clientes em um raio de até 10 km.&rdquo;
-      </p>
     </div>
   );
 }
