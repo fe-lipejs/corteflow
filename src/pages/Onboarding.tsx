@@ -128,7 +128,7 @@ export default function Onboarding() {
         navigate('/login', { replace: true });
         return;
       }
-      
+
       if (profile?.role === 'super_admin') {
         navigate('/platform', { replace: true });
         return;
@@ -431,7 +431,7 @@ export default function Onboarding() {
       // 3. Upload logo & banner (fail-safe)
       let logoUrl: string | null = null;
       let bannerUrl: string | null = null;
-      
+
       if (logoFile) {
         logoUrl = await uploadFile(logoFile, newTenant.id, 'logo');
       }
@@ -569,9 +569,9 @@ export default function Onboarding() {
       {/* Background glow */}
       <div className="absolute top-[-30%] right-[-20%] w-[50%] h-[50%] bg-[#DE870D]/10 blur-[150px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-20%] left-[-20%] w-[40%] h-[40%] bg-[#DE870D]/5 blur-[120px] rounded-full pointer-events-none" />
-      
+
       <div className="w-full max-w-4xl rounded-3xl overflow-hidden flex flex-col md:flex-row border border-[#E2E8F0] shadow-2xl relative z-10 bg-white" style={{ minHeight: '660px' }}>
-        
+
         {/* Sidebar Progress */}
         <div className="bg-[#F8FAFC] p-8 md:w-64 flex flex-col border-r border-[#E2E8F0]">
           <div className="flex items-center mb-10">
@@ -580,8 +580,8 @@ export default function Onboarding() {
 
           <div className="flex-1 space-y-6">
             {stepLabels.map((s) => (
-              <div 
-                key={s.num} 
+              <div
+                key={s.num}
                 onClick={() => {
                   if (s.num < step) {
                     setError(null);
@@ -590,14 +590,13 @@ export default function Onboarding() {
                 }}
                 className={`flex items-center gap-3.5 ${s.num < step ? 'cursor-pointer' : ''}`}
               >
-                <div 
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs transition-all ${
-                    step > s.num 
-                      ? 'bg-green-100 text-green-700 border border-green-300' 
-                      : step === s.num 
-                        ? 'bg-[#DE870D] text-white shadow-md shadow-[#DE870D]/25' 
+                <div
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs transition-all ${step > s.num
+                      ? 'bg-green-100 text-green-700 border border-green-300'
+                      : step === s.num
+                        ? 'bg-[#DE870D] text-white shadow-md shadow-[#DE870D]/25'
                         : 'bg-slate-100 text-slate-400 border border-slate-200'
-                  }`}
+                    }`}
                 >
                   {step > s.num ? <CheckCircle2 className="w-4 h-4" /> : s.num}
                 </div>
@@ -615,7 +614,7 @@ export default function Onboarding() {
 
         {/* Content Area */}
         <div className="flex-1 bg-white p-8 md:p-10 flex flex-col justify-between overflow-y-auto max-h-[85vh]">
-          <form 
+          <form
             onSubmit={(e) => {
               e.preventDefault();
               if (step === 3) {
@@ -623,410 +622,407 @@ export default function Onboarding() {
               } else {
                 handleNextStep();
               }
-            }} 
+            }}
             onKeyDown={handleKeyDown}
             className="flex-1 flex flex-col justify-between"
           >
-              <AnimatePresence mode="wait">
-                {/* Step 1: Idioma + Tipo de Negócio */}
-                {step === 1 && (
-                  <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1">
-                    <h3 className="text-2xl font-black mb-1 text-[#0F172A]">Qual é o seu negócio?</h3>
-                    <p className="text-sm mb-6 text-[#64748B]">Personalizaremos a plataforma para o seu segmento.</p>
+            <AnimatePresence mode="wait">
+              {/* Step 1: Idioma + Tipo de Negócio */}
+              {step === 1 && (
+                <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1">
+                  <h3 className="text-2xl font-black mb-1 text-[#0F172A]">Qual é o seu negócio?</h3>
+                  <p className="text-sm mb-6 text-[#64748B]">Personalizaremos a plataforma para o seu segmento.</p>
 
-                    <div className="mb-5">
-                      <label className="block text-sm font-semibold text-[#334155] mb-1.5">Idioma do Sistema</label>
-                      <select {...register('language')} className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium">
-                        <option value="pt">Português</option>
-                        <option value="en">English</option>
-                        <option value="es">Español</option>
-                        <option value="fr">Français</option>
-                        <option value="de">Deutsch</option>
-                      </select>
-                    </div>
+                  <div className="mb-5">
+                    <label className="block text-sm font-semibold text-[#334155] mb-1.5">Idioma do Sistema</label>
+                    <select {...register('language')} className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium">
+                      <option value="pt">Português</option>
+                      <option value="en">English</option>
+                      <option value="es">Español</option>
+                      <option value="fr">Français</option>
+                      <option value="de">Deutsch</option>
+                    </select>
+                  </div>
 
-                    <div className="grid grid-cols-1 gap-3">
-                      {[
-                        { id: 'barbearia', title: 'Barbearia', desc: 'Cortes, barba e navalha', icon: Scissors },
-                        { id: 'salao', title: 'Salão de Beleza', desc: 'Cabelo, coloração, tratamentos', icon: Star },
-                        { id: 'esmalteria', title: 'Esmalteria', desc: 'Manicure, pedicure, nail design', icon: Sparkles },
-                      ].map(type => (
-                        <div
-                          key={type.id}
-                          onClick={() => setValue('businessType', type.id as any, { shouldValidate: true })}
-                          className="p-4 rounded-2xl cursor-pointer transition-all border group hover:-translate-y-0.5"
-                          style={{
-                            borderColor: businessType === type.id ? '#DE870D' : '#E2E8F0',
-                            background: businessType === type.id ? '#DE870D0C' : '#FFFFFF',
-                            boxShadow: businessType === type.id ? '0 4px 12px rgba(222,135,13,0.12)' : 'none',
-                          }}
-                        >
-                          <div className="flex items-center gap-3">
-                            <type.icon className="w-6 h-6" style={{ color: businessType === type.id ? '#DE870D' : '#94A3B8' }} />
-                            <div>
-                              <div className="font-bold text-sm text-[#0F172A]">{type.title}</div>
-                              <div className="text-xs mt-0.5 text-[#64748B]">{type.desc}</div>
-                            </div>
+                  <div className="grid grid-cols-1 gap-3">
+                    {[
+                      { id: 'barbearia', title: 'Barbearia', desc: 'Cortes, barba e navalha', icon: Scissors },
+                      { id: 'salao', title: 'Salão de Beleza', desc: 'Cabelo, coloração, tratamentos', icon: Star },
+                      { id: 'esmalteria', title: 'Esmalteria', desc: 'Manicure, pedicure, nail design', icon: Sparkles },
+                    ].map(type => (
+                      <div
+                        key={type.id}
+                        onClick={() => setValue('businessType', type.id as any, { shouldValidate: true })}
+                        className="p-4 rounded-2xl cursor-pointer transition-all border group hover:-translate-y-0.5"
+                        style={{
+                          borderColor: businessType === type.id ? '#DE870D' : '#E2E8F0',
+                          background: businessType === type.id ? '#DE870D0C' : '#FFFFFF',
+                          boxShadow: businessType === type.id ? '0 4px 12px rgba(222,135,13,0.12)' : 'none',
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <type.icon className="w-6 h-6" style={{ color: businessType === type.id ? '#DE870D' : '#94A3B8' }} />
+                          <div>
+                            <div className="font-bold text-sm text-[#0F172A]">{type.title}</div>
+                            <div className="text-xs mt-0.5 text-[#64748B]">{type.desc}</div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
 
-                {/* Step 2: Nome + URL com Geração Automática e Live Check */}
-                {step === 2 && (
-                  <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1">
-                    <h3 className="text-2xl font-black mb-1 text-[#0F172A]">Como os clientes vão te encontrar?</h3>
-                    <p className="text-sm mb-6 text-[#64748B]">Seu link exclusivo para agendamentos online.</p>
-                    
-                    <div className="space-y-5">
-                      {/* Nome do Estabelecimento */}
-                      <div>
-                        <label className="block text-sm font-semibold text-[#334155] mb-1.5">Nome do Estabelecimento</label>
-                        <input 
-                          {...register('businessName')} 
-                          placeholder="Ex: Maria Manicure ou Studio Barber"
-                          value={businessName}
+              {/* Step 2: Nome + URL com Geração Automática e Live Check */}
+              {step === 2 && (
+                <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1">
+                  <h3 className="text-2xl font-black mb-1 text-[#0F172A]">Como os clientes vão te encontrar?</h3>
+                  <p className="text-sm mb-6 text-[#64748B]">Seu link exclusivo para agendamentos online.</p>
+
+                  <div className="space-y-5">
+                    {/* Nome do Estabelecimento */}
+                    <div>
+                      <label className="block text-sm font-semibold text-[#334155] mb-1.5">Nome do Estabelecimento</label>
+                      <input
+                        {...register('businessName')}
+                        placeholder="Ex: Maria Manicure ou Studio Barber"
+                        value={businessName}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setValue('businessName', val, { shouldValidate: true });
+                          if (!userManuallyEditedSlug) {
+                            setValue('slug', formatSlug(val), { shouldValidate: true });
+                          }
+                          setError(null);
+                        }}
+                        className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
+                      />
+                    </div>
+
+                    {/* URL Personalizada com Live Check */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-sm font-semibold text-[#334155]">URL Personalizada da sua Página</label>
+                        {isCheckingSlug && (
+                          <span className="text-xs text-[#DE870D] flex items-center gap-1 font-semibold">
+                            <span className="w-2 h-2 rounded-full bg-[#DE870D] animate-ping" /> Verificando...
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center">
+                        <span className="px-3.5 py-3 bg-[#F1F5F9] border border-[#CBD5E1] border-r-0 rounded-l-xl text-[#64748B] text-xs font-mono font-medium select-none">
+                          raffros.com/
+                        </span>
+                        <input
+                          {...register('slug')}
+                          placeholder="sua-url"
+                          value={slug || ''}
                           onChange={(e) => {
-                             const val = e.target.value;
-                             setValue('businessName', val, { shouldValidate: true });
-                             if (!userManuallyEditedSlug) {
-                               setValue('slug', formatSlug(val), { shouldValidate: true });
-                             }
-                             setError(null);
+                            setUserManuallyEditedSlug(true);
+                            const formatted = formatSlugWhileTyping(e.target.value);
+                            setValue('slug', formatted, { shouldValidate: true });
+                            setError(null);
                           }}
-                          className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium" 
+                          onBlur={() => {
+                            if (slug) {
+                              setValue('slug', formatSlug(slug), { shouldValidate: true });
+                            }
+                          }}
+                          className={`w-full px-4 py-3 bg-[#F8FAFC] border rounded-r-xl text-[#0F172A] placeholder-[#94A3B8] font-mono text-sm outline-none transition-all font-semibold ${slugStatus === 'available'
+                              ? 'border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 text-green-700'
+                              : slugStatus === 'taken'
+                                ? 'border-amber-500 focus:border-amber-500 text-amber-700'
+                                : 'border-[#CBD5E1] focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20'
+                            }`}
                         />
                       </div>
 
-                      {/* URL Personalizada com Live Check */}
-                      <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="block text-sm font-semibold text-[#334155]">URL Personalizada da sua Página</label>
-                          {isCheckingSlug && (
-                            <span className="text-xs text-[#DE870D] flex items-center gap-1 font-semibold">
-                              <span className="w-2 h-2 rounded-full bg-[#DE870D] animate-ping" /> Verificando...
-                            </span>
+                      {/* Status Feedback */}
+                      {slugStatus === 'available' && !isCheckingSlug && (
+                        <p className="text-green-600 text-xs mt-2 flex items-center gap-1.5 font-bold">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> URL exclusiva e disponível!
+                        </p>
+                      )}
+
+                      {slugStatus === 'taken' && !isCheckingSlug && (
+                        <div className="mt-2 space-y-2">
+                          <p className="text-amber-600 text-xs font-semibold flex items-center gap-1.5">
+                            ⚠️ A URL <strong className="font-mono">"{slug}"</strong> já está em uso por outro salão.
+                          </p>
+
+                          {/* Sugestões Inteligentes com 1 Clique */}
+                          {slugSuggestions.length > 0 && (
+                            <div className="p-3 bg-[#FFFBEB] rounded-xl border border-amber-200">
+                              <p className="text-[11px] font-bold text-[#DE870D] mb-2 flex items-center gap-1.5 uppercase tracking-wider">
+                                <Sparkles className="w-3.5 h-3.5" /> Sugestões disponíveis com 1 clique:
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {slugSuggestions.map((sug) => (
+                                  <button
+                                    key={sug}
+                                    type="button"
+                                    onClick={() => {
+                                      setValue('slug', sug, { shouldValidate: true });
+                                      setUserManuallyEditedSlug(true);
+                                    }}
+                                    className="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-white hover:bg-[#DE870D] text-[#DE870D] hover:text-white border border-[#DE870D]/40 hover:border-[#DE870D] transition-all active:scale-95 flex items-center gap-1 shadow-sm cursor-pointer"
+                                  >
+                                    <span>{sug}</span>
+                                    <span className="text-[10px] opacity-70">+</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           )}
                         </div>
+                      )}
 
-                        <div className="flex items-center">
-                          <span className="px-3.5 py-3 bg-[#F1F5F9] border border-[#CBD5E1] border-r-0 rounded-l-xl text-[#64748B] text-xs font-mono font-medium select-none">
-                            navalha.app/
-                          </span>
-                          <input 
-                            {...register('slug')} 
-                            placeholder="sua-url"
-                            value={slug || ''}
-                            onChange={(e) => {
-                              setUserManuallyEditedSlug(true);
-                              const formatted = formatSlugWhileTyping(e.target.value);
-                              setValue('slug', formatted, { shouldValidate: true });
-                              setError(null);
-                            }}
-                            onBlur={() => {
-                              if (slug) {
-                                setValue('slug', formatSlug(slug), { shouldValidate: true });
-                              }
-                            }}
-                            className={`w-full px-4 py-3 bg-[#F8FAFC] border rounded-r-xl text-[#0F172A] placeholder-[#94A3B8] font-mono text-sm outline-none transition-all font-semibold ${
-                              slugStatus === 'available' 
-                                ? 'border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 text-green-700' 
-                                : slugStatus === 'taken' 
-                                  ? 'border-amber-500 focus:border-amber-500 text-amber-700' 
-                                  : 'border-[#CBD5E1] focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20'
-                            }`}
-                          />
+                      {errors.slug && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.slug.message}</p>}
+                      {error && step === 2 && <p className="text-red-500 text-sm mt-2 font-semibold">⚠️ {error}</p>}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 3: Identidade, Contato & Localização Detalhada */}
+              {step === 3 && (
+                <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 space-y-6">
+                  <div>
+                    <h3 className="text-2xl font-black mb-1 text-[#0F172A]">Identidade & Localização</h3>
+                    <p className="text-sm text-[#64748B]">Personalize sua marca, contato e endereço (tudo editável depois).</p>
+                  </div>
+
+                  {/* Bloco 1: Imagens (Logo e Banner) */}
+                  <div className="p-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/60 space-y-4">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#475569]">Imagens da Marca</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-[#334155] mb-1.5">Logo (Perfil)</label>
+                        <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+                        <div
+                          onClick={() => !isProcessingLogo && logoInputRef.current?.click()}
+                          className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#DE870D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative"
+                        >
+                          {isProcessingLogo ? (
+                            <div className="flex flex-col items-center gap-2 text-[#DE870D]">
+                              <Loader2 className="w-6 h-6 animate-spin" />
+                              <span className="text-[10px] font-bold">PROCESSANDO...</span>
+                            </div>
+                          ) : logoPreview ? (
+                            <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-2" />
+                          ) : (
+                            <div className="flex flex-col items-center gap-1 text-[#94A3B8]">
+                              <Upload className="w-5 h-5" />
+                              <span className="text-xs font-medium">Enviar Logo</span>
+                            </div>
+                          )}
+                          {logoSize && !isProcessingLogo && (
+                            <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded font-medium backdrop-blur-sm">
+                              {logoSize}
+                            </div>
+                          )}
                         </div>
+                      </div>
 
-                        {/* Status Feedback */}
-                        {slugStatus === 'available' && !isCheckingSlug && (
-                          <p className="text-green-600 text-xs mt-2 flex items-center gap-1.5 font-bold">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> URL exclusiva e disponível!
+                      <div>
+                        <label className="block text-xs font-semibold text-[#334155] mb-1.5">Banner (Capa Superior)</label>
+                        <input ref={bannerInputRef} type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
+                        <div
+                          onClick={() => !isProcessingBanner && bannerInputRef.current?.click()}
+                          className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#DE870D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative"
+                        >
+                          {isProcessingBanner ? (
+                            <div className="flex flex-col items-center gap-2 text-[#DE870D]">
+                              <Loader2 className="w-6 h-6 animate-spin" />
+                              <span className="text-[10px] font-bold">PROCESSANDO...</span>
+                            </div>
+                          ) : bannerPreview ? (
+                            <img src={bannerPreview} alt="Banner" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="flex flex-col items-center gap-1 text-[#94A3B8]">
+                              <Image className="w-5 h-5" />
+                              <span className="text-xs font-medium">Enviar Capa</span>
+                            </div>
+                          )}
+                          {bannerSize && !isProcessingBanner && (
+                            <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded font-medium backdrop-blur-sm">
+                              {bannerSize}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#334155] mb-1 flex items-center justify-between">
+                        <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> Descrição curta</span>
+                        <span className="text-[11px] text-[#94A3B8]">{shortDescription.length}/180</span>
+                      </label>
+                      <textarea
+                        {...register('shortDescription')}
+                        rows={2}
+                        placeholder="Ex: Cortes modernos, atendimento exclusivo e ambiente climatizado."
+                        className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all resize-none text-xs font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Bloco 2: Contato & Redes */}
+                  <div className="p-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/60 space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#475569]">Contato</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-xs font-semibold text-[#334155] flex items-center gap-1">
+                            <PhoneIcon className="w-3 h-3 text-emerald-500" /> Telefone / WhatsApp do estabelecimento
+                          </label>
+                          {phoneCheckStatus === 'checking' && (
+                            <span className="text-[10px] text-[#DE870D] font-bold">Verificando...</span>
+                          )}
+                        </div>
+                        <input
+                          {...register('phoneNumber')}
+                          placeholder="(27) 99730-3135"
+                          onChange={(e) => {
+                            const masked = formatPhoneMask(e.target.value);
+                            setValue('phoneNumber', masked, { shouldValidate: true });
+                            setError(null);
+                            validatePhoneLive(masked);
+                          }}
+                          className={`w-full px-3 py-2 bg-white border rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all text-xs font-medium ${phoneCheckStatus === 'valid'
+                              ? 'border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 text-green-800'
+                              : phoneCheckStatus === 'taken' || phoneCheckStatus === 'invalid'
+                                ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 text-red-700'
+                                : 'border-[#CBD5E1] focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20'
+                            }`}
+                        />
+                        {phoneFeedback && (
+                          <p className={`text-[11px] mt-1 font-semibold flex items-center gap-1 ${phoneCheckStatus === 'valid'
+                              ? 'text-green-600'
+                              : 'text-red-500'
+                            }`}>
+                            {phoneCheckStatus === 'valid' ? <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" /> : '⚠️'} {phoneFeedback}
                           </p>
                         )}
+                      </div>
 
-                        {slugStatus === 'taken' && !isCheckingSlug && (
-                          <div className="mt-2 space-y-2">
-                            <p className="text-amber-600 text-xs font-semibold flex items-center gap-1.5">
-                              ⚠️ A URL <strong className="font-mono">"{slug}"</strong> já está em uso por outro salão.
-                            </p>
+                      <div>
+                        <label className="block text-xs font-semibold text-[#334155] mb-1 flex items-center gap-1">
+                          <Mail className="w-3 h-3 text-blue-500" /> E-mail
+                        </label>
+                        <input
+                          {...register('contactEmail')}
+                          placeholder="contato@salao.com"
+                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                        />
+                      </div>
 
-                            {/* Sugestões Inteligentes com 1 Clique */}
-                            {slugSuggestions.length > 0 && (
-                              <div className="p-3 bg-[#FFFBEB] rounded-xl border border-amber-200">
-                                <p className="text-[11px] font-bold text-[#DE870D] mb-2 flex items-center gap-1.5 uppercase tracking-wider">
-                                  <Sparkles className="w-3.5 h-3.5" /> Sugestões disponíveis com 1 clique:
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                  {slugSuggestions.map((sug) => (
-                                    <button
-                                      key={sug}
-                                      type="button"
-                                      onClick={() => {
-                                        setValue('slug', sug, { shouldValidate: true });
-                                        setUserManuallyEditedSlug(true);
-                                      }}
-                                      className="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-white hover:bg-[#DE870D] text-[#DE870D] hover:text-white border border-[#DE870D]/40 hover:border-[#DE870D] transition-all active:scale-95 flex items-center gap-1 shadow-sm cursor-pointer"
-                                    >
-                                      <span>{sug}</span>
-                                      <span className="text-[10px] opacity-70">+</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {errors.slug && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.slug.message}</p>}
-                        {error && step === 2 && <p className="text-red-500 text-sm mt-2 font-semibold">⚠️ {error}</p>}
+                      <div>
+                        <label className="block text-xs font-semibold text-[#334155] mb-1 flex items-center gap-1">
+                          <AtSign className="w-3 h-3 text-pink-500" /> Instagram (@)
+                        </label>
+                        <input
+                          {...register('instagramHandle')}
+                          placeholder="arroba_do_salao"
+                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                        />
                       </div>
                     </div>
-                  </motion.div>
-                )}
+                  </div>
 
-                {/* Step 3: Identidade, Contato & Localização Detalhada */}
-                {step === 3 && (
-                  <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 space-y-6">
+                  {/* Bloco 3: Localização com cada dado em um input */}
+                  <div className="p-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/60 space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#475569] flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-[#DE870D]" /> Localização do Estabelecimento
+                    </h4>
+
+                    {/* CEP + Rua + Número */}
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div className="sm:col-span-1">
+                        <label className="block text-xs font-semibold text-[#334155] mb-1">CEP</label>
+                        <input
+                          {...register('zipCode')}
+                          placeholder="00000000"
+                          maxLength={8}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '').slice(0, 8);
+                            setValue('zipCode', val);
+                            if (val.length === 8) lookupCep(val);
+                          }}
+                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-semibold text-[#334155] mb-1">Rua / Logradouro</label>
+                        <input
+                          {...register('street')}
+                          placeholder="Ex: Av. Paulista ou Rua das Flores"
+                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                        />
+                      </div>
+                      <div className="sm:col-span-1">
+                        <label className="block text-xs font-semibold text-[#334155] mb-1">Número</label>
+                        <input
+                          {...register('streetNumber')}
+                          placeholder="123"
+                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Complemento + Bairro + Cidade + Estado */}
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div className="sm:col-span-1">
+                        <label className="block text-xs font-semibold text-[#334155] mb-1">Complemento</label>
+                        <input
+                          {...register('complement')}
+                          placeholder="Sala 2, Bloco B..."
+                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                        />
+                      </div>
+                      <div className="sm:col-span-1">
+                        <label className="block text-xs font-semibold text-[#334155] mb-1">Bairro</label>
+                        <input
+                          {...register('neighborhood')}
+                          placeholder="Centro"
+                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                        />
+                      </div>
+                      <div className="sm:col-span-1">
+                        <label className="block text-xs font-semibold text-[#334155] mb-1">Cidade</label>
+                        <input
+                          {...register('city')}
+                          placeholder="São Paulo"
+                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                        />
+                      </div>
+                      <div className="sm:col-span-1">
+                        <label className="block text-xs font-semibold text-[#334155] mb-1">Estado</label>
+                        <input
+                          {...register('state')}
+                          placeholder="SP"
+                          maxLength={2}
+                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Google Maps Link */}
                     <div>
-                      <h3 className="text-2xl font-black mb-1 text-[#0F172A]">Identidade & Localização</h3>
-                      <p className="text-sm text-[#64748B]">Personalize sua marca, contato e endereço (tudo editável depois).</p>
+                      <label className="block text-xs font-semibold text-[#334155] mb-1">
+                        Link do Google Maps (Opcional)
+                      </label>
+                      <input
+                        {...register('googleMapsUrl')}
+                        placeholder="Cole o link curto do Google Maps aqui"
+                        className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                      />
                     </div>
-                    
-                    {/* Bloco 1: Imagens (Logo e Banner) */}
-                    <div className="p-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/60 space-y-4">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-[#475569]">Imagens da Marca</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-[#334155] mb-1.5">Logo (Perfil)</label>
-                          <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
-                          <div 
-                            onClick={() => !isProcessingLogo && logoInputRef.current?.click()} 
-                            className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#DE870D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative"
-                          >
-                            {isProcessingLogo ? (
-                              <div className="flex flex-col items-center gap-2 text-[#DE870D]">
-                                <Loader2 className="w-6 h-6 animate-spin" />
-                                <span className="text-[10px] font-bold">PROCESSANDO...</span>
-                              </div>
-                            ) : logoPreview ? (
-                              <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-2" />
-                            ) : (
-                              <div className="flex flex-col items-center gap-1 text-[#94A3B8]">
-                                <Upload className="w-5 h-5" />
-                                <span className="text-xs font-medium">Enviar Logo</span>
-                              </div>
-                            )}
-                            {logoSize && !isProcessingLogo && (
-                              <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded font-medium backdrop-blur-sm">
-                                {logoSize}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-[#334155] mb-1.5">Banner (Capa Superior)</label>
-                          <input ref={bannerInputRef} type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
-                          <div 
-                            onClick={() => !isProcessingBanner && bannerInputRef.current?.click()} 
-                            className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#DE870D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative"
-                          >
-                            {isProcessingBanner ? (
-                              <div className="flex flex-col items-center gap-2 text-[#DE870D]">
-                                <Loader2 className="w-6 h-6 animate-spin" />
-                                <span className="text-[10px] font-bold">PROCESSANDO...</span>
-                              </div>
-                            ) : bannerPreview ? (
-                              <img src={bannerPreview} alt="Banner" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="flex flex-col items-center gap-1 text-[#94A3B8]">
-                                <Image className="w-5 h-5" />
-                                <span className="text-xs font-medium">Enviar Capa</span>
-                              </div>
-                            )}
-                            {bannerSize && !isProcessingBanner && (
-                              <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded font-medium backdrop-blur-sm">
-                                {bannerSize}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-[#334155] mb-1 flex items-center justify-between">
-                          <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> Descrição curta</span>
-                          <span className="text-[11px] text-[#94A3B8]">{shortDescription.length}/180</span>
-                        </label>
-                        <textarea
-                          {...register('shortDescription')}
-                          rows={2}
-                          placeholder="Ex: Cortes modernos, atendimento exclusivo e ambiente climatizado."
-                          className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all resize-none text-xs font-medium"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Bloco 2: Contato & Redes */}
-                    <div className="p-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/60 space-y-3">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-[#475569]">Contato</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <label className="block text-xs font-semibold text-[#334155] flex items-center gap-1">
-                              <PhoneIcon className="w-3 h-3 text-emerald-500" /> Telefone / WhatsApp do estabelecimento
-                            </label>
-                            {phoneCheckStatus === 'checking' && (
-                              <span className="text-[10px] text-[#DE870D] font-bold">Verificando...</span>
-                            )}
-                          </div>
-                          <input 
-                            {...register('phoneNumber')} 
-                            placeholder="(27) 99730-3135"
-                            onChange={(e) => {
-                              const masked = formatPhoneMask(e.target.value);
-                              setValue('phoneNumber', masked, { shouldValidate: true });
-                              setError(null);
-                              validatePhoneLive(masked);
-                            }}
-                            className={`w-full px-3 py-2 bg-white border rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all text-xs font-medium ${
-                              phoneCheckStatus === 'valid'
-                                ? 'border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 text-green-800'
-                                : phoneCheckStatus === 'taken' || phoneCheckStatus === 'invalid'
-                                  ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 text-red-700'
-                                  : 'border-[#CBD5E1] focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20'
-                            }`}
-                          />
-                          {phoneFeedback && (
-                            <p className={`text-[11px] mt-1 font-semibold flex items-center gap-1 ${
-                              phoneCheckStatus === 'valid'
-                                ? 'text-green-600'
-                                : 'text-red-500'
-                            }`}>
-                              {phoneCheckStatus === 'valid' ? <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" /> : '⚠️'} {phoneFeedback}
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-[#334155] mb-1 flex items-center gap-1">
-                            <Mail className="w-3 h-3 text-blue-500" /> E-mail
-                          </label>
-                          <input 
-                            {...register('contactEmail')} 
-                            placeholder="contato@salao.com"
-                            className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium" 
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-[#334155] mb-1 flex items-center gap-1">
-                            <AtSign className="w-3 h-3 text-pink-500" /> Instagram (@)
-                          </label>
-                          <input 
-                            {...register('instagramHandle')} 
-                            placeholder="arroba_do_salao"
-                            className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium" 
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bloco 3: Localização com cada dado em um input */}
-                    <div className="p-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/60 space-y-3">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-[#475569] flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-[#DE870D]" /> Localização do Estabelecimento
-                      </h4>
-
-                      {/* CEP + Rua + Número */}
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                        <div className="sm:col-span-1">
-                          <label className="block text-xs font-semibold text-[#334155] mb-1">CEP</label>
-                          <input 
-                            {...register('zipCode')} 
-                            placeholder="00000000"
-                            maxLength={8}
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, '').slice(0, 8);
-                              setValue('zipCode', val);
-                              if (val.length === 8) lookupCep(val);
-                            }}
-                            className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium" 
-                          />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs font-semibold text-[#334155] mb-1">Rua / Logradouro</label>
-                          <input 
-                            {...register('street')} 
-                            placeholder="Ex: Av. Paulista ou Rua das Flores"
-                            className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium" 
-                          />
-                        </div>
-                        <div className="sm:col-span-1">
-                          <label className="block text-xs font-semibold text-[#334155] mb-1">Número</label>
-                          <input 
-                            {...register('streetNumber')} 
-                            placeholder="123"
-                            className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium" 
-                          />
-                        </div>
-                      </div>
-
-                      {/* Complemento + Bairro + Cidade + Estado */}
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                        <div className="sm:col-span-1">
-                          <label className="block text-xs font-semibold text-[#334155] mb-1">Complemento</label>
-                          <input 
-                            {...register('complement')} 
-                            placeholder="Sala 2, Bloco B..."
-                            className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium" 
-                          />
-                        </div>
-                        <div className="sm:col-span-1">
-                          <label className="block text-xs font-semibold text-[#334155] mb-1">Bairro</label>
-                          <input 
-                            {...register('neighborhood')} 
-                            placeholder="Centro"
-                            className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium" 
-                          />
-                        </div>
-                        <div className="sm:col-span-1">
-                          <label className="block text-xs font-semibold text-[#334155] mb-1">Cidade</label>
-                          <input 
-                            {...register('city')} 
-                            placeholder="São Paulo"
-                            className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium" 
-                          />
-                        </div>
-                        <div className="sm:col-span-1">
-                          <label className="block text-xs font-semibold text-[#334155] mb-1">Estado</label>
-                          <input 
-                            {...register('state')} 
-                            placeholder="SP"
-                            maxLength={2}
-                            className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium" 
-                          />
-                        </div>
-                      </div>
-
-                      {/* Google Maps Link */}
-                      <div>
-                        <label className="block text-xs font-semibold text-[#334155] mb-1">
-                          Link do Google Maps (Opcional)
-                        </label>
-                        <input 
-                          {...register('googleMapsUrl')} 
-                          placeholder="Cole o link curto do Google Maps aqui"
-                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium" 
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {error && (
               <div className="mt-4 p-3 rounded-xl text-xs font-semibold bg-red-500/10 border border-red-500/20 text-red-600">
@@ -1044,8 +1040,8 @@ export default function Onboarding() {
               )}
 
               {step < 3 ? (
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={handleNextStep}
                   className="px-6 py-3 rounded-xl font-bold text-xs text-white shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] transition-all flex items-center gap-1.5 cursor-pointer"
                   style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
@@ -1054,8 +1050,8 @@ export default function Onboarding() {
                   <ChevronRight className="w-4 h-4" />
                 </button>
               ) : (
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={handleSubmit(onSubmit)}
                   disabled={loading}
                   className="px-7 py-3 rounded-xl font-bold text-xs text-white shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60"

@@ -30,27 +30,27 @@ import { ImageCropperModal } from '../../components/ImageCropperModal';
 // ─── Custom SVG Icons ─────────────────────────────────────────────────────────
 const InstagramIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
-    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
   </svg>
 );
 
 const FacebookIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
-    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
   </svg>
 );
 
 const WhatsAppIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className={className} style={style}>
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
   </svg>
 );
 
 const StripeIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 28 28" fill="currentColor" className={className} style={style}>
-    <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697.5 12.521.5 5.86.5 1.584 3.977 1.584 9.544c0 6.082 5.679 7.18 8.878 8.371 2.457.915 3.328 1.597 3.328 2.64 0 .972-.947 1.554-2.428 1.554-2.28 0-5.183-1.077-7.147-2.189l-.92 5.584c2.052 1.073 5.378 1.868 8.068 1.868 6.786 0 11.233-3.23 11.233-9.197 0-6.175-5.59-7.25-8.62-8.025z"/>
+    <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697.5 12.521.5 5.86.5 1.584 3.977 1.584 9.544c0 6.082 5.679 7.18 8.878 8.371 2.457.915 3.328 1.597 3.328 2.64 0 .972-.947 1.554-2.428 1.554-2.28 0-5.183-1.077-7.147-2.189l-.92 5.584c2.052 1.073 5.378 1.868 8.068 1.868 6.786 0 11.233-3.23 11.233-9.197 0-6.175-5.59-7.25-8.62-8.025z" />
   </svg>
 );
 
@@ -80,7 +80,7 @@ export default function Configuracoes() {
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('aparencia');
-  
+
   // Account & Subscription Status
   const [subInfo, setSubInfo] = useState<any>(null);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -180,7 +180,7 @@ export default function Configuracoes() {
   const [rescheduleDeadlineHours, setRescheduleDeadlineHours] = useState(24);
   const [allowCancel, setAllowCancel] = useState(true);
   const [cancelPolicyText, setCancelPolicyText] = useState('');
-  
+
   // New Intelligent Policies
   const [cancelFreeHoursBefore, setCancelFreeHoursBefore] = useState(2);
   const [cancelFeePercent, setCancelFeePercent] = useState(0);
@@ -250,10 +250,10 @@ export default function Configuracoes() {
     if (file) {
       if (type === 'logo') setIsProcessingLogo(true);
       else setIsProcessingBanner(true);
-      
+
       try {
         file = await processFileIfHeic(file);
-        
+
         if (type === 'logo') setLogoSize(formatSize(file.size));
         else setBannerSize(formatSize(file.size));
 
@@ -275,7 +275,7 @@ export default function Configuracoes() {
   const handleCropComplete = async (croppedFile: File) => {
     setCropModalOpen(false);
     if (!tenant) return;
-    
+
     if (cropType === 'logo') {
       const url = await logoUpload.upload(croppedFile, `${tenant.id}/logo`);
       if (url) {
@@ -381,13 +381,13 @@ export default function Configuracoes() {
         setMapLink(data.map_link || '');
         setLatitude(data.latitude || null);
         setLongitude(data.longitude || null);
-        
+
         // Policies
         setAllowReschedule(data.allow_reschedule ?? true);
         setRescheduleDeadlineHours(data.reschedule_deadline_hours ?? 24);
         setAllowCancel(data.allow_cancel ?? true);
         setCancelPolicyText(data.cancel_policy_text || '');
-        
+
         // Intelligent engine policies
         setCancelFreeHoursBefore(data.cancel_free_hours_before ?? 2);
         setCancelFeePercent(data.cancel_fee_percent ?? 0);
@@ -570,16 +570,16 @@ export default function Configuracoes() {
       if (smartResult.extractedPalette && smartResult.extractedPalette.length > 0) {
         setExtractedColors(smartResult.extractedPalette);
       }
-      
+
       const accentToUse = chosenAccent || smartResult.primary;
-      const newPalette = mode === 'dark' 
-        ? { primary: accentToUse } 
+      const newPalette = mode === 'dark'
+        ? { primary: accentToUse }
         : {
-            primary: accentToUse,
-            background: '#F4F5F7',
-            card: '#FFFFFF',
-            text: '#0F172A',
-          };
+          primary: accentToUse,
+          background: '#F4F5F7',
+          card: '#FFFFFF',
+          text: '#0F172A',
+        };
       setCustomPalette(newPalette);
       setSelectedTheme(mode === 'light' ? 'elegant' : 'noir');
     } catch (e) {
@@ -597,11 +597,11 @@ export default function Configuracoes() {
     const newPalette = newMode === 'dark'
       ? { primary: activeAccent }
       : {
-          primary: activeAccent,
-          background: '#F8FAFC',
-          card: '#FFFFFF',
-          text: '#0F172A',
-        };
+        primary: activeAccent,
+        background: '#F8FAFC',
+        card: '#FFFFFF',
+        text: '#0F172A',
+      };
     setCustomPalette(newPalette);
     setSelectedTheme(newMode === 'light' ? 'elegant' : 'noir');
   };
@@ -611,11 +611,11 @@ export default function Configuracoes() {
     const newPalette = bgMode === 'dark'
       ? { primary: swatchHex }
       : {
-          primary: swatchHex,
-          background: '#F8FAFC',
-          card: '#FFFFFF',
-          text: '#0F172A',
-        };
+        primary: swatchHex,
+        background: '#F8FAFC',
+        card: '#FFFFFF',
+        text: '#0F172A',
+      };
     setCustomPalette(newPalette);
     setSelectedTheme(bgMode === 'light' ? 'elegant' : 'noir');
   };
@@ -1354,7 +1354,7 @@ export default function Configuracoes() {
       setTimeout(async () => {
         try {
           await signOut();
-        } catch {}
+        } catch { }
         window.location.href = '/';
       }, 2500);
 
@@ -1365,7 +1365,7 @@ export default function Configuracoes() {
     }
   };
 
-  const publicUrl = `navalha.app/${tenant?.slug || ''}`;
+  const publicUrl = `raffros.com/${tenant?.slug || ''}`;
 
   // ─── Skeleton Loading ─────────────────────────────────────────────────────
   if (initialLoading) {
@@ -1404,12 +1404,12 @@ export default function Configuracoes() {
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-medium" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textPrimary }}>
             <Globe className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-            <span className="font-mono font-bold">navalha.app/{tenant?.slug || 'seu-link'}</span>
+            <span className="font-mono font-bold">raffros.com/{tenant?.slug || 'seu-link'}</span>
           </div>
           <button
             type="button"
             onClick={() => {
-              const currentFullUrl = `navalha.app/${tenant?.slug || ''}`;
+              const currentFullUrl = `raffros.com/${tenant?.slug || ''}`;
               navigator.clipboard.writeText(currentFullUrl);
               setCopied(true);
               setTimeout(() => setCopied(false), 2000);
@@ -1443,11 +1443,11 @@ export default function Configuracoes() {
               onClick={() => setActiveTab(tab.id)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
               style={{
-                background: isActive 
-                  ? (theme.id === 'elegant' ? '#0F172A' : '#FFFFFF') 
+                background: isActive
+                  ? (theme.id === 'elegant' ? '#0F172A' : '#FFFFFF')
                   : 'transparent',
-                color: isActive 
-                  ? (theme.id === 'elegant' ? '#FFFFFF' : '#000000') 
+                color: isActive
+                  ? (theme.id === 'elegant' ? '#FFFFFF' : '#000000')
                   : theme.textSecondary,
                 boxShadow: isActive ? (theme.id === 'elegant' ? '0 1px 3px rgba(0,0,0,0.1)' : '0 0 12px rgba(255,255,255,0.2)') : 'none',
               }}
@@ -1526,7 +1526,7 @@ export default function Configuracoes() {
                       }}>
                       <span className="px-3 py-2.5 text-xs font-bold select-none border-r shrink-0 flex items-center gap-1"
                         style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textSecondary }}>
-                        navalha.app/
+                        raffros.com/
                       </span>
                       <input
                         type="text"
@@ -1772,9 +1772,8 @@ export default function Configuracoes() {
                         key={item.id}
                         type="button"
                         onClick={() => setBusinessType(item.id as any)}
-                        className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${
-                          businessType === item.id ? 'ring-2 ring-[#DE870D]' : ''
-                        }`}
+                        className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${businessType === item.id ? 'ring-2 ring-[#DE870D]' : ''
+                          }`}
                         style={{
                           background: businessType === item.id ? `${theme.accent}15` : theme.inputBg,
                           borderColor: businessType === item.id ? theme.accent : theme.border,
@@ -1883,21 +1882,19 @@ export default function Configuracoes() {
                     type="text"
                     value={whatsapp}
                     onChange={handleWhatsappChange}
-                    className={`themed-input ${
-                      phoneCheckStatus === 'valid'
-                        ? 'border-green-500 text-green-800'
-                        : phoneCheckStatus === 'taken' || phoneCheckStatus === 'invalid'
-                          ? 'border-red-500 text-red-700'
-                          : ''
-                    }`}
+                    className={`themed-input ${phoneCheckStatus === 'valid'
+                      ? 'border-green-500 text-green-800'
+                      : phoneCheckStatus === 'taken' || phoneCheckStatus === 'invalid'
+                        ? 'border-red-500 text-red-700'
+                        : ''
+                      }`}
                     placeholder="(27) 99730-3135"
                   />
                   {phoneFeedback && (
-                    <p className={`text-[11px] mt-1 font-semibold flex items-center gap-1 ${
-                      phoneCheckStatus === 'valid'
-                        ? 'text-green-600'
-                        : 'text-red-500'
-                    }`}>
+                    <p className={`text-[11px] mt-1 font-semibold flex items-center gap-1 ${phoneCheckStatus === 'valid'
+                      ? 'text-green-600'
+                      : 'text-red-500'
+                      }`}>
                       {phoneCheckStatus === 'valid' ? <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" /> : '⚠️'} {phoneFeedback}
                     </p>
                   )}
@@ -2117,16 +2114,16 @@ export default function Configuracoes() {
               {(() => {
                 const queryAddress = [streetAddress, streetNumber ? `nº ${streetNumber}` : '', neighborhood, city, state, zipCode, 'Brasil'].filter(Boolean).join(', ');
                 let embedUrl = '';
-                
+
                 // 1. If explicit iframe embed code was pasted
                 if (mapLink && mapLink.includes('<iframe')) {
                   const match = mapLink.match(/src="([^"]+)"/);
                   if (match) embedUrl = match[1];
-                } 
+                }
                 // 2. Direct embed url
                 else if (mapLink && (mapLink.includes('output=embed') || mapLink.includes('google.com/maps/embed'))) {
                   embedUrl = mapLink;
-                } 
+                }
                 // 3. Coordenadas exatas identificadas (via resolução ou GPS) -> Precisão Máxima
                 else if (latitude && longitude) {
                   embedUrl = `https://maps.google.com/maps?q=${latitude},${longitude}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
@@ -2141,7 +2138,7 @@ export default function Configuracoes() {
                 // 5. Busca de alta precisão por endereço completo com número, bairro, cidade e CEP
                 else if (queryAddress) {
                   embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(queryAddress)}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
-                } 
+                }
                 // 6. Link genérico de fallback
                 else if (mapLink && mapLink.trim().startsWith('http')) {
                   embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapLink.trim())}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
@@ -2149,8 +2146,8 @@ export default function Configuracoes() {
 
                 if (!embedUrl) return null;
 
-                const directLink = (mapLink && mapLink.trim().startsWith('http')) 
-                  ? mapLink.trim() 
+                const directLink = (mapLink && mapLink.trim().startsWith('http'))
+                  ? mapLink.trim()
                   : (queryAddress ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(queryAddress)}` : null);
 
                 return (
@@ -2212,7 +2209,7 @@ export default function Configuracoes() {
                         }}
                       >
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/>
+                          <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z" />
                         </svg>
                       </div>
 
@@ -2356,92 +2353,92 @@ export default function Configuracoes() {
                       const isLastActive = m.state && activeCount === 1;
 
                       return (
-                      <div
-                        key={m.key}
-                        onClick={() => {
-                          if (m.isLocked) {
-                            setStripeRequiredModalOpen(true);
-                          }
-                        }}
-                        className={`p-4 rounded-xl border transition-all ${m.isLocked ? 'opacity-70 cursor-pointer hover:border-amber-500/40' : ''}`}
-                        style={{
-                          background: m.state && !m.isLocked ? `${theme.accent}0d` : theme.inputBg,
-                          borderColor: m.state && !m.isLocked ? theme.accent : theme.inputBorder,
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold" style={{ color: theme.textPrimary }}>
-                                {m.label}
-                              </span>
-                              {m.isLocked && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
-                                  <Lock className="w-2.5 h-2.5" /> Requer Stripe
+                        <div
+                          key={m.key}
+                          onClick={() => {
+                            if (m.isLocked) {
+                              setStripeRequiredModalOpen(true);
+                            }
+                          }}
+                          className={`p-4 rounded-xl border transition-all ${m.isLocked ? 'opacity-70 cursor-pointer hover:border-amber-500/40' : ''}`}
+                          style={{
+                            background: m.state && !m.isLocked ? `${theme.accent}0d` : theme.inputBg,
+                            borderColor: m.state && !m.isLocked ? theme.accent : theme.inputBorder,
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold" style={{ color: theme.textPrimary }}>
+                                  {m.label}
                                 </span>
-                              )}
+                                {m.isLocked && (
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                                    <Lock className="w-2.5 h-2.5" /> Requer Stripe
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
+                                {m.desc}
+                              </p>
                             </div>
-                            <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
-                              {m.desc}
-                            </p>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (m.isLocked) {
+                                  setStripeRequiredModalOpen(true);
+                                  return;
+                                }
+                                if (isLastActive) return;
+                                m.set(!m.state);
+                              }}
+                              className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ml-4 cursor-pointer"
+                              style={{ background: m.state && !m.isLocked ? theme.accent : theme.border }}
+                            >
+                              <span
+                                className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                                style={{ transform: m.state && !m.isLocked ? 'translateX(22px)' : 'translateX(4px)' }}
+                              />
+                            </button>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (m.isLocked) {
-                                setStripeRequiredModalOpen(true);
-                                return;
-                              }
-                              if (isLastActive) return;
-                              m.set(!m.state);
-                            }}
-                            className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ml-4 cursor-pointer"
-                            style={{ background: m.state && !m.isLocked ? theme.accent : theme.border }}
-                          >
-                            <span
-                              className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-                              style={{ transform: m.state && !m.isLocked ? 'translateX(22px)' : 'translateX(4px)' }}
-                            />
-                          </button>
+                          {/* Slider for deposit percentage */}
+                          <AnimatePresence>
+                            {m.key === 'deposit' && m.state && !m.isLocked && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="mt-3 pt-3 border-t flex flex-col gap-2"
+                                style={{ borderColor: theme.inputBorder }}
+                              >
+                                <div className="flex items-center justify-between text-xs">
+                                  <span style={{ color: theme.textSecondary }}>
+                                    Valor da entrada: <strong style={{ color: theme.accent }}>{depositPercentage}%</strong>
+                                  </span>
+                                  <span style={{ color: theme.textMuted }}>
+                                    Restante ({100 - depositPercentage}%) pago no salão
+                                  </span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min={10}
+                                  max={90}
+                                  step={5}
+                                  value={depositPercentage}
+                                  onChange={(e) => setDepositPercentage(Number(e.target.value))}
+                                  className="w-full cursor-pointer"
+                                  style={{ accentColor: theme.accent }}
+                                />
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
-
-                        {/* Slider for deposit percentage */}
-                        <AnimatePresence>
-                          {m.key === 'deposit' && m.state && !m.isLocked && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="mt-3 pt-3 border-t flex flex-col gap-2"
-                              style={{ borderColor: theme.inputBorder }}
-                            >
-                              <div className="flex items-center justify-between text-xs">
-                                <span style={{ color: theme.textSecondary }}>
-                                  Valor da entrada: <strong style={{ color: theme.accent }}>{depositPercentage}%</strong>
-                                </span>
-                                <span style={{ color: theme.textMuted }}>
-                                  Restante ({100 - depositPercentage}%) pago no salão
-                                </span>
-                              </div>
-                              <input
-                                type="range"
-                                min={10}
-                                max={90}
-                                step={5}
-                                value={depositPercentage}
-                                onChange={(e) => setDepositPercentage(Number(e.target.value))}
-                                className="w-full cursor-pointer"
-                                style={{ accentColor: theme.accent }}
-                              />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
             </div>
           )}
@@ -2481,8 +2478,8 @@ export default function Configuracoes() {
                           }}
                           className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 cursor-pointer"
                           style={{
-                            background: bh.is_open 
-                              ? (customPalette?.primary || theme.accent) 
+                            background: bh.is_open
+                              ? (customPalette?.primary || theme.accent)
                               : (theme.id === 'elegant' ? '#CBD5E1' : '#2A2A2A')
                           }}
                         >
@@ -2965,11 +2962,10 @@ export default function Configuracoes() {
                     <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
                       Situação do Estabelecimento
                     </span>
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                      tenant?.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${tenant?.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
                       tenant?.status === 'trial' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
-                      'bg-red-500/10 text-red-400 border border-red-500/20'
-                    }`}>
+                        'bg-red-500/10 text-red-400 border border-red-500/20'
+                      }`}>
                       {tenant?.status === 'active' ? 'Ativo' : tenant?.status === 'trial' ? 'Em Período de Testes' : tenant?.status || 'Ativo'}
                     </span>
                   </div>
@@ -2977,7 +2973,7 @@ export default function Configuracoes() {
                     {tenant?.name || 'Seu Estabelecimento'}
                   </h4>
                   <p className="text-xs font-mono" style={{ color: theme.textMuted }}>
-                    navalha.app/{tenant?.slug}
+                    raffros.com/{tenant?.slug}
                   </p>
                 </div>
 
@@ -3007,9 +3003,9 @@ export default function Configuracoes() {
                   </div>
                   <h4 className="font-bold text-base" style={{ color: theme.textPrimary }}>
                     {subInfo?.status === 'active' ? 'Assinatura Ativa (Stripe)' :
-                     subInfo?.status === 'trial' ? 'Período de Testes (Trial)' :
-                     subInfo?.status === 'canceled' ? 'Cancelada (Sem novas cobranças)' :
-                     'Assinatura Regularizada'}
+                      subInfo?.status === 'trial' ? 'Período de Testes (Trial)' :
+                        subInfo?.status === 'canceled' ? 'Cancelada (Sem novas cobranças)' :
+                          'Assinatura Regularizada'}
                   </h4>
                   <p className="text-xs font-mono truncate" style={{ color: theme.textMuted }}>
                     {subInfo?.stripe_subscription_id ? `ID: ${subInfo.stripe_subscription_id}` : 'Cobrança via Stripe Billing'}
@@ -3028,8 +3024,8 @@ export default function Configuracoes() {
                     {subInfo?.current_period_end ?
                       new Date(subInfo.current_period_end).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) :
                       subInfo?.trial_ends_at ?
-                      `Fim do trial: ${new Date(subInfo.trial_ends_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}` :
-                      'Renovação Automática'}
+                        `Fim do trial: ${new Date(subInfo.trial_ends_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}` :
+                        'Renovação Automática'}
                   </h4>
                   <p className="text-xs text-emerald-400 font-medium">
                     {subInfo?.status === 'canceled' ? '✓ Nenhuma cobrança futura será feita' : 'Pagamento processado com segurança'}
@@ -3047,13 +3043,12 @@ export default function Configuracoes() {
                         Recebimento Online (Stripe Connect)
                       </span>
                     </div>
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                      stripeConnectInfo?.charges_enabled
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : stripeConnectInfo?.stripe_account_id
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${stripeConnectInfo?.charges_enabled
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : stripeConnectInfo?.stripe_account_id
                         ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                         : 'bg-neutral-500/10 text-neutral-400 border border-neutral-500/20'
-                    }`}>
+                      }`}>
                       {stripeConnectInfo?.charges_enabled ? 'Habilitado (Ao Vivo)' : stripeConnectInfo?.stripe_account_id ? 'Em Análise / Pendente' : 'Não Conectado'}
                     </span>
                   </div>
@@ -3061,15 +3056,15 @@ export default function Configuracoes() {
                     {stripeConnectInfo?.charges_enabled
                       ? 'Conta Bancária Vinculada & Ativa'
                       : stripeConnectInfo?.stripe_account_id
-                      ? 'Verificação Bancária Pendente'
-                      : 'Pagamentos Online Desativados'}
+                        ? 'Verificação Bancária Pendente'
+                        : 'Pagamentos Online Desativados'}
                   </h4>
                   <p className="text-xs" style={{ color: theme.textMuted }}>
                     {stripeConnectInfo?.charges_enabled
                       ? 'Seu salão está habilitado a receber pagamentos online (Pix, Cartão) diretamente na sua conta bancária.'
                       : stripeConnectInfo?.stripe_account_id
-                      ? 'Conclua o envio dos seus documentos bancários na aba "Recebimentos & Pagamentos" para liberar cobranças online.'
-                      : 'Conecte sua conta Stripe na aba "Recebimentos & Pagamentos" para cobrar reservas antecipadas dos seus clientes.'}
+                        ? 'Conclua o envio dos seus documentos bancários na aba "Recebimentos & Pagamentos" para liberar cobranças online.'
+                        : 'Conecte sua conta Stripe na aba "Recebimentos & Pagamentos" para cobrar reservas antecipadas dos seus clientes.'}
                   </p>
                   {!stripeConnectInfo?.charges_enabled && (
                     <div className="pt-2">
@@ -3156,7 +3151,7 @@ export default function Configuracoes() {
                 Ao cancelar, sua assinatura permanecerá ativa até o encerramento do ciclo já pago. Após esse período, seu salão voltará <strong>automaticamente para o Plano Gratuito</strong> e você não receberá nenhuma nova cobrança.
               </p>
             </div>
-            
+
             <div className="p-6">
               <label className="block text-sm font-bold text-[#888] mb-2">
                 Para confirmar o cancelamento, digite <strong className="text-amber-400">CANCELAR</strong> abaixo:
@@ -3170,7 +3165,7 @@ export default function Configuracoes() {
                 onPaste={e => e.preventDefault()}
               />
             </div>
-            
+
             <div className="border-t border-[#1a1a1a] p-4 flex justify-end gap-3 bg-[#0a0a0a]">
               <button
                 type="button"
@@ -3209,7 +3204,7 @@ export default function Configuracoes() {
                 Esta ação <strong>cancelará imediatamente</strong> qualquer assinatura ativa no Stripe e revogará seu acesso ao sistema. O histórico será mantido apenas para fins de auditoria.
               </p>
             </div>
-            
+
             <div className="p-6">
               <label className="block text-sm font-bold text-[#888] mb-2">
                 Para confirmar, digite <strong className="text-white">EXCLUIR</strong> abaixo:
@@ -3223,7 +3218,7 @@ export default function Configuracoes() {
                 onPaste={e => e.preventDefault()}
               />
             </div>
-            
+
             <div className="border-t border-[#1a1a1a] p-4 flex justify-end gap-3 bg-[#0a0a0a]">
               <button
                 onClick={() => {

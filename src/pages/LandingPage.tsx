@@ -298,7 +298,7 @@ function Header() {
                 Som da Casa
               </Link>
               <Link
-                to="/login"
+                to="/admin"
                 onClick={() => { closeMenu(); trackEvent('click_mobile_login'); }}
                 className="font-mono text-[16px] text-[#71717A] transition-colors hover:text-white"
               >

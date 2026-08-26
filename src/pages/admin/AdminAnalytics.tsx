@@ -137,6 +137,10 @@ export default function AdminAnalytics() {
   const spotifyExternalClicks = events.filter((e) => e.event_name === 'click_spotify_abrir_externo').length;
   const totalFaithInteractions = playlistViews + playlistHeroPillClicks + verseDrawClicks + verseShareClicks + spotifyExternalClicks;
 
+  // New Landing Page tracking
+  const storyTimelineClicks = events.filter((e) => e.event_name === 'click_story_step').length;
+  const stickyCtaClicks = events.filter((e) => e.event_name === 'click_mobile_sticky_cta').length;
+
   // Device breakdown
   const deviceCounts = events.reduce((acc, e) => {
     const dev = e.device_type || 'desktop';
@@ -387,7 +391,14 @@ export default function AdminAnalytics() {
             </div>
           </div>
           <p className="text-3xl font-display font-bold text-white mt-3">{totalClicks}</p>
-          <p className="text-xs text-[#71717A] mt-1">Interações em botões</p>
+          <div className="flex justify-between items-end mt-1">
+            <p className="text-xs text-[#71717A]">Interações em botões</p>
+            {storyTimelineClicks > 0 && (
+              <span className="text-[10px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                {storyTimelineClicks} na História
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Conversion Rate */}
@@ -399,7 +410,14 @@ export default function AdminAnalytics() {
             </div>
           </div>
           <p className="text-3xl font-display font-bold text-white mt-3">{conversionRate}%</p>
-          <p className="text-xs text-[#A1A1A6] mt-1">{conversionClicks} cliques nos planos</p>
+          <div className="flex justify-between items-end mt-1">
+            <p className="text-xs text-[#A1A1A6]">{conversionClicks} cliques nos planos</p>
+            {stickyCtaClicks > 0 && (
+              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                {stickyCtaClicks} via CTA Mobile
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Faith & Playlist Engagements */}
@@ -507,6 +525,14 @@ export default function AdminAnalytics() {
                   Acessos à Página /playlist
                 </span>
                 <span className="font-mono font-bold text-white">{playlistViews}</span>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-xs">
+                <span className="flex items-center gap-2 text-[#D4D4D8]">
+                  <Music2 className="w-3.5 h-3.5 text-purple-400" />
+                  Pílula Hero "Som da Casa"
+                </span>
+                <span className="font-mono font-bold text-white">{playlistHeroPillClicks}</span>
               </div>
 
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-xs">
