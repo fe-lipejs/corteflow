@@ -41,6 +41,11 @@ interface PlanFormData {
   trial_days: number;
   sort_order: number;
   price_brl: number;
+  stripe_price_brl: string;
+  price_usd: number;
+  stripe_price_usd: string;
+  price_eur: number;
+  stripe_price_eur: string;
   is_default: boolean;
   
   // Nova estrutura dinâmica
@@ -58,6 +63,11 @@ const EMPTY_FORM: PlanFormData = {
   trial_days: 7,
   sort_order: 0,
   price_brl: 0,
+  stripe_price_brl: '',
+  price_usd: 0,
+  stripe_price_usd: '',
+  price_eur: 0,
+  stripe_price_eur: '',
   is_default: false,
   permissions: [],
   features: {},
@@ -97,7 +107,12 @@ function PlanModal({
       description: plan.description ?? '',
       trial_days: plan.trial_days,
       sort_order: plan.sort_order,
-      price_brl: existingPrice?.amount ?? 0,
+      price_brl: plan?.plan_prices?.find(p => p.currency === 'BRL')?.amount ?? 0,
+      stripe_price_brl: plan?.plan_prices?.find(p => p.currency === 'BRL')?.stripe_price_id ?? '',
+      price_usd: plan?.plan_prices?.find(p => p.currency === 'USD')?.amount ?? 0,
+      stripe_price_usd: plan?.plan_prices?.find(p => p.currency === 'USD')?.stripe_price_id ?? '',
+      price_eur: plan?.plan_prices?.find(p => p.currency === 'EUR')?.amount ?? 0,
+      stripe_price_eur: plan?.plan_prices?.find(p => p.currency === 'EUR')?.stripe_price_id ?? '',
       is_default: !!plan.is_default,
       
       permissions: Array.isArray(plan.permissions) ? (plan.permissions as string[]) : [],
@@ -238,15 +253,6 @@ function PlanModal({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-[#555] mb-1.5">Preço BRL (R$)</label>
-                  <input
-                    type="number"
-                    value={form.price_brl}
-                    onChange={e => setForm(f => ({ ...f, price_brl: Number(e.target.value) }))}
-                    className="w-full px-3 py-2 bg-[#111] border border-[#1a1a1a] rounded-lg text-sm text-white"
-                  />
-                </div>
-                <div>
                   <label className="block text-xs font-medium text-[#555] mb-1.5">Trial (dias)</label>
                   <input
                     type="number"
@@ -254,6 +260,46 @@ function PlanModal({
                     onChange={e => setForm(f => ({ ...f, trial_days: Number(e.target.value) }))}
                     className="w-full px-3 py-2 bg-[#111] border border-[#1a1a1a] rounded-lg text-sm text-white"
                   />
+                </div>
+              </div>
+
+              <div className="space-y-3 mt-4 pt-4 border-t border-[#1a1a1a]">
+                <h4 className="text-sm font-medium text-white mb-2">Preços e Stripe (Multi-Moedas)</h4>
+                
+                {/* BRL */}
+                <div className="grid grid-cols-3 gap-3 p-3 bg-[#111] border border-[#1a1a1a] rounded-xl">
+                  <div className="col-span-1">
+                    <label className="block text-[10px] font-bold text-[#888] mb-1">BRL (R$)</label>
+                    <input type="number" value={form.price_brl} onChange={e => setForm(f => ({ ...f, price_brl: Number(e.target.value) }))} className="w-full px-2 py-1.5 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white" placeholder="0.00" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-[10px] font-bold text-[#888] mb-1">Stripe Price ID (BRL)</label>
+                    <input value={form.stripe_price_brl} onChange={e => setForm(f => ({ ...f, stripe_price_brl: e.target.value }))} className="w-full px-2 py-1.5 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white font-mono placeholder-[#333]" placeholder="price_1U8..." />
+                  </div>
+                </div>
+
+                {/* USD */}
+                <div className="grid grid-cols-3 gap-3 p-3 bg-[#111] border border-[#1a1a1a] rounded-xl">
+                  <div className="col-span-1">
+                    <label className="block text-[10px] font-bold text-[#888] mb-1">USD ($)</label>
+                    <input type="number" value={form.price_usd} onChange={e => setForm(f => ({ ...f, price_usd: Number(e.target.value) }))} className="w-full px-2 py-1.5 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white" placeholder="0.00" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-[10px] font-bold text-[#888] mb-1">Stripe Price ID (USD)</label>
+                    <input value={form.stripe_price_usd} onChange={e => setForm(f => ({ ...f, stripe_price_usd: e.target.value }))} className="w-full px-2 py-1.5 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white font-mono placeholder-[#333]" placeholder="price_1U8..." />
+                  </div>
+                </div>
+
+                {/* EUR */}
+                <div className="grid grid-cols-3 gap-3 p-3 bg-[#111] border border-[#1a1a1a] rounded-xl">
+                  <div className="col-span-1">
+                    <label className="block text-[10px] font-bold text-[#888] mb-1">EUR (€)</label>
+                    <input type="number" value={form.price_eur} onChange={e => setForm(f => ({ ...f, price_eur: Number(e.target.value) }))} className="w-full px-2 py-1.5 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white" placeholder="0.00" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-[10px] font-bold text-[#888] mb-1">Stripe Price ID (EUR)</label>
+                    <input value={form.stripe_price_eur} onChange={e => setForm(f => ({ ...f, stripe_price_eur: e.target.value }))} className="w-full px-2 py-1.5 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white font-mono placeholder-[#333]" placeholder="price_1U8..." />
+                  </div>
                 </div>
               </div>
 
@@ -525,20 +571,30 @@ export default function AdminPlans() {
         }
       }
 
-      if (planId && form.price_brl >= 0) {
-        const existingPlan = plans.find(p => p.id === planId);
-        const existingBrlPrice = existingPlan?.plan_prices?.find(p => p.currency === 'BRL');
+      if (planId) {
+        const syncPrice = async (currency: string, country: string, amount: number, stripeId: string) => {
+          const existingPlan = plans.find(p => p.id === planId);
+          const existingPrice = existingPlan?.plan_prices?.find(p => p.currency === currency);
+          
+          if (existingPrice) {
+            await supabase.from('plan_prices').update({ 
+              amount, 
+              stripe_price_id: stripeId || null 
+            } as any).eq('id', existingPrice.id);
+          } else if (amount >= 0) {
+            await supabase.from('plan_prices').insert({
+              plan_id: planId,
+              country_code: country,
+              currency: currency,
+              amount: amount,
+              stripe_price_id: stripeId || null
+            } as any);
+          }
+        };
 
-        if (existingBrlPrice) {
-          await supabase.from('plan_prices').update({ amount: form.price_brl } as any).eq('id', existingBrlPrice.id);
-        } else {
-          await supabase.from('plan_prices').insert({
-            plan_id: planId,
-            country_code: 'BR',
-            currency: 'BRL',
-            amount: form.price_brl,
-          } as any);
-        }
+        await syncPrice('BRL', 'BR', form.price_brl, form.stripe_price_brl);
+        await syncPrice('USD', 'US', form.price_usd, form.stripe_price_usd);
+        await syncPrice('EUR', 'ES', form.price_eur, form.stripe_price_eur);
       }
     },
     onSuccess: () => {

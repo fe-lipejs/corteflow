@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://raffros.com/sitemap.xml
