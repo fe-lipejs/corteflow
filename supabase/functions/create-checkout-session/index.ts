@@ -51,18 +51,31 @@ serve(async (req) => {
     // 2. Buscar preço padrão do plano
     const { data: planPrice } = await supabase
       .from('plan_prices')
-      .select('amount, currency')
+      .select('amount, currency, stripe_price_id')
       .eq('plan_id', plan.id)
       .limit(1)
       .maybeSingle();
     
-    // 3. Definir valor final (Custom Price > Plan Price > Fallback)
-    const amountFloat = customPrice?.amount_override ?? planPrice?.amount ?? 0;
-    const unitAmount = Math.round(amountFloat * 100);
     const currency = (planPrice?.currency ?? 'BRL').toLowerCase();
+    const lineItem: any = { quantity: 1 };
 
-    if (unitAmount <= 0) {
-      throw new Error("O valor do plano não pode ser zero ou negativo para assinaturas no Stripe.");
+    if (customPrice?.amount_override) {
+      const customUnitAmount = Math.round(customPrice.amount_override * 100);
+      if (customUnitAmount <= 0) throw new Error("Valor inválido.");
+      lineItem.price_data = {
+        currency: currency,
+        product_data: {
+          name: `Plano ${plan.name} - Customizado`,
+          description: plan.description,
+        },
+        unit_amount: customUnitAmount,
+        recurring: { interval: 'month' },
+      };
+    } else {
+      if (!planPrice?.stripe_price_id) {
+        throw new Error("ERRO: O plano selecionado não possui um 'stripe_price_id' configurado no banco de dados. O Administrador precisa criar o Produto no painel do Stripe e cadastrar o ID do preço.");
+      }
+      lineItem.price = planPrice.stripe_price_id;
     }
 
     // 4. Verificar se o salão já utilizou o benefício do teste grátis (Single-use trial rule)
@@ -95,22 +108,38 @@ serve(async (req) => {
       .eq('tenant_id', tenantId)
       .maybeSingle();
 
+    let customerId = existingSub?.stripe_customer_id;
+
+    // NOVO: Recuperar conta órfã do Stripe pelo e-mail se não estiver vinculada
+    if (!customerId && user.email) {
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        // Salvar no banco usando admin client para garantir permissão
+        const supabaseAdmin = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
+        await supabaseAdmin.from('subscriptions').update({ stripe_customer_id: customerId }).eq('tenant_id', tenantId);
+      }
+    }
+
+    // NOVO: Prevenir duplicação de assinatura no upgrade
+    if (existingSub?.stripe_subscription_id && (existingSub.status === 'active' || existingSub.status === 'trialing')) {
+      if (customerId) {
+        const portalSession = await stripe.billingPortal.sessions.create({
+          customer: customerId,
+          return_url: returnUrl,
+        });
+        return new Response(JSON.stringify({ url: portalSession.url }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     const checkoutParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: currency,
-            product_data: {
-              name: `Plano ${plan.name} - Navalha SaaS`,
-              description: plan.description,
-            },
-            unit_amount: unitAmount,
-            recurring: { interval: 'month' },
-          },
-          quantity: 1,
-        },
-      ],
+      line_items: [lineItem],
       mode: 'subscription',
       subscription_data: subscriptionData,
       success_url: `${returnUrl}?session_id={CHECKOUT_SESSION_ID}`,
@@ -121,8 +150,8 @@ serve(async (req) => {
       },
     };
 
-    if (existingSub?.stripe_customer_id) {
-      checkoutParams.customer = existingSub.stripe_customer_id;
+    if (customerId) {
+      checkoutParams.customer = customerId;
       checkoutParams.customer_update = { name: 'auto', address: 'auto' };
     } else {
       checkoutParams.customer_email = user.email;

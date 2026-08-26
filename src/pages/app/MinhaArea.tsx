@@ -80,7 +80,7 @@ export default function MinhaArea() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         className="rounded-2xl p-6 border"
-        style={{ background: theme.card, borderColor: theme.border }}
+        style={{ background: theme.cardBg, borderColor: theme.border }}
       >
         <div className="flex items-center gap-5">
           {professionalProfile?.photo_url ? (
@@ -128,7 +128,7 @@ export default function MinhaArea() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         className="rounded-2xl border overflow-hidden"
-        style={{ background: theme.card, borderColor: theme.border }}
+        style={{ background: theme.cardBg, borderColor: theme.border }}
       >
         <div className="px-6 py-4 border-b flex items-center gap-3" style={{ borderColor: theme.border }}>
           <Store className="w-5 h-5" style={{ color: theme.accent }} />
@@ -224,7 +224,7 @@ export default function MinhaArea() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         className="rounded-2xl p-5 border flex gap-4"
-        style={{ background: theme.card, borderColor: theme.border }}
+        style={{ background: theme.cardBg, borderColor: theme.border }}
       >
         <Shield className="w-5 h-5 shrink-0 mt-0.5" style={{ color: theme.accent }} />
         <div>
@@ -262,7 +262,7 @@ export default function MinhaArea() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="relative w-full max-w-sm rounded-2xl p-6 border z-10"
-              style={{ background: theme.card, borderColor: theme.border }}
+              style={{ background: theme.cardBg, borderColor: theme.border }}
             >
               {unlinkSuccess ? (
                 <div className="text-center py-4">

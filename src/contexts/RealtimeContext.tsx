@@ -15,15 +15,15 @@ const RealtimeContext = createContext<RealtimeContextType>({
 });
 
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
-  const { profile } = useAuth();
+  const { tenantId: activeTenantId } = useAuth();
   const queryClient = useQueryClient();
   const [isConnected, setIsConnected] = useState(true);
   const [status, setStatus] = useState<'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' | 'CONNECTING'>('CONNECTING');
 
   useEffect(() => {
-    if (!profile?.tenant_id) return;
+    if (!activeTenantId) return;
 
-    const tenantId = profile.tenant_id;
+    const tenantId = activeTenantId;
 
     // Supabase Channel setup
     const channel = supabase
@@ -129,7 +129,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.tenant_id, queryClient]);
+  }, [activeTenantId, queryClient]);
 
   return (
     <RealtimeContext.Provider value={{ isConnected, status }}>

@@ -114,6 +114,8 @@ export interface CreateProfessionalInput {
   offers_home_service?: boolean;
   max_home_distance_km?: number;
   home_fee?: number;
+  home_fee_type?: 'fixed' | 'per_km';
+  home_fee_per_km?: number;
 }
 
 export function useCreateProfessional(tenantId: string) {
@@ -138,6 +140,8 @@ export function useCreateProfessional(tenantId: string) {
           offers_home_service: input.offers_home_service ?? false,
           max_home_distance_km: input.max_home_distance_km ?? 0,
           home_fee: input.home_fee ?? 0,
+          home_fee_type: input.home_fee_type ?? 'fixed',
+          home_fee_per_km: input.home_fee_per_km ?? 0,
         } as any)
         .select('*')
         .single();

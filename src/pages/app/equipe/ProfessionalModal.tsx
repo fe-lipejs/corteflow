@@ -89,6 +89,8 @@ export default function ProfessionalModal({ professional, services, onClose, onC
   const [offersHomeService, setOffersHomeService] = useState<boolean>(professional?.offers_home_service ?? false);
   const [maxHomeDistanceKm, setMaxHomeDistanceKm] = useState<string>(String(professional?.max_home_distance_km ?? 10));
   const [homeFee, setHomeFee] = useState<string>(String(professional?.home_fee ?? 0));
+  const [homeFeeType, setHomeFeeType] = useState<'fixed' | 'per_km'>(professional?.home_fee_type ?? 'fixed');
+  const [homeFeePerKm, setHomeFeePerKm] = useState<string>(String(professional?.home_fee_per_km ?? 0));
 
   const [hours, setHours] = useState<WorkingHourForm[]>(() => {
     if (professional?.professional_working_hours?.length) {
@@ -171,7 +173,9 @@ export default function ProfessionalModal({ professional, services, onClose, onC
         serviceIds: selectedServiceIds,
         offers_home_service: offersHomeService,
         max_home_distance_km: Number(maxHomeDistanceKm),
-        home_fee: Number(homeFee) || 0,
+        home_fee: homeFeeType === 'fixed' ? (Number(homeFee) || 0) : 0,
+        home_fee_type: homeFeeType,
+        home_fee_per_km: homeFeeType === 'per_km' ? (Number(homeFeePerKm) || 0) : 0,
       });
     } else if (!isEditing && onCreate) {
       await onCreate({
@@ -189,7 +193,9 @@ export default function ProfessionalModal({ professional, services, onClose, onC
         serviceIds: selectedServiceIds,
         offers_home_service: offersHomeService,
         max_home_distance_km: Number(maxHomeDistanceKm),
-        home_fee: Number(homeFee) || 0,
+        home_fee: homeFeeType === 'fixed' ? (Number(homeFee) || 0) : 0,
+        home_fee_type: homeFeeType,
+        home_fee_per_km: homeFeeType === 'per_km' ? (Number(homeFeePerKm) || 0) : 0,
       });
     }
   };

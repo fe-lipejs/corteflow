@@ -126,7 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         // Fetch all memberships for this user
-        if (prof.is_super_admin) {
+        if ((prof.role === 'super_admin')) {
           // Super admins can access everything, we could fetch all tenants or just leave memberships empty
           setMemberships([]);
         } else {
@@ -192,7 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     profile,
     tenant,
     tenantId: tenant?.id || profile?.tenant_id || null,
-    role: profile?.is_super_admin ? 'super_admin' : (profile?.role as UserRole) || null,
+    role: (profile?.role === 'super_admin') ? 'super_admin' : (profile?.role as UserRole) || null,
     onboardingCompleted: Boolean(profile?.onboarding_completed || profile?.tenant_id),
     loading,
     signOut,

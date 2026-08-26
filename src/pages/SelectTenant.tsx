@@ -137,10 +137,10 @@ export default function SelectTenant() {
         </div>
 
         <div className="text-center">
-          <Button variant="ghost" onClick={signOut} className="text-zinc-500 hover:text-white">
+          <button onClick={signOut} className="text-zinc-500 hover:text-white flex items-center justify-center mx-auto">
             <LogOut className="w-4 h-4 mr-2" />
             Sair da conta
-          </Button>
+          </button>
         </div>
       </div>
     </div>

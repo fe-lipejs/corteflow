@@ -10,20 +10,18 @@ export interface PermissionEngine {
   checkLimit: (key: string, currentUsage: number) => boolean;
   getEffectivePermissions: () => string[];
   isLoading: boolean;
-  // Raw data for backwards compatibility
   contract: any;
   subscription: any;
   defaultPlan: any;
 }
 
 export function usePermissionEngine(): PermissionEngine {
-  const { tenantId, role } = useAuth();
+  const { tenantId, role, professionalPermissions } = useAuth();
 
-  // 1. Fetch Role Permissions
   const { data: rolePermissions = [], isLoading: isLoadingRoles } = useQuery({
     queryKey: ['sys_role_permissions', role],
-    enabled: !!role && role !== 'super_admin',
-    staleTime: Infinity, // Role definitions don't change often
+    enabled: !!role && role !== 'super_admin' && role !== 'professional',
+    staleTime: Infinity,
     queryFn: async () => {
       const { data } = await supabase
         .from('sys_role_permissions')
@@ -33,11 +31,10 @@ export function usePermissionEngine(): PermissionEngine {
     }
   });
 
-  // 2. Fetch Active Subscription & Contract
   const { data: subData, isLoading: isLoadingSub } = useQuery({
     queryKey: ['active_subscription_contract', tenantId, role],
     enabled: !!tenantId || role === 'super_admin',
-    staleTime: 1000 * 60 * 2, // 2 min cache
+    staleTime: 1000 * 60 * 2,
     queryFn: async () => {
       if (role === 'super_admin') return { isSuperAdmin: true };
 
@@ -59,7 +56,8 @@ export function usePermissionEngine(): PermissionEngine {
             allow_products,
             features,
             permissions,
-            limits
+            limits,
+            is_default
           ),
           plans (
             id,
@@ -76,13 +74,11 @@ export function usePermissionEngine(): PermissionEngine {
         .eq('tenant_id', tenantId!)
         .order('updated_at', { ascending: false });
 
-      // Always pick active/trialing first, then trial, then past_due, then newest
       let sub = subs?.find((s: any) => s.status === 'active' || s.status === 'trialing') ||
                 subs?.find((s: any) => s.status === 'trial') ||
                 subs?.find((s: any) => s.status === 'past_due') ||
                 subs?.[0] || null;
 
-      // Se não há assinatura ativa no banco local e o usuário é dono, sincroniza automaticamente com Stripe em background
       if ((!sub || sub.status !== 'active') && role === 'owner' && tenantId) {
         try {
           const { data: { session } } = await supabase.auth.getSession();
@@ -98,36 +94,7 @@ export function usePermissionEngine(): PermissionEngine {
             if (syncData.synced) {
               const { data: refreshedSubs } = await supabase
                 .from('subscriptions')
-                .select(`
-                  id,
-                  plan_id,
-                  status,
-                  trial_ends_at,
-                  current_period_end,
-                  grace_period_ends_at,
-                  suspension_reason,
-                  canceled_at,
-                  updated_at,
-                  created_at,
-                  subscription_contracts (
-                    max_professionals,
-                    allow_products,
-                    features,
-                    permissions,
-                    limits
-                  ),
-                  plans (
-                    id,
-                    key,
-                    name,
-                    max_professionals,
-                    allow_products,
-                    features,
-                    permissions,
-                    limits,
-                    is_default
-                  )
-                `)
+                .select('*')
                 .eq('tenant_id', tenantId!)
                 .order('updated_at', { ascending: false });
 
@@ -154,25 +121,21 @@ export function usePermissionEngine(): PermissionEngine {
 
   const isLoading = isLoadingRoles || isLoadingSub;
 
-  // Extract raw data
   const isSuperAdmin = role === 'super_admin';
   const sub = subData?.sub as any;
   const defaultPlan = subData?.defaultPlan as any;
   const contract = Array.isArray(sub?.subscription_contracts) ? sub?.subscription_contracts[0] : sub?.subscription_contracts;
 
-  // Resolve active sources (Contract or Plan or Default Plan)
   let featuresObj: any = {};
   let permissionsArr: string[] = [];
   let limitsObj: any = {};
 
   if (isSuperAdmin) {
-    // Super admin overrides
   } else if (sub && sub.status !== 'canceled') {
     const trialEndsAt = sub.trial_ends_at ? new Date(sub.trial_ends_at) : null;
     const trialExpired = trialEndsAt ? trialEndsAt < new Date() : false;
     
     if (sub.status === 'trial' && trialExpired) {
-      // Trial expired: block everything until payment
       featuresObj = {};
       permissionsArr = [];
       limitsObj = { profissionais: 0 };
@@ -183,7 +146,6 @@ export function usePermissionEngine(): PermissionEngine {
       permissionsArr = Array.from(new Set([...planPerms, ...contractPerms]));
       limitsObj = { ...(sub.plans?.limits || {}), ...(contract.limits || {}) };
       
-      // Retrocompatibility parsing for limits if max_professionals is used
       if (!limitsObj.profissionais && (contract.max_professionals || sub.plans?.max_professionals)) {
         limitsObj.profissionais = contract.max_professionals || sub.plans?.max_professionals;
       }
@@ -197,7 +159,6 @@ export function usePermissionEngine(): PermissionEngine {
       }
     }
   } else if (defaultPlan) {
-    // Fallback to Free/Default plan
     featuresObj = defaultPlan.features || {};
     permissionsArr = Array.isArray(defaultPlan.permissions) ? defaultPlan.permissions : [];
     limitsObj = defaultPlan.limits || {};
@@ -207,15 +168,20 @@ export function usePermissionEngine(): PermissionEngine {
     }
   }
 
-  // Engine Methods
   const hasPermission = (key: string) => {
     if (isSuperAdmin) return true;
     
-    // Role check: owners have all role permissions by default; other roles check sys_role_permissions
+    if (role === 'professional') {
+      if (key.startsWith('agenda')) return !!professionalPermissions?.view_own_schedule;
+      if (key.startsWith('financeiro')) return !!professionalPermissions?.view_financial;
+      if (key.startsWith('clientes')) return !!professionalPermissions?.view_clients;
+      if (key.startsWith('comissao')) return !!professionalPermissions?.view_commission;
+      return false;
+    }
+    
     const roleHasIt = role === 'owner' || role === 'admin' || rolePermissions.includes(key) || rolePermissions.includes('*');
     if (!roleHasIt) return false;
 
-    // Se o array de permissões do contrato/plano existe (mesmo vazio), validar se a chave está presente
     if (Array.isArray(permissionsArr)) {
       return permissionsArr.includes(key) || permissionsArr.includes('*');
     }
@@ -237,11 +203,18 @@ export function usePermissionEngine(): PermissionEngine {
   const hasAnyPermission = (prefix: string) => {
     if (isSuperAdmin) return true;
     
+    if (role === 'professional') {
+      if (prefix === 'agenda') return !!professionalPermissions?.view_own_schedule;
+      if (prefix === 'financeiro') return !!professionalPermissions?.view_financial;
+      if (prefix === 'clientes') return !!professionalPermissions?.view_clients;
+      if (prefix === 'comissao') return !!professionalPermissions?.view_commission;
+      return false;
+    }
+    
     if (!Array.isArray(permissionsArr) || permissionsArr.length === 0) return false;
 
-    // Verifica se alguma permissão do plano começa com o prefixo (ex: "equipe.", "agenda.", "produto.") ou se tem '*'
     if (permissionsArr.includes('*')) return true;
-    return permissionsArr.some(p => p.startsWith(prefix) || p.startsWith(`${prefix}.`));
+    return permissionsArr.some(p => p.startsWith(prefix) || p.startsWith(prefix + '.'));
   };
 
   const getPlanLimit = (key: string): number | 'unlimited' => {
@@ -249,7 +222,6 @@ export function usePermissionEngine(): PermissionEngine {
     
     const val = limitsObj[key];
     if (val === undefined || val === null) {
-      // Fallback: se não declarou limite, assume 0 (bloqueado)
       return 0;
     }
     if (val === -1 || val === 'unlimited') return 'unlimited';
@@ -268,8 +240,8 @@ export function usePermissionEngine(): PermissionEngine {
 
   const getEffectivePermissions = () => {
     if (isSuperAdmin) return ['*'];
-    // Intersecção do plano com a role
-    return rolePermissions.filter(p => permissionsArr.includes(p) || permissionsArr.length === 0);
+    if (role === 'professional') return ['professional_scoped'];
+    return rolePermissions.filter((p: string) => permissionsArr.includes(p) || permissionsArr.length === 0);
   };
 
   return {
@@ -285,4 +257,3 @@ export function usePermissionEngine(): PermissionEngine {
     defaultPlan
   };
 }
-

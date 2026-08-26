@@ -391,6 +391,24 @@ export default function PublicStore() {
   // ── State ──────────────────────────────────────────────────────────────────
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<any | null>(null);
+
+  const maxHomeRadiusKm = useMemo(() => {
+    let list = professionalsList.filter((p: any) => p.status === 'active' || p.active);
+    list = list.filter((p: any) => p.offers_home_service);
+    
+    if (selectedService && storeData?.professionalServices && storeData.professionalServices.length > 0) {
+      const allowedProIds = storeData.professionalServices
+        .filter((ps: any) => ps.service_id === selectedService.id)
+        .map((ps: any) => ps.professional_id);
+      const proIdsWithAnyMapping = [...new Set(storeData.professionalServices.map((ps: any) => ps.professional_id))];
+      list = list.filter((p: any) => {
+        if (!proIdsWithAnyMapping.includes(p.id)) return true;
+        return allowedProIds.includes(p.id);
+      });
+    }
+    
+    return list.length ? Math.max(...list.map((p: any) => Number(p.max_home_distance_km) || 0)) : 0;
+  }, [professionalsList, selectedService, storeData?.professionalServices]);
   const [selectedPro, setSelectedPro] = useState<any | "any" | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -1786,7 +1804,7 @@ export default function PublicStore() {
                               <HomeLocationWizard
                                 theme={theme}
                                 storeCoords={storeCoords}
-                                maxRadiusKm={professionalsList.length ? Math.max(...professionalsList.map((p: any) => p.max_home_distance_km || 0)) : 0}
+                                maxRadiusKm={maxHomeRadiusKm}
                                 feeConfig={{
                                   enabled: true,
                                   feeType: settings?.home_fee_type || 'fixed',

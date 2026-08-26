@@ -1,7 +1,4 @@
 const fs = require("fs");
-let content = fs.readFileSync("supabase/migrations/0073_home_fee_type.sql", "utf8");
-// Remove BOM if present
-if (content.charCodeAt(0) === 0xFEFF) {
-  content = content.slice(1);
-}
-fs.writeFileSync("supabase/migrations/0073_home_fee_type.sql", content, "utf8");
+let content = fs.readFileSync("supabase/migrations/0074_professional_email.sql", "utf8");
+if (content.charCodeAt(0) === 0xFEFF) content = content.slice(1);
+fs.writeFileSync("supabase/migrations/0074_professional_email.sql", content, "utf8");

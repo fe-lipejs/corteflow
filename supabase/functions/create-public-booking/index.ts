@@ -1,4 +1,4 @@
-Ôªøimport { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
 
@@ -72,7 +72,7 @@ serve(async (req) => {
     
     if (booking_mode === 'home') {
       if (!professional_id || professional_id === 'any') {
-        throw new Error("Para atendimento a domic√≠lio, escolha um profissional espec√≠fico.");
+        throw new Error("Para atendimento a domicÌlio, escolha um profissional especÌfico.");
       }
       
       const { data: professional, error: pErr } = await supabase
@@ -84,10 +84,10 @@ serve(async (req) => {
         
       if (pErr || !professional) throw new Error("Invalid professional.");
       if (!professional.active) throw new Error("Professional is not active.");
-      if (!professional.offers_home_service) throw new Error("Este profissional n√£o realiza atendimentos a domic√≠lio.");
+      if (!professional.offers_home_service) throw new Error("Este profissional n„o realiza atendimentos a domicÌlio.");
 
       if (!client_lat || !client_lng) {
-        throw new Error("Coordenadas do cliente s√£o obrigat√≥rias para atendimento a domic√≠lio.");
+        throw new Error("Coordenadas do cliente s„o obrigatÛrias para atendimento a domicÌlio.");
       }
 
       const { data: tenantSettings, error: tsErr } = await supabase
@@ -97,7 +97,7 @@ serve(async (req) => {
         .single();
         
       if (tsErr || !tenantSettings || !tenantSettings.latitude || !tenantSettings.longitude) {
-        throw new Error("O sal√£o n√£o possui coordenadas configuradas para calcular a dist√¢ncia.");
+        throw new Error("O sal„o n„o possui coordenadas configuradas para calcular a dist‚ncia.");
       }
 
       const distanceKm = haversineKm(
@@ -105,9 +105,9 @@ serve(async (req) => {
         { lat: tenantSettings.latitude, lng: tenantSettings.longitude }
       );
 
-      const maxDistance = professional.max_home_distance_km || 0;
+      const maxDistance = Number(professional.max_home_distance_km) || 0;
       if (distanceKm > maxDistance) {
-        throw new Error("A dist√¢ncia solicitada excede o limite de cobertura do profissional.");
+        throw new Error("A dist‚ncia solicitada excede o limite de cobertura do profissional.");
       }
 
       if (professional.home_fee_type === 'per_km') {
