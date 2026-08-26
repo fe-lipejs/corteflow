@@ -128,6 +128,7 @@ export default function ProfessionalModal({ professional, services, onClose, onC
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [isManagingAccess, setIsManagingAccess] = useState(false);
   const [accessError, setAccessError] = useState<string | null>(null);
+  const [accessSuccessMsg, setAccessSuccessMsg] = useState<string | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -251,7 +252,7 @@ export default function ProfessionalModal({ professional, services, onClose, onC
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao criar acesso');
-      setTempPassword(data.tempPassword);
+      setAccessSuccessMsg(data.message || 'Acesso criado com sucesso!');
       setAccessEnabled(true);
     } catch (err: any) {
       setAccessError(err.message);
@@ -444,38 +445,6 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                 </div>
               </div>
 
-              {/* Bio */}
-              <div>
-                <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Biografia</label>
-                <textarea
-                  value={bio}
-                  onChange={e => setBio(e.target.value)}
-                  rows={3}
-                  className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none resize-none themed-input"
-                  style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
-                  placeholder="Especialidades e experiência do profissional..."
-                />
-              </div>
-
-              {/* Specialties */}
-              <div>
-                <label className="block text-xs font-bold mb-2 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Especialidades</label>
-                <div className="flex flex-wrap gap-2">
-                  {SPECIALTIES.map(s => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => toggleSpecialty(s)}
-                      className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all"
-                      style={specialties.includes(s) 
-                        ? { background: theme.accentGradient, color: theme.btnPrimaryText, borderColor: theme.accent } 
-                        : { background: theme.inputBg, color: theme.textSecondary, borderColor: theme.border }}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
               {/* Atendimento a Domicílio (Professional override) */}
               <div className="rounded-xl p-5" style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}>
@@ -498,30 +467,71 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                 </div>
 
                 {offersHomeService && (
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t" style={{ borderColor: theme.border }}>
-                    <div>
-                      <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Limite Máximo (km)</label>
-                      <input 
-                        type="number" 
-                        min="1" 
-                        value={maxHomeDistanceKm} 
-                        onChange={e => setMaxHomeDistanceKm(e.target.value)} 
-                        className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
-                        style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
-                        placeholder="Ex: 10" 
-                      />
+                  <div className="space-y-4 pt-4 border-t" style={{ borderColor: theme.border }}>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Limite Máximo (km)</label>
+                        <input 
+                          type="number" 
+                          min="1" 
+                          value={maxHomeDistanceKm} 
+                          onChange={e => setMaxHomeDistanceKm(e.target.value)} 
+                          className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
+                          style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
+                          placeholder="Ex: 10" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Como é a taxa?</label>
+                        <div className="flex bg-zinc-900 rounded-xl p-1 border" style={{ borderColor: theme.border, background: theme.inputBg }}>
+                          <button
+                            type="button"
+                            onClick={() => setHomeFeeType('fixed')}
+                            className={`flex-1 text-xs py-2 rounded-lg font-bold transition-colors ${homeFeeType === 'fixed' ? 'bg-[#FFC400] text-black shadow-sm' : 'text-zinc-500 hover:text-white'}`}
+                            style={homeFeeType === 'fixed' ? { background: theme.accent, color: theme.textInverse } : { color: theme.textSecondary }}
+                          >
+                            Fixa
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setHomeFeeType('per_km')}
+                            className={`flex-1 text-xs py-2 rounded-lg font-bold transition-colors ${homeFeeType === 'per_km' ? 'bg-[#FFC400] text-black shadow-sm' : 'text-zinc-500 hover:text-white'}`}
+                            style={homeFeeType === 'per_km' ? { background: theme.accent, color: theme.textInverse } : { color: theme.textSecondary }}
+                          >
+                            Por KM
+                          </button>
+                        </div>
+                      </div>
                     </div>
+                    
                     <div>
-                      <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Taxa Extra (R$)</label>
-                      <input 
-                        type="number" 
-                        min="0" step="0.50" 
-                        value={homeFee} 
-                        onChange={e => setHomeFee(e.target.value)} 
-                        className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
-                        style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
-                        placeholder="Ex: 0.00" 
-                      />
+                      {homeFeeType === 'fixed' ? (
+                        <>
+                          <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Valor da Taxa Fixa (R$)</label>
+                          <input 
+                            type="number" 
+                            min="0" step="0.50" 
+                            value={homeFee} 
+                            onChange={e => setHomeFee(e.target.value)} 
+                            className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
+                            style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
+                            placeholder="Ex: 20.00" 
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Valor por cada KM (R$)</label>
+                          <input 
+                            type="number" 
+                            min="0" step="0.50" 
+                            value={homeFeePerKm} 
+                            onChange={e => setHomeFeePerKm(e.target.value)} 
+                            className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
+                            style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
+                            placeholder="Ex: 1.50" 
+                          />
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -743,10 +753,13 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full p-2.5 rounded-lg border text-sm focus:ring-2 outline-none mb-3"
+                          className="w-full p-2.5 rounded-lg border text-sm focus:ring-2 outline-none mb-2"
                           style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
                           placeholder="profissional@email.com"
                         />
+                        <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
+                          Se o e-mail já tiver conta no sistema, o profissional será vinculado automaticamente e receberá uma notificação. Se for novo, receberá um convite para criar a senha.
+                        </p>
                         <button
                           type="button"
                           onClick={handleCreateAccess}
@@ -754,7 +767,7 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-opacity disabled:opacity-50"
                           style={{ background: theme.accent, color: theme.textInverse }}
                         >
-                          {isManagingAccess ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Criar Acesso'}
+                          {isManagingAccess ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enviar Convite'}
                         </button>
                       </div>
                     ) : (
@@ -779,13 +792,13 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                       </div>
                     )}
 
-                    {tempPassword && (
-                      <div className="mt-4 p-4 rounded-lg bg-yellow-50 border border-yellow-200">
-                        <p className="text-xs text-yellow-800 mb-1">Senha temporária gerada! Copie e envie para o profissional:</p>
-                        <div className="flex items-center gap-2">
-                          <code className="flex-1 p-2 bg-white rounded text-sm font-mono text-center border border-yellow-200 select-all">{tempPassword}</code>
+                    {accessSuccessMsg && (
+                      <div className="mt-4 p-4 rounded-lg border" style={{ background: 'rgba(74, 222, 128, 0.08)', borderColor: 'rgba(74,222,128,0.3)' }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Check className="w-4 h-4 text-green-400" />
+                          <p className="text-xs font-semibold text-green-400">Sucesso!</p>
                         </div>
-                        <p className="text-[10px] text-yellow-600 mt-2 text-center">Ele será obrigado a trocar no primeiro login.</p>
+                        <p className="text-xs" style={{ color: theme.textSecondary }}>{accessSuccessMsg}</p>
                       </div>
                     )}
                   </div>

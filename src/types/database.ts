@@ -39,10 +39,12 @@ export interface Professional {
   languages: string[] | null;
   created_at: string;
   updated_at: string;
-  // Hybrid location model (migration 0046)
+  // Hybrid location model (migration 0046 & 0073)
   offers_home_service: boolean;
   max_home_distance_km: number;
   home_fee: number;
+  home_fee_type: 'fixed' | 'per_km';
+  home_fee_per_km: number;
   // Professional Access (migration 0047)
   auth_user_id: string | null;
   active: boolean;

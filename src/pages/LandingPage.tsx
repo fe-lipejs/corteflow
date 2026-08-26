@@ -218,7 +218,7 @@ function Header() {
             </Link>
 
             <Link
-              to="/login"
+              to="/admin"
               onClick={() => trackEvent('click_nav_login')}
               className="hidden text-[14px] font-medium text-[#A1A1A6] transition-colors hover:text-white md:inline-flex"
             >
@@ -1928,7 +1928,7 @@ function Footer() {
             <a href="/privacidade" className="text-[12px] text-[#52525B] transition-colors hover:text-white">Privacidade</a>
             <a href="/termos" className="text-[12px] text-[#52525B] transition-colors hover:text-white">Termos</a>
             <Link
-              to="/login"
+              to="/admin"
               onClick={() => trackEvent('click_footer_login')}
               className="text-[12px] text-[#52525B] transition-colors hover:text-white"
             >

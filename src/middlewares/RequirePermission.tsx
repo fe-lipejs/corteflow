@@ -4,12 +4,14 @@ import { useAuth } from '../hooks/useAuth';
 
 export default function RequirePermission({ 
   children, 
-  permission 
+  permission,
+  modulePrefix
 }: { 
   children: React.ReactNode, 
-  permission: string 
+  permission?: string,
+  modulePrefix?: string
 }) {
-  const { hasPermission, isLoading } = usePermissionEngine();
+  const { hasPermission, hasAnyPermission, isLoading } = usePermissionEngine();
   const { role, profile, tenant, onboardingCompleted, loading } = useAuth();
 
   if (loading || isLoading) {
@@ -30,7 +32,16 @@ export default function RequirePermission({
     return <Navigate to="/onboarding" replace />;
   }
 
-  if (!hasPermission(permission)) {
+  let hasAccess = false;
+  if (permission) {
+    hasAccess = hasPermission(permission);
+  } else if (modulePrefix) {
+    hasAccess = hasAnyPermission(modulePrefix);
+  } else {
+    hasAccess = true;
+  }
+
+  if (!hasAccess) {
     // Redireciona de volta para o dashboard caso tente acessar uma rota sem permissão
     return <Navigate to="/admin" replace />;
   }

@@ -942,14 +942,15 @@ export default function Onboarding() {
                       <div className="sm:col-span-1">
                         <label className="block text-xs font-semibold text-[#334155] mb-1">CEP</label>
                         <input
-                          {...register('zipCode')}
+                          {...register('zipCode', {
+                            onChange: (e) => {
+                              const val = e.target.value.replace(/\D/g, '').slice(0, 8);
+                              setValue('zipCode', val);
+                              if (val.length === 8) lookupCep(val);
+                            }
+                          })}
                           placeholder="00000000"
                           maxLength={8}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, '').slice(0, 8);
-                            setValue('zipCode', val);
-                            if (val.length === 8) lookupCep(val);
-                          }}
                           className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
                         />
                       </div>

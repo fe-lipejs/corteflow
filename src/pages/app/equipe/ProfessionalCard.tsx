@@ -108,21 +108,7 @@ export default function ProfessionalCard({ professional: p, onEdit, onDelete, on
           </span>
         </div>
 
-        {/* Specialties */}
-        {p.specialties?.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {p.specialties.slice(0, 3).map(s => (
-              <span key={s} className="text-[10px] font-semibold px-2 py-1 rounded-full border" style={{ borderColor: theme.border, color: theme.textSecondary, background: theme.inputBg }}>
-                {s}
-              </span>
-            ))}
-            {p.specialties.length > 3 && (
-              <span className="text-[10px] font-semibold px-2 py-1 rounded-full border" style={{ borderColor: theme.border, color: theme.textSecondary, background: theme.inputBg }}>
-                +{p.specialties.length - 3}
-              </span>
-            )}
-          </div>
-        )}
+
 
         {/* Contact */}
         <div className="mt-auto space-y-1.5">

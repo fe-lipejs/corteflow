@@ -267,17 +267,41 @@ export function useDeleteProfessional(tenantId: string) {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, photoUrl }: { id: string; photoUrl: string | null }) => {
+    mutationFn: async ({ id, photoUrl, status, authUserId }: { id: string; photoUrl: string | null; status?: string, authUserId?: string | null }) => {
       // 1. Remove photo from Storage first
       if (photoUrl) await deletePhoto(photoUrl);
 
-      // 2. Soft delete the row (set status to inactive) instead of hard delete
-      const { error } = await supabase.from('professionals').update({ status: 'inactive' } as any).eq('id', id);
-      if (error) throw error;
+      if (status === 'inactive') {
+        // 2a. Nullify bookings referencing this professional (prevents FK constraint errors)
+        await supabase
+          .from('bookings')
+          .update({ professional_id: null } as any)
+          .eq('professional_id', id)
+          .eq('tenant_id', tenantId);
+
+        // 2b. Delete professional_services and professional_working_hours (cleanup children)
+        await supabase.from('professional_services').delete().eq('professional_id', id);
+        await supabase.from('professional_working_hours').delete().eq('professional_id', id);
+
+        // 2c. Call edge function to revoke auth access / delink membership
+        if (authUserId) {
+          const { error: fnErr } = await supabase.functions.invoke('delete-professional-auth', {
+            body: { professional_id: id, auth_user_id: authUserId }
+          });
+          if (fnErr) console.warn("Failed to delete auth user, maybe already deleted", fnErr);
+        }
+
+        // 2d. Hard delete from professionals table
+        const { error } = await supabase.from('professionals').delete().eq('id', id);
+        if (error) throw error;
+      } else {
+        // Soft delete: set status to inactive (first time)
+        const { error } = await supabase.from('professionals').update({ active: false, status: 'inactive' } as any).eq('id', id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: PROFESSIONALS_KEY(tenantId) });
     },
   });
 }
-

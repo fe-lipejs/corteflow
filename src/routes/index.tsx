@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 // Middlewares
 import RequireAuth from '../middlewares/RequireAuth';
 import RequireRole from '../middlewares/RequireRole';
+import RequirePermission from '../middlewares/RequirePermission';
 
 // Public & Auth Pages
 import Login from '../pages/Login';
@@ -11,6 +12,7 @@ import LandingPage from '../pages/LandingPage';
 import PlaylistPage from '../pages/PlaylistPage';
 import Onboarding from '../pages/Onboarding';
 import RedefinirSenha from '../pages/RedefinirSenha';
+import SelectTenant from '../pages/SelectTenant';
 
 // Client Public Pages
 import SuccessBooking from '../pages/public/SuccessBooking';
@@ -45,6 +47,7 @@ import Assinatura from '../pages/app/Assinatura';
 import Suporte from '../pages/app/Suporte';
 import ChangePassword from '../pages/app/ChangePassword';
 import MinhaComissao from '../pages/app/MinhaComissao';
+import MinhaArea from '../pages/app/MinhaArea';
 import FeatureGate from '../components/FeatureGate';
 
 // ─── Shared Auth/Onboarding Routes ────────────────────────────────────────────
@@ -60,6 +63,14 @@ function AuthRoutes() {
         element={
           <RequireAuth>
             <Onboarding />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/select-tenant"
+        element={
+          <RequireAuth>
+            <SelectTenant />
           </RequireAuth>
         }
       />
@@ -81,16 +92,41 @@ function AppRouteTree() {
       }
     >
       <Route index element={<Dashboard />} />
-      <Route path="agenda" element={<FeatureGate modulePrefix="agenda"><Agenda /></FeatureGate>} />
-      <Route path="equipe" element={<FeatureGate modulePrefix="equipe"><Equipe /></FeatureGate>} />
-      <Route path="servicos" element={<FeatureGate modulePrefix="catalogo"><Servicos /></FeatureGate>} />
-      <Route path="clientes" element={<FeatureGate modulePrefix="clientes"><Clientes /></FeatureGate>} />
-      <Route path="financeiro" element={<FeatureGate modulePrefix="financeiro"><Financeiro /></FeatureGate>} />
-      <Route path="configuracoes" element={<Configuracoes />} />
+      <Route path="agenda" element={
+        <RequirePermission modulePrefix="agenda">
+          <FeatureGate modulePrefix="agenda"><Agenda /></FeatureGate>
+        </RequirePermission>
+      } />
+      <Route path="equipe" element={
+        <RequirePermission modulePrefix="equipe">
+          <FeatureGate modulePrefix="equipe"><Equipe /></FeatureGate>
+        </RequirePermission>
+      } />
+      <Route path="servicos" element={
+        <RequirePermission modulePrefix="catalogo">
+          <FeatureGate modulePrefix="catalogo"><Servicos /></FeatureGate>
+        </RequirePermission>
+      } />
+      <Route path="clientes" element={
+        <RequirePermission modulePrefix="clientes">
+          <FeatureGate modulePrefix="clientes"><Clientes /></FeatureGate>
+        </RequirePermission>
+      } />
+      <Route path="financeiro" element={
+        <RequirePermission modulePrefix="financeiro">
+          <FeatureGate modulePrefix="financeiro"><Financeiro /></FeatureGate>
+        </RequirePermission>
+      } />
+      <Route path="configuracoes" element={
+        <RequirePermission modulePrefix="configuracoes">
+          <Configuracoes />
+        </RequirePermission>
+      } />
       <Route path="assinatura" element={<Assinatura />} />
       <Route path="suporte" element={<Suporte />} />
-      <Route path="change-password" element={<ChangePassword />} />
+      <Route path="senha" element={<ChangePassword />} />
       <Route path="minha-comissao" element={<MinhaComissao />} />
+      <Route path="minha-area" element={<MinhaArea />} />
     </Route>
   );
 }

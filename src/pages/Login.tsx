@@ -199,7 +199,18 @@ export default function Login() {
       if (isSuperAdminMode || profileData?.role === 'super_admin') {
         navigate('/platform');
       } else if (isCompleted) {
-        navigate('/admin');
+        // Check memberships
+        const { data: memData } = await supabase
+          .from('tenant_users')
+          .select('tenant_id')
+          .eq('user_id', user.id)
+          .eq('status', 'active');
+          
+        if (memData && memData.length > 1) {
+          navigate('/select-tenant');
+        } else {
+          navigate('/admin');
+        }
       } else {
         navigate('/onboarding');
       }

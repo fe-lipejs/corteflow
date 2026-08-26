@@ -143,7 +143,7 @@ export default function Equipe() {
       return;
     }
     try {
-      await deleteMutation.mutateAsync({ id: deletingPro.id, photoUrl: deletingPro.photo_url });
+      await deleteMutation.mutateAsync({ id: deletingPro.id, photoUrl: deletingPro.photo_url, status: deletingPro.status, authUserId: deletingPro.auth_user_id });
       setDeletingPro(null);
     } catch (e: any) {
       setMutationError(e?.message ?? 'Erro ao excluir profissional.');

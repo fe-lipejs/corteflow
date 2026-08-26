@@ -396,6 +396,7 @@ export default function PublicStore() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
   const [paymentScope, setPaymentScope] = useState<PaymentScope>("partial");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pix");
@@ -579,7 +580,13 @@ export default function PublicStore() {
     storeInsta = storeInsta.split("instagram.com/")[1].replace("/", "");
   }
 
-  const travelFee = homeLocationData?.travelFee ?? 0;
+  const travelFee = (() => {
+    if (bookingMode !== 'home' || !selectedPro || selectedPro === 'any') return 0;
+    if (selectedPro.home_fee_type === 'per_km') {
+      return (selectedPro.home_fee_per_km || 0) * (homeLocationData?.distanceKm ?? 0);
+    }
+    return selectedPro.home_fee || 0;
+  })();
 
   const serviceHomeExtra = bookingMode === 'home' ? (selectedService?.home_price_extra ?? 0) : 0;
   const total = (selectedService?.price ?? 0) + serviceHomeExtra + travelFee;
@@ -691,19 +698,19 @@ export default function PublicStore() {
     }
 
     if (bookingMode === 'home') {
-      const salonRadius = settings?.home_service_radius_km || 10;
       list = list.filter((p: any) => {
         if (!p.offers_home_service) return false;
         if ((homeLocationData?.distanceKm ?? null) == null) return true;
+        // Use ONLY the professional's own radius - no global salon cap
         const effectiveRadius = p.max_home_distance_km && p.max_home_distance_km > 0
-          ? Math.min(p.max_home_distance_km, salonRadius)
-          : salonRadius;
+          ? p.max_home_distance_km
+          : 9999; // No limit if not set
         return homeLocationData!.distanceKm! <= effectiveRadius;
       });
     }
 
     return list;
-  }, [professionalsList, selectedService, storeData?.professionalServices, bookingMode, (homeLocationData?.distanceKm ?? null), settings?.home_service_radius_km]);
+  }, [professionalsList, selectedService, storeData?.professionalServices, bookingMode, (homeLocationData?.distanceKm ?? null), ]);
 
   const availableSlots: Slot[] = useMemo(() => {
     if (!selectedDate || !selectedService) return [];
@@ -869,77 +876,62 @@ export default function PublicStore() {
     setErrorMsg("");
 
     try {
-      const cleanPhone = customerPhone.replace(/\D/g, "");
-      let customerId = "";
-      const { data: existing } = await supabase
-        .from("customers")
-        .select("id")
-        .eq("tenant_id", tenant.id)
-        .eq("phone", cleanPhone)
-        .maybeSingle();
-
-      if (existing) {
-        customerId = existing.id;
-      } else {
-        const { data: newC, error: cErr } = await supabase
-          .from("customers")
-          .insert([{ tenant_id: tenant.id, name: customerName, phone: cleanPhone }])
-          .select("id")
-          .single();
-        if (cErr) throw cErr;
-        customerId = newC.id;
-      }
-
-      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const accessCode = Math.random().toString(36).substring(2, 12);
-      const pad = (n: number) => String(n).padStart(2, "0");
-      const tzOffsetMin = -new Date().getTimezoneOffset();
-      const tzSign = tzOffsetMin >= 0 ? "+" : "-";
-      const tzAbs = Math.abs(tzOffsetMin);
-      const tzStr = `${tzSign}${pad(Math.floor(tzAbs / 60))}:${pad(tzAbs % 60)}`;
-      const scheduledAt = `${format(selectedDate, "yyyy-MM-dd")}T${selectedTime}:00${tzStr}`;
-      let proId = selectedPro === "any" ? null : selectedPro?.id;
-      if (selectedPro === "any") {
-        const slot = availableSlots.find((s) => s.time === selectedTime);
-        if (slot?.availableProIds?.length) {
-          proId = slot.availableProIds[Math.floor(Math.random() * slot.availableProIds.length)];
-        } else {
-          proId = professionalsList[0]?.id || null;
+              let proId = selectedPro === "any" ? null : selectedPro?.id;
+        if (selectedPro === "any") {
+          const slot = availableSlots.find((s) => s.time === selectedTime);
+          if (slot?.availableProIds?.length) {
+            proId = slot.availableProIds[Math.floor(Math.random() * slot.availableProIds.length)];
+          } else {
+            proId = professionalsList[0]?.id || null;
+          }
         }
-      }
 
-      const { data: newBooking, error: bErr } = await supabase
-        .from("bookings")
-        .insert([
-          {
-            tenant_id: tenant.id,
-            customer_id: customerId,
-            professional_id: proId,
-            service_id: selectedService.id,
-            order_number: code,
-            scheduled_at: scheduledAt,
-            status: (paymentScope !== "local" && paymentMethod !== "cash") ? "pending" : "confirmed",
-            payment_mode:
-              paymentScope === "full"
-                ? "full"
-                : paymentScope === "partial"
-                  ? "deposit"
-                  : "local",
-            amount_paid:
-              paymentScope === "local" || paymentMethod === "cash" ? 0 : amountPaid,
-            amount_total: total,
-            notes: customerNotes,
-            access_code: accessCode,
-            service_location: bookingMode,
-            client_address: bookingMode === 'home' ? (homeLocationData?.address ?? "") : null,
-            client_lat: bookingMode === 'home' && homeLocationData ? homeLocationData?.lat : null,
-            client_lng: bookingMode === 'home' && homeLocationData ? homeLocationData?.lng : null,
-            travel_fee: bookingMode === 'home' ? travelFee : 0,
+        if (bookingMode === 'home' && (!proId || selectedPro === 'any')) {
+          setErrorMsg("Para atendimento a domicílio, escolha um profissional específico.");
+          setIsProcessing(false);
+          return;
+        }
+
+        const pad = (n: number) => String(n).padStart(2, "0");
+        const tzOffsetMin = -new Date().getTimezoneOffset();
+        const tzSign = tzOffsetMin >= 0 ? "+" : "-";
+        const tzAbs = Math.abs(tzOffsetMin);
+        const tzStr = `${tzSign}${pad(Math.floor(tzAbs / 60))}:${pad(tzAbs % 60)}`;
+        const scheduledAt = `${format(selectedDate, "yyyy-MM-dd")}T${selectedTime}:00${tzStr}`;
+
+        const payload = {
+          tenant_id: tenant.id,
+          service_id: selectedService.id,
+          professional_id: proId,
+          customer: {
+            name: customerName,
+            phone: customerPhone,
+            email: customerEmail,
           },
-        ])
-        .select("id")
-        .single();
-      if (bErr) throw bErr;
+          scheduled_at: scheduledAt,
+          booking_mode: bookingMode,
+          payment_scope: paymentScope,
+          payment_method: paymentMethod,
+          client_address: bookingMode === 'home' ? (homeLocationData?.address ?? "") : null,
+          client_lat: bookingMode === 'home' && homeLocationData ? homeLocationData?.lat : null,
+          client_lng: bookingMode === 'home' && homeLocationData ? homeLocationData?.lng : null,
+          customer_notes: customerNotes
+        };
+
+        const { data: functionResponse, error: functionError } = await supabase.functions.invoke("create-public-booking", {
+          body: payload
+        });
+
+        if (functionError) {
+          throw new Error(functionError.message || "Erro ao agendar.");
+        }
+
+        if (functionResponse?.error) {
+           throw new Error(functionResponse.error);
+        }
+
+        const newBooking = functionResponse?.booking;
+        if (!newBooking) throw new Error("Erro desconhecido ao criar agendamento.");
 
       if (paymentScope !== "local" && paymentMethod !== "cash") {
         const { data: checkoutData, error: cErr2 } = await supabase.functions.invoke(
@@ -958,7 +950,7 @@ export default function PublicStore() {
         queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(slug) });
       }
 
-      setBookingCode(code);
+      setBookingCode(newBooking.order_number);
       playSuccessSound();
       setStep(5);
     } catch (err: any) {
@@ -1794,7 +1786,7 @@ export default function PublicStore() {
                               <HomeLocationWizard
                                 theme={theme}
                                 storeCoords={storeCoords}
-                                maxRadiusKm={settings?.home_service_radius_km || 10}
+                                maxRadiusKm={professionalsList.length ? Math.max(...professionalsList.map((p: any) => p.max_home_distance_km || 0)) : 0}
                                 feeConfig={{
                                   enabled: true,
                                   feeType: settings?.home_fee_type || 'fixed',
@@ -2040,39 +2032,41 @@ export default function PublicStore() {
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 sm:gap-4">
                         {/* Anyone Option */}
-                      <motion.button
-                        whileHover={{ y: -3 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          setSelectedPro("any");
-                          setStep(3);
-                        }}
-                        className="group relative rounded-3xl border-2 p-5 sm:p-6 flex flex-col items-center justify-center text-center transition-all cursor-pointer"
-                        style={{
-                          borderColor: `${accent}60`,
-                          background: isDark ? `${accent}0c` : `${accent}08`,
-                          boxShadow: cardShadowStyle,
-                        }}
-                      >
-                        <div
-                          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3 shadow-md"
-                          style={{ background: `${accent}20`, color: accent }}
+                      {bookingMode !== 'home' && (
+                        <motion.button
+                          whileHover={{ y: -3 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => {
+                            setSelectedPro("any");
+                            setStep(3);
+                          }}
+                          className="group relative rounded-3xl border-2 p-5 sm:p-6 flex flex-col items-center justify-center text-center transition-all cursor-pointer"
+                          style={{
+                            borderColor: `${accent}60`,
+                            background: isDark ? `${accent}0c` : `${accent}08`,
+                            boxShadow: cardShadowStyle,
+                          }}
                         >
-                          <Zap className="w-6 h-6" />
-                        </div>
-                        <p className="font-bold text-xs sm:text-sm" style={{ color: theme.textPrimary }}>
-                          Qualquer profissional
-                        </p>
-                        <p className="text-[11px] mt-0.5 font-medium" style={{ color: theme.textSecondary }}>
-                          Horário mais rápido
-                        </p>
-                        <span
-                          className="mt-2.5 text-[9px] font-bold px-2 py-0.5 rounded-full"
-                          style={{ background: `${accent}20`, color: accent }}
-                        >
-                          Recomendado
-                        </span>
-                      </motion.button>
+                          <div
+                            className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3 shadow-md"
+                            style={{ background: `${accent}20`, color: accent }}
+                          >
+                            <Zap className="w-6 h-6" />
+                          </div>
+                          <p className="font-bold text-xs sm:text-sm" style={{ color: theme.textPrimary }}>
+                            Qualquer profissional
+                          </p>
+                          <p className="text-[11px] mt-0.5 font-medium" style={{ color: theme.textSecondary }}>
+                            Horário mais rápido
+                          </p>
+                          <span
+                            className="mt-2.5 text-[9px] font-bold px-2 py-0.5 rounded-full"
+                            style={{ background: `${accent}20`, color: accent }}
+                          >
+                            Recomendado
+                          </span>
+                        </motion.button>
+                      )}
 
                       {/* Professional Cards */}
                       {availableProfessionals.map((p, i) => (
@@ -2651,8 +2645,31 @@ export default function PublicStore() {
                           <div className="space-y-2.5 text-xs">
                             <div className="flex justify-between" style={{ color: theme.textSecondary }}>
                               <span>Valor do Serviço</span>
-                              <span className="font-semibold" style={{ color: theme.textPrimary }}>{money(total)}</span>
+                              <span className="font-semibold" style={{ color: theme.textPrimary }}>{money(selectedService?.price ?? 0)}</span>
                             </div>
+                            {bookingMode === 'home' && travelFee > 0 && (
+                              <div className="flex justify-between" style={{ color: theme.textSecondary }}>
+                                <span>
+                                    Taxa de Deslocamento
+                                    {selectedPro && selectedPro !== 'any' && (selectedPro as any).home_fee_type === 'per_km' && homeLocationData?.distanceKm != null && (
+                                      <span className="block text-xs opacity-60 font-normal">{homeLocationData.distanceKm.toFixed(1)} km × {money((selectedPro as any).home_fee_per_km || 0)}/km</span>
+                                    )}
+                                  </span>
+                                <span className="font-semibold" style={{ color: theme.textPrimary }}>{money(travelFee)}</span>
+                              </div>
+                            )}
+                            {bookingMode === 'home' && serviceHomeExtra > 0 && (
+                              <div className="flex justify-between" style={{ color: theme.textSecondary }}>
+                                <span>Adicional a domicílio</span>
+                                <span className="font-semibold" style={{ color: theme.textPrimary }}>{money(serviceHomeExtra)}</span>
+                              </div>
+                            )}
+                            {bookingMode === 'home' && (
+                              <div className="flex justify-between font-bold border-t pt-2 mt-2" style={{ color: theme.textPrimary, borderColor: cardBorderColor }}>
+                                <span>Total</span>
+                                <span>{money(total)}</span>
+                              </div>
+                            )}
                             <div
                               className="flex justify-between font-extrabold text-base border-t pt-3"
                               style={{ borderColor: cardBorderColor }}

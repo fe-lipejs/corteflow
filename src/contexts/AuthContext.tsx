@@ -2,6 +2,7 @@ import React, { createContext, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../integrations/supabase/client';
 import type { Database, UserRole, Professional } from '../types/database';
+import { useQueryClient } from '@tanstack/react-query';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Tenant = Database['public']['Tables']['tenants']['Row'];
@@ -21,11 +22,15 @@ interface AuthContextType {
   professionalProfile: Professional | null;
   professionalPermissions: Record<string, boolean> | null;
   forcePasswordChange: boolean;
+  // Multi-tenant
+  memberships: any[];
+  switchTenantContext: (tenantId: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -35,6 +40,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [professionalProfile, setProfessionalProfile] = useState<Professional | null>(null);
   const [professionalPermissions, setProfessionalPermissions] = useState<Record<string, boolean> | null>(null);
   const [forcePasswordChange, setForcePasswordChange] = useState(false);
+  
+  const [memberships, setMemberships] = useState<any[]>([]);
 
   useEffect(() => {
     // Get initial session
@@ -86,19 +93,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         let resolvedTenantId = (prof as any)?.tenant_id;
 
-        if (prof.role === 'professional') {
-          // Fetch professional record
+        if (prof.role === 'professional' && resolvedTenantId) {
+          // Fetch professional record for the active tenant
           const { data: profRecord, error: profRecordErr } = await supabase
             .from('professionals')
             .select('*')
             .eq('auth_user_id', userId)
+            .eq('tenant_id', resolvedTenantId)
             .maybeSingle();
             
           if (profRecord && !profRecordErr) {
             setProfessionalProfile(profRecord as Professional);
             setProfessionalPermissions((profRecord.permissions as Record<string, boolean>) || null);
             setForcePasswordChange(!!profRecord.force_password_change);
-            resolvedTenantId = profRecord.tenant_id;
+          } else {
+            setProfessionalProfile(null);
+            setProfessionalPermissions(null);
           }
         }
 
@@ -114,6 +124,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setTenant(ten);
           }
         }
+        
+        // Fetch all memberships for this user
+        if (prof.is_super_admin) {
+          // Super admins can access everything, we could fetch all tenants or just leave memberships empty
+          setMemberships([]);
+        } else {
+          const { data: memData } = await supabase
+            .from('tenant_users')
+            .select('*, tenants(*)')
+            .eq('user_id', userId)
+            .eq('status', 'active');
+          if (memData) {
+            setMemberships(memData);
+          }
+        }
+
       } else {
         // If no profile yet (e.g. during onboarding before upsert finishes), reset to null
         setProfile(null);
@@ -139,20 +165,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const switchTenantContext = async (newTenantId: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.rpc('switch_tenant', { p_tenant_id: newTenantId });
+      if (error) throw error;
+      
+      // Clear React Query cache to prevent data from previous tenant leaking
+      queryClient.clear();
+      
+      // If success, refresh the whole context
+      if (user?.id) {
+        await fetchProfile(user.id);
+      }
+    } catch (err) {
+      console.error('Error switching tenant:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value: AuthContextType = {
     session,
     user,
     profile,
     tenant,
     tenantId: tenant?.id || profile?.tenant_id || null,
-    role: (profile?.role as UserRole) || (profile?.tenant_id ? 'admin' : null),
+    role: profile?.is_super_admin ? 'super_admin' : (profile?.role as UserRole) || null,
     onboardingCompleted: Boolean(profile?.onboarding_completed || profile?.tenant_id),
     loading,
     signOut,
     refreshProfile,
     professionalProfile,
     professionalPermissions,
-    forcePasswordChange
+    forcePasswordChange,
+    memberships,
+    switchTenantContext
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

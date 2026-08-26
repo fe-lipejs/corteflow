@@ -3,7 +3,7 @@ import { Outlet, NavLink, Navigate, useNavigate, useLocation } from 'react-route
 import {
   LayoutDashboard, Calendar, Users, Scissors,
   DollarSign, Settings, LogOut, Bell, CreditCard, Shield, Loader2, Menu, X,
-  AlertTriangle, Clock, LifeBuoy
+  AlertTriangle, Clock, LifeBuoy, UserCircle
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -12,9 +12,10 @@ import { supabase } from '../../integrations/supabase/client';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { ConnectionStatus } from '../../components/notifications/ConnectionStatus';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
+import { RefreshCw } from 'lucide-react';
 
 export default function AppLayout() {
-  const { signOut, tenant, profile, loading, role, professionalPermissions, professionalProfile } = useAuth();
+  const { signOut, tenant, profile, loading, role, professionalPermissions, professionalProfile, memberships } = useAuth();
   const { i18n } = useTranslation();
   const { theme, setThemeId, setCustomPalette } = useTheme();
   const navigate = useNavigate();
@@ -105,6 +106,8 @@ export default function AppLayout() {
 
   if (role === 'professional') {
     navItems = [];
+    // Always show Minha Área for professionals
+    navItems.push({ to: '/admin/minha-area', icon: UserCircle, label: 'Minha Área', end: false, permission: null } as any);
     if (professionalPermissions?.view_own_schedule) {
       navItems.push({ to: '/admin/agenda', icon: Calendar, label: 'Agenda', end: false, permission: null } as any);
     }
@@ -244,6 +247,20 @@ export default function AppLayout() {
             <NotificationBell align="sidebar" />
           </div>
         </div>
+        
+        {/* Switch Tenant Button */}
+        {memberships && memberships.length > 1 && (
+          <div className="px-4 py-3 border-b" style={{ borderColor: theme.sidebarBorder }}>
+            <button 
+              onClick={() => navigate('/select-tenant')}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-colors"
+              style={{ background: 'rgba(255,255,255,0.05)', color: theme.textSecondary, border: `1px solid ${theme.border}` }}
+            >
+              <RefreshCw className="w-4 h-4" />
+              Trocar Estabelecimento
+            </button>
+          </div>
+        )}
 
         {/* Navigation Links */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">

@@ -206,26 +206,6 @@ export default function ClientPortal() {
       return;
     }
 
-    const scheduledDate = new Date(booking.scheduled_at);
-    
-    // Calcula o prazo máximo onde o cancelamento ainda é 100% grátis
-    const freeDeadlineDate = new Date(scheduledDate);
-    freeDeadlineDate.setHours(freeDeadlineDate.getHours() - (settings.cancel_free_hours_before || 2));
-    
-    const now = new Date();
-
-    if (now > freeDeadlineDate) {
-      // Passou do prazo gratuito, verificar se cobra multa
-      const feePercent = settings.cancel_fee_percent || 0;
-      if (feePercent > 0) {
-        const confirmCancel = window.confirm(`ATENÇÃO: Você está cancelando com menos de ${settings.cancel_free_hours_before}h de antecedência.\n\nUma multa de ${feePercent}% será aplicada sobre o valor pago.\n\nDeseja confirmar o cancelamento?`);
-        if (!confirmCancel) return;
-      } else {
-        const confirmCancel = window.confirm('Você está cancelando em cima da hora, mas o salão não cobra multa. Deseja confirmar?');
-        if (!confirmCancel) return;
-      }
-    }
-
     setCancelReason("Imprevisto");
     setBookingToCancel(booking);
   };
@@ -612,17 +592,65 @@ export default function ClientPortal() {
       {bookingToCancel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
           <div className="w-full max-w-md p-7 rounded-3xl shadow-2xl border" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
-            <h3 className="text-2xl font-serif font-bold mb-2 text-red-500">Cancelar Agendamento</h3>
+            <h3 className="text-lg font-bold mb-4" style={{ color: theme.textPrimary }}>Cancelar Agendamento</h3>
+            <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>Tem certeza que deseja cancelar este agendamento?</p>
             
-            {tenant?.tenant_settings?.[0]?.cancel_policy_text && (
-              <div className="p-4 rounded-xl mb-4 text-xs bg-red-500/10 text-red-600 border border-red-500/20">
-                <strong>Política de Cancelamento:</strong><br />
-                {tenant.tenant_settings[0].cancel_policy_text}
-                {tenant.tenant_settings[0].cancel_fee_amount > 0 && (
-                  <p className="mt-2 font-bold">Taxa aplicável: R$ {tenant.tenant_settings[0].cancel_fee_amount.toFixed(2)}</p>
-                )}
-              </div>
-            )}
+            {/* Warning Card for Penalty Math */}
+            {(() => {
+              const settings = storeData?.settings;
+              if (!settings) return null;
+              const scheduledDate = new Date(bookingToCancel.scheduled_at);
+              const freeDeadlineDate = new Date(scheduledDate);
+              freeDeadlineDate.setHours(freeDeadlineDate.getHours() - (settings.cancel_free_hours_before || 2));
+              
+              const now = new Date();
+              const isLate = now > freeDeadlineDate;
+              const feePercent = settings.cancel_fee_percent || 0;
+              
+              if (isLate && feePercent > 0) {
+                const amountPaid = bookingToCancel.amount_paid || 0;
+                const penalty = (amountPaid * feePercent) / 100;
+                const refund = amountPaid - penalty;
+                
+                return (
+                  <div className="mb-6 p-4 rounded-xl border flex flex-col gap-2" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+                    <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-bold text-sm">
+                      <AlertTriangle className="w-5 h-5 shrink-0" />
+                      Aviso Legal: Cancelamento Tardio
+                    </div>
+                    <p className="text-xs text-red-600/90 dark:text-red-400/90 leading-relaxed">
+                      Você está cancelando com menos de {settings.cancel_free_hours_before}h de antecedência. De acordo com as políticas que você aceitou, uma multa de {feePercent}% será aplicada.
+                    </p>
+                    {amountPaid > 0 && (
+                      <div className="mt-2 p-3 bg-red-500/10 rounded-lg text-xs font-medium text-red-700 dark:text-red-300">
+                        <div className="flex justify-between mb-1">
+                          <span>Valor Pago Antecipado:</span>
+                          <span>R$ {amountPaid.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between mb-1">
+                          <span>Multa Retida ({feePercent}%):</span>
+                          <span>- R$ {penalty.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between font-bold pt-2 mt-2 border-t border-red-500/20">
+                          <span>Seu Reembolso Final:</span>
+                          <span>R$ {refund.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              } else if (isLate) {
+                return (
+                  <div className="mb-6 p-4 rounded-xl border flex gap-3" style={{ background: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.3)' }}>
+                    <AlertTriangle className="w-5 h-5 shrink-0 text-amber-500 mt-0.5" />
+                    <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                      Você está cancelando em cima da hora, mas este estabelecimento <b>não cobra multa</b> por cancelamento tardio.
+                    </p>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             <div className="mb-4">
               <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textPrimary }}>Motivo do Cancelamento (opcional)</label>
