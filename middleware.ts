@@ -1,34 +1,34 @@
 export default async function middleware(request) {
   const url = new URL(request.url);
   const pathParts = url.pathname.split("/").filter(Boolean);
-  
+
   if (pathParts.length !== 1) {
-    return; 
+    return;
   }
 
   const slug = pathParts[0];
   const ignoredSlugs = ["api", "admin", "platform", "app", "images", "assets", "favicon.ico"];
-  
+
   if (ignoredSlugs.includes(slug) || slug.includes(".")) {
     return;
   }
 
   const indexUrl = new URL("/index.html", request.url);
   const indexRes = await fetch(indexUrl.toString());
-  
+
   if (!indexRes.ok) {
     return;
   }
 
   let html = await indexRes.text();
 
-  let title = "Raffros | A plataforma definitiva para quem vive da beleza";
-  let desc = "Garanta seu atendimento. Faça seu agendamento agora.";
+  let title = "Raffros | GestÃ£o e Agendamento para Barbearias e SalÃµes";
+  let desc = "Garanta seu atendimento. FaÃ§a seu agendamento agora.";
   let logoUrl = "https://raffros.com/images/RaffrosLogo.png";
 
   if (slug === "playlist") {
     title = "Raffros | Som da Casa";
-    desc = "Dê um play, respire e leve uma Palavra para o seu dia.";
+    desc = "Dï¿½ um play, respire e leve uma Palavra para o seu dia.";
   } else {
     const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://paefckmkawocjxzuoclq.supabase.co";
     const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
@@ -48,7 +48,7 @@ export default async function middleware(request) {
 
           if (tenant) {
             title = `${tenant.name} | Agende agora.`;
-            desc = tenant.tenant_settings?.short_description || `Garanta seu atendimento. Faça seu agendamento agora. ??`;
+            desc = tenant.tenant_settings?.short_description || `Garanta seu atendimento. Faï¿½a seu agendamento agora. ??`;
             logoUrl = tenant.tenant_settings?.logo_url || logoUrl;
           }
         }
