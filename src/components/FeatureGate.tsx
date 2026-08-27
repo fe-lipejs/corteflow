@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Lock, Crown } from 'lucide-react';
+import { Lock } from 'lucide-react';
+import { UpgradeModal } from './UpgradeModal';
 import { usePermissionEngine } from '../hooks/usePermissionEngine';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -61,49 +62,14 @@ export default function FeatureGate({ feature, permission, modulePrefix, childre
     }
 
     return (
-      <div className="relative w-full h-full min-h-[500px]">
+      <div className="relative w-full overflow-hidden rounded-3xl" style={{ height: 'calc(100vh - 100px)' }}>
         {/* Render actual children but blurred and disabled to tease the user */}
-        <div className="absolute inset-0 pointer-events-none select-none filter blur-[5px] opacity-60 overflow-hidden">
+        <div className="pointer-events-none select-none filter blur-[5px] h-full w-full">
           {children}
         </div>
 
         {/* Modal Overlay */}
-        <div className="absolute inset-0 z-30 flex items-center justify-center p-4">
-          <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_0_80px_rgba(0,0,0,0.5)] ring-1 ring-white/10 glass-card animate-scale-in" style={{ borderColor: theme.border, background: theme.cardBg }}>
-            <div className="relative mb-6">
-              <div className="relative w-20 h-20 mx-auto bg-black border rounded-full flex items-center justify-center" style={{ borderColor: theme.accent }}>
-                <Crown className="w-10 h-10" style={{ color: theme.accent }} />
-                <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full border-2 flex items-center justify-center" style={{ background: theme.cardBg, borderColor: theme.border }}>
-                  <Lock className="w-4 h-4" style={{ color: theme.textSecondary }} />
-                </div>
-              </div>
-            </div>
-            
-            <h3 className="font-serif text-2xl font-bold mb-2" style={{ color: theme.textPrimary }}>
-              Recurso Premium
-            </h3>
-            
-            <p className="text-sm mb-7" style={{ color: theme.textSecondary }}>
-              {displayMessage}
-            </p>
-            
-            <button
-              onClick={() => { navigate('/admin/assinatura'); }}
-              className="w-full py-3 rounded-xl mb-3 font-bold transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.4)]"
-              style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
-            >
-              Ver planos
-            </button>
-            
-            <button 
-              className="text-sm w-full py-2 transition-colors hover:underline" 
-              style={{ color: theme.textSecondary }} 
-              onClick={() => navigate('/admin')}
-            >
-              Agora não
-            </button>
-          </div>
-        </div>
+        <UpgradeModal message={displayMessage} />
       </div>
     );
   }

@@ -180,7 +180,7 @@ export function AdminHistory() {
         </Card>
       )}
 
-      <Dialog open={!!selectedHistory} onOpenChange={(open) => !open && setSelectedHistory(null)}>
+      <Dialog open={!!selectedHistory} onOpenChange={(open: boolean) => !open && setSelectedHistory(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Timeline de Eventos Comerciais</DialogTitle>
