@@ -158,7 +158,7 @@ export function usePermissionEngine(): PermissionEngine {
         limitsObj.profissionais = sub.plans.max_professionals;
       }
     }
-  } else if (defaultPlan) {
+  } else if (defaultPlan && (!sub || sub.status !== 'canceled')) {
     featuresObj = defaultPlan.features || {};
     permissionsArr = Array.isArray(defaultPlan.permissions) ? defaultPlan.permissions : [];
     limitsObj = defaultPlan.limits || {};

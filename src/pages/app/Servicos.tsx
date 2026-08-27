@@ -152,11 +152,19 @@ export default function Servicos() {
                 setShowUpgradeModal('Cadastrar Novo Serviço');
                 return;
               }
+              if (!engine.checkLimit('servicos', services.length)) {
+                setShowUpgradeModal('Limite de Serviços atingido no seu Plano atual');
+                return;
+              }
               setEditingService(null);
               setServiceModalOpen(true);
             } else {
               if (!engine.hasPermission('produto.criar') && !engine.hasPermission('catalogo.criar')) {
                 setShowUpgradeModal('Cadastrar Novo Produto');
+                return;
+              }
+              if (!engine.checkLimit('produtos', products.length)) {
+                setShowUpgradeModal('Limite de Produtos atingido no seu Plano atual');
                 return;
               }
               setEditingProduct(null);

@@ -7,6 +7,7 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { Modal } from '../../../components/ui/Modal';
 import { normalizeBrazilianPhone, formatPhoneMask } from '../../../lib/phoneUtils';
 import { usePermissionEngine } from '../../../hooks/usePermissionEngine';
+import FeatureGate from '../../../components/FeatureGate';
 import { Crown, Lock, Key, Shield, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../integrations/supabase/client';
@@ -453,95 +454,97 @@ export default function ProfessionalModal({ professional, services, onClose, onC
 
 
               {/* Atendimento a Domicílio (Professional override) */}
-              <div className="rounded-xl p-5" style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Atendimento a Domicílio</h4>
-                    <p className="text-xs" style={{ color: theme.textMuted }}>Este profissional faz atendimento na casa do cliente?</p>
+              <FeatureGate permission="equipe.domicilio" message="Atendimento a Domicílio é uma funcionalidade premium.">
+                <div className="rounded-xl p-5" style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Atendimento a Domicílio</h4>
+                      <p className="text-xs" style={{ color: theme.textMuted }}>Este profissional faz atendimento na casa do cliente?</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setOffersHomeService(!offersHomeService)}
+                      className="relative w-12 h-6 rounded-full transition-all shrink-0"
+                      style={{ background: offersHomeService ? theme.accent : theme.border }}
+                    >
+                      <span
+                        className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
+                        style={{ left: offersHomeService ? '26px' : '4px' }}
+                      />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setOffersHomeService(!offersHomeService)}
-                    className="relative w-12 h-6 rounded-full transition-all shrink-0"
-                    style={{ background: offersHomeService ? theme.accent : theme.border }}
-                  >
-                    <span
-                      className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
-                      style={{ left: offersHomeService ? '26px' : '4px' }}
-                    />
-                  </button>
-                </div>
 
-                {offersHomeService && (
-                  <div className="space-y-4 pt-4 border-t" style={{ borderColor: theme.border }}>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Limite Máximo (km)</label>
-                        <input 
-                          type="number" 
-                          min="1" 
-                          value={maxHomeDistanceKm} 
-                          onChange={e => setMaxHomeDistanceKm(e.target.value)} 
-                          className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
-                          style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
-                          placeholder="Ex: 10" 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Como é a taxa?</label>
-                        <div className="flex bg-zinc-900 rounded-xl p-1 border" style={{ borderColor: theme.border, background: theme.inputBg }}>
-                          <button
-                            type="button"
-                            onClick={() => setHomeFeeType('fixed')}
-                            className={`flex-1 text-xs py-2 rounded-lg font-bold transition-colors ${homeFeeType === 'fixed' ? 'bg-[#FFC400] text-black shadow-sm' : 'text-zinc-500 hover:text-white'}`}
-                            style={homeFeeType === 'fixed' ? { background: theme.accent, color: theme.textInverse } : { color: theme.textSecondary }}
-                          >
-                            Fixa
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setHomeFeeType('per_km')}
-                            className={`flex-1 text-xs py-2 rounded-lg font-bold transition-colors ${homeFeeType === 'per_km' ? 'bg-[#FFC400] text-black shadow-sm' : 'text-zinc-500 hover:text-white'}`}
-                            style={homeFeeType === 'per_km' ? { background: theme.accent, color: theme.textInverse } : { color: theme.textSecondary }}
-                          >
-                            Por KM
-                          </button>
+                  {offersHomeService && (
+                    <div className="space-y-4 pt-4 border-t" style={{ borderColor: theme.border }}>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Limite Máximo (km)</label>
+                          <input 
+                            type="number" 
+                            min="1" 
+                            value={maxHomeDistanceKm} 
+                            onChange={e => setMaxHomeDistanceKm(e.target.value)} 
+                            className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
+                            style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
+                            placeholder="Ex: 10" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Como é a taxa?</label>
+                          <div className="flex bg-zinc-900 rounded-xl p-1 border" style={{ borderColor: theme.border, background: theme.inputBg }}>
+                            <button
+                              type="button"
+                              onClick={() => setHomeFeeType('fixed')}
+                              className={`flex-1 text-xs py-2 rounded-lg font-bold transition-colors ${homeFeeType === 'fixed' ? 'bg-[#FFC400] text-black shadow-sm' : 'text-zinc-500 hover:text-white'}`}
+                              style={homeFeeType === 'fixed' ? { background: theme.accent, color: theme.textInverse } : { color: theme.textSecondary }}
+                            >
+                              Fixa
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setHomeFeeType('per_km')}
+                              className={`flex-1 text-xs py-2 rounded-lg font-bold transition-colors ${homeFeeType === 'per_km' ? 'bg-[#FFC400] text-black shadow-sm' : 'text-zinc-500 hover:text-white'}`}
+                              style={homeFeeType === 'per_km' ? { background: theme.accent, color: theme.textInverse } : { color: theme.textSecondary }}
+                            >
+                              Por KM
+                            </button>
+                          </div>
                         </div>
                       </div>
+                      
+                      <div>
+                        {homeFeeType === 'fixed' ? (
+                          <>
+                            <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Valor da Taxa Fixa (R$)</label>
+                            <input 
+                              type="number" 
+                              min="0" step="0.50" 
+                              value={homeFee} 
+                              onChange={e => setHomeFee(e.target.value)} 
+                              className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
+                              style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
+                              placeholder="Ex: 20.00" 
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Valor por cada KM (R$)</label>
+                            <input 
+                              type="number" 
+                              min="0" step="0.50" 
+                              value={homeFeePerKm} 
+                              onChange={e => setHomeFeePerKm(e.target.value)} 
+                              className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
+                              style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
+                              placeholder="Ex: 1.50" 
+                            />
+                          </>
+                        )}
+                      </div>
                     </div>
-                    
-                    <div>
-                      {homeFeeType === 'fixed' ? (
-                        <>
-                          <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Valor da Taxa Fixa (R$)</label>
-                          <input 
-                            type="number" 
-                            min="0" step="0.50" 
-                            value={homeFee} 
-                            onChange={e => setHomeFee(e.target.value)} 
-                            className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
-                            style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
-                            placeholder="Ex: 20.00" 
-                          />
-                        </>
-                      ) : (
-                        <>
-                          <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Valor por cada KM (R$)</label>
-                          <input 
-                            type="number" 
-                            min="0" step="0.50" 
-                            value={homeFeePerKm} 
-                            onChange={e => setHomeFeePerKm(e.target.value)} 
-                            className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
-                            style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
-                            placeholder="Ex: 1.50" 
-                          />
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              </FeatureGate>
 
               {/* Agenda color + Status */}
               <div className="grid grid-cols-2 gap-4">

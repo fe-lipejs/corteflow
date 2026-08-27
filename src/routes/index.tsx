@@ -33,6 +33,7 @@ import AdminNotificacoes from '../pages/admin/AdminNotificacoes';
 import AdminSeguranca from '../pages/admin/AdminSeguranca';
 import AdminAnalytics from '../pages/admin/AdminAnalytics';
 import AdminSuporte from '../pages/admin/AdminSuporte';
+import { AdminHistory } from '../pages/admin/AdminHistory';
 
 // App Pages (Tenant Admin/Manager/Professional)
 import AppLayout from '../pages/app/AppLayout';
@@ -94,27 +95,27 @@ function AppRouteTree() {
       <Route index element={<Dashboard />} />
       <Route path="agenda" element={
         <RequirePermission modulePrefix="agenda">
-          <FeatureGate modulePrefix="agenda"><Agenda /></FeatureGate>
+          <Agenda />
         </RequirePermission>
       } />
       <Route path="equipe" element={
         <RequirePermission modulePrefix="equipe">
-          <FeatureGate modulePrefix="equipe"><Equipe /></FeatureGate>
+          <Equipe />
         </RequirePermission>
       } />
       <Route path="servicos" element={
         <RequirePermission modulePrefix="catalogo">
-          <FeatureGate modulePrefix="catalogo"><Servicos /></FeatureGate>
+          <Servicos />
         </RequirePermission>
       } />
       <Route path="clientes" element={
         <RequirePermission modulePrefix="clientes">
-          <FeatureGate modulePrefix="clientes"><Clientes /></FeatureGate>
+          <Clientes />
         </RequirePermission>
       } />
       <Route path="financeiro" element={
         <RequirePermission modulePrefix="financeiro">
-          <FeatureGate modulePrefix="financeiro"><Financeiro /></FeatureGate>
+          <Financeiro />
         </RequirePermission>
       } />
       <Route path="configuracoes" element={
@@ -150,6 +151,7 @@ function AdminRouteTree() {
       <Route path="plans" element={<AdminPlans />} />
       <Route path="custom-pricing" element={<AdminCustomPricing />} />
       <Route path="financeiro" element={<AdminFinanceiro />} />
+      <Route path="history" element={<AdminHistory />} />
       <Route path="usuarios" element={<AdminUsuarios />} />
       <Route path="auditoria" element={<AdminAuditoria />} />
       <Route path="notificacoes" element={<AdminNotificacoes />} />

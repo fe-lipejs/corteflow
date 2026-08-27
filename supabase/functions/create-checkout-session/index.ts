@@ -26,10 +26,15 @@ serve(async (req) => {
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     );
 
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Usuário não autenticado");
 
-    const { planId, returnUrl } = await req.json();
+    const { planId, returnUrl, currency: requestedCurrency } = await req.json();
 
     // Buscar plano
     const { data: plan } = await supabase.from('plans').select('*').eq('id', planId).single();
@@ -40,6 +45,33 @@ serve(async (req) => {
     if (!profile?.tenant_id) throw new Error("Salão não encontrado para este usuário");
     const tenantId = profile.tenant_id;
 
+    // Buscar dados do tenant (idioma e histórico de trial)
+    const { data: tenantData } = await supabase
+      .from('tenants')
+      .select('id, language, status, has_used_trial')
+      .eq('id', tenantId)
+      .single();
+
+    // Log Checkout Initiated event
+    const { data: historyData } = await supabaseAdmin
+      .from('commercial_history')
+      .select('id, total_trials_used')
+      .eq('normalized_email', user.email)
+      .maybeSingle();
+
+    if (historyData?.id) {
+      await supabaseAdmin.from('billing_events').insert({
+        history_id: historyData.id,
+        event_type: 'checkout_initiated',
+        details: { plan_id: plan.id, tenant_id: tenantId }
+      });
+    }
+
+    const hasUsedTrialHistory = (historyData?.total_trials_used || 0) > 0;
+    const isAntiFraudTriggered = tenantData?.has_used_trial || hasUsedTrialHistory;
+
+    const targetCurrency = (requestedCurrency || (tenantData?.language === 'en' ? 'USD' : (['es', 'fr', 'de'].includes(tenantData?.language || '')) ? 'EUR' : 'BRL')).toUpperCase();
+
     // 1. Verificar se existe preço personalizado (Custom Pricing)
     const { data: customPrice } = await supabase
       .from('custom_pricing')
@@ -48,15 +80,26 @@ serve(async (req) => {
       .eq('plan_id', plan.id)
       .maybeSingle();
 
-    // 2. Buscar preço padrão do plano
-    const { data: planPrice } = await supabase
+    // 2. Buscar preço do plano para a moeda do tenant
+    let { data: planPrice } = await supabase
       .from('plan_prices')
       .select('amount, currency, stripe_price_id')
       .eq('plan_id', plan.id)
-      .limit(1)
+      .eq('currency', targetCurrency)
       .maybeSingle();
     
-    const currency = (planPrice?.currency ?? 'BRL').toLowerCase();
+    // Fallback para o primeiro preço cadastrado se não houver da moeda específica
+    if (!planPrice) {
+      const { data: fallbackPrice } = await supabase
+        .from('plan_prices')
+        .select('amount, currency, stripe_price_id')
+        .eq('plan_id', plan.id)
+        .limit(1)
+        .maybeSingle();
+      planPrice = fallbackPrice;
+    }
+    
+    const currency = (planPrice?.currency ?? targetCurrency).toLowerCase();
     const lineItem: any = { quantity: 1 };
 
     if (customPrice?.amount_override) {
@@ -73,22 +116,22 @@ serve(async (req) => {
       };
     } else {
       if (!planPrice?.stripe_price_id) {
-        throw new Error("ERRO: O plano selecionado não possui um 'stripe_price_id' configurado no banco de dados. O Administrador precisa criar o Produto no painel do Stripe e cadastrar o ID do preço.");
+        throw new Error(`ERRO: O plano selecionado não possui um 'stripe_price_id' configurado para a moeda ${currency.toUpperCase()}. O Administrador precisa cadastrar o ID do preço no painel Admin (/platform/plans).`);
       }
       lineItem.price = planPrice.stripe_price_id;
     }
 
-    // 4. Verificar se o salão já utilizou o benefício do teste grátis (Single-use trial rule)
-    const { data: tenantData } = await supabase
-      .from('tenants')
-      .select('has_used_trial')
-      .eq('id', tenantId)
-      .single();
+    // 4. Verificar se já existe assinatura ou se já utilizou o benefício do teste grátis (Single-use trial rule)
+    const { data: existingSub } = await supabase
+      .from('subscriptions')
+      .select('stripe_customer_id, stripe_subscription_id, status')
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
 
-    const hasUsedTrial = tenantData?.has_used_trial === true;
+    const isPaidSub = existingSub && (existingSub.status === 'active' || existingSub.status === 'past_due' || existingSub.status === 'canceled');
 
-    // Se ainda não usou e o plano possui dias de teste, oferece o trial. Caso já tenha usado, COBRA IMEDIATAMENTE.
-    const trialDays = (!hasUsedTrial && plan.trial_days && plan.trial_days > 0) ? plan.trial_days : 0;
+    // Regra Antifraude (Local + Histórico): Se já usou trial (tenant atual ou email), ou já teve assinatura, trial é estritamente 0 (cobrança imediata)
+    const trialDays = (!isAntiFraudTriggered && !isPaidSub && plan.trial_days && plan.trial_days > 0) ? plan.trial_days : 0;
 
     const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
       metadata: {
@@ -101,13 +144,6 @@ serve(async (req) => {
       subscriptionData.trial_period_days = trialDays;
     }
 
-    // 5. Verificar se já existe customer no Stripe para este salão
-    const { data: existingSub } = await supabase
-      .from('subscriptions')
-      .select('stripe_customer_id, stripe_subscription_id, status')
-      .eq('tenant_id', tenantId)
-      .maybeSingle();
-
     let customerId = existingSub?.stripe_customer_id;
 
     // NOVO: Recuperar conta órfã do Stripe pelo e-mail se não estiver vinculada
@@ -115,7 +151,6 @@ serve(async (req) => {
       const customers = await stripe.customers.list({ email: user.email, limit: 1 });
       if (customers.data.length > 0) {
         customerId = customers.data[0].id;
-        // Salvar no banco usando admin client para garantir permissão
         const supabaseAdmin = createClient(
           Deno.env.get('SUPABASE_URL') ?? '',
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -124,7 +159,7 @@ serve(async (req) => {
       }
     }
 
-    // NOVO: Prevenir duplicação de assinatura no upgrade
+    // Prevenir duplicação de assinatura no upgrade
     if (existingSub?.stripe_subscription_id && (existingSub.status === 'active' || existingSub.status === 'trialing')) {
       if (customerId) {
         const portalSession = await stripe.billingPortal.sessions.create({
@@ -143,10 +178,7 @@ serve(async (req) => {
       line_items: [lineItem],
       mode: 'subscription',
       currency: currency,
-      subscription_data: {
-        ...subscriptionData,
-        trial_period_days: 7, // Force 7 days trial on V3
-      },
+      subscription_data: subscriptionData,
       success_url: `${returnUrl}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${returnUrl}`,
       metadata: {
@@ -166,7 +198,7 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create(checkoutParams);
 
     // Se consumiu trial pela primeira vez, marcar permanentemente no banco
-    if (trialDays > 0 && !hasUsedTrial) {
+    if (trialDays > 0 && !isAntiFraudTriggered) {
       await supabase.from('tenants').update({ has_used_trial: true }).eq('id', tenantId);
     }
 

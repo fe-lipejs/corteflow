@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useQueryClient } from '@tanstack/react-query';
-import { Crown, ExternalLink, CheckCircle, Zap, Clock, AlertTriangle, Loader2, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Crown, ExternalLink, CheckCircle, Zap, Clock, AlertTriangle, Loader2, RefreshCw, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 
 interface Plan {
   id: string;
@@ -133,7 +133,8 @@ export default function Assinatura() {
       if (activeSub) setSubscription(activeSub as any);
       
       if (planData) {
-        const plansWithCustomPrices = planData.map((plan: any) => {
+        const validPlans = planData.filter((p: any) => p.name !== 'Trial (Período de Teste)' && p.key !== 'expired_tier' && !p.is_trial_plan);
+        const plansWithCustomPrices = validPlans.map((plan: any) => {
           const customPrice = customPricingData?.find(cp => cp.plan_id === plan.id);
           if (customPrice && plan.plan_prices) {
             const brlPriceIndex = plan.plan_prices.findIndex((p: any) => p.currency === 'BRL');
@@ -364,6 +365,14 @@ export default function Assinatura() {
   const isTrial = features.is_trial && !isTrialExpired;
   const hasActivePlan = features.is_active && !isTrialExpired;
 
+  // Determine the correct currency to display based on tenant language
+  const displayCurrency = tenant?.language === 'en' ? 'USD' 
+    : (['es', 'fr', 'de'].includes(tenant?.language || '')) ? 'EUR' 
+    : 'BRL';
+
+  const configuredTrialPlan = plans.find(p => (p as any).is_trial_plan || p.is_default || p.trial_days > 0);
+  const activeTrialDays = configuredTrialPlan?.trial_days || 7;
+
   return (
     <div className="space-y-8 max-w-5xl mx-auto animate-fade-in pb-12">
       <header>
@@ -455,11 +464,85 @@ export default function Assinatura() {
         </div>
       )}
 
-      {/* Plan cards */}
-      <div>
-        <h2 className="text-base font-bold mb-4" style={{ color: theme.textPrimary }}>
-          {hasActivePlan && !isTrial ? 'Alterar Plano' : 'Escolha seu plano'}
-        </h2>
+      {/* Plan cards Header & Apple-Grade Trial Guarantee Banner */}
+      <div className="pt-6 pb-2">
+        <div className="text-center max-w-3xl mx-auto mb-10">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3" style={{ color: theme.textPrimary }}>
+            {hasActivePlan && !isTrial ? 'Planos & Assinatura' : 'Escolha o Plano Ideal'}
+          </h1>
+          <p className="text-sm sm:text-base font-normal max-w-xl mx-auto" style={{ color: theme.textSecondary }}>
+            {hasActivePlan && !isTrial
+              ? 'Gerencie sua assinatura ou faça upgrade com segurança e flexibilidade total.'
+              : `Desbloqueie todo o potencial da sua barbearia com ${activeTrialDays} dias de acesso irrestrito.`}
+          </p>
+
+          {/* Apple-grade High-Trust Trial Card */}
+          {tenant?.status === 'trial' && (
+            <div 
+              className="mt-6 p-5 sm:p-6 rounded-2xl border backdrop-blur-md transition-all text-left shadow-sm"
+              style={{
+                background: theme.id === 'elegant' ? '#FFFFFF' : `${theme.cardBg}`,
+                borderColor: `${theme.accent}40`,
+                boxShadow: `0 8px 30px -10px ${theme.accent}20`
+              }}
+            >
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                    style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
+                  >
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span 
+                        className="text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full"
+                        style={{ background: `${theme.accent}20`, color: theme.accent }}
+                      >
+                        Avaliação Gratuita Ativa
+                      </span>
+                      <span className="text-xs font-semibold" style={{ color: theme.textMuted }}>
+                        {activeTrialDays} dias de teste
+                      </span>
+                    </div>
+                    <h3 className="text-base font-bold mt-1" style={{ color: theme.textPrimary }}>
+                      {displayCurrency === 'USD' ? '$ 0.00' : (displayCurrency === 'EUR' ? '€ 0,00' : 'R$ 0,00')} cobrados hoje em qualquer plano escolhido
+                    </h3>
+                    <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>
+                      Você só paga após o período de teste. Cancele com um clique no painel a qualquer momento sem taxas ou multas.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 self-stretch sm:self-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10 shrink-0">
+                  <div className="flex sm:flex-col items-center sm:items-end gap-1.5 text-xs" style={{ color: theme.textMuted }}>
+                    <span className="flex items-center gap-1 font-medium">
+                      <ShieldCheck className="w-4 h-4 text-emerald-500" /> 100% Seguro via Stripe
+                    </span>
+                    <span className="hidden sm:inline font-medium">Sem fidelidade</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3 Value Pillars */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t" style={{ borderColor: theme.border }}>
+                <div className="flex items-center gap-2 text-xs font-medium" style={{ color: theme.textSecondary }}>
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: theme.accent }} />
+                  <span>Cobrança apenas no {activeTrialDays + 1}º dia</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-medium" style={{ color: theme.textSecondary }}>
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: theme.accent }} />
+                  <span>Cancele com 1 clique quando quiser</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-medium" style={{ color: theme.textSecondary }}>
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: theme.accent }} />
+                  <span>Acesso imediato e irrestrito</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {plans.length === 0 ? (
           <div className="text-center py-16 border rounded-2xl" style={{ borderColor: theme.border, background: theme.cardBg }}>
@@ -473,7 +556,7 @@ export default function Assinatura() {
             </p>
             {profile?.role === 'super_admin' && (
               <a
-                href="/platform/planos"
+                href="/platform/plans"
                 className="inline-flex items-center gap-2 mt-4 px-6 py-3 rounded-xl font-bold text-sm"
                 style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
               >
@@ -482,7 +565,7 @@ export default function Assinatura() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-5 lg:items-stretch max-w-5xl mx-auto pb-12 px-4">
             {plans.filter(plan => {
               // Ocultar Plano Gratuito se o usuário tiver uma assinatura paga ativa
               const hasActivePaidPlan = subscription && (subscription.status === 'active' || subscription.status === 'trialing') && plans.some(p => p.id === subscription.plan_id && !p.is_default);
@@ -524,9 +607,15 @@ export default function Assinatura() {
                 };
               }
 
-              const brlPrice = planToDisplay.plan_prices?.find((p: any) => p.currency === 'BRL');
+              // Determine the correct currency to display based on tenant language
+              const displayCurrency = tenant?.language === 'en' ? 'USD' 
+                : (['es', 'fr', 'de'].includes(tenant?.language || '')) ? 'EUR' 
+                : 'BRL';
+              
+              const planPriceObj = planToDisplay.plan_prices?.find((p: any) => p.currency === displayCurrency) 
+                || planToDisplay.plan_prices?.[0]; // Fallback to first available if missing
+
               const displayFeatures = getDisplayFeatures(planToDisplay);
-              const flags = getFeatureFlags(planToDisplay);
               
               const limitsObj = planToDisplay.limits || {};
               const maxProf = limitsObj.profissionais ?? planToDisplay.max_professionals;
@@ -535,143 +624,171 @@ export default function Assinatura() {
                 : `Até ${maxProf} ${maxProf === 1 ? 'profissional' : 'profissionais'}`;
 
               const isLoading = checkoutLoading === plan.id;
+              const isStudio = plan.key === 'studio_tier';
+
+              // Design Tokens Harmoniosos e Dinâmicos com o Tema Ativo
+              const isDark = theme.id !== 'elegant';
+              const cardBg = isStudio 
+                ? (isDark ? `linear-gradient(180deg, ${theme.accent}18 0%, ${theme.cardBg} 100%)` : `linear-gradient(180deg, #FFFFFF 0%, #FFFDF8 100%)`)
+                : theme.cardBg;
+              const cardBorder = isStudio ? theme.accent : theme.border;
+              const cardShadow = isStudio 
+                ? `0 20px 45px -12px ${theme.accent}35`
+                : (isDark ? '0 10px 25px -10px rgba(0,0,0,0.5)' : '0 4px 20px -2px rgba(0, 0, 0, 0.05)');
 
               return (
                 <div
                   key={plan.id}
-                  className="rounded-3xl border-2 flex flex-col overflow-hidden transition-all duration-200 shadow-md hover:shadow-xl"
+                  className={`relative flex flex-col w-full lg:w-[320px] rounded-3xl transition-all duration-300 backdrop-blur-md ${isStudio ? 'scale-100 lg:scale-105 z-10' : 'scale-100 z-0 hover:border-amber-500/40'}`}
                   style={{
-                    borderColor: isCurrent ? theme.accent : (theme.id === 'elegant' ? '#E2E8F0' : theme.border),
-                    background: theme.cardBg,
-                    boxShadow: isCurrent ? theme.shadowAccent : (theme.id === 'elegant' ? '0 4px 20px -2px rgba(0, 0, 0, 0.06)' : 'none'),
+                    background: cardBg,
+                    border: `${isStudio ? '2px' : '1px'} solid ${cardBorder}`,
+                    boxShadow: cardShadow,
                   }}
                 >
+                  {isStudio && (
+                    <div 
+                      className="absolute -top-3.5 inset-x-0 mx-auto w-max px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-md flex items-center gap-1.5"
+                      style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      Mais Popular
+                    </div>
+                  )}
+
                   {/* Plan header */}
-                  <div className="p-6 flex-1">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h3 className="text-xl font-bold" style={{ color: theme.textPrimary }}>{planToDisplay.name}</h3>
-                      {isCurrent && (
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          <span 
-                            className="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full border shadow-sm flex items-center gap-1.5"
-                            style={{ 
-                              background: `${theme.accent}18`, 
-                              color: theme.accent,
-                              borderColor: `${theme.accent}40`
-                            }}
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Plano Atual
-                          </span>
-                          {subscription?.subscription_contracts && (
-                            <span 
-                              className="text-[10px] font-semibold px-2 py-0.5 rounded-md border"
-                              style={{ 
-                                background: theme.inputBg, 
-                                color: theme.textSecondary,
-                                borderColor: theme.border 
-                              }}
-                            >
-                              Contrato Ativo
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    {/* Price */}
-                    <div className="my-4">
-                      {brlPrice ? (
-                        <div className="flex flex-col gap-1">
-                          {plan.is_custom_price && (
-                            <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider">
-                              ✨ Preço Especial
-                            </span>
-                          )}
-                          <div className="flex items-end gap-1">
-                            <span className="text-3xl font-black" style={{ color: theme.textPrimary }}>
-                              {money(brlPrice.amount, 'BRL')}
-                            </span>
-                            <span className="text-sm mb-1" style={{ color: theme.textMuted }}>/mês</span>
-                          </div>
-                        </div>
+                  <div className="p-7 pb-0 flex flex-col items-center text-center">
+                    
+                    {/* Minimal Geometric Brand Icon */}
+                    <div className="mb-3.5 flex items-center justify-center gap-1">
+                      {isStudio ? (
+                        <>
+                          <div className="w-2.5 h-2.5 rounded-sm rotate-45" style={{ background: theme.accent }} />
+                          <div className="w-2.5 h-2.5 rounded-sm rotate-45 opacity-60" style={{ background: theme.accentLight }} />
+                        </>
                       ) : (
-                        <span className="text-sm" style={{ color: theme.textMuted }}>Preço sob consulta</span>
+                        <>
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ background: theme.accent, opacity: 0.8 }} />
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ background: theme.accent, opacity: 0.3 }} />
+                        </>
                       )}
                     </div>
 
-                    {/* Trial */}
-                    <p className="text-xs mb-4 flex items-center gap-1.5" style={{ color: theme.textSecondary }}>
-                      <Clock className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-                      <span>{planToDisplay.trial_days} dias de teste grátis</span>
+                    <h3 className="text-xl font-bold mb-1.5" style={{ color: theme.textPrimary }}>
+                      {planToDisplay.name}
+                    </h3>
+                    
+                    <p className="text-xs leading-relaxed mb-6 h-10 flex items-center justify-center max-w-[220px]" style={{ color: theme.textSecondary }}>
+                      {planToDisplay.description || 'Plano ideal para o seu negócio.'}
                     </p>
+                    
+                    {/* Price Block */}
+                    <div className="mb-6 flex flex-col items-center">
+                      {planPriceObj ? (
+                        <>
+                          {tenant?.status === 'trial' ? (
+                            <div className="flex flex-col items-center">
+                              <div className="flex items-baseline gap-1 justify-center">
+                                <span className="text-4xl sm:text-5xl font-black tracking-tight" style={{ color: theme.textPrimary }}>
+                                  {money(0, displayCurrency)}
+                                </span>
+                                <span 
+                                  className="text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full" 
+                                  style={{ background: `${theme.accent}20`, color: theme.accent }}
+                                >
+                                  7 Dias Grátis
+                                </span>
+                              </div>
+                              <p className="text-xs font-semibold mt-2" style={{ color: theme.textSecondary }}>
+                                Depois {money(planPriceObj.amount, displayCurrency)}/mês
+                              </p>
+                              <span className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>
+                                Cancele quando quiser
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center">
+                              <div className="flex items-baseline gap-1 justify-center">
+                                <span className="text-4xl sm:text-5xl font-black tracking-tight" style={{ color: theme.textPrimary }}>
+                                  {money(planPriceObj.amount, displayCurrency).replace(/\,\d\d$/, '')}
+                                </span>
+                                <div className="flex flex-col items-start text-left">
+                                  <span className="text-sm font-bold" style={{ color: theme.textPrimary }}>
+                                    {money(planPriceObj.amount, displayCurrency).slice(-3)}
+                                  </span>
+                                  <span className="text-[11px] uppercase tracking-wider font-semibold" style={{ color: theme.textMuted }}>
+                                    / Mês
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-[11px] font-medium mt-1.5" style={{ color: theme.textMuted }}>
+                                Cobrança mensal • Sem fidelidade
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-sm font-semibold" style={{ color: theme.textMuted }}>Preço sob consulta</span>
+                      )}
+                    </div>
+                  </div>
 
-                    {/* Dynamic Features List based on Plan Description */}
+                  {/* Features List */}
+                  <div className="flex-1 px-7 pt-4 pb-7 border-t" style={{ borderColor: theme.border }}>
                     {(() => {
-                      const descLines = (planToDisplay.description || '')
-                        .split(/[\n\r]+/)
-                        .map((l: string) => l.trim())
-                        .filter((l: string) => Boolean(l));
-
-                      const items = descLines.length > 0 
-                        ? descLines 
-                        : displayFeatures.length > 0 
+                      const items = displayFeatures.length > 0 
                         ? displayFeatures 
                         : [
                             'Acesso completo à plataforma',
                             'Agenda online e link personalizado',
                             'Gestão de clientes e histórico',
-                            'Suporte prioritário e relatórios'
                           ];
 
                       return (
-                        <div className="space-y-2.5 mb-5 border-t border-b py-4" style={{ borderColor: theme.border }}>
+                        <div className="space-y-3.5 mb-7">
                           {items.map((item: string, idx: number) => (
-                            <div key={idx} className="flex items-center gap-2.5 text-xs font-medium" style={{ color: theme.textPrimary }}>
-                              <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: theme.accent }} />
-                              <span>{item}</span>
+                            <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm font-medium" style={{ color: theme.textPrimary }}>
+                              <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.accent }} />
+                              <span className="leading-snug">{item}</span>
                             </div>
                           ))}
+                          
+                          <div className="flex items-start gap-2.5 text-xs sm:text-sm font-medium" style={{ color: theme.textPrimary }}>
+                            <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.accent }} />
+                            <span className="leading-snug">{displayMaxProf}</span>
+                          </div>
                         </div>
                       );
                     })()}
 
-                    {/* Limits */}
-                    <div className="text-sm font-medium flex items-center gap-2" style={{ color: theme.textPrimary }}>
-                      <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style={{ background: `${theme.accent}20`, color: theme.accent }}>👥</span>
-                      <span>{displayMaxProf}</span>
-                    </div>
-                  </div>
-
-                  {/* Action button */}
-                  <div className="p-6 pt-0">
+                    {/* Action button */}
                     <button
                       onClick={() => !plan.is_default ? handleCheckout(plan.id) : null}
                       disabled={isLoading || isCurrent || plan.is_default}
-                      className="w-full py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-85 cursor-pointer"
+                      className="w-full py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-75 disabled:hover:scale-100 cursor-pointer shadow-sm"
                       style={{
                         background: isCurrent 
-                          ? (theme.id === 'elegant' ? '#F1F5F9' : `${theme.accent}15`) 
-                          : (plan.is_default ? theme.bgHover : theme.accentGradient),
+                          ? `${theme.accent}15`
+                          : (isStudio ? theme.accentGradient : (theme.id === 'elegant' ? '#F1F5F9' : 'rgba(255, 255, 255, 0.08)')),
                         color: isCurrent 
-                          ? (theme.id === 'elegant' ? '#475569' : theme.accent) 
-                          : (plan.is_default ? theme.textMuted : theme.btnPrimaryText),
-                        border: isCurrent ? `1px solid ${theme.accent}40` : 'none',
-                        boxShadow: isCurrent || plan.is_default ? 'none' : theme.shadowAccent,
+                          ? theme.accent 
+                          : (isStudio ? theme.btnPrimaryText : theme.textPrimary),
+                        border: isCurrent 
+                          ? `1px solid ${theme.accent}50` 
+                          : (isStudio ? 'none' : `1px solid ${theme.border}`),
+                        boxShadow: isStudio && !isCurrent ? theme.shadowAccent : 'none',
                       }}
                     >
                       {isLoading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Processando...
-                        </>
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : isCurrent ? (
-                        '✓ Seu Plano Atual'
+                        '✓ Plano Atual'
                       ) : plan.is_default ? (
-                        'Seu Plano Básico'
+                        'Plano Básico'
+                      ) : tenant?.status === 'trial' ? (
+                        'Testar 7 Dias Grátis'
                       ) : (
-                        <>
-                          <Zap className="w-4 h-4" />
-                          Assinar este plano
-                        </>
+                        'Escolher Plano'
                       )}
                     </button>
                   </div>

@@ -79,22 +79,32 @@ serve(async (req) => {
         eventTenantId = tenantId || null;
 
         if (tenantId && session.subscription) {
-          // Update legacy subscriptions table (to not break old UI)
+          const stripeSub = await stripe.subscriptions.retrieve(session.subscription as string);
+          const isTrialing = stripeSub.status === 'trialing' && stripeSub.trial_end;
+          const trialEndsAt = isTrialing ? new Date(stripeSub.trial_end! * 1000).toISOString() : null;
+          const initialStatus = isTrialing ? 'trialing' : 'active';
+          const initialAccountState = isTrialing ? 'trialing_with_card' : 'active';
+
+          // Update subscriptions table
           const { error: subErr } = await supabase.from('subscriptions').upsert({
             tenant_id: tenantId,
             stripe_subscription_id: session.subscription as string,
             stripe_customer_id: session.customer as string,
             plan_id: planId,
-            status: 'trialing'
+            status: initialStatus,
+            trial_ends_at: trialEndsAt,
+            current_period_end: stripeSub.current_period_end ? new Date(stripeSub.current_period_end * 1000).toISOString() : null
           }, { onConflict: 'tenant_id' });
 
           if (subErr) console.error(subErr);
 
-          // V3 State Machine Update
+          // State Machine Update
           await supabase.from('tenants').update({
-            account_state: 'trialing_with_card',
-            trial_started_at: new Date().toISOString(),
-            trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+            status: initialStatus === 'active' ? 'active' : 'trial',
+            account_state: initialAccountState,
+            trial_started_at: isTrialing ? new Date().toISOString() : undefined,
+            trial_ends_at: trialEndsAt,
+            has_used_trial: true
           }).eq('id', tenantId);
         }
         break;

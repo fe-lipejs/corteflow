@@ -37,6 +37,7 @@ const navGroups = [
     label: 'Gestão',
     items: [
       { to: '/platform/usuarios', icon: Users, label: 'Usuários' },
+      { to: '/platform/history', icon: ScrollText, label: 'CRM & Histórico' },
       { to: '/platform/auditoria', icon: ScrollText, label: 'Auditoria' },
       { to: '/platform/notificacoes', icon: Bell, label: 'Notificações', badgeKey: 'notifications' },
       { to: '/platform/suporte', icon: LifeBuoy, label: 'Suporte', badgeKey: 'support' },

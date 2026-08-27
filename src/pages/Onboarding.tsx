@@ -1046,9 +1046,9 @@ export default function Onboarding() {
                     <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">Recomendado</div>
                     <div className="flex items-center justify-center gap-2 mb-2 text-[#0F172A] font-black text-2xl">
                       <Star className="w-6 h-6 text-[#DE870D] fill-[#DE870D]" />
-                      Plano Studio
+                      Escolha seu plano ideal
                     </div>
-                    <p className="text-slate-600 font-medium text-sm mb-4">7 dias grátis. Cancele quando quiser.</p>
+                    <p className="text-slate-600 font-medium text-sm mb-4 text-center">Teste grátis por 7 dias. Você só será cobrado depois e pode cancelar a qualquer momento.</p>
                     
                     <button
                       type="button"
@@ -1058,20 +1058,15 @@ export default function Onboarding() {
                         try {
                           await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', user?.id);
                           await refreshProfile();
-                          const { data: plan } = await supabase.from('plans').select('id').eq('key', 'studio_tier').single();
-                          const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-                            body: { planId: plan?.id, returnUrl: `${window.location.origin}/admin` }
-                          });
-                          if (error) throw error;
-                          if (data?.url) window.location.href = data.url;
+                          window.location.href = '/admin/assinatura';
                         } catch(e) {
-                          alert('Erro ao iniciar checkout');
+                          alert('Erro ao concluir cadastro');
                           setLoading(false);
                         }
                       }}
                       className="w-full bg-[#0F172A] text-white h-14 rounded-xl font-bold flex items-center justify-center hover:bg-[#1E293B] transition-colors shadow-lg"
                     >
-                      {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Assinar Agora (R$ 0,00 Hoje)'}
+                      {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Escolher Meu Plano'}
                     </button>
                   </div>
 

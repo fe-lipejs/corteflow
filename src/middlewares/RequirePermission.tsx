@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { usePermissionEngine } from '../hooks/usePermissionEngine';
 import { useAuth } from '../hooks/useAuth';
+import FeatureGate from '../components/FeatureGate';
 
 export default function RequirePermission({ 
   children, 
@@ -42,8 +43,13 @@ export default function RequirePermission({
   }
 
   if (!hasAccess) {
-    // Redireciona de volta para o dashboard caso tente acessar uma rota sem permissão
-    return <Navigate to="/admin" replace />;
+    // Render the FeatureGate so it shows the blurred children and the upgrade card
+    const deniedMessage = "Você não tem permissão para acessar ou alterar este recurso. Conheça nossos planos e desbloqueie o acesso.";
+    return (
+      <FeatureGate permission={permission} modulePrefix={modulePrefix} message={deniedMessage}>
+        {children}
+      </FeatureGate>
+    );
   }
 
   return <>{children}</>;

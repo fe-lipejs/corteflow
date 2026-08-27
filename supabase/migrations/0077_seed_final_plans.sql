@@ -45,7 +45,9 @@ WITH novo_solo AS (
   ) RETURNING id
 )
 INSERT INTO public.plan_prices (plan_id, country_code, currency, amount, stripe_price_id)
-SELECT id, 'BR', 'BRL', 50, NULL FROM novo_solo;
+SELECT id, 'BR', 'BRL', 50, 'price_1U8oxn8dE283e6kosbcOKp2Z' FROM novo_solo UNION ALL
+SELECT id, 'US', 'USD', 15, 'price_1U8oxn8dE283e6kosbcOKp2Z' FROM novo_solo UNION ALL
+SELECT id, 'ES', 'EUR', 15, 'price_1U8oxn8dE283e6kosbcOKp2Z' FROM novo_solo;
 
 -- Ativa/Reinsere o Plano Studio
 WITH novo_studio AS (
@@ -67,7 +69,9 @@ WITH novo_studio AS (
   ) RETURNING id
 )
 INSERT INTO public.plan_prices (plan_id, country_code, currency, amount, stripe_price_id)
-SELECT id, 'BR', 'BRL', 100, NULL FROM novo_studio;
+SELECT id, 'BR', 'BRL', 100, 'price_1U8pf28dE283e6koAJIGkIap' FROM novo_studio UNION ALL
+SELECT id, 'US', 'USD', 29, 'price_1U8pf28dE283e6koAJIGkIap' FROM novo_studio UNION ALL
+SELECT id, 'ES', 'EUR', 29, 'price_1U8pf28dE283e6koAJIGkIap' FROM novo_studio;
 
 -- Ativa/Reinsere o Plano Business
 WITH novo_business AS (
@@ -89,4 +93,6 @@ WITH novo_business AS (
   ) RETURNING id
 )
 INSERT INTO public.plan_prices (plan_id, country_code, currency, amount, stripe_price_id)
-SELECT id, 'BR', 'BRL', 150, NULL FROM novo_business;
+SELECT id, 'BR', 'BRL', 150, 'price_1U8phO8dE283e6kofmM8ElFK' FROM novo_business UNION ALL
+SELECT id, 'US', 'USD', 49, 'price_1U8phO8dE283e6kofmM8ElFK' FROM novo_business UNION ALL
+SELECT id, 'ES', 'EUR', 49, 'price_1U8phO8dE283e6kofmM8ElFK' FROM novo_business;

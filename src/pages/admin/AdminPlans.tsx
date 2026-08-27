@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Edit2, Trash2, CheckCircle, Ban, CreditCard,
   X, Save, Users, Package, Clock, Lock, Unlock,
-  LayoutDashboard, Calendar, Scissors, DollarSign, BarChart3, Settings
+  LayoutDashboard, Calendar, Scissors, DollarSign, BarChart3, Settings, Sparkles
 } from 'lucide-react';
 import AdminPageHeader from './components/AdminPageHeader';
 import AdminEmptyState from './components/AdminEmptyState';
@@ -48,6 +48,7 @@ interface PlanFormData {
   price_eur: number;
   stripe_price_eur: string;
   is_default: boolean;
+  is_trial_plan: boolean;
   
   // Nova estrutura dinâmica
   permissions: string[];
@@ -70,6 +71,7 @@ const EMPTY_FORM: PlanFormData = {
   price_eur: 0,
   stripe_price_eur: '',
   is_default: false,
+  is_trial_plan: false,
   permissions: [],
   features: {},
   limits: { profissionais: 1 },
@@ -115,6 +117,7 @@ function PlanModal({
       price_eur: plan?.plan_prices?.find(p => p.currency === 'EUR')?.amount ?? 0,
       stripe_price_eur: plan?.plan_prices?.find(p => p.currency === 'EUR')?.stripe_price_id ?? '',
       is_default: !!plan.is_default,
+      is_trial_plan: !!(plan as any).is_trial_plan,
       
       permissions: Array.isArray(plan.permissions) ? (plan.permissions as string[]) : [],
       features: (plan.features as Record<string, boolean>) || {},
@@ -229,17 +232,43 @@ function PlanModal({
                 </div>
               </div>
               
-              <div className="flex items-center gap-2 p-3 bg-violet-500/10 border border-violet-500/20 rounded-lg">
-                <input 
-                  type="checkbox"
-                  id="is_default"
-                  checked={form.is_default}
-                  onChange={e => setForm(f => ({ ...f, is_default: e.target.checked }))}
-                  className="rounded bg-[#111] border-[#1a1a1a] text-violet-500"
-                />
-                <label htmlFor="is_default" className="text-xs font-medium text-violet-400 cursor-pointer">
-                  Plano Padrão (Gratuito/Fallback)
-                </label>
+              {/* Configurações de Papel do Plano */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex items-center justify-between p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                  <div>
+                    <label htmlFor="is_trial_plan" className="text-xs font-bold text-amber-400 cursor-pointer flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" /> Plano Padrão de Trial
+                    </label>
+                    <p className="text-[10px] text-amber-200/70 mt-0.5">
+                      Novos cadastros iniciarão neste plano durante os dias de teste.
+                    </p>
+                  </div>
+                  <input 
+                    type="checkbox"
+                    id="is_trial_plan"
+                    checked={form.is_trial_plan}
+                    onChange={e => setForm(f => ({ ...f, is_trial_plan: e.target.checked }))}
+                    className="w-4 h-4 rounded bg-[#111] border-[#333] text-amber-500 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 bg-violet-500/10 border border-violet-500/20 rounded-xl">
+                  <div>
+                    <label htmlFor="is_default" className="text-xs font-bold text-violet-400 cursor-pointer">
+                      Plano Fallback Gratuito
+                    </label>
+                    <p className="text-[10px] text-violet-300/70 mt-0.5">
+                      Usado quando a conta não possui assinatura ativa.
+                    </p>
+                  </div>
+                  <input 
+                    type="checkbox"
+                    id="is_default"
+                    checked={form.is_default}
+                    onChange={e => setForm(f => ({ ...f, is_default: e.target.checked }))}
+                    className="w-4 h-4 rounded bg-[#111] border-[#333] text-violet-500"
+                  />
+                </div>
               </div>
 
               <div>
@@ -444,9 +473,26 @@ function PlanModal({
                   />
                 </div>
                 
-                {/* Você pode adicionar mais limites dinâmicos aqui no futuro */}
-                <div className="p-4 border border-dashed border-[#1a1a1a] rounded-xl flex items-center justify-center text-[#555] text-xs text-center">
-                  Novos limites (agendamentos, clientes) podem ser adicionados no JSON futuramente.
+                <div className="p-4 border border-[#1a1a1a] bg-[#111] rounded-xl">
+                  <label className="block text-sm font-medium text-white mb-1">Serviços</label>
+                  <p className="text-[10px] text-[#555] mb-3">Máximo de serviços no catálogo.</p>
+                  <input
+                    type="number"
+                    value={form.limits.servicos === 'unlimited' ? -1 : (form.limits.servicos ?? 0)}
+                    onChange={e => setLimit('servicos', Number(e.target.value) === -1 ? 'unlimited' : Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white"
+                  />
+                </div>
+
+                <div className="p-4 border border-[#1a1a1a] bg-[#111] rounded-xl">
+                  <label className="block text-sm font-medium text-white mb-1">Produtos</label>
+                  <p className="text-[10px] text-[#555] mb-3">Máximo de produtos de revenda.</p>
+                  <input
+                    type="number"
+                    value={form.limits.produtos === 'unlimited' ? -1 : (form.limits.produtos ?? 0)}
+                    onChange={e => setLimit('produtos', Number(e.target.value) === -1 ? 'unlimited' : Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white"
+                  />
                 </div>
               </div>
             </div>
@@ -550,11 +596,16 @@ export default function AdminPlans() {
         permissions: finalPermissions,
         limits: form.limits,
         is_default: form.is_default,
+        is_trial_plan: form.is_trial_plan,
         active: true,
       };
 
       if (form.is_default) {
         await supabase.from('plans').update({ is_default: false }).neq('id', '00000000-0000-0000-0000-000000000000');
+      }
+
+      if (form.is_trial_plan) {
+        await supabase.from('plans').update({ is_trial_plan: false } as any).neq('id', '00000000-0000-0000-0000-000000000000');
       }
 
       let planId = id;
@@ -675,8 +726,13 @@ export default function AdminPlans() {
                 <div className="p-5 border-b border-[#111] flex-1">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-white font-bold">{plan.name}</h3>
-                    <div className="flex gap-1.5">
-                      {plan.is_default && <span className="text-[9px] text-violet-400 border border-violet-500/20 bg-violet-500/5 px-1.5 py-0.5 rounded font-mono">PADRÃO</span>}
+                    <div className="flex flex-wrap gap-1.5 justify-end">
+                      {(plan as any).is_trial_plan && (
+                        <span className="text-[9px] text-amber-400 border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 rounded font-mono font-bold flex items-center gap-1">
+                          <Sparkles className="w-2.5 h-2.5" /> TRIAL ({plan.trial_days}D)
+                        </span>
+                      )}
+                      {plan.is_default && <span className="text-[9px] text-violet-400 border border-violet-500/20 bg-violet-500/5 px-1.5 py-0.5 rounded font-mono">FALLBACK</span>}
                       {(!plan.active && subCount > 0) ? (
                         <span className="text-[9px] text-amber-400 border border-amber-500/20 bg-amber-500/5 px-1.5 py-0.5 rounded font-mono">LEGADO</span>
                       ) : (

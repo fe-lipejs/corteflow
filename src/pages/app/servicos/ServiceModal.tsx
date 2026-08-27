@@ -6,6 +6,8 @@ import { useCategories } from '../../../hooks/useCategories';
 import type { Professional } from '../../../types/database';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { Modal } from '../../../components/ui/Modal';
+import { usePermissionEngine } from '../../../hooks/usePermissionEngine';
+import FeatureGate from '../../../components/FeatureGate';
 
 const COLOR_PALETTE = ['#C9963B', '#E8B960', '#60a5fa', '#a78bfa', '#34d399', '#f87171', '#fb923c', '#f472b6', '#4ade80', '#94a3b8'];
 
@@ -20,6 +22,7 @@ interface Props {
 
 export default function ServiceModal({ service, professionals = [], tenantId, onClose, onSave, isLoading }: Props) {
   const { theme } = useTheme();
+  const engine = usePermissionEngine();
   const { categories } = useCategories(tenantId);
   const isEdit = !!service;
   const fileRef = useRef<HTMLInputElement>(null);
@@ -194,29 +197,31 @@ export default function ServiceModal({ service, professionals = [], tenantId, on
         </div>
 
         {/* Location / Mode */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Onde é realizado?</label>
-            <select value={serviceMode} onChange={e => setServiceMode(e.target.value as 'instore' | 'home' | 'both')} className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}>
-              <option value="instore">🏠 Apenas no estabelecimento</option>
-              <option value="home">🚗 Apenas a domicílio</option>
-              <option value="both">✨ Nos dois (cliente escolhe)</option>
-            </select>
+        <FeatureGate permission="catalogo.domicilio" message="Atendimento a Domicílio é uma funcionalidade premium.">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Onde é realizado?</label>
+              <select value={serviceMode} onChange={e => setServiceMode(e.target.value as 'instore' | 'home' | 'both')} className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}>
+                <option value="instore">🏠 Apenas no estabelecimento</option>
+                <option value="home">🚗 Apenas a domicílio</option>
+                <option value="both">✨ Nos dois (cliente escolhe)</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Acréscimo domicílio (R$)</label>
+              <input 
+                type="number" 
+                min="0" step="0.50" 
+                value={homePriceExtra} 
+                onChange={e => setHomePriceExtra(e.target.value)} 
+                disabled={serviceMode === 'instore'}
+                className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input disabled:opacity-50" 
+                style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
+                placeholder="Ex: 15.00" 
+              />
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Acréscimo domicílio (R$)</label>
-            <input 
-              type="number" 
-              min="0" step="0.50" 
-              value={homePriceExtra} 
-              onChange={e => setHomePriceExtra(e.target.value)} 
-              disabled={serviceMode === 'instore'}
-              className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input disabled:opacity-50" 
-              style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} 
-              placeholder="Ex: 15.00" 
-            />
-          </div>
-        </div>
+        </FeatureGate>
 
         {/* Duration + Buffer */}
         <div className="grid grid-cols-3 gap-4">
