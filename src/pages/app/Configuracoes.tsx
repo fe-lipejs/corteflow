@@ -186,6 +186,14 @@ export default function Configuracoes() {
   const [cancelFeePercent, setCancelFeePercent] = useState(0);
   const [noshowFeePercent, setNoshowFeePercent] = useState(0);
   const [delayToleranceMinutes, setDelayToleranceMinutes] = useState(15);
+  
+  // Home Service (migration 0046)
+  const [offersHomeService, setOffersHomeService] = useState(false);
+  const [homeServiceRadiusKm, setHomeServiceRadiusKm] = useState(10);
+  const [homeFeeType, setHomeFeeType] = useState('fixed');
+  const [homeFeeAmount, setHomeFeeAmount] = useState(0);
+  const [homeFeePerKm, setHomeFeePerKm] = useState(0);
+  const [showRadiusMap, setShowRadiusMap] = useState(false);
 
   // Financial Policies
   const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);

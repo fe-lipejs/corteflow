@@ -1084,7 +1084,6 @@ export default function Onboarding() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
 
           {/* Bottom Fixed Navigation */}
           {step < 4 && (
@@ -1136,6 +1135,8 @@ export default function Onboarding() {
                 </button>
               )}
             </div>
+          </div>
+          )}
           </form>
         </div>
 

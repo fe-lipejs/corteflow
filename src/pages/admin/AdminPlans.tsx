@@ -18,6 +18,7 @@ type Plan = Database['public']['Tables']['plans']['Row'] & {
     country_code: string;
     currency: string;
     amount: number;
+    stripe_price_id: string | null;
   }>;
   subscriptions?: [{ count: number }];
 };

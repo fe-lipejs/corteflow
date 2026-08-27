@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useAccountState } from '../hooks/useAccountState';
 import { Lock, CreditCard, ChevronRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
