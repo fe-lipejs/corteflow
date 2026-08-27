@@ -134,9 +134,13 @@ export default function Onboarding() {
         return;
       }
 
-      if (profile?.onboarding_completed || profile?.tenant_id || tenant?.id) {
+      if (profile?.onboarding_completed) {
         navigate('/admin', { replace: true });
         return;
+      }
+
+      if (profile?.tenant_id || tenant?.id) {
+        setStep(4);
       }
 
       // Verificação direta no banco para garantir que salões já criados não acessem o onboarding
@@ -148,7 +152,11 @@ export default function Onboarding() {
           .maybeSingle();
 
         if (existingTenant?.id) {
-          navigate('/admin', { replace: true });
+          if (!profile?.onboarding_completed) {
+            setStep(4);
+          } else {
+            navigate('/admin', { replace: true });
+          }
         }
       };
 
@@ -391,10 +399,10 @@ export default function Onboarding() {
           full_name: user.user_metadata?.full_name || 'Dono do Salão',
           phone: normalizedPhone || user.user_metadata?.phone || '',
           phone_normalized: normalizedPhone || user.user_metadata?.phone_normalized || '',
-          onboarding_completed: true,
         } as any);
         await refreshProfile();
-        window.location.href = '/admin';
+        setStep(4);
+        setLoading(false);
         return;
       }
 
@@ -425,7 +433,6 @@ export default function Onboarding() {
         full_name: user.user_metadata?.full_name || 'Dono do Salão',
         phone: normalizedPhone || user.user_metadata?.phone || '',
         phone_normalized: normalizedPhone || user.user_metadata?.phone_normalized || '',
-        onboarding_completed: true,
       } as any);
 
       // 3. Upload logo & banner (fail-safe)
@@ -1039,7 +1046,7 @@ export default function Onboarding() {
                     <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">Recomendado</div>
                     <div className="flex items-center justify-center gap-2 mb-2 text-[#0F172A] font-black text-2xl">
                       <Star className="w-6 h-6 text-[#DE870D] fill-[#DE870D]" />
-                      Plano Studio
+                      Plano Growth
                     </div>
                     <p className="text-slate-600 font-medium text-sm mb-4">7 dias grátis. Cancele quando quiser.</p>
                     
@@ -1049,7 +1056,9 @@ export default function Onboarding() {
                       onClick={async () => {
                         setLoading(true);
                         try {
-                          const { data: plan } = await supabase.from('plans').select('id').eq('key', 'studio_tier').single();
+                          await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', user?.id);
+                          await refreshProfile();
+                          const { data: plan } = await supabase.from('plans').select('id').eq('key', 'growth').single();
                           const { data, error } = await supabase.functions.invoke('create-checkout-session', {
                             body: { planId: plan?.id, returnUrl: `${window.location.origin}/admin` }
                           });
@@ -1068,7 +1077,9 @@ export default function Onboarding() {
 
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
+                      await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', user?.id);
+                      await refreshProfile();
                       window.location.href = '/admin'; // Dashboard/Visão Geral
                     }}
                     className="text-slate-500 font-semibold text-sm hover:text-slate-800 transition-colors"

@@ -61,8 +61,8 @@ export default function PaywallGate({ feature, children }: PaywallGateProps) {
       const { data: profile } = await supabase.from('profiles').select('tenant_id').single();
       const returnUrl = `${window.location.origin}/app`;
       
-      // Obter o plano "Studio" como default para o trial inicial (isso pode ser adaptado via UI)
-      const { data: plan } = await supabase.from('plans').select('id').eq('key', 'studio_tier').single();
+      // Obter o plano "Growth" como default para o trial inicial (isso pode ser adaptado via UI)
+      const { data: plan } = await supabase.from('plans').select('id').eq('key', 'growth').single();
       
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: { planId: plan?.id, returnUrl }

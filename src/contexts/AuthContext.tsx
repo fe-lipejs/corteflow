@@ -193,7 +193,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     tenant,
     tenantId: tenant?.id || profile?.tenant_id || null,
     role: (profile?.role === 'super_admin') ? 'super_admin' : (profile?.role as UserRole) || null,
-    onboardingCompleted: Boolean(profile?.onboarding_completed || profile?.tenant_id),
+    onboardingCompleted: Boolean(profile?.onboarding_completed),
     loading,
     signOut,
     refreshProfile,
