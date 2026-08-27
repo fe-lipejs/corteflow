@@ -661,13 +661,7 @@ export default function Onboarding() {
                           boxShadow: businessType === type.id ? '0 4px 12px rgba(222,135,13,0.12)' : 'none',
                         }}
                       >
-                        {step < 4 && (
-                          <div className="flex gap-1 justify-center mt-6">
-                            {[1, 2, 3].map(i => (
-                              <div key={i} className={`h-1.5 rounded-full transition-all ${step >= i ? 'w-8 bg-[#DE870D]' : 'w-4 bg-slate-200'}`} />
-                            ))}
-                          </div>
-                        )}
+
                         <div className="flex items-center gap-3">
                           <type.icon className="w-6 h-6" style={{ color: businessType === type.id ? '#DE870D' : '#94A3B8' }} />
                           <div>
