@@ -1277,7 +1277,7 @@ export default function Configuracoes() {
       queryClient.invalidateQueries({ queryKey: ['permission_engine'] });
       queryClient.invalidateQueries({ queryKey: ['plan_features'] });
       await loadSettings();
-      alert('Assinatura cancelada com sucesso. Seu salão retornará ao Plano Gratuito no encerramento do ciclo.');
+      alert('Assinatura cancelada com sucesso. Seu salão será bloqueado no encerramento do ciclo.');
     } catch (err: any) {
       console.error('Cancel sub error:', err);
       alert(`Erro ao cancelar assinatura: ${err.message}`);
@@ -3005,7 +3005,7 @@ export default function Configuracoes() {
               </div>
               <h3 className="text-xl font-bold text-center text-white mb-2">Cancelar Assinatura?</h3>
               <p className="text-sm text-[#888] text-center leading-relaxed">
-                Ao cancelar, sua assinatura permanecerá ativa até o encerramento do ciclo já pago. Após esse período, seu salão voltará <strong>automaticamente para o Plano Gratuito</strong> e você não receberá nenhuma nova cobrança.
+                Ao cancelar, sua assinatura permanecerá ativa até o encerramento do ciclo já pago. Após esse período, seu salão será <strong>bloqueado automaticamente</strong> e você não receberá nenhuma nova cobrança.
               </p>
             </div>
 

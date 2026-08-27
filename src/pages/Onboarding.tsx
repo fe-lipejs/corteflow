@@ -1046,7 +1046,7 @@ export default function Onboarding() {
                     <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">Recomendado</div>
                     <div className="flex items-center justify-center gap-2 mb-2 text-[#0F172A] font-black text-2xl">
                       <Star className="w-6 h-6 text-[#DE870D] fill-[#DE870D]" />
-                      Plano Growth
+                      Plano Studio
                     </div>
                     <p className="text-slate-600 font-medium text-sm mb-4">7 dias grátis. Cancele quando quiser.</p>
                     
@@ -1058,7 +1058,7 @@ export default function Onboarding() {
                         try {
                           await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', user?.id);
                           await refreshProfile();
-                          const { data: plan } = await supabase.from('plans').select('id').eq('key', 'growth').single();
+                          const { data: plan } = await supabase.from('plans').select('id').eq('key', 'studio_tier').single();
                           const { data, error } = await supabase.functions.invoke('create-checkout-session', {
                             body: { planId: plan?.id, returnUrl: `${window.location.origin}/admin` }
                           });
