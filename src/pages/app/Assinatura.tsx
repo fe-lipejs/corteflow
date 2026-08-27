@@ -4,7 +4,17 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useQueryClient } from '@tanstack/react-query';
-import { Crown, ExternalLink, CheckCircle, Zap, Clock, AlertTriangle, Loader2, RefreshCw, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+import {
+  Crown,
+  ExternalLink,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Loader2,
+  ShieldCheck,
+  Star,
+  X,
+} from 'lucide-react';
 
 interface Plan {
   id: string;
@@ -18,7 +28,10 @@ interface Plan {
   features: any;
   permissions?: any;
   limits?: any;
-  plan_prices: Array<{ currency: string; amount: number }>;
+  plan_prices: Array<{
+    currency: string;
+    amount: number;
+  }>;
   is_custom_price?: boolean;
 }
 
@@ -33,37 +46,30 @@ interface Subscription {
   subscription_contracts?: any;
 }
 
+/* =========================================================
+   HELPERS
+========================================================= */
+
 function getDisplayFeatures(plan: Plan): string[] {
   if (!plan.features) return [];
+
   const f = plan.features;
+
   if (Array.isArray(f)) return f;
-  if (f.display_features && Array.isArray(f.display_features)) return f.display_features;
+
+  if (
+    f.display_features &&
+    Array.isArray(f.display_features)
+  ) {
+    return f.display_features;
+  }
+
   return [];
 }
 
-function getFeatureFlags(plan: Plan): Record<string, boolean> {
-  const permissions = Array.isArray(plan.permissions) ? plan.permissions : [];
-  
-  return {
-    agenda: permissions.some((p: string) => p.startsWith('agenda.')) || plan.features?.agenda,
-    equipe: permissions.some((p: string) => p.startsWith('equipe.')) || plan.features?.equipe,
-    catalogo: permissions.some((p: string) => p.startsWith('catalogo.') || p.startsWith('servico.')) || plan.features?.servicos,
-    produtos: permissions.some((p: string) => p.startsWith('produto.')) || plan.allow_products || plan.features?.produtos,
-    clientes: permissions.some((p: string) => p.startsWith('clientes.')) || plan.features?.clientes,
-    financeiro: permissions.some((p: string) => p.startsWith('financeiro.')) || plan.features?.financeiro,
-    relatorios: permissions.some((p: string) => p.startsWith('relatorios.')) || plan.features?.relatorios,
-    configuracoes: permissions.some((p: string) => p.startsWith('configuracoes.')) || plan.features?.configuracoes,
-  };
-}
-
-const FEATURE_LABELS: Record<string, string> = {
-  agenda: 'Agenda',
-  equipe: 'Equipe',
-  servicos: 'Serviços',
-  financeiro: 'Financeiro',
-  relatorios: 'Relatórios',
-  produtos: 'Produtos',
-};
+/* =========================================================
+   MAIN COMPONENT
+========================================================= */
 
 export default function Assinatura() {
   const { tenant, profile } = useAuth();
@@ -72,711 +78,1736 @@ export default function Assinatura() {
   const queryClient = useQueryClient();
 
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [subscription, setSubscription] =
+    useState<Subscription | null>(null);
+
   const [loading, setLoading] = useState(true);
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
-  const [cancelLoading, setCancelLoading] = useState(false);
+  const [portalLoading, setPortalLoading] =
+    useState(false);
+
+  const [checkoutLoading, setCheckoutLoading] =
+    useState<string | null>(null);
+
+  const [cancelLoading, setCancelLoading] =
+    useState(false);
+
   const [syncing, setSyncing] = useState(false);
-  const [syncSuccessMessage, setSyncSuccessMessage] = useState<string | null>(null);
+
+  const [syncSuccessMessage, setSyncSuccessMessage] =
+    useState<string | null>(null);
+
+  /* =========================================================
+     FETCH DATA
+  ========================================================= */
 
   const fetchData = useCallback(async () => {
     if (!tenant) return;
+
     try {
-      const [{ data: subsData }, { data: planData }, { data: customPricingData }] = await Promise.all([
+      const [
+        { data: subsData },
+        { data: planData },
+        { data: customPricingData },
+      ] = await Promise.all([
         supabase
           .from('subscriptions')
-          .select('*, subscription_contracts(*), plans(*)')
+          .select(
+            '*, subscription_contracts(*), plans(*)'
+          )
           .eq('tenant_id', tenant.id)
-          .order('updated_at', { ascending: false }),
-        supabase.from('plans').select('*, plan_prices(*)').eq('active', true).order('sort_order', { ascending: true }),
-        supabase.from('custom_pricing').select('*').eq('tenant_id', tenant.id)
+          .order('updated_at', {
+            ascending: false,
+          }),
+
+        supabase
+          .from('plans')
+          .select('*, plan_prices(*)')
+          .eq('active', true)
+          .order('sort_order', {
+            ascending: true,
+          }),
+
+        supabase
+          .from('custom_pricing')
+          .select('*')
+          .eq('tenant_id', tenant.id),
       ]);
 
-      let activeSub = subsData?.find((s: any) => s.status === 'active' || s.status === 'trialing') ||
-                      subsData?.find((s: any) => s.status === 'trial') ||
-                      subsData?.find((s: any) => s.status === 'past_due') ||
-                      subsData?.[0] || null;
+      let activeSub =
+        subsData?.find(
+          (s: any) =>
+            s.status === 'active' ||
+            s.status === 'trialing'
+        ) ||
+        subsData?.find(
+          (s: any) => s.status === 'trial'
+        ) ||
+        subsData?.find(
+          (s: any) => s.status === 'past_due'
+        ) ||
+        subsData?.[0] ||
+        null;
 
-      // Auto-sync em background com Stripe caso a assinatura não esteja ativa no banco local
-      if ((!activeSub || activeSub.status !== 'active') && tenant) {
+      /*
+       * Sincronização automática com Stripe.
+       */
+      if (
+        (!activeSub ||
+          activeSub.status !== 'active') &&
+        tenant
+      ) {
         try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            const syncRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-stripe-subscription`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`
-              }
-            });
-            const syncData = await syncRes.json();
-            if (syncData.synced) {
-              const { data: refreshedSubs } = await supabase
-                .from('subscriptions')
-                .select('*, subscription_contracts(*), plans(*)')
-                .eq('tenant_id', tenant.id)
-                .order('updated_at', { ascending: false });
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
 
-              const newActiveSub = refreshedSubs?.find((s: any) => s.status === 'active' || s.status === 'trialing');
+          if (session) {
+            const syncRes = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-stripe-subscription`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type':
+                    'application/json',
+                  Authorization: `Bearer ${session.access_token}`,
+                },
+              }
+            );
+
+            const syncData = await syncRes.json();
+
+            if (syncData.synced) {
+              const {
+                data: refreshedSubs,
+              } = await supabase
+                .from('subscriptions')
+                .select(
+                  '*, subscription_contracts(*), plans(*)'
+                )
+                .eq(
+                  'tenant_id',
+                  tenant.id
+                )
+                .order('updated_at', {
+                  ascending: false,
+                });
+
+              const newActiveSub =
+                refreshedSubs?.find(
+                  (s: any) =>
+                    s.status === 'active' ||
+                    s.status === 'trialing'
+                );
+
               if (newActiveSub) {
-                activeSub = newActiveSub;
-                queryClient.invalidateQueries({ queryKey: ['active_subscription_contract'] });
-                queryClient.invalidateQueries({ queryKey: ['permission_engine'] });
-                queryClient.invalidateQueries({ queryKey: ['plan_features'] });
+                activeSub =
+                  newActiveSub;
+
+                queryClient.invalidateQueries({
+                  queryKey: [
+                    'active_subscription_contract',
+                  ],
+                });
+
+                queryClient.invalidateQueries({
+                  queryKey: [
+                    'permission_engine',
+                  ],
+                });
+
+                queryClient.invalidateQueries({
+                  queryKey: [
+                    'plan_features',
+                  ],
+                });
               }
             }
           }
-        } catch (_) {}
+        } catch (_) {
+          // Sync silencioso
+        }
       }
 
-      if (activeSub) setSubscription(activeSub as any);
-      
-      if (planData) {
-        const validPlans = planData.filter((p: any) => p.name !== 'Trial (Período de Teste)' && p.key !== 'expired_tier' && !p.is_trial_plan);
-        const plansWithCustomPrices = validPlans.map((plan: any) => {
-          const customPrice = customPricingData?.find(cp => cp.plan_id === plan.id);
-          if (customPrice && plan.plan_prices) {
-            const brlPriceIndex = plan.plan_prices.findIndex((p: any) => p.currency === 'BRL');
-            if (brlPriceIndex >= 0) {
-              plan.plan_prices[brlPriceIndex].amount = customPrice.amount_override;
-            } else {
-              plan.plan_prices.push({ currency: 'BRL', amount: customPrice.amount_override });
-            }
-            plan.is_custom_price = true;
-          }
-          return plan;
-        });
+      if (activeSub) {
+        setSubscription(
+          activeSub as Subscription
+        );
+      }
 
-        const sortedPlans = plansWithCustomPrices.sort((a: any, b: any) => {
-          if (a.is_default) return -1;
-          if (b.is_default) return 1;
-          
-          const aPrice = a.plan_prices?.find((p: any) => p.currency === 'BRL')?.amount || 0;
-          const bPrice = b.plan_prices?.find((p: any) => p.currency === 'BRL')?.amount || 0;
-          return aPrice - bPrice;
-        });
+      if (planData) {
+        /*
+         * Remove planos internos/deprecated
+         */
+        const validPlans =
+          planData.filter(
+            (p: any) =>
+              p.name !==
+              'Trial (Período de Teste)' &&
+              p.key !== 'expired_tier' &&
+              !p.is_trial_plan
+          );
+
+        /*
+         * Aplica preço personalizado
+         */
+        const plansWithCustomPrices =
+          validPlans.map((plan: any) => {
+            const customPrice =
+              customPricingData?.find(
+                (cp: any) =>
+                  cp.plan_id === plan.id
+              );
+
+            if (
+              customPrice &&
+              plan.plan_prices
+            ) {
+              const brlIndex =
+                plan.plan_prices.findIndex(
+                  (p: any) =>
+                    p.currency === 'BRL'
+                );
+
+              if (brlIndex >= 0) {
+                plan.plan_prices[
+                  brlIndex
+                ].amount =
+                  customPrice.amount_override;
+              } else {
+                plan.plan_prices.push({
+                  currency: 'BRL',
+                  amount:
+                    customPrice.amount_override,
+                });
+              }
+
+              plan.is_custom_price = true;
+            }
+
+            return plan;
+          });
+
+        /*
+         * Ordenação:
+         * recomendado primeiro,
+         * depois preço.
+         */
+        const sortedPlans =
+          plansWithCustomPrices.sort(
+            (a: any, b: any) => {
+              if (a.is_default) return -1;
+              if (b.is_default) return 1;
+
+              const aPrice =
+                a.plan_prices?.find(
+                  (p: any) =>
+                    p.currency === 'BRL'
+                )?.amount || 0;
+
+              const bPrice =
+                b.plan_prices?.find(
+                  (p: any) =>
+                    p.currency === 'BRL'
+                )?.amount || 0;
+
+              return aPrice - bPrice;
+            }
+          );
 
         setPlans(sortedPlans);
       }
-    } catch (e) {
-      console.error('Erro ao buscar dados de assinatura:', e);
+    } catch (error) {
+      console.error(
+        'Erro ao buscar dados de assinatura:',
+        error
+      );
     } finally {
       setLoading(false);
     }
   }, [tenant, queryClient]);
 
+  /* =========================================================
+     INITIAL LOAD
+  ========================================================= */
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get('session_id');
-    if (sessionId && tenant) {
-      const verifySession = async () => {
-        try {
-          setSyncing(true);
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) return;
+  /* =========================================================
+     VERIFY CHECKOUT
+  ========================================================= */
 
-          const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-checkout-session`, {
+  useEffect(() => {
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+    const sessionId =
+      params.get('session_id');
+
+    if (!sessionId || !tenant) return;
+
+    const verifySession = async () => {
+      try {
+        setSyncing(true);
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) return;
+
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-checkout-session`,
+          {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`
+              'Content-Type':
+                'application/json',
+              Authorization: `Bearer ${session.access_token}`,
             },
-            body: JSON.stringify({ sessionId })
+            body: JSON.stringify({
+              sessionId,
+            }),
+          }
+        );
+
+        if (res.ok) {
+          setSyncSuccessMessage(
+            'Pagamento confirmado. Seu plano foi ativado.'
+          );
+
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname
+          );
+
+          queryClient.invalidateQueries({
+            queryKey: [
+              'active_subscription_contract',
+            ],
           });
 
-          if (res.ok) {
-            setSyncSuccessMessage('🎉 Pagamento confirmado com sucesso! Seu plano foi ativado.');
-            window.history.replaceState({}, document.title, window.location.pathname);
-            queryClient.invalidateQueries({ queryKey: ['active_subscription_contract'] });
-            queryClient.invalidateQueries({ queryKey: ['permission_engine'] });
-            queryClient.invalidateQueries({ queryKey: ['plan_features'] });
-            await fetchData();
+          queryClient.invalidateQueries({
+            queryKey: [
+              'permission_engine',
+            ],
+          });
+
+          queryClient.invalidateQueries({
+            queryKey: [
+              'plan_features',
+            ],
+          });
+
+          await fetchData();
+        }
+      } catch (error) {
+        console.error(
+          'Erro ao verificar checkout:',
+          error
+        );
+      } finally {
+        setSyncing(false);
+      }
+    };
+
+    verifySession();
+  }, [
+    tenant,
+    queryClient,
+    fetchData,
+  ]);
+
+  /* =========================================================
+     SYNC STRIPE
+  ========================================================= */
+
+  const handleSyncWithStripe =
+    async () => {
+      if (!tenant) return;
+
+      try {
+        setSyncing(true);
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+          throw new Error(
+            'Não autenticado'
+          );
+        }
+
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-stripe-subscription`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':
+                'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
           }
-        } catch (e) {
-          console.error('Erro ao verificar sessão do Stripe:', e);
-        } finally {
-          setSyncing(false);
+        );
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(
+            data.error ||
+            'Erro ao sincronizar'
+          );
         }
-      };
-      verifySession();
-    }
-  }, [tenant, queryClient, fetchData]);
 
-  const handleSyncWithStripe = async () => {
-    if (!tenant) return;
-    try {
-      setSyncing(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Não autenticado');
+        if (data.synced) {
+          setSyncSuccessMessage(
+            'Assinatura sincronizada com sucesso.'
+          );
 
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-stripe-subscription`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          queryClient.invalidateQueries({
+            queryKey: [
+              'active_subscription_contract',
+            ],
+          });
+
+          queryClient.invalidateQueries({
+            queryKey: [
+              'permission_engine',
+            ],
+          });
+
+          queryClient.invalidateQueries({
+            queryKey: [
+              'plan_features',
+            ],
+          });
+
+          await fetchData();
+        } else {
+          alert(
+            data.message ||
+            'Nenhuma assinatura ativa encontrada no Stripe.'
+          );
         }
-      });
+      } catch (error: any) {
+        console.error(error);
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Erro ao sincronizar com Stripe');
+        alert(
+          `Erro: ${error.message}`
+        );
+      } finally {
+        setSyncing(false);
+      }
+    };
 
-      if (data.synced) {
-        setSyncSuccessMessage('✅ Assinatura sincronizada com sucesso diretamente do Stripe!');
-        queryClient.invalidateQueries({ queryKey: ['active_subscription_contract'] });
-        queryClient.invalidateQueries({ queryKey: ['permission_engine'] });
-        queryClient.invalidateQueries({ queryKey: ['plan_features'] });
+  /* =========================================================
+     CUSTOMER PORTAL
+  ========================================================= */
+
+  const handleOpenCustomerPortal =
+    async () => {
+      try {
+        setPortalLoading(true);
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+          throw new Error(
+            'Não autenticado'
+          );
+        }
+
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':
+                'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              returnUrl:
+                window.location.href,
+            }),
+          }
+        );
+
+        const data =
+          await res.json();
+
+        if (!res.ok) {
+          throw new Error(
+            data.error ||
+            'Erro ao abrir portal'
+          );
+        }
+
+        if (data.url) {
+          window.location.href =
+            data.url;
+        }
+      } catch (error: any) {
+        console.error(
+          'Portal error:',
+          error
+        );
+
+        alert(
+          `Erro ao abrir portal de pagamentos: ${error.message}`
+        );
+      } finally {
+        setPortalLoading(false);
+      }
+    };
+
+  /* =========================================================
+     CANCEL SUBSCRIPTION
+  ========================================================= */
+
+  const handleCancelSubscription =
+    async () => {
+      const confirmed = confirm(
+        'Tem certeza que deseja cancelar sua assinatura? O acesso continuará até o final do período atual.'
+      );
+
+      if (!confirmed) return;
+
+      setCancelLoading(true);
+
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+          throw new Error(
+            'Não autenticado'
+          );
+        }
+
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-subscription`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':
+                'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          const errData =
+            await res
+              .json()
+              .catch(() => ({}));
+
+          throw new Error(
+            errData.error ||
+            'Erro ao cancelar assinatura'
+          );
+        }
+
+        alert(
+          'Assinatura cancelada com sucesso. Seu acesso continua até o final do período atual.'
+        );
+
+        setSubscription(
+          (prev) =>
+            prev
+              ? {
+                ...prev,
+                status:
+                  'canceled',
+              }
+              : null
+        );
+
+        queryClient.invalidateQueries({
+          queryKey: [
+            'active_subscription_contract',
+          ],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: [
+            'permission_engine',
+          ],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: [
+            'plan_features',
+          ],
+        });
+
         await fetchData();
-      } else {
-        alert(data.message || 'Nenhuma assinatura ativa encontrada no Stripe.');
+      } catch (error: any) {
+        console.error(error);
+
+        alert(
+          `Erro: ${error.message}`
+        );
+      } finally {
+        setCancelLoading(false);
       }
-    } catch (err: any) {
-      console.error(err);
-      alert(`Erro: ${err.message}`);
-    } finally {
-      setSyncing(false);
-    }
-  };
+    };
 
-  const handleOpenCustomerPortal = async () => {
-    try {
-      setPortalLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Não autenticado');
+  /* =========================================================
+     CHECKOUT
+  ========================================================= */
 
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ returnUrl: window.location.href })
-      });
+  const handleCheckout =
+    async (planId: string) => {
+      if (!tenant) return;
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Erro ao abrir portal do cliente');
-      if (data.url) {
-        window.location.href = data.url;
+      try {
+        setCheckoutLoading(planId);
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+          throw new Error(
+            'Não autenticado'
+          );
+        }
+
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':
+                'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              planId,
+              returnUrl:
+                window.location.href,
+            }),
+          }
+        );
+
+        if (!res.ok) {
+          const errorText =
+            await res.text();
+
+          throw new Error(
+            `Erro na API: ${res.status} ${errorText}`
+          );
+        }
+
+        const { url } =
+          await res.json();
+
+        if (url) {
+          window.location.href =
+            url;
+        }
+      } catch (error: any) {
+        console.error(
+          'Checkout error:',
+          error
+        );
+
+        alert(
+          `Erro ao iniciar assinatura: ${error.message}`
+        );
+      } finally {
+        setCheckoutLoading(null);
       }
-    } catch (err: any) {
-      console.error('Portal error:', err);
-      alert(`Erro ao abrir portal de pagamentos: ${err.message}`);
-    } finally {
-      setPortalLoading(false);
-    }
-  };
+    };
 
-  const handleCancelSubscription = async () => {
-    if (!confirm('Tem certeza que deseja cancelar sua assinatura? O cancelamento ocorrerá ao final do período já pago e você não será mais cobrado.')) return;
-    
-    setCancelLoading(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Não autenticado');
+  /* =========================================================
+     FORMATTERS
+  ========================================================= */
 
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-subscription`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Erro ao cancelar assinatura');
-      }
-
-      alert('Assinatura cancelada com sucesso. Você terá acesso até o final do período atual.');
-      
-      setSubscription(prev => prev ? { ...prev, status: 'canceled' } : null);
-      queryClient.invalidateQueries({ queryKey: ['active_subscription_contract'] });
-      queryClient.invalidateQueries({ queryKey: ['permission_engine'] });
-      queryClient.invalidateQueries({ queryKey: ['plan_features'] });
-      await fetchData();
-    } catch (err: any) {
-      console.error(err);
-      alert(`Erro: ${err.message}`);
-    } finally {
-      setCancelLoading(false);
-    }
-  };
-
-  const handleCheckout = async (planId: string) => {
-    if (!tenant) return;
-    try {
-      setCheckoutLoading(planId);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Não autenticado');
-
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          planId,
-          returnUrl: window.location.href,
-        })
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Erro na API: ${res.status} ${errorText}`);
-      }
-
-      const { url } = await res.json();
-      if (url) window.location.href = url;
-    } catch (err: any) {
-      console.error('Checkout error:', err);
-      alert(`Erro ao iniciar assinatura: ${err.message}`);
-    } finally {
-      setCheckoutLoading(null);
-    }
-  };
-
-  const formatDate = (dateStr: string | null) => {
+  const formatDate = (
+    dateStr: string | null
+  ) => {
     if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    return new Date(
+      dateStr
+    ).toLocaleDateString(
+      'pt-BR',
+      {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      }
+    );
   };
 
-  const money = (amount: number, currency: string) => {
-    const locale = currency === 'BRL' ? 'pt-BR' : 'en-US';
-    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount);
+  const money = (
+    amount: number,
+    currency: string
+  ) => {
+    const locale =
+      currency === 'BRL'
+        ? 'pt-BR'
+        : 'en-US';
+
+    return new Intl.NumberFormat(
+      locale,
+      {
+        style: 'currency',
+        currency,
+      }
+    ).format(amount);
   };
+
+  /* =========================================================
+     LOADING
+  ========================================================= */
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center min-h-[400px]">
+      <div className="h-full min-h-[400px] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: theme.accent }} />
-          <span className="text-sm" style={{ color: theme.textMuted }}>Carregando planos...</span>
+          <Loader2
+            className="w-7 h-7 animate-spin"
+            style={{
+              color: theme.accent,
+            }}
+          />
+
+          <span
+            className="text-xs"
+            style={{
+              color: theme.textMuted,
+            }}
+          >
+            Carregando assinatura...
+          </span>
         </div>
       </div>
     );
   }
 
-  const isTrialExpired = features.subscription_status === 'trial_expired';
-  const isTrial = features.is_trial && !isTrialExpired;
-  const hasActivePlan = features.is_active && !isTrialExpired;
+  /* =========================================================
+     SUBSCRIPTION STATE
+  ========================================================= */
 
-  // Determine the correct currency to display based on tenant language
-  const displayCurrency = tenant?.language === 'en' ? 'USD' 
-    : (['es', 'fr', 'de'].includes(tenant?.language || '')) ? 'EUR' 
-    : 'BRL';
+  const isTrialExpired =
+    features.subscription_status ===
+    'trial_expired';
 
-  const configuredTrialPlan = plans.find(p => (p as any).is_trial_plan || p.is_default || p.trial_days > 0);
-  const activeTrialDays = configuredTrialPlan?.trial_days || 7;
+  const isTrial =
+    features.is_trial &&
+    !isTrialExpired;
+
+  const hasActivePlan =
+    features.is_active &&
+    !isTrialExpired;
+
+  /* =========================================================
+     CURRENCY
+  ========================================================= */
+
+  const displayCurrency =
+    tenant?.language === 'en'
+      ? 'USD'
+      : ['es', 'fr', 'de'].includes(
+        tenant?.language || ''
+      )
+        ? 'EUR'
+        : 'BRL';
+
+  /* =========================================================
+     TRIAL
+  ========================================================= */
+
+  const configuredTrialPlan =
+    plans.find(
+      (p) =>
+        (p as any).is_trial_plan ||
+        p.is_default ||
+        p.trial_days > 0
+    );
+
+  const activeTrialDays =
+    configuredTrialPlan?.trial_days ||
+    7;
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto animate-fade-in pb-12">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>Minha Assinatura</p>
-        <h1 className="font-serif text-3xl font-bold" style={{ color: theme.textPrimary }}>Planos & Faturamento</h1>
+    <div className="max-w-5xl mx-auto pb-12 animate-fade-in">
+
+      {/* =====================================================
+          PAGE HEADER
+      ===================================================== */}
+
+      <header className="mb-7">
+        <p
+          className="text-[10px] font-bold uppercase tracking-[0.16em] mb-1"
+          style={{
+            color: theme.textMuted,
+          }}
+        >
+          Minha assinatura
+        </p>
+
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div>
+            <h1
+              className="font-serif text-3xl font-bold tracking-tight"
+              style={{
+                color: theme.textPrimary,
+              }}
+            >
+              Planos & Assinatura
+            </h1>
+
+            <p
+              className="text-sm mt-1"
+              style={{
+                color: theme.textSecondary,
+              }}
+            >
+              Tudo para manter seu negócio organizado.
+            </p>
+          </div>
+
+          {hasActivePlan &&
+            !isTrial &&
+            subscription?.stripe_subscription_id && (
+              <button
+                onClick={
+                  handleOpenCustomerPortal
+                }
+                disabled={
+                  portalLoading
+                }
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-semibold transition-all hover:-translate-y-[1px]"
+                style={{
+                  borderColor:
+                    theme.border,
+                  background:
+                    theme.cardBg,
+                  color:
+                    theme.textPrimary,
+                }}
+              >
+                {portalLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <ExternalLink
+                    className="w-3.5 h-3.5"
+                    style={{
+                      color:
+                        theme.accent,
+                    }}
+                  />
+                )}
+
+                Gerenciar assinatura
+              </button>
+            )}
+        </div>
       </header>
 
-      {/* Sync Success Alert */}
+      {/* =====================================================
+          SUCCESS
+      ===================================================== */}
+
       {syncSuccessMessage && (
-        <div className="p-4 rounded-2xl border flex items-center justify-between gap-3 bg-emerald-500/10 border-emerald-500/30">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-            <p className="text-sm font-semibold text-emerald-300">{syncSuccessMessage}</p>
+        <div
+          className="mb-5 flex items-center justify-between gap-3 px-4 py-3 rounded-xl border"
+          style={{
+            background:
+              'rgba(16,185,129,0.08)',
+            borderColor:
+              'rgba(16,185,129,0.25)',
+          }}
+        >
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+
+            <span className="text-xs font-semibold text-emerald-600">
+              {syncSuccessMessage}
+            </span>
           </div>
-          <button onClick={() => setSyncSuccessMessage(null)} className="text-xs text-emerald-400 hover:underline">
-            Fechar
+
+          <button
+            onClick={() =>
+              setSyncSuccessMessage(null)
+            }
+            className="text-emerald-500"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* Trial expired banner */}
+      {/* =====================================================
+          TRIAL EXPIRED
+      ===================================================== */}
+
       {isTrialExpired && (
-        <div className="p-4 rounded-2xl border flex items-start gap-3" style={{ background: `${theme.warning}10`, borderColor: `${theme.warning}30` }}>
-          <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
+        <div
+          className="mb-5 flex items-center gap-3 px-4 py-3.5 rounded-xl border"
+          style={{
+            background: `${theme.warning}08`,
+            borderColor: `${theme.warning}25`,
+          }}
+        >
+          <AlertTriangle
+            className="w-4 h-4 shrink-0"
+            style={{
+              color: theme.warning,
+            }}
+          />
+
           <div>
-            <p className="font-bold text-sm" style={{ color: theme.warning }}>Seu período de teste encerrou</p>
-            <p className="text-sm mt-1" style={{ color: theme.textSecondary }}>
-              Para continuar usando o sistema, escolha um dos planos abaixo.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Subscription Canceled Banner */}
-      {subscription?.status === 'canceled' && (
-        <div className="p-5 rounded-2xl border flex items-start gap-3 bg-amber-500/10 border-amber-500/30">
-          <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-400" />
-          <div className="space-y-1">
-            <p className="font-bold text-sm text-amber-400">Assinatura Cancelada</p>
-            <p className="text-xs text-amber-200/90 leading-relaxed">
-              Sua assinatura foi cancelada com sucesso. Seu plano permanecerá <strong>ativo até {formatDate(subscription?.current_period_end || subscription?.trial_ends_at)}</strong> para você usufruir de todo o período já faturado.
-            </p>
-            <p className="text-xs text-emerald-400 font-bold flex items-center gap-1 mt-1">
-              ✓ Nenhuma nova cobrança será realizada no seu cartão de crédito.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Trial active banner */}
-      {isTrial && (
-        <div className="p-4 rounded-2xl border flex items-start gap-3" style={{ background: `${theme.info}10`, borderColor: `${theme.info}30` }}>
-          <Clock className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: theme.info }} />
-          <div>
-            <p className="font-bold text-sm" style={{ color: theme.info }}>
-              Você está no período de teste — encerra em {formatDate(subscription?.trial_ends_at || null)}
-            </p>
-            <p className="text-sm mt-1" style={{ color: theme.textSecondary }}>
-              Escolha um plano para continuar depois do trial. Não haverá cobrança até o encerramento do período de teste.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Current plan summary if active subscription */}
-      {hasActivePlan && !isTrial && subscription?.stripe_subscription_id && (
-        <div className="p-6 rounded-3xl border glass-card flex flex-col md:flex-row items-center gap-6" style={{ borderColor: theme.border }}>
-          <div className="w-16 h-16 rounded-full border-2 flex items-center justify-center shrink-0"
-            style={{ background: theme.inputBg, borderColor: theme.accent, color: theme.accent, boxShadow: theme.shadowAccent }}>
-            <Crown className="w-8 h-8" />
-          </div>
-          <div className="flex-1 text-center md:text-left">
-            <h2 className="text-2xl font-bold" style={{ color: theme.textPrimary }}>{features.plan_name}</h2>
-            <p className="text-sm mt-1" style={{ color: theme.textSecondary }}>
-              Assinatura ativa • Próxima cobrança: {formatDate(subscription.current_period_end)}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              className="flex items-center justify-center gap-2 px-5 py-2.5 border rounded-xl text-sm font-semibold transition-all hover:scale-[1.02] cursor-pointer disabled:opacity-50"
-              style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }}
-              onClick={handleOpenCustomerPortal}
-              disabled={portalLoading}
-            >
-              {portalLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" style={{ color: theme.accent }} />}
-              {portalLoading ? 'Abrindo Portal...' : 'Portal de Pagamento'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Plan cards Header & Apple-Grade Trial Guarantee Banner */}
-      <div className="pt-6 pb-2">
-        <div className="text-center max-w-3xl mx-auto mb-10">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3" style={{ color: theme.textPrimary }}>
-            {hasActivePlan && !isTrial ? 'Planos & Assinatura' : 'Escolha o Plano Ideal'}
-          </h1>
-          <p className="text-sm sm:text-base font-normal max-w-xl mx-auto" style={{ color: theme.textSecondary }}>
-            {hasActivePlan && !isTrial
-              ? 'Gerencie sua assinatura ou faça upgrade com segurança e flexibilidade total.'
-              : `Desbloqueie todo o potencial da sua barbearia com ${activeTrialDays} dias de acesso irrestrito.`}
-          </p>
-
-          {/* Apple-grade High-Trust Trial Card */}
-          {tenant?.status === 'trial' && (
-            <div 
-              className="mt-6 p-5 sm:p-6 rounded-2xl border backdrop-blur-md transition-all text-left shadow-sm"
+            <p
+              className="text-xs font-bold"
               style={{
-                background: theme.id === 'elegant' ? '#FFFFFF' : `${theme.cardBg}`,
-                borderColor: `${theme.accent}40`,
-                boxShadow: `0 8px 30px -10px ${theme.accent}20`
+                color: theme.warning,
               }}
             >
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3.5">
-                  <div 
-                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
-                    style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
-                  >
-                    <Sparkles className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span 
-                        className="text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full"
-                        style={{ background: `${theme.accent}20`, color: theme.accent }}
-                      >
-                        Avaliação Gratuita Ativa
-                      </span>
-                      <span className="text-xs font-semibold" style={{ color: theme.textMuted }}>
-                        {activeTrialDays} dias de teste
-                      </span>
-                    </div>
-                    <h3 className="text-base font-bold mt-1" style={{ color: theme.textPrimary }}>
-                      {displayCurrency === 'USD' ? '$ 0.00' : (displayCurrency === 'EUR' ? '€ 0,00' : 'R$ 0,00')} cobrados hoje em qualquer plano escolhido
-                    </h3>
-                    <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>
-                      Você só paga após o período de teste. Cancele com um clique no painel a qualquer momento sem taxas ou multas.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 self-stretch sm:self-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10 shrink-0">
-                  <div className="flex sm:flex-col items-center sm:items-end gap-1.5 text-xs" style={{ color: theme.textMuted }}>
-                    <span className="flex items-center gap-1 font-medium">
-                      <ShieldCheck className="w-4 h-4 text-emerald-500" /> 100% Seguro via Stripe
-                    </span>
-                    <span className="hidden sm:inline font-medium">Sem fidelidade</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 3 Value Pillars */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t" style={{ borderColor: theme.border }}>
-                <div className="flex items-center gap-2 text-xs font-medium" style={{ color: theme.textSecondary }}>
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: theme.accent }} />
-                  <span>Cobrança apenas no {activeTrialDays + 1}º dia</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs font-medium" style={{ color: theme.textSecondary }}>
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: theme.accent }} />
-                  <span>Cancele com 1 clique quando quiser</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs font-medium" style={{ color: theme.textSecondary }}>
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: theme.accent }} />
-                  <span>Acesso imediato e irrestrito</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {plans.length === 0 ? (
-          <div className="text-center py-16 border rounded-2xl" style={{ borderColor: theme.border, background: theme.cardBg }}>
-            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: `${theme.accent}20` }}>
-              <Crown className="w-8 h-8" style={{ color: theme.accent }} />
-            </div>
-            <h3 className="font-bold text-lg mb-2" style={{ color: theme.textPrimary }}>Nenhum plano disponível</h3>
-            <p className="text-sm max-w-sm mx-auto" style={{ color: theme.textSecondary }}>
-              Os planos ainda não foram configurados. Se você é o administrador da plataforma,
-              acesse o painel Admin para criar os planos.
+              Seu período de teste terminou
             </p>
-            {profile?.role === 'super_admin' && (
+
+            <p
+              className="text-xs mt-0.5"
+              style={{
+                color:
+                  theme.textSecondary,
+              }}
+            >
+              Escolha um plano para continuar usando o Raffros.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================
+          CANCELED
+      ===================================================== */}
+
+      {subscription?.status ===
+        'canceled' && (
+          <div
+            className="mb-5 flex items-start gap-3 px-4 py-3.5 rounded-xl border"
+            style={{
+              background:
+                'rgba(245,158,11,0.07)',
+              borderColor:
+                'rgba(245,158,11,0.22)',
+            }}
+          >
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-500" />
+
+            <div>
+              <p className="text-xs font-bold text-amber-600">
+                Assinatura cancelada
+              </p>
+
+              <p className="text-xs mt-0.5 leading-5 text-amber-700/80">
+                Seu acesso continua até{' '}
+                <strong>
+                  {formatDate(
+                    subscription.current_period_end ||
+                    subscription.trial_ends_at
+                  )}
+                </strong>
+                . Nenhuma nova cobrança será realizada.
+              </p>
+            </div>
+          </div>
+        )}
+
+      {/* =====================================================
+          CURRENT PLAN
+      ===================================================== */}
+
+      {hasActivePlan &&
+        !isTrial &&
+        subscription?.stripe_subscription_id && (
+          <div
+            className="mb-8 flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-4 rounded-2xl border"
+            style={{
+              background:
+                theme.cardBg,
+              borderColor:
+                theme.border,
+            }}
+          >
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+              style={{
+                background: `${theme.accent}12`,
+                color: theme.accent,
+              }}
+            >
+              <Crown className="w-5 h-5" />
+            </div>
+
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h2
+                  className="text-sm font-bold"
+                  style={{
+                    color:
+                      theme.textPrimary,
+                  }}
+                >
+                  {features.plan_name}
+                </h2>
+
+                <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                  Ativo
+                </span>
+              </div>
+
+              <p
+                className="text-xs mt-0.5"
+                style={{
+                  color:
+                    theme.textSecondary,
+                }}
+              >
+                Próxima cobrança em{' '}
+                {formatDate(
+                  subscription.current_period_end
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
+      {/* =====================================================
+          TRIAL MINI BANNER
+      ===================================================== */}
+
+      {isTrial && (
+        <div
+          className="mb-7 flex items-center gap-3 px-4 py-3 rounded-xl border"
+          style={{
+            background:
+              'rgba(0,200,83,0.055)',
+            borderColor:
+              'rgba(0,200,83,0.18)',
+          }}
+        >
+          <div className="w-8 h-8 rounded-lg bg-[#00c853]/10 flex items-center justify-center shrink-0">
+            <Clock className="w-4 h-4 text-[#00c853]" />
+          </div>
+
+          <div className="flex-1">
+            <p
+              className="text-xs font-bold"
+              style={{
+                color:
+                  theme.textPrimary,
+              }}
+            >
+              Seu teste gratuito está ativo
+            </p>
+
+            <p
+              className="text-[11px] mt-0.5"
+              style={{
+                color:
+                  theme.textSecondary,
+              }}
+            >
+              Você não paga nada hoje. Escolha seu plano e continue aproveitando o Raffros.
+            </p>
+          </div>
+
+          <span className="hidden sm:block text-[10px] font-bold text-[#00a844] whitespace-nowrap">
+            {activeTrialDays} dias grátis
+          </span>
+        </div>
+      )}
+
+      {/* =====================================================
+          PLANS INTRO
+      ===================================================== */}
+
+      <div className="text-center mb-7">
+        <h2
+          className="font-serif text-2xl sm:text-3xl font-bold tracking-tight"
+          style={{
+            color: theme.textPrimary,
+          }}
+        >
+          {hasActivePlan && !isTrial
+            ? 'Seu plano, do seu jeito.'
+            : 'Escolha seu plano.'}
+        </h2>
+
+        <p
+          className="text-xs sm:text-sm mt-1.5"
+          style={{
+            color:
+              theme.textSecondary,
+          }}
+        >
+          {hasActivePlan && !isTrial
+            ? 'Faça upgrade quando seu negócio crescer.'
+            : 'Comece simples. Cresça quando precisar.'}
+        </p>
+      </div>
+
+      {/* =====================================================
+          PLANS
+      ===================================================== */}
+
+      {plans.length === 0 ? (
+        <div
+          className="py-14 text-center rounded-2xl border"
+          style={{
+            background:
+              theme.cardBg,
+            borderColor:
+              theme.border,
+          }}
+        >
+          <Crown
+            className="w-7 h-7 mx-auto mb-3"
+            style={{
+              color: theme.accent,
+            }}
+          />
+
+          <h3
+            className="font-bold text-sm"
+            style={{
+              color:
+                theme.textPrimary,
+            }}
+          >
+            Nenhum plano disponível
+          </h3>
+
+          <p
+            className="text-xs mt-1 max-w-sm mx-auto"
+            style={{
+              color:
+                theme.textSecondary,
+            }}
+          >
+            Os planos ainda não foram configurados.
+          </p>
+
+          {profile?.role ===
+            'super_admin' && (
               <a
                 href="/platform/plans"
-                className="inline-flex items-center gap-2 mt-4 px-6 py-3 rounded-xl font-bold text-sm"
-                style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
+                className="inline-flex mt-4 px-4 py-2.5 rounded-xl text-xs font-bold"
+                style={{
+                  background:
+                    theme.accentGradient,
+                  color:
+                    theme.btnPrimaryText,
+                }}
               >
-                Ir para Admin → Planos
+                Ir para Planos
               </a>
             )}
-          </div>
-        ) : (
-          <div className="flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-5 lg:items-stretch max-w-5xl mx-auto pb-12 px-4">
-            {plans.filter(plan => {
-              // Ocultar Plano Gratuito se o usuário tiver uma assinatura paga ativa
-              const hasActivePaidPlan = subscription && (subscription.status === 'active' || subscription.status === 'trialing') && plans.some(p => p.id === subscription.plan_id && !p.is_default);
-              
-              if (plan.is_default && hasActivePaidPlan) {
+        </div>
+      ) : (
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-5 px-2">
+
+          {plans
+            .filter((plan) => {
+              const hasActivePaidPlan =
+                subscription &&
+                (
+                  subscription.status ===
+                  'active' ||
+                  subscription.status ===
+                  'trialing'
+                ) &&
+                plans.some(
+                  (p) =>
+                    p.id ===
+                    subscription.plan_id &&
+                    !p.is_default
+                );
+
+              if (
+                plan.is_default &&
+                hasActivePaidPlan
+              ) {
                 return false;
               }
+
               return true;
-            }).map((plan) => {
-              const isCanceled = subscription?.status === 'canceled';
-              const hasActiveSub = subscription && subscription.status !== 'canceled';
-              const isCurrent = hasActiveSub 
-                ? subscription.plan_id === plan.id 
-                : Boolean(plan.is_default);
-              
-              // Se for o plano atual e existir um contrato, o contrato manda nos limites e preço!
-              let planToDisplay = plan;
-              if (isCurrent && subscription?.subscription_contracts && !Array.isArray(subscription.subscription_contracts)) {
-                const contract = subscription.subscription_contracts as any;
+            })
+            .map((plan) => {
+              /* =================================================
+                 PLAN STATE
+              ================================================= */
+
+              const isCanceled =
+                subscription?.status ===
+                'canceled';
+
+              const hasActiveSub =
+                subscription &&
+                !isCanceled;
+
+              const isCurrent =
+                hasActiveSub
+                  ? subscription.plan_id ===
+                  plan.id
+                  : Boolean(
+                    plan.is_default
+                  );
+
+              /* =================================================
+                 CONTRACT OVERRIDE
+              ================================================= */
+
+              let planToDisplay =
+                plan;
+
+              const contracts =
+                subscription?.subscription_contracts;
+
+              if (
+                isCurrent &&
+                contracts &&
+                !Array.isArray(
+                  contracts
+                )
+              ) {
+                const contract =
+                  contracts as any;
+
                 planToDisplay = {
                   ...plan,
-                  max_professionals: contract.max_professionals,
-                  allow_products: contract.allow_products,
-                  features: contract.features,
-                  permissions: contract.permissions,
-                  limits: contract.limits,
-                  plan_prices: [{ currency: contract.currency, amount: contract.price_amount }]
-                };
-              } else if (isCurrent && subscription?.subscription_contracts && Array.isArray(subscription.subscription_contracts) && subscription.subscription_contracts.length > 0) {
-                const contract = subscription.subscription_contracts[0] as any;
-                planToDisplay = {
-                  ...plan,
-                  max_professionals: contract.max_professionals,
-                  allow_products: contract.allow_products,
-                  features: contract.features,
-                  permissions: contract.permissions,
-                  limits: contract.limits,
-                  plan_prices: [{ currency: contract.currency, amount: contract.price_amount }]
+                  max_professionals:
+                    contract.max_professionals,
+                  allow_products:
+                    contract.allow_products,
+                  features:
+                    contract.features,
+                  permissions:
+                    contract.permissions,
+                  limits:
+                    contract.limits,
+                  plan_prices: [
+                    {
+                      currency:
+                        contract.currency,
+                      amount:
+                        contract.price_amount,
+                    },
+                  ],
                 };
               }
 
-              // Determine the correct currency to display based on tenant language
-              const displayCurrency = tenant?.language === 'en' ? 'USD' 
-                : (['es', 'fr', 'de'].includes(tenant?.language || '')) ? 'EUR' 
-                : 'BRL';
-              
-              const planPriceObj = planToDisplay.plan_prices?.find((p: any) => p.currency === displayCurrency) 
-                || planToDisplay.plan_prices?.[0]; // Fallback to first available if missing
+              if (
+                isCurrent &&
+                Array.isArray(
+                  contracts
+                ) &&
+                contracts.length > 0
+              ) {
+                const contract =
+                  contracts[0] as any;
 
-              const displayFeatures = getDisplayFeatures(planToDisplay);
-              
-              const limitsObj = planToDisplay.limits || {};
-              const maxProf = limitsObj.profissionais ?? planToDisplay.max_professionals;
-              const displayMaxProf = maxProf === 'unlimited' || maxProf === -1 || maxProf === 999 
-                ? 'Ilimitados' 
-                : `Até ${maxProf} ${maxProf === 1 ? 'profissional' : 'profissionais'}`;
+                planToDisplay = {
+                  ...plan,
+                  max_professionals:
+                    contract.max_professionals,
+                  allow_products:
+                    contract.allow_products,
+                  features:
+                    contract.features,
+                  permissions:
+                    contract.permissions,
+                  limits:
+                    contract.limits,
+                  plan_prices: [
+                    {
+                      currency:
+                        contract.currency,
+                      amount:
+                        contract.price_amount,
+                    },
+                  ],
+                };
+              }
 
-              const isLoading = checkoutLoading === plan.id;
-              const isStudio = plan.key === 'studio_tier';
+              /* =================================================
+                 PRICE
+              ================================================= */
 
-              // Design Tokens Harmoniosos e Dinâmicos com o Tema Ativo
-              const isDark = theme.id !== 'elegant';
-              const cardBg = isStudio 
-                ? (isDark ? `linear-gradient(180deg, ${theme.accent}18 0%, ${theme.cardBg} 100%)` : `linear-gradient(180deg, #FFFFFF 0%, #FFFDF8 100%)`)
-                : theme.cardBg;
-              const cardBorder = isStudio ? theme.accent : theme.border;
-              const cardShadow = isStudio 
-                ? `0 20px 45px -12px ${theme.accent}35`
-                : (isDark ? '0 10px 25px -10px rgba(0,0,0,0.5)' : '0 4px 20px -2px rgba(0, 0, 0, 0.05)');
+              const planPriceObj =
+                planToDisplay.plan_prices?.find(
+                  (p: any) =>
+                    p.currency ===
+                    displayCurrency
+                ) ||
+                planToDisplay.plan_prices?.[0];
+
+              /* =================================================
+                 FEATURES
+              ================================================= */
+
+              let displayFeatures =
+                getDisplayFeatures(
+                  planToDisplay
+                );
+
+              /*
+               * Mantém o card curto.
+               * Se o banco tiver muitos recursos,
+               * mostramos somente os primeiros.
+               */
+
+              if (
+                displayFeatures.length >
+                4
+              ) {
+                displayFeatures =
+                  displayFeatures.slice(
+                    0,
+                    4
+                  );
+              }
+
+              if (
+                displayFeatures.length ===
+                0
+              ) {
+                displayFeatures = [
+                  'Agenda online completa',
+                  'Clientes e profissionais',
+                  'Serviços e atendimento',
+                  'Gestão financeira',
+                ];
+              }
+
+              /* =================================================
+                 PROFESSIONAL LIMIT
+              ================================================= */
+
+              const limitsObj =
+                planToDisplay.limits ||
+                {};
+
+              const maxProf =
+                limitsObj.profissionais ??
+                planToDisplay.max_professionals;
+
+              const displayMaxProf =
+                maxProf ===
+                  'unlimited' ||
+                  maxProf === -1 ||
+                  maxProf === 999
+                  ? 'Profissionais ilimitados'
+                  : `Até ${maxProf} ${maxProf === 1
+                    ? 'profissional'
+                    : 'profissionais'
+                  }`;
+
+              /*
+               * Só adiciona se ainda couber.
+               */
+              if (
+                !displayFeatures.some(
+                  (f) =>
+                    f
+                      .toLowerCase()
+                      .includes(
+                        'profissional'
+                      )
+                )
+              ) {
+                displayFeatures.push(
+                  displayMaxProf
+                );
+              }
+
+              /* =================================================
+                 STUDIO
+              ================================================= */
+
+              const isStudio =
+                plan.key ===
+                'studio_tier';
+
+              /*
+               * Recomendado:
+               * prioriza Studio.
+               */
+              const isRecommended =
+                isStudio ||
+                Boolean(
+                  plan.is_default
+                );
+
+              const isLoading =
+                checkoutLoading ===
+                plan.id;
+
+              /* =================================================
+                 CARD
+              ================================================= */
 
               return (
                 <div
                   key={plan.id}
-                  className={`relative flex flex-col w-full lg:w-[320px] rounded-3xl transition-all duration-300 backdrop-blur-md ${isStudio ? 'scale-100 lg:scale-105 z-10' : 'scale-100 z-0 hover:border-amber-500/40'}`}
+                  className={`
+                    relative flex flex-col
+                    w-full max-w-[320px]
+                    rounded-3xl
+                    transition-all duration-300
+                    ${isStudio
+                      ? 'lg:scale-[1.025] z-10'
+                      : 'z-0'}
+                  `}
                   style={{
-                    background: cardBg,
-                    border: `${isStudio ? '2px' : '1px'} solid ${cardBorder}`,
-                    boxShadow: cardShadow,
+                    background:
+                      theme.cardBg,
+
+                    border: `1px solid ${isStudio
+                        ? theme.accent
+                        : theme.border
+                      }`,
+
+                    boxShadow: isStudio
+                      ? `0 18px 45px -18px ${theme.accent}45`
+                      : '0 8px 25px rgba(15,23,42,0.06)',
                   }}
                 >
-                  {isStudio && (
-                    <div 
-                      className="absolute -top-3.5 inset-x-0 mx-auto w-max px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-md flex items-center gap-1.5"
-                      style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
+
+                  {/* ==========================================
+                      GREEN RECOMMENDED BADGE
+                  ========================================== */}
+
+                  {isRecommended && (
+                    <div
+                      className="
+                        absolute
+                        top-0
+                        right-0
+                        bg-[#00c853]
+                        text-white
+                        text-[9px]
+                        font-bold
+                        px-4
+                        py-1.5
+                        rounded-tr-3xl
+                        rounded-bl-xl
+                        uppercase
+                        tracking-[0.12em]
+                        shadow-sm
+                      "
                     >
-                      <Sparkles className="w-3 h-3" />
-                      Mais Popular
+                      Recomendado
                     </div>
                   )}
 
-                  {/* Plan header */}
-                  <div className="p-7 pb-0 flex flex-col items-center text-center">
-                    
-                    {/* Minimal Geometric Brand Icon */}
-                    <div className="mb-3.5 flex items-center justify-center gap-1">
-                      {isStudio ? (
-                        <>
-                          <div className="w-2.5 h-2.5 rounded-sm rotate-45" style={{ background: theme.accent }} />
-                          <div className="w-2.5 h-2.5 rounded-sm rotate-45 opacity-60" style={{ background: theme.accentLight }} />
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-2.5 h-2.5 rounded-full" style={{ background: theme.accent, opacity: 0.8 }} />
-                          <div className="w-2.5 h-2.5 rounded-full" style={{ background: theme.accent, opacity: 0.3 }} />
-                        </>
-                      )}
+                  {/* ==========================================
+                      CARD CONTENT
+                  ========================================== */}
+
+                  <div className="px-7 pt-7 pb-6">
+
+                    {/* ----------------------------------------
+                        PLAN NAME
+                    ---------------------------------------- */}
+
+                    <div className="text-center">
+
+                      <div className="flex items-center justify-center gap-2 mb-2">
+
+                        {isStudio ? (
+                          <Star
+                            className="w-5 h-5 fill-amber-500 text-amber-500"
+                          />
+                        ) : (
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{
+                              background:
+                                theme.accent,
+                            }}
+                          />
+                        )}
+
+                        <h3
+                          className="text-[21px] font-bold tracking-tight"
+                          style={{
+                            color:
+                              theme.textPrimary,
+                          }}
+                        >
+                          {
+                            planToDisplay.name
+                          }
+                        </h3>
+
+                      </div>
+
+                      <p
+                        className="text-[12px] leading-relaxed max-w-[230px] min-h-[36px] mx-auto"
+                        style={{
+                          color:
+                            theme.textSecondary,
+                        }}
+                      >
+                        {planToDisplay.description ||
+                          'Tudo que você precisa para administrar seu negócio.'}
+                      </p>
+
                     </div>
 
-                    <h3 className="text-xl font-bold mb-1.5" style={{ color: theme.textPrimary }}>
-                      {planToDisplay.name}
-                    </h3>
-                    
-                    <p className="text-xs leading-relaxed mb-6 h-10 flex items-center justify-center max-w-[220px]" style={{ color: theme.textSecondary }}>
-                      {planToDisplay.description || 'Plano ideal para o seu negócio.'}
-                    </p>
-                    
-                    {/* Price Block */}
-                    <div className="mb-6 flex flex-col items-center">
+                    {/* ----------------------------------------
+                        PRICE
+                    ---------------------------------------- */}
+
+                    <div className="text-center mt-5 mb-5">
+
                       {planPriceObj ? (
-                        <>
-                          {tenant?.status === 'trial' ? (
-                            <div className="flex flex-col items-center">
-                              <div className="flex items-baseline gap-1 justify-center">
-                                <span className="text-4xl sm:text-5xl font-black tracking-tight" style={{ color: theme.textPrimary }}>
-                                  {money(0, displayCurrency)}
-                                </span>
-                                <span 
-                                  className="text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full" 
-                                  style={{ background: `${theme.accent}20`, color: theme.accent }}
-                                >
-                                  7 Dias Grátis
-                                </span>
+                        tenant?.status ===
+                          'trial' ? (
+                          <>
+                            <div className="flex items-center justify-center gap-2">
+
+                              <span
+                                className="text-[42px] font-black tracking-[-0.045em]"
+                                style={{
+                                  color:
+                                    theme.textPrimary,
+                                }}
+                              >
+                                {money(
+                                  0,
+                                  displayCurrency
+                                )}
+                              </span>
+
+                              <span
+                                className="
+                                  text-[9px]
+                                  font-bold
+                                  uppercase
+                                  tracking-wider
+                                  px-2
+                                  py-1
+                                  rounded-full
+                                "
+                                style={{
+                                  background:
+                                    '#00c85315',
+                                  color:
+                                    '#00a844',
+                                }}
+                              >
+                                {activeTrialDays}{' '}
+                                dias grátis
+                              </span>
+
+                            </div>
+
+                            <p
+                              className="text-[11px] mt-1.5"
+                              style={{
+                                color:
+                                  theme.textMuted,
+                              }}
+                            >
+                              Depois{' '}
+                              {money(
+                                planPriceObj.amount,
+                                displayCurrency
+                              )}
+                              /mês
+                            </p>
+                          </>
+                        ) : (
+                          <div>
+                            <span
+                              className="text-[42px] font-black tracking-[-0.045em]"
+                              style={{
+                                color:
+                                  theme.textPrimary,
+                              }}
+                            >
+                              {money(
+                                planPriceObj.amount,
+                                displayCurrency
+                              ).replace(
+                                /\,\d\d$/,
+                                ''
+                              )}
+                            </span>
+
+                            <span
+                              className="text-[12px] ml-1"
+                              style={{
+                                color:
+                                  theme.textMuted,
+                              }}
+                            >
+                              /mês
+                            </span>
+                          </div>
+                        )
+                      ) : (
+                        <span
+                          className="text-sm font-semibold"
+                          style={{
+                            color:
+                              theme.textMuted,
+                          }}
+                        >
+                          Preço sob consulta
+                        </span>
+                      )}
+
+                    </div>
+
+                    {/* ----------------------------------------
+                        FEATURES
+                    ---------------------------------------- */}
+
+                    <div
+                      className="border-t pt-5 mb-5"
+                      style={{
+                        borderColor:
+                          theme.border,
+                      }}
+                    >
+                      <div className="space-y-2.5">
+
+                        {displayFeatures.map(
+                          (
+                            item: string,
+                            index: number
+                          ) => (
+                            <div
+                              key={`${item}-${index}`}
+                              className="flex items-center gap-2.5"
+                            >
+                              <div
+                                className="
+                                  w-4 h-4
+                                  rounded-full
+                                  flex
+                                  items-center
+                                  justify-center
+                                  shrink-0
+                                "
+                                style={{
+                                  background:
+                                    isStudio
+                                      ? '#00c85315'
+                                      : `${theme.accent}12`,
+                                }}
+                              >
+                                <CheckCircle2
+                                  className="w-3 h-3"
+                                  style={{
+                                    color:
+                                      isStudio
+                                        ? '#00c853'
+                                        : theme.accent,
+                                  }}
+                                />
                               </div>
-                              <p className="text-xs font-semibold mt-2" style={{ color: theme.textSecondary }}>
-                                Depois {money(planPriceObj.amount, displayCurrency)}/mês
-                              </p>
-                              <span className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>
-                                Cancele quando quiser
+
+                              <span
+                                className="text-[12px] leading-5"
+                                style={{
+                                  color:
+                                    theme.textPrimary,
+                                }}
+                              >
+                                {item}
                               </span>
                             </div>
-                          ) : (
-                            <div className="flex flex-col items-center">
-                              <div className="flex items-baseline gap-1 justify-center">
-                                <span className="text-4xl sm:text-5xl font-black tracking-tight" style={{ color: theme.textPrimary }}>
-                                  {money(planPriceObj.amount, displayCurrency).replace(/\,\d\d$/, '')}
-                                </span>
-                                <div className="flex flex-col items-start text-left">
-                                  <span className="text-sm font-bold" style={{ color: theme.textPrimary }}>
-                                    {money(planPriceObj.amount, displayCurrency).slice(-3)}
-                                  </span>
-                                  <span className="text-[11px] uppercase tracking-wider font-semibold" style={{ color: theme.textMuted }}>
-                                    / Mês
-                                  </span>
-                                </div>
-                              </div>
-                              <p className="text-[11px] font-medium mt-1.5" style={{ color: theme.textMuted }}>
-                                Cobrança mensal • Sem fidelidade
-                              </p>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-sm font-semibold" style={{ color: theme.textMuted }}>Preço sob consulta</span>
-                      )}
+                          )
+                        )}
+
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Features List */}
-                  <div className="flex-1 px-7 pt-4 pb-7 border-t" style={{ borderColor: theme.border }}>
-                    {(() => {
-                      const items = displayFeatures.length > 0 
-                        ? displayFeatures 
-                        : [
-                            'Acesso completo à plataforma',
-                            'Agenda online e link personalizado',
-                            'Gestão de clientes e histórico',
-                          ];
+                    {/* ----------------------------------------
+                        CTA
+                    ---------------------------------------- */}
 
-                      return (
-                        <div className="space-y-3.5 mb-7">
-                          {items.map((item: string, idx: number) => (
-                            <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm font-medium" style={{ color: theme.textPrimary }}>
-                              <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.accent }} />
-                              <span className="leading-snug">{item}</span>
-                            </div>
-                          ))}
-                          
-                          <div className="flex items-start gap-2.5 text-xs sm:text-sm font-medium" style={{ color: theme.textPrimary }}>
-                            <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.accent }} />
-                            <span className="leading-snug">{displayMaxProf}</span>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Action button */}
                     <button
-                      onClick={() => !plan.is_default ? handleCheckout(plan.id) : null}
-                      disabled={isLoading || isCurrent || plan.is_default}
-                      className="w-full py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-75 disabled:hover:scale-100 cursor-pointer shadow-sm"
+                      onClick={() =>
+                        !plan.is_default &&
+                        !isCurrent &&
+                        handleCheckout(
+                          plan.id
+                        )
+                      }
+                      disabled={
+                        isLoading ||
+                        isCurrent ||
+                        plan.is_default
+                      }
+                      className="
+                        w-full
+                        py-3.5
+                        px-4
+                        rounded-xl
+                        text-[13px]
+                        font-bold
+                        flex
+                        items-center
+                        justify-center
+                        gap-2
+                        transition-all
+                        duration-200
+                        hover:-translate-y-[1px]
+                        active:scale-[0.98]
+                        disabled:opacity-70
+                      "
                       style={{
-                        background: isCurrent 
-                          ? `${theme.accent}15`
-                          : (isStudio ? theme.accentGradient : (theme.id === 'elegant' ? '#F1F5F9' : 'rgba(255, 255, 255, 0.08)')),
-                        color: isCurrent 
-                          ? theme.accent 
-                          : (isStudio ? theme.btnPrimaryText : theme.textPrimary),
-                        border: isCurrent 
-                          ? `1px solid ${theme.accent}50` 
-                          : (isStudio ? 'none' : `1px solid ${theme.border}`),
-                        boxShadow: isStudio && !isCurrent ? theme.shadowAccent : 'none',
+                        background: isCurrent
+                          ? `${theme.accent}12`
+                          : isStudio
+                            ? '#0f172a'
+                            : theme.id ===
+                              'elegant'
+                              ? '#F1F5F9'
+                              : 'rgba(255,255,255,0.08)',
+
+                        color: isCurrent
+                          ? theme.accent
+                          : isStudio
+                            ? '#ffffff'
+                            : theme.textPrimary,
+
+                        border: isCurrent
+                          ? `1px solid ${theme.accent}35`
+                          : isStudio
+                            ? 'none'
+                            : `1px solid ${theme.border}`,
+
+                        boxShadow:
+                          isStudio &&
+                            !isCurrent
+                            ? '0 8px 20px rgba(15,23,42,0.15)'
+                            : 'none',
                       }}
                     >
                       {isLoading ? (
@@ -785,39 +1816,211 @@ export default function Assinatura() {
                         '✓ Plano Atual'
                       ) : plan.is_default ? (
                         'Plano Básico'
-                      ) : tenant?.status === 'trial' ? (
-                        'Testar 7 Dias Grátis'
+                      ) : tenant?.status ===
+                        'trial' ? (
+                        `Começar ${activeTrialDays} Dias Grátis`
                       ) : (
-                        'Escolher Plano'
+                        'Assinar agora'
                       )}
                     </button>
+
+                    {/* ----------------------------------------
+                        MICRO COPY
+                    ---------------------------------------- */}
+
+                    <p
+                      className="text-[10px] text-center mt-3"
+                      style={{
+                        color:
+                          theme.textMuted,
+                      }}
+                    >
+                      {tenant?.status ===
+                        'trial'
+                        ? 'Sem cobrança hoje · Cancele quando quiser'
+                        : 'Sem fidelidade · Cancele quando quiser'}
+                    </p>
+
                   </div>
                 </div>
               );
             })}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* FAQ section */}
-      <div className="p-6 rounded-2xl border" style={{ borderColor: theme.border, background: theme.cardBg }}>
-        <h3 className="font-bold mb-4" style={{ color: theme.textPrimary }}>Dúvidas frequentes</h3>
-        <div className="space-y-4 text-sm" style={{ color: theme.textSecondary }}>
-          <div>
-            <p className="font-semibold mb-1" style={{ color: theme.textPrimary }}>Posso cancelar quando quiser?</p>
-            <p>Sim. Não há fidelidade. O acesso continua ativo até o fim do período já pago.</p>
-          </div>
-          <div>
-            <p className="font-semibold mb-1" style={{ color: theme.textPrimary }}>Formas de pagamento aceitas?</p>
-            <p>Cartão de crédito e débito via Stripe. Processamento 100% seguro.</p>
-          </div>
-          <div>
-            <p className="font-semibold mb-1" style={{ color: theme.textPrimary }}>Meus dados ficam seguros?</p>
-            <p>Sim. Os dados ficam isolados por salão via Row Level Security no Supabase.</p>
-          </div>
+      {/* =====================================================
+          TRUST
+      ===================================================== */}
+
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-7">
+        <div
+          className="flex items-center gap-1.5 text-[10px]"
+          style={{
+            color:
+              theme.textMuted,
+          }}
+        >
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+          Pagamento seguro
+        </div>
+
+        <div
+          className="text-[10px]"
+          style={{
+            color:
+              theme.textMuted,
+          }}
+        >
+          Sem fidelidade
+        </div>
+
+        <div
+          className="text-[10px]"
+          style={{
+            color:
+              theme.textMuted,
+          }}
+        >
+          Cancele quando quiser
         </div>
       </div>
+
+      {/* =====================================================
+          FAQ — MINIMALISTA
+      ===================================================== */}
+
+      <div className="mt-12 max-w-2xl mx-auto">
+
+        <div className="text-center mb-5">
+          <p
+            className="text-[10px] font-bold uppercase tracking-[0.14em]"
+            style={{
+              color:
+                theme.textMuted,
+            }}
+          >
+            Dúvidas
+          </p>
+
+          <h3
+            className="font-serif text-xl font-bold mt-1"
+            style={{
+              color:
+                theme.textPrimary,
+            }}
+          >
+            Tudo simples por aqui.
+          </h3>
+        </div>
+
+        <div
+          className="rounded-2xl border divide-y overflow-hidden"
+          style={{
+            background:
+              theme.cardBg,
+            borderColor:
+              theme.border,
+          }}
+        >
+
+          <div className="px-5 py-4">
+            <p
+              className="text-xs font-bold"
+              style={{
+                color:
+                  theme.textPrimary,
+              }}
+            >
+              Posso cancelar quando quiser?
+            </p>
+
+            <p
+              className="text-[11px] leading-5 mt-1"
+              style={{
+                color:
+                  theme.textSecondary,
+              }}
+            >
+              Sim. Não existe fidelidade. O acesso continua até o final do período já pago.
+            </p>
+          </div>
+
+          <div className="px-5 py-4">
+            <p
+              className="text-xs font-bold"
+              style={{
+                color:
+                  theme.textPrimary,
+              }}
+            >
+              Como funciona o teste gratuito?
+            </p>
+
+            <p
+              className="text-[11px] leading-5 mt-1"
+              style={{
+                color:
+                  theme.textSecondary,
+              }}
+            >
+              Você começa com acesso completo durante o período de teste. A cobrança só acontece depois desse período.
+            </p>
+          </div>
+
+          <div className="px-5 py-4">
+            <p
+              className="text-xs font-bold"
+              style={{
+                color:
+                  theme.textPrimary,
+              }}
+            >
+              O pagamento é seguro?
+            </p>
+
+            <p
+              className="text-[11px] leading-5 mt-1"
+              style={{
+                color:
+                  theme.textSecondary,
+              }}
+            >
+              Sim. O processamento dos pagamentos é realizado pelo Stripe.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      {/* =====================================================
+          ADMIN SYNC — DISCRETO
+      ===================================================== */}
+
+      {profile?.role ===
+        'super_admin' && (
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={
+                handleSyncWithStripe
+              }
+              disabled={syncing}
+              className="text-[10px] font-medium opacity-50 hover:opacity-100 transition-opacity flex items-center gap-1.5"
+              style={{
+                color:
+                  theme.textMuted,
+              }}
+            >
+              {syncing ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <ShieldCheck className="w-3 h-3" />
+              )}
+
+              Sincronizar assinatura
+            </button>
+          </div>
+        )}
+
     </div>
   );
 }
-

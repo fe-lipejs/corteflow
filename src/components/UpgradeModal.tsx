@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star } from 'lucide-react';
+import { Star, Check } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface UpgradeModalProps {
@@ -9,23 +9,21 @@ interface UpgradeModalProps {
   message?: string;
 }
 
-export function UpgradeModal({ feature, onClose, message }: UpgradeModalProps) {
+export function UpgradeModal({
+  feature,
+  onClose,
+  message,
+}: UpgradeModalProps) {
   const navigate = useNavigate();
   const { theme } = useTheme();
 
-  // If a specific message is passed (e.g., from FeatureGate), use it.
-  // Otherwise, use a default feature-based message.
-  let displayMessage = message || '';
-  if (!displayMessage) {
-    if (typeof feature === 'string' && feature) {
-      displayMessage = `A funcionalidade de ${feature} é exclusiva de planos superiores. Faça o upgrade para desbloquear o acesso total.`;
-    } else {
-      displayMessage = 'Este recurso é exclusivo de planos superiores. Faça o upgrade para desbloquear o acesso total.';
-    }
-  }
+  const featureName =
+    typeof feature === 'string' && feature
+      ? feature
+      : 'este recurso';
 
   const handleAction = () => {
-    if (onClose) onClose();
+    onClose?.();
     navigate('/admin/assinatura');
   };
 
@@ -38,56 +36,210 @@ export function UpgradeModal({ feature, onClose, message }: UpgradeModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[35] md:pl-[250px] flex items-center justify-center p-4 bg-black/20 backdrop-blur-md animate-fade-in">
-      <div 
-        className="relative bg-white rounded-3xl p-8 max-w-[340px] w-full text-center shadow-[0_20px_50px_rgba(0,0,0,0.1)] border" 
-        style={{ borderColor: theme.border, background: theme.cardBg }}
+    <div
+      className="
+        fixed inset-0 z-[35]
+        md:pl-[250px]
+        flex items-center justify-center
+        p-4
+        bg-black/30
+        backdrop-blur-[0px]
+        animate-fade-in
+      "
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="upgrade-modal-title"
+    >
+      <div
+        className="
+          relative
+          w-full
+          max-w-[330px]
+          rounded-3xl
+          border
+          p-7
+          text-center
+          shadow-[0_20px_50px_rgba(0,0,0,0.1)]
+        "
+        style={{
+          borderColor: theme.border,
+          background: theme.cardBg,
+        }}
       >
-        {/* Recommended Badge */}
-        <div className="absolute top-0 right-0 bg-[#00c853] text-white text-[10px] font-bold px-4 py-1.5 rounded-tr-3xl rounded-bl-xl uppercase tracking-wider shadow-sm">
+        {/* Badge */}
+        <div
+          className="
+            absolute
+            top-0
+            right-0
+            bg-[#00c853]
+            text-white
+            text-[9px]
+            font-bold
+            px-4
+            py-1.5
+            rounded-tr-3xl
+            rounded-bl-xl
+            uppercase
+            tracking-wider
+          "
+        >
           Recomendado
         </div>
 
-        {/* Title Block */}
-        <div className="flex flex-col items-center justify-center gap-1 mt-3 mb-3">
-          <div className="flex items-center gap-2">
-            <Star className="w-6 h-6 fill-amber-500 text-amber-500" />
-            <h3 className="text-2xl font-bold tracking-tight" style={{ color: theme.textPrimary }}>
-              Plano Studio
-            </h3>
-          </div>
+        {/* Plano */}
+        <div className="mt-1 flex items-center justify-center gap-2">
+          <Star
+            className="h-5 w-5 fill-amber-500 text-amber-500"
+          />
+
+          <h3
+            id="upgrade-modal-title"
+            className="text-[22px] font-bold tracking-tight"
+            style={{
+              color: theme.textPrimary,
+            }}
+          >
+            Plano Studio
+          </h3>
         </div>
 
-        {/* Subtitle */}
-        <p className="text-[13px] font-medium leading-relaxed mb-4 px-2" style={{ color: theme.textSecondary }}>
-          7 dias grátis. Cancele quando quiser.
+        {/* Headline */}
+        <h4
+          className="
+            mt-4
+            text-[16px]
+            font-bold
+            tracking-[-0.02em]
+          "
+          style={{
+            color: theme.textPrimary,
+          }}
+        >
+          Seu negócio, sem limitações.
+        </h4>
+
+        {/* Contexto */}
+        <p
+          className="
+            mt-2
+            px-3
+            text-[11px]
+            leading-[17px]
+          "
+          style={{
+            color: theme.textSecondary,
+          }}
+        >
+          Libere {featureName} e aproveite a experiência
+          completa do Raffros.
         </p>
 
-        {/* Dynamic Context Message */}
-        {displayMessage && (
-          <div className="mb-6 p-3 rounded-xl border text-left" style={{ background: theme.bg, borderColor: theme.border }}>
-            <p className="text-xs font-semibold leading-relaxed" style={{ color: theme.textPrimary }}>
-              <span className="text-red-500 mr-1.5 font-bold">Bloqueado:</span>
-              {displayMessage}
-            </p>
+        {/* Trial */}
+        <div className="mt-5 flex items-center justify-center gap-2">
+          <div
+            className="
+              flex
+              h-5
+              w-5
+              items-center
+              justify-center
+              rounded-full
+              bg-emerald-50
+            "
+          >
+            <Check
+              className="h-3 w-3 text-emerald-600"
+              strokeWidth={2.8}
+            />
           </div>
-        )}
 
-        {/* Action Button */}
+          <span
+            className="text-[11px] font-semibold"
+            style={{
+              color: theme.textPrimary,
+            }}
+          >
+            7 dias grátis
+          </span>
+        </div>
+
+        {/* Preço */}
+        <div className="mt-4">
+          <div className="flex items-baseline justify-center gap-1">
+            <span
+              className="
+                text-[26px]
+                font-bold
+                tracking-[-0.04em]
+              "
+              style={{
+                color: theme.textPrimary,
+              }}
+            >
+              R$ 0,00
+            </span>
+
+            <span
+              className="text-[10px]"
+              style={{
+                color: theme.textSecondary,
+              }}
+            >
+              hoje
+            </span>
+          </div>
+
+
+        </div>
+
+        {/* CTA */}
         <button
+          type="button"
           onClick={handleAction}
-          className="w-full py-3.5 bg-[#0f172a] hover:bg-[#1e293b] text-white rounded-xl font-bold transition-all transform active:scale-95 shadow-lg shadow-slate-900/20"
+          className="
+            mt-4
+            w-full
+            rounded-xl
+            bg-[#0f172a]
+            py-3.5
+            text-[12px]
+            font-bold
+            text-white
+            shadow-lg
+            shadow-slate-900/20
+            transition-all
+            hover:bg-[#1e293b]
+            active:scale-[0.97]
+          "
         >
-          Assinar Agora (R$ 0,00 Hoje)
+          Experimentar gratuitamente
         </button>
-        
-        {/* Dismiss Link */}
-        <button 
-          onClick={handleDismiss}
-          className="mt-5 text-[13px] font-medium hover:underline transition-colors"
-          style={{ color: theme.textMuted }}
+
+        {/* Segurança */}
+        <p
+          className="mt-2 text-[9px]"
+          style={{
+            color: theme.textMuted,
+          }}
         >
-          Pular para Visão Geral
+        </p>
+
+        {/* Dismiss */}
+        <button
+          type="button"
+          onClick={handleDismiss}
+          className="
+            mt-3
+            text-[14px]
+            font-medium
+            hover:underline
+          "
+          style={{
+            color: theme.textMuted,
+          }}
+        >
+          Continuar por enquanto
         </button>
       </div>
     </div>
