@@ -62,7 +62,7 @@ export default function FeatureGate({ feature, permission, modulePrefix, childre
     }
 
     return (
-      <div className="relative w-full overflow-hidden rounded-3xl" style={{ height: 'calc(100vh - 100px)' }}>
+      <div className="relative w-full h-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
         {/* Render actual children but blurred and disabled to tease the user */}
         <div className="pointer-events-none select-none filter blur-[5px] h-full w-full">
           {children}

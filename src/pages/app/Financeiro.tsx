@@ -413,8 +413,8 @@ export default function Financeiro() {
   return (
     <>
       <div className="relative min-h-[600px] w-full">
-      {/* ── Se não tiver nenhuma permissão, mostra teaser com blur ── */}
-      <div className={`space-y-6 h-full flex flex-col animate-fade-in ${!canAccessFinanceiro ? 'filter blur-[5px] opacity-40 pointer-events-none select-none' : ''}`}>
+      {/* ── Conteúdo da Página ── */}
+      <div className="space-y-6 h-full flex flex-col animate-fade-in">
         {/* HEADER */}
         {/* HEADER */}
         <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
@@ -751,35 +751,6 @@ export default function Financeiro() {
           </div>
         )}
       </div>
-
-      {/* ── Overlay de Bloqueio se não tiver permissão alguma ── */}
-      {!canAccessFinanceiro && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center p-4">
-          <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_0_80px_rgba(0,0,0,0.5)] ring-1 ring-white/10 glass-card animate-scale-in" style={{ borderColor: theme.border, background: theme.cardBg }}>
-            <div className="relative mb-6">
-              <div className="relative w-20 h-20 mx-auto bg-black border rounded-full flex items-center justify-center" style={{ borderColor: theme.accent }}>
-                <Crown className="w-10 h-10" style={{ color: theme.accent }} />
-                <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full border-2 flex items-center justify-center" style={{ background: theme.cardBg, borderColor: theme.border }}>
-                  <Lock className="w-4 h-4" style={{ color: theme.textSecondary }} />
-                </div>
-              </div>
-            </div>
-            <h3 className="font-bold text-xl mb-2" style={{ color: theme.textPrimary }}>
-              Módulo Financeiro
-            </h3>
-            <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>
-              O controle de caixa e relatórios financeiros é exclusivo de planos superiores. Faça upgrade para desbloquear.
-            </p>
-            <button
-              onClick={() => navigate('/admin/assinatura')}
-              className="w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all shadow-lg hover:opacity-90"
-              style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
-            >
-              Ver planos
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ── Modal de Lançamento Manual ── */}
       <ManualTransactionModal

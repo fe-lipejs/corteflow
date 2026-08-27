@@ -56,8 +56,7 @@ export function usePermissionEngine(): PermissionEngine {
             allow_products,
             features,
             permissions,
-            limits,
-            is_default
+            limits
           ),
           plans (
             id,
@@ -111,7 +110,7 @@ export function usePermissionEngine(): PermissionEngine {
           .from('plans')
           .select('*')
           .eq('is_default', true)
-          .single();
+          .maybeSingle();
         defaultPlan = dp;
       }
 

@@ -12,8 +12,8 @@ import {
   AlertTriangle,
   Loader2,
   ShieldCheck,
+  Sparkles,
   Star,
-  X,
 } from 'lucide-react';
 
 interface Plan {
@@ -46,10 +46,6 @@ interface Subscription {
   subscription_contracts?: any;
 }
 
-/* =========================================================
-   HELPERS
-========================================================= */
-
 function getDisplayFeatures(plan: Plan): string[] {
   if (!plan.features) return [];
 
@@ -67,10 +63,6 @@ function getDisplayFeatures(plan: Plan): string[] {
   return [];
 }
 
-/* =========================================================
-   MAIN COMPONENT
-========================================================= */
-
 export default function Assinatura() {
   const { tenant, profile } = useAuth();
   const { theme } = useTheme();
@@ -82,23 +74,16 @@ export default function Assinatura() {
     useState<Subscription | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [portalLoading, setPortalLoading] =
-    useState(false);
-
+  const [portalLoading, setPortalLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] =
     useState<string | null>(null);
 
+  const [syncing, setSyncing] = useState(false);
   const [cancelLoading, setCancelLoading] =
     useState(false);
 
-  const [syncing, setSyncing] = useState(false);
-
   const [syncSuccessMessage, setSyncSuccessMessage] =
     useState<string | null>(null);
-
-  /* =========================================================
-     FETCH DATA
-  ========================================================= */
 
   const fetchData = useCallback(async () => {
     if (!tenant) return;
@@ -111,9 +96,7 @@ export default function Assinatura() {
       ] = await Promise.all([
         supabase
           .from('subscriptions')
-          .select(
-            '*, subscription_contracts(*), plans(*)'
-          )
+          .select('*, subscription_contracts(*), plans(*)')
           .eq('tenant_id', tenant.id)
           .order('updated_at', {
             ascending: false,
@@ -184,10 +167,7 @@ export default function Assinatura() {
                 .select(
                   '*, subscription_contracts(*), plans(*)'
                 )
-                .eq(
-                  'tenant_id',
-                  tenant.id
-                )
+                .eq('tenant_id', tenant.id)
                 .order('updated_at', {
                   ascending: false,
                 });
@@ -200,8 +180,7 @@ export default function Assinatura() {
                 );
 
               if (newActiveSub) {
-                activeSub =
-                  newActiveSub;
+                activeSub = newActiveSub;
 
                 queryClient.invalidateQueries({
                   queryKey: [
@@ -210,46 +189,32 @@ export default function Assinatura() {
                 });
 
                 queryClient.invalidateQueries({
-                  queryKey: [
-                    'permission_engine',
-                  ],
+                  queryKey: ['permission_engine'],
                 });
 
                 queryClient.invalidateQueries({
-                  queryKey: [
-                    'plan_features',
-                  ],
+                  queryKey: ['plan_features'],
                 });
               }
             }
           }
         } catch (_) {
-          // Sync silencioso
+          // Não bloqueia a tela caso a sincronização falhe.
         }
       }
 
       if (activeSub) {
-        setSubscription(
-          activeSub as Subscription
-        );
+        setSubscription(activeSub as any);
       }
 
       if (planData) {
-        /*
-         * Remove planos internos/deprecated
-         */
-        const validPlans =
-          planData.filter(
-            (p: any) =>
-              p.name !==
-              'Trial (Período de Teste)' &&
-              p.key !== 'expired_tier' &&
-              !p.is_trial_plan
-          );
+        const validPlans = planData.filter(
+          (p: any) =>
+            p.name !== 'Trial (Período de Teste)' &&
+            p.key !== 'expired_tier' &&
+            !p.is_trial_plan
+        );
 
-        /*
-         * Aplica preço personalizado
-         */
         const plansWithCustomPrices =
           validPlans.map((plan: any) => {
             const customPrice =
@@ -287,11 +252,6 @@ export default function Assinatura() {
             return plan;
           });
 
-        /*
-         * Ordenação:
-         * recomendado primeiro,
-         * depois preço.
-         */
         const sortedPlans =
           plansWithCustomPrices.sort(
             (a: any, b: any) => {
@@ -316,33 +276,27 @@ export default function Assinatura() {
 
         setPlans(sortedPlans);
       }
-    } catch (error) {
+    } catch (e) {
       console.error(
         'Erro ao buscar dados de assinatura:',
-        error
+        e
       );
     } finally {
       setLoading(false);
     }
   }, [tenant, queryClient]);
 
-  /* =========================================================
-     INITIAL LOAD
-  ========================================================= */
-
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  /* =========================================================
-     VERIFY CHECKOUT
-  ========================================================= */
-
+  /*
+   * Confirmação do checkout.
+   */
   useEffect(() => {
-    const params =
-      new URLSearchParams(
-        window.location.search
-      );
+    const params = new URLSearchParams(
+      window.location.search
+    );
 
     const sessionId =
       params.get('session_id');
@@ -376,7 +330,7 @@ export default function Assinatura() {
 
         if (res.ok) {
           setSyncSuccessMessage(
-            'Pagamento confirmado. Seu plano foi ativado.'
+            'Pagamento confirmado. Seu plano já está ativo.'
           );
 
           window.history.replaceState(
@@ -392,23 +346,19 @@ export default function Assinatura() {
           });
 
           queryClient.invalidateQueries({
-            queryKey: [
-              'permission_engine',
-            ],
+            queryKey: ['permission_engine'],
           });
 
           queryClient.invalidateQueries({
-            queryKey: [
-              'plan_features',
-            ],
+            queryKey: ['plan_features'],
           });
 
           await fetchData();
         }
-      } catch (error) {
+      } catch (e) {
         console.error(
           'Erro ao verificar checkout:',
-          error
+          e
         );
       } finally {
         setSyncing(false);
@@ -416,220 +366,46 @@ export default function Assinatura() {
     };
 
     verifySession();
-  }, [
-    tenant,
-    queryClient,
-    fetchData,
-  ]);
+  }, [tenant, queryClient, fetchData]);
 
-  /* =========================================================
-     SYNC STRIPE
-  ========================================================= */
+  const handleSyncWithStripe = async () => {
+    if (!tenant) return;
 
-  const handleSyncWithStripe =
-    async () => {
-      if (!tenant) return;
+    try {
+      setSyncing(true);
 
-      try {
-        setSyncing(true);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session) {
-          throw new Error(
-            'Não autenticado'
-          );
-        }
-
-        const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-stripe-subscription`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type':
-                'application/json',
-              Authorization: `Bearer ${session.access_token}`,
-            },
-          }
-        );
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(
-            data.error ||
-            'Erro ao sincronizar'
-          );
-        }
-
-        if (data.synced) {
-          setSyncSuccessMessage(
-            'Assinatura sincronizada com sucesso.'
-          );
-
-          queryClient.invalidateQueries({
-            queryKey: [
-              'active_subscription_contract',
-            ],
-          });
-
-          queryClient.invalidateQueries({
-            queryKey: [
-              'permission_engine',
-            ],
-          });
-
-          queryClient.invalidateQueries({
-            queryKey: [
-              'plan_features',
-            ],
-          });
-
-          await fetchData();
-        } else {
-          alert(
-            data.message ||
-            'Nenhuma assinatura ativa encontrada no Stripe.'
-          );
-        }
-      } catch (error: any) {
-        console.error(error);
-
-        alert(
-          `Erro: ${error.message}`
-        );
-      } finally {
-        setSyncing(false);
+      if (!session) {
+        throw new Error('Não autenticado');
       }
-    };
 
-  /* =========================================================
-     CUSTOMER PORTAL
-  ========================================================= */
-
-  const handleOpenCustomerPortal =
-    async () => {
-      try {
-        setPortalLoading(true);
-
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session) {
-          throw new Error(
-            'Não autenticado'
-          );
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-stripe-subscription`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
         }
-
-        const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type':
-                'application/json',
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              returnUrl:
-                window.location.href,
-            }),
-          }
-        );
-
-        const data =
-          await res.json();
-
-        if (!res.ok) {
-          throw new Error(
-            data.error ||
-            'Erro ao abrir portal'
-          );
-        }
-
-        if (data.url) {
-          window.location.href =
-            data.url;
-        }
-      } catch (error: any) {
-        console.error(
-          'Portal error:',
-          error
-        );
-
-        alert(
-          `Erro ao abrir portal de pagamentos: ${error.message}`
-        );
-      } finally {
-        setPortalLoading(false);
-      }
-    };
-
-  /* =========================================================
-     CANCEL SUBSCRIPTION
-  ========================================================= */
-
-  const handleCancelSubscription =
-    async () => {
-      const confirmed = confirm(
-        'Tem certeza que deseja cancelar sua assinatura? O acesso continuará até o final do período atual.'
       );
 
-      if (!confirmed) return;
+      const data = await res.json();
 
-      setCancelLoading(true);
-
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session) {
-          throw new Error(
-            'Não autenticado'
-          );
-        }
-
-        const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-subscription`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type':
-                'application/json',
-              Authorization: `Bearer ${session.access_token}`,
-            },
-          }
+      if (!res.ok) {
+        throw new Error(
+          data.error ||
+          'Erro ao sincronizar com Stripe'
         );
+      }
 
-        if (!res.ok) {
-          const errData =
-            await res
-              .json()
-              .catch(() => ({}));
-
-          throw new Error(
-            errData.error ||
-            'Erro ao cancelar assinatura'
-          );
-        }
-
-        alert(
-          'Assinatura cancelada com sucesso. Seu acesso continua até o final do período atual.'
-        );
-
-        setSubscription(
-          (prev) =>
-            prev
-              ? {
-                ...prev,
-                status:
-                  'canceled',
-              }
-              : null
+      if (data.synced) {
+        setSyncSuccessMessage(
+          'Assinatura sincronizada com sucesso.'
         );
 
         queryClient.invalidateQueries({
@@ -639,100 +415,215 @@ export default function Assinatura() {
         });
 
         queryClient.invalidateQueries({
-          queryKey: [
-            'permission_engine',
-          ],
+          queryKey: ['permission_engine'],
         });
 
         queryClient.invalidateQueries({
-          queryKey: [
-            'plan_features',
-          ],
+          queryKey: ['plan_features'],
         });
 
         await fetchData();
-      } catch (error: any) {
-        console.error(error);
-
+      } else {
         alert(
-          `Erro: ${error.message}`
+          data.message ||
+          'Nenhuma assinatura ativa encontrada no Stripe.'
         );
-      } finally {
-        setCancelLoading(false);
       }
-    };
+    } catch (err: any) {
+      console.error(err);
+      alert(`Erro: ${err.message}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
-  /* =========================================================
-     CHECKOUT
-  ========================================================= */
+  const handleOpenCustomerPortal = async () => {
+    try {
+      setPortalLoading(true);
 
-  const handleCheckout =
-    async (planId: string) => {
-      if (!tenant) return;
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      try {
-        setCheckoutLoading(planId);
+      if (!session) {
+        throw new Error('Não autenticado');
+      }
 
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session) {
-          throw new Error(
-            'Não autenticado'
-          );
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            returnUrl: window.location.href,
+          }),
         }
+      );
 
-        const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type':
-                'application/json',
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              planId,
-              returnUrl:
-                window.location.href,
-            }),
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          data.error ||
+          'Erro ao abrir portal do cliente'
+        );
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      console.error('Portal error:', err);
+
+      alert(
+        `Erro ao abrir portal de pagamentos: ${err.message}`
+      );
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    const confirmed = confirm(
+      'Tem certeza que deseja cancelar sua assinatura? O acesso continuará disponível até o final do período atual.'
+    );
+
+    if (!confirmed) return;
+
+    setCancelLoading(true);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error('Não autenticado');
+      }
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-subscription`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const errData =
+          await res.json().catch(() => ({}));
+
+        throw new Error(
+          errData.error ||
+          'Erro ao cancelar assinatura'
+        );
+      }
+
+      alert(
+        'Assinatura cancelada com sucesso. Você continuará com acesso até o final do período atual.'
+      );
+
+      setSubscription((prev) =>
+        prev
+          ? {
+            ...prev,
+            status: 'canceled',
           }
-        );
+          : null
+      );
 
-        if (!res.ok) {
-          const errorText =
-            await res.text();
+      queryClient.invalidateQueries({
+        queryKey: [
+          'active_subscription_contract',
+        ],
+      });
 
-          throw new Error(
-            `Erro na API: ${res.status} ${errorText}`
-          );
-        }
+      queryClient.invalidateQueries({
+        queryKey: ['permission_engine'],
+      });
 
-        const { url } =
-          await res.json();
+      queryClient.invalidateQueries({
+        queryKey: ['plan_features'],
+      });
 
-        if (url) {
-          window.location.href =
-            url;
-        }
-      } catch (error: any) {
-        console.error(
-          'Checkout error:',
-          error
-        );
+      await fetchData();
+    } catch (err: any) {
+      console.error(err);
+      alert(`Erro: ${err.message}`);
+    } finally {
+      setCancelLoading(false);
+    }
+  };
 
-        alert(
-          `Erro ao iniciar assinatura: ${error.message}`
-        );
-      } finally {
-        setCheckoutLoading(null);
+  const handleCheckout = async (
+    planId: string
+  ) => {
+    if (!tenant) return;
+
+    try {
+      setCheckoutLoading(planId);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error('Não autenticado');
       }
-    };
 
-  /* =========================================================
-     FORMATTERS
-  ========================================================= */
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            planId,
+            returnUrl:
+              window.location.href,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorText =
+          await res.text();
+
+        throw new Error(
+          `Erro na API: ${res.status} ${errorText}`
+        );
+      }
+
+      const { url } =
+        await res.json();
+
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (err: any) {
+      console.error(
+        'Checkout error:',
+        err
+      );
+
+      alert(
+        `Erro ao iniciar assinatura: ${err.message}`
+      );
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
 
   const formatDate = (
     dateStr: string | null
@@ -769,10 +660,6 @@ export default function Assinatura() {
     ).format(amount);
   };
 
-  /* =========================================================
-     LOADING
-  ========================================================= */
-
   if (loading) {
     return (
       <div className="h-full min-h-[400px] flex items-center justify-center">
@@ -785,21 +672,17 @@ export default function Assinatura() {
           />
 
           <span
-            className="text-xs"
+            className="text-sm"
             style={{
               color: theme.textMuted,
             }}
           >
-            Carregando assinatura...
+            Carregando...
           </span>
         </div>
       </div>
     );
   }
-
-  /* =========================================================
-     SUBSCRIPTION STATE
-  ========================================================= */
 
   const isTrialExpired =
     features.subscription_status ===
@@ -813,10 +696,6 @@ export default function Assinatura() {
     features.is_active &&
     !isTrialExpired;
 
-  /* =========================================================
-     CURRENCY
-  ========================================================= */
-
   const displayCurrency =
     tenant?.language === 'en'
       ? 'USD'
@@ -825,10 +704,6 @@ export default function Assinatura() {
       )
         ? 'EUR'
         : 'BRL';
-
-  /* =========================================================
-     TRIAL
-  ========================================================= */
 
   const configuredTrialPlan =
     plans.find(
@@ -839,28 +714,24 @@ export default function Assinatura() {
     );
 
   const activeTrialDays =
-    configuredTrialPlan?.trial_days ||
-    7;
-
-  /* =========================================================
-     RENDER
-  ========================================================= */
+    configuredTrialPlan?.trial_days || 7;
 
   return (
-    <div className="max-w-5xl mx-auto pb-12 animate-fade-in">
+    <div
+      className="max-w-5xl mx-auto pb-10 px-4 sm:px-6 animate-fade-in"
+    >
+      {/* ======================================================
+          HEADER
+      ====================================================== */}
 
-      {/* =====================================================
-          PAGE HEADER
-      ===================================================== */}
-
-      <header className="mb-7">
+      <header className="mb-8">
         <p
-          className="text-[10px] font-bold uppercase tracking-[0.16em] mb-1"
+          className="text-[10px] font-bold uppercase tracking-[0.18em] mb-1"
           style={{
             color: theme.textMuted,
           }}
         >
-          Minha assinatura
+          Minha conta
         </p>
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
@@ -871,7 +742,7 @@ export default function Assinatura() {
                 color: theme.textPrimary,
               }}
             >
-              Planos & Assinatura
+              Assinatura
             </h1>
 
             <p
@@ -880,7 +751,7 @@ export default function Assinatura() {
                 color: theme.textSecondary,
               }}
             >
-              Tudo para manter seu negócio organizado.
+              Seu negócio merece uma operação à altura.
             </p>
           </div>
 
@@ -891,13 +762,10 @@ export default function Assinatura() {
                 onClick={
                   handleOpenCustomerPortal
                 }
-                disabled={
-                  portalLoading
-                }
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-semibold transition-all hover:-translate-y-[1px]"
+                disabled={portalLoading}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-all hover:shadow-sm disabled:opacity-60"
                 style={{
-                  borderColor:
-                    theme.border,
+                  borderColor: theme.border,
                   background:
                     theme.cardBg,
                   color:
@@ -922,18 +790,18 @@ export default function Assinatura() {
         </div>
       </header>
 
-      {/* =====================================================
+      {/* ======================================================
           SUCCESS
-      ===================================================== */}
+      ====================================================== */}
 
       {syncSuccessMessage && (
         <div
-          className="mb-5 flex items-center justify-between gap-3 px-4 py-3 rounded-xl border"
+          className="mb-6 px-4 py-3 rounded-xl border flex items-center justify-between gap-3"
           style={{
             background:
               'rgba(16,185,129,0.08)',
             borderColor:
-              'rgba(16,185,129,0.25)',
+              'rgba(16,185,129,0.20)',
           }}
         >
           <div className="flex items-center gap-2.5">
@@ -948,20 +816,20 @@ export default function Assinatura() {
             onClick={() =>
               setSyncSuccessMessage(null)
             }
-            className="text-emerald-500"
+            className="text-[11px] text-emerald-600 hover:underline"
           >
-            <X className="w-4 h-4" />
+            Fechar
           </button>
         </div>
       )}
 
-      {/* =====================================================
-          TRIAL EXPIRED
-      ===================================================== */}
+      {/* ======================================================
+          STATUS
+      ====================================================== */}
 
       {isTrialExpired && (
         <div
-          className="mb-5 flex items-center gap-3 px-4 py-3.5 rounded-xl border"
+          className="mb-6 px-4 py-3.5 rounded-xl border flex items-center gap-3"
           style={{
             background: `${theme.warning}08`,
             borderColor: `${theme.warning}25`,
@@ -981,7 +849,7 @@ export default function Assinatura() {
                 color: theme.warning,
               }}
             >
-              Seu período de teste terminou
+              Seu período de teste terminou.
             </p>
 
             <p
@@ -991,35 +859,31 @@ export default function Assinatura() {
                   theme.textSecondary,
               }}
             >
-              Escolha um plano para continuar usando o Raffros.
+              Escolha um plano para continuar.
             </p>
           </div>
         </div>
       )}
 
-      {/* =====================================================
-          CANCELED
-      ===================================================== */}
-
       {subscription?.status ===
         'canceled' && (
           <div
-            className="mb-5 flex items-start gap-3 px-4 py-3.5 rounded-xl border"
+            className="mb-6 px-4 py-3.5 rounded-xl border flex items-center gap-3"
             style={{
               background:
                 'rgba(245,158,11,0.07)',
               borderColor:
-                'rgba(245,158,11,0.22)',
+                'rgba(245,158,11,0.20)',
             }}
           >
-            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-500" />
+            <Clock className="w-4 h-4 shrink-0 text-amber-500" />
 
             <div>
               <p className="text-xs font-bold text-amber-600">
                 Assinatura cancelada
               </p>
 
-              <p className="text-xs mt-0.5 leading-5 text-amber-700/80">
+              <p className="text-xs mt-0.5 text-amber-700/80">
                 Seu acesso continua até{' '}
                 <strong>
                   {formatDate(
@@ -1027,42 +891,56 @@ export default function Assinatura() {
                     subscription.trial_ends_at
                   )}
                 </strong>
-                . Nenhuma nova cobrança será realizada.
+                .
               </p>
             </div>
           </div>
         )}
 
-      {/* =====================================================
-          CURRENT PLAN
-      ===================================================== */}
+      {/* ======================================================
+          CURRENT ACTIVE PLAN
+      ====================================================== */}
 
       {hasActivePlan &&
         !isTrial &&
         subscription?.stripe_subscription_id && (
           <div
-            className="mb-8 flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-4 rounded-2xl border"
+            className="mb-10 rounded-2xl border p-5 flex flex-col sm:flex-row sm:items-center gap-4"
             style={{
               background:
                 theme.cardBg,
               borderColor:
                 theme.border,
+              boxShadow:
+                '0 8px 30px rgba(15,23,42,0.05)',
             }}
           >
             <div
               className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
               style={{
-                background: `${theme.accent}12`,
-                color: theme.accent,
+                background:
+                  `${theme.accent}12`,
+                color:
+                  theme.accent,
               }}
             >
               <Crown className="w-5 h-5" />
             </div>
 
             <div className="flex-1">
-              <div className="flex items-center gap-2">
+              <p
+                className="text-[10px] font-bold uppercase tracking-wider"
+                style={{
+                  color:
+                    theme.textMuted,
+                }}
+              >
+                Plano atual
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2 mt-0.5">
                 <h2
-                  className="text-sm font-bold"
+                  className="text-lg font-bold"
                   style={{
                     color:
                       theme.textPrimary,
@@ -1071,7 +949,8 @@ export default function Assinatura() {
                   {features.plan_name}
                 </h2>
 
-                <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   Ativo
                 </span>
               </div>
@@ -1083,7 +962,7 @@ export default function Assinatura() {
                     theme.textSecondary,
                 }}
               >
-                Próxima cobrança em{' '}
+                Próxima cobrança:{' '}
                 {formatDate(
                   subscription.current_period_end
                 )}
@@ -1092,935 +971,771 @@ export default function Assinatura() {
           </div>
         )}
 
-      {/* =====================================================
-          TRIAL MINI BANNER
-      ===================================================== */}
+      {/* ======================================================
+          TRIAL — ULTRA COMPACT
+      ====================================================== */}
 
       {isTrial && (
         <div
-          className="mb-7 flex items-center gap-3 px-4 py-3 rounded-xl border"
+          className="mb-8 rounded-2xl border overflow-hidden"
           style={{
-            background:
-              'rgba(0,200,83,0.055)',
+            background: theme.cardBg,
             borderColor:
-              'rgba(0,200,83,0.18)',
+              `${theme.accent}30`,
+            boxShadow:
+              `0 10px 35px -15px ${theme.accent}30`,
           }}
         >
-          <div className="w-8 h-8 rounded-lg bg-[#00c853]/10 flex items-center justify-center shrink-0">
-            <Clock className="w-4 h-4 text-[#00c853]" />
-          </div>
-
-          <div className="flex-1">
-            <p
-              className="text-xs font-bold"
+          <div className="px-5 py-4 flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
               style={{
+                background:
+                  theme.accentGradient,
                 color:
-                  theme.textPrimary,
+                  theme.btnPrimaryText,
               }}
             >
-              Seu teste gratuito está ativo
-            </p>
+              <Sparkles className="w-4 h-4" />
+            </div>
 
-            <p
-              className="text-[11px] mt-0.5"
-              style={{
-                color:
-                  theme.textSecondary,
-              }}
-            >
-              Você não paga nada hoje. Escolha seu plano e continue aproveitando o Raffros.
-            </p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full"
+                  style={{
+                    background:
+                      `${theme.accent}15`,
+                    color:
+                      theme.accent,
+                  }}
+                >
+                  Teste ativo
+                </span>
+
+                <span
+                  className="text-[10px]"
+                  style={{
+                    color:
+                      theme.textMuted,
+                  }}
+                >
+                  {activeTrialDays} dias grátis
+                </span>
+              </div>
+
+              <p
+                className="text-xs mt-1"
+                style={{
+                  color:
+                    theme.textSecondary,
+                }}
+              >
+                Você não paga nada durante o teste.
+                Cancele quando quiser.
+              </p>
+            </div>
+
+            <ShieldCheck className="ml-auto w-4 h-4 shrink-0 text-emerald-500" />
           </div>
-
-          <span className="hidden sm:block text-[10px] font-bold text-[#00a844] whitespace-nowrap">
-            {activeTrialDays} dias grátis
-          </span>
         </div>
       )}
 
-      {/* =====================================================
-          PLANS INTRO
-      ===================================================== */}
-
-      <div className="text-center mb-7">
-        <h2
-          className="font-serif text-2xl sm:text-3xl font-bold tracking-tight"
-          style={{
-            color: theme.textPrimary,
-          }}
-        >
-          {hasActivePlan && !isTrial
-            ? 'Seu plano, do seu jeito.'
-            : 'Escolha seu plano.'}
-        </h2>
-
-        <p
-          className="text-xs sm:text-sm mt-1.5"
-          style={{
-            color:
-              theme.textSecondary,
-          }}
-        >
-          {hasActivePlan && !isTrial
-            ? 'Faça upgrade quando seu negócio crescer.'
-            : 'Comece simples. Cresça quando precisar.'}
-        </p>
-      </div>
-
-      {/* =====================================================
+      {/* ======================================================
           PLANS
-      ===================================================== */}
+      ====================================================== */}
 
-      {plans.length === 0 ? (
-        <div
-          className="py-14 text-center rounded-2xl border"
-          style={{
-            background:
-              theme.cardBg,
-            borderColor:
-              theme.border,
-          }}
-        >
-          <Crown
-            className="w-7 h-7 mx-auto mb-3"
+      <section>
+        <div className="text-center mb-8">
+          <p
+            className="text-[10px] font-bold uppercase tracking-[0.18em] mb-2"
             style={{
               color: theme.accent,
             }}
-          />
+          >
+            Escolha seu próximo nível
+          </p>
 
-          <h3
-            className="font-bold text-sm"
+          <h2
+            className="font-serif text-3xl font-bold tracking-tight"
             style={{
               color:
                 theme.textPrimary,
             }}
           >
-            Nenhum plano disponível
-          </h3>
+            Um plano que acompanha seu negócio.
+          </h2>
 
           <p
-            className="text-xs mt-1 max-w-sm mx-auto"
+            className="text-xs mt-2"
             style={{
               color:
                 theme.textSecondary,
             }}
           >
-            Os planos ainda não foram configurados.
+            Simples. Completo. Sem fidelidade.
           </p>
-
-          {profile?.role ===
-            'super_admin' && (
-              <a
-                href="/platform/plans"
-                className="inline-flex mt-4 px-4 py-2.5 rounded-xl text-xs font-bold"
-                style={{
-                  background:
-                    theme.accentGradient,
-                  color:
-                    theme.btnPrimaryText,
-                }}
-              >
-                Ir para Planos
-              </a>
-            )}
         </div>
-      ) : (
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-5 px-2">
 
-          {plans
-            .filter((plan) => {
-              const hasActivePaidPlan =
-                subscription &&
-                (
-                  subscription.status ===
-                  'active' ||
-                  subscription.status ===
-                  'trialing'
-                ) &&
-                plans.some(
-                  (p) =>
-                    p.id ===
-                    subscription.plan_id &&
-                    !p.is_default
-                );
+        {plans.length === 0 ? (
+          <div
+            className="text-center py-14 rounded-2xl border"
+            style={{
+              borderColor:
+                theme.border,
+              background:
+                theme.cardBg,
+            }}
+          >
+            <Crown
+              className="w-7 h-7 mx-auto mb-3"
+              style={{
+                color: theme.accent,
+              }}
+            />
 
-              if (
-                plan.is_default &&
-                hasActivePaidPlan
-              ) {
-                return false;
-              }
+            <h3
+              className="font-bold"
+              style={{
+                color:
+                  theme.textPrimary,
+              }}
+            >
+              Nenhum plano disponível
+            </h3>
 
-              return true;
-            })
-            .map((plan) => {
-              /* =================================================
-                 PLAN STATE
-              ================================================= */
-
-              const isCanceled =
-                subscription?.status ===
-                'canceled';
-
-              const hasActiveSub =
-                subscription &&
-                !isCanceled;
-
-              const isCurrent =
-                hasActiveSub
-                  ? subscription.plan_id ===
-                  plan.id
-                  : Boolean(
-                    plan.is_default
-                  );
-
-              /* =================================================
-                 CONTRACT OVERRIDE
-              ================================================= */
-
-              let planToDisplay =
-                plan;
-
-              const contracts =
-                subscription?.subscription_contracts;
-
-              if (
-                isCurrent &&
-                contracts &&
-                !Array.isArray(
-                  contracts
-                )
-              ) {
-                const contract =
-                  contracts as any;
-
-                planToDisplay = {
-                  ...plan,
-                  max_professionals:
-                    contract.max_professionals,
-                  allow_products:
-                    contract.allow_products,
-                  features:
-                    contract.features,
-                  permissions:
-                    contract.permissions,
-                  limits:
-                    contract.limits,
-                  plan_prices: [
-                    {
-                      currency:
-                        contract.currency,
-                      amount:
-                        contract.price_amount,
-                    },
-                  ],
-                };
-              }
-
-              if (
-                isCurrent &&
-                Array.isArray(
-                  contracts
-                ) &&
-                contracts.length > 0
-              ) {
-                const contract =
-                  contracts[0] as any;
-
-                planToDisplay = {
-                  ...plan,
-                  max_professionals:
-                    contract.max_professionals,
-                  allow_products:
-                    contract.allow_products,
-                  features:
-                    contract.features,
-                  permissions:
-                    contract.permissions,
-                  limits:
-                    contract.limits,
-                  plan_prices: [
-                    {
-                      currency:
-                        contract.currency,
-                      amount:
-                        contract.price_amount,
-                    },
-                  ],
-                };
-              }
-
-              /* =================================================
-                 PRICE
-              ================================================= */
-
-              const planPriceObj =
-                planToDisplay.plan_prices?.find(
-                  (p: any) =>
-                    p.currency ===
-                    displayCurrency
-                ) ||
-                planToDisplay.plan_prices?.[0];
-
-              /* =================================================
-                 FEATURES
-              ================================================= */
-
-              let displayFeatures =
-                getDisplayFeatures(
-                  planToDisplay
-                );
-
-              /*
-               * Mantém o card curto.
-               * Se o banco tiver muitos recursos,
-               * mostramos somente os primeiros.
-               */
-
-              if (
-                displayFeatures.length >
-                4
-              ) {
-                displayFeatures =
-                  displayFeatures.slice(
-                    0,
-                    4
-                  );
-              }
-
-              if (
-                displayFeatures.length ===
-                0
-              ) {
-                displayFeatures = [
-                  'Agenda online completa',
-                  'Clientes e profissionais',
-                  'Serviços e atendimento',
-                  'Gestão financeira',
-                ];
-              }
-
-              /* =================================================
-                 PROFESSIONAL LIMIT
-              ================================================= */
-
-              const limitsObj =
-                planToDisplay.limits ||
-                {};
-
-              const maxProf =
-                limitsObj.profissionais ??
-                planToDisplay.max_professionals;
-
-              const displayMaxProf =
-                maxProf ===
-                  'unlimited' ||
-                  maxProf === -1 ||
-                  maxProf === 999
-                  ? 'Profissionais ilimitados'
-                  : `Até ${maxProf} ${maxProf === 1
-                    ? 'profissional'
-                    : 'profissionais'
-                  }`;
-
-              /*
-               * Só adiciona se ainda couber.
-               */
-              if (
-                !displayFeatures.some(
-                  (f) =>
-                    f
-                      .toLowerCase()
-                      .includes(
-                        'profissional'
-                      )
-                )
-              ) {
-                displayFeatures.push(
-                  displayMaxProf
-                );
-              }
-
-              /* =================================================
-                 STUDIO
-              ================================================= */
-
-              const isStudio =
-                plan.key ===
-                'studio_tier';
-
-              /*
-               * Recomendado:
-               * prioriza Studio.
-               */
-              const isRecommended =
-                isStudio ||
-                Boolean(
-                  plan.is_default
-                );
-
-              const isLoading =
-                checkoutLoading ===
-                plan.id;
-
-              /* =================================================
-                 CARD
-              ================================================= */
-
-              return (
-                <div
-                  key={plan.id}
-                  className={`
-                    relative flex flex-col
-                    w-full max-w-[320px]
-                    rounded-3xl
-                    transition-all duration-300
-                    ${isStudio
-                      ? 'lg:scale-[1.025] z-10'
-                      : 'z-0'}
-                  `}
+            {profile?.role ===
+              'super_admin' && (
+                <a
+                  href="/platform/plans"
+                  className="inline-flex mt-4 px-5 py-2.5 rounded-xl text-xs font-bold"
                   style={{
                     background:
-                      theme.cardBg,
-
-                    border: `1px solid ${isStudio
-                        ? theme.accent
-                        : theme.border
-                      }`,
-
-                    boxShadow: isStudio
-                      ? `0 18px 45px -18px ${theme.accent}45`
-                      : '0 8px 25px rgba(15,23,42,0.06)',
+                      theme.accentGradient,
+                    color:
+                      theme.btnPrimaryText,
                   }}
                 >
+                  Ir para planos
+                </a>
+              )}
+          </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row justify-center items-stretch gap-5 max-w-4xl mx-auto">
+            {plans
+              .filter((plan) => {
+                const hasActivePaidPlan =
+                  subscription &&
+                  (
+                    subscription.status ===
+                    'active' ||
+                    subscription.status ===
+                    'trialing'
+                  ) &&
+                  plans.some(
+                    (p) =>
+                      p.id ===
+                      subscription.plan_id &&
+                      !p.is_default
+                  );
 
-                  {/* ==========================================
-                      GREEN RECOMMENDED BADGE
-                  ========================================== */}
+                if (
+                  plan.is_default &&
+                  hasActivePaidPlan
+                ) {
+                  return false;
+                }
 
-                  {isRecommended && (
-                    <div
-                      className="
-                        absolute
-                        top-0
-                        right-0
-                        bg-[#00c853]
-                        text-white
-                        text-[9px]
-                        font-bold
-                        px-4
-                        py-1.5
-                        rounded-tr-3xl
-                        rounded-bl-xl
-                        uppercase
-                        tracking-[0.12em]
-                        shadow-sm
-                      "
-                    >
-                      Recomendado
-                    </div>
-                  )}
+                return true;
+              })
+              .map((plan) => {
+                const isCanceled =
+                  subscription?.status ===
+                  'canceled';
 
-                  {/* ==========================================
-                      CARD CONTENT
-                  ========================================== */}
+                const hasActiveSub =
+                  subscription &&
+                  !isCanceled;
 
-                  <div className="px-7 pt-7 pb-6">
+                const isCurrent =
+                  hasActiveSub
+                    ? subscription.plan_id ===
+                    plan.id
+                    : Boolean(
+                      plan.is_default
+                    );
 
-                    {/* ----------------------------------------
-                        PLAN NAME
-                    ---------------------------------------- */}
+                /*
+                 * Contrato atual sempre
+                 * prevalece sobre o plano.
+                 */
+                let planToDisplay = plan;
 
-                    <div className="text-center">
+                const contracts =
+                  subscription?.subscription_contracts;
 
-                      <div className="flex items-center justify-center gap-2 mb-2">
+                if (
+                  isCurrent &&
+                  contracts
+                ) {
+                  const contract =
+                    Array.isArray(
+                      contracts
+                    )
+                      ? contracts[0]
+                      : contracts;
 
-                        {isStudio ? (
-                          <Star
-                            className="w-5 h-5 fill-amber-500 text-amber-500"
-                          />
-                        ) : (
-                          <div
-                            className="w-2 h-2 rounded-full"
+                  if (contract) {
+                    planToDisplay = {
+                      ...plan,
+                      max_professionals:
+                        contract.max_professionals,
+                      allow_products:
+                        contract.allow_products,
+                      features:
+                        contract.features,
+                      permissions:
+                        contract.permissions,
+                      limits:
+                        contract.limits,
+                      plan_prices: [
+                        {
+                          currency:
+                            contract.currency,
+                          amount:
+                            contract.price_amount,
+                        },
+                      ],
+                    };
+                  }
+                }
+
+                const planPriceObj =
+                  planToDisplay.plan_prices?.find(
+                    (p) =>
+                      p.currency ===
+                      displayCurrency
+                  ) ||
+                  planToDisplay
+                    .plan_prices?.[0];
+
+                const displayFeatures =
+                  getDisplayFeatures(
+                    planToDisplay
+                  );
+
+                const limits =
+                  planToDisplay.limits ||
+                  {};
+
+                const maxProf =
+                  limits.profissionais ??
+                  planToDisplay.max_professionals;
+
+                const professionalText =
+                  maxProf === 'unlimited' ||
+                    maxProf === -1 ||
+                    maxProf === 999
+                    ? 'Profissionais ilimitados'
+                    : `Até ${maxProf} ${maxProf === 1
+                      ? 'profissional'
+                      : 'profissionais'
+                    }`;
+
+                const isLoading =
+                  checkoutLoading ===
+                  plan.id;
+
+                const isStudio =
+                  plan.key ===
+                  'studio_tier';
+
+                /*
+                 * Destaque principal.
+                 */
+                const isRecommended =
+                  isStudio;
+
+                /*
+                 * Apenas 3 benefícios.
+                 * O restante fica oculto para
+                 * não transformar o card em
+                 * uma tabela de especificações.
+                 */
+                const visibleFeatures =
+                  displayFeatures.length >
+                    0
+                    ? displayFeatures.slice(
+                      0,
+                      3
+                    )
+                    : [
+                      'Agenda online completa',
+                      'Gestão de clientes',
+                      professionalText,
+                    ];
+
+                return (
+                  <div
+                    key={plan.id}
+                    className={`
+                      relative flex flex-col w-full lg:w-[300px]
+                      rounded-3xl
+                      transition-all duration-300
+                      ${isRecommended
+                        ? 'lg:scale-[1.035] z-10'
+                        : 'hover:-translate-y-1'
+                      }
+                    `}
+                    style={{
+                      background:
+                        theme.cardBg,
+
+                      border:
+                        isRecommended
+                          ? `1.5px solid ${theme.accent}`
+                          : `1px solid ${theme.border}`,
+
+                      boxShadow:
+                        isRecommended
+                          ? `0 22px 50px -18px ${theme.accent}45`
+                          : '0 10px 30px -18px rgba(15,23,42,0.18)',
+                    }}
+                  >
+                    {/* ==========================================
+                        RECOMMENDED BADGE
+                    ========================================== */}
+
+                    {isRecommended && (
+                      <div
+                        className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.12em] text-white shadow-md flex items-center gap-1.5 whitespace-nowrap"
+                        style={{
+                          background:
+                            '#00c853',
+                        }}
+                      >
+                        <Star
+                          className="w-3 h-3 fill-white"
+                        />
+
+                        Recomendado
+                      </div>
+                    )}
+
+                    {/* ==========================================
+                        CARD CONTENT
+                    ========================================== */}
+
+                    <div className="p-6 pt-7">
+                      {/* Plan name */}
+
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <p
+                            className="text-[9px] font-bold uppercase tracking-[0.16em]"
+                            style={{
+                              color:
+                                theme.textMuted,
+                            }}
+                          >
+                            Plano
+                          </p>
+
+                          <h3
+                            className="text-xl font-bold mt-0.5"
+                            style={{
+                              color:
+                                theme.textPrimary,
+                            }}
+                          >
+                            {
+                              planToDisplay.name
+                            }
+                          </h3>
+                        </div>
+
+                        {isCurrent && (
+                          <span
+                            className="text-[9px] font-bold px-2 py-1 rounded-full"
                             style={{
                               background:
+                                `${theme.accent}12`,
+                              color:
                                 theme.accent,
                             }}
-                          />
+                          >
+                            Atual
+                          </span>
                         )}
-
-                        <h3
-                          className="text-[21px] font-bold tracking-tight"
-                          style={{
-                            color:
-                              theme.textPrimary,
-                          }}
-                        >
-                          {
-                            planToDisplay.name
-                          }
-                        </h3>
-
                       </div>
 
+                      {/* Description */}
+
                       <p
-                        className="text-[12px] leading-relaxed max-w-[230px] min-h-[36px] mx-auto"
+                        className="text-xs leading-5 min-h-[40px]"
                         style={{
                           color:
                             theme.textSecondary,
                         }}
                       >
                         {planToDisplay.description ||
-                          'Tudo que você precisa para administrar seu negócio.'}
+                          'Tudo o que você precisa para administrar seu negócio.'}
                       </p>
 
-                    </div>
+                      {/* ======================================
+                          PRICE — PROTAGONISTA
+                      ====================================== */}
 
-                    {/* ----------------------------------------
-                        PRICE
-                    ---------------------------------------- */}
-
-                    <div className="text-center mt-5 mb-5">
-
-                      {planPriceObj ? (
-                        tenant?.status ===
-                          'trial' ? (
-                          <>
-                            <div className="flex items-center justify-center gap-2">
-
-                              <span
-                                className="text-[42px] font-black tracking-[-0.045em]"
-                                style={{
-                                  color:
-                                    theme.textPrimary,
-                                }}
-                              >
-                                {money(
-                                  0,
-                                  displayCurrency
-                                )}
-                              </span>
-
-                              <span
-                                className="
-                                  text-[9px]
-                                  font-bold
-                                  uppercase
-                                  tracking-wider
-                                  px-2
-                                  py-1
-                                  rounded-full
-                                "
-                                style={{
-                                  background:
-                                    '#00c85315',
-                                  color:
-                                    '#00a844',
-                                }}
-                              >
-                                {activeTrialDays}{' '}
-                                dias grátis
-                              </span>
-
-                            </div>
-
-                            <p
-                              className="text-[11px] mt-1.5"
-                              style={{
-                                color:
-                                  theme.textMuted,
-                              }}
-                            >
-                              Depois{' '}
-                              {money(
-                                planPriceObj.amount,
-                                displayCurrency
-                              )}
-                              /mês
-                            </p>
-                          </>
-                        ) : (
-                          <div>
-                            <span
-                              className="text-[42px] font-black tracking-[-0.045em]"
-                              style={{
-                                color:
-                                  theme.textPrimary,
-                              }}
-                            >
-                              {money(
-                                planPriceObj.amount,
-                                displayCurrency
-                              ).replace(
-                                /\,\d\d$/,
-                                ''
-                              )}
-                            </span>
-
-                            <span
-                              className="text-[12px] ml-1"
-                              style={{
-                                color:
-                                  theme.textMuted,
-                              }}
-                            >
-                              /mês
-                            </span>
-                          </div>
-                        )
-                      ) : (
-                        <span
-                          className="text-sm font-semibold"
-                          style={{
-                            color:
-                              theme.textMuted,
-                          }}
-                        >
-                          Preço sob consulta
-                        </span>
-                      )}
-
-                    </div>
-
-                    {/* ----------------------------------------
-                        FEATURES
-                    ---------------------------------------- */}
-
-                    <div
-                      className="border-t pt-5 mb-5"
-                      style={{
-                        borderColor:
-                          theme.border,
-                      }}
-                    >
-                      <div className="space-y-2.5">
-
-                        {displayFeatures.map(
-                          (
-                            item: string,
-                            index: number
-                          ) => (
-                            <div
-                              key={`${item}-${index}`}
-                              className="flex items-center gap-2.5"
-                            >
-                              <div
-                                className="
-                                  w-4 h-4
-                                  rounded-full
-                                  flex
-                                  items-center
-                                  justify-center
-                                  shrink-0
-                                "
-                                style={{
-                                  background:
-                                    isStudio
-                                      ? '#00c85315'
-                                      : `${theme.accent}12`,
-                                }}
-                              >
-                                <CheckCircle2
-                                  className="w-3 h-3"
+                      <div className="mt-5 mb-5">
+                        {planPriceObj ? (
+                          tenant?.status ===
+                            'trial' ? (
+                            <>
+                              <div className="flex items-baseline gap-2">
+                                <span
+                                  className="text-[38px] leading-none font-black tracking-[-0.045em]"
                                   style={{
                                     color:
-                                      isStudio
+                                      theme.textPrimary,
+                                  }}
+                                >
+                                  {money(
+                                    0,
+                                    displayCurrency
+                                  )}
+                                </span>
+
+                                <span
+                                  className="text-[10px] font-bold"
+                                  style={{
+                                    color:
+                                      theme.accent,
+                                  }}
+                                >
+                                  hoje
+                                </span>
+                              </div>
+
+                              <p
+                                className="text-xs mt-2"
+                                style={{
+                                  color:
+                                    theme.textSecondary,
+                                }}
+                              >
+                                Depois do trial:{' '}
+                                <strong
+                                  style={{
+                                    color:
+                                      theme.textPrimary,
+                                  }}
+                                >
+                                  {money(
+                                    planPriceObj.amount,
+                                    displayCurrency
+                                  )}
+                                  /mês
+                                </strong>
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-baseline gap-1">
+                                <span
+                                  className="text-[40px] leading-none font-black tracking-[-0.05em]"
+                                  style={{
+                                    color:
+                                      theme.textPrimary,
+                                  }}
+                                >
+                                  {money(
+                                    planPriceObj.amount,
+                                    displayCurrency
+                                  ).replace(
+                                    /,\d\d$/,
+                                    ''
+                                  )}
+                                </span>
+
+                                <span
+                                  className="text-xs font-semibold"
+                                  style={{
+                                    color:
+                                      theme.textSecondary,
+                                  }}
+                                >
+                                  /mês
+                                </span>
+                              </div>
+
+                              <p
+                                className="text-[10px] mt-2"
+                                style={{
+                                  color:
+                                    theme.textMuted,
+                                }}
+                              >
+                                Cobrança mensal. Sem
+                                fidelidade.
+                              </p>
+                            </>
+                          )
+                        ) : (
+                          <span
+                            className="text-sm font-semibold"
+                            style={{
+                              color:
+                                theme.textMuted,
+                            }}
+                          >
+                            Preço sob consulta
+                          </span>
+                        )}
+                      </div>
+
+                      {/* ======================================
+                          VALUE — CIRÚRGICO
+                      ====================================== */}
+
+                      <div
+                        className="pt-4 border-t"
+                        style={{
+                          borderColor:
+                            theme.border,
+                        }}
+                      >
+                        <div className="space-y-2.5">
+                          {visibleFeatures.map(
+                            (
+                              item: string,
+                              index: number
+                            ) => (
+                              <div
+                                key={index}
+                                className="flex items-start gap-2.5"
+                              >
+                                <CheckCircle2
+                                  className="w-4 h-4 shrink-0 mt-0.5"
+                                  style={{
+                                    color:
+                                      isRecommended
                                         ? '#00c853'
                                         : theme.accent,
                                   }}
                                 />
+
+                                <span
+                                  className="text-xs leading-5 font-medium"
+                                  style={{
+                                    color:
+                                      theme.textPrimary,
+                                  }}
+                                >
+                                  {item}
+                                </span>
                               </div>
+                            )
+                          )}
 
-                              <span
-                                className="text-[12px] leading-5"
-                                style={{
-                                  color:
-                                    theme.textPrimary,
-                                }}
-                              >
-                                {item}
-                              </span>
-                            </div>
-                          )
-                        )}
+                          {!visibleFeatures.some(
+                            (item) =>
+                              item
+                                .toLowerCase()
+                                .includes(
+                                  'profissional'
+                                )
+                          ) && (
+                              <div className="flex items-start gap-2.5">
+                                <CheckCircle2
+                                  className="w-4 h-4 shrink-0 mt-0.5"
+                                  style={{
+                                    color:
+                                      isRecommended
+                                        ? '#00c853'
+                                        : theme.accent,
+                                  }}
+                                />
 
+                                <span
+                                  className="text-xs leading-5 font-medium"
+                                  style={{
+                                    color:
+                                      theme.textPrimary,
+                                  }}
+                                >
+                                  {
+                                    professionalText
+                                  }
+                                </span>
+                              </div>
+                            )}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* ----------------------------------------
-                        CTA
-                    ---------------------------------------- */}
+                      {/* ======================================
+                          CTA
+                      ====================================== */}
 
-                    <button
-                      onClick={() =>
-                        !plan.is_default &&
-                        !isCurrent &&
-                        handleCheckout(
-                          plan.id
-                        )
-                      }
-                      disabled={
-                        isLoading ||
-                        isCurrent ||
-                        plan.is_default
-                      }
-                      className="
-                        w-full
-                        py-3.5
-                        px-4
-                        rounded-xl
-                        text-[13px]
-                        font-bold
-                        flex
-                        items-center
-                        justify-center
-                        gap-2
-                        transition-all
-                        duration-200
-                        hover:-translate-y-[1px]
-                        active:scale-[0.98]
-                        disabled:opacity-70
-                      "
-                      style={{
-                        background: isCurrent
-                          ? `${theme.accent}12`
-                          : isStudio
-                            ? '#0f172a'
-                            : theme.id ===
-                              'elegant'
-                              ? '#F1F5F9'
-                              : 'rgba(255,255,255,0.08)',
-
-                        color: isCurrent
-                          ? theme.accent
-                          : isStudio
-                            ? '#ffffff'
-                            : theme.textPrimary,
-
-                        border: isCurrent
-                          ? `1px solid ${theme.accent}35`
-                          : isStudio
-                            ? 'none'
-                            : `1px solid ${theme.border}`,
-
-                        boxShadow:
-                          isStudio &&
+                      <button
+                        onClick={() =>
+                          !plan.is_default &&
                             !isCurrent
-                            ? '0 8px 20px rgba(15,23,42,0.15)'
-                            : 'none',
-                      }}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : isCurrent ? (
-                        '✓ Plano Atual'
-                      ) : plan.is_default ? (
-                        'Plano Básico'
-                      ) : tenant?.status ===
-                        'trial' ? (
-                        `Começar ${activeTrialDays} Dias Grátis`
-                      ) : (
-                        'Assinar agora'
-                      )}
-                    </button>
+                            ? handleCheckout(
+                              plan.id
+                            )
+                            : null
+                        }
+                        disabled={
+                          isLoading ||
+                          isCurrent ||
+                          plan.is_default
+                        }
+                        className="w-full mt-6 py-3.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:cursor-default"
+                        style={{
+                          background:
+                            isCurrent
+                              ? `${theme.accent}12`
+                              : isRecommended
+                                ? '#0f172a'
+                                : theme.id ===
+                                  'elegant'
+                                  ? '#F1F5F9'
+                                  : 'rgba(255,255,255,0.07)',
 
-                    {/* ----------------------------------------
-                        MICRO COPY
-                    ---------------------------------------- */}
+                          color:
+                            isCurrent
+                              ? theme.accent
+                              : isRecommended
+                                ? '#FFFFFF'
+                                : theme.textPrimary,
 
-                    <p
-                      className="text-[10px] text-center mt-3"
-                      style={{
-                        color:
-                          theme.textMuted,
-                      }}
-                    >
-                      {tenant?.status ===
-                        'trial'
-                        ? 'Sem cobrança hoje · Cancele quando quiser'
-                        : 'Sem fidelidade · Cancele quando quiser'}
-                    </p>
+                          border:
+                            isCurrent
+                              ? `1px solid ${theme.accent}35`
+                              : isRecommended
+                                ? 'none'
+                                : `1px solid ${theme.border}`,
 
+                          boxShadow:
+                            isRecommended &&
+                              !isCurrent
+                              ? '0 10px 25px rgba(15,23,42,0.16)'
+                              : 'none',
+                        }}
+                      >
+                        {isLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : isCurrent ? (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Plano atual
+                          </>
+                        ) : tenant?.status ===
+                          'trial' ? (
+                          <>
+                            Começar grátis
+                            <span className="opacity-60">
+                              →
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            Escolher plano
+                            <span className="opacity-60">
+                              →
+                            </span>
+                          </>
+                        )}
+                      </button>
+
+                      {/* ======================================
+                          TRUST LINE
+                      ====================================== */}
+
+                      {!isCurrent &&
+                        tenant?.status ===
+                        'trial' && (
+                          <div className="flex items-center justify-center gap-1.5 mt-3">
+                            <ShieldCheck className="w-3 h-3 text-emerald-500" />
+
+                            <span
+                              className="text-[9px]"
+                              style={{
+                                color:
+                                  theme.textMuted,
+                              }}
+                            >
+                              R$ 0 hoje • Cancele em
+                              1 clique
+                            </span>
+                          </div>
+                        )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-        </div>
-      )}
-
-      {/* =====================================================
-          TRUST
-      ===================================================== */}
-
-      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-7">
-        <div
-          className="flex items-center gap-1.5 text-[10px]"
-          style={{
-            color:
-              theme.textMuted,
-          }}
-        >
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-          Pagamento seguro
-        </div>
-
-        <div
-          className="text-[10px]"
-          style={{
-            color:
-              theme.textMuted,
-          }}
-        >
-          Sem fidelidade
-        </div>
-
-        <div
-          className="text-[10px]"
-          style={{
-            color:
-              theme.textMuted,
-          }}
-        >
-          Cancele quando quiser
-        </div>
-      </div>
-
-      {/* =====================================================
-          FAQ — MINIMALISTA
-      ===================================================== */}
-
-      <div className="mt-12 max-w-2xl mx-auto">
-
-        <div className="text-center mb-5">
-          <p
-            className="text-[10px] font-bold uppercase tracking-[0.14em]"
-            style={{
-              color:
-                theme.textMuted,
-            }}
-          >
-            Dúvidas
-          </p>
-
-          <h3
-            className="font-serif text-xl font-bold mt-1"
-            style={{
-              color:
-                theme.textPrimary,
-            }}
-          >
-            Tudo simples por aqui.
-          </h3>
-        </div>
-
-        <div
-          className="rounded-2xl border divide-y overflow-hidden"
-          style={{
-            background:
-              theme.cardBg,
-            borderColor:
-              theme.border,
-          }}
-        >
-
-          <div className="px-5 py-4">
-            <p
-              className="text-xs font-bold"
-              style={{
-                color:
-                  theme.textPrimary,
-              }}
-            >
-              Posso cancelar quando quiser?
-            </p>
-
-            <p
-              className="text-[11px] leading-5 mt-1"
-              style={{
-                color:
-                  theme.textSecondary,
-              }}
-            >
-              Sim. Não existe fidelidade. O acesso continua até o final do período já pago.
-            </p>
+                );
+              })}
           </div>
+        )}
+      </section>
 
-          <div className="px-5 py-4">
-            <p
-              className="text-xs font-bold"
+      {/* ======================================================
+          MINI TRUST FOOTER
+      ====================================================== */}
+
+      {plans.length > 0 && (
+        <div className="mt-10 text-center">
+          <div className="inline-flex items-center gap-5 flex-wrap justify-center">
+            <span className="flex items-center gap-1.5 text-[10px] font-medium">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+
+              <span
+                style={{
+                  color:
+                    theme.textMuted,
+                }}
+              >
+                Pagamento seguro
+              </span>
+            </span>
+
+            <span
+              className="w-1 h-1 rounded-full"
               style={{
-                color:
-                  theme.textPrimary,
+                background:
+                  theme.border,
               }}
-            >
-              Como funciona o teste gratuito?
-            </p>
+            />
 
-            <p
-              className="text-[11px] leading-5 mt-1"
-              style={{
-                color:
-                  theme.textSecondary,
-              }}
-            >
-              Você começa com acesso completo durante o período de teste. A cobrança só acontece depois desse período.
-            </p>
-          </div>
-
-          <div className="px-5 py-4">
-            <p
-              className="text-xs font-bold"
-              style={{
-                color:
-                  theme.textPrimary,
-              }}
-            >
-              O pagamento é seguro?
-            </p>
-
-            <p
-              className="text-[11px] leading-5 mt-1"
-              style={{
-                color:
-                  theme.textSecondary,
-              }}
-            >
-              Sim. O processamento dos pagamentos é realizado pelo Stripe.
-            </p>
-          </div>
-
-        </div>
-      </div>
-
-      {/* =====================================================
-          ADMIN SYNC — DISCRETO
-      ===================================================== */}
-
-      {profile?.role ===
-        'super_admin' && (
-          <div className="flex justify-center mt-6">
-            <button
-              onClick={
-                handleSyncWithStripe
-              }
-              disabled={syncing}
-              className="text-[10px] font-medium opacity-50 hover:opacity-100 transition-opacity flex items-center gap-1.5"
+            <span
+              className="text-[10px] font-medium"
               style={{
                 color:
                   theme.textMuted,
               }}
             >
-              {syncing ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <ShieldCheck className="w-3 h-3" />
-              )}
+              Sem fidelidade
+            </span>
 
-              Sincronizar assinatura
-            </button>
+            <span
+              className="w-1 h-1 rounded-full"
+              style={{
+                background:
+                  theme.border,
+              }}
+            />
+
+            <span
+              className="text-[10px] font-medium"
+              style={{
+                color:
+                  theme.textMuted,
+              }}
+            >
+              Cancele quando quiser
+            </span>
           </div>
-        )}
-
+        </div>
+      )}
     </div>
   );
 }
