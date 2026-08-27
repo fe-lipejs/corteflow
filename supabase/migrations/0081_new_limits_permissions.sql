@@ -1,10 +1,10 @@
 -- Migration 0081: Novas Permissões de Domicílio e Limites de Catálogo
 
 -- 1. Inserir permissões de domicílio se não existirem
-INSERT INTO public.sys_permissions (module, key, description, module_name)
+INSERT INTO public.sys_permissions (module, key, description)
 VALUES
-  ('equipe', 'equipe.domicilio', 'Permite habilitar atendimento a domicílio no perfil de um profissional', 'Equipe'),
-  ('catalogo', 'catalogo.domicilio', 'Permite criar serviços com taxa de deslocamento/domicílio', 'Catálogo')
+  ('equipe', 'equipe.domicilio', 'Permite habilitar atendimento a domicílio no perfil de um profissional'),
+  ('catalogo', 'catalogo.domicilio', 'Permite criar serviços com taxa de deslocamento/domicílio')
 ON CONFLICT (key) DO NOTHING;
 
 -- 2. Atualizar limites e permissões do plano Trial (Período de Teste)
