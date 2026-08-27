@@ -1,10 +1,15 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { corsHeaders } from '../_shared/cors.ts';
 
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
 serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY');
   const endpointSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
 
@@ -29,18 +34,8 @@ serve(async (req) => {
   try {
     event = await stripe.webhooks.constructEventAsync(body, signature, endpointSecret, undefined, cryptoProvider);
   } catch (err: any) {
-    const connectSecret = Deno.env.get('STRIPE_CONNECT_WEBHOOK_SECRET');
-    if (connectSecret) {
-      try {
-        event = await stripe.webhooks.constructEventAsync(body, signature, connectSecret, undefined, cryptoProvider);
-      } catch (err2: any) {
-        console.error(`Webhook signature verification failed: ${err.message} / ${err2.message}`);
-        return new Response(`Webhook Error: ${err.message}`, { status: 400 });
-      }
-    } else {
-      console.error(`Webhook signature verification failed: ${err.message}`);
-      return new Response(`Webhook Error: ${err.message}`, { status: 400 });
-    }
+    console.error(`Webhook signature verification failed: ${err.message}`);
+    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
   const supabase = createClient(
@@ -48,16 +43,16 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
-  // 1. Idempotency Check
+  // 1. Idempotency Check (V3 uses billing_events)
   const { data: existingEvent } = await supabase
-    .from('stripe_events')
+    .from('billing_events')
     .select('id')
     .eq('stripe_event_id', event.id)
     .maybeSingle();
 
   if (existingEvent) {
     console.log(`Event ${event.id} already processed. Skipping.`);
-    return new Response(JSON.stringify({ received: true, skipped: true }), { status: 200 });
+    return new Response(JSON.stringify({ received: true, skipped: true }), { status: 200, headers: corsHeaders });
   }
 
   let eventTenantId: string | null = null;
@@ -77,91 +72,40 @@ serve(async (req) => {
     };
 
     switch (event.type) {
-
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
+        const tenantId = session.metadata?.tenant_id;
+        const planId = session.metadata?.plan_id;
+        eventTenantId = tenantId || null;
 
-        if (session.metadata?.tenant_id && session.metadata?.plan_id) {
-          eventTenantId = session.metadata.tenant_id;
-          const planId = session.metadata.plan_id;
-
-          let trialEndsAt: string | null = null;
-          let currentPeriodEnd: string | null = null;
-
-          if (session.subscription) {
-            const stripeSub = await stripe.subscriptions.retrieve(session.subscription as string);
-            if (stripeSub.trial_end) {
-              trialEndsAt = new Date(stripeSub.trial_end * 1000).toISOString();
-            }
-            currentPeriodEnd = new Date(stripeSub.current_period_end * 1000).toISOString();
-          }
-
-          // Se o salão tinha uma assinatura anterior diferente no Stripe, cancela a anterior para evitar cobrança dupla
-          const { data: previousSub } = await supabase
-            .from('subscriptions')
-            .select('stripe_subscription_id')
-            .eq('tenant_id', eventTenantId)
-            .maybeSingle();
-
-          if (previousSub?.stripe_subscription_id && session.subscription && previousSub.stripe_subscription_id !== session.subscription) {
-            try {
-              await stripe.subscriptions.cancel(previousSub.stripe_subscription_id);
-              console.log(`[Webhook] Assinatura anterior ${previousSub.stripe_subscription_id} cancelada com sucesso no Stripe.`);
-            } catch (cancelErr) {
-              console.warn(`[Webhook] Aviso ao cancelar assinatura anterior no Stripe:`, cancelErr);
-            }
-          }
-
-          const { error: upsertError } = await supabase.from('subscriptions').upsert({
-            tenant_id: eventTenantId,
-            plan_id: planId,
+        if (tenantId && session.subscription) {
+          // Update legacy subscriptions table (to not break old UI)
+          const { error: subErr } = await supabase.from('subscriptions').upsert({
+            tenant_id: tenantId,
             stripe_subscription_id: session.subscription as string,
             stripe_customer_id: session.customer as string,
-            status: 'active',
-            trial_ends_at: trialEndsAt,
-            current_period_end: currentPeriodEnd,
-            grace_period_ends_at: null,
-            suspension_reason: null,
-            canceled_at: null,
-            latest_invoice_status: 'paid'
+            plan_id: planId,
+            status: 'trialing'
           }, { onConflict: 'tenant_id' });
 
-          if (upsertError) throw upsertError;
+          if (subErr) console.error(subErr);
 
-          await supabase.from('tenants').update({ status: 'active' }).eq('id', eventTenantId);
-        } else if (session.metadata?.booking_id) {
-          const amountPaid = (session.amount_total ?? 0) / 100;
-          await supabase.from('bookings').update({
-            status: 'confirmed',
-            amount_paid: amountPaid,
-            payment_status: 'paid'
-          }).eq('id', session.metadata.booking_id);
+          // V3 State Machine Update
+          await supabase.from('tenants').update({
+            account_state: 'trialing_with_card',
+            trial_started_at: new Date().toISOString(),
+            trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          }).eq('id', tenantId);
+        }
+        break;
+      }
 
-          // Update the payment record
-          if (session.payment_intent) {
-            const piId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent.id;
-            
-            let stripeFee = 0;
-            let netAmount = amountPaid;
-            
-            try {
-              const pi = await stripe.paymentIntents.retrieve(piId, { expand: ['latest_charge.balance_transaction'] });
-              const charge = pi.latest_charge as any;
-              if (charge?.balance_transaction?.fee) {
-                stripeFee = charge.balance_transaction.fee / 100;
-              }
-              const applicationFee = charge?.application_fee_amount ? (charge.application_fee_amount / 100) : 0;
-              netAmount = amountPaid - stripeFee - applicationFee;
-            } catch (err) {
-              console.warn("Could not retrieve balance transaction", err);
-            }
-
-            await supabase.from('payments').update({
-              status: 'succeeded',
-              stripe_fee: stripeFee,
-              net_amount: netAmount
-            }).eq('stripe_payment_intent_id', piId);
-          }
+      case 'customer.subscription.trial_will_end': {
+        const sub = event.data.object as Stripe.Subscription;
+        eventTenantId = await getTenantFromSub(sub.id);
+        if (eventTenantId) {
+          // Log explicitly for trial ending
+          console.log(`Trial ending soon for tenant: ${eventTenantId}`);
         }
         break;
       }
@@ -171,40 +115,25 @@ serve(async (req) => {
         eventTenantId = await getTenantFromSub(sub.id);
         
         if (eventTenantId) {
+          // Keep legacy subscriptions table updated
           const trialEndsAt = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null;
-          
-          // Identify the plan_id from the stripe price if it changed (e.g. upgrade/downgrade)
-          let updatedPlanId = undefined;
-          const stripePriceId = sub.items?.data?.[0]?.price?.id;
-          if (stripePriceId) {
-            const { data: priceData } = await supabase
-              .from('plan_prices')
-              .select('plan_id')
-              .eq('stripe_price_id', stripePriceId)
-              .maybeSingle();
-            if (priceData?.plan_id) {
-              updatedPlanId = priceData.plan_id;
-            }
-          }
-
-          const updatePayload: any = {
+          await supabase.from('subscriptions').update({
             status: sub.status,
             trial_ends_at: trialEndsAt,
             current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
             cancel_at_period_end: sub.cancel_at_period_end,
-          };
+          }).eq('stripe_subscription_id', sub.id);
 
-          if (updatedPlanId) {
-            updatePayload.plan_id = updatedPlanId;
-          }
+          // V3 State Machine Update
+          let newState = 'active';
+          if (sub.status === 'trialing') newState = 'trialing_with_card';
+          if (sub.status === 'past_due') newState = 'past_due';
+          if (sub.status === 'canceled') newState = 'canceled';
           
-          await supabase.from('subscriptions').update(updatePayload).eq('stripe_subscription_id', sub.id);
-
-          // If it became active/trialing, clear suspension
-          if (sub.status === 'active' || sub.status === 'trialing') {
-            await supabase.from('tenants').update({ status: sub.status === 'trialing' ? 'trial' : 'active' }).eq('id', eventTenantId);
-            await supabase.from('subscriptions').update({ grace_period_ends_at: null, suspension_reason: null }).eq('tenant_id', eventTenantId);
-          }
+          await supabase.from('tenants').update({
+            account_state: newState,
+            trial_ends_at: trialEndsAt
+          }).eq('id', eventTenantId);
         }
         break;
       }
@@ -214,16 +143,9 @@ serve(async (req) => {
         eventTenantId = await getTenantFromSub(sub.id);
 
         if (eventTenantId) {
-          const canceledAt = sub.canceled_at ? new Date(sub.canceled_at * 1000).toISOString() : new Date().toISOString();
-          
-          await supabase.from('subscriptions').update({
-            status: 'canceled',
-            canceled_at: canceledAt,
-            grace_period_ends_at: null,
-            suspension_reason: 'Assinatura cancelada no Stripe.'
-          }).eq('stripe_subscription_id', sub.id);
-
-          await supabase.from('tenants').update({ status: 'canceled' }).eq('id', eventTenantId);
+          await supabase.from('subscriptions').update({ status: 'canceled' }).eq('stripe_subscription_id', sub.id);
+          // V3 State Machine Update
+          await supabase.from('tenants').update({ account_state: 'canceled' }).eq('id', eventTenantId);
         }
         break;
       }
@@ -235,24 +157,12 @@ serve(async (req) => {
         if (stripeSubId) {
           eventTenantId = await getTenantFromSub(stripeSubId);
           if (eventTenantId) {
-            // Check current subscription
-            const { data: currentSub } = await supabase.from('subscriptions').select('grace_period_ends_at').eq('tenant_id', eventTenantId).single();
-            
-            // Set 5-day grace period if not already set
-            let gracePeriod = currentSub?.grace_period_ends_at;
-            if (!gracePeriod) {
-              const fiveDaysFromNow = new Date();
-              fiveDaysFromNow.setDate(fiveDaysFromNow.getDate() + 5);
-              gracePeriod = fiveDaysFromNow.toISOString();
-            }
-
-            await supabase.from('subscriptions').update({
-              status: 'past_due',
-              latest_invoice_status: 'failed',
-              grace_period_ends_at: gracePeriod,
-            }).eq('stripe_subscription_id', stripeSubId);
-            
-            // Note: Tenant status remains 'active', the frontend will check grace_period_ends_at
+            await supabase.from('subscriptions').update({ status: 'past_due' }).eq('stripe_subscription_id', stripeSubId);
+            // V3 State Machine Update
+            await supabase.from('tenants').update({ 
+              account_state: 'past_due',
+              past_due_since: new Date().toISOString()
+            }).eq('id', eventTenantId);
           }
         }
         break;
@@ -265,52 +175,12 @@ serve(async (req) => {
         if (stripeSubId) {
           eventTenantId = await getTenantFromSub(stripeSubId);
           if (eventTenantId) {
-            await supabase.from('subscriptions').update({
-              status: 'active',
-              latest_invoice_status: 'paid',
-              grace_period_ends_at: null,
-              suspension_reason: null
-            }).eq('stripe_subscription_id', stripeSubId);
-
-            // Restore tenant access if they were suspended (though handled by frontend primarily)
-            // But just to be sure we clear 'suspended' status if it was set
-            await supabase.from('tenants').update({ status: 'active' }).eq('id', eventTenantId);
-          }
-        }
-        break;
-      }
-
-      case 'account.updated': {
-        const account = event.data.object as Stripe.Account;
-        await supabase.from('stripe_connect_accounts').update({
-          charges_enabled: account.charges_enabled,
-          payouts_enabled: account.payouts_enabled,
-        }).eq('stripe_account_id', account.id);
-
-        // Se a conta Stripe agora está apta a cobrar (charges_enabled = true), liberar automaticamente pagamentos online no salão
-        if (account.charges_enabled) {
-          const { data: connectAcc } = await supabase
-            .from('stripe_connect_accounts')
-            .select('tenant_id')
-            .eq('stripe_account_id', account.id)
-            .maybeSingle();
-
-          if (connectAcc?.tenant_id) {
-            const { data: currentSettings } = await supabase
-              .from('tenant_settings')
-              .select('payment_methods')
-              .eq('tenant_id', connectAcc.tenant_id)
-              .maybeSingle();
-
-            const currentPm = (currentSettings?.payment_methods as any) || {};
-            await supabase.from('tenant_settings').update({
-              payment_methods: {
-                pay_local: currentPm.pay_local !== false,
-                partial_50: true,
-                full_100: true,
-              },
-              online_payment_enabled: true
-            }).eq('tenant_id', connectAcc.tenant_id);
+            await supabase.from('subscriptions').update({ status: 'active' }).eq('stripe_subscription_id', stripeSubId);
+            // V3 State Machine Update
+            await supabase.from('tenants').update({ 
+              account_state: 'active',
+              past_due_since: null
+            }).eq('id', eventTenantId);
           }
         }
         break;
@@ -322,13 +192,12 @@ serve(async (req) => {
     console.error(`Error processing webhook event ${event.type}: ${err.message}`);
   }
 
-  // 2. Audit Log (Idempotency Save)
-  await supabase.from('stripe_events').insert({
+  // 2. Audit Log (Idempotency Save V3)
+  await supabase.from('billing_events').insert({
     stripe_event_id: event.id,
     type: event.type,
     tenant_id: eventTenantId,
-    payload: event as any, // Cast to any because Supabase Json type
-    error: processingError
+    payload: event as any
   });
 
   if (processingError) {
@@ -337,6 +206,6 @@ serve(async (req) => {
 
   return new Response(JSON.stringify({ received: true }), {
     status: 200,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 });

@@ -1,3 +1,4 @@
+import PaywallGate from '../../components/PaywallGate';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, SlidersHorizontal, Scissors, Package, AlertCircle, Loader2, Crown, Lock, Tag } from 'lucide-react';
@@ -134,7 +135,8 @@ export default function Servicos() {
   };
 
   return (
-    <div className="space-y-6 pb-12 animate-fade-in">
+    <PaywallGate feature="servicos">
+      <div className="space-y-6 pb-12 animate-fade-in">
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -548,6 +550,8 @@ export default function Servicos() {
         </div>
       )}
     </div>
+      </PaywallGate>
   );
+
 }
 

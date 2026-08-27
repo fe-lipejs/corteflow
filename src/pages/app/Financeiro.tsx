@@ -1,3 +1,4 @@
+import PaywallGate from '../../components/PaywallGate';
 import { useState, useMemo, useEffect } from 'react';
 import {
   DollarSign, ArrowUpRight, ArrowDownRight, Download, Plus, Edit2, Trash2,
@@ -409,7 +410,8 @@ export default function Financeiro() {
     engine.hasPermission('financeiro.criar_lancamento');
 
   return (
-    <div className="relative min-h-[600px] w-full">
+    <PaywallGate feature="financeiro">
+      <div className="relative min-h-[600px] w-full">
       {/* ── Se não tiver nenhuma permissão, mostra teaser com blur ── */}
       <div className={`space-y-6 h-full flex flex-col animate-fade-in ${!canAccessFinanceiro ? 'filter blur-[5px] opacity-40 pointer-events-none select-none' : ''}`}>
         {/* HEADER */}
@@ -832,6 +834,8 @@ export default function Financeiro() {
         </div>
       )}
     </div>
+      </PaywallGate>
   );
+
 }
 

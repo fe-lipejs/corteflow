@@ -1,3 +1,4 @@
+import PaywallGate from '../../components/PaywallGate';
 import { useState, useMemo, useEffect } from 'react';
 import { format, startOfWeek, addWeeks, subWeeks, addDays, isToday, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
@@ -166,7 +167,8 @@ export default function Agenda() {
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(null);
 
   return (
-    <div className="flex flex-col h-full max-w-7xl mx-auto w-full animate-fade-in" style={{ minHeight: 'calc(100vh - 80px)' }}>
+    <PaywallGate feature="agenda">
+      <div className="flex flex-col h-full max-w-7xl mx-auto w-full animate-fade-in" style={{ minHeight: 'calc(100vh - 80px)' }}>
 
       {/* ── Header ── */}
       <div className="flex flex-col gap-4 mb-4 shrink-0">
@@ -462,6 +464,8 @@ export default function Agenda() {
         />
       )}
     </div>
+      </PaywallGate>
   );
+
 }
 

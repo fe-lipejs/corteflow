@@ -139,10 +139,14 @@ serve(async (req) => {
 
     const checkoutParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card'],
+      payment_method_collection: 'always',
       line_items: [lineItem],
       mode: 'subscription',
-      currency: currency, // Forçar a moeda do banco de dados (suporta Preços Multi-Moedas do Stripe)
-      subscription_data: subscriptionData,
+      currency: currency,
+      subscription_data: {
+        ...subscriptionData,
+        trial_period_days: 7, // Force 7 days trial on V3
+      },
       success_url: `${returnUrl}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${returnUrl}`,
       metadata: {

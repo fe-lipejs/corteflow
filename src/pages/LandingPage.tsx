@@ -1,4 +1,4 @@
-﻿import {
+import {
   motion,
   animate,
   useInView,
@@ -1710,25 +1710,25 @@ function PricingSection() {
   const plans = [
     {
       name: 'Solo',
-      price: 49,
+      price: 27,
       tag: 'Pra quem trabalha sozinho e quer parar de agendar pelo WhatsApp.',
       items: ['Agenda online ilimitada', '1 profissional', 'Atendimento a domicílio', 'Lembretes automáticos', 'Sinal anti-furo'],
       featured: false,
     },
     {
       name: 'Studio',
-      price: 89,
+      price: 47,
       tag: 'Pra quem já tem equipe e quer o negócio inteiro organizado.',
       items: ['Tudo do plano Solo', 'Até 5 profissionais', 'Gestão de equipe completa', 'Relatórios de desempenho', 'Suporte prioritário'],
       featured: true,
     },
     {
-      name: 'Equipe',
-      price: 149,
-      tag: 'Pra estabelecimentos maiores, com operação em escala.',
+      name: 'Business',
+      price: 97,
+      tag: 'Para estabelecimentos maiores, com operação em escala.',
       items: ['Tudo do plano Studio', 'Profissionais ilimitados', 'Múltiplas unidades', 'Gerente de conta dedicado'],
       featured: false,
-    },
+    }
   ];
 
   return (

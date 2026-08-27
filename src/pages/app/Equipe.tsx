@@ -1,3 +1,4 @@
+import PaywallGate from '../../components/PaywallGate';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Crown, Users, CheckCircle, Palmtree, XCircle, SlidersHorizontal, Loader2, AlertCircle, Lock } from 'lucide-react';
@@ -157,7 +158,8 @@ export default function Equipe() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6 pb-12 animate-fade-in">
+    <PaywallGate feature="profissionais">
+      <div className="space-y-6 pb-12 animate-fade-in">
 
       {/* ── Page Header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -402,6 +404,8 @@ export default function Equipe() {
         </div>
       )}
     </div>
+      </PaywallGate>
   );
+
 }
 
