@@ -192,17 +192,18 @@ serve(async (req) => {
     console.error(`Error processing webhook event ${event.type}: ${err.message}`);
   }
 
+  if (processingError) {
+    return new Response(`Error: ${processingError}`, { status: 500 });
+  }
+
   // 2. Audit Log (Idempotency Save V3)
+  // ONLY save if processing was successful, otherwise let Stripe retry it.
   await supabase.from('billing_events').insert({
     stripe_event_id: event.id,
     type: event.type,
     tenant_id: eventTenantId,
     payload: event as any
   });
-
-  if (processingError) {
-    return new Response(`Error: ${processingError}`, { status: 500 });
-  }
 
   return new Response(JSON.stringify({ received: true }), {
     status: 200,

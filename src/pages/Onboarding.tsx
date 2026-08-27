@@ -521,9 +521,10 @@ export default function Onboarding() {
         await supabase.from('professional_services').insert(links as any);
       }
 
-      // 9. Refresh context and redirect to /app
+      // 9. Refresh context and go to Payment Step
       await refreshProfile();
-      window.location.href = '/admin';
+      setStep(4);
+      setLoading(false);
 
     } catch (err: any) {
       console.error('Erro no onboarding:', err);
@@ -660,6 +661,13 @@ export default function Onboarding() {
                           boxShadow: businessType === type.id ? '0 4px 12px rgba(222,135,13,0.12)' : 'none',
                         }}
                       >
+                        {step < 4 && (
+                          <div className="flex gap-1 justify-center mt-6">
+                            {[1, 2, 3].map(i => (
+                              <div key={i} className={`h-1.5 rounded-full transition-all ${step >= i ? 'w-8 bg-[#DE870D]' : 'w-4 bg-slate-200'}`} />
+                            ))}
+                          </div>
+                        )}
                         <div className="flex items-center gap-3">
                           <type.icon className="w-6 h-6" style={{ color: businessType === type.id ? '#DE870D' : '#94A3B8' }} />
                           <div>
@@ -789,11 +797,9 @@ export default function Onboarding() {
               {step === 3 && (
                 <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 space-y-6">
                   <div>
-                    <h3 className="text-2xl font-black mb-1 text-[#0F172A]">Identidade & Localização</h3>
-                    <p className="text-sm text-[#64748B]">Personalize sua marca, contato e endereço (tudo editável depois).</p>
+                    <h3 className="text-2xl font-black mb-1 text-[#0F172A]">Onde você fica?</h3>
+                    <p className="text-slate-500 font-medium">Os clientes precisam saber como chegar até você.</p>
                   </div>
-
-                  {/* Bloco 1: Imagens (Logo e Banner) */}
                   <div className="p-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/60 space-y-4">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-[#475569]">Imagens da Marca</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1023,8 +1029,66 @@ export default function Onboarding() {
                   </div>
                 </motion.div>
               )}
-            </AnimatePresence>
 
+              {step === 4 && (
+                <motion.div key="step4" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="flex-1 flex flex-col items-center justify-center text-center">
+                  <div className="w-20 h-20 bg-[#DE870D]/10 rounded-2xl flex items-center justify-center mb-6">
+                    <Sparkles className="w-10 h-10 text-[#DE870D]" />
+                  </div>
+                  
+                  <h3 className="text-3xl font-black mb-3 text-[#0F172A]">Tudo pronto!</h3>
+                  <p className="text-slate-500 text-lg mb-8 max-w-sm mx-auto">
+                    Seu espaço está configurado. Ative sua assinatura agora para desbloquear sua agenda e começar a receber clientes.
+                  </p>
+
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 w-full max-w-sm mb-8 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">Recomendado</div>
+                    <div className="flex items-center justify-center gap-2 mb-2 text-[#0F172A] font-black text-2xl">
+                      <Star className="w-6 h-6 text-[#DE870D] fill-[#DE870D]" />
+                      Plano Studio
+                    </div>
+                    <p className="text-slate-600 font-medium text-sm mb-4">7 dias grátis. Cancele quando quiser.</p>
+                    
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={async () => {
+                        setLoading(true);
+                        try {
+                          const { data: plan } = await supabase.from('plans').select('id').eq('key', 'studio_tier').single();
+                          const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+                            body: { planId: plan?.id, returnUrl: `${window.location.origin}/admin` }
+                          });
+                          if (error) throw error;
+                          if (data?.url) window.location.href = data.url;
+                        } catch(e) {
+                          alert('Erro ao iniciar checkout');
+                          setLoading(false);
+                        }
+                      }}
+                      className="w-full bg-[#0F172A] text-white h-14 rounded-xl font-bold flex items-center justify-center hover:bg-[#1E293B] transition-colors shadow-lg"
+                    >
+                      {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Assinar Agora (R$ 0,00 Hoje)'}
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = '/admin'; // Dashboard/Visão Geral
+                    }}
+                    className="text-slate-500 font-semibold text-sm hover:text-slate-800 transition-colors"
+                  >
+                    Pular para Visão Geral
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Bottom Fixed Navigation */}
+          {step < 4 && (
+            <div className="p-6 border-t border-slate-100 bg-white/50 backdrop-blur-md sticky bottom-0 z-20 shrink-0">
             {error && (
               <div className="mt-4 p-3 rounded-xl text-xs font-semibold bg-red-500/10 border border-red-500/20 text-red-600">
                 ⚠️ {error}

@@ -60,37 +60,70 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 4.1. services
 DROP POLICY IF EXISTS "Tenant isolation for services" ON public.services;
-CREATE POLICY "Tenant isolation for services" ON public.services
+DROP POLICY IF EXISTS "Tenant isolation for services (READ)" ON public.services;
+DROP POLICY IF EXISTS "Tenant isolation for services (WRITE)" ON public.services;
+
+CREATE POLICY "Tenant isolation for services (READ)" ON public.services
+    FOR SELECT
+    USING (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) OR is_super_admin());
+
+CREATE POLICY "Tenant isolation for services (WRITE)" ON public.services
     FOR ALL
     USING (
-        tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) 
-        OR is_super_admin()
+        (
+            (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) AND EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'owner'))
+            OR is_super_admin()
+        )
+        AND is_account_writable(tenant_id)
     )
     WITH CHECK (
-        (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) OR is_super_admin())
+        (
+            (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) AND EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'owner'))
+            OR is_super_admin()
+        )
         AND is_account_writable(tenant_id)
     );
 
 -- 4.2. professionals
 DROP POLICY IF EXISTS "Tenant isolation for professionals" ON public.professionals;
-CREATE POLICY "Tenant isolation for professionals" ON public.professionals
+DROP POLICY IF EXISTS "Tenant isolation for professionals (READ)" ON public.professionals;
+DROP POLICY IF EXISTS "Tenant isolation for professionals (WRITE)" ON public.professionals;
+
+CREATE POLICY "Tenant isolation for professionals (READ)" ON public.professionals
+    FOR SELECT
+    USING (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) OR is_super_admin());
+
+CREATE POLICY "Tenant isolation for professionals (WRITE)" ON public.professionals
     FOR ALL
     USING (
-        tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) 
-        OR is_super_admin()
+        (
+            (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) AND EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'owner'))
+            OR is_super_admin()
+        )
+        AND is_account_writable(tenant_id)
     )
     WITH CHECK (
-        (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) OR is_super_admin())
+        (
+            (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) AND EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'owner'))
+            OR is_super_admin()
+        )
         AND is_account_writable(tenant_id)
     );
 
 -- 4.3. bookings
 DROP POLICY IF EXISTS "Tenant isolation for bookings" ON public.bookings;
-CREATE POLICY "Tenant isolation for bookings" ON public.bookings
+DROP POLICY IF EXISTS "Tenant isolation for bookings (READ)" ON public.bookings;
+DROP POLICY IF EXISTS "Tenant isolation for bookings (WRITE)" ON public.bookings;
+
+CREATE POLICY "Tenant isolation for bookings (READ)" ON public.bookings
+    FOR SELECT
+    USING (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) OR is_super_admin());
+
+CREATE POLICY "Tenant isolation for bookings (WRITE)" ON public.bookings
     FOR ALL
     USING (
-        tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) 
-        OR is_super_admin()
+        (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) OR is_super_admin())
+        AND is_account_writable(tenant_id)
     )
     WITH CHECK (
         (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) OR is_super_admin())
@@ -99,14 +132,27 @@ CREATE POLICY "Tenant isolation for bookings" ON public.bookings
 
 -- 4.4. financial_transactions
 DROP POLICY IF EXISTS "Tenant isolation for financial_transactions" ON public.financial_transactions;
-CREATE POLICY "Tenant isolation for financial_transactions" ON public.financial_transactions
+DROP POLICY IF EXISTS "Tenant isolation for financial_transactions (READ)" ON public.financial_transactions;
+DROP POLICY IF EXISTS "Tenant isolation for financial_transactions (WRITE)" ON public.financial_transactions;
+
+CREATE POLICY "Tenant isolation for financial_transactions (READ)" ON public.financial_transactions
+    FOR SELECT
+    USING (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) OR is_super_admin());
+
+CREATE POLICY "Tenant isolation for financial_transactions (WRITE)" ON public.financial_transactions
     FOR ALL
     USING (
-        tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) 
-        OR is_super_admin()
+        (
+            (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) AND EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'owner'))
+            OR is_super_admin()
+        )
+        AND is_account_writable(tenant_id)
     )
     WITH CHECK (
-        (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) OR is_super_admin())
+        (
+            (tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid()) AND EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'owner'))
+            OR is_super_admin()
+        )
         AND is_account_writable(tenant_id)
     );
 

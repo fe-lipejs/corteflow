@@ -194,14 +194,6 @@ export default function Configuracoes() {
   const [refundPolicy, setRefundPolicy] = useState('full_refund_only');
   const [creditValidityDays, setCreditValidityDays] = useState(90);
 
-  // Home Service (Hybrid Location Model — migration 0046)
-  const [offersHomeService, setOffersHomeService] = useState(false);
-  const [homeServiceRadiusKm, setHomeServiceRadiusKm] = useState(10);
-  const [showRadiusMap, setShowRadiusMap] = useState(false);
-  const [homeFeeType, setHomeFeeType] = useState<'fixed' | 'per_km' | 'free'>('free');
-  const [homeFeeAmount, setHomeFeeAmount] = useState(0);
-  const [homeFeePerKm, setHomeFeePerKm] = useState(0);
-
   // Notifications
   const [soundEnabled, setSoundEnabled] = useState(true);
 
@@ -400,13 +392,6 @@ export default function Configuracoes() {
         setAllowRefunds(data.allow_refunds ?? true);
         setRefundPolicy(data.refund_policy || 'full_refund_only');
         setCreditValidityDays(data.credit_validity_days ?? 90);
-
-        // Home Service (migration 0046)
-        setOffersHomeService(data.offers_home_service ?? false);
-        setHomeServiceRadiusKm(data.home_service_radius_km ?? 10);
-        setHomeFeeType((data.home_fee_type ?? 'free') as 'fixed' | 'per_km' | 'free');
-        setHomeFeeAmount(data.home_fee_amount ?? 0);
-        setHomeFeePerKm(data.home_fee_per_km ?? 0);
       } else {
         setTenantName(tenant.name || '');
         setSlug(tenant.slug || '');
@@ -2587,142 +2572,6 @@ export default function Configuracoes() {
               </div>
 
               {/* ─── Atendimento a Domicílio (PRIMEIRO) ──────────────────────────────────── */}
-              <div className="rounded-xl p-5" style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${theme.accent}18` }}>
-                      <Home className="w-4 h-4" style={{ color: theme.accent }} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Atendimento a Domicílio</h4>
-                      <p className="text-xs" style={{ color: theme.textMuted }}>Habilite para que clientes possam agendar atendimento no endereço deles.</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setOffersHomeService(!offersHomeService)}
-                    className="relative w-12 h-6 rounded-full transition-all shrink-0"
-                    style={{ background: offersHomeService ? theme.accent : theme.border }}
-                  >
-                    <span
-                      className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
-                      style={{ left: offersHomeService ? '26px' : '4px' }}
-                    />
-                  </button>
-                </div>
-
-                {offersHomeService && (
-                  <div className="pt-4 border-t space-y-4" style={{ borderColor: theme.border }}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Raio de cobertura */}
-                      <div>
-                        <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                          Raio de Cobertura (km)
-                        </label>
-                        <div className="flex gap-2">
-                          <input
-                            type="number"
-                            min="1"
-                            max="200"
-                            value={homeServiceRadiusKm}
-                            onChange={e => setHomeServiceRadiusKm(Number(e.target.value))}
-                            className="themed-input flex-1"
-                            placeholder="Ex: 10"
-                          />
-                          <button
-                            onClick={() => setShowRadiusMap(true)}
-                            title="Ver raio no mapa"
-                            className="px-3 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-all hover:scale-[1.02] shrink-0"
-                            style={{ background: `${theme.accent}15`, borderColor: `${theme.accent}40`, color: theme.accent }}
-                          >
-                            <Navigation className="w-3.5 h-3.5" />
-                            Ver Mapa
-                          </button>
-                        </div>
-                        <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Clientes fora deste raio não conseguirão agendar a domicílio.</p>
-                      </div>
-
-                      {/* Tipo de taxa */}
-                      <div>
-                        <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                          Taxa de Deslocamento
-                        </label>
-                        <select
-                          value={homeFeeType}
-                          onChange={e => setHomeFeeType(e.target.value as 'fixed' | 'per_km' | 'free')}
-                          className="themed-input w-full"
-                        >
-                          <option value="free">Grátis (sem cobrança)</option>
-                          <option value="fixed">Valor fixo</option>
-                          <option value="per_km">Por quilômetro</option>
-                        </select>
-                      </div>
-
-                      {/* Valor da taxa fixa */}
-                      {homeFeeType === 'fixed' && (
-                        <div>
-                          <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                            Valor da Taxa (R$)
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.50"
-                            value={homeFeeAmount}
-                            onChange={e => setHomeFeeAmount(Number(e.target.value))}
-                            className="themed-input w-full"
-                            placeholder="Ex: 15.00"
-                          />
-                        </div>
-                      )}
-
-                      {/* Taxa por km */}
-                      {homeFeeType === 'per_km' && (
-                        <>
-                          <div>
-                            <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                              Taxa Mínima (R$)
-                            </label>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.50"
-                              value={homeFeeAmount}
-                              onChange={e => setHomeFeeAmount(Number(e.target.value))}
-                              className="themed-input w-full"
-                              placeholder="Ex: 10.00"
-                            />
-                            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Cobrado mesmo para distâncias curtas.</p>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                              Valor por km (R$)
-                            </label>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.10"
-                              value={homeFeePerKm}
-                              onChange={e => setHomeFeePerKm(Number(e.target.value))}
-                              className="themed-input w-full"
-                              placeholder="Ex: 2.50"
-                            />
-                            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Total = taxa mínima + distância × valor por km.</p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Mapa de raio */}
-                    {!latitude && !longitude && (
-                      <div className="flex items-center gap-2 p-3 rounded-lg text-xs" style={{ background: `${theme.accent}10`, color: theme.accent, border: `1px solid ${theme.accent}30` }}>
-                        <MapPin className="w-3.5 h-3.5 shrink-0" />
-                        <span>Para exibir o mapa de raio, cadastre o endereço do salão na aba <strong>Localização</strong>.</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
               {/* Reagendamento */}
               <div className="rounded-xl p-5" style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}>
                 <div className="flex items-center justify-between mb-4">
