@@ -95,6 +95,10 @@ export function useImageUpload(options: UseImageUploadOptions = {}): UseImageUpl
       setError(null);
 
       try {
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error('A imagem deve ter no máximo 5MB.');
+        }
+
         // Create preview immediately
         const previewUrl = URL.createObjectURL(file);
         setPreview(previewUrl);

@@ -140,7 +140,9 @@ export default function Dashboard() {
     }, 0);
     
     if (totalMinutesOpen > 0) {
-      const pct = Math.min(100, Math.round((totalBookedMinutes / totalMinutesOpen) * 100));
+      const activeProfessionalsCount = professionals.filter(p => p.active).length || 1;
+      const totalMinutesAvailable = totalMinutesOpen * activeProfessionalsCount;
+      const pct = Math.min(100, Math.round((totalBookedMinutes / totalMinutesAvailable) * 100));
       occupancy = `${pct}%`;
     }
   } else if (todayHours && !todayHours.is_open) {
@@ -227,7 +229,7 @@ export default function Dashboard() {
   });
   
   const topServices = Object.entries(servicesStats)
-    .sort((a, b) => b[1].count - a[1].count)
+    .sort((a, b) => b[1].count - a[1].count || b[1].revenue - a[1].revenue)
     .slice(0, 3)
     .map(([name, stats]) => ({
       name,
@@ -377,7 +379,7 @@ export default function Dashboard() {
               </div>
             ) : (
               todayBookings.map((item) => (
-                <div key={item.id} className="agenda-item flex items-center gap-3 p-3 rounded-lg border transition-colors hover:bg-[var(--theme-bg-hover)]" style={{ borderColor: theme.border }}>
+                <div key={item.id} onClick={() => navigate('/admin/agenda')} className="agenda-item flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors hover:bg-[var(--theme-bg-hover)]" style={{ borderColor: theme.border }}>
                   <span className="agenda-time font-bold text-sm w-12 flex-shrink-0" style={{ color: theme.accent }}>{formatTime(item.scheduled_at)}</span>
                   <div className="flex-1 truncate">
                     <p className="font-semibold text-sm truncate flex items-center gap-2" style={{ color: theme.textPrimary }}>

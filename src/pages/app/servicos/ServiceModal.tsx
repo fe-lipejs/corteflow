@@ -75,8 +75,9 @@ export default function ServiceModal({ service, professionals = [], tenantId, on
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!name.trim()) errs.name = 'Nome é obrigatório.';
-    if (!price || isNaN(Number(price))) errs.price = 'Preço inválido.';
-    if (!duration || isNaN(Number(duration))) errs.duration = 'Duração inválida.';
+    if (!price || isNaN(Number(price)) || Number(price) < 0) errs.price = 'Preço inválido.';
+    if (!duration || isNaN(Number(duration)) || Number(duration) <= 0) errs.duration = 'A duração deve ser maior que zero.';
+    if (!/^#[0-9A-Fa-f]{6}$/i.test(color)) errs.color = 'Cor inválida (use formato Hex, ex: #C9963B).';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
