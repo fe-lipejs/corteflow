@@ -1308,14 +1308,15 @@ export default function Assinatura() {
 
                     {isRecommended && (
                       <div
-                        className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.12em] text-white shadow-md flex items-center gap-1.5 whitespace-nowrap"
+                        className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.12em] shadow-md flex items-center gap-1.5 whitespace-nowrap"
                         style={{
-                          background:
-                            '#00c853',
+                          background: '#00c853',
+                          color: theme.id !== 'elegant' ? '#000000' : '#FFFFFF',
                         }}
                       >
                         <Star
-                          className="w-3 h-3 fill-white"
+                          className="w-3 h-3"
+                          style={{ fill: theme.id !== 'elegant' ? '#000000' : '#FFFFFF', color: theme.id !== 'elegant' ? '#000000' : '#FFFFFF' }}
                         />
 
                         Recomendado
@@ -1596,9 +1597,8 @@ export default function Assinatura() {
                             isCurrent
                               ? `${theme.accent}12`
                               : isRecommended
-                                ? '#0f172a'
-                                : theme.id ===
-                                  'elegant'
+                                ? '#00c853'
+                                : theme.id === 'elegant'
                                   ? '#F1F5F9'
                                   : 'rgba(255,255,255,0.07)',
 
@@ -1606,7 +1606,7 @@ export default function Assinatura() {
                             isCurrent
                               ? theme.accent
                               : isRecommended
-                                ? '#FFFFFF'
+                                ? (theme.id !== 'elegant' ? '#000000' : '#FFFFFF')
                                 : theme.textPrimary,
 
                           border:
@@ -1617,9 +1617,8 @@ export default function Assinatura() {
                                 : `1px solid ${theme.border}`,
 
                           boxShadow:
-                            isRecommended &&
-                              !isCurrent
-                              ? '0 10px 25px rgba(15,23,42,0.16)'
+                            isRecommended && !isCurrent
+                              ? theme.shadowAccent || '0 10px 25px rgba(15,23,42,0.16)'
                               : 'none',
                         }}
                       >
