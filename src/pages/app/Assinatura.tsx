@@ -1597,7 +1597,7 @@ export default function Assinatura() {
                             isCurrent
                               ? `${theme.accent}12`
                               : isRecommended
-                                ? '#00c853'
+                                ? '#fff'
                                 : theme.id === 'elegant'
                                   ? '#F1F5F9'
                                   : 'rgba(255,255,255,0.07)',
@@ -1618,7 +1618,7 @@ export default function Assinatura() {
 
                           boxShadow:
                             isRecommended && !isCurrent
-                              ? theme.shadowAccent || '0 10px 25px rgba(15,23,42,0.16)'
+                              ? '0 10px 25px rgba(15,23,42,0.16)'
                               : 'none',
                         }}
                       >
