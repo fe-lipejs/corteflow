@@ -1618,7 +1618,7 @@ export default function Assinatura() {
 
                           boxShadow:
                             isRecommended && !isCurrent
-                              ? '#fffff' || '0 10px 25px rgba(15,23,42,0.16)'
+                              ? '0 10px 25px rgba(15,23,42,0.16)'
                               : 'none',
                         }}
                       >

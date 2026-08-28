@@ -173,18 +173,18 @@ export const THEME_NOIR: ThemeTokens = {
   name: 'Noir',
   description: 'Preto absoluto com dourado',
 
-  bg: '#000000',
-  bgCard: 'rgba(15, 15, 15, 0.9)',
-  bgInput: '#0A0A0A',
-  bgSidebar: '#050505',
-  bgHover: '#111111',
-  bgOverlay: 'rgba(0, 0, 0, 0.8)',
-  bgGlass: 'rgba(10, 10, 10, 0.85)',
+  bg: '#09090b', // zinc-950
+  bgCard: 'rgba(24, 24, 27, 0.9)', // zinc-900
+  bgInput: '#18181b', // zinc-900
+  bgSidebar: '#09090b',
+  bgHover: '#27272a', // zinc-800
+  bgOverlay: 'rgba(0, 0, 0, 0.7)',
+  bgGlass: 'rgba(24, 24, 27, 0.85)',
 
   textPrimary: '#FFFFFF',
-  textSecondary: '#999999',
-  textMuted: '#555555',
-  textInverse: '#000000',
+  textSecondary: '#a1a1aa', // zinc-400
+  textMuted: '#71717a', // zinc-500
+  textInverse: '#09090b',
 
   accent: '#DE870D',
   accentLight: '#F5A623',
@@ -192,56 +192,56 @@ export const THEME_NOIR: ThemeTokens = {
   accentGradient: 'linear-gradient(135deg, #DE870D, #F5A623)',
   accentHover: '#C67509',
 
-  border: '#1A1A1A',
-  borderHover: '#2A2A2A',
+  border: '#27272a', // zinc-800
+  borderHover: '#3f3f46', // zinc-700
   borderActive: '#DE870D',
 
   btnPrimaryBg: 'linear-gradient(135deg, #DE870D, #F5A623)',
-  btnPrimaryText: '#000000',
-  btnPrimaryHover: '0 0 25px rgba(222, 135, 13, 0.5)',
-  btnOutlineBorder: '#1A1A1A',
+  btnPrimaryText: '#09090b',
+  btnPrimaryHover: '0 0 25px rgba(222, 135, 13, 0.4)',
+  btnOutlineBorder: '#27272a',
   btnOutlineText: '#FFFFFF',
   btnOutlineHoverBg: 'rgba(222, 135, 13, 0.08)',
 
   calendarActiveBg: '#DE870D',
-  calendarActiveText: '#000000',
+  calendarActiveText: '#09090b',
   calendarAvailableBg: 'rgba(222, 135, 13, 0.08)',
-  calendarUnavailableBg: 'rgba(255, 255, 255, 0.02)',
+  calendarUnavailableBg: 'rgba(255, 255, 255, 0.03)',
 
-  inputBg: '#0A0A0A',
-  inputBorder: '#1A1A1A',
+  inputBg: '#18181b',
+  inputBorder: '#27272a',
   inputFocusBorder: '#DE870D',
-  inputPlaceholder: '#444444',
+  inputPlaceholder: '#71717a',
   inputText: '#FFFFFF',
 
-  cardBg: 'rgba(15, 15, 15, 0.9)',
-  cardBorder: '#1A1A1A',
-  cardShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+  cardBg: 'rgba(24, 24, 27, 0.9)',
+  cardBorder: '#27272a',
+  cardShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
   glassBlur: '16px',
 
-  sidebarBg: 'rgba(5, 5, 5, 0.9)',
-  sidebarBorder: '#1A1A1A',
-  sidebarHover: '#111111',
+  sidebarBg: 'rgba(9, 9, 11, 0.9)',
+  sidebarBorder: '#27272a',
+  sidebarHover: '#18181b',
   sidebarActiveItemBg: '#DE870D',
-  sidebarActiveItemText: '#000000',
+  sidebarActiveItemText: '#09090b',
 
   success: '#22c55e',
   warning: '#f59e0b',
   error: '#ef4444',
   info: '#3b82f6',
 
-  shadowSm: '0 1px 2px rgba(0, 0, 0, 0.5)',
-  shadowMd: '0 4px 6px rgba(0, 0, 0, 0.5)',
-  shadowLg: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+  shadowSm: '0 1px 2px rgba(0, 0, 0, 0.4)',
+  shadowMd: '0 4px 6px rgba(0, 0, 0, 0.4)',
+  shadowLg: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
   shadowAccent: '0 0 25px rgba(222, 135, 13, 0.3)',
 
   fontSans: "'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   fontSerif: "'Playfair Display', Georgia, serif",
 
-  skeletonBase: '#111111',
-  skeletonShimmer: '#1A1A1A',
-  scrollbarThumb: '#2A2A2A',
-  scrollbarTrack: '#000000',
+  skeletonBase: '#18181b',
+  skeletonShimmer: '#27272a',
+  scrollbarThumb: '#3f3f46',
+  scrollbarTrack: '#09090b',
 };
 
 export const THEME_ELEGANT: ThemeTokens = {
