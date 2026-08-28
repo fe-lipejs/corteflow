@@ -454,7 +454,7 @@ export default function ProfessionalModal({ professional, services, onClose, onC
 
 
               {/* Atendimento a Domicílio (Professional override) */}
-              <FeatureGate permission="equipe.domicilio" message="Atendimento a Domicílio é uma funcionalidade premium.">
+              <FeatureGate permission="equipe.domicilio" message="Atendimento a Domicílio é uma funcionalidade premium." inline>
                 <div className="rounded-xl p-5" style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}>
                   <div className="flex items-center justify-between mb-4">
                     <div>

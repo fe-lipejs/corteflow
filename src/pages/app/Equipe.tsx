@@ -44,7 +44,7 @@ export default function Equipe() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPro, setEditingPro] = useState<Professional | null>(null);
   const [deletingPro, setDeletingPro] = useState<Professional | null>(null);
-  const [showUpgradeModal, setShowUpgradeModal] = useState<'limit' | 'permission' | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('newest');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -91,14 +91,14 @@ export default function Equipe() {
     return list;
   }, [professionals, search, filterStatus, sortKey]);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleNewClick = () => {
     if (!engine.hasPermission('equipe.criar')) {
-      setShowUpgradeModal('permission');
+      setShowUpgradeModal('equipe.criar');
       return;
     }
-    if (!engine.checkLimit('profissionais', professionals.length)) {
-      setShowUpgradeModal('limit');
+    const activeProfessionalsCount = professionals.filter(p => p.status === 'active').length;
+    if (!engine.checkLimit('profissionais', activeProfessionalsCount)) {
+      setShowUpgradeModal('limit.profissionais');
       return;
     }
     setEditingPro(null);
@@ -108,7 +108,7 @@ export default function Equipe() {
 
   const handleEdit = (p: Professional) => {
     if (!engine.hasPermission('equipe.editar_perfil')) {
-      setShowUpgradeModal('permission');
+      setShowUpgradeModal('equipe.editar_perfil');
       return;
     }
     setEditingPro(p);
@@ -140,7 +140,7 @@ export default function Equipe() {
   const handleDeleteConfirm = async () => {
     if (!deletingPro) return;
     if (!engine.hasPermission('equipe.inativar')) {
-      setShowUpgradeModal('permission');
+      setShowUpgradeModal('equipe.inativar');
       setDeletingPro(null);
       return;
     }
@@ -388,9 +388,7 @@ export default function Equipe() {
       {/* ── Modal: Upgrade Plan ── */}
       {showUpgradeModal && (
         <UpgradeModal 
-          message={showUpgradeModal === 'limit' 
-            ? `Seu plano atual permite apenas ${engine.getPlanLimit('profissionais') === 'unlimited' ? 'um número ilimitado de' : engine.getPlanLimit('profissionais')} ${engine.getPlanLimit('profissionais') === 1 ? 'profissional' : 'profissionais'}. Faça upgrade para adicionar mais profissionais e expandir sua equipe.`
-            : 'A criação e gestão avançada de profissionais é exclusiva de planos superiores. Faça o upgrade para desbloquear o controle total da sua equipe.'}
+          feature={showUpgradeModal}
           onClose={() => setShowUpgradeModal(null)} 
         />
       )}

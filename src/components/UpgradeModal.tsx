@@ -2,6 +2,9 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, Check } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { PERMISSION_UPGRADE_MESSAGES } from '../constants/permissionsDictionary';
+
+import { usePermissionEngine } from '../hooks/usePermissionEngine';
 
 interface UpgradeModalProps {
   feature?: string | boolean;
@@ -16,11 +19,30 @@ export function UpgradeModal({
 }: UpgradeModalProps) {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const engine = usePermissionEngine();
 
-  const featureName =
-    typeof feature === 'string' && feature
-      ? feature
-      : 'este recurso';
+  // Se tem uma message explícita, usa ela. Senão, tenta achar no dicionário, senão usa o nome da feature como fallback
+  const featureKey = typeof feature === 'string' ? feature : '';
+  const friendlyName = PERMISSION_UPGRADE_MESSAGES[featureKey] || featureKey || 'este recurso';
+
+  let displayMessage: React.ReactNode = message || `Libere ${friendlyName} e aproveite a experiência completa do Raffros.`;
+
+  if (!message && featureKey.startsWith('limit.')) {
+    const limitType = featureKey.split('.')[1];
+    const limitValue = engine.getPlanLimit(limitType);
+    
+    if (limitValue !== 'unlimited') {
+      const singular: Record<string, string> = { profissionais: 'profissional', servicos: 'serviço', produtos: 'produto' };
+      const plural: Record<string, string> = { profissionais: 'profissionais', servicos: 'serviços', produtos: 'produtos' };
+      const itemName = limitValue === 1 ? (singular[limitType] || limitType) : (plural[limitType] || limitType);
+      
+      displayMessage = (
+        <>
+          Você atingiu o limite de <span className="font-bold" style={{ color: theme.textPrimary }}>{limitValue} {itemName}</span> do seu plano atual. Faça o upgrade para expandir seu negócio.
+        </>
+      );
+    }
+  }
 
   const handleAction = () => {
     onClose?.();
@@ -132,8 +154,7 @@ export function UpgradeModal({
             color: theme.textSecondary,
           }}
         >
-          Libere {featureName} e aproveite a experiência
-          completa do Raffros.
+          {displayMessage}
         </p>
 
         {/* Trial */}

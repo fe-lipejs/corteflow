@@ -215,7 +215,7 @@ export function usePermissionEngine(): PermissionEngine {
     
     const val = limitsObj[key];
     if (val === undefined || val === null) {
-      return 0;
+      return 'unlimited';
     }
     if (val === -1 || val === 'unlimited') return 'unlimited';
     

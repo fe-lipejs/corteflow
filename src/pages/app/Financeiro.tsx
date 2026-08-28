@@ -340,7 +340,7 @@ export default function Financeiro() {
   // Handlers
   const handleNewTransactionClick = () => {
     if (!engine.hasPermission('financeiro.criar_lancamento')) {
-      setShowUpgradeModal('Lançamentos Manuais de Receitas e Despesas');
+      setShowUpgradeModal('financeiro.criar_lancamento');
       return;
     }
     setEditingTransaction(null);
@@ -350,7 +350,7 @@ export default function Financeiro() {
   const handleEditClick = (tx: any) => {
     if (!tx.isManual) return;
     if (!engine.hasPermission('financeiro.editar_lancamento')) {
-      setShowUpgradeModal('Editar Lançamentos Financeiros');
+      setShowUpgradeModal('financeiro.editar_lancamento');
       return;
     }
     setEditingTransaction({
@@ -369,7 +369,7 @@ export default function Financeiro() {
   const handleDeleteClick = async (tx: any) => {
     if (!tx.isManual) return;
     if (!engine.hasPermission('financeiro.excluir_lancamento')) {
-      setShowUpgradeModal('Excluir Lançamentos Financeiros');
+      setShowUpgradeModal('financeiro.excluir_lancamento');
       return;
     }
     if (window.confirm(`Deseja realmente excluir o lançamento "${tx.description}"?`)) {
@@ -379,7 +379,7 @@ export default function Financeiro() {
 
   const handleExport = () => {
     if (!engine.hasPermission('financeiro.exportar')) {
-      setShowUpgradeModal('Exportação de Relatórios Financeiros');
+      setShowUpgradeModal('financeiro.exportar');
       return;
     }
     if (!data?.transactions || data.transactions.length === 0) return;
@@ -511,7 +511,7 @@ export default function Financeiro() {
                   <button
                     onClick={() => {
                       if (!engine.hasPermission('financeiro.visualizar_caixa_geral')) {
-                        setShowUpgradeModal('Visualizar Caixa Geral de Todos os Profissionais');
+                        setShowUpgradeModal('financeiro.visualizar_caixa_geral');
                         return;
                       }
                       setSelectedProfessionalId(null);

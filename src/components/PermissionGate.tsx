@@ -30,7 +30,7 @@ export default function PermissionGate({ permission, children, fallback = null, 
     if (type === 'modal' || type === 'page') {
       return (
         <UpgradeModal 
-          message="Esta funcionalidade é exclusiva de planos superiores. Faça o upgrade para desbloquear o acesso total." 
+          feature={permission}
           onClose={() => {
             if (onClose) {
               onClose();

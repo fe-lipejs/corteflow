@@ -197,7 +197,7 @@ export default function ServiceModal({ service, professionals = [], tenantId, on
         </div>
 
         {/* Location / Mode */}
-        <FeatureGate permission="catalogo.domicilio" message="Atendimento a Domicílio é uma funcionalidade premium.">
+        <FeatureGate permission="catalogo.domicilio" message="Atendimento a Domicílio é uma funcionalidade premium." inline>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Onde é realizado?</label>

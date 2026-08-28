@@ -74,7 +74,7 @@ export default function Clientes() {
 
   const handleExport = () => {
     if (!engine.hasPermission('clientes.exportar')) {
-      setShowUpgradeModal('Exportar Clientes');
+      setShowUpgradeModal('clientes.exportar');
       return;
     }
     if (!customers || customers.length === 0) return;

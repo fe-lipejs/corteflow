@@ -572,14 +572,13 @@ export default function AdminPlans() {
         display_features: form.display_features, // backwards compatibility
       };
 
-      // Se a feature produtos estiver desligada, limpamos as permissões residuais
       let finalPermissions = form.permissions || [];
-      if (!form.features.produtos) {
-        finalPermissions = finalPermissions.filter(p => !p.startsWith('produto.') && p !== 'catalogo.criar');
-      }
-
-      const hasProductPerm = finalPermissions.some(p => p.startsWith('produto.') || p === 'catalogo.criar');
+      const hasProductPerm = finalPermissions.some(p => p.startsWith('produto.'));
       const allowProducts = Boolean(form.features.produtos || hasProductPerm);
+
+      if (!allowProducts) {
+        finalPermissions = finalPermissions.filter(p => !p.startsWith('produto.'));
+      }
 
       const planData = {
         name: form.name,

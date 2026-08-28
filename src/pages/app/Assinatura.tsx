@@ -1597,7 +1597,7 @@ export default function Assinatura() {
                             isCurrent
                               ? `${theme.accent}12`
                               : isRecommended
-                                ? '#fff'
+                                ? (theme.id === 'elegant' ? '#0f172a' : '#00c853')
                                 : theme.id === 'elegant'
                                   ? '#F1F5F9'
                                   : 'rgba(255,255,255,0.07)',
@@ -1606,7 +1606,7 @@ export default function Assinatura() {
                             isCurrent
                               ? theme.accent
                               : isRecommended
-                                ? (theme.id !== 'elegant' ? '#000000' : '#FFFFFF')
+                                ? (theme.id === 'elegant' ? '#FFFFFF' : '#000000')
                                 : theme.textPrimary,
 
                           border:

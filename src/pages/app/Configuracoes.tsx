@@ -16,6 +16,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { PUBLIC_STORE_QUERY_KEY } from '../../hooks/usePublicStore';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import FeatureGate from '../../components/FeatureGate';
+import { UpgradeModal } from '../../components/UpgradeModal';
 import {
   Save, Check, Link as LinkIcon, Copy, ExternalLink, Image as ImageIcon,
   MapPin, Phone, Globe, Mail, Palette, Clock, CreditCard, Upload,
@@ -1637,7 +1638,7 @@ export default function Configuracoes() {
                     type="button"
                     onClick={() => {
                       if (!engine.hasPermission('configuracoes.editar_layout')) {
-                        setShowUpgradeModal('Personalização de Cores e Visual da Página Pública');
+                        setShowUpgradeModal('configuracoes.editar_layout');
                         return;
                       }
                       setDraftFontStyle(fontStyle);
@@ -2415,7 +2416,7 @@ export default function Configuracoes() {
           {/* ═══════════════════════════ TAB 6: HORÁRIOS ════════════════════════════════ */}
           {activeTab === 'horarios' && (
             <div className="space-y-6">
-              <FeatureGate permission="agenda.bloquear_horario">
+              <FeatureGate permission="agenda.bloquear_horario" inline>
               <div>
                 <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
                   <Clock className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
@@ -3704,44 +3705,10 @@ export default function Configuracoes() {
       </AnimatePresence>
       {/* ── Modal: Upgrade Plan ── */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black/20 backdrop-blur-md">
-          <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_0_80px_rgba(0,0,0,0.5)] ring-1 ring-white/10 glass-card animate-scale-in" style={{ borderColor: theme.border, background: theme.cardBg }}>
-            <div className="relative mb-6">
-              <div className="relative w-20 h-20 mx-auto bg-black border rounded-full flex items-center justify-center" style={{ borderColor: theme.accent }}>
-                <Crown className="w-10 h-10" style={{ color: theme.accent }} />
-                <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full border-2 flex items-center justify-center" style={{ background: theme.cardBg, borderColor: theme.border }}>
-                  <Lock className="w-4 h-4" style={{ color: theme.textSecondary }} />
-                </div>
-              </div>
-            </div>
-
-            <h3 className="font-bold text-xl mb-2" style={{ color: theme.textPrimary }}>
-              Recurso Premium
-            </h3>
-            <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>
-              A funcionalidade de <strong>{showUpgradeModal}</strong> é exclusiva de planos superiores. Faça o upgrade para desbloquear o acesso total.
-            </p>
-
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => { setShowUpgradeModal(null); navigate('/admin/assinatura'); }}
-                className="w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all shadow-lg hover:opacity-90 cursor-pointer"
-                style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
-              >
-                Ver planos
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowUpgradeModal(null)}
-                className="w-full py-2 text-xs font-semibold hover:underline"
-                style={{ color: theme.textSecondary }}
-              >
-                Agora não
-              </button>
-            </div>
-          </div>
-        </div>
+        <UpgradeModal 
+          feature={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(null)}
+        />
       )}
 
       {/* ── Modal: Image Cropper ── */}

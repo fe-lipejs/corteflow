@@ -124,7 +124,7 @@ export default function Agenda() {
 
   const handleSlotClick = (date: Date, hour: number) => {
     if (!engine.hasPermission('agenda.criar')) {
-      setShowUpgradeModal('Criar Agendamento Manual');
+      setShowUpgradeModal('agenda.criar');
       return;
     }
     const d = new Date(date);
@@ -135,7 +135,7 @@ export default function Agenda() {
 
   const handleCreate = async (input: CreateBookingInput) => {
     if (!engine.hasPermission('agenda.criar')) {
-      setShowUpgradeModal('Criar Agendamento Manual');
+      setShowUpgradeModal('agenda.criar');
       return;
     }
     await createBooking.mutateAsync(input);
@@ -144,7 +144,7 @@ export default function Agenda() {
 
   const handleStatusChange = async (id: string, status: BookingStatus) => {
     if (!engine.hasPermission('agenda.mudar_status')) {
-      setShowUpgradeModal('Alterar Status do Agendamento');
+      setShowUpgradeModal('agenda.mudar_status');
       return;
     }
     await updateStatus.mutateAsync({ id, status });
@@ -156,7 +156,7 @@ export default function Agenda() {
   const deleteBooking = useDeleteBooking(tenantId);
   const handleDelete = async (id: string) => {
     if (!engine.hasPermission('agenda.cancelar')) {
-      setShowUpgradeModal('Cancelar Agendamento');
+      setShowUpgradeModal('agenda.cancelar');
       return;
     }
     await deleteBooking.mutateAsync(id);
@@ -256,7 +256,7 @@ export default function Agenda() {
             <button
               onClick={() => {
                 if (!engine.hasPermission('agenda.criar')) {
-                  setShowUpgradeModal('Criar Agendamento Manual');
+                  setShowUpgradeModal('agenda.criar');
                   return;
                 }
                 setInitialBookingDate(undefined);
@@ -328,7 +328,7 @@ export default function Agenda() {
               <button
                 onClick={() => {
                   if (!engine.hasPermission('agenda.visualizar_todos')) {
-                    setShowUpgradeModal('Visualizar Agenda de Todos');
+                    setShowUpgradeModal('agenda.visualizar_todos');
                     return;
                   }
                   setSelectedProfessionalId(null);

@@ -308,8 +308,19 @@ export default function PublicStore() {
   const [homeLocationData, setHomeLocationData] = useState<LocationWizardResult | null>(null);
   const [showModeSelectionFor, setShowModeSelectionFor] = useState<any | null>(null);
   
+  const [categoryFilter, setCategoryFilter] = useState('Todos');
+
   const servicesList = useMemo(() => {
-    return rawServicesList;
+    let list = rawServicesList;
+    if (categoryFilter !== 'Todos') {
+      list = list.filter((s: any) => s.category === categoryFilter);
+    }
+    return list;
+  }, [rawServicesList, categoryFilter]);
+
+  const uniqueCategories = useMemo(() => {
+    const cats = new Set(rawServicesList.filter((s: any) => s.category).map((s: any) => s.category));
+    return Array.from(cats) as string[];
   }, [rawServicesList]);
 
   // Theme setup directly using preset defaults (Classic, Noir, Elegant)
@@ -1795,6 +1806,35 @@ export default function PublicStore() {
                         Selecione o serviço para iniciar seu agendamento.
                       </p>
                     </div>
+
+                    {/* Category Filter */}
+                    {uniqueCategories.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-none items-center mb-2">
+                        <button 
+                          onClick={() => setCategoryFilter('Todos')} 
+                          className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-all"
+                          style={{
+                            color: categoryFilter === 'Todos' ? theme.btnPrimaryText : theme.textSecondary,
+                            background: categoryFilter === 'Todos' ? accent : "transparent",
+                            borderColor: categoryFilter === 'Todos' ? accent : cardBorderColor,
+                          }}>
+                          Todos
+                        </button>
+                        {uniqueCategories.map(cat => (
+                          <button 
+                            key={cat} 
+                            onClick={() => setCategoryFilter(cat)} 
+                            className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-all"
+                            style={{
+                              color: categoryFilter === cat ? theme.btnPrimaryText : theme.textSecondary,
+                              background: categoryFilter === cat ? accent : "transparent",
+                              borderColor: categoryFilter === cat ? accent : cardBorderColor,
+                            }}>
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Mode selector moved to individual service clicks */}
 
