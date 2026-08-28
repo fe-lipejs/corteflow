@@ -42,7 +42,7 @@ export function UpgradeModal({
         md:pl-[250px]
         flex items-center justify-center
         p-4
-        bg-black/50
+        bg-black/70
         backdrop-blur-[0px]
         animate-fade-in
       "

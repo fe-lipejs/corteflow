@@ -131,30 +131,24 @@ export function usePermissionEngine(): PermissionEngine {
 
   if (isSuperAdmin) {
   } else if (sub && sub.status !== 'canceled') {
-    const trialEndsAt = sub.trial_ends_at ? new Date(sub.trial_ends_at) : null;
-    const trialExpired = trialEndsAt ? trialEndsAt < new Date() : false;
-    
-    if (sub.status === 'trial' && trialExpired) {
-      featuresObj = {};
-      permissionsArr = [];
-      limitsObj = { profissionais: 0 };
-    } else if (contract) {
-      featuresObj = { ...(sub.plans?.features || {}), ...(contract.features || {}) };
-      const contractPerms = Array.isArray(contract.permissions) ? contract.permissions : [];
-      const planPerms = Array.isArray(sub.plans?.permissions) ? sub.plans.permissions : [];
-      permissionsArr = Array.from(new Set([...planPerms, ...contractPerms]));
-      limitsObj = { ...(sub.plans?.limits || {}), ...(contract.limits || {}) };
-      
-      if (!limitsObj.profissionais && (contract.max_professionals || sub.plans?.max_professionals)) {
-        limitsObj.profissionais = contract.max_professionals || sub.plans?.max_professionals;
-      }
-    } else if (sub.plans) {
+    if (sub.plans) {
+      // Lê APENAS da tabela de planos (Vitrine) para refletir sempre em tempo real
       featuresObj = sub.plans.features || {};
       permissionsArr = Array.isArray(sub.plans.permissions) ? sub.plans.permissions : [];
       limitsObj = sub.plans.limits || {};
       
+      // Fallback para limite de profissionais se não estiver no json de limites
       if (!limitsObj.profissionais && sub.plans.max_professionals) {
         limitsObj.profissionais = sub.plans.max_professionals;
+      }
+    } else if (contract) {
+      // Apenas como último recurso (se o plano não veio no join)
+      featuresObj = contract.features || {};
+      permissionsArr = Array.isArray(contract.permissions) ? contract.permissions : [];
+      limitsObj = contract.limits || {};
+      
+      if (!limitsObj.profissionais && contract.max_professionals) {
+        limitsObj.profissionais = contract.max_professionals;
       }
     }
   } else if (defaultPlan && (!sub || sub.status !== 'canceled')) {
@@ -191,7 +185,7 @@ export function usePermissionEngine(): PermissionEngine {
   const hasFeature = (key: string) => {
     if (isSuperAdmin) return true;
     if (key === 'produtos') {
-      if (hasPermission('produto.criar') || hasPermission('produto.editar') || hasPermission('produto.excluir') || hasPermission('catalogo.criar')) return true;
+      if (hasPermission('produto.criar') || hasPermission('produto.editar') || hasPermission('produto.excluir')) return true;
       if (contract) return !!contract.allow_products || !!featuresObj?.produtos;
       if (defaultPlan) return !!defaultPlan.allow_products || !!featuresObj?.produtos;
       return false;

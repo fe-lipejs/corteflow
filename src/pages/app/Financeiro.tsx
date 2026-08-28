@@ -433,7 +433,7 @@ export default function Financeiro() {
               <Download className="w-4 h-4 mr-2" /> Exportar
             </button>
 
-            {engine.hasPermission('financeiro.lancar_manual') && (
+            {engine.hasPermission('financeiro.criar_lancamento') && (
               <button
                 onClick={() => {
                   setEditingTransaction(null);
@@ -484,7 +484,17 @@ export default function Financeiro() {
         </div>
 
         {activeTab === 'comissoes' && tenantId && (
-          <CommissionsTab tenantId={tenantId} />
+          engine.hasPermission('equipe.ver_comissoes') ? (
+            <CommissionsTab tenantId={tenantId} />
+          ) : (
+            <div className="flex flex-col items-center justify-center p-12 text-center h-64 border rounded-xl" style={{ borderColor: theme.border, background: theme.cardBg }}>
+              <Lock className="w-12 h-12 mb-4 opacity-50" style={{ color: theme.textSecondary }} />
+              <h3 className="text-lg font-bold mb-2" style={{ color: theme.textPrimary }}>Acesso Restrito</h3>
+              <p className="text-sm opacity-80 max-w-sm" style={{ color: theme.textSecondary }}>
+                Você não tem permissão para visualizar as comissões.
+              </p>
+            </div>
+          )
         )}
 
         {activeTab === 'despesas_fixas' && tenantId && (

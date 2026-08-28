@@ -160,7 +160,7 @@ export default function Servicos() {
               setEditingService(null);
               setServiceModalOpen(true);
             } else {
-              if (!engine.hasPermission('produto.criar') && !engine.hasPermission('catalogo.criar')) {
+              if (!engine.hasPermission('produto.criar')) {
                 setShowUpgradeModal('Cadastrar Novo Produto');
                 return;
               }
@@ -418,7 +418,7 @@ export default function Servicos() {
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <button onClick={() => {
-                    if (!engine.hasPermission('produto.editar') && !engine.hasPermission('catalogo.editar')) {
+                    if (!engine.hasPermission('produto.editar')) {
                       setShowUpgradeModal('Editar Produto');
                       return;
                     }
@@ -426,7 +426,7 @@ export default function Servicos() {
                     setProductModalOpen(true);
                   }} className="text-xs px-3 py-1.5 rounded-lg transition-all hover:bg-[var(--theme-bg-hover)] cursor-pointer" style={{ color: theme.textSecondary }}>Editar</button>
                   <button onClick={() => {
-                    if (!engine.hasPermission('produto.excluir') && !engine.hasPermission('catalogo.excluir')) {
+                    if (!engine.hasPermission('produto.excluir')) {
                       setShowUpgradeModal('Excluir Produto');
                       return;
                     }
@@ -441,7 +441,7 @@ export default function Servicos() {
                 <p className="font-semibold mb-2" style={{ color: theme.textPrimary }}>Nenhum produto cadastrado</p>
                 <p className="text-sm mb-5" style={{ color: theme.textSecondary }}>Controle seu estoque de produtos.</p>
                 <button onClick={() => {
-                  if (!engine.hasPermission('produto.criar') && !engine.hasPermission('catalogo.criar')) {
+                  if (!engine.hasPermission('produto.criar')) {
                     setShowUpgradeModal('Cadastrar Novo Produto');
                     return;
                   }

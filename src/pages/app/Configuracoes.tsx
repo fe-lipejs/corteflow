@@ -187,20 +187,7 @@ export default function Configuracoes() {
   const [noshowFeePercent, setNoshowFeePercent] = useState(0);
   const [delayToleranceMinutes, setDelayToleranceMinutes] = useState(15);
   
-  // Home Service (migration 0046)
-  const [offersHomeService, setOffersHomeService] = useState(false);
-  const [homeServiceRadiusKm, setHomeServiceRadiusKm] = useState(10);
-  const [homeFeeType, setHomeFeeType] = useState('fixed');
-  const [homeFeeAmount, setHomeFeeAmount] = useState(0);
-  const [homeFeePerKm, setHomeFeePerKm] = useState(0);
-  const [showRadiusMap, setShowRadiusMap] = useState(false);
 
-  // Financial Policies
-  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
-  const [paymentOptions, setPaymentOptions] = useState('both');
-  const [allowRefunds, setAllowRefunds] = useState(true);
-  const [refundPolicy, setRefundPolicy] = useState('full_refund_only');
-  const [creditValidityDays, setCreditValidityDays] = useState(90);
 
   // Notifications
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -394,12 +381,7 @@ export default function Configuracoes() {
         setNoshowFeePercent(data.noshow_fee_percent ?? 0);
         setDelayToleranceMinutes(data.delay_tolerance_minutes ?? 15);
 
-        // Financial Policies
-        setOnlinePaymentEnabled(data.online_payment_enabled ?? true);
-        setPaymentOptions(data.payment_options || 'both');
-        setAllowRefunds(data.allow_refunds ?? true);
-        setRefundPolicy(data.refund_policy || 'full_refund_only');
-        setCreditValidityDays(data.credit_validity_days ?? 90);
+
       } else {
         setTenantName(tenant.name || '');
         setSlug(tenant.slug || '');
@@ -997,12 +979,6 @@ export default function Configuracoes() {
         cancel_fee_percent: cancelFeePercent,
         noshow_fee_percent: noshowFeePercent,
         delay_tolerance_minutes: delayToleranceMinutes,
-        // Home Service (migration 0046)
-        offers_home_service: offersHomeService,
-        home_service_radius_km: homeServiceRadiusKm,
-        home_fee_type: homeFeeType,
-        home_fee_amount: homeFeeAmount,
-        home_fee_per_km: homeFeePerKm,
       };
 
       if (settingsId) {
@@ -1660,7 +1636,7 @@ export default function Configuracoes() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (!engine.hasPermission('configuracoes.editar_layout') && !engine.hasFeature('custom_colors')) {
+                      if (!engine.hasPermission('configuracoes.editar_layout')) {
                         setShowUpgradeModal('Personalização de Cores e Visual da Página Pública');
                         return;
                       }
@@ -2439,6 +2415,7 @@ export default function Configuracoes() {
           {/* ═══════════════════════════ TAB 6: HORÁRIOS ════════════════════════════════ */}
           {activeTab === 'horarios' && (
             <div className="space-y-6">
+              <FeatureGate permission="agenda.bloquear_horario">
               <div>
                 <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
                   <Clock className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
@@ -2563,6 +2540,7 @@ export default function Configuracoes() {
                   </div>
                 ))}
               </div>
+              </FeatureGate>
             </div>
           )}
 
@@ -2708,95 +2686,7 @@ export default function Configuracoes() {
           )}
 
           {/* ── RADIUS MAP MODAL ── */}
-          <AnimatePresence>
-            {showRadiusMap && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-                style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
-                onClick={() => setShowRadiusMap(false)}
-              >
-                <motion.div
-                  initial={{ scale: 0.93, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.93, opacity: 0 }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  onClick={e => e.stopPropagation()}
-                  className="w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl"
-                  style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}
-                >
-                  {/* Modal Header */}
-                  <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: theme.border }}>
-                    <div>
-                      <h3 className="font-bold text-base" style={{ color: theme.textPrimary }}>Raio de Atendimento</h3>
-                      <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
-                        {latitude && longitude
-                          ? `Centro: ${latitude.toFixed(4)}, ${longitude.toFixed(4)} · Raio: ${homeServiceRadiusKm} km`
-                          : 'Cadastre o endereço do salão na aba Localização para ver o mapa.'}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setShowRadiusMap(false)}
-                      className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors"
-                      style={{ background: theme.border, color: theme.textMuted }}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
 
-                  {/* Map Area */}
-                  <div className="relative" style={{ height: 400 }}>
-                    {latitude && longitude ? (
-                      <iframe
-                        key={`${latitude}-${longitude}-${homeServiceRadiusKm}`}
-                        title="Raio de Atendimento"
-                        width="100%"
-                        height="400"
-                        style={{ border: 0, display: 'block' }}
-                        loading="lazy"
-                        allowFullScreen
-                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${longitude - homeServiceRadiusKm * 0.015},${latitude - homeServiceRadiusKm * 0.009},${longitude + homeServiceRadiusKm * 0.015},${latitude + homeServiceRadiusKm * 0.009}&layer=mapnik&marker=${latitude},${longitude}`}
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: theme.textMuted }}>
-                        <MapPin className="w-10 h-10 opacity-30" />
-                        <p className="text-sm font-medium">Localização do salão não cadastrada</p>
-                        <p className="text-xs text-center max-w-xs">
-                          Vá até a aba <strong style={{ color: theme.accent }}>Localização</strong> e insira o endereço ou cole o link do Google Maps.
-                        </p>
-                        <button
-                          onClick={() => { setActiveTab('local'); setShowRadiusMap(false); }}
-                          className="mt-2 px-4 py-2 rounded-xl text-xs font-bold transition-all hover:scale-[1.02]"
-                          style={{ background: theme.accent, color: theme.btnPrimaryText }}
-                        >
-                          Ir para Localização
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Footer info */}
-                  {latitude && longitude && (
-                    <div className="px-6 py-3 border-t flex items-center gap-3" style={{ borderColor: theme.border }}>
-                      <div className="flex items-center gap-2 text-xs" style={{ color: theme.textMuted }}>
-                        <div className="w-3 h-3 rounded-full border-2" style={{ borderColor: theme.accent, background: `${theme.accent}30` }} />
-                        <span>A área sombreada representa aproximadamente o seu raio de <strong style={{ color: theme.textPrimary }}>{homeServiceRadiusKm} km</strong></span>
-                      </div>
-                      <button
-                        onClick={() => setShowRadiusMap(false)}
-                        className="ml-auto px-4 py-1.5 rounded-xl text-xs font-bold"
-                        style={{ background: theme.accent, color: theme.btnPrimaryText }}
-                      >
-                        Fechar
-                      </button>
-                    </div>
-                  )}
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* ═══════════════════════════ TAB: STATUS DA CONTA ════════════════════════════ */}
           {activeTab === 'conta' && (

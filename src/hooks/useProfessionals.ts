@@ -140,8 +140,9 @@ export function useCreateProfessional(tenantId: string) {
           offers_home_service: input.offers_home_service ?? false,
           max_home_distance_km: input.max_home_distance_km ?? 0,
           home_fee: input.home_fee ?? 0,
-          home_fee_type: input.home_fee_type ?? 'fixed',
-          home_fee_per_km: input.home_fee_per_km ?? 0,
+          // TEMP FIX: Commented out because remote DB schema doesn't have them yet (migration 0073 pending)
+          // home_fee_type: input.home_fee_type ?? 'fixed',
+          // home_fee_per_km: input.home_fee_per_km ?? 0,
         } as any)
         .select('*')
         .single();
@@ -219,6 +220,9 @@ export function useUpdateProfessional(tenantId: string) {
       const updatePayload: Record<string, unknown> = { ...fields };
       if (photoUrl) updatePayload.photo_url = photoUrl;
       delete updatePayload.currentPhotoUrl;
+      // TEMP FIX: Delete fields that don't exist in remote DB yet (migration 0073 pending)
+      delete updatePayload.home_fee_type;
+      delete updatePayload.home_fee_per_km;
 
       const { error: upErr } = await supabase
         .from('professionals')

@@ -158,6 +158,20 @@ export default function Equipe() {
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  if (!engine.isLoading && !engine.hasPermission('equipe.visualizar')) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+        <div className="w-16 h-16 rounded-2xl bg-black/5 flex items-center justify-center mb-4">
+          <Users className="w-8 h-8 text-black/40" />
+        </div>
+        <h2 className="text-xl font-bold mb-2">Acesso Restrito</h2>
+        <p className="text-sm text-black/60 max-w-md">
+          Você não possui permissão para visualizar a lista de profissionais da equipe.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="space-y-6 pb-12 animate-fade-in">
