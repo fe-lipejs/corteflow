@@ -37,15 +37,15 @@ export function UpgradeModal({
 
   return (
     <div
-      className="
-        fixed inset-0 z-[35]
-        md:pl-[250px]
-        flex items-center justify-center
-        p-4
-        bg-black/70
-        backdrop-blur-[5px]
-        animate-fade-in
-      "
+      className={`
+          fixed inset-0 z-[35]
+          md:pl-[250px]
+          flex items-center justify-center
+          p-4
+          ${theme.id === 'elegant' ? 'bg-black/45' : 'bg-black/50'}
+          backdrop-blur-[5px]
+          animate-fade-in
+        `}
       role="dialog"
       aria-modal="true"
       aria-labelledby="upgrade-modal-title"
