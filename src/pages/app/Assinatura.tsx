@@ -1293,12 +1293,12 @@ export default function Assinatura() {
 
                       border:
                         isRecommended
-                          ? `1.5px solid ${theme.accent}`
+                          ? `1.5px solid ${theme.accent}80`
                           : `1px solid ${theme.border}`,
 
                       boxShadow:
                         isRecommended
-                          ? `0 22px 50px -18px ${theme.accent}45`
+                          ? `0 15px 40px -15px ${theme.accent}25`
                           : '0 10px 30px -18px rgba(15,23,42,0.18)',
                     }}
                   >
@@ -1618,7 +1618,7 @@ export default function Assinatura() {
 
                           boxShadow:
                             isRecommended && !isCurrent
-                              ? '0 10px 25px rgba(15,23,42,0.16)'
+                              ? '#fffff' || '0 10px 25px rgba(15,23,42,0.16)'
                               : 'none',
                         }}
                       >
