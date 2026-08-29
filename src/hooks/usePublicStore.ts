@@ -82,7 +82,7 @@ async function fetchPublicStore(slug: string) {
     professionalBlockedTimes: blockedData || [],
     bookings: validBookings,
     professionalServices: proServicesData || [],
-    isStripeEnabled: !!connectData?.stripe_account_id
+    isStripeEnabled: !!connectData?.charges_enabled
   };
 }
 

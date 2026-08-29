@@ -160,6 +160,26 @@ serve(async (req) => {
         break;
       }
 
+      case 'payment_intent.succeeded': {
+        const pi = event.data.object as Stripe.PaymentIntent;
+        const bookingId = pi.metadata?.booking_id;
+        const tenantId = pi.metadata?.tenant_id;
+        eventTenantId = tenantId || null;
+
+        if (bookingId) {
+          // Atualiza status do pagamento
+          await supabase.from('payments').update({ status: 'succeeded' }).eq('stripe_payment_intent_id', pi.id);
+          
+          // Busca o agendamento para saber se foi sinal ou integral
+          const { data: booking } = await supabase.from('bookings').select('payment_mode').eq('id', bookingId).maybeSingle();
+          if (booking) {
+            const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid';
+            await supabase.from('bookings').update({ payment_status: newPaymentStatus }).eq('id', bookingId);
+          }
+        }
+        break;
+      }
+
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
         const stripeSubId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;

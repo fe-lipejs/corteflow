@@ -14,6 +14,7 @@ import { getThemeById, adjustColorBrightness } from '../../contexts/ThemeContext
 import { usePublicStore } from '../../hooks/usePublicStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getThemeContrastEngine } from '../../lib/themeEngine';
+import toast from 'react-hot-toast';
 
 export default function ClientPortal() {
   const slugFromHook = useTenantSlug();
@@ -188,7 +189,7 @@ export default function ClientPortal() {
         setCustomerId(customerIdData);
         setIsLogged(true);
       } else {
-        alert('Nenhum agendamento encontrado para este telefone.');
+        toast.error('Nenhum agendamento encontrado para este telefone.');
       }
     } catch (err) {
       console.error(err);
@@ -202,7 +203,7 @@ export default function ClientPortal() {
     if (!settings) return;
 
     if (!settings.allow_cancel) {
-      alert('O salão não permite cancelamentos pelo portal.');
+      toast.error('O salão não permite cancelamentos pelo portal.');
       return;
     }
 
@@ -219,11 +220,11 @@ export default function ClientPortal() {
         reason: cancelReason,
         actorType: 'client'
       });
-      alert('Agendamento cancelado com sucesso!');
+      toast.success('Agendamento cancelado com sucesso!');
       qc.invalidateQueries({ queryKey: ['customer-bookings', customerId] });
       setBookingToCancel(null);
     } catch (err: any) {
-      alert(`Erro ao cancelar: ${err.message}`);
+      toast.error(`Erro ao cancelar: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -245,7 +246,7 @@ export default function ClientPortal() {
     const now = new Date();
 
     if (now > deadlineDate) {
-      alert(`Você não pode reagendar em cima da hora. O prazo máximo para reagendamento é de ${settings.reschedule_deadline_hours} horas de antecedência.`);
+      toast.error(`Você não pode reagendar em cima da hora. O prazo máximo para reagendamento é de ${settings.reschedule_deadline_hours} horas de antecedência.`);
       return;
     }
 
@@ -265,11 +266,11 @@ export default function ClientPortal() {
         newProId: rescheduleBooking.professional_id, // keep the same professional for now
         actorType: 'client'
       });
-      alert('Agendamento reagendado com sucesso!');
+      toast.success('Agendamento reagendado com sucesso!');
       setRescheduleBooking(null);
       qc.invalidateQueries({ queryKey: ['customer-bookings', customerId] });
     } catch (err: any) {
-      alert(`Erro ao reagendar: ${err.message}`);
+      toast.error(`Erro ao reagendar: ${err.message}`);
     } finally {
       setLoading(false);
     }

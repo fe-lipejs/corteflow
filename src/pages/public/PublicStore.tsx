@@ -2612,17 +2612,19 @@ export default function PublicStore() {
 
                               {paymentMethod === "card" && (
                                 <div className="space-y-3">
-                                  <button
-                                    onClick={() => {
-                                      setCardNumber("4242 4242 4242 4242");
-                                      setCardExp("12/30");
-                                      setCardCvc("123");
-                                    }}
-                                    className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
-                                    style={{ color: accent }}
-                                  >
-                                    <Sparkles className="w-3.5 h-3.5" /> Preencher cartão de teste Stripe
-                                  </button>
+                                  {import.meta.env.MODE === 'development' && (
+                                    <button
+                                      onClick={() => {
+                                        setCardNumber("4242 4242 4242 4242");
+                                        setCardExp("12/30");
+                                        setCardCvc("123");
+                                      }}
+                                      className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                                      style={{ color: accent }}
+                                    >
+                                      <Sparkles className="w-3.5 h-3.5" /> Preencher cartão de teste Stripe
+                                    </button>
+                                  )}
                                   <div>
                                     <label className="block text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: theme.textSecondary }}>
                                       Número do Cartão
