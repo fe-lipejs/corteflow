@@ -418,8 +418,12 @@ export default function PublicStore() {
       });
     }
     
-    return list.length ? Math.max(...list.map((p: any) => Number(p.max_home_distance_km) || 0)) : 0;
+    if (list.length === 0) return 0;
+
+    const effectiveRadii = list.map((p: any) => Number(p.max_home_distance_km) || 0);
+    return Math.max(...effectiveRadii);
   }, [professionalsList, selectedService, storeData?.professionalServices]);
+
   const [selectedPro, setSelectedPro] = useState<any | "any" | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -611,6 +615,8 @@ export default function PublicStore() {
 
   const travelFee = (() => {
     if (bookingMode !== 'home' || !selectedPro || selectedPro === 'any') return 0;
+    
+    // Professional specific fee (per_km or fixed)
     if (selectedPro.home_fee_type === 'per_km') {
       return (selectedPro.home_fee_per_km || 0) * (homeLocationData?.distanceKm ?? 0);
     }
@@ -730,16 +736,14 @@ export default function PublicStore() {
       list = list.filter((p: any) => {
         if (!p.offers_home_service) return false;
         if ((homeLocationData?.distanceKm ?? null) == null) return true;
-        // Use ONLY the professional's own radius - no global salon cap
-        const effectiveRadius = p.max_home_distance_km && p.max_home_distance_km > 0
-          ? p.max_home_distance_km
-          : 9999; // No limit if not set
-        return homeLocationData!.distanceKm! <= effectiveRadius;
+        
+        const proRadius = Number(p.max_home_distance_km) || 0;
+        return homeLocationData!.distanceKm! <= (proRadius + 2.5); // Add 2.5km tolerance to match backend
       });
     }
 
     return list;
-  }, [professionalsList, selectedService, storeData?.professionalServices, bookingMode, (homeLocationData?.distanceKm ?? null), ]);
+  }, [professionalsList, selectedService, storeData?.professionalServices, bookingMode, (homeLocationData?.distanceKm ?? null)]);
 
   const availableSlots: Slot[] = useMemo(() => {
     if (!selectedDate || !selectedService) return [];
@@ -1850,7 +1854,7 @@ export default function PublicStore() {
                                   feeType: settings?.home_fee_type || 'fixed',
                                   feeAmount: settings?.home_fee_amount || 0,
                                   feePerKm: settings?.home_fee_per_km || 0,
-                                  radiusKm: settings?.home_service_radius_km || 10
+                                  radiusKm: settings?.home_service_radius_km ?? 10
                                 }}
                                 onSuccess={(result) => {
                                   setHomeLocationData(result);
@@ -2001,7 +2005,7 @@ export default function PublicStore() {
 
                                 {s.description && (
                                   <p
-                                    className="text-xs leading-relaxed line-clamp-2 mb-3"
+                                    className="text-xs leading-relaxed mb-3"
                                     style={{ color: theme.textSecondary }}
                                   >
                                     {s.description}
@@ -2381,11 +2385,11 @@ export default function PublicStore() {
                             >
                               <Icon className="w-3.5 h-3.5" />
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>
                                 {label}
                               </p>
-                              <p className="text-xs sm:text-sm font-bold truncate mt-0.5" style={{ color: theme.textPrimary }}>
+                              <p className="text-xs sm:text-sm font-bold mt-0.5" style={{ color: theme.textPrimary, wordBreak: 'break-word' }}>
                                 {value}
                               </p>
                             </div>
@@ -2687,9 +2691,9 @@ export default function PublicStore() {
                       </div>
 
                       {/* Right: Sticky Summary Box */}
-                      <div className="hidden lg:block">
+                      <div className="w-full">
                         <div
-                          className="sticky top-24 rounded-3xl border p-6 space-y-4"
+                          className="lg:sticky lg:top-24 rounded-3xl border p-5 sm:p-6 space-y-4"
                           style={{
                             background: cardBackground,
                             borderColor: cardBorderColor,
@@ -2748,7 +2752,7 @@ export default function PublicStore() {
                             whileTap={{ scale: 0.98 }}
                             onClick={handleConfirm}
                             disabled={isProcessing}
-                            className="w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg disabled:opacity-60"
+                            className="hidden lg:flex w-full py-4 rounded-2xl font-bold text-sm items-center justify-center gap-2 transition-all cursor-pointer shadow-lg disabled:opacity-60"
                             style={{
                               background: theme.btnPrimaryBg || accent,
                               color: theme.btnPrimaryText,

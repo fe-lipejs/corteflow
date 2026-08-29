@@ -1,6 +1,6 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { corsHeaders } from '../_shared/cors.ts';
+ï»¿import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { corsHeaders } from "../_shared/cors.ts";
 
 function haversineKm(
   pos1: { lat: number; lng: number },
@@ -18,13 +18,13 @@ function haversineKm(
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const payload = await req.json();
@@ -48,21 +48,21 @@ serve(async (req) => {
     }
 
     const { data: tenant, error: tErr } = await supabase
-      .from('tenants')
-      .select('id, status')
-      .eq('id', tenant_id)
+      .from("tenants")
+      .select("id, status")
+      .eq("id", tenant_id)
       .single();
     
     if (tErr || !tenant) throw new Error("Invalid tenant.");
-    if (tenant.status !== 'active' && tenant.status !== 'trial') {
+    if (tenant.status !== "active" && tenant.status !== "trial") {
       throw new Error("Tenant is not active.");
     }
 
     const { data: service, error: sErr } = await supabase
-      .from('services')
-      .select('id, price, home_price_extra, active')
-      .eq('id', service_id)
-      .eq('tenant_id', tenant_id)
+      .from("services")
+      .select("id, price, home_price_extra, active")
+      .eq("id", service_id)
+      .eq("tenant_id", tenant_id)
       .single();
       
     if (sErr || !service) throw new Error("Invalid service.");
@@ -70,34 +70,34 @@ serve(async (req) => {
 
     let travel_fee = 0;
     
-    if (booking_mode === 'home') {
-      if (!professional_id || professional_id === 'any') {
-        throw new Error("Para atendimento a domicílio, escolha um profissional específico.");
+    if (booking_mode === "home") {
+      if (!professional_id || professional_id === "any") {
+        throw new Error("Para atendimento a domicÃ­lio, escolha um profissional especÃ­fico.");
       }
       
       const { data: professional, error: pErr } = await supabase
-        .from('professionals')
-        .select('id, offers_home_service, max_home_distance_km, home_fee, home_fee_type, home_fee_per_km, active')
-        .eq('id', professional_id)
-        .eq('tenant_id', tenant_id)
+        .from("professionals")
+        .select("id, offers_home_service, max_home_distance_km, home_fee, home_fee_type, home_fee_per_km, active")
+        .eq("id", professional_id)
+        .eq("tenant_id", tenant_id)
         .single();
         
       if (pErr || !professional) throw new Error("Invalid professional.");
       if (!professional.active) throw new Error("Professional is not active.");
-      if (!professional.offers_home_service) throw new Error("Este profissional não realiza atendimentos a domicílio.");
+      if (!professional.offers_home_service) throw new Error("Este profissional nÃ£o realiza atendimentos a domicÃ­lio.");
 
       if (!client_lat || !client_lng) {
-        throw new Error("Coordenadas do cliente são obrigatórias para atendimento a domicílio.");
+        throw new Error("Coordenadas do cliente sÃ£o obrigatÃ³rias para atendimento a domicÃ­lio.");
       }
 
       const { data: tenantSettings, error: tsErr } = await supabase
-        .from('tenant_settings')
-        .select('latitude, longitude')
-        .eq('tenant_id', tenant_id)
+        .from("tenant_settings")
+        .select("latitude, longitude")
+        .eq("tenant_id", tenant_id)
         .single();
         
       if (tsErr || !tenantSettings || !tenantSettings.latitude || !tenantSettings.longitude) {
-        throw new Error("O salão não possui coordenadas configuradas para calcular a distância.");
+        throw new Error("O salÃ£o nÃ£o possui coordenadas configuradas para calcular a distÃ¢ncia.");
       }
 
       const distanceKm = haversineKm(
@@ -105,30 +105,32 @@ serve(async (req) => {
         { lat: tenantSettings.latitude, lng: tenantSettings.longitude }
       );
 
-      const maxDistance = Number(professional.max_home_distance_km) || 0;
-      if (distanceKm > maxDistance) {
-        throw new Error("A distância solicitada excede o limite de cobertura do profissional.");
+      const proRadius = professional.max_home_distance_km != null ? Number(professional.max_home_distance_km) : 0;
+      
+      if (distanceKm > (proRadius + 2.5)) {
+        throw new Error("A distÃ¢ncia solicitada excede o limite de cobertura do profissional.");
       }
 
-      if (professional.home_fee_type === 'per_km') {
-          travel_fee = (professional.home_fee_per_km || 0) * distanceKm;
-        } else {
-          travel_fee = professional.home_fee || 0;
-        }
+      if (professional.home_fee_type === "per_km") {
+        travel_fee = (professional.home_fee_per_km || 0) * distanceKm;
+      } else {
+        travel_fee = professional.home_fee || 0;
+      }
+      
     } else {
-      if (professional_id && professional_id !== 'any') {
+      if (professional_id && professional_id !== "any") {
         const { data: professional, error: pErr } = await supabase
-          .from('professionals')
-          .select('id, active')
-          .eq('id', professional_id)
-          .eq('tenant_id', tenant_id)
+          .from("professionals")
+          .select("id, active")
+          .eq("id", professional_id)
+          .eq("tenant_id", tenant_id)
           .single();
           
         if (pErr || !professional || !professional.active) throw new Error("Invalid or inactive professional.");
       }
     }
 
-    const serviceHomeExtra = booking_mode === 'home' ? (service.home_price_extra || 0) : 0;
+    const serviceHomeExtra = booking_mode === "home" ? (service.home_price_extra || 0) : 0;
     const amount_total = (service.price || 0) + serviceHomeExtra + travel_fee;
     
     let amount_paid = 0;
@@ -177,7 +179,7 @@ serve(async (req) => {
         {
           tenant_id: tenant_id,
           customer_id: customerId,
-          professional_id: professional_id === 'any' ? null : professional_id,
+          professional_id: professional_id === "any" ? null : professional_id,
           service_id: service_id,
           order_number: code,
           scheduled_at: scheduled_at,
@@ -193,10 +195,10 @@ serve(async (req) => {
           notes: customer_notes,
           access_code: accessCode,
           service_location: booking_mode,
-          client_address: booking_mode === 'home' ? client_address : null,
-          client_lat: booking_mode === 'home' ? client_lat : null,
-          client_lng: booking_mode === 'home' ? client_lng : null,
-          travel_fee: booking_mode === 'home' ? travel_fee : 0,
+          client_address: booking_mode === "home" ? client_address : null,
+          client_lat: booking_mode === "home" ? client_lat : null,
+          client_lng: booking_mode === "home" ? client_lng : null,
+          travel_fee: booking_mode === "home" ? travel_fee : 0,
         },
       ])
       .select("id, order_number, amount_total")
@@ -208,14 +210,14 @@ serve(async (req) => {
       success: true, 
       booking: newBooking 
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (error: any) {
     console.error(error);
     return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
     });
   }
 });

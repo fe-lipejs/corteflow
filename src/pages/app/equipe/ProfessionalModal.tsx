@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { X, Upload, Plus, Trash2, Camera, CalendarClock, User, Clock, Scissors, Check, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Upload, Plus, Trash2, Camera, CalendarClock, User, Clock, Scissors, Check, Loader2, AlertCircle } from 'lucide-react';
 import { processFileIfHeic } from '../../../lib/imageHelper';
 import type { Professional, ProfessionalWorkingHour, Service } from '../../../types/database';
 import type { CreateProfessionalInput, UpdateProfessionalInput } from '../../../hooks/useProfessionals';
@@ -11,6 +11,7 @@ import FeatureGate from '../../../components/FeatureGate';
 import { Crown, Lock, Key, Shield, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../integrations/supabase/client';
+import { useAccountState } from '../../../hooks/useAccountState';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ROLES = ['Barbeiro', 'Cabeleireiro', 'Manicure', 'Pedicure', 'Esteticista', 'Maquiador', 'Outro'];
@@ -74,6 +75,18 @@ export default function ProfessionalModal({ professional, services, onClose, onC
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
   const [photoSize, setPhotoSize] = useState<string | null>(null);
+
+  const { currentTenant } = useAccountState();
+  const [hasLocation, setHasLocation] = useState(true);
+
+  useEffect(() => {
+    if (currentTenant?.id) {
+      supabase.from('tenant_settings').select('latitude, longitude').eq('tenant_id', currentTenant.id).single().then(({ data }) => {
+        if (!data?.latitude || !data?.longitude) setHasLocation(false);
+        else setHasLocation(true);
+      });
+    }
+  }, [currentTenant?.id]);
 
   // Form fields
   const [name, setName] = useState(professional?.name ?? '');
@@ -476,6 +489,15 @@ export default function ProfessionalModal({ professional, services, onClose, onC
 
                   {offersHomeService && (
                     <div className="space-y-4 pt-4 border-t" style={{ borderColor: theme.border }}>
+                      {!hasLocation && (
+                        <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-xl p-3 text-xs flex items-start gap-2" style={{ background: `${theme.accent}10`, borderColor: `${theme.accent}30`, color: theme.textPrimary }}>
+                          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: theme.accent }} />
+                          <p>
+                            Certifique-se de ter configurado o <strong>Link do Google Maps</strong> na tela de <strong style={{ color: theme.accent }}>Configurações &gt; Informações do Salão</strong> para que o sistema consiga calcular a distância do cliente.
+                          </p>
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>Limite Máximo (km)</label>

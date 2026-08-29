@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
-import { X, Upload, Plus, Trash2, Camera, CalendarClock, Loader2, Check } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Upload, Plus, Trash2, Camera, CalendarClock, Loader2, Check, AlertCircle } from 'lucide-react';
+import { supabase } from '../../../integrations/supabase/client';
 import { processFileIfHeic } from '../../../lib/imageHelper';
 import { useServices, type Service, type ServiceInput } from '../../../hooks/useServices';
 import { useCategories } from '../../../hooks/useCategories';
@@ -55,6 +56,15 @@ export default function ServiceModal({ service, professionals = [], tenantId, on
   // Hybrid Location fields (migration 0046)
   const [serviceMode, setServiceMode] = useState<'instore' | 'home' | 'both'>(service?.service_mode ?? 'instore');
   const [homePriceExtra, setHomePriceExtra] = useState(String(service?.home_price_extra ?? 0));
+
+  const [hasLocation, setHasLocation] = useState(true);
+
+  React.useEffect(() => {
+    supabase.from('tenant_settings').select('latitude, longitude').eq('tenant_id', tenantId).single().then(({ data }) => {
+      if (!data?.latitude || !data?.longitude) setHasLocation(false);
+      else setHasLocation(true);
+    });
+  }, [tenantId]);
 
   const formatSize = (bytes: number) => {
     return (bytes / 1024 / 1024).toFixed(2) + ' MB';
@@ -198,6 +208,14 @@ export default function ServiceModal({ service, professionals = [], tenantId, on
 
         {/* Location / Mode */}
         <FeatureGate permission="catalogo.domicilio" message="Atendimento a Domicílio é uma funcionalidade premium." inline>
+          {serviceMode !== 'instore' && !hasLocation && (
+             <div className="mb-4 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl p-3 text-xs flex items-start gap-2" style={{ background: `${theme.accent}10`, borderColor: `${theme.accent}30`, color: theme.textPrimary }}>
+               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: theme.accent }} />
+               <p>
+                 Certifique-se de ter configurado o <strong>Link do Google Maps</strong> na tela de <strong style={{ color: theme.accent }}>Configurações &gt; Informações do Salão</strong> para que o sistema consiga calcular a distância do cliente.
+               </p>
+             </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Onde é realizado?</label>
