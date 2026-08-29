@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, Plus, Calendar, RefreshCw,
   Users, CheckCircle, Clock, DollarSign, Loader2, Bell, Crown, Lock
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 import { useAuth } from '../../hooks/useAuth';
 import { useBarberSound } from '../../hooks/useBarberSound';
@@ -165,7 +165,11 @@ export default function Agenda() {
     }
   };
 
-  const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  // Initialize from URL ?professional= query param (set when navigating from Equipe.tsx)
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(
+    () => searchParams.get('professional')
+  );
 
   // Se o usuário NÃO tiver permissão para visualizar todos, filtra a agenda automaticamente para ele mesmo
   useEffect(() => {
@@ -327,9 +331,9 @@ export default function Agenda() {
               <span className="text-xs font-bold shrink-0 mr-1" style={{ color: theme.textSecondary }}>Filtrar por:</span>
               <button
                 onClick={() => {
+                  // Only owners/admins can see all professionals — professionals only see themselves
                   if (!engine.hasPermission('agenda.visualizar_todos')) {
-                    setShowUpgradeModal('agenda.visualizar_todos');
-                    return;
+                    return; // Silently block (the filter chip is already hidden in practice for professionals)
                   }
                   setSelectedProfessionalId(null);
                 }}

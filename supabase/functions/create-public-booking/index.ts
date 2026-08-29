@@ -1,4 +1,4 @@
-﻿import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 
@@ -133,11 +133,19 @@ serve(async (req) => {
     const serviceHomeExtra = booking_mode === "home" ? (service.home_price_extra || 0) : 0;
     const amount_total = (service.price || 0) + serviceHomeExtra + travel_fee;
     
+    // Fetch deposit_percentage from tenant_settings
+    const { data: tenantSettings } = await supabase
+      .from("tenant_settings")
+      .select("deposit_percentage")
+      .eq("tenant_id", tenant_id)
+      .maybeSingle();
+    const depositPct = (tenantSettings?.deposit_percentage ?? 50) / 100;
+
     let amount_paid = 0;
     if (payment_scope === "full" && payment_method !== "cash") {
       amount_paid = amount_total;
     } else if (payment_scope === "partial" && payment_method !== "cash") {
-      amount_paid = amount_total / 2;
+      amount_paid = amount_total * depositPct; // Uses configured percentage, e.g. 30%, 50%, 70%
     }
 
     let customerId = null;
