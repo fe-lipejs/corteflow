@@ -136,7 +136,6 @@ serve(async (req: Request) => {
     }
 
     let targetUserId = null;
-    let tempPassword = null;
 
     // Check if user already exists
     const { data: existingUserId, error: lookupError } = await supabaseAdmin.rpc('get_user_id_by_email', {
@@ -146,26 +145,22 @@ serve(async (req: Request) => {
     if (existingUserId) {
       targetUserId = existingUserId;
     } else {
-      tempPassword = generateTempPassword();
-
-      // Create auth user
-      const { data: newAuthUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-        email: email,
-        password: tempPassword,
-        email_confirm: true,
-        user_metadata: {
+      // Create user and send invite email via Supabase
+      const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+        data: {
           is_professional: true
-        }
+        },
+        redirectTo: `${Deno.env.get('SITE_URL') || 'https://www.raffros.com'}/change-password`
       });
 
-      if (createUserError) {
-        return new Response(JSON.stringify({ error: createUserError.message }), {
+      if (inviteError) {
+        return new Response(JSON.stringify({ error: inviteError.message }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       
-      targetUserId = newAuthUser.user.id;
+      targetUserId = inviteData.user.id;
 
       // Create profile for professional (Global Profile)
       await supabaseAdmin.from('profiles').insert({
@@ -224,22 +219,8 @@ serve(async (req: Request) => {
 
     const isExistingUser = !!existingUserId;
 
-    // Send appropriate email via Supabase (generateLink for new, custom for existing)
-    if (!isExistingUser && targetUserId) {
-      // Generate a magic invite link for new users (they click to set their own password)
-      try {
-        await supabaseAdmin.auth.admin.generateLink({
-          type: 'magiclink',
-          email: email,
-          options: {
-            redirectTo: `${Deno.env.get('SITE_URL') || 'https://www.raffros.com'}/change-password`
-          }
-        });
-      } catch (linkErr) {
-        // Non-fatal: link generation may fail in some configurations
-        console.warn('Could not generate magic link:', linkErr);
-      }
-    }
+    // Note: For existing users, they already have a password — they just receive access to the new tenant.
+    // A notification email can be sent here via a future email service integration.
     // Note: For existing users, they already have a password — they just receive access to the new tenant.
     // A notification email can be sent here via a future email service integration.
     
