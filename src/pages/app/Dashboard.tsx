@@ -437,26 +437,28 @@ export default function Dashboard() {
                 const isLate = new Date(item.scheduled_at) < new Date() && (item.status === 'pending' || item.status === 'confirmed');
 
                 return (
-                  <div key={item.id} onClick={() => setSelectedBooking(item)} className={`agenda-item flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors hover:bg-[var(--theme-bg-hover)] ${isLate ? 'border-red-300 bg-red-50 hover:bg-red-100' : ''}`} style={{ borderColor: isLate ? '#FCA5A5' : theme.border }}>
-                    <div className="flex flex-col items-center flex-shrink-0 w-14">
-                      <span className={`font-bold text-sm ${isLate ? 'text-red-600' : ''}`} style={{ color: isLate ? '#DC2626' : theme.accent }}>{formatTime(item.scheduled_at)}</span>
-                      <span className="text-[10px] font-medium" style={{ color: theme.textMuted }}>{format(new Date(item.scheduled_at), 'dd/MM')}</span>
-                      {isLate && <span className="text-[9px] font-bold text-red-600 bg-red-100 px-1 py-0.5 rounded-sm mt-0.5 uppercase tracking-wider">Atrasado</span>}
+                  <div key={item.id} onClick={() => setSelectedBooking(item)} className={`agenda-item flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg border cursor-pointer transition-colors hover:bg-[var(--theme-bg-hover)] ${isLate ? 'border-red-300 bg-red-50 hover:bg-red-100' : ''}`} style={{ borderColor: isLate ? '#FCA5A5' : theme.border }}>
+                    <div className="flex flex-col items-center flex-shrink-0 w-12 md:w-14">
+                      <span className={`font-bold text-xs md:text-sm ${isLate ? 'text-red-600' : ''}`} style={{ color: isLate ? '#DC2626' : theme.accent }}>{formatTime(item.scheduled_at)}</span>
+                      <span className="text-[9px] md:text-[10px] font-medium" style={{ color: theme.textMuted }}>{format(new Date(item.scheduled_at), 'dd/MM')}</span>
+                      {isLate && <span className="text-[8px] md:text-[9px] font-bold text-red-600 bg-red-100 px-1 py-0.5 rounded-sm mt-0.5 uppercase tracking-wider">Atrasado</span>}
                     </div>
-                    <div className="flex-1 truncate">
-                      <p className={`font-semibold text-sm truncate flex items-center gap-2 ${isLate ? 'text-red-900' : ''}`} style={{ color: isLate ? '#7F1D1D' : theme.textPrimary }}>
-                        {item.customers?.name || 'Cliente anônimo'}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 w-full mb-0.5">
+                        <span className={`font-semibold text-[13px] md:text-sm truncate ${isLate ? 'text-red-900' : ''}`} style={{ color: isLate ? '#7F1D1D' : theme.textPrimary }}>
+                          {item.customers?.name || 'Cliente anônimo'}
+                        </span>
                         {item.order_number && (
-                          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md border ${isLate ? 'border-red-200 bg-red-100 text-red-700' : ''}`} style={!isLate ? { color: theme.textMuted, borderColor: theme.border, background: theme.bg } : {}}>
+                          <span className={`text-[9px] md:text-[10px] font-mono px-1 py-0.5 rounded-md border flex-shrink-0 ${isLate ? 'border-red-200 bg-red-100 text-red-700' : ''}`} style={!isLate ? { color: theme.textMuted, borderColor: theme.border, background: theme.bg } : {}}>
                             {item.order_number}
                           </span>
                         )}
-                      </p>
-                      <p className={`text-xs truncate ${isLate ? 'text-red-700/80' : ''}`} style={{ color: isLate ? 'rgb(185 28 28 / 0.8)' : theme.textMuted }}>
-                        {item.services?.name || 'Serviço'} · com {item.professionals?.name || 'Equipe'}
+                      </div>
+                      <p className={`text-[11px] md:text-xs truncate ${isLate ? 'text-red-700/80' : ''}`} style={{ color: isLate ? 'rgb(185 28 28 / 0.8)' : theme.textMuted }}>
+                        {item.services?.name || 'Serviço'} · {item.professionals?.name || 'Equipe'}
                       </p>
                     </div>
-                    <span className={`text-sm font-semibold flex-shrink-0 ${isLate ? 'text-red-700' : ''}`} style={{ color: isLate ? '#B91C1C' : theme.textSecondary }}>
+                    <span className={`text-[13px] md:text-sm font-semibold flex-shrink-0 ${isLate ? 'text-red-700' : ''}`} style={{ color: isLate ? '#B91C1C' : theme.textSecondary }}>
                       {formatCurrency(item.amount_total || 0)}
                     </span>
                   </div>
