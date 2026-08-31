@@ -1033,8 +1033,8 @@ export default function Onboarding() {
 
               {step === 4 && (
                 <motion.div key="step4" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="flex-1 flex flex-col items-center justify-center text-center">
-                  <div className="w-20 h-20 bg-[#DE870D]/10 rounded-2xl flex items-center justify-center mb-6">
-                    <Sparkles className="w-10 h-10 text-[#DE870D]" />
+                  <div className="w-20 h-20 bg-[#22C55E]/10 rounded-2xl flex items-center justify-center mb-6">
+                    <CheckCircle2 className="w-10 h-10 text-[#22C55E]" />
                   </div>
                   
                   <h3 className="text-3xl font-black mb-3 text-[#0F172A]">Tudo pronto!</h3>
