@@ -11,8 +11,9 @@ import { ptBR } from 'date-fns/locale';
 
 import { useProfessionals } from '../../hooks/useProfessionals';
 import { useServices } from '../../hooks/useServices';
-import { useCreateBooking, useBookingsRealtime } from '../../hooks/useBookings';
+import { useCreateBooking, useBookingsRealtime, useUpdateBookingStatus } from '../../hooks/useBookings';
 import BookingModal from './agenda/BookingModal';
+import BookingDetailSheet from './agenda/BookingDetailSheet';
 export default function Dashboard() {
   const { profile, tenant } = useAuth();
   const { theme } = useTheme();
@@ -21,6 +22,8 @@ export default function Dashboard() {
   const firstName = profile?.full_name?.split(' ')[0] || 'Dono';
 
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const updateStatus = useUpdateBookingStatus(tenantId);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -360,15 +363,15 @@ export default function Dashboard() {
         <div className="lg:col-span-2 glass-card p-4 md:p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h3 className="font-bold text-lg" style={{ color: theme.textPrimary }}>Agenda de hoje</h3>
-              <p className="text-xs" style={{ color: theme.textMuted }}>{todayBookings.length} horários confirmados</p>
+              <h3 className="font-bold text-lg" style={{ color: theme.textPrimary }}>Próximos agendamentos</h3>
+              <p className="text-xs" style={{ color: theme.textMuted }}>{todayBookings.length} horários hoje</p>
             </div>
             <button onClick={() => navigate('/admin/agenda')} className="flex items-center gap-1 text-xs font-semibold" style={{ color: theme.accent }}>
               Ver semana <ArrowRight className="w-3 h-3" />
             </button>
           </div>
 
-          <div className="mt-4 flex flex-col gap-2">
+          <div className="mt-4 flex flex-col gap-2 max-h-[360px] overflow-y-auto pr-1">
             {todayBookings.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-icon">
@@ -378,27 +381,35 @@ export default function Dashboard() {
                 <p className="empty-state-text">Os clientes que agendarem aparecerão aqui.</p>
               </div>
             ) : (
-              todayBookings.map((item) => (
-                <div key={item.id} onClick={() => navigate('/admin/agenda')} className="agenda-item flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors hover:bg-[var(--theme-bg-hover)]" style={{ borderColor: theme.border }}>
-                  <span className="agenda-time font-bold text-sm w-12 flex-shrink-0" style={{ color: theme.accent }}>{formatTime(item.scheduled_at)}</span>
-                  <div className="flex-1 truncate">
-                    <p className="font-semibold text-sm truncate flex items-center gap-2" style={{ color: theme.textPrimary }}>
-                      {item.customers?.name || 'Cliente anônimo'}
-                      {item.order_number && (
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md border" style={{ color: theme.textMuted, borderColor: theme.border, background: theme.bg }}>
-                          {item.order_number}
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs truncate" style={{ color: theme.textMuted }}>
-                      {item.services?.name || 'Serviço'} · com {item.professionals?.name || 'Equipe'}
-                    </p>
+              todayBookings.map((item) => {
+                // Warning se o horário já passou e continua pendente ou confirmado
+                const isLate = new Date(item.scheduled_at) < new Date() && (item.status === 'pending' || item.status === 'confirmed');
+
+                return (
+                  <div key={item.id} onClick={() => setSelectedBooking(item)} className={`agenda-item flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors hover:bg-[var(--theme-bg-hover)] ${isLate ? 'border-red-300 bg-red-50 hover:bg-red-100' : ''}`} style={{ borderColor: isLate ? '#FCA5A5' : theme.border }}>
+                    <div className="flex flex-col items-center flex-shrink-0 w-12">
+                      <span className={`font-bold text-sm ${isLate ? 'text-red-600' : ''}`} style={{ color: isLate ? '#DC2626' : theme.accent }}>{formatTime(item.scheduled_at)}</span>
+                      {isLate && <span className="text-[9px] font-bold text-red-600 bg-red-100 px-1 py-0.5 rounded-sm mt-0.5 uppercase tracking-wider">Atrasado</span>}
+                    </div>
+                    <div className="flex-1 truncate">
+                      <p className={`font-semibold text-sm truncate flex items-center gap-2 ${isLate ? 'text-red-900' : ''}`} style={{ color: isLate ? '#7F1D1D' : theme.textPrimary }}>
+                        {item.customers?.name || 'Cliente anônimo'}
+                        {item.order_number && (
+                          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md border ${isLate ? 'border-red-200 bg-red-100 text-red-700' : ''}`} style={!isLate ? { color: theme.textMuted, borderColor: theme.border, background: theme.bg } : {}}>
+                            {item.order_number}
+                          </span>
+                        )}
+                      </p>
+                      <p className={`text-xs truncate ${isLate ? 'text-red-700/80' : ''}`} style={{ color: isLate ? 'rgb(185 28 28 / 0.8)' : theme.textMuted }}>
+                        {item.services?.name || 'Serviço'} · com {item.professionals?.name || 'Equipe'}
+                      </p>
+                    </div>
+                    <span className={`text-sm font-semibold flex-shrink-0 ${isLate ? 'text-red-700' : ''}`} style={{ color: isLate ? '#B91C1C' : theme.textSecondary }}>
+                      {formatCurrency(item.amount_total || 0)}
+                    </span>
                   </div>
-                  <span className="text-sm font-semibold flex-shrink-0" style={{ color: theme.textSecondary }}>
-                    {formatCurrency(item.amount_total || 0)}
-                  </span>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -467,15 +478,28 @@ export default function Dashboard() {
       {bookingModalOpen && (
         <BookingModal
           tenantId={tenantId}
-          services={services}
-          professionals={professionals}
+          services={services.filter(s => s.active)}
+          professionals={professionals.filter(p => p.active)}
           businessHours={businessHours}
           onClose={() => setBookingModalOpen(false)}
-          onCreate={handleCreateBooking}
+          onCreate={async (input) => {
+            await createBooking.mutateAsync(input);
+            setBookingModalOpen(false);
+          }}
           isLoading={createBooking.isPending}
+        />
+      )}
+
+      {selectedBooking && (
+        <BookingDetailSheet
+          booking={selectedBooking}
+          onClose={() => setSelectedBooking(null)}
+          onStatusChange={(id, status) => {
+            updateStatus.mutate({ id, status });
+          }}
+          isUpdating={updateStatus.isPending}
         />
       )}
     </div>
   );
 }
-
