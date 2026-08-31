@@ -1032,23 +1032,23 @@ export default function Onboarding() {
               )}
 
               {step === 4 && (
-                <motion.div key="step4" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="flex-1 flex flex-col items-center justify-center text-center">
-                  <div className="w-20 h-20 bg-[#22C55E]/10 rounded-2xl flex items-center justify-center mb-6">
-                    <CheckCircle2 className="w-10 h-10 text-[#22C55E]" />
+                <motion.div key="step4" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                  <div className="w-24 h-24 bg-[#22C55E]/10 rounded-3xl flex items-center justify-center mb-8">
+                    <CheckCircle2 className="w-12 h-12 text-[#22C55E]" />
                   </div>
                   
-                  <h3 className="text-3xl font-black mb-3 text-[#0F172A]">Tudo pronto!</h3>
-                  <p className="text-slate-500 text-lg mb-8 max-w-sm mx-auto">
+                  <h3 className="text-4xl font-black mb-5 text-[#0F172A]">Tudo pronto!</h3>
+                  <p className="text-slate-500 text-lg mb-12 max-w-md mx-auto leading-relaxed">
                     Seu espaço está configurado. Ative sua assinatura agora para desbloquear sua agenda e começar a receber clientes.
                   </p>
 
-                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 w-full max-w-sm mb-8 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">Recomendado</div>
-                    <div className="flex items-center justify-center gap-2 mb-2 text-[#0F172A] font-black text-2xl">
-                      <Star className="w-6 h-6 text-[#DE870D] fill-[#DE870D]" />
+                  <div className="bg-slate-50 border border-slate-200 rounded-3xl p-8 sm:p-10 w-full max-w-md mb-10 relative overflow-hidden shadow-sm">
+                    <div className="absolute top-0 right-0 bg-green-500 text-white text-[11px] font-bold px-4 py-1.5 rounded-bl-2xl uppercase tracking-wider">Recomendado</div>
+                    <div className="flex items-center justify-center gap-3 mb-4 mt-2 text-[#0F172A] font-black text-2xl">
+                      <Star className="w-7 h-7 text-[#DE870D] fill-[#DE870D]" />
                       Escolha seu plano ideal
                     </div>
-                    <p className="text-slate-600 font-medium text-sm mb-4 text-center">Teste grátis por 7 dias. Você só será cobrado depois e pode cancelar a qualquer momento.</p>
+                    <p className="text-slate-600 font-medium text-[15px] mb-8 text-center leading-relaxed">Teste grátis por 7 dias. Você só será cobrado depois e pode cancelar a qualquer momento.</p>
                     
                     <button
                       type="button"
