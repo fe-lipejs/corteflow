@@ -1032,15 +1032,47 @@ export default function Onboarding() {
               )}
 
               {step === 4 && (
-                <motion.div key="step4" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="flex-1 flex flex-col items-center justify-center text-center px-4">
-                  <div className="w-20 h-20 bg-[#22C55E]/10 rounded-3xl flex items-center justify-center mb-6">
-                    <CheckCircle2 className="w-10 h-10 text-[#22C55E]" />
+                <motion.div key="step4" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="flex-1 flex flex-col items-center justify-center text-center px-4 w-full">
+                  <div className="w-16 h-16 bg-[#22C55E]/10 rounded-2xl flex items-center justify-center mb-4 shrink-0">
+                    <CheckCircle2 className="w-8 h-8 text-[#22C55E]" />
                   </div>
                   
-                  <h3 className="text-3xl font-black mb-4 text-[#0F172A]">Tudo pronto!</h3>
-                  <p className="text-slate-500 text-[15px] mb-8 max-w-[280px] mx-auto leading-relaxed">
-                    Seu espaço foi configurado com sucesso e seus 7 dias de teste grátis já começaram.
+                  <h3 className="text-2xl font-black mb-2 text-[#0F172A] shrink-0">Tudo pronto!</h3>
+                  <p className="text-slate-500 text-sm mb-6 max-w-[280px] mx-auto leading-relaxed shrink-0">
+                    Seu espaço foi configurado com sucesso e seus 7 dias grátis já estão valendo.
                   </p>
+
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 w-full max-w-sm mb-4 relative overflow-hidden shadow-sm shrink-0">
+                    <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+                      Recomendado
+                    </div>
+                    <div className="flex items-center justify-center gap-2 mb-2 mt-1 text-[#0F172A] font-black text-xl">
+                      <Star className="w-5 h-5 text-[#DE870D] fill-[#DE870D]" />
+                      Escolha seu plano ideal
+                    </div>
+                    <p className="text-slate-500 font-medium text-xs mb-5 text-center leading-relaxed px-2">
+                      Aproveite seus 7 dias sem custo. Você não será cobrado agora e pode cancelar quando quiser.
+                    </p>
+                    
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={async () => {
+                        setLoading(true);
+                        try {
+                          await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', user?.id);
+                          await refreshProfile();
+                          window.location.href = '/admin/assinatura';
+                        } catch(e) {
+                          alert('Erro ao concluir cadastro');
+                          setLoading(false);
+                        }
+                      }}
+                      className="w-full bg-[#0F172A] text-white h-12 rounded-xl font-bold flex items-center justify-center hover:bg-[#1E293B] transition-colors shadow-md"
+                    >
+                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Ver planos disponíveis'}
+                    </button>
+                  </div>
 
                   <button
                     type="button"
@@ -1056,9 +1088,9 @@ export default function Onboarding() {
                         setLoading(false);
                       }
                     }}
-                    className="w-full max-w-[280px] bg-[#0F172A] text-white h-12 rounded-xl font-bold flex items-center justify-center hover:bg-[#1E293B] transition-colors shadow-md mx-auto"
+                    className="text-slate-400 font-medium text-xs hover:text-[#0F172A] transition-colors underline underline-offset-2 shrink-0 mt-1"
                   >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Acessar meu painel'}
+                    Decidir depois (ir para o painel)
                   </button>
                 </motion.div>
               )}
