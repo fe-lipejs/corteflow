@@ -1,1 +1,0 @@
-ALTER TABLE professionals ADD COLUMN IF NOT EXISTS commission_value NUMERIC DEFAULT 0;

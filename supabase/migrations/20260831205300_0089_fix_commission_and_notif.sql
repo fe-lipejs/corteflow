@@ -1,14 +1,26 @@
 -- ============================================================
--- Fixes for Commission and Notifications
+-- Correção de Comissão, Notificações, Horários e Clientes
 -- ============================================================
 
--- 1. Fix missing commission_value column
+-- 1. Cria a coluna de comissão no profissional (Evita o Erro 400 no Finalizado)
 ALTER TABLE professionals ADD COLUMN IF NOT EXISTS commission_value NUMERIC DEFAULT 0;
 
--- 2. Add professional_id to notifications for targeted delivery
+-- 2. Adiciona suporte ao profissional nas notificações (Bug do Sino)
 ALTER TABLE notifications ADD COLUMN IF NOT EXISTS professional_id UUID REFERENCES professionals(id) ON DELETE CASCADE;
 
--- 3. Update the realtime trigger to populate professional_id
+-- 3. Permite que o profissional leia o nome dos clientes (Bug do Cliente anônimo)
+DROP POLICY IF EXISTS "Professionals read tenant customers" ON customers;
+CREATE POLICY "Professionals read tenant customers" ON customers
+  FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM professionals 
+      WHERE auth_user_id = auth.uid() 
+      AND tenant_id = customers.tenant_id
+    )
+  );
+
+-- 4. Atualiza o gatilho de notificações para endereçar ao profissional correto
 CREATE OR REPLACE FUNCTION notify_booking_changes()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -47,5 +59,26 @@ BEGIN
   END IF;
 
   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 5. Corrige a verificação da Agenda Pública (Riscado / Portas Abertas)
+CREATE OR REPLACE FUNCTION get_public_booking_slots(p_tenant_id uuid, p_start timestamp with time zone, p_end timestamp with time zone)
+RETURNS TABLE (
+  id uuid,
+  professional_id uuid,
+  service_id uuid,
+  scheduled_at timestamp with time zone,
+  status text,
+  created_at timestamp with time zone
+) SECURITY DEFINER AS $$
+BEGIN
+  RETURN QUERY
+  SELECT b.id, b.professional_id, b.service_id, b.scheduled_at, b.status, b.created_at
+  FROM bookings b
+  WHERE b.tenant_id = p_tenant_id
+    AND b.status IN ('pending', 'confirmed', 'arrived', 'in_progress', 'completed')
+    AND b.scheduled_at >= p_start
+    AND b.scheduled_at <= p_end;
 END;
 $$ LANGUAGE plpgsql;

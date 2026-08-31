@@ -18,7 +18,10 @@ const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL',
 
 const STATUS_FLOW: BookingStatus[] = ['pending', 'confirmed', 'arrived', 'in_progress', 'completed'];
 
+import { useAuth } from '../../../contexts/AuthContext';
+
 export default function BookingDetailSheet({ booking, onClose, onStatusChange, onDelete, isUpdating }: Props) {
+  const { profile } = useAuth();
   const statusCfg = BOOKING_STATUS_CONFIG[booking.status];
   const scheduledAt = new Date(booking.scheduled_at);
   const endTime = new Date(scheduledAt.getTime() + (booking.duration_minutes * 60 * 1000));
