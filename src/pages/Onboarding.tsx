@@ -600,10 +600,10 @@ export default function Onboarding() {
               >
                 <div
                   className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs transition-all ${step > s.num
-                      ? 'bg-green-100 text-green-700 border border-green-300'
-                      : step === s.num
-                        ? 'bg-[#DE870D] text-white shadow-md shadow-[#DE870D]/25'
-                        : 'bg-slate-100 text-slate-400 border border-slate-200'
+                    ? 'bg-green-100 text-green-700 border border-green-300'
+                    : step === s.num
+                      ? 'bg-[#DE870D] text-white shadow-md shadow-[#DE870D]/25'
+                      : 'bg-slate-100 text-slate-400 border border-slate-200'
                     }`}
                 >
                   {step > s.num ? <CheckCircle2 className="w-4 h-4" /> : s.num}
@@ -739,10 +739,10 @@ export default function Onboarding() {
                             }
                           }}
                           className={`w-full px-4 py-3 bg-[#F8FAFC] border rounded-r-xl text-[#0F172A] placeholder-[#94A3B8] font-mono text-sm outline-none transition-all font-semibold ${slugStatus === 'available'
-                              ? 'border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 text-green-700'
-                              : slugStatus === 'taken'
-                                ? 'border-amber-500 focus:border-amber-500 text-amber-700'
-                                : 'border-[#CBD5E1] focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20'
+                            ? 'border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 text-green-700'
+                            : slugStatus === 'taken'
+                              ? 'border-amber-500 focus:border-amber-500 text-amber-700'
+                              : 'border-[#CBD5E1] focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20'
                             }`}
                         />
                       </div>
@@ -898,16 +898,16 @@ export default function Onboarding() {
                             validatePhoneLive(masked);
                           }}
                           className={`w-full px-3 py-2 bg-white border rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all text-xs font-medium ${phoneCheckStatus === 'valid'
-                              ? 'border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 text-green-800'
-                              : phoneCheckStatus === 'taken' || phoneCheckStatus === 'invalid'
-                                ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 text-red-700'
-                                : 'border-[#CBD5E1] focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20'
+                            ? 'border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 text-green-800'
+                            : phoneCheckStatus === 'taken' || phoneCheckStatus === 'invalid'
+                              ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 text-red-700'
+                              : 'border-[#CBD5E1] focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20'
                             }`}
                         />
                         {phoneFeedback && (
                           <p className={`text-[11px] mt-1 font-semibold flex items-center gap-1 ${phoneCheckStatus === 'valid'
-                              ? 'text-green-600'
-                              : 'text-red-500'
+                            ? 'text-green-600'
+                            : 'text-red-500'
                             }`}>
                             {phoneCheckStatus === 'valid' ? <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" /> : '⚠️'} {phoneFeedback}
                           </p>
@@ -1036,25 +1036,29 @@ export default function Onboarding() {
                   <div className="w-16 h-16 bg-[#22C55E]/10 rounded-2xl flex items-center justify-center mb-4 shrink-0">
                     <CheckCircle2 className="w-8 h-8 text-[#22C55E]" />
                   </div>
-                  
+
                   <h3 className="text-2xl font-black mb-2 text-[#0F172A] shrink-0">Tudo pronto!</h3>
                   <p className="text-slate-500 text-sm mb-6 max-w-[280px] mx-auto leading-relaxed shrink-0">
                     Seu espaço foi configurado com sucesso e seus 7 dias grátis já estão valendo.
                   </p>
+                  <br />
 
                   <div className="bg-white border-2 border-[#DE870D]/20 rounded-3xl p-6 w-full max-w-[280px] mb-4 relative shadow-sm shrink-0 flex flex-col items-center mt-3">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#22C55E] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1 whitespace-nowrap shadow-sm">
-                      <Star className="w-3 h-3 fill-white" /> Recomendado
+                      <Star className="w-3 h-3 text-[#F5C542] fill-current" /> Recomendado
                     </div>
-                    
+
                     <h4 className="text-[#0F172A] font-black text-xl mb-2 mt-2 text-center leading-tight">
-                      Escolha seu plano ideal
+                      🎁 Você ganhou 7 dias grátis!
                     </h4>
-                    
+                    <br />
                     <p className="text-slate-500 font-medium text-xs mb-5 text-center leading-relaxed">
-                      Aproveite seus 7 dias sem custo. Você não será cobrado agora e pode cancelar quando quiser.
+                      Sua agenda, clientes e equipe organizados em um só lugar
+                      <br />
+
+                      Sem compromisso, sem burocracia!
                     </p>
-                    
+
                     <button
                       type="button"
                       disabled={loading}
@@ -1064,14 +1068,14 @@ export default function Onboarding() {
                           await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', user?.id);
                           await refreshProfile();
                           window.location.href = '/admin/assinatura';
-                        } catch(e) {
+                        } catch (e) {
                           alert('Erro ao concluir cadastro');
                           setLoading(false);
                         }
                       }}
                       className="w-full bg-[#0F172A] text-white h-12 rounded-xl font-bold flex items-center justify-center hover:bg-[#1E293B] transition-colors shadow-md text-sm"
                     >
-                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Escolher plano →'}
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Começar grátis →'}
                     </button>
                   </div>
 
@@ -1084,12 +1088,12 @@ export default function Onboarding() {
                         await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', user?.id);
                         await refreshProfile();
                         window.location.href = '/admin'; // Dashboard
-                      } catch(e) {
+                      } catch (e) {
                         alert('Erro ao concluir cadastro');
                         setLoading(false);
                       }
                     }}
-                    className="text-slate-400 font-medium text-xs hover:text-[#0F172A] transition-colors underline underline-offset-2 shrink-0 mt-1"
+                    className="text-[#475569] font-medium text-xs hover:text-[#0F172A] transition-colors underline underline-offset-2 shrink-0 mt-1"
                   >
                     Decidir depois (ir para o painel)
                   </button>
@@ -1097,58 +1101,58 @@ export default function Onboarding() {
               )}
             </AnimatePresence>
 
-          {/* Bottom Fixed Navigation */}
-          {step < 4 && (
-            <div className="p-6 border-t border-slate-100 bg-white/50 backdrop-blur-md sticky bottom-0 z-20 shrink-0">
-            {error && (
-              <div className="mt-4 p-3 rounded-xl text-xs font-semibold bg-red-500/10 border border-red-500/20 text-red-600">
-                ⚠️ {error}
+            {/* Bottom Fixed Navigation */}
+            {step < 4 && (
+              <div className="p-6 border-t border-slate-100 bg-white/50 backdrop-blur-md sticky bottom-0 z-20 shrink-0">
+                {error && (
+                  <div className="mt-4 p-3 rounded-xl text-xs font-semibold bg-red-500/10 border border-red-500/20 text-red-600">
+                    ⚠️ {error}
+                  </div>
+                )}
+
+                <div className="mt-8 pt-6 border-t border-[#E2E8F0] flex justify-between items-center">
+                  {step > 1 ? (
+                    <button type="button" onClick={() => { setError(null); setStep(step - 1); }} className="flex items-center px-4 py-2 text-[#64748B] hover:text-[#0F172A] font-semibold text-xs transition-colors cursor-pointer">
+                      <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
+                    </button>
+                  ) : (
+                    <div></div>
+                  )}
+
+                  {step < 3 ? (
+                    <button
+                      type="button"
+                      onClick={handleNextStep}
+                      className="px-6 py-3 rounded-xl font-bold text-xs text-white shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] transition-all flex items-center gap-1.5 cursor-pointer"
+                      style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
+                    >
+                      <span>Continuar</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSubmit(onSubmit)}
+                      disabled={loading}
+                      className="px-7 py-3 rounded-xl font-bold text-xs text-white shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                      style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
+                    >
+                      {loading ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                          <span>Configurando seu Salão...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Concluir e Acessar Painel</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             )}
-
-            <div className="mt-8 pt-6 border-t border-[#E2E8F0] flex justify-between items-center">
-              {step > 1 ? (
-                <button type="button" onClick={() => { setError(null); setStep(step - 1); }} className="flex items-center px-4 py-2 text-[#64748B] hover:text-[#0F172A] font-semibold text-xs transition-colors cursor-pointer">
-                  <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
-                </button>
-              ) : (
-                <div></div>
-              )}
-
-              {step < 3 ? (
-                <button
-                  type="button"
-                  onClick={handleNextStep}
-                  className="px-6 py-3 rounded-xl font-bold text-xs text-white shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] transition-all flex items-center gap-1.5 cursor-pointer"
-                  style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
-                >
-                  <span>Continuar</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSubmit(onSubmit)}
-                  disabled={loading}
-                  className="px-7 py-3 rounded-xl font-bold text-xs text-white shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
-                  style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
-                >
-                  {loading ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                      <span>Configurando seu Salão...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Concluir e Acessar Painel</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-          </div>
-          )}
           </form>
         </div>
 
