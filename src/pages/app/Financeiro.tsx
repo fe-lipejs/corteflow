@@ -2,7 +2,7 @@ import PaywallGate from '../../components/PaywallGate';
 import { useState, useMemo, useEffect } from 'react';
 import {
   DollarSign, ArrowUpRight, ArrowDownRight, Download, Plus, Edit2, Trash2,
-  Lock, Crown, Filter, Users, TrendingUp, AlertCircle, ChevronLeft, ChevronRight
+  Lock, Crown, Filter, Users, TrendingUp, AlertCircle, ChevronLeft, ChevronRight, Loader2
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { TableRowSkeleton } from '../../components/ui/Skeleton';

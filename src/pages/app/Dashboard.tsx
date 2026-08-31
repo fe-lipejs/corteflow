@@ -15,7 +15,7 @@ import { useCreateBooking, useBookingsRealtime, useUpdateBookingStatus } from '.
 import BookingModal from './agenda/BookingModal';
 import BookingDetailSheet from './agenda/BookingDetailSheet';
 export default function Dashboard() {
-  const { profile, tenant } = useAuth();
+  const { profile, tenant, professionalProfile } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
   const tenantId = tenant?.id ?? '';
@@ -42,7 +42,7 @@ export default function Dashboard() {
   const { data: todayBookings = [], isLoading: isLoadingToday } = useQuery({
     queryKey: ['bookings', tenantId, 'dashboard_today'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('bookings')
         .select(`
           *,
@@ -54,6 +54,40 @@ export default function Dashboard() {
         .gte('scheduled_at', todayStart)
         .lte('scheduled_at', todayEnd)
         .order('scheduled_at', { ascending: true });
+
+      if (profile?.role === 'professional' && professionalProfile?.id) {
+        query = query.eq('professional_id', professionalProfile.id);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!tenantId,
+  });
+
+  // 1.5 Fetch Upcoming Bookings (for the next 7 days list)
+  const { data: upcomingBookings = [], isLoading: isLoadingUpcoming } = useQuery({
+    queryKey: ['bookings', tenantId, 'dashboard_upcoming'],
+    queryFn: async () => {
+      let query = supabase
+        .from('bookings')
+        .select(`
+          *,
+          customers ( name ),
+          professionals ( name ),
+          services ( name, duration_minutes )
+        `)
+        .eq('tenant_id', tenantId)
+        .gte('scheduled_at', todayStart)
+        .lte('scheduled_at', futureWeekEnd)
+        .order('scheduled_at', { ascending: true });
+
+      if (profile?.role === 'professional' && professionalProfile?.id) {
+        query = query.eq('professional_id', professionalProfile.id);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
@@ -66,7 +100,7 @@ export default function Dashboard() {
   const { data: recentBookings = [], isLoading: isLoadingFuture } = useQuery({
     queryKey: ['bookings', tenantId, 'dashboard_recent'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('bookings')
         .select(`
           id, scheduled_at, amount_total, status,
@@ -75,6 +109,12 @@ export default function Dashboard() {
         .eq('tenant_id', tenantId)
         .gte('scheduled_at', past30DaysStart)
         .lte('scheduled_at', futureWeekEnd);
+
+      if (profile?.role === 'professional' && professionalProfile?.id) {
+        query = query.eq('professional_id', professionalProfile.id);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
@@ -119,7 +159,7 @@ export default function Dashboard() {
   // Enable Real-time updates for the dashboard!
   useBookingsRealtime(tenantId || null);
 
-  const loading = isLoadingToday || isLoadingFuture || isLoadingCustomers;
+  const loading = isLoadingToday || isLoadingFuture || isLoadingCustomers || isLoadingUpcoming;
 
   // Total revenue today - count only confirmed/completed
   const validTodayBookings = todayBookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
@@ -364,7 +404,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-start mb-4">
             <div>
               <h3 className="font-bold text-lg" style={{ color: theme.textPrimary }}>Próximos agendamentos</h3>
-              <p className="text-xs" style={{ color: theme.textMuted }}>{todayBookings.length} horários hoje</p>
+              <p className="text-xs" style={{ color: theme.textMuted }}>Os seus próximos horários</p>
             </div>
             <button onClick={() => navigate('/admin/agenda')} className="flex items-center gap-1 text-xs font-semibold" style={{ color: theme.accent }}>
               Ver semana <ArrowRight className="w-3 h-3" />
@@ -372,23 +412,35 @@ export default function Dashboard() {
           </div>
 
           <div className="mt-4 flex flex-col gap-2 max-h-[360px] overflow-y-auto pr-1">
-            {todayBookings.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">
-                  <Calendar className="w-8 h-8" />
-                </div>
-                <p className="empty-state-title">Nenhum agendamento hoje</p>
-                <p className="empty-state-text">Os clientes que agendarem aparecerão aqui.</p>
-              </div>
-            ) : (
-              todayBookings.map((item) => {
+            {(() => {
+              const proximosAgendamentos = upcomingBookings.filter(item => {
+                const isPast = new Date(item.scheduled_at) < new Date();
+                const isFinished = item.status === 'completed' || item.status === 'canceled' || item.status === 'no_show';
+                if (isPast && isFinished) return false;
+                return true;
+              }).slice(0, 15);
+
+              if (proximosAgendamentos.length === 0) {
+                return (
+                  <div className="empty-state">
+                    <div className="empty-state-icon">
+                      <Calendar className="w-8 h-8" />
+                    </div>
+                    <p className="empty-state-title">Nenhum próximo agendamento</p>
+                    <p className="empty-state-text">Você está livre pelo resto do dia.</p>
+                  </div>
+                );
+              }
+
+              return proximosAgendamentos.map((item) => {
                 // Warning se o horário já passou e continua pendente ou confirmado
                 const isLate = new Date(item.scheduled_at) < new Date() && (item.status === 'pending' || item.status === 'confirmed');
 
                 return (
                   <div key={item.id} onClick={() => setSelectedBooking(item)} className={`agenda-item flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors hover:bg-[var(--theme-bg-hover)] ${isLate ? 'border-red-300 bg-red-50 hover:bg-red-100' : ''}`} style={{ borderColor: isLate ? '#FCA5A5' : theme.border }}>
-                    <div className="flex flex-col items-center flex-shrink-0 w-12">
+                    <div className="flex flex-col items-center flex-shrink-0 w-14">
                       <span className={`font-bold text-sm ${isLate ? 'text-red-600' : ''}`} style={{ color: isLate ? '#DC2626' : theme.accent }}>{formatTime(item.scheduled_at)}</span>
+                      <span className="text-[10px] font-medium" style={{ color: theme.textMuted }}>{format(new Date(item.scheduled_at), 'dd/MM')}</span>
                       {isLate && <span className="text-[9px] font-bold text-red-600 bg-red-100 px-1 py-0.5 rounded-sm mt-0.5 uppercase tracking-wider">Atrasado</span>}
                     </div>
                     <div className="flex-1 truncate">
@@ -409,8 +461,8 @@ export default function Dashboard() {
                     </span>
                   </div>
                 );
-              })
-            )}
+              });
+            })()}
           </div>
         </div>
 

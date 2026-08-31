@@ -77,8 +77,9 @@ export default function ProfessionalModal({ professional, services, onClose, onC
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
   const [photoSize, setPhotoSize] = useState<string | null>(null);
 
-  const { currentTenant } = useAccountState();
+  const { data: currentTenant } = useAccountState();
   const [hasLocation, setHasLocation] = useState(true);
+  const [emailSentFeedback, setEmailSentFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentTenant?.id) {
