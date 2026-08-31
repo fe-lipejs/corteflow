@@ -77,27 +77,28 @@ serve(async (req: Request) => {
       });
     }
 
-    // Verify caller is owner of the professional's tenant
-    const { data: callerMembership } = await supabaseAdmin
-      .from('tenant_users')
-      .select('role')
-      .match({ user_id: user.id, tenant_id: professional.tenant_id, status: 'active' })
-      .maybeSingle();
-
+    // Verify caller is owner of the professional's tenant or a super_admin
     const { data: callerProfile } = await supabaseAdmin
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .maybeSingle();
 
-    if (callerMembership?.role !== 'owner' && callerProfile?.role !== 'super_admin') {
+    const { data: tenant } = await supabaseAdmin
+      .from('tenants')
+      .select('owner_user_id')
+      .eq('id', professional.tenant_id)
+      .maybeSingle();
+
+    const isTenantOwner = tenant?.owner_user_id === user.id;
+    const isSuperAdmin = callerProfile?.role === 'super_admin';
+
+    if (!isTenantOwner && !isSuperAdmin) {
       return new Response(JSON.stringify({ error: "Only owners can create professional access" }), {
-        status: 200,
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // (We already verified callerMembership, so they definitely belong to the same tenant)
 
     // Check existing membership in this tenant for this professional slot
     if (professional.auth_user_id) {
@@ -231,6 +232,7 @@ serve(async (req: Request) => {
     const siteUrl = Deno.env.get('SITE_URL') || 'https://www.raffros.com';
     let emailSent = false;
 
+    let resendErrorDetail = null;
     if (resendApiKey && !isExistingUser && tempPassword) {
       try {
         const emailRes = await fetch('https://api.resend.com/emails', {
@@ -240,7 +242,7 @@ serve(async (req: Request) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: `${tenantName} via Raffros <noreply@raffros.com>`,
+            from: `Equipe Raffros <noreply@raffros.com>`,
             to: [email],
             subject: `Você recebeu acesso ao ${tenantName} — Raffros`,
             html: `
@@ -261,9 +263,14 @@ serve(async (req: Request) => {
             `,
           }),
         });
-        if (emailRes.ok) emailSent = true;
-        else console.error('Resend email failed:', await emailRes.text());
-      } catch (emailErr) {
+        if (emailRes.ok) {
+          emailSent = true;
+        } else {
+          resendErrorDetail = await emailRes.text();
+          console.error('Resend email failed:', resendErrorDetail);
+        }
+      } catch (emailErr: any) {
+        resendErrorDetail = emailErr.message;
         console.error('Error sending email via Resend:', emailErr);
       }
     }
@@ -277,9 +284,9 @@ serve(async (req: Request) => {
           : `Acesso criado! A senha temporária é: ${tempPassword}`,
       isExistingUser,
       authUserId: targetUserId,
-      // Only expose tempPassword in UI if email was NOT sent (fallback)
       tempPassword: emailSent ? null : tempPassword,
       emailSent,
+      resendError: resendErrorDetail
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

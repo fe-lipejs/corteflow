@@ -254,10 +254,17 @@ export default function ProfessionalModal({ professional, services, onClose, onC
 
   const handleCreateAccess = async () => {
     if (!professional) return;
+    console.log('🔑 [createAccess] Iniciando criação de acesso para:', professional.id, 'email:', email);
     setIsManagingAccess(true);
     setAccessError(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔑 [createAccess] Session:', session ? 'OK (token obtido)' : 'FALHOU - sem sessão!');
+      if (!session) {
+        setAccessError('Sessão expirada. Recarregue a página.');
+        return;
+      }
+      console.log('🔑 [createAccess] Chamando edge function...');
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-professional-access`, {
         method: 'POST',
         headers: {
@@ -270,16 +277,26 @@ export default function ProfessionalModal({ professional, services, onClose, onC
           permissions: accessPermissions
         })
       });
+      console.log('🔑 [createAccess] Response status:', res.status);
       const data = await res.json();
+      console.log('🔑 [createAccess] Response data:', JSON.stringify(data, null, 2));
       if (!res.ok) throw new Error(data.error || 'Erro ao criar acesso');
       if (data.tempPassword) {
         setTempPassword(data.tempPassword);
-        toast.success('Acesso criado! Anote a senha provisória.');
+        if (data.resendError) {
+          console.error('📧 [createAccess] Resend falhou:', data.resendError);
+          toast.error(`Acesso criado, mas o e-mail NÃO foi enviado. Erro: ${data.resendError}`, { duration: 8000 });
+        } else {
+          console.log('📧 [createAccess] Email enviado com sucesso pelo Resend');
+          toast.success('Acesso criado! Anote a senha provisória.');
+        }
       } else {
+        console.log('📧 [createAccess] Usuário existente ou email enviado sem senha temporária');
         toast.success(data.message || 'Acesso criado com sucesso!');
       }
       setAccessEnabled(true);
     } catch (err: any) {
+      console.error('🔑 [createAccess] ERRO:', err.message, err);
       setAccessError(err.message);
     } finally {
       setIsManagingAccess(false);
@@ -333,7 +350,6 @@ export default function ProfessionalModal({ professional, services, onClose, onC
       if (!res.ok) throw new Error(data.error || 'Erro ao alterar acesso');
       
       toast.success('Acesso atualizado com sucesso!');
-      if (onClose) onClose();
     } catch (err: any) {
       setAccessError(err.message);
       setIsManagingAccess(false);
