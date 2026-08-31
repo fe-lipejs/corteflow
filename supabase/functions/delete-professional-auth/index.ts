@@ -51,21 +51,7 @@ serve(async (req: Request) => {
       });
     }
 
-    // Verify caller is owner of the professional's tenant
-    const { data: callerProfile } = await supabaseAdmin
-      .from('profiles')
-      .select('tenant_id, role')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (callerProfile?.role !== 'owner' && callerProfile?.role !== 'super_admin') {
-      return new Response(JSON.stringify({ error: "Only owners can delete professional access" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Verify professional belongs to the caller's tenant
+    // Verify professional first
     const { data: professional } = await supabaseAdmin
       .from('professionals')
       .select('tenant_id, auth_user_id')
@@ -79,8 +65,21 @@ serve(async (req: Request) => {
       });
     }
 
-    if (callerProfile.role !== 'super_admin' && professional.tenant_id !== callerProfile.tenant_id) {
-      return new Response(JSON.stringify({ error: "Professional does not belong to your tenant" }), {
+    // Verify caller is owner of the professional's tenant
+    const { data: callerMembership } = await supabaseAdmin
+      .from('tenant_users')
+      .select('role')
+      .match({ user_id: user.id, tenant_id: professional.tenant_id, status: 'active' })
+      .maybeSingle();
+
+    const { data: callerProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (callerMembership?.role !== 'owner' && callerProfile?.role !== 'super_admin') {
+      return new Response(JSON.stringify({ error: "Only owners can delete professional access" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

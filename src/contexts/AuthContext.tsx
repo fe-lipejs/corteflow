@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useState } from 'react';
+﻿import React, { createContext, useEffect, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../integrations/supabase/client';
 import type { Database, UserRole, Professional } from '../types/database';
@@ -18,13 +18,12 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  // Professional Access
   professionalProfile: Professional | null;
   professionalPermissions: Record<string, boolean> | null;
   forcePasswordChange: boolean;
-  // Multi-tenant
   memberships: any[];
   switchTenantContext: (tenantId: string) => Promise<void>;
+  pendingTenantSelection: any[];
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,15 +35,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);
-  
   const [professionalProfile, setProfessionalProfile] = useState<Professional | null>(null);
   const [professionalPermissions, setProfessionalPermissions] = useState<Record<string, boolean> | null>(null);
   const [forcePasswordChange, setForcePasswordChange] = useState(false);
-  
   const [memberships, setMemberships] = useState<any[]>([]);
+  const [pendingTenantSelection, setPendingTenantSelection] = useState<any[]>([]);
+  const permChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  const subscribeToPermissions = (userId: string) => {
+    if (permChannelRef.current) {
+      supabase.removeChannel(permChannelRef.current);
+      permChannelRef.current = null;
+    }
+    const channel = supabase
+      .channel(`prof-permissions-${userId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'professionals',
+        filter: `auth_user_id=eq.${userId}`,
+      }, (payload) => {
+        const updated = payload.new as any;
+        if (updated.permissions) {
+          setProfessionalPermissions(updated.permissions as Record<string, boolean>);
+        }
+        if (updated.active === false) {
+          supabase.auth.signOut();
+        }
+      })
+      .subscribe();
+    permChannelRef.current = channel;
+  };
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -55,26 +78,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          fetchProfile(session.user.id);
-        } else {
-          setProfile(null);
-          setTenant(null);
-          setProfessionalProfile(null);
-          setProfessionalPermissions(null);
-          setForcePasswordChange(false);
-          setLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setTenant(null);
+        setProfessionalProfile(null);
+        setProfessionalPermissions(null);
+        setForcePasswordChange(false);
+        setPendingTenantSelection([]);
+        if (permChannelRef.current) {
+          supabase.removeChannel(permChannelRef.current);
+          permChannelRef.current = null;
         }
+        setLoading(false);
       }
-    );
+    });
 
     return () => {
       subscription.unsubscribe();
+      if (permChannelRef.current) {
+        supabase.removeChannel(permChannelRef.current);
+      }
     };
   }, []);
 
@@ -90,22 +118,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error fetching profile:', profErr);
       } else if (prof) {
         setProfile(prof);
-
         let resolvedTenantId = (prof as any)?.tenant_id;
 
+        if (prof.role === 'professional' && !resolvedTenantId) {
+          const { data: activeMemberships } = await supabase
+            .from('tenant_users')
+            .select('tenant_id, role, status, tenants(id, name, business_type, slug)')
+            .eq('user_id', userId)
+            .eq('status', 'active');
+
+          const validMemberships = (activeMemberships || []).filter(
+            (m: any) => m.tenants && m.status === 'active'
+          );
+
+          if (validMemberships.length > 1) {
+            setPendingTenantSelection(validMemberships);
+            setLoading(false);
+            return;
+          } else if (validMemberships.length === 1) {
+            resolvedTenantId = validMemberships[0].tenant_id;
+          }
+        }
+
+        setPendingTenantSelection([]);
+
         if (prof.role === 'professional' && resolvedTenantId) {
-          // Fetch professional record for the active tenant
           const { data: profRecord, error: profRecordErr } = await supabase
             .from('professionals')
             .select('*')
             .eq('auth_user_id', userId)
             .eq('tenant_id', resolvedTenantId)
             .maybeSingle();
-            
           if (profRecord && !profRecordErr) {
             setProfessionalProfile(profRecord as Professional);
             setProfessionalPermissions((profRecord.permissions as Record<string, boolean>) || null);
             setForcePasswordChange(!!profRecord.force_password_change);
+            subscribeToPermissions(userId);
           } else {
             setProfessionalProfile(null);
             setProfessionalPermissions(null);
@@ -118,16 +166,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .select('*')
             .eq('id', resolvedTenantId)
             .maybeSingle();
-          const ten = tenData as any;
-            
-          if (!tenErr && ten) {
-            setTenant(ten);
+          if (!tenErr && tenData) {
+            setTenant(tenData as any);
           }
         }
-        
-        // Fetch all memberships for this user
-        if ((prof.role === 'super_admin')) {
-          // Super admins can access everything, we could fetch all tenants or just leave memberships empty
+
+        if (prof.role === 'super_admin') {
           setMemberships([]);
         } else {
           const { data: memData } = await supabase
@@ -135,18 +179,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .select('*, tenants(*)')
             .eq('user_id', userId)
             .eq('status', 'active');
-          if (memData) {
-            setMemberships(memData);
-          }
+          if (memData) setMemberships(memData);
         }
-
       } else {
-        // If no profile yet (e.g. during onboarding before upsert finishes), reset to null
         setProfile(null);
         setTenant(null);
         setProfessionalProfile(null);
         setProfessionalPermissions(null);
         setForcePasswordChange(false);
+        setPendingTenantSelection([]);
       }
     } catch (err) {
       console.error('Error in fetchProfile:', err);
@@ -156,13 +197,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    if (permChannelRef.current) {
+      supabase.removeChannel(permChannelRef.current);
+      permChannelRef.current = null;
+    }
     await supabase.auth.signOut();
   };
 
   const refreshProfile = async () => {
-    if (user?.id) {
-      await fetchProfile(user.id);
-    }
+    if (user?.id) await fetchProfile(user.id);
   };
 
   const switchTenantContext = async (newTenantId: string) => {
@@ -170,14 +213,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { error } = await supabase.rpc('switch_tenant', { p_tenant_id: newTenantId });
       if (error) throw error;
-      
-      // Clear React Query cache to prevent data from previous tenant leaking
       queryClient.clear();
-      
-      // If success, refresh the whole context
-      if (user?.id) {
-        await fetchProfile(user.id);
-      }
+      if (user?.id) await fetchProfile(user.id);
     } catch (err) {
       console.error('Error switching tenant:', err);
       throw err;
@@ -201,7 +238,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     professionalPermissions,
     forcePasswordChange,
     memberships,
-    switchTenantContext
+    switchTenantContext,
+    pendingTenantSelection,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -214,4 +252,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

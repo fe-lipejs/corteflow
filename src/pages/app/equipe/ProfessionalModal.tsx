@@ -12,6 +12,7 @@ import { Crown, Lock, Key, Shield, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../integrations/supabase/client';
 import { useAccountState } from '../../../hooks/useAccountState';
+import toast from 'react-hot-toast';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ROLES = ['Barbeiro', 'Cabeleireiro', 'Manicure', 'Pedicure', 'Esteticista', 'Maquiador', 'Outro'];
@@ -272,7 +273,13 @@ export default function ProfessionalModal({ professional, services, onClose, onC
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao criar acesso');
-      setAccessSuccessMsg(data.message || 'Acesso criado com sucesso!');
+      if (data.tempPassword) {
+        setTempPassword(data.tempPassword);
+        toast.success('Acesso criado! Anote a senha provisória.');
+      } else {
+        toast.success(data.message || 'Acesso criado com sucesso!');
+        if (onClose) onClose();
+      }
       setAccessEnabled(true);
     } catch (err: any) {
       setAccessError(err.message);
@@ -326,8 +333,9 @@ export default function ProfessionalModal({ professional, services, onClose, onC
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao alterar acesso');
-      // Apenas atualizar UI local
-      window.location.reload(); // Simplificação para garantir sincronia do active
+      
+      toast.success('Acesso atualizado com sucesso!');
+      if (onClose) onClose();
     } catch (err: any) {
       setAccessError(err.message);
       setIsManagingAccess(false);
@@ -820,6 +828,23 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                         >
                           {professional.active ? 'Bloquear Acesso' : 'Desbloquear Acesso'}
                         </button>
+                      </div>
+                    )}
+
+                    {tempPassword && (
+                      <div className="mt-4 p-4 rounded-lg border flex flex-col gap-2" style={{ background: 'rgba(234, 179, 8, 0.1)', borderColor: 'rgba(234,179,8,0.3)' }}>
+                        <div className="flex items-center gap-2">
+                          <Key className="w-4 h-4 text-yellow-600" />
+                          <p className="text-xs font-bold text-yellow-700">Senha Provisória Gerada!</p>
+                        </div>
+                        <p className="text-xs text-yellow-800">
+                          Copie a senha abaixo e envie para o profissional. Ele precisará dela para o primeiro acesso.
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <code className="flex-1 px-3 py-2 rounded bg-white border border-yellow-200 text-sm font-mono text-center select-all">
+                            {tempPassword}
+                          </code>
+                        </div>
                       </div>
                     )}
 

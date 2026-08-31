@@ -136,6 +136,7 @@ serve(async (req: Request) => {
     }
 
     let targetUserId = null;
+    let tempPassword = null;
 
     // Check if user already exists
     const { data: existingUserId, error: lookupError } = await supabaseAdmin.rpc('get_user_id_by_email', {
@@ -145,22 +146,25 @@ serve(async (req: Request) => {
     if (existingUserId) {
       targetUserId = existingUserId;
     } else {
-      // Create user and send invite email via Supabase
-      const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        data: {
+      tempPassword = generateTempPassword();
+      // Create user directly and auto-confirm email, skipping the generic invite email
+      const { data: authData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
           is_professional: true
-        },
-        redirectTo: `${Deno.env.get('SITE_URL') || 'https://www.raffros.com'}/change-password`
+        }
       });
 
-      if (inviteError) {
-        return new Response(JSON.stringify({ error: inviteError.message }), {
+      if (createError) {
+        return new Response(JSON.stringify({ error: createError.message }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       
-      targetUserId = inviteData.user.id;
+      targetUserId = authData.user.id;
 
       // Create profile for professional (Global Profile)
       await supabaseAdmin.from('profiles').insert({
@@ -219,18 +223,62 @@ serve(async (req: Request) => {
 
     const isExistingUser = !!existingUserId;
 
-    // Note: For existing users, they already have a password — they just receive access to the new tenant.
-    // A notification email can be sent here via a future email service integration.
-    // Note: For existing users, they already have a password — they just receive access to the new tenant.
-    // A notification email can be sent here via a future email service integration.
-    
+    // ── EMAIL NOTIFICATION via Resend (optional — falls back to UI display) ──
+    // To enable: add RESEND_API_KEY as a secret in Supabase Dashboard →
+    // Project Settings → Edge Functions → Secrets
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://www.raffros.com';
+    let emailSent = false;
+
+    if (resendApiKey && !isExistingUser && tempPassword) {
+      try {
+        const emailRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: `${tenantName} via Raffros <noreply@raffros.com>`,
+            to: [email],
+            subject: `Você recebeu acesso ao ${tenantName} — Raffros`,
+            html: `
+              <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #1a1a1a; color: #f0f0f0; border-radius: 16px;">
+                <h2 style="color: #C9963B; margin-bottom: 8px;">Seu acesso está pronto! 🎉</h2>
+                <p>Olá! O estabelecimento <strong>${tenantName}</strong> criou um acesso para você na plataforma <strong>Raffros</strong>.</p>
+                <div style="background: #2a2a2a; border-radius: 12px; padding: 20px; margin: 24px 0; border: 1px solid #333;">
+                  <p style="margin: 0 0 8px; font-size: 13px; color: #888;">Suas credenciais de acesso:</p>
+                  <p style="margin: 0 0 4px;"><strong>E-mail:</strong> ${email}</p>
+                  <p style="margin: 0;"><strong>Senha provisória:</strong> <code style="background: #333; padding: 2px 8px; border-radius: 4px; font-size: 16px; color: #C9963B;">${tempPassword}</code></p>
+                </div>
+                <p style="font-size: 13px; color: #888;">Por segurança, você será solicitado a criar uma nova senha no primeiro acesso.</p>
+                <a href="${siteUrl}/login" style="display: inline-block; background: #C9963B; color: #000; font-weight: bold; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-top: 16px;">
+                  Acessar minha conta →
+                </a>
+                <p style="margin-top: 24px; font-size: 12px; color: #555;">Este e-mail foi enviado automaticamente. Não responda a este endereço.</p>
+              </div>
+            `,
+          }),
+        });
+        if (emailRes.ok) emailSent = true;
+        else console.error('Resend email failed:', await emailRes.text());
+      } catch (emailErr) {
+        console.error('Error sending email via Resend:', emailErr);
+      }
+    }
+
     return new Response(JSON.stringify({ 
       success: true, 
       message: isExistingUser 
-        ? `Profissional adicionado à ${tenantName}. Ele receberá uma notificação.`
-        : `Convite enviado para ${email}. O profissional receberá um e-mail para acessar o sistema.`,
+        ? `Profissional adicionado ao salão com sucesso!`
+        : emailSent 
+          ? `Acesso criado! Um e-mail com as credenciais foi enviado para ${email}.`
+          : `Acesso criado! A senha temporária é: ${tempPassword}`,
       isExistingUser,
-      authUserId: targetUserId
+      authUserId: targetUserId,
+      // Only expose tempPassword in UI if email was NOT sent (fallback)
+      tempPassword: emailSent ? null : tempPassword,
+      emailSent,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

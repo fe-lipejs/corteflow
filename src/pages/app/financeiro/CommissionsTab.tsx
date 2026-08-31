@@ -6,32 +6,41 @@ import { CheckCircle, DollarSign, User, Calendar, Loader2 } from 'lucide-react';
 
 interface Props {
   tenantId: string;
+  role?: string | null;
+  professionalId?: string | null;
 }
 
-export function CommissionsTab({ tenantId }: Props) {
+export function CommissionsTab({ tenantId, role, professionalId }: Props) {
   const { theme } = useTheme();
   const queryClient = useQueryClient();
   const [payingId, setPayingId] = useState<string | null>(null);
 
   const { data: commissions, isLoading } = useQuery({
-    queryKey: ['commissions', tenantId],
+    queryKey: ['commissions', tenantId, professionalId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // C3 FIX: Build query conditionally — professionals only see their own commissions
+      let query = supabase
         .from('financial_transactions')
         .select(`
           id,
           amount,
           created_at,
           status,
+          professional_id,
           professionals(name),
           bookings(services(name))
         `)
         .eq('tenant_id', tenantId)
         .eq('type', 'expense')
         .eq('category', 'Comissão')
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false });
+        .is('deleted_at', null);
 
+      // Backend filter: if a professional, restrict to their own records only
+      if (role === 'professional' && professionalId) {
+        query = query.eq('professional_id', professionalId);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -43,7 +52,8 @@ export function CommissionsTab({ tenantId }: Props) {
       const { error } = await supabase
         .from('financial_transactions')
         .update({ status: 'approved' })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('tenant_id', tenantId);
       if (error) throw error;
     },
     onSuccess: () => {

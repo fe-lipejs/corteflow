@@ -13,6 +13,7 @@ import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import { ManualTransactionModal, type FinancialTransaction } from './financeiro/ManualTransactionModal';
 import { UpgradeModal } from '../../components/UpgradeModal';
 import { CommissionsTab } from './financeiro/CommissionsTab';
@@ -29,6 +30,7 @@ export default function Financeiro() {
   const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null);
+  const [deletingTransaction, setDeletingTransaction] = useState<any>(null);
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(role === 'professional' ? professionalProfile?.id || null : null);
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [activeTab, setActiveTab] = useState<'fluxo' | 'comissoes' | 'despesas_fixas'>('fluxo');
@@ -64,6 +66,21 @@ export default function Financeiro() {
       const start = startOfMonth(currentMonth).toISOString();
       const end = endOfMonth(currentMonth).toISOString();
 
+      // ── C1 FIX: For professionals, pre-fetch their booking IDs so payments/refunds
+      // are filtered at the DATABASE level (not just hidden in the UI). This prevents
+      // raw data from appearing in the browser's DevTools Network tab.
+      let professionalBookingIds: string[] | null = null;
+      if (role === 'professional' && selectedProfessionalId) {
+        const { data: myBookings } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('tenant_id', tenantId)
+          .eq('professional_id', selectedProfessionalId)
+          .gte('scheduled_at', start)
+          .lte('scheduled_at', end);
+        professionalBookingIds = (myBookings || []).map((b: any) => b.id);
+      }
+
       // (A) Fetch Payments (Entradas Online)
       let paymentsQuery = supabase
         .from('payments')
@@ -83,6 +100,16 @@ export default function Financeiro() {
         .lte('created_at', end)
         .order('created_at', { ascending: false });
 
+      // Backend filter: only fetch payments linked to professional's own bookings
+      if (professionalBookingIds !== null) {
+        if (professionalBookingIds.length === 0) {
+          // No bookings → skip payments query entirely
+          paymentsQuery = paymentsQuery.in('booking_id', ['00000000-0000-0000-0000-000000000000']);
+        } else {
+          paymentsQuery = paymentsQuery.in('booking_id', professionalBookingIds);
+        }
+      }
+
       // (B) Fetch Refunds (Saídas Online)
       let refundsQuery = supabase
         .from('refunds')
@@ -90,6 +117,7 @@ export default function Financeiro() {
           *,
           payments (
             id,
+            booking_id,
             bookings (
               professional_id,
               customers (name),
@@ -144,8 +172,9 @@ export default function Financeiro() {
         paymentsQuery,
         refundsQuery,
         localBookingsQuery,
-        manualTxQuery
+        manualTxQuery,
       ]);
+
 
       let entradas = 0;
       let saidas = 0;
@@ -366,14 +395,23 @@ export default function Financeiro() {
     setModalOpen(true);
   };
 
-  const handleDeleteClick = async (tx: any) => {
+  const handleDeleteClick = (tx: any) => {
     if (!tx.isManual) return;
     if (!engine.hasPermission('financeiro.excluir_lancamento')) {
       setShowUpgradeModal('financeiro.excluir_lancamento');
       return;
     }
-    if (window.confirm(`Deseja realmente excluir o lançamento "${tx.description}"?`)) {
-      await deleteTransactionMutation.mutateAsync(tx.id);
+    setDeletingTransaction(tx);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingTransaction) return;
+    try {
+      await deleteTransactionMutation.mutateAsync(deletingTransaction.id);
+      toast.success('Lançamento excluído com sucesso');
+      setDeletingTransaction(null);
+    } catch (error: any) {
+      toast.error(error?.message || 'Erro ao excluir lançamento');
     }
   };
 
@@ -485,7 +523,7 @@ export default function Financeiro() {
 
         {activeTab === 'comissoes' && tenantId && (
           engine.hasPermission('equipe.ver_comissoes') ? (
-            <CommissionsTab tenantId={tenantId} />
+            <CommissionsTab tenantId={tenantId} role={role} professionalId={professionalProfile?.id || null} />
           ) : (
             <div className="flex flex-col items-center justify-center p-12 text-center h-64 border rounded-xl" style={{ borderColor: theme.border, background: theme.cardBg }}>
               <Lock className="w-12 h-12 mb-4 opacity-50" style={{ color: theme.textSecondary }} />
@@ -773,6 +811,38 @@ export default function Financeiro() {
         tenantId={tenantId || ''}
         isLoading={saveTransactionMutation.isPending}
       />
+
+      {/* ── Modal: Delete Confirmation ── */}
+      {deletingTransaction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl glass-card" style={{ borderColor: theme.border }}>
+            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: `${theme.error}10`, color: theme.error }}>
+              <AlertCircle className="w-7 h-7" />
+            </div>
+            <h3 className="font-serif text-xl font-bold mb-2" style={{ color: theme.textPrimary }}>Excluir Lançamento?</h3>
+            <p className="text-sm mb-7" style={{ color: theme.textSecondary }}>
+              <strong style={{ color: theme.textPrimary }}>{deletingTransaction.description}</strong> será removido do fluxo de caixa. Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeletingTransaction(null)}
+                className="flex-1 py-3 rounded-xl border font-semibold text-sm transition-all hover:bg-[var(--theme-bg-hover)]"
+                style={{ borderColor: theme.border, color: theme.textPrimary }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleteTransactionMutation.isPending}
+                className="flex-1 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-white"
+                style={{ background: theme.error }}
+              >
+                {deleteTransactionMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Excluindo...</> : 'Confirmar Exclusão'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal: Upgrade Plan (Ações Individuais) ── */}
       {showUpgradeModal && (

@@ -13,9 +13,10 @@ import { NotificationBell } from '../../components/notifications/NotificationBel
 import { ConnectionStatus } from '../../components/notifications/ConnectionStatus';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 import { RefreshCw } from 'lucide-react';
+import { TenantSelectorModal } from '../../components/TenantSelectorModal';
 
 export default function AppLayout() {
-  const { signOut, tenant, profile, loading, role, professionalPermissions, professionalProfile, memberships } = useAuth();
+  const { signOut, tenant, profile, loading, role, professionalPermissions, professionalProfile, memberships, pendingTenantSelection } = useAuth();
   const { i18n } = useTranslation();
   const { theme, setThemeId, setCustomPalette } = useTheme();
   const navigate = useNavigate();
@@ -117,6 +118,11 @@ export default function AppLayout() {
     if (professionalPermissions?.view_commission) {
       navItems.push({ to: '/admin/minha-comissao', icon: DollarSign, label: 'Minha Comissão', end: false, permission: null } as any);
     }
+  }
+
+  // Show tenant selector for professionals with multiple active salons
+  if (pendingTenantSelection.length > 0) {
+    return <TenantSelectorModal options={pendingTenantSelection} />;
   }
 
   if (loading || !tenant) {

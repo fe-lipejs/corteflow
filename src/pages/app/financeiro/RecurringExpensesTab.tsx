@@ -36,7 +36,8 @@ export function RecurringExpensesTab({ tenantId }: Props) {
       const { error } = await supabase
         .from('recurring_expenses')
         .update({ deleted_at: new Date().toISOString() })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('tenant_id', tenantId);
       if (error) throw error;
     },
     onSuccess: () => {
