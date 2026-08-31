@@ -193,6 +193,7 @@ serve(async (req: Request) => {
     // Link professional record
     const { error: updateProfError } = await supabaseAdmin.from('professionals').update({
       auth_user_id: targetUserId,
+      email: email,
       active: true,
       force_password_change: true,
       permissions: permissions || {
