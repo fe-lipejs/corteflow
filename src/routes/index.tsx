@@ -67,14 +67,8 @@ function AuthRoutes() {
           </RequireAuth>
         }
       />
-      <Route
-        path="/select-tenant"
-        element={
-          <RequireAuth>
-            <SelectTenant />
-          </RequireAuth>
-        }
-      />
+      <Route path="/select-tenant" element={<RequireAuth><SelectTenant /></RequireAuth>} />
+      <Route path="/admin/senha" element={<RequireAuth><ChangePassword /></RequireAuth>} />
     </>
   );
 }
@@ -125,7 +119,6 @@ function AppRouteTree() {
       } />
       <Route path="assinatura" element={<Assinatura />} />
       <Route path="suporte" element={<Suporte />} />
-      <Route path="senha" element={<ChangePassword />} />
       <Route path="minha-comissao" element={<MinhaComissao />} />
       <Route path="minha-area" element={<MinhaArea />} />
     </Route>

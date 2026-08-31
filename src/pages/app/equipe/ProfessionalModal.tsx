@@ -254,17 +254,15 @@ export default function ProfessionalModal({ professional, services, onClose, onC
 
   const handleCreateAccess = async () => {
     if (!professional) return;
-    console.log('🔑 [createAccess] Iniciando criação de acesso para:', professional.id, 'email:', email);
     setIsManagingAccess(true);
     setAccessError(null);
+    setEmailSentFeedback(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      console.log('🔑 [createAccess] Session:', session ? 'OK (token obtido)' : 'FALHOU - sem sessão!');
       if (!session) {
         setAccessError('Sessão expirada. Recarregue a página.');
         return;
       }
-      console.log('🔑 [createAccess] Chamando edge function...');
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-professional-access`, {
         method: 'POST',
         headers: {
@@ -277,26 +275,26 @@ export default function ProfessionalModal({ professional, services, onClose, onC
           permissions: accessPermissions
         })
       });
-      console.log('🔑 [createAccess] Response status:', res.status);
       const data = await res.json();
-      console.log('🔑 [createAccess] Response data:', JSON.stringify(data, null, 2));
       if (!res.ok) throw new Error(data.error || 'Erro ao criar acesso');
       if (data.tempPassword) {
         setTempPassword(data.tempPassword);
         if (data.resendError) {
-          console.error('📧 [createAccess] Resend falhou:', data.resendError);
-          toast.error(`Acesso criado, mas o e-mail NÃO foi enviado. Erro: ${data.resendError}`, { duration: 8000 });
+          setEmailSentFeedback(`⚠️ Acesso criado, mas o e-mail falhou: ${data.resendError}`);
+          toast.error('Não foi possível enviar o e-mail. Anote a senha provisória abaixo.', { duration: 6000 });
         } else {
-          console.log('📧 [createAccess] Email enviado com sucesso pelo Resend');
+          setEmailSentFeedback('✅ E-mail enviado com a senha provisória!');
           toast.success('Acesso criado! Anote a senha provisória.');
         }
+      } else if (data.emailSent) {
+        setEmailSentFeedback(`✅ E-mail com as credenciais enviado para ${email}`);
+        toast.success(data.message || 'Acesso criado com sucesso!');
       } else {
-        console.log('📧 [createAccess] Usuário existente ou email enviado sem senha temporária');
+        setEmailSentFeedback('✅ Profissional vinculado ao salão com sucesso!');
         toast.success(data.message || 'Acesso criado com sucesso!');
       }
       setAccessEnabled(true);
     } catch (err: any) {
-      console.error('🔑 [createAccess] ERRO:', err.message, err);
       setAccessError(err.message);
     } finally {
       setIsManagingAccess(false);
@@ -692,6 +690,11 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                             >
                               {isManagingAccess ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Criar Acesso'}
                             </button>
+                            {emailSentFeedback && (
+                              <div className={`mt-2 p-2.5 rounded-lg text-xs font-medium ${emailSentFeedback.startsWith('✅') ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-yellow-50 text-yellow-700 border border-yellow-100'}`}>
+                                {emailSentFeedback}
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="mt-4 pt-4 border-t flex gap-2" style={{ borderColor: theme.border }}>

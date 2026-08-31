@@ -1,4 +1,4 @@
-﻿import React, { createContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useEffect, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../integrations/supabase/client';
 import type { Database, UserRole, Professional } from '../types/database';
@@ -120,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile(prof);
         let resolvedTenantId = (prof as any)?.tenant_id;
 
-        if (prof.role === 'professional' && !resolvedTenantId) {
+        if ((prof.role === 'professional' || !resolvedTenantId) && prof.role !== 'super_admin') {
           const { data: activeMemberships } = await supabase
             .from('tenant_users')
             .select('tenant_id, role, status, tenants(id, name, business_type, slug)')

@@ -194,12 +194,13 @@ export default function Login() {
         }
       }
 
-      const isCompleted = profileData?.onboarding_completed || Boolean(profileData?.tenant_id);
+      const isProfessional = profileData?.role === 'professional';
+      const isCompleted = profileData?.onboarding_completed || Boolean(profileData?.tenant_id) || isProfessional;
 
       if (isSuperAdminMode || profileData?.role === 'super_admin') {
         navigate('/platform');
-      } else if (isCompleted) {
-        // Check memberships
+      } else if (isCompleted || isProfessional) {
+        // Check memberships for multi-tenant
         const { data: memData } = await supabase
           .from('tenant_users')
           .select('tenant_id')

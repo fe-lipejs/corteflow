@@ -168,9 +168,17 @@ serve(async (req: Request) => {
       targetUserId = authData.user.id;
 
       // Create profile for professional (Global Profile)
-      await supabaseAdmin.from('profiles').insert({
+      // Fetch professional name for the profile
+      const { data: profData } = await supabaseAdmin
+        .from('professionals')
+        .select('name')
+        .eq('id', professional_id)
+        .maybeSingle();
+
+      await supabaseAdmin.from('profiles').upsert({
         id: targetUserId,
-        full_name: 'Profissional', 
+        full_name: profData?.name || 'Profissional',
+        role: 'professional',
         onboarding_completed: true
       });
     }

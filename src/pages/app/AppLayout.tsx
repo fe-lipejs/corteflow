@@ -107,7 +107,8 @@ export default function AppLayout() {
 
   if (role === 'professional') {
     navItems = [];
-    // Always show Minha Área for professionals
+    // Always show Visão geral and Minha Área for professionals
+    navItems.push({ to: '/admin', icon: LayoutDashboard, label: 'Visão geral', end: true, permission: null } as any);
     navItems.push({ to: '/admin/minha-area', icon: UserCircle, label: 'Minha Área', end: false, permission: null } as any);
     if (professionalPermissions?.view_own_schedule) {
       navItems.push({ to: '/admin/agenda', icon: Calendar, label: 'Agenda', end: false, permission: null } as any);
