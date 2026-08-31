@@ -176,7 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           const { data: memData } = await supabase
             .from('tenant_users')
-            .select('*, tenants(*)')
+            .select('*, tenants(*, tenant_settings(logo_url))')
             .eq('user_id', userId)
             .eq('status', 'active');
           if (memData) setMemberships(memData);

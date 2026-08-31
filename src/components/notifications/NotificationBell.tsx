@@ -30,14 +30,24 @@ export function NotificationBell({ align = 'right' }: NotificationBellProps = {}
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const { professionalProfile } = useAuth();
+
   const { data: notifications = [] } = useQuery({
-    queryKey: ['notifications', tenant?.id],
+    queryKey: ['notifications', tenant?.id, professionalProfile?.id],
     queryFn: async () => {
       if (!tenant?.id) return [];
-      const { data, error } = await supabase
+      
+      let query = supabase
         .from('notifications')
         .select('*')
-        .eq('tenant_id', tenant.id)
+        .eq('tenant_id', tenant.id);
+        
+      if (professionalProfile?.id) {
+        // Professionals only see their own notifications, plus any tenant-wide ones where professional_id is null
+        query = query.or(`professional_id.eq.${professionalProfile.id},professional_id.is.null`);
+      }
+        
+      const { data, error } = await query
         .order('created_at', { ascending: false })
         .limit(20);
       

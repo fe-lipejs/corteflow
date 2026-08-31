@@ -267,28 +267,30 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                  </div>
                  
                  {/* Recent Bookings List */}
-                 <div className="pt-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--theme-text-secondary)' }}>Últimos Atendimentos</p>
-                    {customerHistory.recentList.length > 0 ? (
-                      <div className="space-y-2">
-                        {customerHistory.recentList.map((pb: any) => (
-                          <div key={pb.id} className="flex items-center justify-between p-3.5 rounded-xl border transition-colors hover:opacity-80" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
-                            <div>
-                              <p className="text-sm font-bold" style={{ color: 'var(--theme-text-primary)' }}>{pb.services?.name}</p>
-                              <p className="text-[11px] mt-0.5" style={{ color: 'var(--theme-text-secondary)' }}>com {pb.professionals?.name}</p>
+                 {profile?.role !== 'professional' && (
+                   <div className="pt-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--theme-text-secondary)' }}>Últimos Atendimentos</p>
+                      {customerHistory.recentList.length > 0 ? (
+                        <div className="space-y-2">
+                          {customerHistory.recentList.map((pb: any) => (
+                            <div key={pb.id} className="flex items-center justify-between p-3.5 rounded-xl border transition-colors hover:opacity-80" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
+                              <div>
+                                <p className="text-sm font-bold" style={{ color: 'var(--theme-text-primary)' }}>{pb.services?.name}</p>
+                                <p className="text-[11px] mt-0.5" style={{ color: 'var(--theme-text-secondary)' }}>com {pb.professionals?.name}</p>
+                              </div>
+                              <span className="text-xs font-mono font-medium px-2 py-1 rounded-md" style={{ background: 'var(--theme-bg-hover)', color: 'var(--theme-text-secondary)' }}>
+                                {format(new Date(pb.scheduled_at), "dd/MM/yy")}
+                              </span>
                             </div>
-                            <span className="text-xs font-mono font-medium px-2 py-1 rounded-md" style={{ background: 'var(--theme-bg-hover)', color: 'var(--theme-text-secondary)' }}>
-                              {format(new Date(pb.scheduled_at), "dd/MM/yy")}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-4 rounded-xl border border-dashed" style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-bg-hover)' }}>
-                        <p className="text-xs" style={{ color: 'var(--theme-text-secondary)' }}>Este é o primeiro agendamento deste cliente.</p>
-                      </div>
-                    )}
-                 </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 rounded-xl border border-dashed" style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-bg-hover)' }}>
+                          <p className="text-xs" style={{ color: 'var(--theme-text-secondary)' }}>Este é o primeiro agendamento deste cliente.</p>
+                        </div>
+                      )}
+                   </div>
+                 )}
                </>
              ) : null}
           </div>

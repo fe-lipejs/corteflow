@@ -62,13 +62,19 @@ async function fetchPublicStore(slug: string) {
 
   const now = new Date();
   const validBookings = (bookingsData ?? []).filter((b: any) => {
-    if (b.status === 'confirmed') return true;
+    // Keep bookings that are definitively occupying the slot
+    if (['confirmed', 'arrived', 'in_progress', 'completed'].includes(b.status)) {
+      return true;
+    }
+    
     // For pending, if older than 15 min, consider abandoned
-    if (b.created_at) {
+    if (b.status === 'pending' && b.created_at) {
       const createdAt = new Date(b.created_at);
       const ageMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
       return ageMinutes <= 15;
     }
+    
+    // Catch-all for any other weird status
     return true;
   });
 

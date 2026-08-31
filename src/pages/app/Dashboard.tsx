@@ -165,12 +165,12 @@ export default function Dashboard() {
   const validTodayBookings = todayBookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
   const totalRevenueToday = validTodayBookings.reduce((sum, b) => sum + (b.amount_total || 0), 0);
   
-  let occupancy = 'Sem dados';
+  let occupancy = '0%';
   const todayWeekday = new Date().getDay(); // 0-6
   const todayHours = businessHours.find(h => h.weekday === todayWeekday);
   
   if (todayBookings.length === 0) {
-    occupancy = 'Ainda sem agendamentos';
+    occupancy = '0%';
   } else if (todayHours && todayHours.is_open && todayHours.open_time && todayHours.close_time) {
     const startHour = parseInt(todayHours.open_time.split(':')[0]);
     const endHour = parseInt(todayHours.close_time.split(':')[0]);
@@ -178,23 +178,19 @@ export default function Dashboard() {
     
     // Sum duration of all today's bookings
     const totalBookedMinutes = todayBookings.reduce((sum, b) => {
-      const dur = b.services?.duration_minutes || 0;
-      return sum + dur;
+      return sum + (b.services?.duration_minutes || 30);
     }, 0);
     
-    if (totalMinutesOpen > 0) {
-      const activeProfessionalsCount = professionals.filter(p => p.active).length || 1;
-      const totalMinutesAvailable = totalMinutesOpen * activeProfessionalsCount;
-      const pct = Math.min(100, Math.round((totalBookedMinutes / totalMinutesAvailable) * 100));
-      occupancy = `${pct}%`;
-    }
-  } else if (todayHours && !todayHours.is_open) {
-    occupancy = 'Fechado';
+    // Total available minutes depends on number of professionals (naive calc for now)
+    const availableMinutes = totalMinutesOpen * (professionals.length || 1);
+    const occ = Math.round((totalBookedMinutes / availableMinutes) * 100);
+    occupancy = `${Math.min(occ, 100)}%`;
   }
 
-  // Basic formatter
-  const formatCurrency = (val: number) => 
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+  // Helper to format currency
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+  };
 
   const formatTime = (isoString: string) => {
     const d = new Date(isoString);
@@ -225,7 +221,7 @@ export default function Dashboard() {
     },
     {
       label: 'Novos clientes',
-      value: newCustomersCount === 0 ? 'Nenhum cliente novo' : (newCustomersCount !== undefined ? newCustomersCount.toString() : '...'), 
+      value: newCustomersCount === 0 ? 'Nenhum' : (newCustomersCount !== undefined ? newCustomersCount.toString() : '...'), 
       sub: 'últimos 7 dias',
       icon: UserPlus,
       dark: false,
@@ -296,7 +292,7 @@ export default function Dashboard() {
   if (!profile) return null;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-12">
       {/* Header com Saudação */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
         <div>
@@ -373,24 +369,24 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 4 KPIs Principais */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-5 md:mb-8">
         {kpis.map((k, i) => (
-          <div key={i} className={`kpi-card ${k.dark ? 'glass-card' : 'glass-card'} flex flex-col justify-between h-full p-5`}>
+          <div key={i} className="glass-card p-4 md:p-6 relative overflow-hidden group">
             <div>
-              <div className="flex justify-between items-start mb-4">
-                <span className="text-xs font-medium" style={{ color: theme.textSecondary }}>
+              <div className="flex justify-between items-start mb-2 md:mb-4">
+                <span className="text-[10px] md:text-xs font-medium" style={{ color: theme.textSecondary }}>
                   {k.label}
                 </span>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: theme.accentMuted }}>
-                  <k.icon className="w-4 h-4" style={{ color: theme.accent }} />
+                <div className="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: theme.accentMuted }}>
+                  <k.icon className="w-3.5 h-3.5 md:w-4 md:h-4" style={{ color: theme.accent }} />
                 </div>
               </div>
-              <p className={`font-serif ${typeof k.value === 'string' && k.value.length > 10 ? 'text-xl md:text-2xl' : 'text-2xl md:text-4xl'} font-bold mb-2 truncate`} style={{ color: theme.textPrimary }}>
+              <p className={`font-serif ${typeof k.value === 'string' && k.value.length > 8 ? 'text-[17px] md:text-2xl lg:text-3xl' : 'text-xl md:text-3xl lg:text-4xl'} font-bold mb-1 truncate`} style={{ color: theme.textPrimary }}>
                 {k.value}
               </p>
             </div>
-            <p className="text-xs font-medium" style={{ color: theme.accent }}>
+            <p className="text-[10px] md:text-xs font-medium" style={{ color: theme.accent }}>
               {k.sub}
             </p>
           </div>

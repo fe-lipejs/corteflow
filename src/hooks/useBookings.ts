@@ -242,7 +242,10 @@ export function useUpdateBookingStatus(tenantId: string) {
         .from('bookings')
         .update({ status } as any)
         .eq('id', id);
-      if (error) throw error;
+      if (error) {
+        alert(`Erro do banco de dados:\nMessage: ${error.message}\nDetails: ${error.details}\nHint: ${error.hint}`);
+        throw error;
+      }
 
       // Log history
       await supabase.from('booking_history').insert({

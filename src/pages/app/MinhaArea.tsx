@@ -82,39 +82,40 @@ export default function MinhaArea() {
         className="rounded-2xl p-6 border"
         style={{ background: theme.cardBg, borderColor: theme.border }}
       >
-        <div className="flex items-center gap-5">
-          {professionalProfile?.photo_url ? (
-            <img
-              src={professionalProfile.photo_url}
-              alt={displayName}
-              className="w-20 h-20 rounded-full object-cover border-2"
-              style={{ borderColor: theme.accent }}
-            />
-          ) : (
-            <div
-              className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold shrink-0"
-              style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
-            >
-              {initials}
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold truncate" style={{ color: theme.textPrimary }}>{displayName}</h2>
-            {professionalProfile?.role_title && (
-              <p className="text-sm" style={{ color: theme.textMuted }}>{professionalProfile.role_title}</p>
-            )}
-            {profile && (
-              <div className="flex items-center gap-1.5 mt-2">
-                <Mail className="w-3.5 h-3.5" style={{ color: theme.textMuted }} />
-                <span className="text-xs truncate" style={{ color: theme.textSecondary }}>
-                  {/* E-mail vem do auth.user, não do profile */}
-                  Conta vinculada ao sistema
-                </span>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+          <div className="flex items-center gap-4 sm:gap-5 flex-1 min-w-0">
+            {professionalProfile?.photo_url ? (
+              <img
+                src={professionalProfile.photo_url}
+                alt={displayName}
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 shrink-0"
+                style={{ borderColor: theme.accent }}
+              />
+            ) : (
+              <div
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-xl sm:text-2xl font-bold shrink-0"
+                style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
+              >
+                {initials}
               </div>
             )}
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl font-bold truncate" style={{ color: theme.textPrimary }}>{displayName}</h2>
+              {professionalProfile?.role_title && (
+                <p className="text-xs sm:text-sm truncate" style={{ color: theme.textMuted }}>{professionalProfile.role_title}</p>
+              )}
+              {profile && (
+                <div className="flex items-center gap-1.5 mt-2">
+                  <Mail className="w-3.5 h-3.5 shrink-0" style={{ color: theme.textMuted }} />
+                  <span className="text-[10px] sm:text-xs truncate" style={{ color: theme.textSecondary }}>
+                    Conta vinculada
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
           <div
-            className="px-3 py-1 rounded-full text-xs font-semibold"
+            className="px-3 py-1 rounded-full text-xs font-semibold self-start sm:self-auto shrink-0 w-max"
             style={{ background: `${theme.accent}20`, color: theme.accent }}
           >
             Profissional
@@ -154,12 +155,16 @@ export default function MinhaArea() {
               if (!t) return null;
               const isCurrent = tenant?.id === t.id;
               const isActive = mem.status === 'active';
+              
+              // Handle Supabase 1:1 relation returning either object or array
+              const ts = t.tenant_settings;
+              const tLogoUrl = t.logo_url || (Array.isArray(ts) ? ts[0]?.logo_url : ts?.logo_url);
 
               return (
                 <div key={t.id} className="px-6 py-4 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
-                    {t.logo_url ? (
-                      <img src={t.logo_url} alt={t.name} className="w-10 h-10 rounded-xl object-cover border" style={{ borderColor: theme.border }} />
+                    {tLogoUrl ? (
+                      <img src={tLogoUrl} alt={t.name} className="w-10 h-10 rounded-xl object-cover border" style={{ borderColor: theme.border }} />
                     ) : (
                       <div
                         className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0"
@@ -223,11 +228,11 @@ export default function MinhaArea() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="rounded-2xl p-5 border flex gap-4"
+        className="rounded-2xl p-4 sm:p-5 border flex gap-3 sm:gap-4"
         style={{ background: theme.cardBg, borderColor: theme.border }}
       >
         <Shield className="w-5 h-5 shrink-0 mt-0.5" style={{ color: theme.accent }} />
-        <div>
+        <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-sm mb-1" style={{ color: theme.textPrimary }}>Segurança da Conta</h3>
           <p className="text-xs leading-relaxed" style={{ color: theme.textMuted }}>
             Sua conta é <strong>global</strong>: o mesmo login e senha funcionam em todos os estabelecimentos onde você está vinculado.
