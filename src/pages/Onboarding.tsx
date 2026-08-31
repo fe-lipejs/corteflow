@@ -1042,15 +1042,16 @@ export default function Onboarding() {
                     Seu espaço foi configurado com sucesso e seus 7 dias grátis já estão valendo.
                   </p>
 
-                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 w-full max-w-sm mb-4 relative overflow-hidden shadow-sm shrink-0">
-                    <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
-                      Recomendado
+                  <div className="bg-white border-2 border-[#DE870D]/20 rounded-3xl p-6 w-full max-w-[280px] mb-4 relative shadow-sm shrink-0 flex flex-col items-center mt-3">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#22C55E] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1 whitespace-nowrap shadow-sm">
+                      <Star className="w-3 h-3 fill-white" /> Recomendado
                     </div>
-                    <div className="flex items-center justify-center gap-2 mb-2 mt-1 text-[#0F172A] font-black text-xl">
-                      <Star className="w-5 h-5 text-[#DE870D] fill-[#DE870D]" />
+                    
+                    <h4 className="text-[#0F172A] font-black text-xl mb-2 mt-2 text-center leading-tight">
                       Escolha seu plano ideal
-                    </div>
-                    <p className="text-slate-500 font-medium text-xs mb-5 text-center leading-relaxed px-2">
+                    </h4>
+                    
+                    <p className="text-slate-500 font-medium text-xs mb-5 text-center leading-relaxed">
                       Aproveite seus 7 dias sem custo. Você não será cobrado agora e pode cancelar quando quiser.
                     </p>
                     
@@ -1068,9 +1069,9 @@ export default function Onboarding() {
                           setLoading(false);
                         }
                       }}
-                      className="w-full bg-[#0F172A] text-white h-12 rounded-xl font-bold flex items-center justify-center hover:bg-[#1E293B] transition-colors shadow-md"
+                      className="w-full bg-[#0F172A] text-white h-12 rounded-xl font-bold flex items-center justify-center hover:bg-[#1E293B] transition-colors shadow-md text-sm"
                     >
-                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Ver planos disponíveis'}
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Escolher plano →'}
                     </button>
                   </div>
 
