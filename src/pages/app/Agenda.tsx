@@ -318,8 +318,8 @@ export default function Agenda() {
                 className="absolute right-0 top-0 bottom-2 w-16 z-20 pointer-events-none flex items-center justify-end pr-1"
                 style={{ background: `linear-gradient(to left, ${theme.bg}, transparent)` }}
               >
-                <div className="w-6 h-6 rounded-full bg-white/10 backdrop-blur flex items-center justify-center animate-pulse">
-                  <ChevronRight className="w-4 h-4 text-white" />
+                <div className="w-6 h-6 rounded-full flex items-center justify-center animate-pulse shadow-sm" style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.border}` }}>
+                  <ChevronRight className="w-4 h-4" style={{ color: theme.textSecondary }} />
                 </div>
               </div>
             )}

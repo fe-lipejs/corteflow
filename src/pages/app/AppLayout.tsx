@@ -74,7 +74,6 @@ export default function AppLayout() {
       const { count } = await supabase
         .from('support_messages')
         .select('*', { count: 'exact', head: true })
-        .eq('tenant_id', tenant.id)
         .eq('read_by_owner', false)
         .neq('sender_role', 'owner');
       setUnreadSupport((count || 0) > 0);

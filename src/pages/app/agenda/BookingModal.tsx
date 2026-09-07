@@ -3,7 +3,7 @@ import { X, Loader2, Check, Search, Calendar, Clock } from 'lucide-react';
 import { format, addDays, isBefore, startOfDay, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { supabase } from '../../../integrations/supabase/client';
-import { useBookingsByDay, generateTimeSlots, checkSlotAvailability, type CreateBookingInput } from '../../../hooks/useBookings';
+import { useBookingsByDay, generateTimeSlots, type CreateBookingInput } from '../../../hooks/useBookings';
 import type { Service } from '../../../hooks/useServices';
 
 interface Props {
@@ -139,18 +139,7 @@ export default function BookingModal({
       const scheduledAt = new Date(selectedDate);
       scheduledAt.setHours(h, m, 0, 0);
 
-      // MED-03: Verificar conflito de horário antes de submeter (a agenda pode ter mudado)
-      const isAvailable = await checkSlotAvailability(
-        tenantId,
-        selectedPro?.id ?? null,
-        scheduledAt,
-        selectedService.duration_minutes,
-        selectedService.buffer_minutes,
-      );
-      if (!isAvailable) {
-        setError('Este horário não está mais disponível. Escolha outro horário.');
-        return;
-      }
+
 
       await onCreate({
         customer_id: selectedCustomer.id,
