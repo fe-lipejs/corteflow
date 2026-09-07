@@ -897,72 +897,6 @@ function SolutionSection() {
   );
 }
 
-      <div className="mx-auto max-w-[1360px]">
-        <div className="mb-20 max-w-[700px]">
-          <Reveal>
-            <Eyebrow dark>Como funciona</Eyebrow>
-            <h2 className="font-display text-[clamp(28px,5vw,52px)] font-bold leading-[1.07] tracking-[-0.03em] text-[#1D1D1F]">
-              Enquanto vocÃª atende.
-              <br />
-              <span className="text-[#D97706]">Seu cliente agenda.</span>
-              <br />
-              Sem vocÃª tocar no celular.
-            </h2>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <p className="mt-6 max-w-[46ch] text-[clamp(15px,1.7vw,17px)] leading-relaxed text-[#6E6E73]">
-              A Raffros assume a parte que ninguÃ©m deveria estar fazendo manualmente.
-              Do agendamento ao pagamento, tudo acontece sozinho.
-            </p>
-          </Reveal>
-        </div>
-
-        <div className="space-y-3">
-          {steps.map((step, i) => {
-            const Icon = step.icon;
-            return (
-              <Reveal key={step.label} delay={i * 0.06}>
-                <div className="group flex items-center gap-5 rounded-[18px] border border-black/[0.06] bg-[#F9F9FA] px-5 py-4 transition-all duration-200 hover:border-amber-400/30 hover:bg-white hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)]">
-                  {/* Step number */}
-                  <span
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold text-[#D97706]"
-                    style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}
-                  >
-                    {i + 1}
-                  </span>
-                  {/* Icon */}
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/[0.05] bg-white shadow-sm">
-                    <Icon className="h-4 w-4 text-[#D97706]" />
-                  </div>
-                  {/* Text */}
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-display text-[16px] font-semibold text-[#1D1D1F] leading-snug">{step.label}</h3>
-                    <p className="text-[13px] text-[#8A8A8F] leading-snug mt-0.5">{step.sub}</p>
-                  </div>
-                  {/* Arrow on hover */}
-                  <ArrowRight className="h-4 w-4 shrink-0 text-[#D0D0D5] transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-[#D97706]" />
-                </div>
-              </Reveal>
-            );
-          })}
-        </div>
-
-        {/* CTA */}
-        <Reveal delay={0.3} className="mt-16 text-center">
-          <Link
-            to="/cadastro"
-            onClick={() => trackEvent('click_solucao_comecar')}
-            className="group inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-8 py-4 text-[15px] font-semibold text-[#D97706] transition-all hover:bg-amber-500/18 hover:text-[#B45309]"
-          >
-            Quero minha agenda funcionando assim
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
 /* ============================================================
    SCROLL STORY â€” iPhone mockup progression
    ============================================================ */
@@ -2227,3 +2161,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+
