@@ -134,12 +134,13 @@ serve(async (req) => {
     const amount_total = (service.price || 0) + serviceHomeExtra + travel_fee;
     
     // Fetch deposit_percentage from tenant_settings
-    const { data: tenantSettings } = await supabase
+    const { data: tenantSettingsDeposit } = await supabase
       .from("tenant_settings")
       .select("deposit_percentage")
       .eq("tenant_id", tenant_id)
       .maybeSingle();
-    const depositPct = (tenantSettings?.deposit_percentage ?? 50) / 100;
+    const depositPct = (tenantSettingsDeposit?.deposit_percentage ?? 50) / 100;
+
 
     let amount_paid = 0;
     if (payment_scope === "full" && payment_method !== "cash") {

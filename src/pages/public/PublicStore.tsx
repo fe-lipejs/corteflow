@@ -625,7 +625,9 @@ export default function PublicStore() {
 
   const serviceHomeExtra = bookingMode === 'home' ? (selectedService?.home_price_extra ?? 0) : 0;
   const total = (selectedService?.price ?? 0) + serviceHomeExtra + travelFee;
-  const amountPaid = paymentScope === "full" ? total : paymentScope === "partial" ? total / 2 : 0;
+  const depositPct = (settings?.deposit_percentage ?? 50) / 100;
+  const amountPaid = paymentScope === "full" ? total : paymentScope === "partial" ? total * depositPct : 0;
+
   const amountDue = total - amountPaid;
   const proName = selectedPro === "any" ? "Qualquer profissional" : selectedPro?.name ?? "";
 

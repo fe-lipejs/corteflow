@@ -174,9 +174,15 @@ serve(async (req) => {
           const { data: booking } = await supabase.from('bookings').select('payment_mode').eq('id', bookingId).maybeSingle();
           if (booking) {
             const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid';
-            await supabase.from('bookings').update({ payment_status: newPaymentStatus }).eq('id', bookingId);
+            // HIGH-02: também atualizar amount_paid com o valor real recebido do Stripe
+            const amountReceivedBRL = pi.amount_received / 100;
+            await supabase.from('bookings').update({
+              payment_status: newPaymentStatus,
+              amount_paid: amountReceivedBRL,
+            }).eq('id', bookingId);
           }
         }
+
         break;
       }
 

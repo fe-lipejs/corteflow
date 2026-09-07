@@ -2,7 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { user, loading, forcePasswordChange } = useAuth();
+  const { user, loading, forcePasswordChange, onboardingCompleted, role } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -27,6 +27,13 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
 
   if (!forcePasswordChange && location.pathname === '/admin/senha') {
     return <Navigate to="/admin" replace />;
+  }
+
+  // MED-07: Redirecionar para onboarding se o dono do salão não completou o cadastro
+  // Super admins e profissionais não têm onboarding
+  const isOnboardingRoute = location.pathname === '/onboarding';
+  if (!onboardingCompleted && role === 'owner' && !isOnboardingRoute) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return <>{children}</>;

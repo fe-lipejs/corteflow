@@ -85,8 +85,10 @@ export function usePlanFeatures(): { features: PlanFeatures; isLoading: boolean 
   
   if (!sub && defaultPlan) {
     subStatus = 'canceled';
-    isActive = true;
+    // Sem assinatura ativa, o tenant não tem acesso a funcionalidades pagas.
+    // isActive permanece false — apenas configuracoes e assinatura ficam disponíveis via NO_PLAN_FEATURES.
   }
+
   
   // Trial expirado lido do banco
   const trialEndsAt = sub?.trial_ends_at ? new Date(sub.trial_ends_at) : null;

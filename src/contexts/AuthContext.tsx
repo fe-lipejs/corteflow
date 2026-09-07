@@ -210,6 +210,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const switchTenantContext = async (newTenantId: string) => {
     setLoading(true);
+    // MED-06: Limpar seleção pendente ANTES do fetchProfile para não re-mostrar o seletor
+    setPendingTenantSelection([]);
     try {
       const { error } = await supabase.rpc('switch_tenant', { p_tenant_id: newTenantId });
       if (error) throw error;
@@ -222,6 +224,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     }
   };
+
 
   const value: AuthContextType = {
     session,

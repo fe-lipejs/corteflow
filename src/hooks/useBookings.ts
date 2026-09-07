@@ -23,8 +23,9 @@ export interface Booking {
   order_number: string;
   scheduled_at: string;
   status: BookingStatus;
-  payment_mode?: 'pay_local' | 'partial_50' | 'full_100';
+  payment_mode?: 'local' | 'deposit' | 'full';
   payment_status?: 'pending' | 'partial_paid' | 'full_paid' | 'refunded' | 'failed';
+
   amount_paid: number;
   amount_total: number;
   amount_due?: number;

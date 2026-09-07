@@ -36,7 +36,12 @@ serve(async (req) => {
       throw new Error('Booking not found');
     }
 
-    const settings = booking.tenant_settings[0];
+    // Settings podem não existir para salões recém-criados — usa defaults seguros
+    const settings = (booking.tenant_settings as any[])?.[0] ?? {
+      allow_cancel: true,
+      cancel_free_hours_before: 2,
+      cancel_fee_percent: 0,
+    };
 
     // 2. Validate cancellation rules (if client)
     if (actorType === 'client') {
@@ -44,6 +49,7 @@ serve(async (req) => {
         throw new Error('O salão não permite cancelamentos pelo portal.');
       }
     }
+
 
     const succeededPayment = booking.payments?.find((p: any) => p.status === 'succeeded');
     

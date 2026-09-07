@@ -111,8 +111,11 @@ serve(async (req) => {
 
     if (upsertError) throw upsertError;
 
-    // Ensure tenant is active
-    await supabaseAdmin.from('tenants').update({ status: 'active' }).eq('id', tenantId);
+    // Ensure tenant is in correct state (trial or active) based on Stripe subscription
+    const isTrialing = stripeSub && typeof stripeSub !== 'string' && stripeSub.status === 'trialing' && !!stripeSub.trial_end;
+    const correctTenantStatus = isTrialing ? 'trial' : 'active';
+    await supabaseAdmin.from('tenants').update({ status: correctTenantStatus }).eq('id', tenantId);
+
 
     return new Response(JSON.stringify({ 
       success: true, 
