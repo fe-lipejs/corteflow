@@ -332,185 +332,212 @@ function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden bg-black pb-16 pt-[120px]"
+      className="relative min-h-[100svh] overflow-hidden bg-[#050505] pt-[88px] text-white"
     >
-      {/* Background radial glow */}
+      {/* Minimal stage — almost black, with one controlled light source. */}
       <div
-        className="pointer-events-none absolute inset-0 z-0"
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 70% 60% at 65% 50%, rgba(245,158,11,0.09) 0%, transparent 70%), radial-gradient(ellipse 40% 30% at 20% 80%, rgba(245,158,11,0.06) 0%, transparent 60%)',
+            'radial-gradient(circle 620px at 74% 48%, rgba(245,158,11,0.095), transparent 62%), radial-gradient(circle 420px at 18% 90%, rgba(255,255,255,0.025), transparent 68%)',
         }}
       />
 
-      {/* Subtle noise texture */}
+      {/* Fine architectural grid — intentionally barely visible. */}
       <div
-        className="pointer-events-none absolute inset-0 z-0 opacity-[0.025]"
-        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-[0.035]"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)',
+          backgroundSize: '80px 80px',
+          maskImage: 'linear-gradient(to bottom, black, transparent 82%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black, transparent 82%)',
+        }}
       />
 
-      <div className="relative z-10 mx-auto grid w-full max-w-[1360px] items-center gap-12 px-6 md:grid-cols-[1fr_auto] md:gap-16 md:px-12 lg:gap-24">
-        {/* Left: Copy */}
-        <div className="max-w-[640px]">
-          <motion.div
-            initial={{ opacity: 0, y: reduce ? 0 : 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: EASE }}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] px-4 py-2"
-          >
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#F59E0B]" />
-            <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[#A1A1A6]">
-              Para barbearias, salões e esmalterias
-            </span>
-          </motion.div>
+      {/* Film grain. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-[0.018]"
+        style={{
+          backgroundImage:
+            'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
+        }}
+      />
 
-          <motion.h1
-            initial={{ opacity: 0, y: reduce ? 0 : 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.85, delay: 0.1, ease: EASE }}
-            className="m-0 mb-5 font-display text-[clamp(38px,6.5vw,72px)] font-bold leading-[1.02] tracking-[-0.03em] text-white"
-          >
-            Você não abriu{' '}
-            <br className="hidden sm:block" />
-            uma barbearia{' '}
-            <br className="hidden sm:block" />
-            pra ficar{' '}
-            <span
-              className="not-italic"
-              style={{
-                background: 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 50%, #F59E0B 100%)',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                color: 'transparent',
-              }}
+      <div className="relative z-10 mx-auto flex min-h-[calc(100svh-88px)] w-full max-w-[1440px] flex-col justify-center px-6 pb-16 pt-10 md:px-12 md:pb-20 lg:px-16 xl:px-20">
+        <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(430px,0.95fr)] lg:gap-10 xl:gap-20">
+          {/* COPY */}
+          <div className="relative z-20 max-w-[720px]">
+            <motion.div
+              initial={{ opacity: 0, y: reduce ? 0 : 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, ease: EASE }}
+              className="mb-7 flex items-center gap-3"
             >
-              respondendo mensagem.
-            </span>
-          </motion.h1>
+              <span className="h-px w-7 bg-[#F59E0B]" />
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8A8A8F]">
+                Sistema de gestão para beleza
+              </span>
+            </motion.div>
 
-          <motion.p
-            initial={{ opacity: 0, y: reduce ? 0 : 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: EASE }}
-            className="mb-9 max-w-[50ch] text-[clamp(16px,1.8vw,19px)] leading-relaxed text-[#8A8A8F]"
-          >
-            Agenda online com link próprio, pagamento automático e controle do seu negócio
-            na palma da mão. Seu cliente agenda. Você atende.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: reduce ? 0 : 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.75, delay: 0.3, ease: EASE }}
-            className="flex flex-wrap gap-4"
-          >
-            <Link
-              to="/cadastro"
-              onClick={() => trackEvent('click_hero_comecar_agora')}
-              className="group inline-flex items-center justify-center gap-2 rounded-full px-8 py-[17px] text-[16px] font-bold text-black shadow-[0_20px_50px_-16px_rgba(245,158,11,0.6)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_24px_60px_-16px_rgba(245,158,11,0.75)]"
-              style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
+            <motion.h1
+              initial={{ opacity: 0, y: reduce ? 0 : 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.06, ease: EASE }}
+              className="m-0 max-w-[760px] font-display text-[clamp(44px,6.7vw,82px)] font-semibold leading-[0.96] tracking-[-0.055em] text-white"
             >
-              Colocar minha agenda no lugar
-              <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </Link>
-            <a
-              href="#como-funciona"
-              onClick={() => trackEvent('click_hero_ver_como_funciona')}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.14] bg-white/[0.04] px-8 py-[17px] text-[16px] font-medium text-white/80 backdrop-blur transition-all duration-200 hover:border-white/30 hover:text-white"
-            >
-              Como funciona
-              <ChevronDown className="h-4 w-4" />
-            </a>
-          </motion.div>
+              A agenda que
+              <br />
+              <span className="text-[#F59E0B]">trabalha por você.</span>
+            </motion.h1>
 
-          {/* Stats — kept to two, so the eye has one clear resting point */}
+            <motion.p
+              initial={{ opacity: 0, y: reduce ? 0 : 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.16, ease: EASE }}
+              className="mt-7 max-w-[51ch] text-[clamp(15px,1.5vw,18px)] leading-[1.65] text-[#8A8A8F]"
+            >
+              Seu cliente escolhe o serviço, o profissional e o horário pelo seu link.
+              A Raffros organiza tudo para você — enquanto você continua atendendo.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: reduce ? 0 : 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.75, delay: 0.25, ease: EASE }}
+              className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center"
+            >
+              <Link
+                to="/cadastro"
+                onClick={() => trackEvent('click_hero_comecar_agora')}
+                className="group inline-flex min-h-[54px] items-center justify-center gap-3 rounded-full bg-[#F5A30B] px-7 text-[15px] font-semibold text-black shadow-[0_18px_55px_-18px_rgba(245,158,11,0.75)] transition-all duration-300 hover:scale-[1.025] hover:bg-[#FFB51B] hover:shadow-[0_22px_65px_-18px_rgba(245,158,11,0.9)]"
+              >
+                Começar grátis
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+              </Link>
+
+              <a
+                href="#como-funciona"
+                onClick={() => trackEvent('click_hero_ver_como_funciona')}
+                className="group inline-flex min-h-[54px] items-center gap-2 px-2 text-[14px] font-medium text-[#A1A1A6] transition-colors hover:text-white"
+              >
+                Ver como funciona
+                <span className="h-px w-5 bg-[#52525B] transition-all duration-300 group-hover:w-8 group-hover:bg-[#F59E0B]" />
+              </a>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.42, ease: EASE }}
+              className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-3 border-t border-white/[0.08] pt-6"
+            >
+              <span className="flex items-center gap-2 text-[12px] text-[#71717A]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#F59E0B]" />
+                7 dias grátis
+              </span>
+              <span className="h-3 w-px bg-white/[0.12]" />
+              <span className="text-[12px] text-[#71717A]">Sem cartão</span>
+              <span className="h-3 w-px bg-white/[0.12]" />
+              <span className="text-[12px] text-[#71717A]">Cancele quando quiser</span>
+            </motion.div>
+          </div>
+
+          {/* PRODUCT STAGE */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.45, ease: EASE }}
-            className="mt-11 flex flex-wrap gap-x-12 gap-y-6 border-t border-white/[0.07] pt-8"
+            initial={{ opacity: 0, y: reduce ? 0 : 30, scale: reduce ? 1 : 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 1.05, delay: 0.12, ease: EASE }}
+            className="relative mx-auto flex w-full max-w-[560px] items-center justify-center lg:mx-0 lg:justify-end"
           >
-            {[
-              { num: 7, suf: ' dias', label: 'grátis para testar, sem cartão' },
-              { num: 0, suf: ' furos', label: 'com sinal anti-furo ativo' },
-            ].map((s) => (
-              <div key={s.label} className="flex flex-col">
-                <span className="font-display text-[28px] font-bold text-[#F59E0B] leading-none">
-                  <CountUp to={s.num} suffix={s.suf} />
-                </span>
-                <span className="mt-1.5 max-w-[16ch] text-[12px] leading-snug text-[#52525B]">
-                  {s.label}
-                </span>
+            {/* Quiet halo */}
+            <div
+              aria-hidden="true"
+              className="absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[100px]"
+              style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.16), transparent 66%)' }}
+            />
+
+            {/* Technical frame */}
+            <div
+              aria-hidden="true"
+              className="absolute right-[4%] top-[8%] h-[78%] w-[72%] rounded-[48px] border border-white/[0.055]"
+            />
+            <div
+              aria-hidden="true"
+              className="absolute right-[9%] top-[13%] h-[68%] w-[62%] rounded-[42px] border border-dashed border-[#F59E0B]/10"
+            />
+
+            {/* Booking-link label */}
+            <motion.div
+              animate={reduce ? {} : { y: [0, -5, 0] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute left-[1%] top-[18%] z-30 hidden items-center gap-2 rounded-full border border-white/[0.1] bg-[#111113]/90 px-3.5 py-2 backdrop-blur-xl sm:flex"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(74,222,128,0.8)]" />
+              <span className="font-mono text-[10px] text-[#A1A1A6]">seunegocio.raffros.com</span>
+            </motion.div>
+
+            {/* Confirmation label */}
+            <motion.div
+              animate={reduce ? {} : { y: [0, 6, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+              className="absolute bottom-[14%] right-[-1%] z-30 flex items-center gap-2.5 rounded-[14px] border border-white/[0.09] bg-[#111113]/95 px-3.5 py-3 shadow-[0_24px_55px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl"
+            >
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-400/10 ring-1 ring-inset ring-emerald-400/20">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
               </div>
-            ))}
+              <div>
+                <span className="block text-[10px] font-semibold text-white">Novo agendamento</span>
+                <span className="block mt-0.5 text-[9px] text-[#71717A]">Confirmado automaticamente</span>
+              </div>
+            </motion.div>
+
+            {/* Phone */}
+            <div
+              className="relative z-20 w-[245px] sm:w-[275px] md:w-[295px] lg:w-[315px]"
+              style={{ transform: 'perspective(1400px) rotateY(-7deg) rotateX(2deg)' }}
+            >
+              <div className="relative rounded-[3.25rem] border border-white/[0.14] bg-[#0B0B0D] p-[8px] shadow-[0_65px_120px_-34px_rgba(0,0,0,0.95),0_0_70px_-20px_rgba(245,158,11,0.28)]">
+                <div className="pointer-events-none absolute -inset-px rounded-[3.25rem] ring-1 ring-inset ring-white/[0.035]" />
+                <span className="absolute left-1/2 top-[10px] z-20 h-[14px] w-[58px] -translate-x-1/2 rounded-full border border-white/[0.08] bg-black" />
+                <div className="relative aspect-[9/19.5] overflow-hidden rounded-[2.65rem] bg-black">
+                  <img
+                    src={M.phoneBooking}
+                    alt="Tela de agendamento online da Raffros"
+                    className="absolute inset-0 h-full w-full object-cover object-top"
+                    loading="eager"
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.035] via-transparent to-black/20" />
+                </div>
+              </div>
+            </div>
+
+            {/* Ground shadow */}
+            <div
+              aria-hidden="true"
+              className="absolute bottom-[3%] left-1/2 z-0 h-12 w-[72%] -translate-x-1/2 rounded-full blur-[28px]"
+              style={{ background: 'rgba(245,158,11,0.16)' }}
+            />
           </motion.div>
         </div>
 
-        {/* Right: Hero mockup group */}
+        {/* Bottom signature */}
         <motion.div
-          initial={{ opacity: 0, y: reduce ? 0 : 30, scale: reduce ? 1 : 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 1.1, delay: 0.25, ease: EASE }}
-          className="relative mx-auto w-full max-w-[360px] md:max-w-none md:w-[340px] lg:w-[400px] xl:w-[460px] shrink-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1, duration: 0.6 }}
+          className="mt-10 hidden items-center justify-between border-t border-white/[0.06] pt-4 md:flex"
         >
-          {/* Glow behind phones */}
-          <div
-            className="absolute inset-[-40px] -z-10 rounded-full opacity-30 blur-[80px]"
-            style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.5), transparent 70%)' }}
-          />
-
-          {/* Main phone — booking */}
-          <div
-            className="relative mx-auto z-10"
-            style={{ transform: 'perspective(1400px) rotateY(-5deg) rotateX(2deg)' }}
-          >
-            <div
-              className="relative rounded-[3rem] border border-white/[0.14] bg-[#0A0A0C] p-[8px] shadow-[0_60px_120px_-30px_rgba(0,0,0,0.95),0_0_60px_-12px_rgba(245,158,11,0.2)]"
-            >
-              <span className="absolute left-1/2 top-[10px] z-10 h-[13px] w-[56px] -translate-x-1/2 rounded-full border border-white/10 bg-black" />
-              <div className="relative overflow-hidden rounded-[2.5rem] aspect-[9/19.5]">
-                <img
-                  src={M.phoneBooking}
-                  alt="Tela de agendamento da Raffros no iPhone"
-                  className="absolute inset-0 h-full w-full object-cover object-top"
-                  loading="eager"
-                />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/[0.03]" />
-              </div>
-            </div>
-          </div>
-
-          {/* Single floating badge — one clear proof point, not a chorus of them */}
-          <motion.div
-            animate={reduce ? {} : { y: [0, -6, 0] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute -right-[8%] bottom-[14%] z-20 flex items-center gap-2.5 rounded-[16px] border border-white/[0.1] bg-[#111114]/95 px-3.5 py-2.5 shadow-2xl backdrop-blur-[12px]"
-          >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/15">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-            </div>
-            <div>
-              <strong className="block text-[12px] font-semibold text-white">Sinal pago, horário confirmado</strong>
-              <span className="block text-[10px] text-[#A1A1A6]">Agenda atualizada sozinha</span>
-            </div>
-          </motion.div>
+          <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#3F3F46]">Raffros / Agenda inteligente</span>
+          <span className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.2em] text-[#3F3F46]">
+            Role para explorar
+            <ChevronDown className="h-3 w-3" />
+          </span>
         </motion.div>
       </div>
-
-      {/* Scroll cue */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2, duration: 0.6 }}
-        className="relative z-10 mt-12 flex items-center justify-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#52525B]"
-      >
-        <motion.span
-          animate={reduce ? {} : { scaleY: [1, 0, 1] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: EASE_IN }}
-          className="h-6 w-[1px] origin-top bg-gradient-to-b from-[#F59E0B] to-transparent"
-        />
-        role para ver
-      </motion.div>
     </section>
   );
 }
