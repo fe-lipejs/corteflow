@@ -1,4 +1,4 @@
-﻿import {
+import {
   motion,
   animate,
   useInView,
@@ -53,16 +53,16 @@ const EASE_IN: [number, number, number, number] = [0.4, 0, 1, 1];
 
 const M = {
   phoneBooking: '/Mockups/Iphone - Tela de Agendamento.PNG',
-  phoneServices: '/Mockups/Iphone - ServiÃ§os.PNG',
+  phoneServices: '/Mockups/Iphone - Serviços.PNG',
   phoneDomicilio: '/Mockups/Iphone - Tela de Escolha Domicilio.PNG',
   phonePaymentPix: '/Mockups/Iphone - Tela de Pagamento Pix.PNG',
   phonePayment: '/Mockups/Iphone - Tela de Pagamento.PNG',
-  themeA: '/Mockups/Iphone - PersonalizaÃ§Ã£o Tema 1.PNG',
-  themeB: '/Mockups/Iphone - PersonalizaÃ§Ã£o Tema 2.PNG',
-  themeC: '/Mockups/Iphone - PersonalizaÃ§Ã£o Tema 3.PNG',
+  themeA: '/Mockups/Iphone - Personalização Tema 1.PNG',
+  themeB: '/Mockups/Iphone - Personalização Tema 2.PNG',
+  themeC: '/Mockups/Iphone - Personalização Tema 3.PNG',
   tabletBarber: '/Mockups/Tablet Horizontal - Tela de Agendamento Barbearia.png',
-  tabletSalon: '/Mockups/Tablet Horizontal - Tela de Agendamento SalÃ£o.png',
-  tabletMetrics: '/Mockups/Tablet Horizontal - VisÃ£o Geral Metricas.jpg',
+  tabletSalon: '/Mockups/Tablet Horizontal - Tela de Agendamento Salão.png',
+  tabletMetrics: '/Mockups/Tablet Horizontal - Visão Geral Metricas.jpg',
 };
 
 /* ============================================================
@@ -165,9 +165,9 @@ function Header() {
   const closeMenu = () => setIsMobileMenuOpen(false);
 
   const links = [
-    ['solucao', 'SoluÃ§Ã£o'],
+    ['solucao', 'Solução'],
     ['como-funciona', 'Como funciona'],
-    ['para-quem', 'Para quem Ã©'],
+    ['para-quem', 'Para quem é'],
     ['planos', 'Planos'],
   ] as const;
 
@@ -231,7 +231,7 @@ function Header() {
               className="hidden items-center justify-center rounded-full px-5 py-2.5 text-[13px] font-bold text-black shadow-[0_8px_24px_-8px_rgba(245,158,11,0.5)] transition-all hover:scale-105 hover:shadow-[0_12px_30px_-8px_rgba(245,158,11,0.65)] md:inline-flex"
               style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
             >
-              ComeÃ§ar grÃ¡tis
+              Começar grátis
             </Link>
 
             <button
@@ -302,7 +302,7 @@ function Header() {
                 onClick={() => { closeMenu(); trackEvent('click_mobile_login'); }}
                 className="font-mono text-[16px] text-[#71717A] transition-colors hover:text-white"
               >
-                JÃ¡ tenho conta â†’
+                Já tenho conta →
               </Link>
             </div>
 
@@ -313,7 +313,7 @@ function Header() {
                 className="flex w-full items-center justify-center rounded-full py-4 text-[16px] font-bold text-black"
                 style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
               >
-                ComeÃ§ar grÃ¡tis â€” 7 dias grÃ¡tis
+                Começar grátis — 7 dias grátis
               </Link>
             </div>
           </motion.div>
@@ -333,14 +333,14 @@ function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden bg-black pb-20 pt-[120px]"
+      className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden bg-black pb-16 pt-[120px]"
     >
-      {/* Background radial glow â€” stronger, centered on right */}
+      {/* Background radial glow */}
       <div
         className="pointer-events-none absolute inset-0 z-0"
         style={{
           background:
-            'radial-gradient(ellipse 80% 70% at 70% 55%, rgba(245,158,11,0.11) 0%, transparent 65%), radial-gradient(ellipse 50% 40% at 15% 85%, rgba(245,158,11,0.06) 0%, transparent 60%)',
+            'radial-gradient(ellipse 70% 60% at 65% 50%, rgba(245,158,11,0.09) 0%, transparent 70%), radial-gradient(ellipse 40% 30% at 20% 80%, rgba(245,158,11,0.06) 0%, transparent 60%)',
         }}
       />
 
@@ -350,31 +350,28 @@ function HeroSection() {
         style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }}
       />
 
-      <div className="relative z-10 mx-auto grid w-full max-w-[1360px] items-center gap-16 px-6 md:grid-cols-[1fr_1fr] md:gap-12 md:px-12 lg:gap-20">
-        {/* Left: Copy â€” clean and airy */}
-        <div className="flex flex-col max-w-[580px]">
-
-          {/* Eyebrow pill */}
+      <div className="relative z-10 mx-auto grid w-full max-w-[1360px] items-center gap-12 px-6 md:grid-cols-[1fr_auto] md:gap-16 md:px-12 lg:gap-24">
+        {/* Left: Copy */}
+        <div className="max-w-[640px]">
           <motion.div
             initial={{ opacity: 0, y: reduce ? 0 : 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: EASE }}
-            className="mb-8 inline-flex w-fit items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] px-4 py-2"
+            className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] px-4 py-2"
           >
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#F59E0B]" />
             <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[#A1A1A6]">
-              Para barbearias, salÃµes e esmalterias
+              Para barbearias, salões e esmalterias
             </span>
           </motion.div>
 
-          {/* H1 â€” breathes with generous line height */}
           <motion.h1
             initial={{ opacity: 0, y: reduce ? 0 : 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.85, delay: 0.1, ease: EASE }}
-            className="m-0 font-display text-[clamp(40px,6vw,74px)] font-bold leading-[1.03] tracking-[-0.035em] text-white"
+            className="m-0 mb-6 font-display text-[clamp(38px,6.5vw,72px)] font-bold leading-[1.02] tracking-[-0.03em] text-white"
           >
-            VocÃª nÃ£o abriu{' '}
+            Você não abriu{' '}
             <br className="hidden sm:block" />
             uma barbearia{' '}
             <br className="hidden sm:block" />
@@ -382,7 +379,7 @@ function HeroSection() {
             <span
               className="not-italic"
               style={{
-                background: 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 60%, #F59E0B 100%)',
+                background: 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 50%, #F59E0B 100%)',
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
                 color: 'transparent',
@@ -392,61 +389,68 @@ function HeroSection() {
             </span>
           </motion.h1>
 
-          {/* Sub â€” shorter, punchier */}
           <motion.p
             initial={{ opacity: 0, y: reduce ? 0 : 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: EASE }}
-            className="mt-7 mb-10 max-w-[42ch] text-[clamp(16px,1.7vw,18px)] leading-[1.65] text-[#71717A]"
+            className="mb-9 max-w-[50ch] text-[clamp(16px,1.8vw,19px)] leading-relaxed text-[#8A8A8F]"
           >
-            Agenda online com link prÃ³prio e pagamento automÃ¡tico.
-            <br />
-            Seu cliente agenda. VocÃª sÃ³ atende.
+            Agenda online com link próprio, pagamento automático e controle do seu negócio
+            na palma da mão. Seu cliente agenda. Você atende.
           </motion.p>
 
-          {/* CTAs â€” primary only, secondary as link */}
           <motion.div
             initial={{ opacity: 0, y: reduce ? 0 : 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.75, delay: 0.3, ease: EASE }}
-            className="flex flex-col sm:flex-row sm:items-center gap-4"
+            className="flex flex-wrap gap-4"
           >
             <Link
               to="/cadastro"
               onClick={() => trackEvent('click_hero_comecar_agora')}
-              className="group inline-flex items-center justify-center gap-2 rounded-full px-8 py-[17px] text-[16px] font-bold text-black shadow-[0_20px_50px_-16px_rgba(245,158,11,0.65)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_24px_60px_-16px_rgba(245,158,11,0.8)]"
+              className="group inline-flex items-center justify-center gap-2 rounded-full px-8 py-[17px] text-[16px] font-bold text-black shadow-[0_20px_50px_-16px_rgba(245,158,11,0.6)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_24px_60px_-16px_rgba(245,158,11,0.75)]"
               style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
             >
-              ComeÃ§ar grÃ¡tis â€” 7 dias
+              Colocar minha agenda no lugar
               <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
             <a
               href="#como-funciona"
               onClick={() => trackEvent('click_hero_ver_como_funciona')}
-              className="inline-flex items-center justify-center gap-1.5 text-[14px] font-medium text-[#71717A] transition-colors hover:text-white"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.14] bg-white/[0.04] px-8 py-[17px] text-[16px] font-medium text-white/80 backdrop-blur transition-all duration-200 hover:border-white/30 hover:text-white"
             >
-              Ver como funciona
-              <ChevronDown className="h-3.5 w-3.5" />
+              Como funciona
+              <ChevronDown className="h-4 w-4" />
             </a>
           </motion.div>
 
-          {/* Stats â€” compact, below CTAs */}
+          {/* Playlist card */}
+          <motion.div
+            initial={{ opacity: 0, y: reduce ? 0 : 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.45, ease: EASE }}
+            className="mt-10"
+          >
+            <HeroPlaylistLine />
+          </motion.div>
+
+          {/* Stats */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.55, ease: EASE }}
-            className="mt-12 flex flex-wrap gap-x-8 gap-y-5 border-t border-white/[0.07] pt-8"
+            transition={{ duration: 0.8, delay: 0.6, ease: EASE }}
+            className="mt-10 flex flex-wrap gap-x-10 gap-y-6 border-t border-white/[0.07] pt-8"
           >
             {[
-              { num: 100, suf: '%', label: 'piloto automÃ¡tico' },
-              { num: 7, suf: ' dias', label: 'grÃ¡tis, sem cartÃ£o' },
-              { num: 0, suf: ' furos', label: 'sinal anti-furo' },
+              { num: 100, suf: '%', label: 'da agenda no piloto automático' },
+              { num: 7, suf: ' dias', label: 'grátis para testar sem cartão' },
+              { num: 0, suf: ' furos', label: 'com sinal anti-furo ativo' },
             ].map((s) => (
               <div key={s.label} className="flex flex-col">
-                <span className="font-display text-[26px] font-bold text-[#F59E0B] leading-none">
+                <span className="font-display text-[28px] font-bold text-[#F59E0B] leading-none">
                   <CountUp to={s.num} suffix={s.suf} />
                 </span>
-                <span className="mt-1 text-[11px] uppercase tracking-wide text-[#3F3F46]">
+                <span className="mt-1.5 max-w-[15ch] text-[12px] leading-snug text-[#52525B]">
                   {s.label}
                 </span>
               </div>
@@ -454,32 +458,29 @@ function HeroSection() {
           </motion.div>
         </div>
 
-        {/* Right: Mockup â€” bigger, centered, more impact */}
+        {/* Right: Hero mockup group */}
         <motion.div
-          initial={{ opacity: 0, y: reduce ? 0 : 40, scale: reduce ? 1 : 0.96 }}
+          initial={{ opacity: 0, y: reduce ? 0 : 30, scale: reduce ? 1 : 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 1.15, delay: 0.2, ease: EASE }}
-          className="relative mx-auto w-full flex items-center justify-center"
-          style={{ minHeight: 520 }}
+          transition={{ duration: 1.1, delay: 0.25, ease: EASE }}
+          className="relative mx-auto w-full max-w-[360px] md:max-w-none md:w-[340px] lg:w-[400px] xl:w-[460px] shrink-0"
         >
-          {/* Strong glow behind phone */}
+          {/* Glow behind phones */}
           <div
-            className="absolute inset-0 -z-10"
-            style={{
-              background: 'radial-gradient(ellipse 80% 80% at 50% 50%, rgba(245,158,11,0.18), transparent 65%)',
-              filter: 'blur(24px)',
-            }}
+            className="absolute inset-[-40px] -z-10 rounded-full opacity-30 blur-[80px]"
+            style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.5), transparent 70%)' }}
           />
 
-          {/* Phone frame */}
+          {/* Main phone — booking */}
           <div
-            className="relative z-10"
-            style={{ transform: 'perspective(1400px) rotateY(-6deg) rotateX(2deg)' }}
+            className="relative mx-auto z-10"
+            style={{ transform: 'perspective(1200px) rotateY(-8deg) rotateX(4deg)' }}
           >
-            <div className="relative rounded-[3rem] border border-white/[0.18] bg-[#0A0A0C] p-[9px] shadow-[0_80px_160px_-40px_rgba(0,0,0,0.98),0_0_80px_-12px_rgba(245,158,11,0.3)]">
-              {/* Dynamic Island */}
-              <span className="absolute left-1/2 top-[10px] z-10 h-[13px] w-[60px] -translate-x-1/2 rounded-full border border-white/10 bg-black" />
-              <div className="relative overflow-hidden rounded-[2.5rem]" style={{ width: 260, aspectRatio: '9/19.5' }}>
+            <div
+              className="relative rounded-[3rem] border border-white/[0.14] bg-[#0A0A0C] p-[8px] shadow-[0_60px_120px_-30px_rgba(0,0,0,0.95),0_0_60px_-12px_rgba(245,158,11,0.25)]"
+            >
+              <span className="absolute left-1/2 top-[10px] z-10 h-[13px] w-[56px] -translate-x-1/2 rounded-full border border-white/10 bg-black" />
+              <div className="relative overflow-hidden rounded-[2.5rem] aspect-[9/19.5]">
                 <img
                   src={M.phoneBooking}
                   alt="Tela de agendamento da Raffros no iPhone"
@@ -491,48 +492,33 @@ function HeroSection() {
             </div>
           </div>
 
-          {/* Floating badge â€” confirmed */}
+          {/* Floating badge — confirmed */}
           <motion.div
-            animate={reduce ? {} : { y: [0, -7, 0] }}
+            animate={reduce ? {} : { y: [0, -6, 0] }}
             transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute left-[4%] top-[18%] z-20 flex items-center gap-2.5 rounded-[16px] border border-white/[0.12] bg-[#0D0D10]/95 px-3.5 py-2.5 shadow-2xl backdrop-blur-[16px]"
+            className="absolute -left-[12%] top-[16%] z-20 flex items-center gap-2.5 rounded-[16px] border border-white/[0.1] bg-[#111114]/95 px-3.5 py-2.5 shadow-2xl backdrop-blur-[12px]"
           >
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/15">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
             </div>
             <div>
-              <strong className="block text-[12px] font-semibold text-white">HorÃ¡rio reservado</strong>
-              <span className="block text-[10px] text-[#71717A]">Agenda atualizada sozinha</span>
+              <strong className="block text-[12px] font-semibold text-white">Horário reservado</strong>
+              <span className="block text-[10px] text-[#A1A1A6]">Agenda atualizada sozinha</span>
             </div>
           </motion.div>
 
-          {/* Floating badge â€” payment */}
+          {/* Floating badge — payment */}
           <motion.div
-            animate={reduce ? {} : { y: [0, 6, 0] }}
+            animate={reduce ? {} : { y: [0, 5, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
-            className="absolute right-[2%] bottom-[20%] z-20 flex items-center gap-2.5 rounded-[16px] border border-white/[0.12] bg-[#0D0D10]/95 px-3.5 py-2.5 shadow-2xl backdrop-blur-[16px]"
+            className="absolute -right-[10%] bottom-[18%] z-20 flex items-center gap-2.5 rounded-[16px] border border-white/[0.1] bg-[#111114]/95 px-3.5 py-2.5 shadow-2xl backdrop-blur-[12px]"
           >
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/15">
               <DollarSign className="h-3.5 w-3.5 text-[#F59E0B]" />
             </div>
             <div>
               <strong className="block text-[12px] font-semibold text-white">Sinal recebido</strong>
-              <span className="block text-[10px] text-[#71717A]">R$ 25,00 via Pix</span>
-            </div>
-          </motion.div>
-
-          {/* New badge â€” new client */}
-          <motion.div
-            animate={reduce ? {} : { y: [0, -5, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-            className="absolute right-[5%] top-[12%] z-20 flex items-center gap-2 rounded-[14px] border border-white/[0.1] bg-[#0D0D10]/95 px-3 py-2 shadow-xl backdrop-blur-[12px]"
-          >
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-violet-500/30 bg-violet-500/15">
-              <User className="h-3 w-3 text-violet-400" />
-            </div>
-            <div>
-              <strong className="block text-[11px] font-semibold text-white">Novo cliente</strong>
-              <span className="block text-[9px] text-[#71717A]">Daniel agendou agora</span>
+              <span className="block text-[10px] text-[#A1A1A6]">R$ 25,00 via Pix</span>
             </div>
           </motion.div>
         </motion.div>
@@ -542,8 +528,8 @@ function HeroSection() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 0.6 }}
-        className="relative z-10 mt-16 flex items-center justify-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#3F3F46]"
+        transition={{ delay: 1.4, duration: 0.6 }}
+        className="relative z-10 mt-14 flex items-center justify-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#52525B]"
       >
         <motion.span
           animate={reduce ? {} : { scaleY: [1, 0, 1] }}
@@ -556,9 +542,8 @@ function HeroSection() {
   );
 }
 
-
 /* ============================================================
-   CINEMATIC BREATHER â€” "Enquanto vocÃª atende"
+   CINEMATIC BREATHER — "Enquanto você atende"
    ============================================================ */
 
 function BreatherSection() {
@@ -600,14 +585,14 @@ function BreatherSection() {
               color: 'transparent',
             }}
           >
-            "tem horÃ¡rio?"
+            "tem horário?"
           </span>
         </motion.h2>
 
         <Reveal delay={0.15}>
           <p className="mx-auto mt-10 max-w-[50ch] text-[clamp(15px,1.8vw,18px)] leading-relaxed text-[#6E6E73]">
-            Enquanto vocÃª estÃ¡ com a tesoura na mÃ£o, o celular nÃ£o para.
-            VocÃª perde clientes, perde foco e ainda termina o dia sem saber quanto faturou.
+            Enquanto você está com a tesoura na mão, o celular não para.
+            Você perde clientes, perde foco e ainda termina o dia sem saber quanto faturou.
           </p>
         </Reveal>
 
@@ -622,21 +607,21 @@ function BreatherSection() {
 }
 
 /* ============================================================
-   PROBLEM SECTION â€” Message wall
+   PROBLEM SECTION — Message wall
    ============================================================ */
 
 function ProblemSection() {
   const messages = [
-    'Tem horÃ¡rio amanhÃ£?',
-    'Quanto Ã© o corte?',
-    'Pode ser com o JoÃ£o?',
-    'Tem vaga sÃ¡bado?',
+    'Tem horário amanhã?',
+    'Quanto é o corte?',
+    'Pode ser com o João?',
+    'Tem vaga sábado?',
     'Desmarca pra mim?',
-    'Pode ser Ã s 15h?',
-    'Confirma meu horÃ¡rio',
-    'Tem horÃ¡rio hoje?',
+    'Pode ser às 15h?',
+    'Confirma meu horário',
+    'Tem horário hoje?',
     'Pode remarcar?',
-    'Ã‰ sÃ³ corte ou faz barba tambÃ©m?',
+    'É só corte ou faz barba também?',
     'Quanto tempo leva?',
     'Me avisa quando tiver vaga',
   ];
@@ -651,7 +636,7 @@ function ProblemSection() {
             <Reveal>
               <Eyebrow>O problema real</Eyebrow>
               <h2 className="font-display text-[clamp(28px,5vw,50px)] font-bold leading-[1.07] tracking-[-0.03em]">
-                Seu celular nÃ£o deveria ser
+                Seu celular não deveria ser
                 <br />
                 <span className="text-[#F59E0B]">sua recepcionista.</span>
               </h2>
@@ -659,17 +644,17 @@ function ProblemSection() {
 
             <Reveal delay={0.1}>
               <p className="mt-6 max-w-[44ch] text-[clamp(15px,1.7vw,17px)] leading-relaxed text-[#8A8A8F]">
-                VocÃª nÃ£o estÃ¡ administrando sua agenda. VocÃª estÃ¡ trabalhando para ela. Cada mensagem respondida
-                durante um atendimento Ã© um momento de atenÃ§Ã£o que seu cliente perdeu.
+                Você não está administrando sua agenda. Você está trabalhando para ela. Cada mensagem respondida
+                durante um atendimento é um momento de atenção que seu cliente perdeu.
               </p>
             </Reveal>
 
             <Reveal delay={0.2}>
               <div className="mt-10 space-y-4">
                 {[
-                  { icon: Clock, label: 'Tempo perdido respondendo mensagens que deveriam ser automÃ¡ticas.' },
-                  { icon: DollarSign, label: 'Clientes que dÃ£o bolo e nÃ£o pagam nada pela ausÃªncia.' },
-                  { icon: BarChart3, label: 'Fechamento de mÃªs sem saber quanto entrou, quanto saiu.' },
+                  { icon: Clock, label: 'Tempo perdido respondendo mensagens que deveriam ser automáticas.' },
+                  { icon: DollarSign, label: 'Clientes que dão bolo e não pagam nada pela ausência.' },
+                  { icon: BarChart3, label: 'Fechamento de mês sem saber quanto entrou, quanto saiu.' },
                 ].map(({ icon: Icon, label }) => (
                   <div key={label} className="flex items-start gap-4">
                     <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.04]">
@@ -698,8 +683,8 @@ function ProblemSection() {
                   <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" /></svg>
                 </div>
                 <div>
-                  <p className="text-[12px] font-bold text-white">Barbearia do JoÃ£o</p>
-                  <p className="text-[10px] text-[#71717A]">12 mensagens nÃ£o lidas</p>
+                  <p className="text-[12px] font-bold text-white">Barbearia do João</p>
+                  <p className="text-[10px] text-[#71717A]">12 mensagens não lidas</p>
                 </div>
                 <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-[#25D366] font-mono text-[9px] font-bold text-black">12</span>
               </div>
@@ -739,146 +724,64 @@ function ProblemSection() {
 
 function SolutionSection() {
   const steps = [
-    { icon: Smartphone, label: 'Cliente abre seu link', sub: 'Nenhuma instalaÃ§Ã£o de app, nenhum cadastro.' },
-    { icon: Scissors, label: 'Escolhe o serviÃ§o', sub: 'PreÃ§o e duraÃ§Ã£o clÃ¡ros pra cada serviÃ§o.' },
-    { icon: Users, label: 'Escolhe o profissional', sub: 'Ou o primeiro disponÃ­vel, sem firula.' },
-    { icon: CalendarDays, label: 'Escolhe o horÃ¡rio', sub: 'SÃ³ os horÃ¡rios livres aparecem.' },
-    { icon: Shield, label: 'Paga o sinal', sub: 'Anti-furo automÃ¡tico via Pix.' },
-    { icon: CheckCircle2, label: 'Confirmado', sub: 'VocÃª recebe a notificaÃ§Ã£o na hora.' },
-  ];
-  const reduce = useReducedMotion();
-  const [activeStep, setActiveStep] = useState(0);
-
-  const stepMockups = [
-    M.phoneBooking,
-    M.phoneServices,
-    M.phoneBooking,
-    M.phoneBooking,
-    M.phonePayment,
-    M.phonePaymentPix,
+    { icon: Smartphone, label: 'Cliente abre seu link', sub: 'Nenhuma instalação de app.' },
+    { icon: Scissors, label: 'Escolhe o serviço', sub: 'Com preço e duração claros.' },
+    { icon: Users, label: 'Escolhe o profissional', sub: 'Ou o primeiro disponível.' },
+    { icon: CalendarDays, label: 'Escolhe o horário', sub: 'Só os horários livres aparecem.' },
+    { icon: Shield, label: 'Paga o sinal', sub: 'Anti-furo automático via Pix.' },
+    { icon: CheckCircle2, label: 'Confirmado', sub: 'Você recebe a notificação.' },
   ];
 
   return (
     <section id="como-funciona" className="bg-white px-6 py-[104px] md:px-12 md:py-[160px]">
       <div className="mx-auto max-w-[1360px]">
-        {/* Header */}
-        <div className="mb-16 max-w-[660px]">
+        <div className="mb-20 max-w-[700px]">
           <Reveal>
             <Eyebrow dark>Como funciona</Eyebrow>
             <h2 className="font-display text-[clamp(28px,5vw,52px)] font-bold leading-[1.07] tracking-[-0.03em] text-[#1D1D1F]">
-              Enquanto vocÃª atende.
+              Enquanto você atende.
               <br />
               <span className="text-[#D97706]">Seu cliente agenda.</span>
               <br />
-              Sem vocÃª tocar no celular.
+              Sem você tocar no celular.
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
             <p className="mt-6 max-w-[46ch] text-[clamp(15px,1.7vw,17px)] leading-relaxed text-[#6E6E73]">
-              A Raffros assume a parte que ninguÃ©m deveria estar fazendo manualmente.
+              A Raffros assume a parte que ninguém deveria estar fazendo manualmente.
               Do agendamento ao pagamento, tudo acontece sozinho.
             </p>
           </Reveal>
         </div>
 
-        {/* Two columns: steps + live mockup */}
-        <div className="grid items-start gap-12 md:grid-cols-[1fr_auto] md:gap-16 lg:gap-24">
-          {/* Left: step list */}
-          <div className="space-y-2.5">
-            {steps.map((step, i) => {
-              const Icon = step.icon;
-              const isActive = activeStep === i;
-              return (
-                <Reveal key={step.label} delay={i * 0.05}>
-                  <button
-                    type="button"
-                    onClick={() => setActiveStep(i)}
-                    className={[
-                      'group w-full flex items-center gap-5 rounded-[18px] border px-5 py-4 text-left transition-all duration-200',
-                      isActive
-                        ? 'border-amber-400/40 bg-white shadow-[0_8px_32px_-8px_rgba(245,158,11,0.18)]'
-                        : 'border-black/[0.06] bg-[#F9F9FA] hover:border-amber-300/30 hover:bg-white hover:shadow-[0_4px_16px_-8px_rgba(0,0,0,0.08)]',
-                    ].join(' ')}
+        <div className="space-y-3">
+          {steps.map((step, i) => {
+            const Icon = step.icon;
+            return (
+              <Reveal key={step.label} delay={i * 0.06}>
+                <div className="group flex items-center gap-5 rounded-[18px] border border-black/[0.06] bg-[#F9F9FA] px-5 py-4 transition-all duration-200 hover:border-amber-400/30 hover:bg-white hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)]">
+                  {/* Step number */}
+                  <span
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold text-[#D97706]"
+                    style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}
                   >
-                    {/* Step number */}
-                    <span
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold text-[#D97706]"
-                      style={{ background: isActive ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}
-                    >
-                      {i + 1}
-                    </span>
-                    {/* Icon */}
-                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-sm transition-colors ${
-                      isActive ? 'border-amber-200/60 bg-amber-50' : 'border-black/[0.05] bg-white'
-                    }`}>
-                      <Icon className={`h-4 w-4 transition-colors ${ isActive ? 'text-[#D97706]' : 'text-[#8A8A8F]'}`} />
-                    </div>
-                    {/* Text */}
-                    <div className="min-w-0 flex-1">
-                      <h3 className={`font-display text-[16px] font-semibold leading-snug transition-colors ${
-                        isActive ? 'text-[#1D1D1F]' : 'text-[#3D3D3D]'
-                      }`}>{step.label}</h3>
-                      <p className="text-[13px] text-[#8A8A8F] leading-snug mt-0.5">{step.sub}</p>
-                    </div>
-                    {/* Arrow */}
-                    <ArrowRight className={`h-4 w-4 shrink-0 transition-all duration-200 ${
-                      isActive ? 'translate-x-0.5 text-[#D97706]' : 'text-[#D0D0D5] group-hover:text-[#D97706]'
-                    }`} />
-                  </button>
-                </Reveal>
-              );
-            })}
-          </div>
-
-          {/* Right: sticky phone mockup */}
-          <Reveal delay={0.15} className="hidden md:flex items-start justify-center md:sticky md:top-28">
-            <div className="relative" style={{ width: 220 }}>
-              {/* Glow */}
-              <div
-                className="absolute inset-[-30px] -z-10 rounded-full"
-                style={{
-                  background: 'radial-gradient(circle, rgba(245,158,11,0.15), transparent 70%)',
-                  filter: 'blur(20px)',
-                }}
-              />
-              {/* Frame */}
-              <div className="relative rounded-[2.8rem] border border-black/[0.12] bg-[#0A0A0C] p-[7px] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.25),0_0_40px_-8px_rgba(245,158,11,0.15)]">
-                <span className="absolute left-1/2 top-[8px] z-10 h-[11px] w-[50px] -translate-x-1/2 rounded-full border border-white/10 bg-black" />
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeStep}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.35, ease: EASE }}
-                    className="relative overflow-hidden rounded-[2.3rem]"
-                    style={{ aspectRatio: '9/19.5' }}
-                  >
-                    <img
-                      src={stepMockups[activeStep]}
-                      alt={steps[activeStep].label}
-                      className="absolute inset-0 h-full w-full object-cover object-top"
-                      loading="lazy"
-                    />
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-white/[0.02]" />
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-              {/* Step indicator dots */}
-              <div className="mt-4 flex items-center justify-center gap-1.5">
-                {steps.map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setActiveStep(i)}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      i === activeStep ? 'w-6 bg-[#D97706]' : 'w-1.5 bg-black/15'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-          </Reveal>
+                    {i + 1}
+                  </span>
+                  {/* Icon */}
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/[0.05] bg-white shadow-sm">
+                    <Icon className="h-4 w-4 text-[#D97706]" />
+                  </div>
+                  {/* Text */}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-[16px] font-semibold text-[#1D1D1F] leading-snug">{step.label}</h3>
+                    <p className="text-[13px] text-[#8A8A8F] leading-snug mt-0.5">{step.sub}</p>
+                  </div>
+                  {/* Arrow on hover */}
+                  <ArrowRight className="h-4 w-4 shrink-0 text-[#D0D0D5] transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-[#D97706]" />
+                </div>
+              </Reveal>
+            );
+          })}
         </div>
 
         {/* CTA */}
@@ -898,7 +801,7 @@ function SolutionSection() {
 }
 
 /* ============================================================
-   SCROLL STORY â€” iPhone mockup progression
+   SCROLL STORY — iPhone mockup progression
    ============================================================ */
 
 const STORY_STEPS = [
@@ -906,25 +809,25 @@ const STORY_STEPS = [
     img: M.phoneBooking,
     alt: 'Tela de agendamento',
     headline: 'Seu cliente abre o link.',
-    body: 'Uma pÃ¡gina com a cara do seu negÃ³cio. Sem baixar app, sem cadastro obrigatÃ³rio.',
+    body: 'Uma página com a cara do seu negócio. Sem baixar app, sem cadastro obrigatório.',
   },
   {
     img: M.phoneServices,
-    alt: 'Lista de serviÃ§os',
-    headline: 'Escolhe o serviÃ§o.',
-    body: 'Corte, barba, coloraÃ§Ã£o. Cada serviÃ§o com preÃ§o, duraÃ§Ã£o e quem faz.',
+    alt: 'Lista de serviços',
+    headline: 'Escolhe o serviço.',
+    body: 'Corte, barba, coloração. Cada serviço com preço, duração e quem faz.',
   },
   {
     img: M.phonePaymentPix,
     alt: 'Pagamento via Pix',
     headline: 'Paga o sinal na hora.',
-    body: 'Via Pix, direto pra vocÃª. NinguÃ©m marca e some sem pagar.',
+    body: 'Via Pix, direto pra você. Ninguém marca e some sem pagar.',
   },
   {
     img: M.phonePayment,
-    alt: 'ConfirmaÃ§Ã£o de pagamento',
+    alt: 'Confirmação de pagamento',
     headline: 'Pronto. Confirmado.',
-    body: 'VocÃª recebe a notificaÃ§Ã£o. A agenda se atualiza sozinha. VocÃª continua atendendo.',
+    body: 'Você recebe a notificação. A agenda se atualiza sozinha. Você continua atendendo.',
   },
 ];
 
@@ -937,7 +840,7 @@ function ScrollStorySection() {
       <div className="mx-auto max-w-[1360px]">
         <div className="mb-16 text-center">
           <Reveal>
-            <Eyebrow>ExperiÃªncia do seu cliente</Eyebrow>
+            <Eyebrow>Experiência do seu cliente</Eyebrow>
             <h2 className="mx-auto max-w-[18ch] font-display text-[clamp(28px,5vw,50px)] font-bold leading-[1.07] tracking-[-0.03em]">
               O caminho do agendamento em 4 passos.
             </h2>
@@ -1025,7 +928,7 @@ function ScrollStorySection() {
 }
 
 /* ============================================================
-   BARBER SECTION â€” Tablet
+   BARBER SECTION — Tablet
    ============================================================ */
 
 function BarberSection() {
@@ -1044,8 +947,8 @@ function BarberSection() {
           </Reveal>
           <Reveal delay={0.1}>
             <p className="max-w-[40ch] text-[clamp(15px,1.6vw,17px)] leading-relaxed text-[#6E6E73]">
-              Cada profissional com seus horÃ¡rios. Cada cliente no horÃ¡rio certo.
-              Controle completo da operaÃ§Ã£o na tela do tablet ou celular.
+              Cada profissional com seus horários. Cada cliente no horário certo.
+              Controle completo da operação na tela do tablet ou celular.
             </p>
           </Reveal>
         </div>
@@ -1073,9 +976,9 @@ function BarberSection() {
         <div className="mt-12 grid gap-5 md:grid-cols-4">
           {[
             { icon: CalendarDays, t: 'Agenda visual', d: 'Ver o dia inteiro sem abrir o WhatsApp.' },
-            { icon: Users, t: 'Por profissional', d: 'JoÃ£o, Kauan, Marcus. Cada um no seu horÃ¡rio.' },
+            { icon: Users, t: 'Por profissional', d: 'João, Kauan, Marcus. Cada um no seu horário.' },
             { icon: Shield, t: 'Sinal anti-furo', d: 'Cliente marcou, pagou o sinal. Sem bolo.' },
-            { icon: TrendingUp, t: 'Faturamento do dia', d: 'Quanto entrou, na palma da mÃ£o.' },
+            { icon: TrendingUp, t: 'Faturamento do dia', d: 'Quanto entrou, na palma da mão.' },
           ].map(({ icon: Icon, t, d }, i) => (
             <Reveal key={t} delay={i * 0.08}>
               <div className="rounded-[18px] border border-black/[0.06] bg-[#F5F5F7] p-6 transition-all hover:border-amber-400/40">
@@ -1094,7 +997,7 @@ function BarberSection() {
 }
 
 /* ============================================================
-   SALON SECTION â€” Tablet
+   SALON SECTION — Tablet
    ============================================================ */
 
 function SalonSection() {
@@ -1103,22 +1006,22 @@ function SalonSection() {
       <div className="mx-auto max-w-[1360px]">
         <div className="grid items-center gap-16 md:grid-cols-[0.85fr_1fr] md:gap-20">
           <Reveal>
-            <Eyebrow>Para salÃµes</Eyebrow>
+            <Eyebrow>Para salões</Eyebrow>
             <h2 className="font-display text-[clamp(26px,4.5vw,44px)] font-bold leading-[1.1] tracking-[-0.03em]">
               Quando sua equipe cresce,
               <br />
-              <span className="text-[#F59E0B]">sua agenda nÃ£o pode virar caos.</span>
+              <span className="text-[#F59E0B]">sua agenda não pode virar caos.</span>
             </h2>
             <p className="mt-6 max-w-[44ch] text-[clamp(14px,1.6vw,16.5px)] leading-relaxed text-[#8A8A8F]">
-              MÃºltiplos profissionais, mÃºltiplos serviÃ§os, mÃºltiplos clientes. Tudo na mesma tela,
-              sem conflito, sem dupla marcaÃ§Ã£o, sem WhatsApp.
+              Múltiplos profissionais, múltiplos serviços, múltiplos clientes. Tudo na mesma tela,
+              sem conflito, sem dupla marcação, sem WhatsApp.
             </p>
             <div className="mt-10 space-y-4">
               {[
-                'Cada profissional tem seu prÃ³prio link e agenda',
+                'Cada profissional tem seu próprio link e agenda',
                 'Cliente escolhe com quem quer ser atendida',
-                'GestÃ£o completa de comissÃµes por profissional',
-                'RelatÃ³rios por serviÃ§o e por equipe',
+                'Gestão completa de comissões por profissional',
+                'Relatórios por serviço e por equipe',
               ].map((item) => (
                 <div key={item} className="flex items-start gap-3">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#F59E0B]" />
@@ -1138,7 +1041,7 @@ function SalonSection() {
               </div>
               <img
                 src={M.tabletSalon}
-                alt="Agenda de salÃ£o de beleza no painel Raffros"
+                alt="Agenda de salão de beleza no painel Raffros"
                 className="w-full object-cover"
                 loading="lazy"
               />
@@ -1160,17 +1063,17 @@ function MetricsSection() {
       <div className="mx-auto max-w-[1360px]">
         <div className="mb-16 grid items-end gap-10 md:grid-cols-[1fr_0.65fr]">
           <Reveal>
-            <Eyebrow dark>VisÃ£o do negÃ³cio</Eyebrow>
+            <Eyebrow dark>Visão do negócio</Eyebrow>
             <h2 className="font-display text-[clamp(26px,5vw,50px)] font-bold leading-[1.07] tracking-[-0.03em] text-[#1D1D1F]">
-              Pare de terminar o mÃªs{' '}
+              Pare de terminar o mês{' '}
               <br className="hidden md:block" />
               <span style={{ color: '#D97706' }}>sem saber como foi.</span>
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
             <p className="max-w-[40ch] text-[clamp(15px,1.6vw,17px)] leading-relaxed text-[#6E6E73]">
-              VocÃª nÃ£o precisa adivinhar como estÃ¡ o seu negÃ³cio.
-              VocÃª precisa enxergar.
+              Você não precisa adivinhar como está o seu negócio.
+              Você precisa enxergar.
             </p>
           </Reveal>
         </div>
@@ -1187,7 +1090,7 @@ function MetricsSection() {
             </div>
             <img
               src={M.tabletMetrics}
-              alt="Dashboard de mÃ©tricas do painel Raffros"
+              alt="Dashboard de métricas do painel Raffros"
               className="w-full object-cover"
               loading="lazy"
             />
@@ -1196,10 +1099,10 @@ function MetricsSection() {
 
         <div className="mt-12 grid gap-5 sm:grid-cols-2 md:grid-cols-4">
           {[
-            { icon: TrendingUp, t: 'Faturamento', d: 'Dia, semana ou mÃªs. Com comparativo.' },
-            { icon: BarChart3, t: 'OcupaÃ§Ã£o', d: 'Saiba quanto da agenda vocÃª estÃ¡ aproveitando.' },
+            { icon: TrendingUp, t: 'Faturamento', d: 'Dia, semana ou mês. Com comparativo.' },
+            { icon: BarChart3, t: 'Ocupação', d: 'Saiba quanto da agenda você está aproveitando.' },
             { icon: Users, t: 'Top clientes', d: 'Quem mais frequenta e quanto gasta.' },
-            { icon: DollarSign, t: 'ComissÃµes', d: 'AutomÃ¡tico por profissional e por serviÃ§o.' },
+            { icon: DollarSign, t: 'Comissões', d: 'Automático por profissional e por serviço.' },
           ].map(({ icon: Icon, t, d }, i) => (
             <Reveal key={t} delay={i * 0.08}>
               <div className="rounded-[18px] border border-black/[0.06] bg-white p-6 shadow-sm transition-all hover:border-amber-400/30 hover:shadow-md">
@@ -1275,7 +1178,7 @@ function PaymentSection() {
             <Reveal>
               <Eyebrow>Anti-furo</Eyebrow>
               <h2 className="font-display text-[clamp(26px,4.5vw,46px)] font-bold leading-[1.08] tracking-[-0.03em]">
-                Seu horÃ¡rio
+                Seu horário
                 <br />
                 <span className="text-[#F59E0B]">vale alguma coisa.</span>
               </h2>
@@ -1283,17 +1186,17 @@ function PaymentSection() {
 
             <Reveal delay={0.1}>
               <p className="mt-6 max-w-[44ch] text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#8A8A8F]">
-                Cliente marcou. Cliente pagou um sinal via Pix. Se der bolo, o valor fica com vocÃª.
-                Simples assim. Chega de levar bolo de graÃ§a.
+                Cliente marcou. Cliente pagou um sinal via Pix. Se der bolo, o valor fica com você.
+                Simples assim. Chega de levar bolo de graça.
               </p>
             </Reveal>
 
             <Reveal delay={0.2}>
               <div className="mt-10 space-y-5">
                 {[
-                  { t: 'Pix instantÃ¢neo', d: 'O cliente paga antes de confirmar. Na hora, no celular dele.' },
-                  { t: 'VocÃª define o %', d: 'Pode ser 30%, 50% ou 100% antecipado. VocÃª controla.' },
-                  { t: 'Sem furo, sem drama', d: 'Pagou o sinal? EstÃ¡ confirmado. NÃ£o pagou? NÃ£o marcou.' },
+                  { t: 'Pix instantâneo', d: 'O cliente paga antes de confirmar. Na hora, no celular dele.' },
+                  { t: 'Você define o %', d: 'Pode ser 30%, 50% ou 100% antecipado. Você controla.' },
+                  { t: 'Sem furo, sem drama', d: 'Pagou o sinal? Está confirmado. Não pagou? Não marcou.' },
                 ].map(({ t, d }) => (
                   <div key={t} className="rounded-[16px] border border-white/[0.07] bg-white/[0.03] p-5">
                     <h3 className="font-display text-[16px] font-semibold text-white">{t}</h3>
@@ -1320,9 +1223,9 @@ function DomicilioSection() {
         <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
           <div>
             <Reveal>
-              <Eyebrow>Atendimento a domicÃ­lio</Eyebrow>
+              <Eyebrow>Atendimento a domicílio</Eyebrow>
               <h2 className="font-display text-[clamp(26px,4.5vw,46px)] font-bold leading-[1.08] tracking-[-0.03em] text-white">
-                VocÃª define o raio.
+                Você define o raio.
                 <br />
                 <span style={{ color: '#F59E0B' }}>A Raffros faz o resto.</span>
               </h2>
@@ -1330,22 +1233,22 @@ function DomicilioSection() {
 
             <Reveal delay={0.1}>
               <p className="mt-6 max-w-[44ch] text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#8A8A8F]">
-                Manicures, barbeiros e cabeleireiros que atendem em domicÃ­lio nÃ£o precisam mais perguntar
-                endereÃ§o, verificar distÃ¢ncia e combinar no WhatsApp.
+                Manicures, barbeiros e cabeleireiros que atendem em domicílio não precisam mais perguntar
+                endereço, verificar distância e combinar no WhatsApp.
               </p>
               <p className="mt-4 max-w-[44ch] text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#8A8A8F]">
-                O cliente informa onde estÃ¡ â€” o sistema confere se estÃ¡ dentro da Ã¡rea de atendimento e
-                libera o horÃ¡rio na hora.
+                O cliente informa onde está — o sistema confere se está dentro da área de atendimento e
+                libera o horário na hora.
               </p>
             </Reveal>
 
             <Reveal delay={0.2}>
               <div className="mt-10 space-y-4">
                 {[
-                  'Cliente informa o endereÃ§o no agendamento',
-                  'Sistema verifica se estÃ¡ dentro do seu raio',
-                  'CobranÃ§a automÃ¡tica de taxa de deslocamento',
-                  'Mapa integrado para vocÃª visualizar',
+                  'Cliente informa o endereço no agendamento',
+                  'Sistema verifica se está dentro do seu raio',
+                  'Cobrança automática de taxa de deslocamento',
+                  'Mapa integrado para você visualizar',
                 ].map((item) => (
                   <div key={item} className="flex items-center gap-3">
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-[#F59E0B]" />
@@ -1376,7 +1279,7 @@ function DomicilioSection() {
                     <div className="relative aspect-[9/19.5] overflow-hidden rounded-[2.2rem] sm:rounded-[2.5rem]">
                       <img
                         src={M.phoneDomicilio}
-                        alt="Tela de escolha de atendimento a domicÃ­lio"
+                        alt="Tela de escolha de atendimento a domicílio"
                         className="absolute inset-0 h-full w-full object-cover object-top"
                         loading="lazy"
                       />
@@ -1387,7 +1290,7 @@ function DomicilioSection() {
 
               {/* Caption text centered for the whole section */}
               {/* <p className="absolute bottom-[-60px] left-0 right-0 text-center font-display text-[11px] sm:text-[12px] italic text-[#8A8A8F]">
-                Ex.: &ldquo;Atendo clientes em um raio de atÃ© 10 km.&rdquo;
+                Ex.: &ldquo;Atendo clientes em um raio de até 10 km.&rdquo;
               </p> */}
             </div>
           </Reveal>
@@ -1398,7 +1301,7 @@ function DomicilioSection() {
 }
 
 /* ============================================================
-   RADAR VISUAL â€” Domicilio
+   RADAR VISUAL — Domicilio
    ============================================================ */
 
 function RadarVisual() {
@@ -1459,10 +1362,10 @@ function RadarVisual() {
           </motion.div>
         )}
 
-        {/* Center "VocÃª" Circle */}
+        {/* Center "Você" Circle */}
         <div className="relative z-20 flex h-[40px] w-[40px] sm:h-[46px] sm:w-[46px] items-center justify-center rounded-full bg-gradient-to-b from-[#FBBF24] to-[#D97706] shadow-[0_0_20px_rgba(245,158,11,0.6)]">
           <span className="font-display text-[10px] sm:text-[11px] font-bold text-[#140F00] tracking-tight">
-            VocÃª
+            Você
           </span>
         </div>
 
@@ -1507,7 +1410,7 @@ function RadarVisual() {
    ============================================================ */
 
 const THEMES = [
-  { img: M.themeA, label: 'Tema ClÃ¡ssico', desc: 'Escuro e dourado.' },
+  { img: M.themeA, label: 'Tema Clássico', desc: 'Escuro e dourado.' },
   { img: M.themeB, label: 'Tema Noir', desc: 'Preto absoluto.' },
   { img: M.themeC, label: 'Tema Elegante', desc: 'Sofisticado e feminino.' },
 ];
@@ -1570,23 +1473,23 @@ function PersonalizationSection() {
         {/* Header */}
         <div className="mb-20 grid items-end gap-8 md:grid-cols-[1fr_0.65fr]">
           <Reveal>
-            <Eyebrow dark>PersonalizaÃ§Ã£o</Eyebrow>
+            <Eyebrow dark>Personalização</Eyebrow>
             <h2 className="font-display text-[clamp(26px,5vw,50px)] font-bold leading-[1.07] tracking-[-0.03em] text-[#1D1D1F]">
-              Seu negÃ³cio tem
+              Seu negócio tem
               <br />
               <span style={{ color: '#D97706' }}>sua identidade.</span>
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
             <p className="max-w-[38ch] text-[clamp(14.5px,1.6vw,16.5px)] leading-relaxed text-[#6E6E73]">
-              NÃ£o existe tema fixo. A pÃ¡gina do seu cliente tem as
-              <strong className="text-[#1D1D1F]"> cores que vocÃª escolher</strong>, com logo e banner do
-              seu negÃ³cio. Cada estabelecimento com a sua cara.
+              Não existe tema fixo. A página do seu cliente tem as
+              <strong className="text-[#1D1D1F]"> cores que você escolher</strong>, com logo e banner do
+              seu negócio. Cada estabelecimento com a sua cara.
             </p>
           </Reveal>
         </div>
 
-        {/* 3 iPhones â€” fan float layout */}
+        {/* 3 iPhones — fan float layout */}
         <Reveal delay={0.08}>
           <div className="relative mx-auto flex justify-center" style={{ height: 480, maxWidth: 580 }}>
 
@@ -1606,7 +1509,7 @@ function PersonalizationSection() {
                 <div className="relative rounded-[2.4rem] border border-black/[0.15] bg-[#1A1A1A] p-[6px] shadow-[0_30px_60px_-16px_rgba(0,0,0,0.30)]">
                   <span className="absolute left-1/2 top-[9px] z-10 h-[11px] w-9 -translate-x-1/2 rounded-full bg-[#0A0A0C]" />
                   <div className="relative overflow-hidden rounded-[2rem] aspect-[9/19.5]">
-                    <img src={M.themeA} alt="PersonalizaÃ§Ã£o da pÃ¡gina" className="absolute inset-0 h-full w-full object-cover object-top" loading="lazy" />
+                    <img src={M.themeA} alt="Personalização da página" className="absolute inset-0 h-full w-full object-cover object-top" loading="lazy" />
                   </div>
                 </div>
               </div>
@@ -1628,7 +1531,7 @@ function PersonalizationSection() {
                 <div className="relative rounded-[3rem] border border-black/[0.2] bg-[#1A1A1A] p-[7px] shadow-[0_60px_100px_-24px_rgba(0,0,0,0.40),0_0_40px_-8px_rgba(245,158,11,0.12)]">
                   <span className="absolute left-1/2 top-[10px] z-10 h-[13px] w-[52px] -translate-x-1/2 rounded-full bg-[#0A0A0C]" />
                   <div className="relative overflow-hidden rounded-[2.5rem] aspect-[9/19.5]">
-                    <img src={M.themeB} alt="PersonalizaÃ§Ã£o da pÃ¡gina" className="absolute inset-0 h-full w-full object-cover object-top" loading="lazy" />
+                    <img src={M.themeB} alt="Personalização da página" className="absolute inset-0 h-full w-full object-cover object-top" loading="lazy" />
                   </div>
                 </div>
               </div>
@@ -1659,7 +1562,7 @@ function PersonalizationSection() {
                 <div className="relative rounded-[2.4rem] border border-black/[0.15] bg-[#1A1A1A] p-[6px] shadow-[0_30px_60px_-16px_rgba(0,0,0,0.30)]">
                   <span className="absolute left-1/2 top-[9px] z-10 h-[11px] w-9 -translate-x-1/2 rounded-full bg-[#0A0A0C]" />
                   <div className="relative overflow-hidden rounded-[2rem] aspect-[9/19.5]">
-                    <img src={M.themeC} alt="PersonalizaÃ§Ã£o da pÃ¡gina" className="absolute inset-0 h-full w-full object-cover object-top" loading="lazy" />
+                    <img src={M.themeC} alt="Personalização da página" className="absolute inset-0 h-full w-full object-cover object-top" loading="lazy" />
                   </div>
                 </div>
               </div>
@@ -1671,15 +1574,15 @@ function PersonalizationSection() {
         {/* Bottom tagline */}
         <Reveal delay={0.2} className="mt-20 text-center">
           <p className="mx-auto max-w-[44ch] text-[clamp(14px,1.5vw,16px)] text-[#6E6E73]">
-            Cores, logo, banner e estilo personalizados. A pÃ¡gina do seu cliente com a cara
-            do <strong className="text-[#1D1D1F]">seu</strong> negÃ³cio â€” nÃ£o de mais ninguÃ©m.
+            Cores, logo, banner e estilo personalizados. A página do seu cliente com a cara
+            do <strong className="text-[#1D1D1F]">seu</strong> negócio — não de mais ninguém.
           </p>
           <Link
             to="/cadastro"
             onClick={() => trackEvent('click_personalizacao_comecar')}
             className="group mt-8 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-7 py-3.5 text-[14.5px] font-semibold text-[#D97706] transition-all hover:bg-amber-500/18"
           >
-            Personalizar minha pÃ¡gina
+            Personalizar minha página
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </Reveal>
@@ -1703,37 +1606,37 @@ function ParaQuemSection() {
     },
     {
       icon: Sparkles,
-      title: 'SalÃµes de beleza',
+      title: 'Salões de beleza',
       pct: '',
-      desc: 'Toda a equipe organizada em um sÃ³ lugar. Cada profissional no seu horÃ¡rio.',
+      desc: 'Toda a equipe organizada em um só lugar. Cada profissional no seu horário.',
       highlight: false,
     },
     {
       icon: Heart,
       title: 'Esmalterias e manicures',
       pct: '',
-      desc: 'Agenda online com link prÃ³prio. Sem depender de mensagem pra cada horÃ¡rio.',
+      desc: 'Agenda online com link próprio. Sem depender de mensagem pra cada horário.',
       highlight: false,
     },
     {
       icon: User,
-      title: 'Profissionais autÃ´nomos',
+      title: 'Profissionais autônomos',
       pct: null,
-      desc: 'Seu negÃ³cio com cara de empresa desde o primeiro cliente.',
+      desc: 'Seu negócio com cara de empresa desde o primeiro cliente.',
       highlight: false,
     },
     {
       icon: Home,
-      title: 'Atendimento a domicÃ­lio',
+      title: 'Atendimento a domicílio',
       pct: null,
-      desc: 'Raio configurÃ¡vel, taxa automÃ¡tica, agenda por endereÃ§o.',
+      desc: 'Raio configurável, taxa automática, agenda por endereço.',
       highlight: false,
     },
     {
       icon: Zap,
       title: 'Profissional freelancer',
       pct: null,
-      desc: 'VocÃª define quando quer trabalhar. A Raffros organiza o resto.',
+      desc: 'Você define quando quer trabalhar. A Raffros organiza o resto.',
       highlight: false,
     },
   ];
@@ -1743,7 +1646,7 @@ function ParaQuemSection() {
       <div className="mx-auto max-w-[1360px]">
         <div className="mb-16 max-w-[700px]">
           <Reveal>
-            <Eyebrow dark>Para quem Ã©</Eyebrow>
+            <Eyebrow dark>Para quem é</Eyebrow>
             <h2 className="font-display text-[clamp(26px,5vw,50px)] font-bold leading-[1.07] tracking-[-0.03em] text-[#1D1D1F]">
               Feito para quem vive de deixar
               <br />
@@ -1752,8 +1655,8 @@ function ParaQuemSection() {
           </Reveal>
           <Reveal delay={0.1}>
             <p className="mt-6 max-w-[46ch] text-[clamp(15px,1.7vw,17px)] leading-relaxed text-[#6E6E73]">
-              Da cadeira do barbeiro ao atendimento na casa do cliente. Se vocÃª ganha a vida cuidando das
-              pessoas, a Raffros foi feita para vocÃª.
+              Da cadeira do barbeiro ao atendimento na casa do cliente. Se você ganha a vida cuidando das
+              pessoas, a Raffros foi feita para você.
             </p>
           </Reveal>
         </div>
@@ -1809,21 +1712,21 @@ function PricingSection() {
       name: 'Solo',
       price: 27,
       tag: 'Pra quem trabalha sozinho e quer parar de agendar pelo WhatsApp.',
-      items: ['Agenda online ilimitada', '1 profissional', 'Atendimento a domicÃ­lio', 'Lembretes automÃ¡ticos', 'Sinal anti-furo'],
+      items: ['Agenda online ilimitada', '1 profissional', 'Atendimento a domicílio', 'Lembretes automáticos', 'Sinal anti-furo'],
       featured: false,
     },
     {
       name: 'Studio',
       price: 47,
-      tag: 'Pra quem jÃ¡ tem equipe e quer o negÃ³cio inteiro organizado.',
-      items: ['Tudo do plano Solo', 'AtÃ© 5 profissionais', 'GestÃ£o de equipe completa', 'RelatÃ³rios de desempenho', 'Suporte prioritÃ¡rio'],
+      tag: 'Pra quem já tem equipe e quer o negócio inteiro organizado.',
+      items: ['Tudo do plano Solo', 'Até 5 profissionais', 'Gestão de equipe completa', 'Relatórios de desempenho', 'Suporte prioritário'],
       featured: true,
     },
     {
       name: 'Business',
       price: 97,
-      tag: 'Para estabelecimentos maiores, com operaÃ§Ã£o em escala.',
-      items: ['Tudo do plano Studio', 'Profissionais ilimitados', 'MÃºltiplas unidades', 'Gerente de conta dedicado'],
+      tag: 'Para estabelecimentos maiores, com operação em escala.',
+      items: ['Tudo do plano Studio', 'Profissionais ilimitados', 'Múltiplas unidades', 'Gerente de conta dedicado'],
       featured: false,
     }
   ];
@@ -1840,7 +1743,7 @@ function PricingSection() {
           </Reveal>
           <Reveal delay={0.1}>
             <p className="mx-auto mt-4 max-w-[44ch] text-[clamp(14.5px,1.6vw,16.5px)] text-[#8A8A8F]">
-              7 dias grÃ¡tis para testar tudo, sem cartÃ£o de crÃ©dito, sem fidelidade.
+              7 dias grátis para testar tudo, sem cartão de crédito, sem fidelidade.
             </p>
           </Reveal>
         </div>
@@ -1872,7 +1775,7 @@ function PricingSection() {
                 <p className={cn('mt-7 font-display text-[42px] font-bold leading-none', plan.featured ? 'text-[#F59E0B]' : 'text-white')}>
                   <span className="mr-0.5 align-super text-[19px]">R$</span>
                   {plan.price}
-                  <small className="text-[14px] font-normal text-[#52525B]">/mÃªs</small>
+                  <small className="text-[14px] font-normal text-[#52525B]">/mês</small>
                 </p>
 
                 <ul className="mt-7 flex flex-1 flex-col gap-3">
@@ -1895,7 +1798,7 @@ function PricingSection() {
                   )}
                   style={plan.featured ? { background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' } : {}}
                 >
-                  ComeÃ§ar agora
+                  Começar agora
                 </Link>
               </div>
             </Reveal>
@@ -1904,7 +1807,7 @@ function PricingSection() {
 
         <Reveal delay={0.3} className="mt-10 text-center">
           <p className="font-mono text-[12px] text-[#52525B]">
-            7 dias grÃ¡tis Â· sem cartÃ£o de crÃ©dito Â· sem fidelidade Â· cancele quando quiser
+            7 dias grátis · sem cartão de crédito · sem fidelidade · cancele quando quiser
           </p>
         </Reveal>
       </div>
@@ -1947,16 +1850,16 @@ function FinalCTASection() {
 
       <Reveal>
         <p className="mx-auto mb-6 max-w-[54ch] font-mono text-[clamp(11px,1.2vw,13px)] uppercase tracking-[0.18em] text-[#52525B]">
-          Seu cliente jÃ¡ estÃ¡ procurando horÃ¡rio. A pergunta Ã©:
+          Seu cliente já está procurando horário. A pergunta é:
         </p>
         <h2 className="mx-auto mb-4 max-w-[20ch] font-display text-[clamp(32px,6vw,64px)] font-bold leading-[1.05] tracking-[-0.04em] text-white">
-          Ele vai encontrar vocÃª{' '}
+          Ele vai encontrar você{' '}
           <em className="not-italic" style={{ color: '#F59E0B' }}>
             organizado?
           </em>
         </h2>
         <p className="mx-auto mb-12 max-w-[44ch] text-[clamp(15px,1.7vw,17px)] text-[#6E6E73]">
-          Comece com 7 dias grÃ¡tis. Sem cartÃ£o. Sem fidelidade.
+          Comece com 7 dias grátis. Sem cartão. Sem fidelidade.
           Sua agenda funcionando ainda hoje.
         </p>
         <Link
@@ -1965,11 +1868,11 @@ function FinalCTASection() {
           className="group inline-flex items-center gap-2 rounded-full px-10 py-[20px] text-[17px] font-bold text-black shadow-[0_24px_60px_-16px_rgba(245,158,11,0.65)] transition-all duration-300 hover:scale-[1.04] hover:shadow-[0_28px_70px_-16px_rgba(245,158,11,0.8)]"
           style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
         >
-          Quero comeÃ§ar
+          Quero começar
           <ArrowRight className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-0.5" />
         </Link>
         <p className="mt-5 font-mono text-[11px] text-[#3F3F46]">
-          7 dias grÃ¡tis Â· sem cartÃ£o Â· cancele quando quiser
+          7 dias grátis · sem cartão · cancele quando quiser
         </p>
       </Reveal>
     </section>
@@ -1992,9 +1895,9 @@ function Footer() {
 
           <nav className="flex flex-wrap gap-6 md:gap-8">
             {[
-              ['#solucao', 'SoluÃ§Ã£o'],
+              ['#solucao', 'Solução'],
               ['#como-funciona', 'Como funciona'],
-              ['#para-quem', 'Para quem Ã©'],
+              ['#para-quem', 'Para quem é'],
               ['#planos', 'Planos'],
             ].map(([href, label]) => (
               <a
@@ -2019,7 +1922,7 @@ function Footer() {
 
         <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-white/[0.07] pt-8 md:flex-row md:items-center">
           <p className="text-[12px] text-[#52525B]">
-            Â© {new Date().getFullYear()} Raffros. Todos os direitos reservados.
+            © {new Date().getFullYear()} Raffros. Todos os direitos reservados.
           </p>
           <div className="flex gap-6">
             <a href="/privacidade" className="text-[12px] text-[#52525B] transition-colors hover:text-white">Privacidade</a>
@@ -2066,7 +1969,7 @@ function MobileCTA() {
             className="pointer-events-auto flex h-14 w-full items-center justify-center gap-2 rounded-full text-[15px] font-bold text-black shadow-[0_0_24px_rgba(245,158,11,0.5)]"
             style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
           >
-            ComeÃ§ar agora
+            Começar agora
             <ArrowRight className="h-4 w-4" />
           </Link>
         </motion.div>
@@ -2111,46 +2014,46 @@ export default function LandingPage() {
       <Header />
 
       <main className="pb-16 md:pb-0">
-        {/* 1. HERO â€” Black */}
+        {/* 1. HERO — Black */}
         <HeroSection />
 
-        {/* 2. BREATHER â€” White (cinematic pain statement) */}
+        {/* 2. BREATHER — White (cinematic pain statement) */}
         <BreatherSection />
 
-        {/* 3. PROBLEM â€” Black (message wall) */}
+        {/* 3. PROBLEM — Black (message wall) */}
         <ProblemSection />
 
-        {/* 4. SOLUTION FLOW â€” White */}
+        {/* 4. SOLUTION FLOW — White */}
         <SolutionSection />
 
-        {/* 5. SCROLL STORY â€” Black */}
+        {/* 5. SCROLL STORY — Black */}
         <ScrollStorySection />
 
-        {/* 6. BARBER â€” White (tablet) */}
+        {/* 6. BARBER — White (tablet) */}
         <BarberSection />
 
-        {/* 7. SALON â€” Black (tablet) */}
+        {/* 7. SALON — Black (tablet) */}
         <SalonSection />
 
-        {/* 8. METRICS â€” White (tablet) */}
+        {/* 8. METRICS — White (tablet) */}
         <MetricsSection />
 
-        {/* 9. PAYMENT â€” Black (2 phones) */}
+        {/* 9. PAYMENT — Black (2 phones) */}
         <PaymentSection />
 
-        {/* 10. DOMICILIO â€” White (phone) */}
+        {/* 10. DOMICILIO — White (phone) */}
         <DomicilioSection />
 
-        {/* 11. PERSONALIZATION â€” Black (phone switch) */}
+        {/* 11. PERSONALIZATION — Black (phone switch) */}
         <PersonalizationSection />
 
-        {/* 12. PARA QUEM â€” White */}
+        {/* 12. PARA QUEM — White */}
         <ParaQuemSection />
 
-        {/* 13. PRICING â€” Black */}
+        {/* 13. PRICING — Black */}
         <PricingSection />
 
-        {/* 14. FINAL CTA â€” Black */}
+        {/* 14. FINAL CTA — Black */}
         <FinalCTASection />
       </main>
 
@@ -2161,5 +2064,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-
