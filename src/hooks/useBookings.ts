@@ -106,7 +106,7 @@ async function fetchBookings(tenantId: string, from: Date, to: Date, professiona
     .eq('tenant_id', tenantId)
     .gte('scheduled_at', from.toISOString())
     .lte('scheduled_at', to.toISOString())
-    .not('status', 'in', '("canceled","no_show")')
+    .not('status', 'in', '(canceled,no_show)')
     .order('scheduled_at', { ascending: true });
 
   if (professionalId) {
@@ -132,7 +132,7 @@ async function fetchBookingsForConflict(
     .eq('tenant_id', tenantId)
     .gte('scheduled_at', startOfDay(date).toISOString())
     .lte('scheduled_at', endOfDay(date).toISOString())
-    .not('status', 'in', '("canceled","no_show")');
+    .not('status', 'in', '(canceled,no_show)');
 
   if (professionalId) query = query.eq('professional_id', professionalId);
   if (excludeBookingId) query = query.neq('id', excludeBookingId);
@@ -242,10 +242,7 @@ export function useUpdateBookingStatus(tenantId: string) {
         .from('bookings')
         .update({ status } as any)
         .eq('id', id);
-      if (error) {
-        alert(`Erro do banco de dados:\nMessage: ${error.message}\nDetails: ${error.details}\nHint: ${error.hint}`);
-        throw error;
-      }
+      if (error) throw error;
 
       // Log history
       await supabase.from('booking_history').insert({

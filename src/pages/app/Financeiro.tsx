@@ -224,7 +224,10 @@ export default function Financeiro() {
 
       // Process Local Bookings
       localBookings?.forEach((b: any) => {
-        const val = Number(b.amount_paid || 0);
+        // BUG-02: Local bookings têm amount_paid=0 pois são pagos presencialmente.
+        // Usar amount_total que representa o valor real do serviço.
+        const val = Number(b.amount_total || b.amount_paid || 0);
+
         if (val > 0) {
           entradas += val;
           transactions.push({
@@ -334,9 +337,10 @@ export default function Financeiro() {
   const deleteTransactionMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!tenantId) return;
+      // BUG-14: Usar soft delete em vez de DELETE físico para preservar o audit trail
       const { error } = await supabase
         .from('financial_transactions')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() } as any)
         .eq('id', id)
         .eq('tenant_id', tenantId);
       if (error) throw error;

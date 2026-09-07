@@ -74,6 +74,7 @@ export default function AppLayout() {
       const { count } = await supabase
         .from('support_messages')
         .select('*', { count: 'exact', head: true })
+        .eq('tenant_id', tenant.id)
         .eq('read_by_owner', false)
         .neq('sender_role', 'owner');
       setUnreadSupport((count || 0) > 0);
@@ -124,6 +125,11 @@ export default function AppLayout() {
   // Show tenant selector for professionals with multiple active salons
   if (pendingTenantSelection.length > 0) {
     return <TenantSelectorModal options={pendingTenantSelection} />;
+  }
+
+  // BUG-05: Super Admin não tem tenant — deve ser redirecionado para /platform
+  if (role === 'super_admin') {
+    return <Navigate to="/platform" replace />;
   }
 
   if (loading || !tenant) {

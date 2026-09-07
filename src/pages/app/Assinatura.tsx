@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import {
   Crown,
   ExternalLink,
@@ -15,6 +16,7 @@ import {
   Sparkles,
   Star,
 } from 'lucide-react';
+
 
 interface Plan {
   id: string;
@@ -424,14 +426,14 @@ export default function Assinatura() {
 
         await fetchData();
       } else {
-        alert(
+        toast.error(
           data.message ||
           'Nenhuma assinatura ativa encontrada no Stripe.'
         );
       }
     } catch (err: any) {
       console.error(err);
-      alert(`Erro: ${err.message}`);
+      toast.error(`Erro: ${err.message}`);
     } finally {
       setSyncing(false);
     }
@@ -479,7 +481,7 @@ export default function Assinatura() {
     } catch (err: any) {
       console.error('Portal error:', err);
 
-      alert(
+      toast.error(
         `Erro ao abrir portal de pagamentos: ${err.message}`
       );
     } finally {
@@ -527,7 +529,7 @@ export default function Assinatura() {
         );
       }
 
-      alert(
+      toast.success(
         'Assinatura cancelada com sucesso. Você continuará com acesso até o final do período atual.'
       );
 
@@ -557,7 +559,7 @@ export default function Assinatura() {
       await fetchData();
     } catch (err: any) {
       console.error(err);
-      alert(`Erro: ${err.message}`);
+      toast.error(`Erro: ${err.message}`);
     } finally {
       setCancelLoading(false);
     }
@@ -617,7 +619,7 @@ export default function Assinatura() {
         err
       );
 
-      alert(
+      toast.error(
         `Erro ao iniciar assinatura: ${err.message}`
       );
     } finally {

@@ -169,6 +169,7 @@ export function usePermissionEngine(): PermissionEngine {
       if (key.startsWith('financeiro')) return !!professionalPermissions?.view_financial;
       if (key.startsWith('clientes')) return !!professionalPermissions?.view_clients;
       if (key.startsWith('comissao')) return !!professionalPermissions?.view_commission;
+      if (key === 'equipe.ver_comissoes') return !!professionalPermissions?.view_commission;
       return false;
     }
     

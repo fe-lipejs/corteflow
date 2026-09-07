@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
-import { X, User, Scissors, Clock, CreditCard, MessageSquare, Phone, Mail, Loader2, CalendarClock, ChevronDown, MapPin } from 'lucide-react';
+import { X, User, Scissors, Clock, CreditCard, MessageSquare, Phone, Mail, Loader2, CalendarClock, ChevronDown, MapPin, AlertTriangle } from 'lucide-react';
 import { BOOKING_STATUS_CONFIG, type Booking, type BookingStatus } from '../../../hooks/useBookings';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../integrations/supabase/client';
@@ -22,12 +22,15 @@ import { useAuth } from '../../../contexts/AuthContext';
 
 export default function BookingDetailSheet({ booking, onClose, onStatusChange, onDelete, isUpdating }: Props) {
   const { profile } = useAuth();
+  // BUG-04: Inline confirm state — evita window.confirm nativo que quebra no iOS
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const statusCfg = BOOKING_STATUS_CONFIG[booking.status];
   const scheduledAt = new Date(booking.scheduled_at);
   const endTime = new Date(scheduledAt.getTime() + (booking.duration_minutes * 60 * 1000));
 
   const nextStatus = STATUS_FLOW[STATUS_FLOW.indexOf(booking.status) + 1];
   const isFinished = booking.status === 'completed' || booking.status === 'canceled' || booking.status === 'no_show';
+
 
   // Fix #4: Fetch ALL completed bookings for this customer to calculate real history
   const { data: allPastBookings, isLoading: loadingHistory } = useQuery({
@@ -348,17 +351,44 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
           ) : (
              <div className="pt-4 border-t" style={{ borderColor: 'var(--theme-border)' }}>
                 {onDelete && (
-                  <button
-                    onClick={() => { if(window.confirm('Tem certeza que deseja excluir permanentemente este agendamento?')) onDelete(booking.id) }}
-                    disabled={isUpdating}
-                    className="w-full py-3.5 rounded-xl text-sm font-bold border border-red-500 text-red-500 hover:bg-red-500/10 transition-all flex items-center justify-center gap-2"
-                  >
-                    {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
-                    Excluir Definitivamente
-                  </button>
+                  confirmDelete ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-center font-medium mb-3" style={{ color: 'var(--theme-text-secondary)' }}>
+                        Tem certeza? Esta ação não pode ser desfeita.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setConfirmDelete(false)}
+                          disabled={isUpdating}
+                          className="flex-1 py-3 rounded-xl text-sm font-semibold border transition-all"
+                          style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-primary)' }}
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={() => { onDelete(booking.id); setConfirmDelete(false); }}
+                          disabled={isUpdating}
+                          className="flex-1 py-3 rounded-xl text-sm font-bold border border-red-500 text-red-500 hover:bg-red-500/10 transition-all flex items-center justify-center gap-2"
+                        >
+                          {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertTriangle className="w-4 h-4" />}
+                          Confirmar Exclusão
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDelete(true)}
+                      disabled={isUpdating}
+                      className="w-full py-3.5 rounded-xl text-sm font-bold border border-red-500/60 text-red-500 hover:bg-red-500/10 hover:border-red-500 transition-all flex items-center justify-center gap-2"
+                    >
+                      {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                      Excluir Definitivamente
+                    </button>
+                  )
                 )}
              </div>
           )}
+
 
           {/* Contact Actions */}
           <div className="pt-6 pb-8 border-t mt-4" style={{ borderColor: 'var(--theme-border)' }}>

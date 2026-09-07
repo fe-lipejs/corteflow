@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../integrations/supabase/client';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { CheckCircle, DollarSign, User, Calendar, Loader2 } from 'lucide-react';
+import { startOfMonth, endOfMonth, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Props {
   tenantId: string;
@@ -15,8 +17,14 @@ export function CommissionsTab({ tenantId, role, professionalId }: Props) {
   const queryClient = useQueryClient();
   const [payingId, setPayingId] = useState<string | null>(null);
 
+  // BUG-03: Filter commissions by current month
+  const now = new Date();
+  const monthStart = startOfMonth(now).toISOString();
+  const monthEnd = endOfMonth(now).toISOString();
+  const monthLabel = format(now, 'MMMM yyyy', { locale: ptBR });
+
   const { data: commissions, isLoading } = useQuery({
-    queryKey: ['commissions', tenantId, professionalId],
+    queryKey: ['commissions', tenantId, professionalId, monthStart],
     queryFn: async () => {
       // C3 FIX: Build query conditionally — professionals only see their own commissions
       let query = supabase
@@ -33,7 +41,9 @@ export function CommissionsTab({ tenantId, role, professionalId }: Props) {
         .eq('tenant_id', tenantId)
         .eq('type', 'expense')
         .eq('category', 'Comissão')
-        .is('deleted_at', null);
+        .is('deleted_at', null)
+        .gte('created_at', monthStart)
+        .lte('created_at', monthEnd);
 
       // Backend filter: if a professional, restrict to their own records only
       if (role === 'professional' && professionalId) {
@@ -46,6 +56,7 @@ export function CommissionsTab({ tenantId, role, professionalId }: Props) {
     },
     enabled: !!tenantId,
   });
+
 
   const payMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -81,7 +92,7 @@ export function CommissionsTab({ tenantId, role, professionalId }: Props) {
           </p>
         </div>
         <div className="flex-1 p-6 border rounded-2xl" style={{ borderColor: theme.border, background: theme.cardBg }}>
-          <h3 className="text-sm font-medium mb-2" style={{ color: theme.textSecondary }}>Pago (Mês)</h3>
+          <h3 className="text-sm font-medium mb-2 capitalize" style={{ color: theme.textSecondary }}>Pago em {monthLabel}</h3>
           <p className="text-2xl font-bold text-green-500">
             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
               paid.reduce((acc, curr) => acc + Number(curr.amount), 0)

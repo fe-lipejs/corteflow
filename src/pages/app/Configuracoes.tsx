@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+﻿import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../integrations/supabase/client';
 import { useAuth } from '../../hooks/useAuth';
@@ -27,8 +27,10 @@ import {
 } from 'lucide-react';
 import StripeActivatedModal from '../../components/modals/StripeActivatedModal';
 import { ImageCropperModal } from '../../components/ImageCropperModal';
+import toast from 'react-hot-toast';
 
-// ─── Custom SVG Icons ─────────────────────────────────────────────────────────
+
+// â”€â”€â”€ Custom SVG Icons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const InstagramIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
     <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
@@ -56,13 +58,13 @@ const StripeIcon = ({ className, style }: { className?: string; style?: React.CS
 );
 
 const TABS = [
-  { id: 'aparencia', label: 'Aparência & Marca', icon: Palette },
-  { id: 'politicas', label: 'Políticas de Agendamento', icon: Shield },
-  { id: 'local', label: 'Localização', icon: MapPin },
+  { id: 'aparencia', label: 'AparÃªncia & Marca', icon: Palette },
+  { id: 'politicas', label: 'PolÃ­ticas de Agendamento', icon: Shield },
+  { id: 'local', label: 'LocalizaÃ§Ã£o', icon: MapPin },
   { id: 'stripe', label: 'Recebimentos & Pagamentos', icon: CreditCard },
   { id: 'contato', label: 'Contato', icon: Phone },
-  { id: 'horarios', label: 'Horários', icon: Clock },
-  { id: 'notificacoes', label: 'Notificações', icon: Bell },
+  { id: 'horarios', label: 'HorÃ¡rios', icon: Clock },
+  { id: 'notificacoes', label: 'NotificaÃ§Ãµes', icon: Bell },
   { id: 'conta', label: 'Status da Conta', icon: ShieldCheck },
 ] as const;
 
@@ -109,7 +111,7 @@ export default function Configuracoes() {
   const [disconnectStripeModalOpen, setDisconnectStripeModalOpen] = useState(false);
   const [disconnectingStripe, setDisconnectingStripe] = useState(false);
 
-  // ─── Form State ───────────────────────────────────────────────────────────
+  // â”€â”€â”€ Form State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [language, setLanguage] = useState<string>('pt');
   const [selectedTheme, setSelectedTheme] = useState('classic');
   const [customPalette, setCustomPalette] = useState<any>(null);
@@ -288,7 +290,7 @@ export default function Configuracoes() {
     bannerUpload.clearPreview();
   };
 
-  const WEEKDAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const WEEKDAY_NAMES = ['Domingo', 'Segunda', 'TerÃ§a', 'Quarta', 'Quinta', 'Sexta', 'SÃ¡bado'];
 
   const loadSettings = useCallback(async () => {
     if (!tenant) return;
@@ -448,7 +450,7 @@ export default function Configuracoes() {
     }
   }, [tenant]);
 
-  // ─── Load Settings ────────────────────────────────────────────────────────
+  // â”€â”€â”€ Load Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (tenant) {
       setLanguage(tenant.language || 'pt');
@@ -473,7 +475,7 @@ export default function Configuracoes() {
     }
   }, [activeTab, tenant?.id]);
 
-  // ─── Slug Uniqueness & Format Validation ──────────────────────────────────
+  // â”€â”€â”€ Slug Uniqueness & Format Validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const slugCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const validateSlugLive = (rawSlug: string) => {
@@ -488,13 +490,13 @@ export default function Configuracoes() {
 
     if (!formatted || formatted.length < 3) {
       setSlugStatus('invalid');
-      setSlugMessage('O link deve ter no mínimo 3 caracteres (letras, números ou hífens).');
+      setSlugMessage('O link deve ter no mÃ­nimo 3 caracteres (letras, nÃºmeros ou hÃ­fens).');
       return;
     }
 
     if (tenant && formatted === tenant.slug) {
       setSlugStatus('available');
-      setSlugMessage('Este é o seu link atual.');
+      setSlugMessage('Este Ã© o seu link atual.');
       return;
     }
 
@@ -513,10 +515,10 @@ export default function Configuracoes() {
 
         if (data && data.id !== tenant?.id) {
           setSlugStatus('unavailable');
-          setSlugMessage(`O link "${formatted}" já está em uso por outro salão.`);
+          setSlugMessage(`O link "${formatted}" jÃ¡ estÃ¡ em uso por outro salÃ£o.`);
         } else {
           setSlugStatus('available');
-          setSlugMessage(`O link "${formatted}" está livre!`);
+          setSlugMessage(`O link "${formatted}" estÃ¡ livre!`);
         }
       } catch (err: any) {
         console.error('Erro ao validar slug:', err);
@@ -536,7 +538,7 @@ export default function Configuracoes() {
   const handleMagicExtract = async (targetUrlOverride?: string, targetModeOverride?: 'dark' | 'light', chosenAccent?: string) => {
     const targetUrl = targetUrlOverride || logoUrl || logoUpload.preview;
     if (!targetUrl) {
-      alert('Faça upload de uma logo primeiro para extrair a paleta!');
+      toast.error('FaÃ§a upload de uma logo primeiro para extrair a paleta!');
       return;
     }
     const mode = targetModeOverride || bgMode;
@@ -560,7 +562,7 @@ export default function Configuracoes() {
       setSelectedTheme(mode === 'light' ? 'elegant' : 'noir');
     } catch (e) {
       console.error(e);
-      alert('Erro ao analisar cores da imagem');
+      toast.error('Erro ao analisar cores da imagem.');
     } finally {
       setIsExtracting(false);
     }
@@ -604,7 +606,7 @@ export default function Configuracoes() {
     setSelectedTheme('noir');
   };
 
-  // ─── CEP Lookup (Brazil) ──────────────────────────────────────────────────
+  // â”€â”€â”€ CEP Lookup (Brazil) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const lookupCep = async (cep: string) => {
     const digits = cep.replace(/\D/g, '');
     if (digits.length !== 8) return;
@@ -627,7 +629,7 @@ export default function Configuracoes() {
           setLongitude(geoResult.longitude);
           setMapLinkStatus('resolved'); // Marca como resolvido no visual
         } else {
-          // Fallback se não encontrar o endereço completo, tenta só pelo CEP
+          // Fallback se nÃ£o encontrar o endereÃ§o completo, tenta sÃ³ pelo CEP
           const geoResultFallback = await geocodeAddress(`${digits}, Brasil`);
           if (geoResultFallback) {
             setLatitude(geoResultFallback.latitude);
@@ -641,7 +643,7 @@ export default function Configuracoes() {
     }
   };
 
-  // ─── Live Phone Verification States (SSOT) ──────────────────────────────
+  // â”€â”€â”€ Live Phone Verification States (SSOT) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [phoneCheckStatus, setPhoneCheckStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid' | 'taken'>('idle');
   const [phoneFeedback, setPhoneFeedback] = useState<string | null>(null);
   const phoneCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -658,7 +660,7 @@ export default function Configuracoes() {
     const phoneValidation = normalizeBrazilianPhone(rawPhone);
     if (!phoneValidation.isValid || !phoneValidation.normalized) {
       setPhoneCheckStatus('invalid');
-      setPhoneFeedback(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.');
+      setPhoneFeedback(phoneValidation.error || 'Informe um telefone celular vÃ¡lido com DDD. Ex.: (27) 99730-3135.');
       return;
     }
 
@@ -675,14 +677,14 @@ export default function Configuracoes() {
         if (!availErr && avail) {
           if (!avail.available) {
             setPhoneCheckStatus('taken');
-            setPhoneFeedback(avail.error || 'Este número de telefone já está cadastrado em outra conta.');
+            setPhoneFeedback(avail.error || 'Este nÃºmero de telefone jÃ¡ estÃ¡ cadastrado em outra conta.');
           } else {
             setPhoneCheckStatus('valid');
-            setPhoneFeedback('Telefone válido e disponível!');
+            setPhoneFeedback('Telefone vÃ¡lido e disponÃ­vel!');
           }
         } else {
           setPhoneCheckStatus('valid');
-          setPhoneFeedback('Telefone válido!');
+          setPhoneFeedback('Telefone vÃ¡lido!');
         }
       } catch (e) {
         setPhoneCheckStatus('idle');
@@ -691,7 +693,7 @@ export default function Configuracoes() {
     }, 350);
   };
 
-  // ─── Automatic Google Maps Link Resolution (SSOT) ─────────────────────────
+  // â”€â”€â”€ Automatic Google Maps Link Resolution (SSOT) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (!mapLink || !mapLink.trim()) {
       setMapLinkStatus('idle');
@@ -757,7 +759,7 @@ export default function Configuracoes() {
     }
   }, [mapLink]);
 
-  // ─── Handle Phone Formatting ──────────────────────────────────────────────
+  // â”€â”€â”€ Handle Phone Formatting â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhoneMask(e.target.value);
     setWhatsapp(formatted);
@@ -766,7 +768,7 @@ export default function Configuracoes() {
 
   const queryClient = useQueryClient();
 
-  // ─── Handle Theme Change ──────────────────────────────────────────────────
+  // â”€â”€â”€ Handle Theme Change â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleThemeChange = (id: string) => {
     setSelectedTheme(id);
     setThemeId(id); // Apply immediately for preview
@@ -774,15 +776,15 @@ export default function Configuracoes() {
     setContextCustomPalette(undefined);
   };
 
-  // ─── Save Identity & Custom Slug Only ──────────────────────────────────────
+  // â”€â”€â”€ Save Identity & Custom Slug Only â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleSaveIdentity = async () => {
     if (!tenant) return;
     if (slugStatus === 'unavailable') {
-      alert('O link personalizado escolhido já está em uso por outro salão. Por favor, escolha outro link antes de salvar.');
+      toast.error('O link personalizado escolhido jÃ¡ estÃ¡ em uso por outro salÃ£o. Por favor, escolha outro link antes de salvar.');
       return;
     }
     if (slugStatus === 'invalid') {
-      alert('O link personalizado é inválido. Ele deve ter no mínimo 3 caracteres alfanuméricos.');
+      toast.error('O link personalizado Ã© invÃ¡lido. Ele deve ter no mÃ­nimo 3 caracteres alfanumÃ©ricos.');
       return;
     }
 
@@ -802,7 +804,7 @@ export default function Configuracoes() {
 
       if (tenantErr) {
         if (tenantErr.code === '23505') {
-          alert('Este link já está em uso por outro salão. Por favor, escolha outro link.');
+          toast.error('Este link jÃ¡ estÃ¡ em uso por outro salÃ£o. Por favor, escolha outro link.');
           setIdentitySaving(false);
           return;
         }
@@ -830,13 +832,13 @@ export default function Configuracoes() {
       setTimeout(() => setIdentitySaved(false), 3500);
     } catch (err: any) {
       console.error('Erro ao salvar identidade:', err);
-      alert(`Erro ao salvar: ${err.message || 'Tente novamente.'}`);
+      toast.error(`Erro ao salvar: ${err.message || 'Tente novamente.'}`);
     } finally {
       setIdentitySaving(false);
     }
   };
 
-  // ─── Save All Settings ─────────────────────────────────────────────────────
+  // â”€â”€â”€ Save All Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleSave = async () => {
     if (!tenant) return;
     setLoading(true);
@@ -844,23 +846,23 @@ export default function Configuracoes() {
     try {
       // Validate slug status before saving
       if (slugStatus === 'unavailable') {
-        alert('O link personalizado escolhido já está em uso por outro salão. Por favor, escolha outro link antes de salvar.');
+        toast.error('O link personalizado escolhido jÃ¡ estÃ¡ em uso por outro salÃ£o. Por favor, escolha outro link antes de salvar.');
         setLoading(false);
         return;
       }
       if (slugStatus === 'invalid') {
-        alert('O link personalizado é inválido. Ele deve ter no mínimo 3 caracteres alfanuméricos.');
+        toast.error('O link personalizado Ã© invÃ¡lido. Ele deve ter no mÃ­nimo 3 caracteres alfanumÃ©ricos.');
         setLoading(false);
         return;
       }
 
-      // Validação arquitetural do Telefone / WhatsApp (SSOT)
+      // ValidaÃ§Ã£o arquitetural do Telefone / WhatsApp (SSOT)
       let normalizedPhone: string | null = null;
       let cleanWhatsapp = whatsapp.trim();
       if (cleanWhatsapp) {
         const phoneValidation = normalizeBrazilianPhone(cleanWhatsapp);
         if (!phoneValidation.isValid || !phoneValidation.normalized) {
-          alert(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.');
+          toast.error(phoneValidation.error || 'Informe um telefone celular vÃ¡lido com DDD. Ex.: (27) 99730-3135.');
           setLoading(false);
           return;
         }
@@ -875,7 +877,7 @@ export default function Configuracoes() {
           });
 
           if (!availErr && avail && !avail.available) {
-            alert(avail.error || 'Este número de telefone já está cadastrado em outra conta.');
+            toast.error(avail.error || 'Este nÃºmero de telefone jÃ¡ estÃ¡ cadastrado em outra conta.');
             setLoading(false);
             return;
           }
@@ -900,26 +902,26 @@ export default function Configuracoes() {
         .select();
 
       if (!tenantErr && (!updatedTenant || updatedTenant.length === 0)) {
-        alert('Erro ao salvar as configurações: Permissão negada pelo banco de dados (RLS). Certifique-se de que a migração 0052_fix_tenants_rls.sql foi aplicada!');
+        toast.error('Erro ao salvar as configuraÃ§Ãµes: PermissÃ£o negada pelo banco de dados (RLS). Certifique-se de que a migraÃ§Ã£o 0052_fix_tenants_rls.sql foi aplicada!');
         setLoading(false);
         return;
       }
 
       if (tenantErr) {
         if (tenantErr.code === '23505') {
-          alert('Este link já está em uso por outro salão. Por favor, escolha outro link.');
+          toast.error('Este link jÃ¡ estÃ¡ em uso por outro salÃ£o. Por favor, escolha outro link.');
           setLoading(false);
           return;
         }
-        console.error('Erro ao atualizar dados do salão:', tenantErr);
-        alert('Erro ao atualizar dados do salão: ' + tenantErr.message);
+        console.error('Erro ao atualizar dados do salÃ£o:', tenantErr);
+        toast.error('Erro ao atualizar dados do salÃ£o: ' + tenantErr.message);
         setLoading(false);
         return;
       }
 
       i18n.changeLanguage(language);
 
-      // Atualiza telefone no perfil do usuário
+      // Atualiza telefone no perfil do usuÃ¡rio
       if (profile?.id) {
         await supabase.from('profiles').update({
           phone: cleanWhatsapp,
@@ -930,7 +932,7 @@ export default function Configuracoes() {
       // Fix #2: Serialize individual payment toggles as JSON and validate
       const activeOptions = [allowLocal, allowDeposit, allowFull].filter(Boolean).length;
       if (activeOptions === 0) {
-        alert('Pelo menos uma forma de pagamento deve estar ativa!');
+        toast.error('Pelo menos uma forma de pagamento deve estar ativa.');
         setLoading(false);
         return;
       }
@@ -941,7 +943,7 @@ export default function Configuracoes() {
         fontStyle: draftFontStyle,
       };
 
-      const computedFullAddress = [streetAddress, streetNumber ? `nº ${streetNumber}` : '', neighborhood, city, state, zipCode, 'Brasil'].filter(Boolean).join(', ') || fullAddress;
+      const computedFullAddress = [streetAddress, streetNumber ? `nÂº ${streetNumber}` : '', neighborhood, city, state, zipCode, 'Brasil'].filter(Boolean).join(', ') || fullAddress;
 
       // Build payload (Note: business_type is strictly in 'tenants' table, not in 'tenant_settings')
       const payload: Record<string, any> = {
@@ -986,13 +988,13 @@ export default function Configuracoes() {
         const { error: updateErr } = await supabase.from('tenant_settings').update(payload).eq('id', settingsId);
         if (updateErr) {
           console.error('Error updating tenant_settings:', updateErr);
-          throw new Error('Falha ao salvar configurações do salão: ' + updateErr.message);
+          throw new Error('Falha ao salvar configuraÃ§Ãµes do salÃ£o: ' + updateErr.message);
         }
       } else {
         const { data, error: insertErr } = await supabase.from('tenant_settings').insert([payload]).select().single();
         if (insertErr) {
           console.error('Error inserting tenant_settings:', insertErr);
-          throw new Error('Falha ao criar configurações do salão: ' + insertErr.message);
+          throw new Error('Falha ao criar configuraÃ§Ãµes do salÃ£o: ' + insertErr.message);
         }
         if (data) setSettingsId(data.id);
       }
@@ -1063,7 +1065,7 @@ export default function Configuracoes() {
     setIsConnectingStripe(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Não autenticado');
+      if (!session) throw new Error('NÃ£o autenticado');
 
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-onboarding-link`, {
         method: 'POST',
@@ -1084,7 +1086,7 @@ export default function Configuracoes() {
       }
     } catch (err: any) {
       console.error('Stripe Connect error:', err);
-      alert(`Erro ao iniciar conexão com o Stripe: ${err.message}`);
+      toast.error(`Erro ao iniciar conexÃ£o com o Stripe: ${err.message}`);
       setIsConnectingStripe(false);
     }
   };
@@ -1095,7 +1097,7 @@ export default function Configuracoes() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
 
-      // 1. Tenta acionar a Edge Function para desvinculação na API do Stripe
+      // 1. Tenta acionar a Edge Function para desvinculaÃ§Ã£o na API do Stripe
       if (session) {
         try {
           await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/disconnect-connect-account`, {
@@ -1116,7 +1118,7 @@ export default function Configuracoes() {
         .delete()
         .eq('tenant_id', tenant.id);
 
-      // 3. Reseta os métodos de pagamento para apenas Pagar no Local
+      // 3. Reseta os mÃ©todos de pagamento para apenas Pagar no Local
       const defaultMethods = { pay_local: true, partial_50: false, full_100: false };
       await supabase
         .from('tenant_settings')
@@ -1135,7 +1137,7 @@ export default function Configuracoes() {
       queryClient.invalidateQueries({ queryKey: ['tenant_settings'] });
     } catch (err: any) {
       console.error('Error disconnecting Stripe:', err);
-      alert('Erro ao desconectar conta Stripe: ' + err.message);
+      toast.error('Erro ao desconectar Stripe: ' + err.message);
     } finally {
       setDisconnectingStripe(false);
     }
@@ -1203,7 +1205,7 @@ export default function Configuracoes() {
     try {
       setPortalLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Não autenticado');
+      if (!session) throw new Error('NÃ£o autenticado');
 
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`, {
         method: 'POST',
@@ -1221,7 +1223,7 @@ export default function Configuracoes() {
       }
     } catch (err: any) {
       console.error('Portal error:', err);
-      alert(`Erro ao abrir portal de faturamento: ${err.message}`);
+      toast.error(`Erro ao abrir portal de faturamento: ${err.message}`);
     } finally {
       setPortalLoading(false);
     }
@@ -1232,7 +1234,7 @@ export default function Configuracoes() {
     setCancelSubLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Não autenticado');
+      if (!session) throw new Error('NÃ£o autenticado');
 
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-subscription`, {
         method: 'POST',
@@ -1254,10 +1256,10 @@ export default function Configuracoes() {
       queryClient.invalidateQueries({ queryKey: ['permission_engine'] });
       queryClient.invalidateQueries({ queryKey: ['plan_features'] });
       await loadSettings();
-      alert('Assinatura cancelada com sucesso. Seu salão será bloqueado no encerramento do ciclo.');
+      toast.success('Assinatura cancelada com sucesso. Seu salÃ£o serÃ¡ bloqueado no encerramento do ciclo.');
     } catch (err: any) {
       console.error('Cancel sub error:', err);
-      alert(`Erro ao cancelar assinatura: ${err.message}`);
+      toast.error(`Erro ao cancelar assinatura: ${err.message}`);
     } finally {
       setCancelSubLoading(false);
     }
@@ -1268,7 +1270,7 @@ export default function Configuracoes() {
     setDeleteLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Não autenticado');
+      if (!session) throw new Error('NÃ£o autenticado');
 
       const userId = session.user.id;
       const tenantId = tenant.id;
@@ -1287,14 +1289,14 @@ export default function Configuracoes() {
         console.warn('Aviso Edge Function delete-account:', edgeErr);
       }
 
-      // 2. Executa a exclusão definitiva no banco via RPC de segurança
+      // 2. Executa a exclusÃ£o definitiva no banco via RPC de seguranÃ§a
       try {
         await supabase.rpc('hard_delete_tenant_and_user', {
           p_tenant_id: tenantId,
           p_user_id: userId,
         });
       } catch (rpcErr) {
-        console.warn('Fallback exclusão direta:', rpcErr);
+        console.warn('Fallback exclusÃ£o direta:', rpcErr);
         await supabase.from('stripe_connect_accounts').delete().eq('tenant_id', tenantId);
         await supabase.from('subscriptions').delete().eq('tenant_id', tenantId);
         await supabase.from('tenant_settings').delete().eq('tenant_id', tenantId);
@@ -1316,11 +1318,11 @@ export default function Configuracoes() {
       localStorage.clear();
       sessionStorage.clear();
 
-      // 4. Fecha o modal de confirmação e exibe o pop-up de sucesso
+      // 4. Fecha o modal de confirmaÃ§Ã£o e exibe o pop-up de sucesso
       setDeleteAccountModalOpen(false);
       setAccountDeletedSuccess(true);
 
-      // 5. Redireciona para a landing page após 2.5s
+      // 5. Redireciona para a landing page apÃ³s 2.5s
       setTimeout(async () => {
         try {
           await signOut();
@@ -1330,14 +1332,14 @@ export default function Configuracoes() {
 
     } catch (err: any) {
       console.error('Delete account error:', err);
-      alert(`Erro ao excluir conta: ${err.message}`);
+      toast.error(`Erro ao excluir conta: ${err.message}`);
       setDeleteLoading(false);
     }
   };
 
   const publicUrl = `raffros.com/${tenant?.slug || ''}`;
 
-  // ─── Skeleton Loading ─────────────────────────────────────────────────────
+  // â”€â”€â”€ Skeleton Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (initialLoading) {
     return (
       <div style={{ maxWidth: '900px' }} className="pb-12 space-y-6 animate-fade-in">
@@ -1358,15 +1360,15 @@ export default function Configuracoes() {
 
   return (
     <div style={{ maxWidth: '900px' }} className="pb-12 space-y-6 animate-fade-in">
-      {/* ── Top Header ── */}
+      {/* â”€â”€ Top Header â”€â”€ */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest mb-1 flex items-center gap-1.5" style={{ color: theme.accent }}>
             <Settings2 className="w-3.5 h-3.5" />
-            Configurações
+            ConfiguraÃ§Ãµes
           </p>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: theme.textPrimary, fontFamily: fontStyle === 'serif' ? "'Playfair Display', serif" : 'inherit' }}>
-            Configurações do Salão
+            ConfiguraÃ§Ãµes do SalÃ£o
           </h1>
         </div>
 
@@ -1395,7 +1397,7 @@ export default function Configuracoes() {
             onClick={() => window.open(`/${tenant?.slug}`, '_blank')}
             className="p-2.5 rounded-xl transition-all hover:scale-105 cursor-pointer shadow-sm"
             style={{ background: theme.btnPrimaryBg || theme.accent, color: theme.btnPrimaryText }}
-            title="Ver Página Pública Oficial"
+            title="Ver PÃ¡gina PÃºblica Oficial"
           >
             <ExternalLink className="w-4 h-4" />
           </button>
@@ -1440,7 +1442,7 @@ export default function Configuracoes() {
           className="glass-card p-4 sm:p-6 rounded-2xl"
         >
 
-          {/* ═══════════════════════════ TAB: APARÊNCIA & MARCA (UNIFICADO) ═══════════════════════════ */}
+          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TAB: APARÃŠNCIA & MARCA (UNIFICADO) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
           {activeTab === 'aparencia' && (
             <div className="space-y-6">
               {/* 1. Nome & Link da Barbearia (Clean & Spacious) */}
@@ -1448,18 +1450,18 @@ export default function Configuracoes() {
                 <div>
                   <h4 className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textPrimary }}>
                     <Building2 className="w-4 h-4" style={{ color: theme.accent }} />
-                    Nome do Estabelecimento & Link Público
+                    Nome do Estabelecimento & Link PÃºblico
                   </h4>
                   <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>
-                    As alterações feitas aqui só são salvas e publicadas quando você clicar em "Salvar Configurações".
+                    As alteraÃ§Ãµes feitas aqui sÃ³ sÃ£o salvas e publicadas quando vocÃª clicar em "Salvar ConfiguraÃ§Ãµes".
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Nome do Salão */}
+                  {/* Nome do SalÃ£o */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
-                      Nome do Salão
+                      Nome do SalÃ£o
                     </label>
                     <input
                       type="text"
@@ -1480,10 +1482,10 @@ export default function Configuracoes() {
                         Link Personalizado (URL)
                       </label>
                       {slugStatus === 'available' && (
-                        <span className="text-[10px] font-bold text-emerald-500">✓ Disponível!</span>
+                        <span className="text-[10px] font-bold text-emerald-500">âœ“ DisponÃ­vel!</span>
                       )}
                       {slugStatus === 'unavailable' && (
-                        <span className="text-[10px] font-bold text-rose-500">✕ Já em uso!</span>
+                        <span className="text-[10px] font-bold text-rose-500">âœ• JÃ¡ em uso!</span>
                       )}
                       {slugStatus === 'checking' && (
                         <span className="text-[10px] font-bold text-amber-500">Verificando...</span>
@@ -1516,7 +1518,7 @@ export default function Configuracoes() {
                 {/* Logo */}
                 <div className="flex flex-col items-center">
                   <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-center" style={{ color: theme.textSecondary }}>
-                    Logo do Salão (Perfil)
+                    Logo do SalÃ£o (Perfil)
                   </label>
                   <div
                     className="relative w-40 h-40 rounded-full border-2 border-dashed flex items-center justify-center overflow-hidden group transition-all mx-auto"
@@ -1558,7 +1560,7 @@ export default function Configuracoes() {
                         <p className="text-xs font-medium" style={{ color: theme.textMuted }}>
                           {logoUpload.isUploading ? 'Enviando...' : 'Enviar Logo'}
                         </p>
-                        <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Mínimo 400×400px</p>
+                        <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>MÃ­nimo 400Ã—400px</p>
                         <input type="file" accept="image/*" onChange={(e) => handleFileSelect(e, 'logo')} className="hidden" />
                       </label>
                     )}
@@ -1610,7 +1612,7 @@ export default function Configuracoes() {
                         <p className="text-xs font-medium" style={{ color: theme.textMuted }}>
                           {bannerUpload.isUploading ? 'Enviando...' : 'Enviar Foto de Capa'}
                         </p>
-                        <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Ideal 1600×600px</p>
+                        <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Ideal 1600Ã—600px</p>
                         <input type="file" accept="image/*" onChange={(e) => handleFileSelect(e, 'banner')} className="hidden" />
                       </label>
                     )}
@@ -1630,7 +1632,7 @@ export default function Configuracoes() {
                       Identidade Visual & Cores da Marca
                     </h4>
                     <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>
-                      Configure a atmosfera do seu salão, a cor de destaque e o estilo tipográfico com prévia em tempo real.
+                      Configure a atmosfera do seu salÃ£o, a cor de destaque e o estilo tipogrÃ¡fico com prÃ©via em tempo real.
                     </p>
                   </div>
 
@@ -1711,31 +1713,31 @@ export default function Configuracoes() {
                       Aa
                     </span>
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>Tipografia dos Títulos</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>Tipografia dos TÃ­tulos</p>
                       <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>
-                        {fontStyle === 'serif' ? 'Playfair (Clássico)' : 'Plus Jakarta (Moderno)'}
+                        {fontStyle === 'serif' ? 'Playfair (ClÃ¡ssico)' : 'Plus Jakarta (Moderno)'}
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* 3. Informações da Marca */}
+              {/* 3. InformaÃ§Ãµes da Marca */}
               <div className="p-5 rounded-2xl border space-y-4" style={{ background: theme.inputBg, borderColor: theme.border }}>
                 <h4 className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textPrimary }}>
                   <Building2 className="w-4 h-4" style={{ color: theme.accent }} />
-                  Informações da Marca & Idioma
+                  InformaÃ§Ãµes da Marca & Idioma
                 </h4>
 
-                {/* Tipo de Negócio */}
+                {/* Tipo de NegÃ³cio */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
-                    Tipo de Negócio / Segmento
+                    Tipo de NegÃ³cio / Segmento
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
                       { id: 'barbearia', label: 'Barbearia', icon: <Scissors className="w-5 h-5" />, desc: 'Cortes, barba e navalha' },
-                      { id: 'salao', label: 'Salão de Beleza', icon: <Sparkles className="w-5 h-5" />, desc: 'Cabelo, estética e coloração' },
+                      { id: 'salao', label: 'SalÃ£o de Beleza', icon: <Sparkles className="w-5 h-5" />, desc: 'Cabelo, estÃ©tica e coloraÃ§Ã£o' },
                       { id: 'esmalteria', label: 'Esmalteria / Nails', icon: <Palette className="w-5 h-5" />, desc: 'Manicure, pedicure e unhas' },
                     ].map((item) => (
                       <button
@@ -1772,13 +1774,13 @@ export default function Configuracoes() {
                       value={fantasyName}
                       onChange={e => setFantasyName(e.target.value)}
                       className="themed-input"
-                      placeholder="Nome do seu salão"
+                      placeholder="Nome do seu salÃ£o"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
-                      Slogan / Subtítulo
+                      Slogan / SubtÃ­tulo
                     </label>
                     <input
                       type="text"
@@ -1792,7 +1794,7 @@ export default function Configuracoes() {
 
                 <div>
                   <label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
-                    <span>Sobre o Salão</span>
+                    <span>Sobre o SalÃ£o</span>
                     <span style={{ color: description.length > 180 ? theme.error : theme.textMuted }}>{description.length}/180</span>
                   </label>
                   <textarea
@@ -1800,32 +1802,32 @@ export default function Configuracoes() {
                     onChange={e => setDescription(e.target.value.slice(0, 180))}
                     rows={3}
                     className="themed-input resize-none"
-                    placeholder="Conte a história do seu espaço..."
+                    placeholder="Conte a histÃ³ria do seu espaÃ§o..."
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>
                     <Globe className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" style={{ color: theme.accent }} />
-                    Idioma Padrão do Salão
+                    Idioma PadrÃ£o do SalÃ£o
                   </label>
                   <select
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
                     className="themed-input w-full sm:w-auto"
                   >
-                    <option value="pt">🇧🇷 Português (Brasil)</option>
-                    <option value="en">🇺🇸 English</option>
-                    <option value="es">🇪🇸 Español</option>
-                    <option value="fr">🇫🇷 Français</option>
-                    <option value="de">🇩🇪 Deutsch</option>
+                    <option value="pt">ðŸ‡§ðŸ‡· PortuguÃªs (Brasil)</option>
+                    <option value="en">ðŸ‡ºðŸ‡¸ English</option>
+                    <option value="es">ðŸ‡ªðŸ‡¸ EspaÃ±ol</option>
+                    <option value="fr">ðŸ‡«ðŸ‡· FranÃ§ais</option>
+                    <option value="de">ðŸ‡©ðŸ‡ª Deutsch</option>
                   </select>
                 </div>
               </div>
             </div>
           )}
 
-          {/* ═══════════════════════════ TAB 3: CONTATO ═════════════════════════════════ */}
+          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TAB 3: CONTATO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
           {activeTab === 'contato' && (
             <div className="space-y-6">
               <div>
@@ -1834,7 +1836,7 @@ export default function Configuracoes() {
                   Contato & Redes Sociais
                 </h3>
                 <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>
-                  Informações exibidas na sua página pública.
+                  InformaÃ§Ãµes exibidas na sua pÃ¡gina pÃºblica.
                 </p>
               </div>
 
@@ -1865,7 +1867,7 @@ export default function Configuracoes() {
                       ? 'text-green-600'
                       : 'text-red-500'
                       }`}>
-                      {phoneCheckStatus === 'valid' ? <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" /> : '⚠️'} {phoneFeedback}
+                      {phoneCheckStatus === 'valid' ? <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" /> : 'âš ï¸'} {phoneFeedback}
                     </p>
                   )}
                 </div>
@@ -1921,16 +1923,16 @@ export default function Configuracoes() {
             </div>
           )}
 
-          {/* ═══════════════════════════ TAB NOTIFICAÇÕES ═══════════════════════════ */}
+          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TAB NOTIFICAÃ‡Ã•ES â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
           {activeTab === 'notificacoes' && (
             <div className="space-y-6">
               <div>
                 <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
                   <Bell className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Central de Notificações
+                  Central de NotificaÃ§Ãµes
                 </h3>
                 <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>
-                  Configure como você deseja ser avisado sobre novos agendamentos e cancelamentos.
+                  Configure como vocÃª deseja ser avisado sobre novos agendamentos e cancelamentos.
                 </p>
               </div>
 
@@ -1949,20 +1951,20 @@ export default function Configuracoes() {
             </div>
           )}
 
-          {/* ═══════════════════════════ TAB 4: LOCALIZAÇÃO ═════════════════════════════ */}
+          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TAB 4: LOCALIZAÃ‡ÃƒO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
           {activeTab === 'local' && (
             <div className="space-y-6">
               <div>
                 <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
                   <MapPin className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Localização do Estabelecimento
+                  LocalizaÃ§Ã£o do Estabelecimento
                 </h3>
                 <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>
-                  O endereço e mapa serão exibidos na sua página pública.
+                  O endereÃ§o e mapa serÃ£o exibidos na sua pÃ¡gina pÃºblica.
                 </p>
               </div>
 
-              {/* CEP + Rua + Número */}
+              {/* CEP + Rua + NÃºmero */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="sm:col-span-1">
                   <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>CEP</label>
@@ -1990,7 +1992,7 @@ export default function Configuracoes() {
                   />
                 </div>
                 <div className="sm:col-span-1">
-                  <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>Número</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: theme.textSecondary }}>NÃºmero</label>
                   <input
                     type="text"
                     value={streetNumber}
@@ -2030,7 +2032,7 @@ export default function Configuracoes() {
                     value={city}
                     onChange={e => setCity(e.target.value)}
                     className="themed-input"
-                    placeholder="São Paulo"
+                    placeholder="SÃ£o Paulo"
                   />
                 </div>
                 <div className="sm:col-span-1">
@@ -2076,13 +2078,13 @@ export default function Configuracoes() {
                   </p>
                 )}
                 <p className="text-[10px] mt-1 font-medium" style={{ color: theme.textMuted }}>
-                  Coloque o link do Google para uma localização mais precisa (Ex: https://maps.app.goo.gl/...)
+                  Coloque o link do Google para uma localizaÃ§Ã£o mais precisa (Ex: https://maps.app.goo.gl/...)
                 </p>
               </div>
 
               {/* Map Preview */}
               {(() => {
-                const queryAddress = [streetAddress, streetNumber ? `nº ${streetNumber}` : '', neighborhood, city, state, zipCode, 'Brasil'].filter(Boolean).join(', ');
+                const queryAddress = [streetAddress, streetNumber ? `nÂº ${streetNumber}` : '', neighborhood, city, state, zipCode, 'Brasil'].filter(Boolean).join(', ');
                 let embedUrl = '';
 
                 // 1. If explicit iframe embed code was pasted
@@ -2094,22 +2096,22 @@ export default function Configuracoes() {
                 else if (mapLink && (mapLink.includes('output=embed') || mapLink.includes('google.com/maps/embed'))) {
                   embedUrl = mapLink;
                 }
-                // 3. Coordenadas exatas identificadas (via resolução ou GPS) -> Precisão Máxima
+                // 3. Coordenadas exatas identificadas (via resoluÃ§Ã£o ou GPS) -> PrecisÃ£o MÃ¡xima
                 else if (latitude && longitude) {
                   embedUrl = `https://maps.google.com/maps?q=${latitude},${longitude}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
                 }
-                // 4. Extração direta de coordenadas se o link contiver @lat,lng, !3d!4d ou q=lat,lng
+                // 4. ExtraÃ§Ã£o direta de coordenadas se o link contiver @lat,lng, !3d!4d ou q=lat,lng
                 else if (mapLink && (mapLink.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || mapLink.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/))) {
                   const coordMatch = mapLink.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || mapLink.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
                   if (coordMatch) {
                     embedUrl = `https://maps.google.com/maps?q=${coordMatch[1]},${coordMatch[2]}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
                   }
                 }
-                // 5. Busca de alta precisão por endereço completo com número, bairro, cidade e CEP
+                // 5. Busca de alta precisÃ£o por endereÃ§o completo com nÃºmero, bairro, cidade e CEP
                 else if (queryAddress) {
                   embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(queryAddress)}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
                 }
-                // 6. Link genérico de fallback
+                // 6. Link genÃ©rico de fallback
                 else if (mapLink && mapLink.trim().startsWith('http')) {
                   embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapLink.trim())}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
                 }
@@ -2124,7 +2126,7 @@ export default function Configuracoes() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
-                        Pré-visualização do Mapa
+                        PrÃ©-visualizaÃ§Ã£o do Mapa
                       </p>
                       {directLink && (
                         <a
@@ -2153,10 +2155,10 @@ export default function Configuracoes() {
             </div>
           )}
 
-          {/* ═══════════════════════════ TAB: RECEBIMENTOS & PAGAMENTOS ══════════════════════════ */}
+          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TAB: RECEBIMENTOS & PAGAMENTOS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
           {activeTab === 'stripe' && (
             <div className="space-y-6">
-              {/* 1. Card Principal: Stripe Connect com Selo Verde de Segurança */}
+              {/* 1. Card Principal: Stripe Connect com Selo Verde de SeguranÃ§a */}
               {(() => {
                 const hasStripeAccount = Boolean(stripeConnectInfo?.stripe_account_id);
                 const isFullyActive = stripeConnectInfo?.charges_enabled === true;
@@ -2188,28 +2190,28 @@ export default function Configuracoes() {
                           <h4 className="text-sm font-bold" style={{ color: theme.textPrimary }}>
                             Conta Stripe Connect
                           </h4>
-                          {/* Selo Verde de Segurança e Confiabilidade */}
+                          {/* Selo Verde de SeguranÃ§a e Confiabilidade */}
                           <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                            <ShieldCheck className="w-3 h-3 text-emerald-500" /> 100% Seguro & Confiável
+                            <ShieldCheck className="w-3 h-3 text-emerald-500" /> 100% Seguro & ConfiÃ¡vel
                           </span>
                           {isFullyActive ? (
                             <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-                              ✓ Conectada & Ativa
+                              âœ“ Conectada & Ativa
                             </span>
                           ) : hasStripeAccount ? (
                             <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-                              ✓ Conectada
+                              âœ“ Conectada
                             </span>
                           ) : (
                             <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                              Não Conectada
+                              NÃ£o Conectada
                             </span>
                           )}
                         </div>
                         <p className="text-xs mt-1 leading-relaxed font-medium" style={{ color: theme.textSecondary }}>
                           {hasStripeAccount
-                            ? `Recebimentos online com proteção antifraude e repasse direto na sua conta Stripe (${stripeConnectInfo?.stripe_account_id || ''})`
-                            : 'Conecte sua conta para receber pagamentos online (Pix e cartão) direto dos clientes com total segurança.'}
+                            ? `Recebimentos online com proteÃ§Ã£o antifraude e repasse direto na sua conta Stripe (${stripeConnectInfo?.stripe_account_id || ''})`
+                            : 'Conecte sua conta para receber pagamentos online (Pix e cartÃ£o) direto dos clientes com total seguranÃ§a.'}
                         </p>
                       </div>
                     </div>
@@ -2282,10 +2284,10 @@ export default function Configuracoes() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-sm" style={{ color: theme.textPrimary }}>
-                    Opções de Pagamento para o Cliente
+                    OpÃ§Ãµes de Pagamento para o Cliente
                   </h3>
                   <span className="text-[11px]" style={{ color: theme.textMuted }}>
-                    Pelo menos uma opção ativa
+                    Pelo menos uma opÃ§Ã£o ativa
                   </span>
                 </div>
 
@@ -2297,7 +2299,7 @@ export default function Configuracoes() {
                       {
                         key: 'local' as const,
                         label: 'Pagar no Local',
-                        desc: 'Pagamento presencial no salão após o atendimento',
+                        desc: 'Pagamento presencial no salÃ£o apÃ³s o atendimento',
                         state: allowLocal,
                         isLocked: false,
                         set: setAllowLocal,
@@ -2305,7 +2307,7 @@ export default function Configuracoes() {
                       {
                         key: 'deposit' as const,
                         label: 'Sinal / Entrada Online',
-                        desc: 'Exige percentual antecipado para garantir o horário',
+                        desc: 'Exige percentual antecipado para garantir o horÃ¡rio',
                         state: allowDeposit,
                         isLocked: !hasStripeAccount,
                         set: setAllowDeposit,
@@ -2388,7 +2390,7 @@ export default function Configuracoes() {
                                     Valor da entrada: <strong style={{ color: theme.accent }}>{depositPercentage}%</strong>
                                   </span>
                                   <span style={{ color: theme.textMuted }}>
-                                    Restante ({100 - depositPercentage}%) pago no salão
+                                    Restante ({100 - depositPercentage}%) pago no salÃ£o
                                   </span>
                                 </div>
                                 <input
@@ -2413,17 +2415,17 @@ export default function Configuracoes() {
             </div>
           )}
 
-          {/* ═══════════════════════════ TAB 6: HORÁRIOS ════════════════════════════════ */}
+          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TAB 6: HORÃRIOS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
           {activeTab === 'horarios' && (
             <div className="space-y-6">
               <FeatureGate permission="agenda.bloquear_horario" inline>
               <div>
                 <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
                   <Clock className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Horário de Funcionamento
+                  HorÃ¡rio de Funcionamento
                 </h3>
                 <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>
-                  Defina os dias e horários de atendimento. Clientes só poderão agendar dentro destes horários.
+                  Defina os dias e horÃ¡rios de atendimento. Clientes sÃ³ poderÃ£o agendar dentro destes horÃ¡rios.
                 </p>
               </div>
 
@@ -2509,7 +2511,7 @@ export default function Configuracoes() {
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase mb-1.5" style={{ color: theme.textMuted }}>Almoço Início</label>
+                          <label className="block text-[10px] font-bold uppercase mb-1.5" style={{ color: theme.textMuted }}>AlmoÃ§o InÃ­cio</label>
                           <input
                             type="time"
                             value={bh.lunch_start}
@@ -2523,7 +2525,7 @@ export default function Configuracoes() {
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase mb-1.5" style={{ color: theme.textMuted }}>Almoço Fim</label>
+                          <label className="block text-[10px] font-bold uppercase mb-1.5" style={{ color: theme.textMuted }}>AlmoÃ§o Fim</label>
                           <input
                             type="time"
                             value={bh.lunch_end}
@@ -2545,20 +2547,20 @@ export default function Configuracoes() {
             </div>
           )}
 
-          {/* ═══════════════════════════ TAB 7: POLÍTICAS DE AGENDAMENTO ═════════════════ */}
+          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TAB 7: POLÃTICAS DE AGENDAMENTO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
           {activeTab === 'politicas' && (
             <div className="space-y-6">
               <div>
                 <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
                   <Shield className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Políticas de Agendamento
+                  PolÃ­ticas de Agendamento
                 </h3>
                 <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>
-                  Configure as regras de atendimento, domicílio, cancelamentos e reagendamentos.
+                  Configure as regras de atendimento, domicÃ­lio, cancelamentos e reagendamentos.
                 </p>
               </div>
 
-              {/* ─── Atendimento a Domicílio (PRIMEIRO) ──────────────────────────────────── */}
+              {/* â”€â”€â”€ Atendimento a DomicÃ­lio (PRIMEIRO) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
               {/* Reagendamento */}
               <div className="rounded-xl p-5" style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}>
                 <div className="flex items-center justify-between mb-4">
@@ -2582,19 +2584,19 @@ export default function Configuracoes() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t" style={{ borderColor: theme.border }}>
                     <div>
                       <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                        Prazo máximo (Horas de antecedência)
+                        Prazo mÃ¡ximo (Horas de antecedÃªncia)
                       </label>
                       <select
                         value={rescheduleDeadlineHours}
                         onChange={(e) => setRescheduleDeadlineHours(Number(e.target.value))}
                         className="themed-input w-full"
                       >
-                        <option value={2}>Até 2 horas antes</option>
-                        <option value={6}>Até 6 horas antes</option>
-                        <option value={12}>Até 12 horas antes</option>
-                        <option value={24}>Até 24 horas antes</option>
-                        <option value={48}>Até 48 horas antes</option>
-                        <option value={72}>Até 72 horas antes</option>
+                        <option value={2}>AtÃ© 2 horas antes</option>
+                        <option value={6}>AtÃ© 6 horas antes</option>
+                        <option value={12}>AtÃ© 12 horas antes</option>
+                        <option value={24}>AtÃ© 24 horas antes</option>
+                        <option value={48}>AtÃ© 48 horas antes</option>
+                        <option value={72}>AtÃ© 72 horas antes</option>
                       </select>
                     </div>
                   </div>
@@ -2623,7 +2625,7 @@ export default function Configuracoes() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t" style={{ borderColor: theme.border }}>
                   <div>
                     <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                      Cancelamento Grátis até (Horas antes)
+                      Cancelamento GrÃ¡tis atÃ© (Horas antes)
                     </label>
                     <select
                       value={cancelFreeHoursBefore}
@@ -2654,7 +2656,7 @@ export default function Configuracoes() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
-                      Tolerância de Atraso (Minutos)
+                      TolerÃ¢ncia de Atraso (Minutos)
                     </label>
                     <select
                       value={delayToleranceMinutes}
@@ -2686,10 +2688,10 @@ export default function Configuracoes() {
             </div>
           )}
 
-          {/* ── RADIUS MAP MODAL ── */}
+          {/* â”€â”€ RADIUS MAP MODAL â”€â”€ */}
 
 
-          {/* ═══════════════════════════ TAB: STATUS DA CONTA ════════════════════════════ */}
+          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TAB: STATUS DA CONTA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
           {activeTab === 'conta' && (
             <div className="space-y-6">
               <div>
@@ -2698,23 +2700,23 @@ export default function Configuracoes() {
                   Status da Conta & Assinatura
                 </h3>
                 <p className="text-xs mb-4" style={{ color: theme.textSecondary }}>
-                  Acompanhe a situação do seu estabelecimento, plano contratado e faturamento.
+                  Acompanhe a situaÃ§Ã£o do seu estabelecimento, plano contratado e faturamento.
                 </p>
               </div>
 
               {/* Status Grid Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* 1. Situação da Empresa */}
+                {/* 1. SituaÃ§Ã£o da Empresa */}
                 <div className="p-5 rounded-2xl border space-y-2" style={{ background: theme.cardBg, borderColor: theme.border }}>
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
-                      Situação do Estabelecimento
+                      SituaÃ§Ã£o do Estabelecimento
                     </span>
                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${tenant?.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
                       tenant?.status === 'trial' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
                         'bg-red-500/10 text-red-400 border border-red-500/20'
                       }`}>
-                      {tenant?.status === 'active' ? 'Ativo' : tenant?.status === 'trial' ? 'Em Período de Testes' : tenant?.status || 'Ativo'}
+                      {tenant?.status === 'active' ? 'Ativo' : tenant?.status === 'trial' ? 'Em PerÃ­odo de Testes' : tenant?.status || 'Ativo'}
                     </span>
                   </div>
                   <h4 className="font-bold text-base truncate" style={{ color: theme.textPrimary }}>
@@ -2737,7 +2739,7 @@ export default function Configuracoes() {
                     {engine.defaultPlan?.name || 'Plano Starter'}
                   </h4>
                   <p className="text-xs" style={{ color: theme.textMuted }}>
-                    {engine.getPlanLimit('profissionais') === 'unlimited' ? 'Profissionais ilimitados' : `Até ${engine.getPlanLimit('profissionais')} ${engine.getPlanLimit('profissionais') === 1 ? 'profissional' : 'profissionais'}`} • {engine.hasFeature('produtos') ? 'Produtos liberados' : 'Apenas Serviços'}
+                    {engine.getPlanLimit('profissionais') === 'unlimited' ? 'Profissionais ilimitados' : `AtÃ© ${engine.getPlanLimit('profissionais')} ${engine.getPlanLimit('profissionais') === 1 ? 'profissional' : 'profissionais'}`} â€¢ {engine.hasFeature('produtos') ? 'Produtos liberados' : 'Apenas ServiÃ§os'}
                   </p>
                 </div>
 
@@ -2751,20 +2753,20 @@ export default function Configuracoes() {
                   </div>
                   <h4 className="font-bold text-base" style={{ color: theme.textPrimary }}>
                     {subInfo?.status === 'active' ? 'Assinatura Ativa (Stripe)' :
-                      subInfo?.status === 'trial' ? 'Período de Testes (Trial)' :
-                        subInfo?.status === 'canceled' ? 'Cancelada (Sem novas cobranças)' :
+                      subInfo?.status === 'trial' ? 'PerÃ­odo de Testes (Trial)' :
+                        subInfo?.status === 'canceled' ? 'Cancelada (Sem novas cobranÃ§as)' :
                           'Assinatura Regularizada'}
                   </h4>
                   <p className="text-xs font-mono truncate" style={{ color: theme.textMuted }}>
-                    {subInfo?.stripe_subscription_id ? `ID: ${subInfo.stripe_subscription_id}` : 'Cobrança via Stripe Billing'}
+                    {subInfo?.stripe_subscription_id ? `ID: ${subInfo.stripe_subscription_id}` : 'CobranÃ§a via Stripe Billing'}
                   </p>
                 </div>
 
-                {/* 4. Ciclo e Próxima Fatura */}
+                {/* 4. Ciclo e PrÃ³xima Fatura */}
                 <div className="p-5 rounded-2xl border space-y-2" style={{ background: theme.cardBg, borderColor: theme.border }}>
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
-                      Ciclo / Próxima Fatura
+                      Ciclo / PrÃ³xima Fatura
                     </span>
                     <CalendarCheck className="w-4 h-4 text-amber-400" />
                   </div>
@@ -2773,10 +2775,10 @@ export default function Configuracoes() {
                       new Date(subInfo.current_period_end).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) :
                       subInfo?.trial_ends_at ?
                         `Fim do trial: ${new Date(subInfo.trial_ends_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}` :
-                        'Renovação Automática'}
+                        'RenovaÃ§Ã£o AutomÃ¡tica'}
                   </h4>
                   <p className="text-xs text-emerald-400 font-medium">
-                    {subInfo?.status === 'canceled' ? '✓ Nenhuma cobrança futura será feita' : 'Pagamento processado com segurança'}
+                    {subInfo?.status === 'canceled' ? 'âœ“ Nenhuma cobranÃ§a futura serÃ¡ feita' : 'Pagamento processado com seguranÃ§a'}
                   </p>
                 </div>
 
@@ -2797,21 +2799,21 @@ export default function Configuracoes() {
                         ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                         : 'bg-neutral-500/10 text-neutral-400 border border-neutral-500/20'
                       }`}>
-                      {stripeConnectInfo?.charges_enabled ? 'Habilitado (Ao Vivo)' : stripeConnectInfo?.stripe_account_id ? 'Em Análise / Pendente' : 'Não Conectado'}
+                      {stripeConnectInfo?.charges_enabled ? 'Habilitado (Ao Vivo)' : stripeConnectInfo?.stripe_account_id ? 'Em AnÃ¡lise / Pendente' : 'NÃ£o Conectado'}
                     </span>
                   </div>
                   <h4 className="font-bold text-base" style={{ color: theme.textPrimary }}>
                     {stripeConnectInfo?.charges_enabled
-                      ? 'Conta Bancária Vinculada & Ativa'
+                      ? 'Conta BancÃ¡ria Vinculada & Ativa'
                       : stripeConnectInfo?.stripe_account_id
-                        ? 'Verificação Bancária Pendente'
+                        ? 'VerificaÃ§Ã£o BancÃ¡ria Pendente'
                         : 'Pagamentos Online Desativados'}
                   </h4>
                   <p className="text-xs" style={{ color: theme.textMuted }}>
                     {stripeConnectInfo?.charges_enabled
-                      ? 'Seu salão está habilitado a receber pagamentos online (Pix, Cartão) diretamente na sua conta bancária.'
+                      ? 'Seu salÃ£o estÃ¡ habilitado a receber pagamentos online (Pix, CartÃ£o) diretamente na sua conta bancÃ¡ria.'
                       : stripeConnectInfo?.stripe_account_id
-                        ? 'Conclua o envio dos seus documentos bancários na aba "Recebimentos & Pagamentos" para liberar cobranças online.'
+                        ? 'Conclua o envio dos seus documentos bancÃ¡rios na aba "Recebimentos & Pagamentos" para liberar cobranÃ§as online.'
                         : 'Conecte sua conta Stripe na aba "Recebimentos & Pagamentos" para cobrar reservas antecipadas dos seus clientes.'}
                   </p>
                   {!stripeConnectInfo?.charges_enabled && (
@@ -2822,14 +2824,14 @@ export default function Configuracoes() {
                         className="px-4 py-2 text-xs font-bold rounded-xl text-white transition-all flex items-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] bg-[#635BFF] hover:bg-[#5349e4]"
                       >
                         <Zap className="w-3.5 h-3.5" />
-                        {stripeConnectInfo?.stripe_account_id ? 'Completar Verificação Stripe' : 'Conectar Conta Stripe'}
+                        {stripeConnectInfo?.stripe_account_id ? 'Completar VerificaÃ§Ã£o Stripe' : 'Conectar Conta Stripe'}
                       </button>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Seção de Gerenciamento da Assinatura (Stripe Billing) */}
+              {/* SeÃ§Ã£o de Gerenciamento da Assinatura (Stripe Billing) */}
               <div className="p-5 rounded-2xl border space-y-4 mt-6" style={{ background: theme.cardBg, borderColor: theme.border }}>
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div className="space-y-1">
@@ -2838,11 +2840,11 @@ export default function Configuracoes() {
                         <StripeIcon className="w-3.5 h-3.5" />
                       </div>
                       <h4 className="text-sm font-bold" style={{ color: theme.textPrimary }}>
-                        Gerenciamento de Cobrança & Faturamento (Stripe)
+                        Gerenciamento de CobranÃ§a & Faturamento (Stripe)
                       </h4>
                     </div>
                     <p className="text-xs" style={{ color: theme.textSecondary }}>
-                      Acesse o portal oficial do Stripe para atualizar cartão de crédito, baixar notas fiscais ou gerenciar sua assinatura com total segurança.
+                      Acesse o portal oficial do Stripe para atualizar cartÃ£o de crÃ©dito, baixar notas fiscais ou gerenciar sua assinatura com total seguranÃ§a.
                     </p>
                   </div>
                   <div className="flex items-center gap-3 flex-wrap">
@@ -2861,14 +2863,14 @@ export default function Configuracoes() {
                 </div>
               </div>
 
-              {/* Seção de Encerramento de Conta */}
+              {/* SeÃ§Ã£o de Encerramento de Conta */}
               <div className="p-5 rounded-2xl border border-red-500/20 bg-red-500/5 space-y-3 mt-6">
                 <div className="flex items-center gap-2 text-red-500 font-bold text-sm">
                   <Trash2 className="w-4 h-4 text-red-500" />
                   <span>Encerramento da Conta</span>
                 </div>
                 <p className="text-xs text-[#888] leading-relaxed">
-                  Caso queira encerrar sua conta definitivamente, clique no botão abaixo. <strong>O sistema cancelará imediatamente sua assinatura no Stripe</strong> para que você <strong>nunca receba novas cobranças</strong> no seu cartão de crédito, e seu estabelecimento será desativado.
+                  Caso queira encerrar sua conta definitivamente, clique no botÃ£o abaixo. <strong>O sistema cancelarÃ¡ imediatamente sua assinatura no Stripe</strong> para que vocÃª <strong>nunca receba novas cobranÃ§as</strong> no seu cartÃ£o de crÃ©dito, e seu estabelecimento serÃ¡ desativado.
                 </p>
                 <div className="pt-1">
                   <button
@@ -2896,7 +2898,7 @@ export default function Configuracoes() {
               </div>
               <h3 className="text-xl font-bold text-center text-white mb-2">Cancelar Assinatura?</h3>
               <p className="text-sm text-[#888] text-center leading-relaxed">
-                Ao cancelar, sua assinatura permanecerá ativa até o encerramento do ciclo já pago. Após esse período, seu salão será <strong>bloqueado automaticamente</strong> e você não receberá nenhuma nova cobrança.
+                Ao cancelar, sua assinatura permanecerÃ¡ ativa atÃ© o encerramento do ciclo jÃ¡ pago. ApÃ³s esse perÃ­odo, seu salÃ£o serÃ¡ <strong>bloqueado automaticamente</strong> e vocÃª nÃ£o receberÃ¡ nenhuma nova cobranÃ§a.
               </p>
             </div>
 
@@ -2949,7 +2951,7 @@ export default function Configuracoes() {
               </div>
               <h3 className="text-xl font-bold text-center text-white mb-2">Excluir Conta Permanentemente?</h3>
               <p className="text-sm text-[#888] text-center">
-                Esta ação <strong>cancelará imediatamente</strong> qualquer assinatura ativa no Stripe e revogará seu acesso ao sistema. O histórico será mantido apenas para fins de auditoria.
+                Esta aÃ§Ã£o <strong>cancelarÃ¡ imediatamente</strong> qualquer assinatura ativa no Stripe e revogarÃ¡ seu acesso ao sistema. O histÃ³rico serÃ¡ mantido apenas para fins de auditoria.
               </p>
             </div>
 
@@ -2991,7 +2993,7 @@ export default function Configuracoes() {
         </div>
       )}
 
-      {/* ═══════════════════════════ STUDIO DE IDENTIDADE VISUAL (POP-UP MODAL) ════════════════════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• STUDIO DE IDENTIDADE VISUAL (POP-UP MODAL) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <AnimatePresence>
         {isCustomizerOpen && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 md:p-6 pb-6 pt-16 bg-black/80 backdrop-blur-md overflow-hidden touch-none">
@@ -3023,7 +3025,7 @@ export default function Configuracoes() {
                       Studio de Identidade Visual
                     </h3>
                     <p className="text-xs hidden sm:block" style={{ color: theme.textSecondary }}>
-                      Personalize atmosfera, cores e tipografia com prévia ao vivo. Só muda no sistema ao clicar em salvar.
+                      Personalize atmosfera, cores e tipografia com prÃ©via ao vivo. SÃ³ muda no sistema ao clicar em salvar.
                     </p>
                   </div>
                 </div>
@@ -3040,12 +3042,12 @@ export default function Configuracoes() {
 
               {/* Modal Body - 2 Columns */}
               <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-                {/* ── Left Column: Controls (Spacious & Clean) ── */}
+                {/* â”€â”€ Left Column: Controls (Spacious & Clean) â”€â”€ */}
                 <div className="lg:col-span-7 space-y-6">
                   {/* 1. Atmosfera */}
                   <div>
                     <label className="block text-xs font-extrabold uppercase tracking-wider mb-2.5" style={{ color: theme.textSecondary }}>
-                      1. Atmosfera do Salão (Fundo)
+                      1. Atmosfera do SalÃ£o (Fundo)
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* Modo Noturno */}
@@ -3132,7 +3134,7 @@ export default function Configuracoes() {
                           2. Cor Principal da Marca (Destaque)
                         </label>
                         <p className="text-[11px]" style={{ color: theme.textMuted }}>
-                          A cor que destaca seus botões e cartões
+                          A cor que destaca seus botÃµes e cartÃµes
                         </p>
                       </div>
 
@@ -3152,7 +3154,7 @@ export default function Configuracoes() {
 
                     {/* 2 Cores Sugeridas Inteligentes + Personalizar */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                      {/* Cor 1: Dourado Noir Clássico */}
+                      {/* Cor 1: Dourado Noir ClÃ¡ssico */}
                       {(() => {
                         const hex = '#C9963B';
                         const isActive = (customPalette?.primary || theme.accent).toUpperCase() === hex.toUpperCase();
@@ -3241,7 +3243,7 @@ export default function Configuracoes() {
                   {/* 3. Tipografia */}
                   <div className="pt-3 border-t" style={{ borderColor: theme.border }}>
                     <label className="block text-xs font-extrabold uppercase tracking-wider mb-2.5" style={{ color: theme.textSecondary }}>
-                      3. Estilo Tipográfico dos Títulos
+                      3. Estilo TipogrÃ¡fico dos TÃ­tulos
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* Playfair Display */}
@@ -3262,7 +3264,7 @@ export default function Configuracoes() {
                           <span className="text-xl font-serif font-bold" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
                           <div>
                             <p className="text-xs font-bold font-serif" style={{ color: theme.textPrimary }}>
-                              Clássico & Elegante
+                              ClÃ¡ssico & Elegante
                             </p>
                             <p className="text-[11px]" style={{ color: theme.textMuted }}>
                               Playfair Display refinada
@@ -3297,7 +3299,7 @@ export default function Configuracoes() {
                               Moderno & Minimalista
                             </p>
                             <p className="text-[11px]" style={{ color: theme.textMuted }}>
-                              Plus Jakarta Sans contemporânea
+                              Plus Jakarta Sans contemporÃ¢nea
                             </p>
                           </div>
                         </div>
@@ -3311,12 +3313,12 @@ export default function Configuracoes() {
                   </div>
                 </div>
 
-                {/* ── Right Column: Interactive Live Device Preview ── */}
+                {/* â”€â”€ Right Column: Interactive Live Device Preview â”€â”€ */}
                 <div className="lg:col-span-5 space-y-3.5">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5" style={{ color: theme.textPrimary }}>
                       <Eye className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-                      Prévia Ao Vivo
+                      PrÃ©via Ao Vivo
                     </p>
 
                     <div className="flex items-center p-1 rounded-xl border gap-1" style={{ background: theme.inputBg, borderColor: theme.border }}>
@@ -3329,7 +3331,7 @@ export default function Configuracoes() {
                           color: previewMode === 'public' ? theme.btnPrimaryText : theme.textSecondary,
                         }}
                       >
-                        <Smartphone className="w-3.5 h-3.5" /> Página
+                        <Smartphone className="w-3.5 h-3.5" /> PÃ¡gina
                       </button>
                       <button
                         type="button"
@@ -3421,10 +3423,10 @@ export default function Configuracoes() {
                               style={{ background: prevCardBg, borderColor: prevBorder }}>
                               <div>
                                 <h6 className="font-bold text-xs leading-tight" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>
-                                  Corte Degradê & Barba
+                                  Corte DegradÃª & Barba
                                 </h6>
                                 <p className="text-[11px] mt-0.5" style={{ color: prevTextMuted }}>
-                                  45 min • Individual
+                                  45 min â€¢ Individual
                                 </p>
                                 <p className="text-xs font-extrabold mt-1" style={{ color: activeAccent }}>
                                   R$ 65,00
@@ -3447,9 +3449,9 @@ export default function Configuracoes() {
                           <div className="space-y-3.5">
                             <div className="flex items-center justify-between border-b pb-2.5" style={{ borderColor: prevBorder }}>
                               <div>
-                                <p className="text-[9px] uppercase font-extrabold tracking-widest" style={{ color: prevTextMuted }}>Painel do Salão</p>
+                                <p className="text-[9px] uppercase font-extrabold tracking-widest" style={{ color: prevTextMuted }}>Painel do SalÃ£o</p>
                                 <h5 className="font-bold text-sm mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>
-                                  Olá, {profile?.full_name?.split(' ')[0] || 'Dono'} 👋
+                                  OlÃ¡, {profile?.full_name?.split(' ')[0] || 'Dono'} ðŸ‘‹
                                 </h5>
                               </div>
                               <div className="px-2.5 py-1 rounded-xl text-[11px] font-bold shadow-sm"
@@ -3465,7 +3467,7 @@ export default function Configuracoes() {
                                 <p className="text-[9px] text-emerald-500 font-bold mt-0.5">+14%</p>
                               </div>
                               <div className="rounded-xl p-2.5 border" style={{ background: prevCardBg, borderColor: prevBorder }}>
-                                <p className="text-[9px] font-bold uppercase" style={{ color: prevTextMuted }}>Ocupação</p>
+                                <p className="text-[9px] font-bold uppercase" style={{ color: prevTextMuted }}>OcupaÃ§Ã£o</p>
                                 <p className="text-base font-black mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>85%</p>
                                 <p className="text-[9px] font-bold mt-0.5" style={{ color: activeAccent }}>6 clientes</p>
                               </div>
@@ -3503,7 +3505,7 @@ export default function Configuracoes() {
                   }}
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>Salvar Alterações</span>
+                  <span>Salvar AlteraÃ§Ãµes</span>
                 </button>
               </div>
             </motion.div>
@@ -3533,7 +3535,7 @@ export default function Configuracoes() {
             </>
           ) : (
             <>
-              <Save className="w-5 h-5" /> Salvar Configurações
+              <Save className="w-5 h-5" /> Salvar ConfiguraÃ§Ãµes
             </>
           )}
         </button>
@@ -3546,7 +3548,7 @@ export default function Configuracoes() {
         onConfirmChoice={handleStripeActivatedChoice}
       />
 
-      {/* Modal Informativo: Stripe Necessário */}
+      {/* Modal Informativo: Stripe NecessÃ¡rio */}
       <AnimatePresence>
         {stripeRequiredModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -3569,10 +3571,10 @@ export default function Configuracoes() {
               </div>
               <div className="text-center space-y-1.5">
                 <h3 className="text-lg font-bold" style={{ color: theme.textPrimary }}>
-                  Conexão com o Stripe Necessária
+                  ConexÃ£o com o Stripe NecessÃ¡ria
                 </h3>
                 <p className="text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
-                  Para habilitar pagamentos online (Pix e cartão de crédito direto dos seus clientes pelo seu site), você precisa conectar sua conta Stripe Connect.
+                  Para habilitar pagamentos online (Pix e cartÃ£o de crÃ©dito direto dos seus clientes pelo seu site), vocÃª precisa conectar sua conta Stripe Connect.
                 </p>
               </div>
               <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
@@ -3582,7 +3584,7 @@ export default function Configuracoes() {
                   className="w-full sm:w-1/2 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer hover:opacity-80"
                   style={{ borderColor: theme.border, color: theme.textSecondary, background: theme.inputBg }}
                 >
-                  Agora Não
+                  Agora NÃ£o
                 </button>
                 <button
                   type="button"
@@ -3635,7 +3637,7 @@ export default function Configuracoes() {
                   Desconectar Conta Stripe?
                 </h3>
                 <p className="text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
-                  Ao desconectar, o recebimento de pagamentos online (Pix e cartão) será desativado. Seus clientes só poderão agendar com a opção <strong>"Pagar no Local"</strong>.
+                  Ao desconectar, o recebimento de pagamentos online (Pix e cartÃ£o) serÃ¡ desativado. Seus clientes sÃ³ poderÃ£o agendar com a opÃ§Ã£o <strong>"Pagar no Local"</strong>.
                 </p>
               </div>
               <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
@@ -3669,7 +3671,7 @@ export default function Configuracoes() {
         )}
       </AnimatePresence>
 
-      {/* Modal: Conta Excluída com Sucesso */}
+      {/* Modal: Conta ExcluÃ­da com Sucesso */}
       <AnimatePresence>
         {accountDeletedSuccess && (
           <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
@@ -3692,18 +3694,18 @@ export default function Configuracoes() {
                   Conta Deletada com Sucesso!
                 </h3>
                 <p className="text-sm text-zinc-400 leading-relaxed">
-                  Seu salão, dados e assinaturas do Stripe foram permanentemente cancelados e excluídos.
+                  Seu salÃ£o, dados e assinaturas do Stripe foram permanentemente cancelados e excluÃ­dos.
                 </p>
               </div>
               <div className="pt-2 flex items-center justify-center gap-2 text-xs font-semibold text-zinc-400">
                 <Loader2 className="w-4 h-4 animate-spin text-red-500" />
-                <span>Voltando para a página inicial...</span>
+                <span>Voltando para a pÃ¡gina inicial...</span>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-      {/* ── Modal: Upgrade Plan ── */}
+      {/* â”€â”€ Modal: Upgrade Plan â”€â”€ */}
       {showUpgradeModal && (
         <UpgradeModal 
           feature={showUpgradeModal}
@@ -3711,7 +3713,7 @@ export default function Configuracoes() {
         />
       )}
 
-      {/* ── Modal: Image Cropper ── */}
+      {/* â”€â”€ Modal: Image Cropper â”€â”€ */}
       <ImageCropperModal
         isOpen={cropModalOpen}
         onClose={() => setCropModalOpen(false)}
@@ -3724,4 +3726,5 @@ export default function Configuracoes() {
     </div>
   );
 }
+
 
