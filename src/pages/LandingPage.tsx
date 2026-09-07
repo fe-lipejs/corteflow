@@ -40,7 +40,6 @@ import { trackEvent } from '../lib/analytics';
 import { usePageTracking } from '../hooks/usePageTracking';
 import {
   SpotifyGlyph,
-  HeroPlaylistLine,
   FloatingPlaylistBadge,
 } from '../components/SpotifyMoodCard';
 
@@ -357,7 +356,7 @@ function HeroSection() {
             initial={{ opacity: 0, y: reduce ? 0 : 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: EASE }}
-            className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] px-4 py-2"
+            className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] px-4 py-2"
           >
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#F59E0B]" />
             <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[#A1A1A6]">
@@ -369,7 +368,7 @@ function HeroSection() {
             initial={{ opacity: 0, y: reduce ? 0 : 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.85, delay: 0.1, ease: EASE }}
-            className="m-0 mb-6 font-display text-[clamp(38px,6.5vw,72px)] font-bold leading-[1.02] tracking-[-0.03em] text-white"
+            className="m-0 mb-5 font-display text-[clamp(38px,6.5vw,72px)] font-bold leading-[1.02] tracking-[-0.03em] text-white"
           >
             Você não abriu{' '}
             <br className="hidden sm:block" />
@@ -424,33 +423,22 @@ function HeroSection() {
             </a>
           </motion.div>
 
-          {/* Playlist card */}
-          <motion.div
-            initial={{ opacity: 0, y: reduce ? 0 : 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.45, ease: EASE }}
-            className="mt-10"
-          >
-            <HeroPlaylistLine />
-          </motion.div>
-
-          {/* Stats */}
+          {/* Stats — kept to two, so the eye has one clear resting point */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.6, ease: EASE }}
-            className="mt-10 flex flex-wrap gap-x-10 gap-y-6 border-t border-white/[0.07] pt-8"
+            transition={{ duration: 0.8, delay: 0.45, ease: EASE }}
+            className="mt-11 flex flex-wrap gap-x-12 gap-y-6 border-t border-white/[0.07] pt-8"
           >
             {[
-              { num: 100, suf: '%', label: 'da agenda no piloto automático' },
-              { num: 7, suf: ' dias', label: 'grátis para testar sem cartão' },
+              { num: 7, suf: ' dias', label: 'grátis para testar, sem cartão' },
               { num: 0, suf: ' furos', label: 'com sinal anti-furo ativo' },
             ].map((s) => (
               <div key={s.label} className="flex flex-col">
                 <span className="font-display text-[28px] font-bold text-[#F59E0B] leading-none">
                   <CountUp to={s.num} suffix={s.suf} />
                 </span>
-                <span className="mt-1.5 max-w-[15ch] text-[12px] leading-snug text-[#52525B]">
+                <span className="mt-1.5 max-w-[16ch] text-[12px] leading-snug text-[#52525B]">
                   {s.label}
                 </span>
               </div>
@@ -474,10 +462,10 @@ function HeroSection() {
           {/* Main phone — booking */}
           <div
             className="relative mx-auto z-10"
-            style={{ transform: 'perspective(1200px) rotateY(-8deg) rotateX(4deg)' }}
+            style={{ transform: 'perspective(1400px) rotateY(-5deg) rotateX(2deg)' }}
           >
             <div
-              className="relative rounded-[3rem] border border-white/[0.14] bg-[#0A0A0C] p-[8px] shadow-[0_60px_120px_-30px_rgba(0,0,0,0.95),0_0_60px_-12px_rgba(245,158,11,0.25)]"
+              className="relative rounded-[3rem] border border-white/[0.14] bg-[#0A0A0C] p-[8px] shadow-[0_60px_120px_-30px_rgba(0,0,0,0.95),0_0_60px_-12px_rgba(245,158,11,0.2)]"
             >
               <span className="absolute left-1/2 top-[10px] z-10 h-[13px] w-[56px] -translate-x-1/2 rounded-full border border-white/10 bg-black" />
               <div className="relative overflow-hidden rounded-[2.5rem] aspect-[9/19.5]">
@@ -492,33 +480,18 @@ function HeroSection() {
             </div>
           </div>
 
-          {/* Floating badge — confirmed */}
+          {/* Single floating badge — one clear proof point, not a chorus of them */}
           <motion.div
             animate={reduce ? {} : { y: [0, -6, 0] }}
             transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute -left-[12%] top-[16%] z-20 flex items-center gap-2.5 rounded-[16px] border border-white/[0.1] bg-[#111114]/95 px-3.5 py-2.5 shadow-2xl backdrop-blur-[12px]"
+            className="absolute -right-[8%] bottom-[14%] z-20 flex items-center gap-2.5 rounded-[16px] border border-white/[0.1] bg-[#111114]/95 px-3.5 py-2.5 shadow-2xl backdrop-blur-[12px]"
           >
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/15">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
             </div>
             <div>
-              <strong className="block text-[12px] font-semibold text-white">Horário reservado</strong>
+              <strong className="block text-[12px] font-semibold text-white">Sinal pago, horário confirmado</strong>
               <span className="block text-[10px] text-[#A1A1A6]">Agenda atualizada sozinha</span>
-            </div>
-          </motion.div>
-
-          {/* Floating badge — payment */}
-          <motion.div
-            animate={reduce ? {} : { y: [0, 5, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
-            className="absolute -right-[10%] bottom-[18%] z-20 flex items-center gap-2.5 rounded-[16px] border border-white/[0.1] bg-[#111114]/95 px-3.5 py-2.5 shadow-2xl backdrop-blur-[12px]"
-          >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/15">
-              <DollarSign className="h-3.5 w-3.5 text-[#F59E0B]" />
-            </div>
-            <div>
-              <strong className="block text-[12px] font-semibold text-white">Sinal recebido</strong>
-              <span className="block text-[10px] text-[#A1A1A6]">R$ 25,00 via Pix</span>
             </div>
           </motion.div>
         </motion.div>
@@ -528,8 +501,8 @@ function HeroSection() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.4, duration: 0.6 }}
-        className="relative z-10 mt-14 flex items-center justify-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#52525B]"
+        transition={{ delay: 1.2, duration: 0.6 }}
+        className="relative z-10 mt-12 flex items-center justify-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#52525B]"
       >
         <motion.span
           animate={reduce ? {} : { scaleY: [1, 0, 1] }}
@@ -735,7 +708,7 @@ function SolutionSection() {
   return (
     <section id="como-funciona" className="bg-white px-6 py-[104px] md:px-12 md:py-[160px]">
       <div className="mx-auto max-w-[1360px]">
-        <div className="mb-20 max-w-[700px]">
+        <div className="mb-16 max-w-[700px]">
           <Reveal>
             <Eyebrow dark>Como funciona</Eyebrow>
             <h2 className="font-display text-[clamp(28px,5vw,52px)] font-bold leading-[1.07] tracking-[-0.03em] text-[#1D1D1F]">
@@ -754,47 +727,74 @@ function SolutionSection() {
           </Reveal>
         </div>
 
-        <div className="space-y-3">
-          {steps.map((step, i) => {
-            const Icon = step.icon;
-            return (
-              <Reveal key={step.label} delay={i * 0.06}>
-                <div className="group flex items-center gap-5 rounded-[18px] border border-black/[0.06] bg-[#F9F9FA] px-5 py-4 transition-all duration-200 hover:border-amber-400/30 hover:bg-white hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)]">
-                  {/* Step number */}
-                  <span
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold text-[#D97706]"
-                    style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}
-                  >
-                    {i + 1}
-                  </span>
-                  {/* Icon */}
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/[0.05] bg-white shadow-sm">
-                    <Icon className="h-4 w-4 text-[#D97706]" />
+        <div className="grid gap-14 md:grid-cols-[1fr_auto] md:gap-16 lg:gap-20">
+          {/* Steps */}
+          <div className="space-y-3">
+            {steps.map((step, i) => {
+              const Icon = step.icon;
+              return (
+                <Reveal key={step.label} delay={i * 0.06}>
+                  <div className="group flex items-center gap-5 rounded-[18px] border border-black/[0.06] bg-[#F9F9FA] px-5 py-4 transition-all duration-200 hover:border-amber-400/30 hover:bg-white hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)]">
+                    {/* Step number */}
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold text-[#D97706]"
+                      style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}
+                    >
+                      {i + 1}
+                    </span>
+                    {/* Icon */}
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/[0.05] bg-white shadow-sm">
+                      <Icon className="h-4 w-4 text-[#D97706]" />
+                    </div>
+                    {/* Text */}
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-display text-[16px] font-semibold text-[#1D1D1F] leading-snug">{step.label}</h3>
+                      <p className="text-[13px] text-[#8A8A8F] leading-snug mt-0.5">{step.sub}</p>
+                    </div>
+                    {/* Arrow on hover */}
+                    <ArrowRight className="h-4 w-4 shrink-0 text-[#D0D0D5] transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-[#D97706]" />
                   </div>
-                  {/* Text */}
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-display text-[16px] font-semibold text-[#1D1D1F] leading-snug">{step.label}</h3>
-                    <p className="text-[13px] text-[#8A8A8F] leading-snug mt-0.5">{step.sub}</p>
-                  </div>
-                  {/* Arrow on hover */}
-                  <ArrowRight className="h-4 w-4 shrink-0 text-[#D0D0D5] transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-[#D97706]" />
-                </div>
-              </Reveal>
-            );
-          })}
-        </div>
+                </Reveal>
+              );
+            })}
 
-        {/* CTA */}
-        <Reveal delay={0.3} className="mt-16 text-center">
-          <Link
-            to="/cadastro"
-            onClick={() => trackEvent('click_solucao_comecar')}
-            className="group inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-8 py-4 text-[15px] font-semibold text-[#D97706] transition-all hover:bg-amber-500/18 hover:text-[#B45309]"
-          >
-            Quero minha agenda funcionando assim
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        </Reveal>
+            {/* CTA */}
+            <Reveal delay={0.3} className="pt-6 text-center md:text-left">
+              <Link
+                to="/cadastro"
+                onClick={() => trackEvent('click_solucao_comecar')}
+                className="group inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-8 py-4 text-[15px] font-semibold text-[#D97706] transition-all hover:bg-amber-500/18 hover:text-[#B45309]"
+              >
+                Quero minha agenda funcionando assim
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </Reveal>
+          </div>
+
+          {/* Mockup — gives the step list a visual anchor instead of a wall of text */}
+          <Reveal delay={0.15} className="mx-auto md:sticky md:top-[140px] md:self-start">
+            <div className="relative mx-auto w-[220px] sm:w-[250px] md:w-[270px]">
+              <div
+                className="absolute inset-[-30px] -z-10 rounded-full opacity-25 blur-[60px]"
+                style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.5), transparent 70%)' }}
+              />
+              <div
+                className="relative rounded-[3rem] border border-black/[0.1] bg-[#0A0A0C] p-[8px] shadow-[0_50px_100px_-28px_rgba(0,0,0,0.35),0_0_40px_-10px_rgba(245,158,11,0.18)]"
+                style={{ transform: 'perspective(1200px) rotateY(6deg) rotateX(2deg)' }}
+              >
+                <span className="absolute left-1/2 top-[10px] z-10 h-[13px] w-[56px] -translate-x-1/2 rounded-full border border-white/10 bg-black" />
+                <div className="relative overflow-hidden rounded-[2.5rem] aspect-[9/19.5]">
+                  <img
+                    src={M.phoneServices}
+                    alt="Cliente escolhendo o serviço no link de agendamento da Raffros"
+                    className="absolute inset-0 h-full w-full object-cover object-top"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        </div>
       </div>
     </section>
   );
