@@ -405,7 +405,7 @@ function Header({
           className="rf-logo"
           aria-label="Raffros"
         >
-          <img src="https://raffros.com/logo.png" alt="Raffros" style={{ height: '32px', filter: dark ? 'invert(1)' : 'none' }} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.style.display = 'flex'; }} />
+          <img src="/logo.svg" alt="Raffros" style={{ height: '32px', filter: dark ? 'invert(1)' : 'none' }} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.style.display = 'flex'; }} />
           <div style={{ display: 'none', alignItems: 'center', gap: '6px' }}>
             <span className="rf-logo-mark">R</span>
             <span>raffros</span>
@@ -644,23 +644,23 @@ function Statement() {
           </div>
 
           <Reveal delay={0.24}>
-            <div className="rf-statement-visual" style={{ position: 'relative', width: '100%', minHeight: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="rf-statement-visual" style={{ position: 'relative', width: '100%', minHeight: '550px', display: 'flex', alignItems: 'center', justifyContent: 'center', perspective: '1200px' }}>
               <img
                 src={M.themeA}
                 alt="Tema Claro"
-                style={{ position: 'absolute', width: '45%', left: '0', zIndex: 1, filter: 'blur(2px) brightness(0.8)', transform: 'scale(0.85) translateX(20%)' }}
+                style={{ position: 'absolute', width: '42%', left: '5%', zIndex: 1, filter: 'blur(1px) brightness(0.8)', transform: 'rotate(-16deg) translateY(20px) scale(0.9)', borderRadius: '24px', boxShadow: '0 20px 30px rgba(0,0,0,0.3)' }}
                 loading="lazy"
               />
               <img
                 src={M.themeC}
                 alt="Tema Elegante"
-                style={{ position: 'absolute', width: '45%', right: '0', zIndex: 1, filter: 'blur(2px) brightness(0.8)', transform: 'scale(0.85) translateX(-20%)' }}
+                style={{ position: 'absolute', width: '42%', right: '5%', zIndex: 1, filter: 'blur(1px) brightness(0.8)', transform: 'rotate(16deg) translateY(20px) scale(0.9)', borderRadius: '24px', boxShadow: '0 20px 30px rgba(0,0,0,0.3)' }}
                 loading="lazy"
               />
               <img
                 src={M.themeB}
                 alt="Raffros App"
-                style={{ position: 'relative', width: '55%', zIndex: 3, filter: 'drop-shadow(0 30px 60px rgba(0,0,0,0.4))' }}
+                style={{ position: 'relative', width: '52%', zIndex: 3, transform: 'translateY(-10px) scale(1.05)', borderRadius: '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.6)' }}
                 loading="lazy"
               />
             </div>
@@ -1745,6 +1745,19 @@ export default function LandingPage() {
 
   return (
     <>
+      <motion.div
+        style={{
+          scaleX,
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "3px",
+          transformOrigin: "0%",
+          backgroundColor: "#FF9D2E",
+          zIndex: 99999,
+        }}
+      />
       <style>{`
         /* =====================================================
            RAFFROS DESIGN SYSTEM
@@ -6113,12 +6126,12 @@ export default function LandingPage() {
             .rf-team-real-badge { right: 12px; bottom: 8px; max-width: calc(100% - 24px); }
           }
 
-          .rf-real-gallery-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%); z-index: 1; pointer-events: none; border-radius: inherit; }
-          .rf-real-gallery-copy { position: relative; z-index: 10; text-shadow: 0 2px 10px rgba(0,0,0,0.8), 0 4px 20px rgba(0,0,0,0.6); }
+          .rf-header { width: 100% !important; left: 0 !important; top: 0 !important; border-radius: 0 !important; padding: 0 5%; }
+          .rf-header-scrolled { background: rgba(255,255,255,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.08); width: 100% !important; }
+          .rf-header-dark.rf-header-scrolled { background: rgba(10,10,10,0.9); border-bottom: 1px solid rgba(255,255,255,0.08); }
 
-          .rf-header-fullwidth { width: 100% !important; left: 0 !important; top: 0 !important; border-radius: 0 !important; border-left: none; border-right: none; border-top: none; }
-          .rf-header-scrolled.rf-header-fullwidth { background: rgba(255,255,255,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.08); }
-          .rf-header-dark.rf-header-scrolled.rf-header-fullwidth { background: rgba(10,10,10,0.9); border-bottom: 1px solid rgba(255,255,255,0.08); }
+          .rf-real-gallery-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 30%, transparent 60%); z-index: 1; pointer-events: none; border-radius: inherit; }
+          .rf-real-gallery-copy { position: relative; z-index: 10; text-shadow: 0 4px 15px rgba(0,0,0,1), 0 8px 30px rgba(0,0,0,0.8); }
 
           @media (max-width: 680px) {
             .rf-real-gallery-grid { grid-template-columns: 1fr; margin-top: 42px; }
