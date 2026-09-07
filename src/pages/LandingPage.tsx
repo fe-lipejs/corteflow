@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
 import {
   ArrowDown,
   ArrowRight,
@@ -247,10 +247,10 @@ function BookingPhone() {
 
       <motion.div
         className="rf-real-phone"
-        initial={{ opacity: 0, y: 28, rotate: 4 }}
-        whileInView={{ opacity: 1, y: 0, rotate: -2 }}
+        initial={{ opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.35 }}
-        transition={{ duration: reduced ? 0.3 : 1, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
       >
         <div className="rf-real-phone-frame">
           <span className="rf-real-phone-island" />
@@ -268,7 +268,7 @@ function BookingPhone() {
 
       <motion.div
         className="rf-real-floating-card rf-real-floating-top"
-        animate={reduced ? undefined : { y: [0, -7, 0] }}
+        animate={reduced ? undefined : { y: [0, -3, 0] }}
         transition={
           reduced
             ? undefined
@@ -285,14 +285,14 @@ function BookingPhone() {
       </motion.div>
 
       <motion.div
-        className="rf-real-floating-card rf-real-floating-bottom"
-        animate={reduced ? undefined : { y: [0, 7, 0] }}
+        className="rf-real-floating-card rf-real-floating-top"
+        animate={reduced ? undefined : { y: [80, 77, 80] }}
         transition={
           reduced
             ? undefined
             : { duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }
         }
-      >
+      ><br />
         <small>PRÓXIMO HORÁRIO</small>
         <strong>Hoje · 16:30</strong>
       </motion.div>
@@ -342,9 +342,9 @@ function MacbookMockup({ image, alt, path, className = "" }: { image: string; al
       <div className="rf-macbook-screen-shell">
         <div className="rf-macbook-browser-top">
           <div className="rf-real-browser-dots">
-            <span style={{ background: '#ff5f56', border: '1px solid #e0443e' }}/>
-            <span style={{ background: '#ffbd2e', border: '1px solid #dea123' }}/>
-            <span style={{ background: '#27c93f', border: '1px solid #1aab29' }}/>
+            <span style={{ background: '#ff5f56', border: '1px solid #e0443e' }} />
+            <span style={{ background: '#ffbd2e', border: '1px solid #dea123' }} />
+            <span style={{ background: '#27c93f', border: '1px solid #1aab29' }} />
           </div>
           <span>{path}</span>
           <div className="rf-real-browser-secure"><ShieldCheck size={10} />seguro</div>
@@ -397,6 +397,7 @@ function Header({
           "rf-header",
           dark ? "rf-header-dark" : "",
           scrolled ? "rf-header-scrolled" : "",
+          "rf-header-fullwidth"
         ].join(" ")}
       >
         <a
@@ -404,9 +405,12 @@ function Header({
           className="rf-logo"
           aria-label="Raffros"
         >
-          <span className="rf-logo-mark">R</span>
-          <span>raffros</span>
-          <i>.</i>
+          <img src="https://raffros.com/logo.png" alt="Raffros" style={{ height: '32px', filter: dark ? 'invert(1)' : 'none' }} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.style.display = 'flex'; }} />
+          <div style={{ display: 'none', alignItems: 'center', gap: '6px' }}>
+            <span className="rf-logo-mark">R</span>
+            <span>raffros</span>
+            <i>.</i>
+          </div>
         </a>
 
         <nav className="rf-desktop-nav">
@@ -596,7 +600,9 @@ function Hero() {
       <div className="rf-hero-bottom-label">
         RAFFROS / 01
       </div>
+      <br />
     </section>
+
   );
 }
 
@@ -638,19 +644,24 @@ function Statement() {
           </div>
 
           <Reveal delay={0.24}>
-            <div className="rf-statement-visual" style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img 
-                src={M.metrics} 
-                alt="Raffros Dashboard" 
-                style={{ 
-                  width: '130%', 
-                  maxWidth: '130%', 
-                  marginLeft: '-15%', 
-                  borderRadius: '12px', 
-                  border: '1px solid rgba(0,0,0,0.1)', 
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.08)' 
-                }} 
-                loading="lazy" 
+            <div className="rf-statement-visual" style={{ position: 'relative', width: '100%', minHeight: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img
+                src={M.themeA}
+                alt="Tema Claro"
+                style={{ position: 'absolute', width: '45%', left: '0', zIndex: 1, filter: 'blur(2px) brightness(0.8)', transform: 'scale(0.85) translateX(20%)' }}
+                loading="lazy"
+              />
+              <img
+                src={M.themeC}
+                alt="Tema Elegante"
+                style={{ position: 'absolute', width: '45%', right: '0', zIndex: 1, filter: 'blur(2px) brightness(0.8)', transform: 'scale(0.85) translateX(-20%)' }}
+                loading="lazy"
+              />
+              <img
+                src={M.themeB}
+                alt="Raffros App"
+                style={{ position: 'relative', width: '55%', zIndex: 3, filter: 'drop-shadow(0 30px 60px rgba(0,0,0,0.4))' }}
+                loading="lazy"
               />
             </div>
           </Reveal>
@@ -1725,15 +1736,12 @@ function Footer() {
    ========================================================= */
 
 export default function LandingPage() {
-  useEffect(() => {
-    document.documentElement.style.scrollBehavior =
-      "smooth";
-
-    return () => {
-      document.documentElement.style.scrollBehavior =
-        "";
-    };
-  }, []);
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
 
   return (
     <>
@@ -6105,15 +6113,22 @@ export default function LandingPage() {
             .rf-team-real-badge { right: 12px; bottom: 8px; max-width: calc(100% - 24px); }
           }
 
+          .rf-real-gallery-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%); z-index: 1; pointer-events: none; border-radius: inherit; }
+          .rf-real-gallery-copy { position: relative; z-index: 10; text-shadow: 0 2px 10px rgba(0,0,0,0.8), 0 4px 20px rgba(0,0,0,0.6); }
+
+          .rf-header-fullwidth { width: 100% !important; left: 0 !important; top: 0 !important; border-radius: 0 !important; border-left: none; border-right: none; border-top: none; }
+          .rf-header-scrolled.rf-header-fullwidth { background: rgba(255,255,255,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.08); }
+          .rf-header-dark.rf-header-scrolled.rf-header-fullwidth { background: rgba(10,10,10,0.9); border-bottom: 1px solid rgba(255,255,255,0.08); }
+
           @media (max-width: 680px) {
             .rf-real-gallery-grid { grid-template-columns: 1fr; margin-top: 42px; }
             .rf-real-gallery-card, .rf-real-gallery-card.rf-gallery-main { min-height: 540px; padding: 20px; }
             .rf-real-gallery-card.rf-gallery-main { min-height: 580px; }
-            .rf-real-gallery-device { bottom: -10px; width: 220px; }
-            .rf-gallery-main .rf-real-gallery-device { width: 260px; bottom: -20px; }
-            .rf-real-gallery-card:not(.rf-gallery-main) .rf-real-gallery-device { width: 180px; bottom: -10px; }
+            .rf-real-gallery-device { bottom: -10px; width: 240px; }
+            .rf-gallery-main .rf-real-gallery-device { width: 280px; bottom: -20px; }
+            .rf-real-gallery-card:not(.rf-gallery-main) .rf-real-gallery-device { width: 200px; bottom: -10px; }
             .rf-booking-visual { min-height: 550px; padding: 0; }
-            .rf-booking-visual .rf-real-phone-wrap { height: 550px; transform: scale(.85); }
+            .rf-booking-visual .rf-real-phone-wrap { height: 550px; transform: scale(.92); }
             .rf-macbook-wrap { width: 100%; padding-bottom: 24px; }
             .rf-macbook-screen-shell { border-radius: 8px; }
             .rf-macbook-browser-top { height: 27px; grid-template-columns: 48px 1fr 48px; padding: 0 7px; font-size: 7px; }
@@ -6126,10 +6141,10 @@ export default function LandingPage() {
 
           @media (max-width: 420px) {
             .rf-booking-visual { min-height: 500px; }
-            .rf-booking-visual .rf-real-phone-wrap { height: 500px; transform: scale(.75); }
+            .rf-booking-visual .rf-real-phone-wrap { height: 500px; transform: scale(.85); }
             .rf-real-gallery-card, .rf-real-gallery-card.rf-gallery-main { min-height: 490px; }
-            .rf-gallery-main .rf-real-gallery-device { width: 240px; bottom: -15px; }
-            .rf-real-gallery-card:not(.rf-gallery-main) .rf-real-gallery-device { width: 165px; bottom: -5px; }
+            .rf-gallery-main .rf-real-gallery-device { width: 260px; bottom: -15px; }
+            .rf-real-gallery-card:not(.rf-gallery-main) .rf-real-gallery-device { width: 185px; bottom: -5px; }
             .rf-macbook-browser-top { grid-template-columns: 38px 1fr 38px; }
             .rf-team-real-badge { left: 8px; right: 8px; }
           }
