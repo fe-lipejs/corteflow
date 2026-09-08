@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Activity, Users, Eye, MousePointerClick, TrendingUp, Smartphone,
-  Monitor, Tablet, RefreshCw, Filter, ArrowUpRight, Search, Globe,
+  Monitor, Tablet, RefreshCw, Filter, ArrowUpRight, ArrowLeft, Search, Globe,
   ShieldCheck, Sparkles, Clock, CheckCircle2, ChevronRight, Music2,
   Share2, Shuffle, Download, ExternalLink, Flame
 } from 'lucide-react';
@@ -131,11 +131,20 @@ export default function AdminAnalytics() {
 
   // Faith & Playlist metrics
   const playlistViews = events.filter((e) => e.page_path === '/playlist' && e.event_type === 'page_view').length;
-  const playlistHeroPillClicks = events.filter((e) => e.event_name.includes('playlist') || e.event_name.includes('som_da_casa')).length;
+  // Card glassmorfismo na hero da landing
+  const spotifyCardHeroClicks = events.filter((e) => e.event_name === 'click_spotify_card_hero').length;
+  // Cliques no link ♫ Playlist do menu (desktop nav e mobile nav)
+  const playlistNavClicks = events.filter((e) => e.event_name.includes('playlist') && e.event_type === 'click' && !e.event_name.includes('spotify') && !e.event_name.includes('versiculo')).length;
+  // Total de entradas na /playlist via card hero + nav
+  const playlistHeroPillClicks = spotifyCardHeroClicks + playlistNavClicks;
   const verseDrawClicks = events.filter((e) => e.event_name === 'click_sortear_versiculo').length;
   const verseShareClicks = events.filter((e) => e.event_name === 'click_compartilhar_versiculo').length;
   const spotifyExternalClicks = events.filter((e) => e.event_name === 'click_spotify_abrir_externo').length;
-  const totalFaithInteractions = playlistViews + playlistHeroPillClicks + verseDrawClicks + verseShareClicks + spotifyExternalClicks;
+  // CTA "Começar grátis" no header da /playlist
+  const playlistCtaClicks = events.filter((e) => e.event_name === 'click_cta_da_playlist').length;
+  // Volta da /playlist para a landing
+  const playlistBackClicks = events.filter((e) => e.event_name === 'click_voltar_da_playlist').length;
+  const totalFaithInteractions = playlistViews + playlistHeroPillClicks + verseDrawClicks + verseShareClicks + spotifyExternalClicks + playlistCtaClicks;
 
   // New Landing Page tracking
   const storyTimelineClicks = events.filter((e) => e.event_name === 'click_story_step').length;
@@ -522,17 +531,25 @@ export default function AdminAnalytics() {
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-xs">
                 <span className="flex items-center gap-2 text-[#D4D4D8]">
                   <Eye className="w-3.5 h-3.5 text-blue-400" />
-                  Acessos à Página /playlist
+                  Acessos à página /playlist
                 </span>
                 <span className="font-mono font-bold text-white">{playlistViews}</span>
               </div>
 
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-xs">
                 <span className="flex items-center gap-2 text-[#D4D4D8]">
-                  <Music2 className="w-3.5 h-3.5 text-purple-400" />
-                  Pílula Hero "Som da Casa"
+                  <Music2 className="w-3.5 h-3.5 text-[#1DB954]" />
+                  Card Hero "Som da Casa"
                 </span>
-                <span className="font-mono font-bold text-white">{playlistHeroPillClicks}</span>
+                <span className="font-mono font-bold text-white">{spotifyCardHeroClicks}</span>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-xs">
+                <span className="flex items-center gap-2 text-[#D4D4D8]">
+                  <ChevronRight className="w-3.5 h-3.5 text-purple-400" />
+                  Link ♫ Playlist (Nav)
+                </span>
+                <span className="font-mono font-bold text-white">{playlistNavClicks}</span>
               </div>
 
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-xs">
@@ -554,9 +571,25 @@ export default function AdminAnalytics() {
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-xs">
                 <span className="flex items-center gap-2 text-[#D4D4D8]">
                   <ExternalLink className="w-3.5 h-3.5 text-[#1DB954]" />
-                  Aberturas no Spotify
+                  Abertas no Spotify
                 </span>
                 <span className="font-mono font-bold text-white">{spotifyExternalClicks}</span>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-500/[0.06] border border-amber-500/20 text-xs">
+                <span className="flex items-center gap-2 text-[#FBBF24] font-semibold">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  Começar grátis via /playlist
+                </span>
+                <span className="font-mono font-bold text-[#F59E0B]">{playlistCtaClicks}</span>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-xs">
+                <span className="flex items-center gap-2 text-[#A1A1A6]">
+                  <ArrowLeft className="w-3.5 h-3.5 text-zinc-500" />
+                  Voltaram para a landing
+                </span>
+                <span className="font-mono text-zinc-400">{playlistBackClicks}</span>
               </div>
             </div>
           </div>
