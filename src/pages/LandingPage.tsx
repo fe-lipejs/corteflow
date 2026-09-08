@@ -523,11 +523,11 @@ function Header() {
                   setOpen(false);
                   goTo("/playlist");
                 }}
-                style={{ color: '#FF9D2E', fontSize: '20px' }}
+                style={{ color: '#FF9D2E', fontSize: '18px' }}
               >
                 ♫ Louvor & Palavra do Dia
               </a>
-              <br />
+
               <a
                 href="/login"
                 onClick={(e) => {
