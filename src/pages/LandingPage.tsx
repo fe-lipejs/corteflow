@@ -394,7 +394,7 @@ function Header() {
   const links = [
     { label: "Como funciona", href: "#como-funciona" },
     { label: "Gestão", href: "#gestao" },
-    { label: "Para quem", href: "#para-quem" },
+    // { label: "Para quem", href: "#para-quem" },
     { label: "Planos", href: "#planos" },
     { label: "Dúvidas", href: "#faq" },
     { label: "♫ Playlist", href: "/playlist", isExternal: true },
