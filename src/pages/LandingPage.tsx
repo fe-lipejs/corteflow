@@ -284,7 +284,7 @@ function BookingPhone() {
           <small>Agendamento confirmado</small>
         </span>
       </motion.div>
-
+      {/* 
       <motion.div
         className="rf-real-floating-card rf-real-floating-top"
         animate={reduced ? undefined : { y: [80, 77, 80] }}
@@ -296,7 +296,7 @@ function BookingPhone() {
       ><br />
         <small>PRÓXIMO HORÁRIO</small>
         <strong>Hoje · 16:30</strong>
-      </motion.div>
+      </motion.div> */}
     </div>
   );
 }
