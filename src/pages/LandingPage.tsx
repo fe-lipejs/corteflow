@@ -4290,7 +4290,7 @@ export default function LandingPage() {
           position: relative;
           z-index: 2;
           filter:
-            drop-shadow(0 45px 65px rgba(0,0,0,.68));
+            drop-shadow(0 0px 0px rgba(0,0,0,.10));
         }
 
         .rf-real-phone-frame {

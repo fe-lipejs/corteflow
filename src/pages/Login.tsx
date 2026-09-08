@@ -14,7 +14,7 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // Super Admin Mode state
   const [isSuperAdminMode, setIsSuperAdminMode] = useState(false);
   const [logoClicks, setLogoClicks] = useState(0);
@@ -22,10 +22,10 @@ export default function Login() {
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();
     if (isSuperAdminMode) return;
-    
+
     const newClicks = logoClicks + 1;
     setLogoClicks(newClicks);
-    
+
     // Toggle on 5 fast clicks
     if (newClicks >= 5) {
       setIsSuperAdminMode(true);
@@ -34,7 +34,7 @@ export default function Login() {
       setPassword('');
       setError(null);
     }
-    
+
     // Reset clicks after 2 seconds to require fast clicking
     setTimeout(() => {
       setLogoClicks((prev) => Math.max(0, prev - 1));
@@ -206,7 +206,7 @@ export default function Login() {
           .select('tenant_id')
           .eq('user_id', user.id)
           .eq('status', 'active');
-          
+
         if (memData && memData.length > 1) {
           navigate('/select-tenant');
         } else {
@@ -224,15 +224,15 @@ export default function Login() {
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-700 relative overflow-hidden ${isSuperAdminMode ? 'bg-[#000000]' : 'bg-[#F8FAFC]'}`}>
-      
+
       {/* Background glow (only in normal mode) */}
       <AnimatePresence>
         {!isSuperAdminMode && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute top-[-30%] left-[-20%] w-[60%] h-[60%] bg-[#DE870D]/10 blur-[150px] rounded-full pointer-events-none" 
+            className="absolute top-[-30%] left-[-20%] w-[60%] h-[60%] bg-[#DE870D]/10 blur-[150px] rounded-full pointer-events-none"
           />
         )}
       </AnimatePresence>
@@ -252,7 +252,7 @@ export default function Login() {
             >
               {/* Logo */}
               <div className="text-center mb-8">
-                <button 
+                <button
                   onClick={handleLogoClick}
                   className="inline-flex items-center justify-center mb-4 cursor-pointer focus:outline-none"
                 >
@@ -265,7 +265,7 @@ export default function Login() {
                   <h2 className="text-2xl font-black text-[#0F172A]">{t('login.title')}</h2>
                   <p className="text-[#64748B] mt-2 text-sm">Acesse o painel do seu estabelecimento</p>
                 </div>
-                
+
                 {resendSuccess && (
                   <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-700 text-sm flex items-center justify-between">
                     <span>Link de confirmação reenviado com sucesso! Verifique seu e-mail.</span>
@@ -315,8 +315,8 @@ export default function Login() {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
                       />
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#334155] transition-colors"
                       >
@@ -324,17 +324,17 @@ export default function Login() {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-end">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => {
                         setForgotIdentifier(email);
                         setForgotError(null);
                         setForgotSubmitted(false);
                         setForgotPasswordOpen(true);
                       }}
-                      className="text-sm text-[#DE870D] font-semibold hover:underline cursor-pointer"
+                      className="text-sm text-[#000] font-semibold hover:underline cursor-pointer"
                     >
                       Esqueci minha senha
                     </button>
@@ -343,8 +343,8 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3.5 px-4 font-bold text-sm text-white rounded-xl disabled:opacity-50 transition-all shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer mt-2"
-                    style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
+                    className="w-full py-3.5 px-4 font-bold text-sm text-white  disabled:opacity-50 transition-all shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer mt-2"
+                    style={{ background: 'linear-gradient(135deg, #000000ff, #111010ff)' }}
                   >
                     {loading ? 'Entrando...' : t('login.submit')}
                   </button>
@@ -352,13 +352,13 @@ export default function Login() {
 
                 <div className="mt-6 text-center text-sm text-[#64748B]">
                   Não tem uma conta?{' '}
-                  <Link to="/cadastro" className="text-[#DE870D] font-bold hover:underline">
+                  <Link to="/cadastro" className="text-[#000] font-bold hover:underline">
                     Criar conta grátis
                   </Link>
                 </div>
 
                 <div className="mt-8 pt-6 border-t border-[#E2E8F0] text-center">
-                  <button 
+                  <button
                     onClick={() => {
                       setIsSuperAdminMode(true);
                       setEmail('');
@@ -389,12 +389,12 @@ export default function Login() {
                     <Shield className="w-6 h-6 text-zinc-300" />
                   </div>
                 </div>
-                
+
                 <div className="text-center mb-8">
                   <h2 className="text-xl font-medium text-white tracking-wide">Raffros Corteflow <span className="font-light text-zinc-500">Platform</span></h2>
                   <p className="text-zinc-500 mt-2 text-sm">Acesso Restrito</p>
                 </div>
-                
+
                 {error && (
                   <div className="mb-6 p-3 bg-red-900/20 border border-red-900/50 rounded-lg text-red-400 text-sm text-center">
                     {error}
@@ -422,14 +422,14 @@ export default function Login() {
                       placeholder="Password"
                     />
                   </div>
-                  
+
                   <button
                     type="submit"
                     disabled={loading}
                     className="w-full py-4 mt-4 font-medium text-sm text-black bg-white rounded hover:bg-zinc-200 transition-colors disabled:opacity-50 flex justify-center items-center"
                   >
                     {loading ? (
-                       <span className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin"></span>
+                      <span className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin"></span>
                     ) : (
                       'Entrar'
                     )}
@@ -437,7 +437,7 @@ export default function Login() {
                 </form>
 
                 <div className="mt-10 text-center">
-                  <button 
+                  <button
                     onClick={() => {
                       setIsSuperAdminMode(false);
                       setError(null);

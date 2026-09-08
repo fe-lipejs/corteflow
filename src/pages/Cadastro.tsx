@@ -30,7 +30,7 @@ export default function Cadastro() {
   const [errorList, setErrorList] = useState<string[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   // Email Sent Confirmation Screen
   const [emailSent, setEmailSent] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState('');
@@ -220,7 +220,7 @@ export default function Cadastro() {
       <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] bg-[#DE870D]/5 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10">
-        
+
         {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center justify-center mb-4">
@@ -229,7 +229,7 @@ export default function Cadastro() {
         </div>
 
         <div className="bg-white rounded-3xl border border-[#E2E8F0] p-8 shadow-xl">
-          
+
           <AnimatePresence mode="wait">
             {emailSent ? (
               /* ── TELA DE CONFIRMAÇÃO POR LINK ENVIADO NO EMAIL ── */
@@ -244,7 +244,7 @@ export default function Cadastro() {
                 <div className="w-20 h-20 bg-[#DE870D]/10 border border-[#DE870D]/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <Mail className="w-10 h-10 text-[#DE870D]" />
                 </div>
-                
+
                 <h3 className="text-2xl font-black text-[#0F172A] mb-2">Verifique seu E-mail!</h3>
                 <p className="text-[#64748B] text-sm leading-relaxed mb-4">
                   Enviamos um link de ativação para:
@@ -252,7 +252,7 @@ export default function Cadastro() {
                 <p className="text-sm font-bold text-[#DE870D] font-mono break-all mb-6 px-3 py-2 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
                   {submittedEmail}
                 </p>
-                
+
                 <p className="text-xs text-[#64748B] leading-relaxed mb-8">
                   Basta abrir o e-mail no seu celular ou computador e clicar no botão <strong className="text-[#0F172A]">"Ativar Minha Conta"</strong> para começar a configurar seu estabelecimento.
                 </p>
@@ -360,8 +360,8 @@ export default function Cadastro() {
                         className="w-full px-4 py-3 pr-12 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
                         placeholder="Mínimo 8 caracteres"
                       />
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#334155] transition-colors cursor-pointer"
                       >
@@ -381,8 +381,8 @@ export default function Cadastro() {
                         className="w-full px-4 py-3 pr-12 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
                         placeholder="Repita sua senha"
                       />
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#334155] transition-colors cursor-pointer"
                       >
@@ -407,16 +407,17 @@ export default function Cadastro() {
                 <button
                   type="submit"
                   disabled={!isValid || loading}
-                  className="w-full mt-6 flex items-center justify-center px-6 py-3.5 rounded-xl font-bold text-sm text-white disabled:opacity-50 transition-all shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer"
-                  style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
+                  className="w-full mt-6 flex items-center justify-center px-6 py-3.5 rounded-xl font-bold text-sm text-white disabled:opacity-00 transition-all shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer"
+                  style={{ background: 'linear-gradient(135deg, #000000ff, #111010ff)' }}
                 >
+
                   {loading ? 'Criando conta...' : 'Criar Conta'}
                   {!loading && <ChevronRight className="w-4 h-4 ml-1" />}
                 </button>
 
                 <div className="mt-6 text-center text-sm text-[#64748B]">
                   Já tem uma conta?{' '}
-                  <Link to="/login" className="text-[#DE870D] font-bold hover:underline">
+                  <Link to="/login" className="text-[#000] font-bold hover:underline">
                     Entrar
                   </Link>
                 </div>
