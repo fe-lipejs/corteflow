@@ -161,6 +161,7 @@ export default function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/planos" element={<Navigate to="/#planos" replace />} />
         <Route path="/playlist" element={<PlaylistPage />} />
         {AuthRoutes()}
         

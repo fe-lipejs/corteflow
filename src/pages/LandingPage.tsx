@@ -360,17 +360,24 @@ function MacbookMockup({ image, alt, path, className = "" }: { image: string; al
    HEADER
    ========================================================= */
 
-function Header({
-  dark = false,
-}: {
-  dark?: boolean;
-}) {
+function Header() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
+    let lastScroll = window.scrollY;
+
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      const currentScroll = window.scrollY;
+      setScrolled(currentScroll > 20);
+
+      if (currentScroll > lastScroll && currentScroll > 200) {
+        setHidden(true);
+      } else if (currentScroll < lastScroll) {
+        setHidden(false);
+      }
+      lastScroll = currentScroll <= 0 ? 0 : currentScroll;
     };
 
     window.addEventListener("scroll", handleScroll, {
@@ -384,10 +391,11 @@ function Header({
   }, []);
 
   const links = [
-    { label: "Produto", href: "#produto" },
     { label: "Como funciona", href: "#como-funciona" },
+    { label: "Gestão", href: "#gestao" },
     { label: "Para quem", href: "#para-quem" },
     { label: "Planos", href: "#planos" },
+    { label: "Dúvidas", href: "#faq" },
   ];
 
   return (
@@ -395,9 +403,8 @@ function Header({
       <header
         className={[
           "rf-header",
-          dark ? "rf-header-dark" : "",
           scrolled ? "rf-header-scrolled" : "",
-          "rf-header-fullwidth"
+          hidden ? "rf-header-hidden" : ""
         ].join(" ")}
       >
         <a
@@ -405,11 +412,20 @@ function Header({
           className="rf-logo"
           aria-label="Raffros"
         >
-          <img src="/logo.svg" alt="Raffros" style={{ height: '32px', filter: dark ? 'invert(1)' : 'none' }} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.style.display = 'flex'; }} />
-          <div style={{ display: 'none', alignItems: 'center', gap: '6px' }}>
-            <span className="rf-logo-mark">R</span>
-            <span>raffros</span>
-            <i>.</i>
+          <img
+            src="/logo.svg"
+            alt="Raffros"
+            style={{ height: '32px', filter: 'invert(1)' }}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+              if (fallback) fallback.style.display = 'flex';
+            }}
+          />
+          <div style={{ display: 'none', alignItems: 'center', gap: '6px', color: '#fff' }}>
+            <span className="rf-logo-mark" style={{ background: '#fff', color: '#000' }}>R</span>
+            <span style={{ color: '#fff', fontWeight: 700 }}>raffros</span>
+            <i style={{ color: 'var(--rf-accent)', fontStyle: 'normal' }}>.</i>
           </div>
         </a>
 
@@ -418,6 +434,16 @@ function Header({
             <a
               key={link.href}
               href={link.href}
+              onClick={(e) => {
+                if (link.href.startsWith('#')) {
+                  e.preventDefault();
+                  const targetId = link.href.replace('#', '');
+                  const element = document.getElementById(targetId);
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }
+              }}
             >
               {link.label}
             </a>
@@ -434,7 +460,7 @@ function Header({
 
           <button
             className="rf-header-cta"
-            onClick={() => goTo("/planos")}
+            onClick={() => goTo("/cadastro")}
           >
             Começar grátis
             <ArrowUpRight size={14} />
@@ -446,40 +472,67 @@ function Header({
           onClick={() => setOpen((value) => !value)}
           aria-label="Abrir menu"
         >
-          {open ? <X size={20} /> : <Menu size={20} />}
+          {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </header>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            className="rf-mobile-nav"
-            initial={{ opacity: 0, y: -15 }}
+            className="rf-mobile-nav-fullscreen"
+            initial={{ opacity: 0, y: "-100%" }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
+            exit={{ opacity: 0, y: "-100%" }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
           >
-            {links.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-              >
-                {link.label}
-                <ArrowUpRight size={16} />
-              </a>
-            ))}
-
-            <div className="rf-mobile-actions">
-              <button onClick={() => goTo("/login")}>
-                Entrar
+            <div className="rf-mobile-nav-top">
+              <img src="/logo.svg" alt="Raffros" style={{ height: '32px', filter: 'invert(1)' }} />
+              <button className="rf-mobile-close" onClick={() => setOpen(false)} aria-label="Fechar menu">
+                <X size={32} />
               </button>
+            </div>
 
-              <button
-                className="primary"
-                onClick={() => goTo("/planos")}
+            <div className="rf-mobile-nav-links">
+              {links.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setOpen(false);
+                    const targetId = link.href.replace('#', '');
+                    const element = document.getElementById(targetId);
+                    if (element) {
+                      setTimeout(() => {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 100);
+                    }
+                  }}
+                >
+                  {link.label}
+                </a>
+              ))}
+              <div className="rf-mobile-nav-divider" />
+              <a
+                href="/login"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setOpen(false);
+                  goTo("/login");
+                }}
+              >
+                Entrar
+              </a>
+              <a
+                href="/cadastro"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setOpen(false);
+                  goTo("/cadastro");
+                }}
               >
                 Começar grátis
-              </button>
+              </a>
             </div>
           </motion.div>
         )}
@@ -503,8 +556,6 @@ function Hero() {
 
       <div className="rf-hero-orb rf-hero-orb-one" />
       <div className="rf-hero-orb rf-hero-orb-two" />
-
-      <Header dark />
 
       <div className="rf-container rf-hero-container">
         <div className="rf-hero-copy">
@@ -541,7 +592,7 @@ function Hero() {
             <div className="rf-hero-actions">
               <button
                 className="rf-primary-button"
-                onClick={() => goTo("/planos")}
+                onClick={() => goTo("/cadastro")}
               >
                 Começar grátis
                 <ArrowRight size={17} />
@@ -550,6 +601,10 @@ function Hero() {
               <a
                 href="#como-funciona"
                 className="rf-secondary-button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById("como-funciona")?.scrollIntoView({ behavior: "smooth" });
+                }}
               >
                 Como funciona
                 <ArrowDown size={15} />
@@ -612,7 +667,7 @@ function Hero() {
 
 function Statement() {
   return (
-    <section className="rf-statement">
+    <section id="produto" className="rf-statement">
       <GridLines />
 
       <div className="rf-container">
@@ -749,14 +804,14 @@ function ProblemSection() {
 function BookingSection() {
   return (
     <section
-      id="produto"
+      id="como-funciona"
       className="rf-booking-section"
     >
       <div className="rf-container">
         <div className="rf-section-intro">
           <Reveal>
             <SectionEyebrow>
-              01 / AGENDAMENTO ONLINE
+              COMO FUNCIONA / AGENDAMENTO ONLINE
             </SectionEyebrow>
           </Reveal>
 
@@ -834,14 +889,14 @@ function BookingSection() {
 function DashboardSection() {
   return (
     <section
-      id="como-funciona"
+      id="gestao"
       className="rf-dashboard-section"
     >
       <div className="rf-container">
         <div className="rf-dashboard-copy">
           <Reveal>
             <SectionEyebrow dark>
-              03 / GESTÃO
+              PAINEL DE GESTÃO
             </SectionEyebrow>
           </Reveal>
 
@@ -1079,6 +1134,7 @@ function AudienceSection() {
       description:
         "Mais horários preenchidos. Menos conversa para marcar um corte.",
       icon: Scissors,
+      bgImage: "/images/barbearia.jpg"
     },
     {
       index: "02",
@@ -1086,6 +1142,7 @@ function AudienceSection() {
       description:
         "Equipe, serviços e clientes organizados em uma única operação.",
       icon: Sparkles,
+      bgImage: "/images/salao-cachos.jpg"
     },
     {
       index: "03",
@@ -1093,6 +1150,7 @@ function AudienceSection() {
       description:
         "Uma agenda simples para você cuidar da experiência.",
       icon: CalendarDays,
+      bgImage: "/images/manicure-celular.jpg"
     },
   ];
 
@@ -1105,7 +1163,7 @@ function AudienceSection() {
         <div className="rf-audience-header">
           <Reveal>
             <SectionEyebrow>
-              FEITO PARA VOCÊ
+              PARA QUEM É O RAFFROS
             </SectionEyebrow>
           </Reveal>
 
@@ -1127,18 +1185,28 @@ function AudienceSection() {
                 key={item.title}
                 delay={index * 0.08}
               >
-                <div className="rf-audience-card">
+                <div
+                  className="rf-audience-card"
+                  style={{
+                    backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.1) 100%), url(${item.bgImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    color: '#fff',
+                    border: 'none',
+                    minHeight: '380px'
+                  }}
+                >
                   <div className="rf-audience-top">
-                    <span>{item.index}</span>
-                    <Icon size={22} />
+                    <span style={{ color: 'rgba(255,255,255,0.7)' }}>{item.index}</span>
+                    <Icon size={22} style={{ color: 'rgba(255,255,255,0.7)' }} />
                   </div>
 
                   <div className="rf-audience-content">
-                    <h3>{item.title}</h3>
-                    <p>{item.description}</p>
+                    <h3 style={{ color: '#fff' }}>{item.title}</h3>
+                    <p style={{ color: 'rgba(255,255,255,0.8)' }}>{item.description}</p>
                   </div>
 
-                  <ArrowUpRight className="rf-audience-arrow" />
+                  <ArrowUpRight className="rf-audience-arrow" style={{ color: 'rgba(255,255,255,0.7)' }} />
                 </div>
               </Reveal>
             );
@@ -1408,7 +1476,7 @@ function PricingSection() {
         <div className="rf-pricing-header">
           <Reveal>
             <SectionEyebrow dark>
-              PLANOS
+              PLANOS E PREÇOS
             </SectionEyebrow>
           </Reveal>
 
@@ -1475,7 +1543,7 @@ function PricingSection() {
                       ? "rf-price-button featured"
                       : "rf-price-button"
                   }
-                  onClick={() => goTo("/planos")}
+                  onClick={() => goTo("/cadastro")}
                 >
                   Começar grátis
                   <ArrowRight size={15} />
@@ -1527,7 +1595,7 @@ function FinalCTA() {
         <Reveal delay={0.22}>
           <button
             className="rf-final-button"
-            onClick={() => goTo("/planos")}
+            onClick={() => goTo("/cadastro")}
           >
             Começar grátis
             <ArrowUpRight size={18} />
@@ -1560,12 +1628,12 @@ function FAQSection() {
   const [active, setActive] = useState<number | null>(null);
 
   return (
-    <section className="rf-faq">
+    <section id="faq" className="rf-faq">
       <div className="rf-container rf-faq-grid">
         <div className="rf-faq-intro">
           <Reveal>
             <SectionEyebrow>
-              DÚVIDAS
+              DÚVIDAS FREQUENTES
             </SectionEyebrow>
           </Reveal>
 
@@ -1676,10 +1744,10 @@ function Footer() {
             <div>
               <small>PRODUTO</small>
 
-              <a href="#produto">Agendamento</a>
-              <a href="#produto">Agenda</a>
-              <a href="#produto">Equipe</a>
-              <a href="#produto">Financeiro</a>
+              <a href="#produto">Visão geral</a>
+              <a href="#como-funciona">Como funciona</a>
+              <a href="#gestao">Gestão</a>
+              <a href="#para-quem">Para quem</a>
             </div>
 
             <div>
@@ -1705,7 +1773,7 @@ function Footer() {
               </button>
 
               <button
-                onClick={() => goTo("/planos")}
+                onClick={() => goTo("/cadastro")}
               >
                 Começar grátis
               </button>
@@ -1755,9 +1823,10 @@ export default function LandingPage() {
           height: "3px",
           transformOrigin: "0%",
           backgroundColor: "#FF9D2E",
-          zIndex: 99999,
+          zIndex: 999999,
         }}
       />
+      <Header />
       <style>{`
         /* =====================================================
            RAFFROS DESIGN SYSTEM
@@ -1793,6 +1862,11 @@ export default function LandingPage() {
 
         html {
           scroll-behavior: smooth;
+          scroll-padding-top: 84px;
+        }
+
+        section[id] {
+          scroll-margin-top: 84px;
         }
 
         body {
@@ -1935,54 +2009,46 @@ export default function LandingPage() {
            ===================================================== */
 
         .rf-header {
-          position: absolute;
+          position: fixed;
           top: 0;
           left: 0;
           right: 0;
-          z-index: 100;
-          height: 70px;
+          z-index: 99999;
+          height: 64px;
 
           display: flex;
           align-items: center;
           justify-content: space-between;
 
-          width: min(
-            calc(100% - 64px),
-            var(--rf-max)
-          );
-          margin: 0 auto;
+          width: 100%;
+          max-width: 100%;
+          padding: 0 24px;
+          box-sizing: border-box;
+          margin: 0;
+
+          background: transparent;
+          border-bottom: 1px solid transparent;
+          transform: none;
 
           transition:
-            background .35s ease,
-            backdrop-filter .35s ease,
-            border-color .35s ease;
-
-          border-bottom: 1px solid transparent;
+            transform .3s cubic-bezier(.16,1,.3,1),
+            background .3s ease,
+            backdrop-filter .3s ease,
+            border-color .3s ease,
+            box-shadow .3s ease;
         }
 
         .rf-header-scrolled {
-          position: fixed;
-          top: 10px;
-          left: 50%;
-          right: auto;
-          transform: translateX(-50%);
-          width: min(
-            calc(100% - 32px),
-            1180px
-          );
-          height: 58px;
-          padding: 0 15px;
-          border-radius: 999px;
-          background: rgba(10,10,10,.72);
-          backdrop-filter: blur(18px);
-          border-color: rgba(255,255,255,.08);
-          box-shadow:
-            0 12px 50px rgba(0,0,0,.18);
+          background: rgba(10,10,10,.65);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          border-bottom: 1px solid rgba(255,255,255,.1);
+          box-shadow: 0 8px 32px rgba(0,0,0,.35);
+          transform: none;
         }
 
-        .rf-header:not(.rf-header-dark).rf-header-scrolled {
-          background: rgba(245,245,242,.82);
-          border-color: rgba(0,0,0,.08);
+        .rf-header-hidden {
+          transform: translateY(-100%) !important;
         }
 
         .rf-logo {
@@ -5023,7 +5089,7 @@ export default function LandingPage() {
           }
 
           .rf-header {
-            width: calc(100% - 40px);
+            width: 100%;
           }
 
           .rf-desktop-nav,
@@ -5204,13 +5270,13 @@ export default function LandingPage() {
           }
 
           .rf-header {
-            width: calc(100% - 32px);
-            height: 62px;
+            width: 100%;
+            height: 64px;
           }
 
           .rf-header-scrolled {
-            width: calc(100% - 20px);
-            top: 8px;
+            width: 100%;
+            top: 0;
           }
 
           .rf-logo {
@@ -5709,13 +5775,13 @@ export default function LandingPage() {
             }
 
             .rf-header {
-              width: calc(100% - 32px);
-              height: 62px;
+              width: 100%;
+              height: 64px;
             }
 
             .rf-header-scrolled {
-              width: calc(100% - 20px);
-              top: 8px;
+              width: 100%;
+              top: 0;
             }
 
             .rf-mobile-nav {
@@ -6035,9 +6101,9 @@ export default function LandingPage() {
           @media (max-width: 420px) {
             .rf-container { width: calc(100% - 24px); }
 
-            .rf-header { width: calc(100% - 24px); }
+            .rf-header { width: 100%; }
 
-            .rf-header-scrolled { width: calc(100% - 16px); }
+            .rf-header-scrolled { width: 100%; }
 
             .rf-hero h1 {
               font-size: clamp(42px, 13.2vw, 55px);
@@ -6126,9 +6192,109 @@ export default function LandingPage() {
             .rf-team-real-badge { right: 12px; bottom: 8px; max-width: calc(100% - 24px); }
           }
 
-          .rf-header { width: 100% !important; left: 0 !important; top: 0 !important; border-radius: 0 !important; padding: 0 5%; }
-          .rf-header-scrolled { background: rgba(255,255,255,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.08); width: 100% !important; }
-          .rf-header-dark.rf-header-scrolled { background: rgba(10,10,10,0.9); border-bottom: 1px solid rgba(255,255,255,0.08); }
+          .rf-header {
+            position: fixed !important;
+            z-index: 99999 !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: 64px !important;
+            border-radius: 0 !important;
+            padding: 0 24px !important;
+            box-sizing: border-box !important;
+            margin: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            transform: none !important;
+            background: transparent !important;
+            border-bottom: 1px solid transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease !important;
+          }
+
+          @media (min-width: 768px) {
+            .rf-header {
+              height: 72px !important;
+              padding: 0 48px !important;
+            }
+          }
+
+          .rf-header.rf-header-scrolled {
+            background: rgba(10, 10, 10, 0.65) !important;
+            backdrop-filter: blur(20px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+            transform: none !important;
+          }
+
+          .rf-header.rf-header-hidden {
+            transform: translateY(-100%) !important;
+          }
+
+          .rf-header .rf-logo {
+            color: #ffffff !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            text-decoration: none !important;
+          }
+
+          .rf-header .rf-logo img {
+            height: 32px !important;
+            width: auto !important;
+            filter: invert(1) !important;
+          }
+
+          .rf-header .rf-desktop-nav a {
+            color: rgba(255, 255, 255, 0.75) !important;
+            transition: color 0.2s ease !important;
+          }
+
+          .rf-header .rf-desktop-nav a:hover {
+            color: #ffffff !important;
+          }
+
+          .rf-header .rf-login {
+            color: rgba(255, 255, 255, 0.85) !important;
+          }
+
+          .rf-header .rf-login:hover {
+            color: #ffffff !important;
+          }
+
+          .rf-header .rf-mobile-menu {
+            color: #ffffff !important;
+            background: transparent !important;
+            border: none !important;
+            display: none !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            padding: 8px !important;
+            margin: 0 !important;
+          }
+
+          @media (max-width: 900px) {
+            .rf-header .rf-mobile-menu {
+              display: flex !important;
+            }
+            .rf-header .rf-desktop-nav,
+            .rf-header .rf-header-actions {
+              display: none !important;
+            }
+          }
+
+          .rf-mobile-nav-fullscreen { position: fixed; inset: 0; background: #000; z-index: 999999; display: flex; flex-direction: column; padding: 24px 24px 40px; }
+          .rf-mobile-nav-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 60px; }
+          .rf-mobile-close { background: none; border: none; color: #fff; display: flex; align-items: center; justify-content: center; }
+          .rf-mobile-nav-links { display: flex; flex-direction: column; gap: 24px; padding-left: 8px; }
+          .rf-mobile-nav-links a { font-size: 26px; font-weight: 700; color: #fff; text-decoration: none; }
+          .rf-mobile-nav-divider { width: 24px; height: 2px; background: #fff; margin: 24px 0; opacity: 0.5; }
 
           .rf-real-gallery-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 30%, transparent 60%); z-index: 1; pointer-events: none; border-radius: inherit; }
           .rf-real-gallery-copy { position: relative; z-index: 10; text-shadow: 0 4px 15px rgba(0,0,0,1), 0 8px 30px rgba(0,0,0,0.8); }
@@ -6137,9 +6303,9 @@ export default function LandingPage() {
             .rf-real-gallery-grid { grid-template-columns: 1fr; margin-top: 42px; }
             .rf-real-gallery-card, .rf-real-gallery-card.rf-gallery-main { min-height: 540px; padding: 20px; }
             .rf-real-gallery-card.rf-gallery-main { min-height: 580px; }
-            .rf-real-gallery-device { bottom: -10px; width: 240px; }
-            .rf-gallery-main .rf-real-gallery-device { width: 280px; bottom: -20px; }
-            .rf-real-gallery-card:not(.rf-gallery-main) .rf-real-gallery-device { width: 200px; bottom: -10px; }
+            .rf-real-gallery-device { bottom: 0; width: 200px; }
+            .rf-gallery-main .rf-real-gallery-device { width: 240px; bottom: 0; }
+            .rf-real-gallery-card:not(.rf-gallery-main) .rf-real-gallery-device { width: 180px; bottom: 0; }
             .rf-booking-visual { min-height: 550px; padding: 0; }
             .rf-booking-visual .rf-real-phone-wrap { height: 550px; transform: scale(.92); }
             .rf-macbook-wrap { width: 100%; padding-bottom: 24px; }
@@ -6156,8 +6322,8 @@ export default function LandingPage() {
             .rf-booking-visual { min-height: 500px; }
             .rf-booking-visual .rf-real-phone-wrap { height: 500px; transform: scale(.85); }
             .rf-real-gallery-card, .rf-real-gallery-card.rf-gallery-main { min-height: 490px; }
-            .rf-gallery-main .rf-real-gallery-device { width: 260px; bottom: -15px; }
-            .rf-real-gallery-card:not(.rf-gallery-main) .rf-real-gallery-device { width: 185px; bottom: -5px; }
+            .rf-gallery-main .rf-real-gallery-device { width: 210px; bottom: 0; }
+            .rf-real-gallery-card:not(.rf-gallery-main) .rf-real-gallery-device { width: 160px; bottom: 0; }
             .rf-macbook-browser-top { grid-template-columns: 38px 1fr 38px; }
             .rf-team-real-badge { left: 8px; right: 8px; }
           }
@@ -6185,8 +6351,6 @@ export default function LandingPage() {
         <PaymentRealSection />
 
         <DomicilioRealSection />
-
-        <PersonalizationRealSection />
 
         <AudienceSection />
 
