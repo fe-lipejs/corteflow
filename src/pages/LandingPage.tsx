@@ -49,32 +49,37 @@ const faqs: FAQItem[] = [
   {
     question: "Preciso instalar algum aplicativo?",
     answer:
-      "Não. O Raffros funciona direto no navegador. Você e sua equipe podem acessar de computador, tablet ou celular.",
+      "Não. O Raffros roda direto no navegador — computador, tablet ou celular. Você abre, usa e pronto. Sem instalação, sem atualização manual, sem dor de cabeça.",
   },
   {
-    question: "Meus clientes conseguem agendar sozinhos?",
+    question: "Meus clientes agendam sozinhos de verdade?",
     answer:
-      "Sim. Você recebe uma página de agendamento própria para compartilhar no Instagram, WhatsApp, Google ou onde quiser.",
+      "De verdade. Você recebe uma página própria para colocar no Instagram, WhatsApp, Google ou onde quiser. O cliente escolhe serviço, profissional, dia e horário — sem mandar mensagem pra você.",
   },
   {
-    question: "O Raffros serve para barbearia e salão?",
+    question: "Vale para barbearia, salão e esmalteria?",
     answer:
-      "Sim. A plataforma foi pensada para negócios de beleza, incluindo barbearias, salões e esmalterias.",
+      "Sim. O Raffros foi construído pensando nos três tipos de negócio. Cada um com sua dinâmica, seus profissionais e seus serviços — tudo configurável do jeito que você trabalha.",
   },
   {
-    question: "Posso cadastrar minha equipe?",
+    question: "Posso cadastrar minha equipe inteira?",
     answer:
-      "Sim. Você pode cadastrar profissionais, serviços, horários e permissões de acesso para cada pessoa da equipe.",
+      "Sim. Cada profissional tem seus próprios horários, serviços e permissões. A agenda de um não interfere no outro. Você continua no controle de tudo sem precisar centralizar na sua mão.",
   },
   {
-    question: "Existe período grátis?",
+    question: "Tem mesmo 7 dias grátis, sem cartão?",
     answer:
-      "Sim. Você começa com 7 dias grátis. Não precisa pagar para começar e pode cancelar quando quiser.",
+      "Tem. Você começa hoje, testa com seus clientes reais, vê funcionar na prática. Se não servir, cancela e não paga nada. Mas quem testou não voltou para o WhatsApp.",
   },
   {
-    question: "Consigo controlar o financeiro?",
+    question: "Consigo ver o dinheiro entrando?",
     answer:
-      "Sim. O Raffros centraliza informações financeiras junto com agenda, clientes, serviços e profissionais.",
+      "Sim. Faturamento, ocupação, desempenho por profissional — tudo em uma tela. Você para de adivinhar como o mês foi e começa a tomar decisões com dado real.",
+  },
+  {
+    question: "E se meus clientes estiverem acostumados com o WhatsApp?",
+    answer:
+      "Melhor ainda. Você compartilha o link da sua página por lá. O cliente clica, agenda em 30 segundos e você não precisa responder mais nada. Eles acostumam rápido quando é fácil.",
   },
 ];
 
@@ -577,7 +582,7 @@ function Hero() {
         <div className="rf-hero-copy">
           <Reveal>
             <SectionEyebrow dark>
-              PARA BARBEARIAS, SALÕES E ESMALTERIAS
+              BARBEARIAS · SALÕES · ESMALTERIAS
             </SectionEyebrow>
           </Reveal>
 
@@ -585,22 +590,20 @@ function Hero() {
             <h1>
               Você não abriu
               <br />
-              uma barbearia
+              a barbearia
               <br />
               pra ficar{" "}
               <span>
                 respondendo
                 <br />
-                mensagem.
+                WhatsApp.
               </span>
             </h1>
           </Reveal>
 
           <Reveal delay={0.16}>
             <p className="rf-hero-description">
-              Agendamento online, página própria, controle da
-              equipe e gestão do negócio. Seus clientes agendam.
-              Você cuida do que importa.
+              Agendamento online, página própria, controle da equipe e gestão completa da barbearia ou salão. Seu cliente agenda. Você corta. Simples assim.
             </p>
           </Reveal>
 
@@ -714,25 +717,23 @@ function Statement() {
           <div>
             <Reveal>
               <SectionEyebrow>
-                MENOS OPERAÇÃO. MAIS NEGÓCIO.
+                O PROBLEMA QUE TODOS IGNORAM
               </SectionEyebrow>
             </Reveal>
 
             <Reveal delay={0.1}>
               <h2>
-                Sua agenda não deveria
+                Seu negócio não cresce
                 <br />
-                depender do{" "}
-                <em>seu celular.</em>
+                se você estiver preso
+                <br />
+                <em>no operacional.</em>
               </h2>
             </Reveal>
 
             <Reveal delay={0.18}>
               <p>
-                Enquanto você responde “qual horário tem?”, o
-                Raffros trabalha por você. O cliente escolhe,
-                confirma e recebe as informações sem precisar
-                esperar uma resposta.
+                Enquanto você está com a tesoura na mão, o cliente seguinte já deveria ter o horário confirmado. Não pelo WhatsApp. Automaticamente.
               </p>
             </Reveal>
           </div>
@@ -773,18 +774,18 @@ function ProblemSection() {
   const problems = [
     {
       number: "01",
-      title: "Mensagens",
-      text: "Pare de perder tempo perguntando horário, serviço e profissional.",
+      title: "\"Que horas tem pra corte?\"",
+      text: "Cada mensagem respondida no celular é um minuto a menos cortando, colorindo ou fazendo unhas. Isso soma horas perdidas por semana.",
     },
     {
       number: "02",
-      title: "Furos na agenda",
-      text: "Uma agenda organizada mostra exatamente o que acontece no seu dia.",
+      title: "Cliente que suma sem avisar",
+      text: "Sem confirmação e sem sinal, o horário fica em aberto. O próximo cliente não entrou porque o furo já estava lá.",
     },
     {
       number: "03",
-      title: "Equipe perdida",
-      text: "Cada profissional sabe seus horários, serviços e atendimentos.",
+      title: "Equipe sem agenda clara",
+      text: "Cada profissional gerenciando o próprio WhatsApp significa conflito de horário, cliente errado e problema que cai no seu colo.",
     },
   ];
 
@@ -794,17 +795,17 @@ function ProblemSection() {
         <div className="rf-problem-heading">
           <Reveal>
             <SectionEyebrow dark>
-              O PROBLEMA
+              OS TRÊS PROBLEMAS QUE CUSTAM DINHEIRO TODO DIA
             </SectionEyebrow>
           </Reveal>
 
           <Reveal delay={0.08}>
             <h2>
-              O que deveria
+              Três motivos
               <br />
-              ser simples
+              que travam
               <br />
-              <span>não é.</span>
+              <span>qualquer barbearia.</span>
             </h2>
           </Reveal>
         </div>
@@ -850,7 +851,7 @@ function BookingSection() {
         <div className="rf-section-intro">
           <Reveal>
             <SectionEyebrow>
-              COMO FUNCIONA / AGENDAMENTO ONLINE
+              COMO FUNCIONA · O FIM DAS MENSAGENS
             </SectionEyebrow>
           </Reveal>
 
@@ -858,15 +859,13 @@ function BookingSection() {
             <h2>
               Sua agenda
               <br />
-              <span>aberta 24 horas.</span>
+              <span>trabalha por você. 24h.</span>
             </h2>
           </Reveal>
 
           <Reveal delay={0.16}>
             <p>
-              Seu cliente não precisa mandar mensagem.
-              Ele entra na sua página, escolhe o serviço,
-              profissional, dia e horário.
+              Às 23h, um cliente abre seu Instagram, clica no link da bio e agenda o corte de amanhã às 9h. Você não precisou responder nada. O horário está lá quando você acorda.
             </p>
           </Reveal>
         </div>
@@ -880,18 +879,18 @@ function BookingSection() {
             {[
               {
                 icon: Globe2,
-                title: "Página própria",
-                text: "Uma experiência simples para o cliente marcar sozinho.",
+                title: "Link na bio. Agenda feita.",
+                text: "Coloca o link no Instagram ou WhatsApp. O cliente abre, escolhe o serviço, o barbeiro e o horário. Em menos de 1 minuto.",
               },
               {
                 icon: CalendarDays,
-                title: "Disponibilidade real",
-                text: "Os horários respeitam sua agenda e a da sua equipe.",
+                title: "Só mostra o que está livre",
+                text: "Cada profissional tem sua agenda. O sistema bloqueia automaticamente o que já foi preenchido. Zero conflito de horário.",
               },
               {
                 icon: ShieldCheck,
-                title: "Confirmação automática",
-                text: "O cliente recebe as informações do agendamento.",
+                title: "Confirmado. Sem WhatsApp.",
+                text: "O cliente recebe a confirmação na hora. Você abre o painel e vê a agenda cheia. Simples assim.",
               },
             ].map((item, index) => {
               const Icon = item.icon;
@@ -935,25 +934,23 @@ function DashboardSection() {
         <div className="rf-dashboard-copy">
           <Reveal>
             <SectionEyebrow dark>
-              PAINEL DE GESTÃO
+              PAINEL DE GESTÃO · TUDO EM UM SÓ LUGAR
             </SectionEyebrow>
           </Reveal>
 
           <Reveal delay={0.08}>
             <h2>
-              Tudo que você
+              Você administra
               <br />
-              precisa.
+              a barbearia
               <br />
-              <span>Em um só lugar.</span>
+              <span>sem sair dela.</span>
             </h2>
           </Reveal>
 
           <Reveal delay={0.16}>
             <p>
-              Agenda, clientes, profissionais, serviços e
-              financeiro. Sem abrir cinco sistemas diferentes
-              para administrar um único negócio.
+              Agenda, clientes, equipe, serviços e caixa em uma tela só. Sem planilha, sem caderninho, sem depender de ninguém.
             </p>
           </Reveal>
         </div>
@@ -966,25 +963,25 @@ function DashboardSection() {
           <div>
             <span>01</span>
             <strong>Agenda</strong>
-            <p>Visualize seu dia inteiro.</p>
+            <p>Dia inteiro na palma da mão.</p>
           </div>
 
           <div>
             <span>02</span>
             <strong>Equipe</strong>
-            <p>Controle profissionais e horários.</p>
+            <p>Cada um sabe o que faz.</p>
           </div>
 
           <div>
             <span>03</span>
             <strong>Clientes</strong>
-            <p>Tenha tudo organizado.</p>
+            <p>Histórico de todo mundo.</p>
           </div>
 
           <div>
             <span>04</span>
             <strong>Financeiro</strong>
-            <p>Saiba como o negócio está.</p>
+            <p>Número real, não chute.</p>
           </div>
         </div>
       </div>
@@ -999,9 +996,9 @@ function DashboardSection() {
 
 function RealProductGallery() {
   const screens = [
-    { number: "01", label: "AGENDAMENTO", title: "O cliente escolhe.", text: "Serviço, profissional, dia e horário em poucos toques.", image: M.booking, className: "rf-gallery-main" },
-    { number: "02", label: "SERVIÇOS", title: "Tudo claro antes de marcar.", text: "O cliente vê serviço, duração e preço antes de confirmar.", image: M.services, className: "" },
-    { number: "03", label: "PIX", title: "Menos furos na agenda.", text: "Você pode receber um sinal e proteger o horário reservado.", image: M.pix, className: "" },
+    { number: "01", label: "AGENDAMENTO", title: "30 segundos. Horário marcado.", text: "O cliente escolhe o serviço, o profissional e o horário sem precisar mandar uma mensagem sequer.", image: M.booking, className: "rf-gallery-main" },
+    { number: "02", label: "SERVIÇOS", title: "Corte, barba, colorist...tudo lá.", text: "Cada serviço com duração e preço exibidos antes de confirmar. O cliente sabe exatamente o que vai pagar.", image: M.services, className: "" },
+    { number: "03", label: "PIX", title: "Sinal na hora. Furo nunca.", text: "Você define o percentual de entrada. O cliente paga na hora de marcar. Sem sinal, sem horário.", image: M.pix, className: "" },
   ];
 
   return (
@@ -1010,22 +1007,21 @@ function RealProductGallery() {
         <div className="rf-real-gallery-heading">
           <Reveal>
             <SectionEyebrow dark>
-              04 / A EXPERIÊNCIA REAL
+              A EXPERIÊNCIA DO CLIENTE · LEVA MENOS DE 1 MINUTO
             </SectionEyebrow>
           </Reveal>
 
           <Reveal delay={0.08}>
             <h2>
-              O que seu cliente vê
+              A primeira impressão
               <br />
-              <span>também importa.</span>
+              <span>já é sua.</span>
             </h2>
           </Reveal>
 
           <Reveal delay={0.16}>
             <p>
-              Não é só uma agenda bonita para você. É uma experiência
-              profissional do primeiro toque até a confirmação.
+              Seu cliente julga o negócio antes de entrar pela porta. Uma página de agendamento profissional já diz que você é diferente.
             </p>
           </Reveal>
         </div>
@@ -1075,25 +1071,23 @@ function TeamSection() {
           <div className="rf-team-copy">
             <Reveal>
               <SectionEyebrow>
-                05 / SUA EQUIPE
+                SUA EQUIPE · CADA UM NO SEU LUGAR
               </SectionEyebrow>
             </Reveal>
 
             <Reveal delay={0.08}>
               <h2>
-                Cada pessoa.
+                Cada barbeiro.
                 <br />
-                Seu espaço.
+                Cada cabeleireira.
                 <br />
-                <span>Seu controle.</span>
+                <span>Sua própria agenda.</span>
               </h2>
             </Reveal>
 
             <Reveal delay={0.16}>
               <p>
-                Cadastre profissionais, defina serviços,
-                horários e permissões. O Raffros organiza
-                a operação sem tirar o controle das suas mãos.
+                Cadastre cada profissional com seus serviços, horários e permissões. Cada um vê só o que precisa. Você vê tudo — sem precisar ser o intermediador de nada.
               </p>
             </Reveal>
           </div>
@@ -1108,8 +1102,8 @@ function TeamSection() {
               <div className="rf-team-real-badge">
                 <span />
                 <div>
-                  <strong>Equipe sincronizada</strong>
-                  <small>Horários e serviços em um só lugar</small>
+                  <strong>Equipe independente</strong>
+                  <small>Cada um sabe o que tem hoje</small>
                 </div>
               </div>
             </div>
@@ -1130,30 +1124,30 @@ function PhilosophySection() {
       <div className="rf-container">
         <Reveal>
           <div className="rf-philosophy-label">
-            RAFFROS / PRINCÍPIO
+            RAFFROS / VERDADE
           </div>
         </Reveal>
 
         <Reveal delay={0.08}>
           <h2>
-            A tecnologia
+            Cada horário vazio
             <br />
-            deve desaparecer.
+            é dinheiro
+            <br />
+            que foi embora.
           </h2>
         </Reveal>
 
         <Reveal delay={0.16}>
           <p>
-            Você não precisa aprender um sistema complicado.
-            O Raffros foi feito para que a tecnologia fique
-            em segundo plano e o seu negócio fique em primeiro.
+            Um corte não feito não volta. Uma escova perdida não recupera. Cada furo na agenda é receita que não entrou. A Raffros existe para isso não acontecer mais.
           </p>
         </Reveal>
 
         <Reveal delay={0.22}>
           <div className="rf-philosophy-mark">
             <Sparkles size={18} />
-            <span>PRECISO. SIMPLES. RAFFROS.</span>
+            <span>MENOS OPERAÇÃO. MAIS NEGÓCIO. RAFFROS.</span>
           </div>
         </Reveal>
       </div>
@@ -1268,22 +1262,21 @@ function FinanceRealSection() {
         <div className="rf-finance-real-heading">
           <Reveal>
             <SectionEyebrow dark>
-              08 / VISÃO DO NEGÓCIO
+              FINANCEIRO · PARE DE ADIVINHAR QUANTO ENTROU
             </SectionEyebrow>
           </Reveal>
 
           <Reveal delay={0.08}>
             <h2>
-              O dinheiro
+              Quanto entrou
               <br />
-              <span>também precisa aparecer.</span>
+              <span>hoje no salão?</span>
             </h2>
           </Reveal>
 
           <Reveal delay={0.16}>
             <p>
-              Faturamento, ocupação e desempenho deixam de ser uma
-              dúvida no fim do mês.
+              Se você não sabe responder isso em 10 segundos, a Raffros resolve. Faturamento, ocupação por profissional e desempenho do dia — na tela.
             </p>
           </Reveal>
         </div>
@@ -1326,25 +1319,24 @@ function PaymentRealSection() {
 
           <Reveal delay={0.1}>
             <SectionEyebrow dark>
-              09 / ANTI-FURO
+              ANTI-FURO · CLIENTE PAGOU, HORÁRIO GARANTIDO
             </SectionEyebrow>
 
             <h2>
-              Seu horário
+              Sumiu sem avisar?
               <br />
-              <span>tem valor.</span>
+              <span>Não acontece mais.</span>
             </h2>
 
             <p>
-              Você define o sinal. O cliente paga. O horário é confirmado.
-              Menos faltas e menos dinheiro deixado na mesa.
+              Você define a entrada. O cliente paga via Pix antes de confirmar. Se não pagou, o horário não é dele. Fim do furo.
             </p>
 
             <div className="rf-payment-real-list">
               {[
                 "Você define o percentual",
-                "Pagamento via Pix",
-                "Confirmação automática",
+                "Pagamento via Pix na hora",
+                "Horário confirmado só com sinal",
               ].map((item, index) => (
                 <div key={item}>
                   <span>0{index + 1}</span>
@@ -1378,12 +1370,11 @@ function DomicilioRealSection() {
               <br />
               onde atende.
               <br />
-              <span>A Raffros calcula.</span>
+              <span>Sem complicar.</span>
             </h2>
 
             <p>
-              Defina seu raio de atendimento. O cliente informa o endereço
-              e o sistema verifica se ele está dentro da sua área.
+              Ativar atendimento a domicílio é um clique. Você define o raio, o cliente informa o endereço e o sistema valida na hora. Sem WhatsApp. Sem vai-e-vem.
             </p>
 
             <div className="rf-domicilio-real-points">
@@ -1451,16 +1442,15 @@ function PersonalizationRealSection() {
 
           <Reveal delay={0.08}>
             <h2>
-              Seu negócio.
+              Sua página.
               <br />
-              <span>Sua experiência.</span>
+              <span>Sua identidade.</span>
             </h2>
           </Reveal>
 
           <Reveal delay={0.16}>
             <p>
-              A página onde seu cliente agenda acompanha a identidade
-              do seu negócio.
+              Escolha um tema e pronto. A página onde seu cliente agenda já parece que foi feita por um designer — porque foi.
             </p>
           </Reveal>
         </div>
@@ -1515,23 +1505,22 @@ function PricingSection() {
         <div className="rf-pricing-header">
           <Reveal>
             <SectionEyebrow dark>
-              PLANOS E PREÇOS
+              PLANOS E PREÇOS · COMECE HOJE
             </SectionEyebrow>
           </Reveal>
 
           <Reveal delay={0.08}>
             <h2>
-              Comece pequeno.
+              Custa menos
               <br />
-              <span>Cresça sem trocar de sistema.</span>
+              <span>do que um furo na agenda.</span>
             </h2>
           </Reveal>
 
           <Reveal delay={0.16}>
             <p>
-              7 dias grátis em todos os planos.
-              <br />
-              Cancele quando quiser.
+              Um único horário perdido já cobre o plano inteiro do mês.
+              7 dias grátis, sem cartão, sem enrolação.
             </p>
           </Reveal>
         </div>
@@ -1613,21 +1602,23 @@ function FinalCTA() {
       <div className="rf-container">
         <Reveal>
           <SectionEyebrow dark>
-            PRONTO PARA MUDAR?
+            AGORA É A HORA
           </SectionEyebrow>
         </Reveal>
 
         <Reveal delay={0.08}>
           <h2>
-            Pare de responder.
+            Amanhã você
             <br />
-            <span>Comece a receber.</span>
+            pode abrir a barbearia
+            <br />
+            <span>com agenda cheia.</span>
           </h2>
         </Reveal>
 
         <Reveal delay={0.16}>
           <p>
-            Coloque sua agenda para trabalhar por você.
+            Ou pode abrir o WhatsApp mais uma vez, responder mais uma vez e fechar o dia sem saber quanto entrou. Quem assinou a Raffros não volta atrás.
           </p>
         </Reveal>
 
@@ -1648,6 +1639,8 @@ function FinalCTA() {
             Sem cartão para começar
             <span />
             Cancele quando quiser
+            <span />
+            Leva 2 minutos para configurar
           </div>
         </Reveal>
       </div>
@@ -1678,7 +1671,7 @@ function FAQSection() {
 
           <Reveal delay={0.08}>
             <h2>
-              Tudo claro
+              Dúvidas rápidas
               <br />
               antes de
               <br />
