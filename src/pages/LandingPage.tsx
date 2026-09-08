@@ -396,6 +396,7 @@ function Header() {
     { label: "Para quem", href: "#para-quem" },
     { label: "Planos", href: "#planos" },
     { label: "Dúvidas", href: "#faq" },
+    { label: "♫ Playlist", href: "/playlist", isExternal: true },
   ];
 
   return (
@@ -444,6 +445,7 @@ function Header() {
                   }
                 }
               }}
+              style={(link as { isExternal?: boolean }).isExternal ? { color: '#1DB954', fontWeight: 600 } : undefined}
             >
               {link.label}
             </a>
@@ -493,7 +495,7 @@ function Header() {
             </div>
 
             <div className="rf-mobile-nav-links">
-              {links.map((link) => (
+              {links.filter(l => !(l as { isExternal?: boolean }).isExternal).map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
@@ -513,6 +515,17 @@ function Header() {
                 </a>
               ))}
               <div className="rf-mobile-nav-divider" />
+              <a
+                href="/playlist"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setOpen(false);
+                  goTo("/playlist");
+                }}
+                style={{ color: '#FF9D2E' }}
+              >
+                ♫ Playlist
+              </a>
               <a
                 href="/login"
                 onClick={(e) => {
@@ -611,8 +624,26 @@ function Hero() {
               </a>
             </div>
           </Reveal>
-
+          <br /><br />
           <Reveal delay={0.28}>
+            <a href="/playlist" className="rf-spotify-card" aria-label="Som da Casa e Palavra do Dia — ver playlist">
+              <div className="rf-spotify-card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.623.623 0 01-.857.208c-2.348-1.435-5.304-1.76-8.785-.964a.623.623 0 11-.277-1.215c3.809-.87 7.076-.496 9.712 1.115a.623.623 0 01.207.856zm1.223-2.72a.78.78 0 01-1.072.257C14.1 12.29 10.539 11.88 7.2 12.84a.78.78 0 01-.48-1.485c3.754-1.09 7.72-.562 10.832 1.277a.78.78 0 01.257 1.072zm.105-2.832C15.16 9.15 10.481 9 7.2 9.983a.937.937 0 11-.543-1.794C10.317 7.071 15.494 7.25 19.2 9.638a.937.937 0 01-1.286 1.234z" fill="#1DB954" />
+                </svg>
+              </div>
+              <div className="rf-spotify-card-text">
+                <span className="rf-spotify-card-title">Som da Casa</span>
+                <span className="rf-spotify-card-sub">& Palavra do Dia</span>
+              </div>
+              <div className="rf-spotify-card-arrow">
+                <ArrowUpRight size={14} />
+              </div>
+            </a>
+          </Reveal>
+          <br />
+
+          <Reveal delay={0.36}>
             <div className="rf-hero-trust">
               <div className="rf-trust-item">
                 <span className="rf-trust-value">100%</span>
@@ -2183,8 +2214,8 @@ export default function LandingPage() {
 
         .rf-hero {
           position: relative;
-          min-height: 760px;
-          height: min(900px, 100svh);
+          min-height: 820px;
+          height: min(960px, 100svh);
           overflow: hidden;
           background:
             radial-gradient(
@@ -2230,7 +2261,7 @@ export default function LandingPage() {
         }
 
         .rf-hero-container {
-          min-height: 760px;
+          min-height: 820px;
           height: 100%;
           display: grid;
           grid-template-columns:
@@ -6295,6 +6326,75 @@ export default function LandingPage() {
           .rf-mobile-nav-links { display: flex; flex-direction: column; gap: 24px; padding-left: 8px; }
           .rf-mobile-nav-links a { font-size: 26px; font-weight: 700; color: #fff; text-decoration: none; }
           .rf-mobile-nav-divider { width: 24px; height: 2px; background: #fff; margin: 24px 0; opacity: 0.5; }
+
+          /* ── Spotify glassmorphism card ── */
+          .rf-spotify-card {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 14px;
+            padding: 10px 16px 10px 12px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(16px) saturate(160%);
+            -webkit-backdrop-filter: blur(16px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+            max-width: fit-content;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+          }
+          .rf-spotify-card:hover {
+            background: rgba(29, 185, 84, 0.12);
+            border-color: rgba(29, 185, 84, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(29, 185, 84, 0.18);
+          }
+          .rf-spotify-card-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(29, 185, 84, 0.15);
+            flex-shrink: 0;
+            transition: background 0.25s ease;
+          }
+          .rf-spotify-card:hover .rf-spotify-card-icon {
+            background: rgba(29, 185, 84, 0.25);
+          }
+          .rf-spotify-card-text {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+          }
+          .rf-spotify-card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+          }
+          .rf-spotify-card-sub {
+            font-size: 11px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.2;
+          }
+          .rf-spotify-card-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 4px;
+            color: rgba(255, 255, 255, 0.35);
+            transition: color 0.25s ease, transform 0.25s ease;
+          }
+          .rf-spotify-card:hover .rf-spotify-card-arrow {
+            color: #1DB954;
+            transform: translate(2px, -2px);
+          }
 
           .rf-real-gallery-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 30%, transparent 60%); z-index: 1; pointer-events: none; border-radius: inherit; }
           .rf-real-gallery-copy { position: relative; z-index: 10; text-shadow: 0 4px 15px rgba(0,0,0,1), 0 8px 30px rgba(0,0,0,0.8); }
