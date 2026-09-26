@@ -504,22 +504,25 @@ export default function ClientPortal() {
   const pastBookings = bookings.filter((b) => new Date(b.scheduled_at) < new Date() || ['canceled', 'no_show', 'completed'].includes(b.status));
 
   return (
-    <div className="min-h-screen pb-20 transition-colors" style={{ backgroundColor: theme.bg, color: theme.textPrimary, fontFamily: theme.fontSerif }}>
+    <div className="min-h-screen pb-20 transition-colors bg-[#050505]" style={{ backgroundColor: theme.bg, color: theme.textPrimary, fontFamily: theme.fontSerif }}>
       {storeHeader}
 
-      <div className="max-w-3xl mx-auto px-4 space-y-8">
+      <div className="max-w-3xl mx-auto px-4 space-y-8 relative z-10">
         <section>
-          <h2 className="text-xl font-serif font-bold mb-4 flex items-center gap-2" style={{ color: theme.textPrimary }}>
+          <h2 className="text-xl font-serif font-bold mb-6 flex items-center gap-2" style={{ color: theme.textPrimary }}>
             <Calendar className="w-5 h-5" style={{ color: theme.accent }} /> 
             Próximos Agendamentos
           </h2>
           
           {futureBookings.length === 0 ? (
-            <div className="p-8 text-center rounded-3xl border border-dashed backdrop-blur-xl" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+            <div className="p-8 text-center rounded-3xl border border-white/5 backdrop-blur-2xl shadow-2xl" style={{ backgroundColor: `color-mix(in srgb, ${theme.cardBg} 40%, transparent)` }}>
+              <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center bg-white/5 border border-white/5">
+                <Calendar className="w-8 h-8 opacity-50" />
+              </div>
               <p className="text-sm font-medium" style={{ color: theme.textSecondary }}>Você não tem nenhum agendamento futuro no momento.</p>
               <button
                 onClick={() => navigate(`/${slug}`)}
-                className="mt-4 px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition-transform hover:scale-105 active:scale-95"
+                className="mt-6 px-6 py-3 rounded-2xl font-bold text-xs shadow-lg transition-transform hover:scale-105 active:scale-95 border border-white/10"
                 style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
               >
                 Agendar Novo Horário
@@ -528,8 +531,8 @@ export default function ClientPortal() {
           ) : (
             <div className="space-y-4">
               {futureBookings.map((b) => (
-                <div key={b.id} className="rounded-3xl p-6 shadow-xl border backdrop-blur-xl transition-all" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
-                  <div className="flex justify-between items-start mb-4 border-b pb-4" style={{ borderColor: theme.border }}>
+                <div key={b.id} className="rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/10 backdrop-blur-2xl transition-all hover:scale-[1.01]" style={{ backgroundColor: `color-mix(in srgb, ${theme.cardBg} 40%, transparent)` }}>
+                  <div className="flex justify-between items-start mb-4 border-b pb-4" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[10px] font-mono font-bold tracking-widest px-2 py-0.5 rounded border" style={{ color: theme.textSecondary, borderColor: theme.border, backgroundColor: theme.inputBg }}>

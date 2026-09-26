@@ -144,8 +144,8 @@ export default function AdminLayout() {
       {/* ── Sidebar ── */}
       <aside
         className={`
-          w-60 flex flex-col fixed h-full z-50 
-          bg-[#000000] border-r border-[#111111]
+          w-60 flex flex-col fixed top-0 left-0 md:top-4 md:left-4 h-full md:h-[calc(100vh-32px)] z-50 
+          bg-[#050505]/85 border border-[#222]/50 md:rounded-3xl shadow-2xl backdrop-blur-2xl
           transition-transform duration-300 ease-in-out
           md:translate-x-0
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -211,9 +211,11 @@ export default function AdminLayout() {
       </aside>
 
       {/* ── Main Content ── */}
-      <main className="flex-1 min-w-0 w-full min-h-screen md:ml-60 flex flex-col">
+      <main className="flex-1 min-w-0 w-full min-h-screen md:ml-[270px] flex flex-col md:pt-4 md:pr-4 md:pb-4 transition-all">
+        <div className="flex-1 min-h-0 bg-[#0A0A0A]/40 backdrop-blur-3xl md:rounded-3xl border border-transparent md:border-white/5 shadow-2xl overflow-hidden flex flex-col relative">
+          
         {/* Top Header */}
-        <header className="sticky top-0 z-30 h-14 bg-[#000]/80 backdrop-blur-xl border-b border-[#111] hidden md:flex items-center justify-between px-8">
+        <header className="sticky top-0 z-30 h-14 bg-transparent border-b border-white/5 hidden md:flex items-center justify-between px-8">
           {/* Breadcrumb */}
           <BreadcrumbFromPath />
 
@@ -240,10 +242,12 @@ export default function AdminLayout() {
         </div>
 
         {/* Footer */}
-        <footer className="px-8 py-4 border-t border-[#0d0d0d] flex items-center justify-between">
-          <p className="text-xs text-[#333]">Raffros Corteflow · Admin Console</p>
-          <p className="text-xs text-[#2a2a2a]">v2.0.0</p>
+        <footer className="px-8 py-4 border-t border-white/5 flex items-center justify-between mt-auto">
+          <p className="text-xs text-[#555]">Raffros Corteflow · Admin Console</p>
+          <p className="text-xs text-[#333]">v2.0.0</p>
         </footer>
+        
+        </div>
       </main>
     </div>
   );

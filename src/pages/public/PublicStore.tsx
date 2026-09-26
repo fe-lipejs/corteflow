@@ -1111,10 +1111,10 @@ export default function PublicStore() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-sm overflow-hidden rounded-3xl shadow-2xl border"
+              className="relative w-full max-w-sm overflow-hidden rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border backdrop-blur-3xl"
               style={{
-                background: cardBackground,
-                borderColor: cardBorderColor,
+                background: `color-mix(in srgb, ${cardBackground} 40%, transparent)`,
+                borderColor: `color-mix(in srgb, ${cardBorderColor} 50%, transparent)`,
               }}
             >
               <div className="p-6">
@@ -1380,10 +1380,10 @@ export default function PublicStore() {
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 28, stiffness: 280 }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full rounded-t-3xl overflow-hidden shadow-2xl"
+                className="w-full rounded-t-[32px] overflow-hidden shadow-[0_-20px_50px_rgba(0,0,0,0.4)] backdrop-blur-3xl"
                 style={{
-                  background: cardBackground,
-                  border: `1px solid ${cardBorderColor}`,
+                  background: `color-mix(in srgb, ${cardBackground} 40%, transparent)`,
+                  borderTop: `1px solid color-mix(in srgb, ${cardBorderColor} 50%, transparent)`,
                   maxHeight: "85vh",
                   overflowY: "auto",
                 }}

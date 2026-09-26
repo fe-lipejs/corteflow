@@ -222,10 +222,15 @@ export default function AppLayout() {
 
       {/* Sidebar (Desktop fixed & Mobile Drawer) */}
       <aside 
-        className={`flex flex-col fixed top-0 left-0 h-full z-50 md:z-50 transition-transform duration-300 md:translate-x-0 backdrop-blur-xl ${
-          isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'
+        className={`flex flex-col fixed top-0 left-0 md:top-4 md:left-4 h-full md:h-[calc(100vh-32px)] z-50 md:z-50 transition-all duration-500 backdrop-blur-2xl md:rounded-3xl shadow-2xl ${
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
-        style={{ width: '250px', background: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}` }}
+        style={{ 
+          width: '260px', 
+          background: `color-mix(in srgb, ${theme.sidebarBg} 85%, transparent)`, 
+          border: `1px solid color-mix(in srgb, ${theme.sidebarBorder} 50%, transparent)`,
+          boxShadow: `0 25px 50px -12px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)`
+        }}
       >
         {/* Logo & Tenant Area */}
         <div className="p-6 border-b flex items-center justify-between gap-3" style={{ borderColor: theme.sidebarBorder }}>
@@ -328,8 +333,13 @@ export default function AppLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 min-h-screen pt-16 md:pt-0 md:ml-[250px] transition-all flex flex-col">
-        <div className="p-4 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden flex-1 flex flex-col">
+      <main className="flex-1 min-w-0 min-h-screen pt-16 md:pt-4 md:ml-[280px] md:pr-4 md:pb-4 transition-all flex flex-col">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden flex-1 flex flex-col rounded-none md:rounded-3xl border border-transparent md:border-[color-mix(in_srgb,var(--theme-card-border)_50%,transparent)]"
+             style={{ 
+               background: `color-mix(in srgb, ${theme.cardBg} 40%, transparent)`, 
+               backdropFilter: 'blur(20px)',
+               boxShadow: `0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.05)`
+             }}>
           {features.subscription_status === 'past_due' && features.grace_period_ends_at && !isGracePeriodExpired && (
             <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 rounded-xl p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-start gap-3">
