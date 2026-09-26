@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, addMinutes, isBefore } from 'date-fns';
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, addMinutes, isBefore, addDays } from 'date-fns';
 import { supabase } from '../integrations/supabase/client';
 import { useBarberSound } from './useBarberSound';
 
@@ -165,12 +165,12 @@ export async function checkSlotAvailability(
 
 // ─── Hook: useBookingsByWeek ──────────────────────────────────────────────────
 export function useBookingsByWeek(tenantId: string | null, weekStart: Date, professionalId?: string | null) {
-  const from = startOfWeek(weekStart, { weekStartsOn: 0 });
-  const to = endOfWeek(weekStart, { weekStartsOn: 0 });
-  const dateKey = format(from, 'yyyy-MM-dd');
+  const from = startOfDay(addDays(weekStart, -7));
+  const to = endOfDay(addDays(weekStart, 7));
+  const dateKey = format(weekStart, 'yyyy-MM-dd');
 
   return useQuery({
-    queryKey: [...BOOKINGS_KEY(tenantId ?? '', dateKey), professionalId],
+    queryKey: ['bookings', tenantId ?? '', 'week', dateKey, professionalId],
     queryFn: () => fetchBookings(tenantId!, from, to, professionalId),
     enabled: !!tenantId,
     staleTime: 1000 * 30, // 30s — agenda needs to be fresh
@@ -185,7 +185,7 @@ export function useBookingsByDay(tenantId: string | null, day: Date, professiona
   const dateKey = format(day, 'yyyy-MM-dd');
 
   return useQuery({
-    queryKey: [...BOOKINGS_KEY(tenantId ?? '', dateKey), professionalId],
+    queryKey: ['bookings', tenantId ?? '', 'day', dateKey, professionalId],
     queryFn: () => fetchBookings(tenantId!, from, to, professionalId),
     enabled: !!tenantId,
     staleTime: 1000 * 30,

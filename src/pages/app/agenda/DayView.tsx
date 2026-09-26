@@ -2,10 +2,10 @@ import { useMemo, useRef, useEffect } from 'react';
 import { format, isToday, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { BOOKING_STATUS_CONFIG, type Booking } from '../../../hooks/useBookings';
-import { Clock, User, Scissors, DollarSign } from 'lucide-react';
+import { Clock, User, Scissors, Home, MapPin } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 
-const HOUR_HEIGHT = 88;
+const HOUR_HEIGHT = 96;
 const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
 
 interface Props {
@@ -62,15 +62,21 @@ export default function DayView({ day, bookings, businessHours, onBookingClick, 
       HOURS: Array.from({ length: end - start + 1 }, (_, i) => start + i)
     };
   }, [businessHours, bookings]);
-  
+
   const now = new Date();
   const nowTop = ((now.getHours() - START_HOUR) * 60 + now.getMinutes()) / 60 * HOUR_HEIGHT;
   const showNowLine = isToday(day) && now.getHours() >= START_HOUR && now.getHours() <= END_HOUR;
 
-  const nowRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    nowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, []);
+    if (scrollContainerRef.current) {
+      const containerHeight = scrollContainerRef.current.clientHeight;
+      scrollContainerRef.current.scrollTo({
+        top: Math.max(0, nowTop - (containerHeight / 2)),
+        behavior: 'smooth'
+      });
+    }
+  }, [nowTop]);
 
   const sortedBookings = useMemo(() =>
     [...bookings].sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()),
@@ -81,52 +87,53 @@ export default function DayView({ day, bookings, businessHours, onBookingClick, 
   const isClosed = dayHours && !dayHours.is_open;
 
   return (
-    <div className="flex flex-col h-full min-h-0 w-full rounded-2xl border overflow-hidden shadow-2xl" style={{ background: theme.bg, borderColor: theme.border }}>
+    <div className="flex flex-col h-full min-h-0 w-full rounded-2xl border overflow-hidden shadow-sm" style={{ background: theme.bg, borderColor: theme.border }}>
       {/* ── Day Header ── */}
-      <div className="shrink-0 px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: theme.border, background: theme.cardBg }}>
+      <div className="shrink-0 px-6 py-5 border-b flex items-center justify-between" style={{ borderColor: theme.border, background: theme.cardBg }}>
         <div className="flex items-center gap-4">
-          <div 
-            className="w-12 h-12 flex flex-col items-center justify-center rounded-2xl font-bold shadow-md"
+          <div
+            className="w-14 h-14 flex flex-col items-center justify-center rounded-2xl font-bold"
             style={{
               background: isToday(day) ? theme.accentGradient : theme.inputBg,
               color: isToday(day) ? theme.btnPrimaryText : theme.textPrimary,
               border: isToday(day) ? 'none' : `1px solid ${theme.border}`,
+              boxShadow: isToday(day) ? theme.shadowAccent : 'none',
             }}
           >
-            <span className="text-[10px] uppercase tracking-wider">{format(day, 'EEE', { locale: ptBR })}</span>
-            <span className="text-lg leading-none">{format(day, 'd')}</span>
+            <span className="text-[10px] uppercase tracking-wider opacity-80">{format(day, 'EEE', { locale: ptBR })}</span>
+            <span className="text-xl leading-none mt-0.5">{format(day, 'd')}</span>
           </div>
 
           <div>
-            <h2 className="text-lg font-bold" style={{ color: theme.textPrimary }}>
+            <h2 className="text-lg font-bold leading-tight" style={{ color: theme.textPrimary }}>
               {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })}
             </h2>
-            <p className="text-xs font-medium" style={{ color: theme.textSecondary }}>
+            <p className="text-xs font-medium mt-1" style={{ color: theme.textSecondary }}>
               {isClosed ? 'Salão fechado neste dia' : `${bookings.length} agendamento${bookings.length !== 1 ? 's' : ''} registrado${bookings.length !== 1 ? 's' : ''}`}
             </p>
           </div>
         </div>
 
         {bookings.length > 0 && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textPrimary }}>
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textPrimary }}>
             <Clock className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-            <span>Dia {isToday(day) ? 'Hoje' : format(day, 'dd/MM')}</span>
+            <span>{isToday(day) ? 'Hoje' : format(day, 'dd/MM')}</span>
           </div>
         )}
       </div>
 
       {/* ── Time Grid ── */}
-      <div className="flex-1 overflow-y-auto relative scroll-smooth">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto relative scroll-smooth">
         <div className="flex min-h-full">
           {/* Left Hour labels */}
-          <div className="w-20 shrink-0 border-r sticky left-0 z-30 select-none" style={{ borderColor: theme.border, background: theme.cardBg }}>
+          <div className="w-16 shrink-0 border-r sticky left-0 z-30 select-none" style={{ borderColor: theme.border, background: theme.cardBg }}>
             {HOURS.map(h => (
-              <div 
-                key={h} 
-                className="relative border-b text-xs font-semibold flex items-start pt-2 pr-3 justify-end" 
-                style={{ height: `${HOUR_HEIGHT}px`, borderColor: `${theme.border}40`, color: theme.textSecondary }}
+              <div
+                key={h}
+                className="relative border-b text-xs font-semibold flex items-start pt-2.5 pr-3 justify-end"
+                style={{ height: `${HOUR_HEIGHT}px`, borderColor: `${theme.border}30`, color: theme.textSecondary }}
               >
-                <span className="text-[11px] font-mono tracking-tight font-medium opacity-80">{String(h).padStart(2, '0')}:00</span>
+                <span className="text-[11px] font-mono tracking-tight font-medium opacity-70">{String(h).padStart(2, '0')}:00</span>
               </div>
             ))}
           </div>
@@ -135,10 +142,11 @@ export default function DayView({ day, bookings, businessHours, onBookingClick, 
           <div className="flex-1 relative">
             {/* Live Now Line */}
             {showNowLine && (
-              <div ref={nowRef} className="absolute left-0 right-0 z-40 pointer-events-none flex items-center" style={{ top: `${nowTop}px` }}>
-                <div className="w-full h-[2px] bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.9)]" />
-                <span className="absolute left-2 -top-3 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-red-500 text-white shadow">
-                  Agora {format(now, 'HH:mm')}
+              <div className="absolute left-0 right-0 z-40 pointer-events-none flex items-center" style={{ top: `${nowTop}px` }}>
+                <div className="w-full h-px" style={{ background: theme.accent }} />
+                <div className="w-2 h-2 rounded-full -ml-1 shrink-0" style={{ background: theme.accent }} />
+                <span className="absolute left-3 -top-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: theme.accent }}>
+                  {format(now, 'HH:mm')}
                 </span>
               </div>
             )}
@@ -155,18 +163,18 @@ export default function DayView({ day, bookings, businessHours, onBookingClick, 
                   key={h}
                   onClick={() => { if (!isUnavailable) onSlotClick(day, h); }}
                   className={`border-b transition-colors group relative flex flex-col justify-between ${!isUnavailable ? 'cursor-pointer hover:bg-white/5' : ''}`}
-                  style={{ borderColor: `${theme.border}40`, height: `${HOUR_HEIGHT}px` }}
+                  style={{ borderColor: `${theme.border}30`, height: `${HOUR_HEIGHT}px` }}
                 >
                   {!isUnavailable && (
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all backdrop-blur-[2px]" style={{ background: `${theme.accent}15` }}>
-                      <span className="text-xs font-bold px-4 py-1.5 rounded-full shadow-lg" style={{ background: theme.accent, color: theme.btnPrimaryText }}>
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none" style={{ background: `${theme.accent}0d` }}>
+                      <span className="text-xs font-bold px-4 py-2 rounded-full" style={{ background: theme.accent, color: theme.btnPrimaryText }}>
                         + Agendar às {h.toString().padStart(2, '0')}:00
                       </span>
                     </div>
                   )}
 
                   {/* Subtle 30-min divider */}
-                  <div className="w-full h-px mt-auto mb-auto" style={{ background: `${theme.border}25` }} />
+                  <div className="w-full h-px mt-auto mb-auto" style={{ background: `${theme.border}20` }} />
                 </div>
               );
             })}
@@ -177,7 +185,7 @@ export default function DayView({ day, bookings, businessHours, onBookingClick, 
               const startMinutes = (start.getHours() - START_HOUR) * 60 + start.getMinutes();
               const topOffset = (startMinutes / 60) * HOUR_HEIGHT;
               const duration = b.duration_minutes || 30;
-              const height = Math.max((duration / 60) * HOUR_HEIGHT - 4, 52);
+              const height = Math.max((duration / 60) * HOUR_HEIGHT - 6, 60);
               const end = addMinutes(start, duration);
               const statusCfg = BOOKING_STATUS_CONFIG[b.status] || { label: 'Agendado', bg: 'rgba(201,150,59,0.15)', color: theme.accent };
               const proAccent = b.professional?.agenda_color || b.service?.color || theme.accent;
@@ -186,42 +194,34 @@ export default function DayView({ day, bookings, businessHours, onBookingClick, 
                 <div
                   key={b.id}
                   onClick={e => { e.stopPropagation(); onBookingClick(b); }}
-                  className="absolute left-3 right-3 rounded-2xl cursor-pointer shadow-xl hover:shadow-2xl hover:scale-[1.005] transition-all group overflow-hidden border flex flex-col justify-between p-3.5"
+                  className="absolute left-3 right-3 rounded-2xl cursor-pointer shadow-sm hover:shadow-lg transition-shadow group overflow-hidden border flex flex-col justify-between p-4"
                   style={{
                     top: `${topOffset}px`,
                     height: `${height}px`,
                     background: theme.cardBg,
-                    borderColor: `${proAccent}50`,
-                    borderLeft: `5px solid ${proAccent}`,
-                    backdropFilter: 'blur(10px)',
+                    borderColor: `${theme.border}`,
+                    borderLeft: `4px solid ${proAccent}`,
                   }}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-extrabold" style={{ color: theme.textPrimary }}>
-                          {b.customer?.name ?? 'Cliente'}
-                        </p>
-                        {b.customer?.phone && (
-                          <span className="text-xs font-mono opacity-60" style={{ color: theme.textSecondary }}>
-                            {b.customer.phone}
-                          </span>
-                        )}
-                      </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold truncate" style={{ color: theme.textPrimary }}>
+                        {b.customer?.name ?? 'Cliente'}
+                      </p>
 
-                      <p className="text-xs font-semibold mt-0.5 flex items-center gap-1.5" style={{ color: proAccent }}>
+                      <p className="text-xs font-medium mt-1 flex items-center gap-1.5 truncate" style={{ color: theme.textSecondary }}>
+                        <Scissors className="w-3.5 h-3.5 shrink-0 opacity-60" style={{ color: proAccent }} />
+                        <span className="truncate">{b.service?.name || 'Serviço'}</span>
                         {b.service_location === 'home' ? (
-                          <span title="A domicílio">🏠</span>
+                          <Home className="w-3.5 h-3.5 shrink-0 opacity-60" />
                         ) : (
-                          <span title="No Salão">📍</span>
+                          <MapPin className="w-3.5 h-3.5 shrink-0 opacity-60" />
                         )}
-                        <Scissors className="w-3.5 h-3.5 shrink-0 opacity-75" />
-                        {b.service?.name || 'Serviço'}
                       </p>
                     </div>
 
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider" style={{ background: statusCfg.bg, color: statusCfg.color }}>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide" style={{ background: statusCfg.bg, color: statusCfg.color }}>
                         {statusCfg.label}
                       </span>
                       <span className="text-sm font-bold" style={{ color: theme.textPrimary }}>
@@ -230,16 +230,16 @@ export default function DayView({ day, bookings, businessHours, onBookingClick, 
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs pt-2 border-t mt-2" style={{ borderColor: theme.border }}>
-                    <span className="font-semibold flex items-center gap-1.5" style={{ color: theme.textSecondary }}>
-                      <Clock className="w-3.5 h-3.5" />
-                      {format(start, 'HH:mm')} – {format(end, 'HH:mm')} ({duration} min)
+                  <div className="flex items-center justify-between text-xs pt-3 border-t mt-3" style={{ borderColor: `${theme.border}80` }}>
+                    <span className="font-medium flex items-center gap-1.5" style={{ color: theme.textSecondary }}>
+                      <Clock className="w-3.5 h-3.5 opacity-70" />
+                      {format(start, 'HH:mm')} – {format(end, 'HH:mm')}
                     </span>
 
                     {b.professional?.name && (
-                      <span className="font-medium flex items-center gap-1.5" style={{ color: theme.textSecondary }}>
-                        <User className="w-3.5 h-3.5" />
-                        {b.professional.name}
+                      <span className="font-medium flex items-center gap-1.5 truncate" style={{ color: theme.textSecondary }}>
+                        <User className="w-3.5 h-3.5 opacity-70 shrink-0" />
+                        <span className="truncate">{b.professional.name}</span>
                       </span>
                     )}
                   </div>
@@ -252,4 +252,3 @@ export default function DayView({ day, bookings, businessHours, onBookingClick, 
     </div>
   );
 }
-

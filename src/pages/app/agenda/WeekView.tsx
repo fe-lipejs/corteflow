@@ -2,10 +2,10 @@ import { useMemo, useRef, useEffect } from 'react';
 import { format, addDays, startOfWeek, isSameDay, isToday, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { BOOKING_STATUS_CONFIG, type Booking } from '../../../hooks/useBookings';
-import { Clock, User, Scissors, DollarSign } from 'lucide-react';
+import { Clock, User, Scissors } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 
-const HOUR_HEIGHT = 88;
+const HOUR_HEIGHT = 96;
 const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
 
 interface Props {
@@ -81,10 +81,16 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
   const nowTop = ((now.getHours() - START_HOUR) * 60 + now.getMinutes()) / 60 * HOUR_HEIGHT;
   const showNowLine = now.getHours() >= START_HOUR && now.getHours() <= END_HOUR;
 
-  const nowLineRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    nowLineRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, []);
+    if (scrollContainerRef.current) {
+      const containerHeight = scrollContainerRef.current.clientHeight;
+      scrollContainerRef.current.scrollTo({
+        top: Math.max(0, nowTop - (containerHeight / 2)),
+        behavior: 'smooth'
+      });
+    }
+  }, [nowTop]);
 
   const filteredBookings = useMemo(() => {
     if (!selectedProfessionalId) return bookings;
@@ -104,7 +110,7 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
       const startMinutes = (start.getHours() - START_HOUR) * 60 + start.getMinutes();
       const top = (startMinutes / 60) * HOUR_HEIGHT;
       const duration = b.duration_minutes || 30;
-      const height = Math.max((duration / 60) * HOUR_HEIGHT - 4, 52);
+      const height = Math.max((duration / 60) * HOUR_HEIGHT - 4, 56);
       const bottom = top + height;
       return { booking: b, top, bottom, height };
     });
@@ -145,48 +151,36 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 w-full rounded-2xl border overflow-hidden shadow-2xl" style={{ background: theme.bg, borderColor: theme.border }}>
+    <div className="flex flex-col h-full min-h-0 w-full rounded-2xl border overflow-hidden shadow-sm" style={{ background: theme.bg, borderColor: theme.border }}>
       {/* ── Day Headers ── */}
       <div className="flex border-b shrink-0 relative z-20" style={{ borderColor: theme.border, background: theme.cardBg }}>
         {/* Time column header */}
-        <div className="w-20 shrink-0 border-r flex flex-col items-center justify-center py-3" style={{ borderColor: theme.border }}>
-          <Clock className="w-4 h-4 opacity-50" style={{ color: theme.textSecondary }} />
-          <span className="text-[10px] font-bold uppercase tracking-wider mt-1 opacity-50" style={{ color: theme.textSecondary }}>Hora</span>
+        <div className="w-16 shrink-0 border-r flex flex-col items-center justify-center py-4" style={{ borderColor: theme.border }}>
+          <Clock className="w-4 h-4 opacity-40" style={{ color: theme.textSecondary }} />
         </div>
 
         {/* Day columns headers */}
         {days.map((day) => {
           const today = isToday(day);
-          const dayBookings = filteredBookings.filter(b => isSameDay(new Date(b.scheduled_at), day));
-          const dayCount = dayBookings.length;
           const dayHours = businessHours.find((h: any) => h.weekday === day.getDay());
           const isClosed = dayHours && !dayHours.is_open;
 
           return (
             <div 
               key={day.toISOString()} 
-              className="flex-1 py-3.5 px-2 flex flex-col items-center justify-center border-r last:border-r-0 transition-all relative"
+              className="flex-1 py-4 px-2 flex flex-col items-center justify-center gap-1.5 border-r last:border-r-0 transition-all relative"
               style={{ 
                 borderColor: theme.border,
-                background: today ? `${theme.accent}12` : 'transparent',
-                opacity: isClosed ? 0.45 : 1
+                opacity: isClosed ? 0.45 : 1,
               }}
             >
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: today ? theme.accent : theme.textSecondary }}>
-                  {format(day, 'EEE', { locale: ptBR })}
-                </span>
-                {dayCount > 0 && (
-                  <span className="px-1.5 py-0.2 text-[10px] font-extrabold rounded-full" style={{ background: theme.accent, color: theme.btnPrimaryText }}>
-                    {dayCount}
-                  </span>
-                )}
-              </div>
-
-              <div 
-                className="w-10 h-10 flex items-center justify-center rounded-2xl text-base font-bold transition-all shadow-sm"
+              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
+                {format(day, 'EEE', { locale: ptBR })}
+              </span>
+              <div
+                className="w-9 h-9 flex items-center justify-center rounded-full text-sm font-bold"
                 style={{
-                  background: today ? theme.accentGradient : theme.inputBg,
+                  background: today ? theme.accentGradient : 'transparent',
                   color: today ? theme.btnPrimaryText : theme.textPrimary,
                   border: today ? 'none' : `1px solid ${theme.border}`,
                   boxShadow: today ? theme.shadowAccent : 'none'
@@ -200,18 +194,18 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
       </div>
 
       {/* ── Time Grid Container ── */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth">
         <div className="flex min-h-full">
           
           {/* Left Hour labels column */}
-          <div className="w-20 shrink-0 border-r sticky left-0 z-30 select-none" style={{ borderColor: theme.border, background: theme.cardBg }}>
+          <div className="w-16 shrink-0 border-r sticky left-0 z-30 select-none" style={{ borderColor: theme.border, background: theme.cardBg }}>
             {HOURS.map(h => (
               <div 
                 key={h} 
-                className="relative border-b text-xs font-semibold flex items-start pt-2 pr-3 justify-end" 
-                style={{ height: `${HOUR_HEIGHT}px`, borderColor: `${theme.border}40`, color: theme.textSecondary }}
+                className="relative border-b text-xs font-semibold flex items-start pt-2.5 pr-3 justify-end" 
+                style={{ height: `${HOUR_HEIGHT}px`, borderColor: `${theme.border}30`, color: theme.textSecondary }}
               >
-                <span className="text-[11px] font-mono tracking-tight font-medium opacity-80">{String(h).padStart(2, '0')}:00</span>
+                <span className="text-[11px] font-mono tracking-tight font-medium opacity-70">{String(h).padStart(2, '0')}:00</span>
               </div>
             ))}
           </div>
@@ -222,14 +216,10 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
             {/* Global Horizontal Now Line */}
             {showNowLine && (
               <div 
-                ref={nowLineRef}
                 className="absolute left-0 right-0 z-40 pointer-events-none flex items-center" 
                 style={{ top: `${nowTop}px` }}
               >
-                <div className="w-full h-[2px] bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.9)]" />
-                <span className="absolute left-2 -top-3 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-red-500 text-white shadow">
-                  Agora {format(now, 'HH:mm')}
-                </span>
+                <div className="w-full h-px" style={{ background: theme.accent }} />
               </div>
             )}
 
@@ -245,8 +235,8 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
                   key={day.toISOString()} 
                   className="flex-1 relative border-r last:border-r-0 transition-colors"
                   style={{
-                    borderColor: `${theme.border}40`,
-                    background: isClosed ? 'rgba(0,0,0,0.18)' : (today ? `${theme.accent}05` : 'transparent')
+                    borderColor: `${theme.border}30`,
+                    background: isClosed ? `${theme.border}10` : (today ? `${theme.accent}06` : 'transparent')
                   }}
                 >
                   {/* Hour grid cells */}
@@ -261,19 +251,19 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
                         key={h} 
                         onClick={() => { if (!isUnavailable) onSlotClick(day, h); }}
                         className={`border-b transition-colors group relative flex flex-col justify-between ${!isUnavailable ? 'cursor-pointer hover:bg-white/5' : ''}`}
-                        style={{ borderColor: `${theme.border}40`, height: `${HOUR_HEIGHT}px` }}
+                        style={{ borderColor: `${theme.border}30`, height: `${HOUR_HEIGHT}px` }}
                       >
                         {/* Hover Quick Action Indicator */}
                         {!isUnavailable && (
-                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all backdrop-blur-[2px]" style={{ background: `${theme.accent}15` }}>
-                            <span className="text-[11px] font-bold px-3 py-1 rounded-full shadow-lg" style={{ background: theme.accent, color: theme.btnPrimaryText }}>
-                              + Agendar {h.toString().padStart(2, '0')}:00
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none" style={{ background: `${theme.accent}0d` }}>
+                            <span className="text-[11px] font-bold px-3 py-1.5 rounded-full" style={{ background: theme.accent, color: theme.btnPrimaryText }}>
+                              + {h.toString().padStart(2, '0')}:00
                             </span>
                           </div>
                         )}
 
                         {/* Subtle 30-min divider line */}
-                        <div className="w-full h-px mt-auto mb-auto" style={{ background: `${theme.border}25` }} />
+                        <div className="w-full h-px mt-auto mb-auto" style={{ background: `${theme.border}20` }} />
                       </div>
                     );
                   })}
@@ -285,64 +275,52 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
                     const start = new Date(b.scheduled_at);
                     const duration = b.duration_minutes || 30;
                     const end = addMinutes(start, duration);
-                    const cardHeight = Math.max(height, 68);
+                    const cardHeight = Math.max(height, 72);
 
                     return (
                       <div
                         key={b.id}
                         onClick={e => { e.stopPropagation(); onBookingClick(b); }}
-                        className="absolute rounded-xl cursor-pointer shadow-md hover:shadow-2xl hover:z-50 hover:scale-[1.02] transition-all group overflow-hidden border flex flex-col"
+                        className="absolute rounded-xl cursor-pointer shadow-sm hover:shadow-lg hover:z-50 transition-shadow group overflow-hidden border flex flex-col"
                         style={{
                           top: `${top}px`,
                           height: `${cardHeight}px`,
                           left: `calc(${leftPercent}% + 3px)`,
                           width: `calc(${widthPercent}% - 6px)`,
                           background: theme.cardBg,
-                          borderColor: `${proAccent}50`,
-                          borderLeft: `5px solid ${proAccent}`,
-                          boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
+                          borderColor: theme.border,
+                          borderLeft: `3px solid ${proAccent}`,
                         }}
                       >
-                        <div className="p-2 h-full flex flex-col justify-between min-w-0">
-                          {/* Top Header: Customer Name & Status Badge */}
+                        <div className="p-2.5 h-full flex flex-col justify-between min-w-0 gap-1">
+                          {/* Top: Customer Name & Status Badge */}
                           <div className="min-w-0">
                             <div className="flex items-center justify-between gap-1 mb-1">
-                              <p className="text-[11px] font-extrabold truncate leading-tight" style={{ color: theme.textPrimary }}>
+                              <p className="text-xs font-bold truncate leading-tight" style={{ color: theme.textPrimary }}>
                                 {b.customer?.name ?? 'Cliente'}
                               </p>
-                              
                               <span 
-                                className="shrink-0 px-1.5 py-0.5 rounded-md text-[8px] font-extrabold uppercase tracking-wider border leading-none" 
-                                style={{
-                                  background: `${statusCfg.color}20`,
-                                  borderColor: `${statusCfg.color}40`,
-                                  color: statusCfg.color
-                                }}
-                              >
-                                {statusCfg.label}
-                              </span>
+                                className="shrink-0 w-1.5 h-1.5 rounded-full" 
+                                style={{ background: statusCfg.color }}
+                                title={statusCfg.label}
+                              />
                             </div>
 
                             {/* Service Title */}
-                            <p className="text-[11px] font-bold truncate flex items-center gap-1 leading-tight" style={{ color: proAccent }}>
-                              {b.service_location === 'home' ? (
-                                <span title="A domicílio">🏠</span>
-                              ) : (
-                                <span title="No Salão">📍</span>
-                              )}
-                              <Scissors className="w-3 h-3 shrink-0 opacity-85" />
+                            <p className="text-[11px] font-medium truncate flex items-center gap-1 leading-tight" style={{ color: theme.textSecondary }}>
+                              <Scissors className="w-3 h-3 shrink-0 opacity-60" style={{ color: proAccent }} />
                               <span className="truncate">{b.service?.name || 'Serviço'}</span>
                             </p>
                           </div>
 
                           {/* Bottom Row: Time & Price */}
-                          <div className="flex items-center justify-between text-[10px] pt-1 border-t mt-auto min-w-0" style={{ borderColor: theme.border }}>
-                            <span className="font-semibold flex items-center gap-1" style={{ color: theme.textSecondary }}>
-                              <Clock className="w-2.5 h-2.5 shrink-0 opacity-70" />
+                          <div className="flex items-center justify-between text-[11px] pt-1.5 border-t mt-auto min-w-0" style={{ borderColor: `${theme.border}80` }}>
+                            <span className="font-semibold flex items-center gap-1 shrink-0" style={{ color: theme.textSecondary }}>
+                              <Clock className="w-2.5 h-2.5 shrink-0 opacity-60" />
                               {format(start, 'HH:mm')}
                             </span>
 
-                            <span className="font-bold shrink-0 text-[11px]" style={{ color: theme.textPrimary }}>
+                            <span className="font-bold shrink-0" style={{ color: theme.textPrimary }}>
                               {fmt.format(b.amount_total || 0)}
                             </span>
                           </div>
@@ -361,4 +339,3 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
     </div>
   );
 }
-

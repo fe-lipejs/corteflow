@@ -71,22 +71,22 @@ export default function Agenda() {
 
   // Data fetching
   const { data: weekBookings = [], isLoading: loadingWeek, refetch: refetchWeek } = useBookingsByWeek(
-    tenantId || null, 
+    tenantId || null,
     weekStart,
     role === 'professional' ? professionalProfile?.id : undefined
   );
   const { data: dayBookings = [], isLoading: loadingDay } = useBookingsByDay(
-    tenantId || null, 
+    tenantId || null,
     currentDay,
     role === 'professional' ? professionalProfile?.id : undefined
   );
-  
+
   // Se for profissional, filtra a lista de profissionais apenas para ele mesmo para que o seletor da UI exiba apenas ele.
   const { data: allProfessionals = [] } = useProfessionals(tenantId || null);
   const professionals = role === 'professional' && professionalProfile
     ? allProfessionals.filter(p => p.id === professionalProfile.id)
     : allProfessionals;
-    
+
   const { data: services = [] } = useServices(tenantId || null);
 
   // Setup Realtime Bookings Listener
@@ -171,6 +171,16 @@ export default function Agenda() {
     () => searchParams.get('professional')
   );
 
+  // Sync weekStart with currentDay to ensure weekBookings always contains the currentDay
+  // This is critical for MobileTimeline which relies on weekBookings but can swipe to any day
+  useEffect(() => {
+    // We now use a rolling 7-day window starting exactly on currentDay
+    const expectedWeekStart = startOfDay(currentDay);
+    if (expectedWeekStart.getTime() !== weekStart.getTime()) {
+      setWeekStart(expectedWeekStart);
+    }
+  }, [currentDay, weekStart]);
+
   // Se o usuário NÃO tiver permissão para visualizar todos, filtra a agenda automaticamente para ele mesmo
   useEffect(() => {
     if (!engine.isLoading && !engine.hasPermission('agenda.visualizar_todos')) {
@@ -179,6 +189,16 @@ export default function Agenda() {
       }
     }
   }, [engine.isLoading, engine.hasPermission, professionalProfile?.id]);
+
+  const filteredWeekBookings = useMemo(() => {
+    if (!selectedProfessionalId) return weekBookings;
+    return weekBookings.filter(b => b.professional_id === selectedProfessionalId);
+  }, [weekBookings, selectedProfessionalId]);
+
+  const filteredDayBookings = useMemo(() => {
+    if (!selectedProfessionalId) return dayBookings;
+    return dayBookings.filter(b => b.professional_id === selectedProfessionalId);
+  }, [dayBookings, selectedProfessionalId]);
 
   if (!engine.isLoading && !engine.hasPermission('agenda.visualizar_todos') && !engine.hasPermission('agenda.visualizar_minha')) {
     return (
@@ -198,266 +218,278 @@ export default function Agenda() {
     <>
       <div className="flex flex-col h-full max-w-7xl mx-auto w-full animate-fade-in" style={{ minHeight: 'calc(100vh - 80px)' }}>
 
-      {/* ── Header ── */}
-      <div className="flex flex-col gap-4 mb-4 shrink-0">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>Gestão</p>
-            <h1 className="font-serif text-3xl font-bold" style={{ color: theme.textPrimary }}>Agenda</h1>
-          </div>
-
-          {/* Desktop controls */}
-          <div className="hidden md:flex items-center gap-3">
-            {/* Nav */}
-            <div className="flex items-center gap-1 rounded-xl border px-1 py-1 glass-card">
-              <button onClick={() => view === 'week' ? setWeekStart(w => subWeeks(w, 1)) : setCurrentDay(d => addDays(d, -1))} className="p-2 rounded-lg transition-all hover:bg-[var(--theme-bg-hover)]" style={{ color: theme.textSecondary }}>
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button onClick={() => { setWeekStart(startOfDay(new Date())); setCurrentDay(new Date()); }} className="px-3 py-1.5 text-xs font-bold transition-colors" style={{ color: theme.textPrimary }}>
-                Hoje
-              </button>
-              <span className="px-2 text-sm font-semibold min-w-[130px] text-center" style={{ color: theme.textPrimary }}>
-                {view === 'week'
-                  ? format(weekStart, "MMMM yyyy", { locale: ptBR })
-                  : format(currentDay, "dd 'de' MMMM", { locale: ptBR })
-                }
-              </span>
-              <button onClick={() => view === 'week' ? setWeekStart(w => addWeeks(w, 1)) : setCurrentDay(d => addDays(d, 1))} className="p-2 rounded-lg transition-all hover:bg-[var(--theme-bg-hover)]" style={{ color: theme.textSecondary }}>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+        {/* ── Header ── */}
+        <div className="flex flex-col gap-4 mb-4 shrink-0">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>Gestão</p>
+              <h1 className="font-serif text-3xl font-bold" style={{ color: theme.textPrimary }}>Agenda</h1>
             </div>
 
-            {/* View toggle */}
-            <div className="flex p-1 rounded-xl border gap-0.5 glass-card">
-              {(['week', 'day'] as View[]).map(v => (
-                <button key={v} onClick={() => setView(v)}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${view === v ? '' : 'hover:opacity-80'}`}
-                  style={{
-                    color: view === v ? theme.btnPrimaryText : theme.textSecondary,
-                    background: view === v ? theme.accentGradient : 'transparent',
-                    boxShadow: view === v ? theme.shadowAccent : 'none',
-                  }}
-                >
-                  {v === 'week' ? 'Semana' : 'Dia'}
+            {/* Desktop controls */}
+            <div className="hidden md:flex items-center gap-3">
+              {/* Nav */}
+              <div className="flex items-center gap-1 rounded-xl border px-1 py-1 glass-card">
+                <button onClick={() => {
+                  if (view === 'week') {
+                    setCurrentDay(d => subWeeks(d, 1));
+                  } else {
+                    setCurrentDay(d => addDays(d, -1));
+                  }
+                }} className="p-2 rounded-lg transition-all hover:bg-[var(--theme-bg-hover)]" style={{ color: theme.textSecondary }}>
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
-              ))}
+                <button onClick={() => { setCurrentDay(new Date()); }} className="px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer" style={{ color: theme.textPrimary }}>
+                  Hoje
+                </button>
+                <span className="px-2 text-sm font-semibold min-w-[130px] text-center" style={{ color: theme.textPrimary }}>
+                  {view === 'week'
+                    ? format(weekStart, "MMMM yyyy", { locale: ptBR })
+                    : format(currentDay, "dd 'de' MMMM", { locale: ptBR })
+                  }
+                </span>
+                <button onClick={() => {
+                  if (view === 'week') {
+                    setCurrentDay(d => addWeeks(d, 1));
+                  } else {
+                    setCurrentDay(d => addDays(d, 1));
+                  }
+                }} className="p-2 rounded-lg transition-all hover:bg-[var(--theme-bg-hover)]" style={{ color: theme.textSecondary }}>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* View toggle */}
+              <div className="flex p-1 rounded-xl border gap-0.5 glass-card">
+                {(['week', 'day'] as View[]).map(v => (
+                  <button key={v} onClick={() => setView(v)}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${view === v ? '' : 'hover:opacity-80'}`}
+                    style={{
+                      color: view === v ? theme.btnPrimaryText : theme.textSecondary,
+                      background: view === v ? theme.accentGradient : 'transparent',
+                      boxShadow: view === v ? theme.shadowAccent : 'none',
+                    }}
+                  >
+                    {v === 'week' ? 'Semana' : 'Dia'}
+                  </button>
+                ))}
+              </div>
+
+              <button onClick={() => refetchWeek()} className="p-2 rounded-xl border transition-all glass-card" style={{ color: theme.textSecondary, borderColor: theme.cardBorder }} title="Atualizar">
+                <RefreshCw className="w-4 h-4" />
+              </button>
+
+              {/* Sound test button */}
+              <button
+                onClick={() => playChime('booking')}
+                className="p-2 rounded-xl border transition-all glass-card"
+                style={{ color: theme.textSecondary, borderColor: theme.cardBorder }}
+                title="Testar som de novo agendamento"
+              >
+                <Bell className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => {
+                  if (!engine.hasPermission('agenda.criar')) {
+                    setShowUpgradeModal('agenda.criar');
+                    return;
+                  }
+                  setInitialBookingDate(undefined);
+                  setBookingModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all"
+                style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
+              >
+                <Plus className="w-4 h-4" /> Novo
+              </button>
             </div>
-
-            <button onClick={() => refetchWeek()} className="p-2 rounded-xl border transition-all glass-card" style={{ color: theme.textSecondary, borderColor: theme.cardBorder }} title="Atualizar">
-              <RefreshCw className="w-4 h-4" />
-            </button>
-
-            {/* Sound test button */}
-            <button
-              onClick={() => playChime('booking')}
-              className="p-2 rounded-xl border transition-all glass-card"
-              style={{ color: theme.textSecondary, borderColor: theme.cardBorder }}
-              title="Testar som de novo agendamento"
-            >
-              <Bell className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => {
-                if (!engine.hasPermission('agenda.criar')) {
-                  setShowUpgradeModal('agenda.criar');
-                  return;
-                }
-                setInitialBookingDate(undefined);
-                setBookingModalOpen(true);
-              }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all"
-              style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
-            >
-              <Plus className="w-4 h-4" /> Novo
-            </button>
           </div>
-        </div>
 
-        {/* Professional Filters & Stats row */}
-        <div className="flex flex-col gap-3">
-          {/* Stats cards */}
-          <div className="relative">
-            <div 
-              onScroll={() => setHasScrolledCards(true)}
-              className="flex overflow-x-auto md:grid md:grid-cols-5 gap-3 pb-2 md:pb-0 scrollbar-none snap-x relative z-10"
-            >
-              {[
-                { label: 'Hoje', value: stats.total, icon: Calendar, color: theme.accent },
-                { label: 'Confirmados (Hoje)', value: stats.pending, icon: Clock, color: '#f59e0b' },
-                { label: 'Esquecidos / Pendentes', value: 'Ver Lista', icon: Bell, color: '#ef4444', isButton: true },
-                { label: 'Finalizados', value: stats.completed, icon: CheckCircle, color: theme.success },
-                { label: 'Em atendimento', value: stats.inProgress, icon: Users, color: '#a78bfa' }, // Keeping standard status colors
-                { label: 'Próximo', value: nextBooking ? format(new Date(nextBooking.scheduled_at), 'HH:mm') : '—', icon: Clock, color: theme.info },
-                { label: 'Receita prevista', value: fmt.format(stats.revenue), icon: DollarSign, color: theme.warning },
-              ].map((s, i) => (
-                <div 
-                  key={i} 
-                  onClick={() => s.isButton ? setShowPendingModal(true) : undefined}
-                  className={`flex flex-col flex-shrink-0 min-w-[140px] p-3 rounded-2xl border glass-card ${s.isButton ? 'cursor-pointer hover:scale-105 transition-transform bg-red-500/5 border-red-500/20' : ''}`} 
-                  style={{ borderColor: s.isButton ? undefined : theme.border }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl" style={{ backgroundColor: `${s.color}15`, color: s.color }}>
-                      <s.icon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className={`text-xl font-bold font-display ${s.isButton ? 'text-sm mt-1' : ''}`} style={{ color: s.isButton ? s.color : theme.textPrimary }}>
-                        {isLoading && !s.isButton ? '—' : s.value}
-                      </p>
-                      <p className="text-[10px] font-bold uppercase tracking-wider opacity-80" style={{ color: theme.textSecondary }}>{s.label}</p>
+          {/* Professional Filters & Stats row */}
+          <div className="flex flex-col gap-3">
+            {/* Stats cards */}
+            <div className="relative">
+              <div
+                onScroll={() => setHasScrolledCards(true)}
+                className="flex overflow-x-auto md:grid md:grid-cols-5 gap-3 pb-2 md:pb-0 scrollbar-none snap-x relative z-10"
+              >
+                {[
+                  { label: 'Hoje', value: stats.total, icon: Calendar, color: theme.accent },
+                  { label: 'Confirmados (Hoje)', value: stats.pending, icon: Clock, color: '#f59e0b' },
+                  { label: 'Esquecidos / Pendentes', value: 'Ver Lista', icon: Bell, color: '#ef4444', isButton: true },
+                  { label: 'Finalizados', value: stats.completed, icon: CheckCircle, color: theme.success },
+                  { label: 'Em atendimento', value: stats.inProgress, icon: Users, color: '#a78bfa' }, // Keeping standard status colors
+                  { label: 'Próximo', value: nextBooking ? format(new Date(nextBooking.scheduled_at), 'HH:mm') : '—', icon: Clock, color: theme.info },
+                  { label: 'Receita prevista', value: fmt.format(stats.revenue), icon: DollarSign, color: theme.warning },
+                ].map((s, i) => (
+                  <div
+                    key={i}
+                    onClick={() => s.isButton ? setShowPendingModal(true) : undefined}
+                    className={`flex flex-col flex-shrink-0 min-w-[140px] p-3 rounded-2xl border glass-card ${s.isButton ? 'cursor-pointer hover:scale-105 transition-transform bg-red-500/5 border-red-500/20' : ''}`}
+                    style={{ borderColor: s.isButton ? undefined : theme.border }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl" style={{ backgroundColor: `${s.color}15`, color: s.color }}>
+                        <s.icon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className={`text-xl font-bold font-display ${s.isButton ? 'text-sm mt-1' : ''}`} style={{ color: s.isButton ? s.color : theme.textPrimary }}>
+                          {isLoading && !s.isButton ? '—' : s.value}
+                        </p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider opacity-80" style={{ color: theme.textSecondary }}>{s.label}</p>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+
+              {/* Swipe indicator */}
+              {!hasScrolledCards && isMobile && (
+                <div
+                  className="absolute right-0 top-0 bottom-2 w-16 z-20 pointer-events-none flex items-center justify-end pr-1"
+                  style={{ background: `linear-gradient(to left, ${theme.bg}, transparent)` }}
+                >
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center animate-pulse shadow-sm" style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.border}` }}>
+                    <ChevronRight className="w-4 h-4" style={{ color: theme.textSecondary }} />
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
-            
-            {/* Swipe indicator */}
-            {!hasScrolledCards && isMobile && (
-              <div 
-                className="absolute right-0 top-0 bottom-2 w-16 z-20 pointer-events-none flex items-center justify-end pr-1"
-                style={{ background: `linear-gradient(to left, ${theme.bg}, transparent)` }}
-              >
-                <div className="w-6 h-6 rounded-full flex items-center justify-center animate-pulse shadow-sm" style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.border}` }}>
-                  <ChevronRight className="w-4 h-4" style={{ color: theme.textSecondary }} />
-                </div>
+
+            {/* Professional Filter Chips (Desktop & Mobile) */}
+            {professionals.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                <span className="text-xs font-bold shrink-0 mr-1" style={{ color: theme.textSecondary }}>Filtrar por:</span>
+                <button
+                  onClick={() => {
+                    // Only owners/admins can see all professionals — professionals only see themselves
+                    if (!engine.hasPermission('agenda.visualizar_todos')) {
+                      return; // Silently block (the filter chip is already hidden in practice for professionals)
+                    }
+                    setSelectedProfessionalId(null);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border`}
+                  style={{
+                    color: selectedProfessionalId === null ? theme.btnPrimaryText : theme.textSecondary,
+                    background: selectedProfessionalId === null ? theme.accentGradient : theme.cardBg,
+                    borderColor: selectedProfessionalId === null ? theme.accent : theme.cardBorder,
+                    boxShadow: selectedProfessionalId === null ? theme.shadowAccent : 'none',
+                  }}
+                >
+                  Todos os Profissionais
+                </button>
+                {professionals.map(p => {
+                  const isSelected = selectedProfessionalId === p.id;
+                  const accent = p.agenda_color || (p as any).cor_agenda || theme.accent;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setSelectedProfessionalId(isSelected ? null : p.id)}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border"
+                      style={{
+                        color: isSelected ? '#fff' : theme.textSecondary,
+                        background: isSelected ? accent : theme.cardBg,
+                        borderColor: isSelected ? 'transparent' : theme.cardBorder,
+                        boxShadow: isSelected ? `0 0 15px ${accent}40` : 'none',
+                      }}
+                    >
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: isSelected ? '#fff' : accent }} />
+                      <span>{p.name}</span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
+        </div>
 
-          {/* Professional Filter Chips (Desktop & Mobile) */}
-          {professionals.length > 0 && (
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-              <span className="text-xs font-bold shrink-0 mr-1" style={{ color: theme.textSecondary }}>Filtrar por:</span>
-              <button
-                onClick={() => {
-                  // Only owners/admins can see all professionals — professionals only see themselves
-                  if (!engine.hasPermission('agenda.visualizar_todos')) {
-                    return; // Silently block (the filter chip is already hidden in practice for professionals)
-                  }
-                  setSelectedProfessionalId(null);
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border`}
-                style={{
-                  color: selectedProfessionalId === null ? theme.btnPrimaryText : theme.textSecondary,
-                  background: selectedProfessionalId === null ? theme.accentGradient : theme.cardBg,
-                  borderColor: selectedProfessionalId === null ? theme.accent : theme.cardBorder,
-                  boxShadow: selectedProfessionalId === null ? theme.shadowAccent : 'none',
-                }}
-              >
-                Todos os Profissionais
-              </button>
-              {professionals.map(p => {
-                const isSelected = selectedProfessionalId === p.id;
-                const accent = p.agenda_color || (p as any).cor_agenda || theme.accent;
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => setSelectedProfessionalId(isSelected ? null : p.id)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border"
-                    style={{
-                      color: isSelected ? '#fff' : theme.textSecondary,
-                      background: isSelected ? accent : theme.cardBg,
-                      borderColor: isSelected ? 'transparent' : theme.cardBorder,
-                      boxShadow: isSelected ? `0 0 15px ${accent}40` : 'none',
-                    }}
-                  >
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: isSelected ? '#fff' : accent }} />
-                    <span>{p.name}</span>
-                  </button>
-                );
-              })}
+        {/* ── Calendar body ── */}
+        <div className="flex-1 min-h-0 rounded-2xl border overflow-hidden glass-card">
+          {isLoading && (
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: theme.accent }} />
             </div>
           )}
+
+          {!isLoading && (
+            <>
+              {/* Mobile */}
+              <div className="md:hidden h-full">
+                <MobileTimeline
+                  currentDay={currentDay}
+                  bookings={filteredWeekBookings}
+                  onDayChange={setCurrentDay}
+                  onBookingClick={setSelectedBooking}
+                  onNewBooking={() => { setInitialBookingDate(undefined); setBookingModalOpen(true); }}
+                />
+              </div>
+
+              {/* Desktop */}
+              <div className="hidden md:flex flex-col h-full w-full">
+                {view === 'week' ? (
+                  <WeekView
+                    weekStart={weekStart}
+                    bookings={filteredWeekBookings}
+                    businessHours={businessHours}
+                    selectedProfessionalId={selectedProfessionalId}
+                    onBookingClick={setSelectedBooking}
+                    onSlotClick={handleSlotClick}
+                  />
+                ) : (
+                  <DayView
+                    day={currentDay}
+                    bookings={filteredDayBookings}
+                    businessHours={businessHours}
+                    onBookingClick={setSelectedBooking}
+                    onSlotClick={handleSlotClick}
+                  />
+                )}
+              </div>
+            </>
+          )}
         </div>
-      </div>
 
-      {/* ── Calendar body ── */}
-      <div className="flex-1 min-h-0 rounded-2xl border overflow-hidden glass-card">
-        {isLoading && (
-          <div className="flex items-center justify-center h-full">
-            <Loader2 className="w-8 h-8 animate-spin" style={{ color: theme.accent }} />
-          </div>
+        {/* ── Booking Creation Modal ── */}
+        {bookingModalOpen && (
+          <BookingModal
+            tenantId={tenantId}
+            services={services}
+            professionals={professionals}
+            businessHours={businessHours}
+            initialDate={initialBookingDate}
+            onClose={() => setBookingModalOpen(false)}
+            onCreate={handleCreate}
+            isLoading={createBooking.isPending}
+          />
         )}
 
-        {!isLoading && (
-          <>
-            {/* Mobile */}
-            <div className="md:hidden h-full">
-              <MobileTimeline
-                currentDay={currentDay}
-                bookings={weekBookings}
-                onDayChange={setCurrentDay}
-                onBookingClick={setSelectedBooking}
-                onNewBooking={() => { setInitialBookingDate(undefined); setBookingModalOpen(true); }}
-              />
-            </div>
+        {/* ── Booking Detail Sheet ── */}
+        {selectedBooking && (
+          <BookingDetailSheet
+            booking={selectedBooking}
+            onClose={() => setSelectedBooking(null)}
+            onStatusChange={handleStatusChange}
+            onDelete={handleDelete}
+            isUpdating={updateStatus.isPending || deleteBooking.isPending}
+          />
+        )}
+        {/* ── Modal: Upgrade Plan ── */}
+        {showUpgradeModal && (
+          <UpgradeModal
+            feature={showUpgradeModal}
+            onClose={() => setShowUpgradeModal(null)}
+          />
+        )}
 
-            {/* Desktop */}
-            <div className="hidden md:flex flex-col h-full w-full">
-              {view === 'week' ? (
-                <WeekView
-                  weekStart={weekStart}
-                  bookings={weekBookings}
-                  businessHours={businessHours}
-                  selectedProfessionalId={selectedProfessionalId}
-                  onBookingClick={setSelectedBooking}
-                  onSlotClick={handleSlotClick}
-                />
-              ) : (
-                <DayView
-                  day={currentDay}
-                  bookings={dayBookings}
-                  businessHours={businessHours}
-                  onBookingClick={setSelectedBooking}
-                  onSlotClick={handleSlotClick}
-                />
-              )}
-            </div>
-          </>
+        {showPendingModal && (
+          <PendingBookingsModal
+            tenantId={tenantId}
+            onClose={() => setShowPendingModal(false)}
+            onBookingClick={(b) => setSelectedBooking(b)}
+          />
         )}
       </div>
-
-      {/* ── Booking Creation Modal ── */}
-      {bookingModalOpen && (
-        <BookingModal
-          tenantId={tenantId}
-          services={services}
-          professionals={professionals}
-          businessHours={businessHours}
-          initialDate={initialBookingDate}
-          onClose={() => setBookingModalOpen(false)}
-          onCreate={handleCreate}
-          isLoading={createBooking.isPending}
-        />
-      )}
-
-      {/* ── Booking Detail Sheet ── */}
-      {selectedBooking && (
-        <BookingDetailSheet
-          booking={selectedBooking}
-          onClose={() => setSelectedBooking(null)}
-          onStatusChange={handleStatusChange}
-          onDelete={handleDelete}
-          isUpdating={updateStatus.isPending || deleteBooking.isPending}
-        />
-      )}
-      {/* ── Modal: Upgrade Plan ── */}
-      {showUpgradeModal && (
-        <UpgradeModal 
-          feature={showUpgradeModal} 
-          onClose={() => setShowUpgradeModal(null)} 
-        />
-      )}
-
-      {showPendingModal && (
-        <PendingBookingsModal 
-          tenantId={tenantId} 
-          onClose={() => setShowPendingModal(false)}
-          onBookingClick={(b) => setSelectedBooking(b)}
-        />
-      )}
-    </div>
     </>
   );
 

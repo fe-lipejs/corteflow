@@ -45,24 +45,24 @@ export default function PendingBookingsModal({ tenantId, onClose, onBookingClick
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-md rounded-2xl shadow-2xl flex flex-col max-h-[85vh] animate-slide-up" style={{ background: theme.bg, border: `1px solid ${theme.border}` }}>
-        <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: theme.border }}>
+      <div className="w-full max-w-md rounded-3xl shadow-xl flex flex-col max-h-[85vh] animate-slide-up" style={{ background: theme.bg, border: `1px solid ${theme.border}` }}>
+        <div className="flex items-center justify-between p-5 border-b shrink-0" style={{ borderColor: theme.border }}>
           <div>
-            <h2 className="font-bold text-lg flex items-center gap-2" style={{ color: theme.textPrimary }}>
-              <AlertCircle className="w-5 h-5 text-amber-500" />
-              Agendamentos Esquecidos
+            <h2 className="font-bold text-base flex items-center gap-2" style={{ color: theme.textPrimary }}>
+              <AlertCircle className="w-4.5 h-4.5 text-amber-500" />
+              Agendamentos esquecidos
             </h2>
-            <p className="text-xs" style={{ color: theme.textMuted }}>Atendimentos do passado que ainda estão abertos</p>
+            <p className="text-xs mt-1 opacity-75" style={{ color: theme.textMuted }}>Atendimentos do passado que ainda estão abertos</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg transition-colors hover:bg-white/5" style={{ color: theme.textSecondary }}>
+          <button onClick={onClose} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors hover:bg-white/5" style={{ color: theme.textSecondary }}>
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="px-4 pt-3 flex justify-end">
+        <div className="px-5 pt-4 flex justify-end shrink-0">
           <button 
             onClick={() => setSortOrder(s => s === 'asc' ? 'desc' : 'asc')}
-            className="flex items-center gap-2 text-xs font-semibold transition-colors opacity-80 hover:opacity-100" 
+            className="flex items-center gap-2 text-xs font-semibold transition-opacity opacity-70 hover:opacity-100" 
             style={{ color: theme.textSecondary }}
           >
             <ArrowDownUp className="w-3.5 h-3.5" />
@@ -70,16 +70,16 @@ export default function PendingBookingsModal({ tenantId, onClose, onBookingClick
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-5 space-y-2.5">
           {isLoading ? (
             <div className="flex justify-center p-8"><Clock className="w-6 h-6 animate-spin text-amber-500" /></div>
           ) : sortedBookings.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mb-3">
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
                 <CheckCircle className="w-6 h-6 text-green-500" />
               </div>
               <p className="font-semibold text-sm" style={{ color: theme.textPrimary }}>Tudo em dia!</p>
-              <p className="text-xs" style={{ color: theme.textMuted }}>Nenhum agendamento pendente no passado.</p>
+              <p className="text-xs mt-1 opacity-75" style={{ color: theme.textMuted }}>Nenhum agendamento pendente no passado.</p>
             </div>
           ) : (
             sortedBookings.map((b: any) => (
@@ -88,21 +88,21 @@ export default function PendingBookingsModal({ tenantId, onClose, onBookingClick
                 onClick={() => {
                   onBookingClick(b);
                 }}
-                className="p-3 rounded-xl border cursor-pointer transition-all hover:scale-[1.02]"
+                className="p-4 rounded-2xl border cursor-pointer transition-colors hover:opacity-90"
                 style={{ borderColor: theme.border, background: theme.cardBg }}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-xs font-bold px-2 py-0.5 rounded text-amber-500 bg-amber-500/10 border border-amber-500/20">
+                <div className="flex justify-between items-start mb-2.5">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded text-amber-500 bg-amber-500/10">
                     {format(new Date(b.scheduled_at), "dd/MM HH:mm")}
                   </span>
-                  <span className="text-xs font-semibold" style={{ color: theme.textSecondary }}>
+                  <span className="text-xs font-semibold opacity-80" style={{ color: theme.textSecondary }}>
                     {b.professional?.name}
                   </span>
                 </div>
                 <p className="font-semibold text-sm truncate" style={{ color: theme.textPrimary }}>
                   {b.customer?.name || "Cliente sem nome"}
                 </p>
-                <p className="text-xs truncate" style={{ color: theme.textMuted }}>
+                <p className="text-xs mt-0.5 truncate opacity-75" style={{ color: theme.textMuted }}>
                   {b.service?.name}
                 </p>
               </div>
