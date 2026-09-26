@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../integrations/supabase/client';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -18,6 +18,7 @@ export function NotificationBell({ align = 'right' }: NotificationBellProps = {}
   const { tenant } = useAuth();
   const queryClient = useQueryClient();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Fecha dropdown ao clicar fora
   useEffect(() => {
@@ -148,14 +149,17 @@ export function NotificationBell({ align = 'right' }: NotificationBellProps = {}
                             {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true, locale: ptBR })}
                           </span>
                           {notif.link && (
-                            <Link 
-                              to={notif.link} 
-                              onClick={() => setIsOpen(false)}
-                              className="text-[10px] hover:underline"
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setIsOpen(false);
+                                navigate(notif.link);
+                              }}
+                              className="text-[10px] hover:underline cursor-pointer"
                               style={{ color: theme.accent }}
                             >
                               Ver detalhes
-                            </Link>
+                            </button>
                           )}
                         </div>
                       </div>
