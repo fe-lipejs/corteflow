@@ -119,6 +119,7 @@ export async function trackEvent(eventName: string, options: TrackEventOptions =
       screen_resolution,
       metadata,
       tenant_id: tenantId || null,
+      created_at: new Date().toISOString(),
     };
 
     // Non-blocking insert

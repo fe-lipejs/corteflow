@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { trackEvent } from '../lib/analytics';
+import { usePageTracking } from '../hooks/usePageTracking';
 
 /* =========================================================
    RAFFROS — LANDING PAGE
@@ -449,6 +450,8 @@ function Header() {
                   if (element) {
                     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }
+                } else if (link.href === '/playlist') {
+                  trackEvent('click_playlist_nav_desktop');
                 }
               }}
               style={(link as { isExternal?: boolean }).isExternal ? { color: '#1DB954', fontWeight: 600 } : undefined}
@@ -468,7 +471,10 @@ function Header() {
 
           <button
             className="rf-header-cta"
-            onClick={() => goTo("/cadastro")}
+            onClick={() => {
+              trackEvent('click_cta_header_desktop');
+              goTo("/cadastro");
+            }}
           >
             Começar grátis
             <ArrowUpRight size={14} />
@@ -526,6 +532,7 @@ function Header() {
                 onClick={(e) => {
                   e.preventDefault();
                   setOpen(false);
+                  trackEvent('click_playlist_nav_mobile');
                   goTo("/playlist");
                 }}
                 style={{ color: '#FF9D2E', fontSize: '18px' }}
@@ -548,6 +555,7 @@ function Header() {
                 onClick={(e) => {
                   e.preventDefault();
                   setOpen(false);
+                  trackEvent('click_mobile_sticky_cta');
                   goTo("/cadastro");
                 }}
                 style={{ color: '#FF9D2E', fontSize: '30px' }}
@@ -611,7 +619,10 @@ function Hero() {
             <div className="rf-hero-actions">
               <button
                 className="rf-primary-button"
-                onClick={() => goTo("/cadastro")}
+                onClick={() => {
+                  trackEvent('click_comecar_gratis_hero');
+                  goTo("/cadastro");
+                }}
               >
                 Começar grátis
                 <ArrowRight size={17} />
@@ -1571,7 +1582,10 @@ function PricingSection() {
                       ? "rf-price-button featured"
                       : "rf-price-button"
                   }
-                  onClick={() => goTo("/cadastro")}
+                  onClick={() => {
+                    trackEvent(`click_plan_${plan.name.toLowerCase()}`);
+                    goTo("/cadastro");
+                  }}
                 >
                   Começar grátis
                   <ArrowRight size={15} />
@@ -1625,7 +1639,10 @@ function FinalCTA() {
         <Reveal delay={0.22}>
           <button
             className="rf-final-button"
-            onClick={() => goTo("/cadastro")}
+            onClick={() => {
+              trackEvent('click_cta_final');
+              goTo("/cadastro");
+            }}
           >
             Começar grátis
             <ArrowUpRight size={18} />
@@ -1805,7 +1822,10 @@ function Footer() {
               </button>
 
               <button
-                onClick={() => goTo("/cadastro")}
+                onClick={() => {
+                  trackEvent('click_cta_footer');
+                  goTo("/cadastro");
+                }}
               >
                 Começar grátis
               </button>
@@ -1836,6 +1856,7 @@ function Footer() {
    ========================================================= */
 
 export default function LandingPage() {
+  usePageTracking();
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
