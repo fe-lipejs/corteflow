@@ -1575,7 +1575,7 @@ function PricingSection() {
                     </div>
                   ))}
                 </div>
-
+                <br />
                 <button
                   className={
                     plan.featured
