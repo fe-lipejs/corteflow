@@ -230,41 +230,72 @@ export default function ClientPortal() {
     }
   };
 
-  const handleRescheduleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  /**
+   * Checks if a booking is still within the reschedule deadline window.
+   * The deadline is measured from NOW vs the existing scheduled_at (old time).
+   * i.e. if deadline = 24h, client must request reschedule at least 24h before the old appointment.
+   */
+  const isWithinRescheduleDeadline = (booking: any): boolean => {
+    const s = storeData?.settings;
+    if (!s?.allow_reschedule) return false;
+    const deadlineHours = s.reschedule_deadline_hours ?? 24;
+    const oldAppointment = new Date(booking.scheduled_at);
+    const cutoff = new Date(oldAppointment.getTime() - deadlineHours * 60 * 60 * 1000);
+    return new Date() <= cutoff;
+  };
+
+  /**
+   * Checks if booking has not exceeded max_reschedules (from settings).
+   */
+  const hasReschedulesLeft = (booking: any): boolean => {
+    const s = storeData?.settings;
+    const max = (s as any)?.max_reschedules ?? 999; // 999 = unlimited when not set
+    const current = booking.reschedule_count ?? 0;
+    return current < max;
+  };
+
+  const handleRescheduleSubmit = async () => {
     if (!rescheduleBooking || !newDate || !newTime) return;
 
-    const settings = storeData?.settings;
-    if (!settings) return;
+    const s = storeData?.settings;
+    if (!s) return;
 
-    const scheduledDate = new Date(rescheduleBooking.scheduled_at);
-    
-    // Prazo máximo onde reagendamento é permitido (mesmo comportamento antigo, mas corrigido o state)
-    const deadlineDate = new Date(scheduledDate);
-    deadlineDate.setHours(deadlineDate.getHours() - (settings.reschedule_deadline_hours || 24));
+    // ── Policy Guard 1: allow_reschedule flag ──
+    if (!s.allow_reschedule) {
+      toast.error('O salão não permite reagendamentos pelo portal.');
+      return;
+    }
 
-    const now = new Date();
+    // ── Policy Guard 2: deadline (must be BEFORE the old appointment minus deadline hours) ──
+    if (!isWithinRescheduleDeadline(rescheduleBooking)) {
+      const hours = s.reschedule_deadline_hours ?? 24;
+      toast.error(`Prazo esgotado. O reagendamento deve ser feito com pelo menos ${hours}h de antecedência do horário atual do seu agendamento.`);
+      return;
+    }
 
-    if (now > deadlineDate) {
-      toast.error(`Você não pode reagendar em cima da hora. O prazo máximo para reagendamento é de ${settings.reschedule_deadline_hours} horas de antecedência.`);
+    // ── Policy Guard 3: max_reschedules limit ──
+    if (!hasReschedulesLeft(rescheduleBooking)) {
+      const max = (s as any)?.max_reschedules ?? 1;
+      toast.error(`Limite atingido. Este agendamento já foi reagendado ${max}x (máximo permitido pelo salão).`);
       return;
     }
 
     try {
       setLoading(true);
-      
+
+      // Build ISO timestamp preserving local timezone offset
       const tzOffsetMin = -new Date().getTimezoneOffset();
       const pad = (n: number) => String(n).padStart(2, '0');
       const tzSign = tzOffsetMin >= 0 ? '+' : '-';
       const tzAbs = Math.abs(tzOffsetMin);
       const tzStr = `${tzSign}${pad(Math.floor(tzAbs / 60))}:${pad(tzAbs % 60)}`;
-      const scheduledAt = `${format(newDate, "yyyy-MM-dd")}T${newTime}:00${tzStr}`;
+      const scheduledAt = `${format(newDate, 'yyyy-MM-dd')}T${newTime}:00${tzStr}`;
 
       await rescheduleMutation.mutateAsync({
         bookingId: rescheduleBooking.id,
         newTime: scheduledAt,
-        newProId: rescheduleBooking.professional_id, // keep the same professional for now
-        actorType: 'client'
+        newProId: rescheduleBooking.professional_id,
+        actorType: 'client',
       });
       toast.success('Agendamento reagendado com sucesso!');
       setRescheduleBooking(null);
@@ -538,28 +569,53 @@ export default function ClientPortal() {
                     </div>
 
                     <div className="flex gap-2 w-full sm:w-auto">
-                      {settings?.allow_cancel && (
-                        <button 
-                          onClick={() => handleCancelClick(b)}
-                          className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-bold bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 transition-colors"
-                        >
-                          Cancelar
-                        </button>
-                      )}
-                      {settings?.allow_reschedule && (b.status === 'pending' || b.status === 'confirmed') && (
-                        <button 
-                          onClick={() => {
-                            setRescheduleBooking(b);
-                            // Set to a Date object, not a string
-                            setNewDate(startOfDay(new Date(b.scheduled_at)));
-                            setNewTime('');
-                          }}
-                          className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all hover:opacity-90 shadow-md"
-                          style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
-                        >
-                          Reagendar
-                        </button>
-                      )}
+                      {/* ── Cancel Button: only show if salon allows AND status is cancellable ── */}
+                      {settings?.allow_cancel && (b.status === 'pending' || b.status === 'confirmed') && (() => {
+                        const sched = new Date(b.scheduled_at);
+                        const freeCutoff = new Date(sched.getTime() - (settings.cancel_free_hours_before ?? 2) * 60 * 60 * 1000);
+                        const isLate = new Date() > freeCutoff;
+                        const hasFee = (settings.cancel_fee_percent ?? 0) > 0;
+                        return (
+                          <button
+                            onClick={() => handleCancelClick(b)}
+                            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-bold border transition-colors"
+                            style={{
+                              background: isLate && hasFee ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.08)',
+                              color: '#ef4444',
+                              borderColor: 'rgba(239,68,68,0.25)',
+                            }}
+                          >
+                            {isLate && hasFee ? `Cancelar (multa ${settings.cancel_fee_percent}%)` : 'Cancelar'}
+                          </button>
+                        );
+                      })()}
+
+                      {/* ── Reschedule Button: only show if salon allows, status is valid, and within deadline and limit ── */}
+                      {settings?.allow_reschedule &&
+                        (b.status === 'pending' || b.status === 'confirmed') &&
+                        isWithinRescheduleDeadline(b) &&
+                        hasReschedulesLeft(b) && (
+                          <button
+                            onClick={() => {
+                              setRescheduleBooking(b);
+                              setNewDate(startOfDay(new Date(b.scheduled_at)));
+                              setNewTime('');
+                            }}
+                            className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all hover:opacity-90 shadow-md"
+                            style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
+                          >
+                            Reagendar
+                          </button>
+                        )}
+
+                      {/* ── Deadline passed info (reschedule not allowed) ── */}
+                      {settings?.allow_reschedule &&
+                        (b.status === 'pending' || b.status === 'confirmed') &&
+                        !isWithinRescheduleDeadline(b) && (
+                          <span className="flex-1 sm:flex-none px-3 py-2.5 rounded-xl text-xs font-medium text-center" style={{ color: theme.textMuted, backgroundColor: theme.inputBg, border: `1px solid ${theme.border}` }}>
+                            Prazo de reagendamento encerrado
+                          </span>
+                        )}
                     </div>
                   </div>
                 </div>
@@ -786,7 +842,7 @@ export default function ClientPortal() {
             {/* Ações */}
             <div className="pt-4 mt-auto border-t" style={{ borderColor: theme.border }}>
               <button
-                onClick={handleRescheduleSubmit}
+                onClick={() => handleRescheduleSubmit()}
                 disabled={loading || !newDate || !newTime}
                 className="w-full py-4 rounded-2xl font-bold text-sm flex justify-center items-center gap-2 transition-all disabled:opacity-50"
                 style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}

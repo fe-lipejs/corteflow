@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../integrations/supabase/client';
 import { useAuth } from '../../hooks/useAuth';
@@ -181,6 +181,7 @@ export default function Configuracoes() {
   // Policies (Intelligent Engine)
   const [allowReschedule, setAllowReschedule] = useState(true);
   const [rescheduleDeadlineHours, setRescheduleDeadlineHours] = useState(24);
+  const [maxReschedules, setMaxReschedules] = useState(999); // 999 = unlimited
   const [allowCancel, setAllowCancel] = useState(true);
   const [cancelPolicyText, setCancelPolicyText] = useState('');
 
@@ -375,6 +376,7 @@ export default function Configuracoes() {
         // Policies
         setAllowReschedule(data.allow_reschedule ?? true);
         setRescheduleDeadlineHours(data.reschedule_deadline_hours ?? 24);
+        setMaxReschedules((data as any).max_reschedules ?? 999);
         setAllowCancel(data.allow_cancel ?? true);
         setCancelPolicyText(data.cancel_policy_text || '');
 
@@ -976,6 +978,7 @@ export default function Configuracoes() {
         longitude,
         allow_reschedule: allowReschedule,
         reschedule_deadline_hours: rescheduleDeadlineHours,
+        max_reschedules: maxReschedules === 999 ? null : maxReschedules,
         allow_cancel: allowCancel,
         cancel_policy_text: cancelPolicyText,
         cancel_free_hours_before: cancelFreeHoursBefore,
@@ -2598,6 +2601,22 @@ export default function Configuracoes() {
                         <option value={48}>Até 48 horas antes</option>
                         <option value={72}>Até 72 horas antes</option>
                       </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase mb-2" style={{ color: theme.textMuted }}>
+                        Limite de Reagendamentos por Agendamento
+                      </label>
+                      <select
+                        value={maxReschedules}
+                        onChange={(e) => setMaxReschedules(Number(e.target.value))}
+                        className="themed-input w-full"
+                      >
+                        <option value={999}>Ilimitado</option>
+                        <option value={1}>Máximo 1 vez</option>
+                        <option value={2}>Máximo 2 vezes</option>
+                        <option value={3}>Máximo 3 vezes</option>
+                      </select>
+                      <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Quantas vezes o cliente pode reagendar o mesmo agendamento.</p>
                     </div>
                   </div>
                 )}
