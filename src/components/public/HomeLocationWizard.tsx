@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Search, CheckCircle2, AlertTriangle, ArrowLeft, ChevronUp, Map, Loader2 } from 'lucide-react';
+import { MapPin, Search, CheckCircle2, AlertTriangle, ArrowLeft, ChevronLeft, Map, Loader2 } from 'lucide-react';
 import { fetchViaCEP, geocodeAddress, extractLatLngFromGoogleMapsUrl, type ViaCepResult } from '../../lib/geocoding';
 import { haversineKm, computeTravelFee } from '../../lib/locationEngine';
 import { supabase } from '../../integrations/supabase/client';
@@ -186,24 +186,15 @@ export function HomeLocationWizard({ theme, storeCoords, maxRadiusKm, feeConfig,
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto mt-4 bg-white/5 rounded-2xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.borderActive }}>
+    <div className="w-full max-w-2xl mt-4">
       <AnimatePresence mode="wait">
         
         {step === 'cep' && (
           <motion.div key="cep" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <div className="flex items-center gap-3 mb-5">
-              <button 
-                onClick={onCancel} 
-                className="w-10 h-10 rounded-2xl sm:rounded-full border flex items-center justify-center shrink-0 transition-colors shadow-sm"
-                style={{ borderColor: theme.borderActive, background: theme.inputBg, color: theme.textPrimary }}
-              >
-                <ChevronUp className="w-5 h-5 -rotate-90" />
-              </button>
-              <div>
-                <h3 className="text-base font-bold" style={{ color: theme.textPrimary }}>Onde será o atendimento?</h3>
-              </div>
-            </div>
-            <p className="text-xs mb-4" style={{ color: theme.textSecondary }}>Digite o CEP do seu endereço para verificarmos se atendemos sua região.</p>
+            
+            <div className="pt-2"></div>
+
+            <p className="text-xs mb-4 font-medium" style={{ color: theme.textSecondary }}>Digite o CEP do seu endereço para verificarmos se atendemos sua região.</p>
             
             <div className="relative mb-2">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: theme.textSecondary }} />

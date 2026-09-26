@@ -891,7 +891,12 @@ export default function PublicStore() {
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleBack = () => {
     setErrorMsg("");
-    if (step > 1) setStep(step - 1);
+    if (step === 1 && bookingMode === 'home' && !isHomeLocationValidated) {
+      setBookingMode('instore');
+      setSelectedService(null);
+    } else if (step > 1) {
+      setStep(step - 1);
+    }
   };
 
   const handleConfirm = async () => {
@@ -1729,8 +1734,8 @@ export default function PublicStore() {
               </div>
             )}
 
-            {/* Back Bar (Step 2, 3, 4) */}
-            {step > 1 && step < 5 && (
+            {/* Back Bar (Step 2, 3, 4 + Home Location Wizard) */}
+            {((step > 1 && step < 5) || (step === 1 && bookingMode === 'home' && !isHomeLocationValidated)) && (
               <div
                 className="flex items-center gap-3 px-5 lg:px-10 py-3.5 border-b"
                 style={{ borderColor: cardBorderColor, background: isDark ? "transparent" : "#FFFFFF" }}
@@ -1750,8 +1755,13 @@ export default function PublicStore() {
                 </motion.button>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: accent }}>
-                    {["", "Serviço", "Profissional", "Data & Horário", "Confirmar"][step]}
+                    {step === 1 && bookingMode === 'home' ? "Onde será o atendimento?" : ["", "Serviço", "Profissional", "Data & Horário", "Confirmar"][step]}
                   </p>
+                  {step === 1 && bookingMode === 'home' && (
+                    <p className="text-xs font-semibold" style={{ color: theme.textMuted }}>
+                      Atendimento a Domicílio
+                    </p>
+                  )}
                   {step === 2 && selectedService && (
                     <p className="text-xs font-semibold" style={{ color: theme.textMuted }}>
                       {selectedService.name} · {money(selectedService.price)}
