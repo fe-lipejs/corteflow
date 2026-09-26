@@ -515,14 +515,14 @@ export default function ClientPortal() {
           </h2>
           
           {futureBookings.length === 0 ? (
-            <div className="p-8 text-center rounded-3xl border border-white/5 backdrop-blur-2xl shadow-2xl" style={{ backgroundColor: `color-mix(in srgb, ${theme.cardBg} 40%, transparent)` }}>
-              <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center bg-white/5 border border-white/5">
+            <div className="p-8 text-center rounded-3xl border backdrop-blur-2xl shadow-2xl" style={{ backgroundColor: `color-mix(in srgb, ${theme.cardBg} 95%, transparent)`, borderColor: theme.cardBorder }}>
+              <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center border" style={{ backgroundColor: theme.inputBg, borderColor: theme.border }}>
                 <Calendar className="w-8 h-8 opacity-50" />
               </div>
               <p className="text-sm font-medium" style={{ color: theme.textSecondary }}>Você não tem nenhum agendamento futuro no momento.</p>
               <button
                 onClick={() => navigate(`/${slug}`)}
-                className="mt-6 px-6 py-3 rounded-2xl font-bold text-xs shadow-lg transition-transform hover:scale-105 active:scale-95 border border-white/10"
+                className="mt-6 px-6 py-3 rounded-2xl font-bold text-xs shadow-lg transition-transform hover:scale-105 active:scale-95 border"
                 style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
               >
                 Agendar Novo Horário
@@ -531,8 +531,8 @@ export default function ClientPortal() {
           ) : (
             <div className="space-y-4">
               {futureBookings.map((b) => (
-                <div key={b.id} className="rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/10 backdrop-blur-2xl transition-all hover:scale-[1.01]" style={{ backgroundColor: `color-mix(in srgb, ${theme.cardBg} 40%, transparent)` }}>
-                  <div className="flex justify-between items-start mb-4 border-b pb-4" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                <div key={b.id} className="rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.1)] md:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border backdrop-blur-2xl transition-all hover:scale-[1.01]" style={{ backgroundColor: `color-mix(in srgb, ${theme.cardBg} 95%, transparent)`, borderColor: theme.cardBorder }}>
+                  <div className="flex justify-between items-start mb-4 border-b pb-4" style={{ borderColor: theme.border }}>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[10px] font-mono font-bold tracking-widest px-2 py-0.5 rounded border" style={{ color: theme.textSecondary, borderColor: theme.border, backgroundColor: theme.inputBg }}>

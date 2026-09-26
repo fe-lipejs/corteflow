@@ -227,9 +227,9 @@ export default function AppLayout() {
         }`}
         style={{ 
           width: '260px', 
-          background: `color-mix(in srgb, ${theme.sidebarBg} 85%, transparent)`, 
-          border: `1px solid color-mix(in srgb, ${theme.sidebarBorder} 50%, transparent)`,
-          boxShadow: `0 25px 50px -12px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)`
+          background: `color-mix(in srgb, ${theme.sidebarBg} 95%, transparent)`, 
+          border: `1px solid ${theme.sidebarBorder}`,
+          boxShadow: `0 25px 50px -12px rgba(0,0,0,0.25)`
         }}
       >
         {/* Logo & Tenant Area */}
@@ -334,11 +334,12 @@ export default function AppLayout() {
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 min-h-screen pt-16 md:pt-4 md:ml-[280px] md:pr-4 md:pb-4 transition-all flex flex-col">
-        <div className="p-4 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden flex-1 flex flex-col rounded-none md:rounded-3xl border border-transparent md:border-[color-mix(in_srgb,var(--theme-card-border)_50%,transparent)]"
+        <div className="p-4 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden flex-1 flex flex-col rounded-none md:rounded-3xl border"
              style={{ 
-               background: `color-mix(in srgb, ${theme.cardBg} 40%, transparent)`, 
+               background: `color-mix(in srgb, ${theme.cardBg} 95%, transparent)`, 
+               borderColor: theme.cardBorder,
                backdropFilter: 'blur(20px)',
-               boxShadow: `0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.05)`
+               boxShadow: `0 8px 32px rgba(0,0,0,0.1)`
              }}>
           {features.subscription_status === 'past_due' && features.grace_period_ends_at && !isGracePeriodExpired && (
             <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 rounded-xl p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

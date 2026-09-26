@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../integrations/supabase/client';
 import { useAuth } from '../../hooks/useAuth';
@@ -2907,8 +2908,10 @@ export default function Configuracoes() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Cancel Subscription Modal */}
-      {cancelSubModalOpen && (
+      {typeof document !== 'undefined' && createPortal((
+        <>
+          {/* Cancel Subscription Modal */}
+          {cancelSubModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-[#1a1a1a]">
@@ -3742,6 +3745,8 @@ export default function Configuracoes() {
         shape={cropType === 'logo' ? 'round' : 'rect'}
         title={cropType === 'logo' ? 'Ajustar Logo' : 'Ajustar Banner'}
       />
+        </>
+      ), document.body)}
     </div>
   );
 }
