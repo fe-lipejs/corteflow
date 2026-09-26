@@ -303,23 +303,22 @@ export function useCancelBooking(tenantId?: string) {
   });
 }
 
-// ─── Hook: useRescheduleBooking (RPC) ─────────────────────────────────────────
+// ─── Hook: useRescheduleBooking (Edge Function) ────────────────────────────────
 export function useRescheduleBooking(tenantId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ bookingId, newTime, newProId, actorType }: { bookingId: string; newTime: string; newProId: string; actorType: 'client' | 'admin' }) => {
-      const { data, error } = await supabase.rpc('reschedule_booking', {
-        p_booking_id: bookingId,
-        p_new_time: newTime,
-        p_new_pro_id: newProId,
-        p_actor_type: actorType,
+    mutationFn: async ({ bookingId, newTime, newProId, actorType }: { bookingId: string; newTime: string; newProId: string | null; actorType: 'client' | 'admin' }) => {
+      const { data, error } = await supabase.functions.invoke('reschedule-booking', {
+        body: { bookingId, newTime, newProId, actorType },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       return data;
     },
     onSuccess: () => {
       if (tenantId) qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
       qc.invalidateQueries({ queryKey: ['booking'] });
+      qc.invalidateQueries({ queryKey: ['customer-bookings'] });
     },
   });
 }
