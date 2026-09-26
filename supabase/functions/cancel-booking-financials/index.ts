@@ -25,10 +25,10 @@ serve(async (req) => {
       throw new Error('Missing bookingId');
     }
 
-    // 1. Fetch booking with tenant and payments
+    // 1. Fetch booking (no join to tenant_settings — no FK exists between bookings and tenant_settings)
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
-      .select('*, tenant_settings(*), payments(*)')
+      .select('*')
       .eq('id', bookingId)
       .single();
 
@@ -36,47 +36,56 @@ serve(async (req) => {
       throw new Error('Booking not found');
     }
 
-    // Settings podem não existir para salões recém-criados — usa defaults seguros
-    const settings = (booking.tenant_settings as any[])?.[0] ?? {
+    // 2. Fetch tenant_settings separately using tenant_id from the booking
+    const { data: settingsRow } = await supabase
+      .from('tenant_settings')
+      .select('allow_cancel, cancel_free_hours_before, cancel_fee_percent')
+      .eq('tenant_id', booking.tenant_id)
+      .maybeSingle();
+
+    // Safe defaults if no settings row exists yet
+    const settings = settingsRow ?? {
       allow_cancel: true,
       cancel_free_hours_before: 2,
       cancel_fee_percent: 0,
     };
 
-    // 2. Validate cancellation rules (if client)
+    // 3. Fetch payments separately
+    const { data: payments } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('booking_id', bookingId);
+
+    // 4. Validate cancellation policy (client only)
     if (actorType === 'client') {
       if (!settings.allow_cancel) {
         throw new Error('O salão não permite cancelamentos pelo portal.');
       }
     }
 
+    const succeededPayment = (payments ?? []).find((p: any) => p.status === 'succeeded');
 
-    const succeededPayment = booking.payments?.find((p: any) => p.status === 'succeeded');
-    
-    // 3. Process Financials if there's a payment
-    if (succeededPayment) {
-      // Calculate refund amount based on intelligent cancellation rules
+    // 5. Process financials if there was a Stripe payment
+    if (succeededPayment?.stripe_payment_intent_id) {
       const scheduledDate = new Date(booking.scheduled_at);
       const freeDeadlineDate = new Date(scheduledDate);
       freeDeadlineDate.setHours(freeDeadlineDate.getHours() - (settings.cancel_free_hours_before || 2));
-      
+
       const now = new Date();
       let refundAmount = succeededPayment.amount;
 
-      // Se cancelou depois do prazo de gratuidade, aplica a multa
+      // Apply cancellation fee if past the free-cancel window
       if (now > freeDeadlineDate) {
         const feePercent = settings.cancel_fee_percent || 0;
         refundAmount = Math.round((succeededPayment.amount * (100 - feePercent)) / 100);
       }
 
-      // Só processa estorno no Stripe se tiver algo a devolver
       if (refundAmount > 0) {
-        // Process Stripe Refund
         const pi = await stripe.paymentIntents.retrieve(succeededPayment.stripe_payment_intent_id);
         const chargeId = pi.latest_charge as string;
 
         if (!chargeId) {
-            throw new Error('No charge found for this payment intent');
+          throw new Error('No charge found for this payment intent');
         }
 
         const refund = await stripe.refunds.create({
@@ -85,7 +94,6 @@ serve(async (req) => {
           reason: 'requested_by_customer',
         });
 
-        // Insert into refunds table
         await supabase.from('refunds').insert({
           tenant_id: booking.tenant_id,
           payment_id: succeededPayment.id,
@@ -98,15 +106,15 @@ serve(async (req) => {
         await supabase.from('payments').update({ status: 'refunded' }).eq('id', succeededPayment.id);
         await supabase.from('bookings').update({ payment_status: 'refunded' }).eq('id', bookingId);
       } else {
-        // Retido 100% como taxa de cancelamento
+        // 100% retained as cancellation fee
         await supabase.from('payments').update({ status: 'captured_as_fee' }).eq('id', succeededPayment.id);
         await supabase.from('bookings').update({ payment_status: 'failed' }).eq('id', bookingId);
       }
     }
 
-    // 4. Update Booking status via DB
+    // 6. Mark booking as canceled
     await supabase.from('bookings').update({ status: 'canceled' }).eq('id', bookingId);
-    
+
     await supabase.from('booking_history').insert({
       tenant_id: booking.tenant_id,
       booking_id: bookingId,
