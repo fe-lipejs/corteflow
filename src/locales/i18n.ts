@@ -22,7 +22,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: navigator.language.split('-')[0], // simple auto-detection
+    lng: 'pt', // Forçar português como padrão
     fallbackLng: 'pt',
     interpolation: {
       escapeValue: false, // react already safes from xss

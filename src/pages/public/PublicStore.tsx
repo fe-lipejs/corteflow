@@ -282,11 +282,7 @@ function StepIndicator({
   );
 }
 
-// ── Audio Helper ────────────────────────────────────────────────────────────
-const playSuccessSound = () => {
-  const audio = new Audio("https://actions.google.com/sounds/v1/alarms/dinner_bell_triangle.ogg");
-  audio.play().catch(() => { });
-};
+// ── Main Component ────────────────────────────────────────────────────────────
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function PublicStore() {
@@ -991,7 +987,7 @@ export default function PublicStore() {
       }
 
       setBookingCode(newBooking.order_number);
-      playSuccessSound();
+      // audio removed as requested
       setStep(5);
     } catch (err: any) {
       setErrorMsg(err?.message || "Erro ao registrar agendamento. Tente novamente.");

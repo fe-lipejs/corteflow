@@ -8,6 +8,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { RealtimeProvider } from './contexts/RealtimeContext';
+import CookieConsentBanner from './components/cookies/CookieConsentBanner';
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ createRoot(document.getElementById('root')!).render(
         <AuthProvider>
           <RealtimeProvider>
             <AppRoutes />
+            <CookieConsentBanner />
           </RealtimeProvider>
         </AuthProvider>
       </ThemeProvider>

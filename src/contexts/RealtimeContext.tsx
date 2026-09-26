@@ -88,25 +88,8 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
             }
 
             if (settings && settings.sound_enabled) {
-              const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-              if (AudioCtx) {
-                const ctx = new AudioCtx();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.15);
-                
-                gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-                
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                
-                osc.start();
-                osc.stop(ctx.currentTime + 0.15);
-              }
+              const audio = new Audio('/sounds/new-booking.mp3');
+              audio.play().catch((e) => console.warn('Autoplay prevented:', e));
             }
           } catch (e) {
             console.error('Erro ao reproduzir som de notificação:', e);

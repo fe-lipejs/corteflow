@@ -139,31 +139,32 @@ export default function BookingModal({
       const scheduledAt = new Date(selectedDate);
       scheduledAt.setHours(h, m, 0, 0);
 
-
-
       await onCreate({
         customer_id: selectedCustomer.id,
         professional_id: selectedPro?.id ?? null,
         service_id: selectedService.id,
         scheduled_at: scheduledAt.toISOString(),
-        payment_mode: 'local', // Dono do salão agendando manualmente não precisa escolher pagamento
+        payment_mode: 'local',
         amount_total: selectedService.price,
         duration_minutes: selectedService.duration_minutes,
         buffer_minutes: selectedService.buffer_minutes,
         pro_color: selectedPro?.agenda_color ?? 'var(--theme-accent)',
         notes: notes.trim() || undefined,
       });
+      // onCreate closes the modal on success — no need to do anything here
     } catch (err: any) {
-      console.error("Erro ao criar agendamento:", err);
-      setError(err.message || "Erro ao criar agendamento. Verifique os dados e tente novamente.");
+      console.error('Erro ao criar agendamento:', err);
+      // Show the real Supabase error message to help debug
+      const msg = err?.message || err?.error_description || 'Erro ao criar agendamento. Tente novamente.';
+      setError(msg);
     }
   };
 
   const STEPS = ['Serviço', 'Profissional', 'Horário', 'Confirmar'];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg rounded-3xl border shadow-2xl flex flex-col" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)', maxHeight: '85vh' }}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/70 backdrop-blur-sm">
+      <div className="relative w-full max-w-lg sm:rounded-3xl rounded-t-3xl border shadow-2xl flex flex-col" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)', maxHeight: '92vh' }}>
 
         {/* Header */}
         <div className="p-6 pb-4 shrink-0 border-b" style={{ borderColor: 'var(--theme-border)' }}>

@@ -60,7 +60,7 @@ export function UpgradeModal({
   return (
     <div
       className={`
-          fixed inset-0 z-[35]
+          fixed inset-0 z-[999]
           md:pl-[250px]
           flex items-center justify-center
           p-4
