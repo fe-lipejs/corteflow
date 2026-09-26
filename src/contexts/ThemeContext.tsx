@@ -171,7 +171,7 @@ export const THEME_CLASSIC: ThemeTokens = {
 export const THEME_NOIR: ThemeTokens = {
   id: 'noir',
   name: 'Noir',
-  description: 'Preto absoluto com dourado',
+  description: 'Preto absoluto com âmbar',
 
   bg: '#09090b', // zinc-950
   bgCard: 'rgba(24, 24, 27, 0.9)', // zinc-900
@@ -186,26 +186,26 @@ export const THEME_NOIR: ThemeTokens = {
   textMuted: '#71717a', // zinc-500
   textInverse: '#09090b',
 
-  accent: '#DE870D',
-  accentLight: '#F5A623',
-  accentMuted: 'rgba(222, 135, 13, 0.12)',
-  accentGradient: 'linear-gradient(135deg, #DE870D, #F5A623)',
-  accentHover: '#C67509',
+  accent: '#FF9D2E',
+  accentLight: '#FFB154',
+  accentMuted: 'rgba(255, 157, 46, 0.12)',
+  accentGradient: 'linear-gradient(135deg, #FF9D2E, #FFB154)',
+  accentHover: '#E68A27',
 
   border: '#27272a', // zinc-800
   borderHover: '#3f3f46', // zinc-700
-  borderActive: '#DE870D',
+  borderActive: '#FF9D2E',
 
-  btnPrimaryBg: 'linear-gradient(135deg, #DE870D, #F5A623)',
+  btnPrimaryBg: 'linear-gradient(135deg, #FF9D2E, #FFB154)',
   btnPrimaryText: '#09090b',
-  btnPrimaryHover: '0 0 25px rgba(222, 135, 13, 0.4)',
+  btnPrimaryHover: '0 0 25px rgba(255, 157, 46, 0.4)',
   btnOutlineBorder: '#27272a',
   btnOutlineText: '#FFFFFF',
-  btnOutlineHoverBg: 'rgba(222, 135, 13, 0.08)',
+  btnOutlineHoverBg: 'rgba(255, 157, 46, 0.08)',
 
-  calendarActiveBg: '#DE870D',
+  calendarActiveBg: '#FF9D2E',
   calendarActiveText: '#09090b',
-  calendarAvailableBg: 'rgba(222, 135, 13, 0.08)',
+  calendarAvailableBg: 'rgba(255, 157, 46, 0.08)',
   calendarUnavailableBg: 'rgba(255, 255, 255, 0.03)',
 
   inputBg: '#18181b',
