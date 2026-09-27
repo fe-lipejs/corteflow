@@ -1557,7 +1557,7 @@ export default function PublicStore() {
                       className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-xs font-bold shadow-md"
                       style={{ background: theme.btnPrimaryBg || accent, color: theme.btnPrimaryText }}
                     >
-                      <Calendar className="w-4 h-4" /> Meus agendamentos
+                      <Calendar className="w-4 h-4" /> Agendamentos
                     </a>
                   </div>
                 </div>
@@ -1699,7 +1699,7 @@ export default function PublicStore() {
                   }}
                 >
                   <Calendar className="w-3.5 h-3.5" style={{ color: accent }} />
-                  Meus Agendamentos
+                  Agendamentos
                 </a>
                 <button
                   type="button"
