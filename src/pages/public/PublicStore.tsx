@@ -28,6 +28,7 @@ import {
   AlertTriangle,
   Store,
   Home,
+  Plus,
 } from "lucide-react";
 import { format, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale/pt-BR";
@@ -303,8 +304,14 @@ export default function PublicStore() {
   const [isHomeLocationValidated, setIsHomeLocationValidated] = useState(false);
   const [homeLocationData, setHomeLocationData] = useState<LocationWizardResult | null>(null);
   const [showModeSelectionFor, setShowModeSelectionFor] = useState<any | null>(null);
-  
+  const [showInfoModal, setShowInfoModal] = useState(false);
+
   const [categoryFilter, setCategoryFilter] = useState('Todos');
+  const [servicePage, setServicePage] = useState(1);
+  const mobileInfoRef = useRef<HTMLDivElement | null>(null);
+
+  const SERVICES_PER_PAGE_MOBILE = 5;
+  const SERVICES_PER_PAGE_DESKTOP = 8;
 
   const servicesList = useMemo(() => {
     let list = rawServicesList;
@@ -318,6 +325,79 @@ export default function PublicStore() {
     const cats = new Set(rawServicesList.filter((s: any) => s.category).map((s: any) => s.category));
     return Array.from(cats) as string[];
   }, [rawServicesList]);
+
+  const mobileServicePages = Math.max(1, Math.ceil(servicesList.length / SERVICES_PER_PAGE_MOBILE));
+  const desktopServicePages = Math.max(1, Math.ceil(servicesList.length / SERVICES_PER_PAGE_DESKTOP));
+
+  const visibleMobileServices = useMemo(
+    () => servicesList.slice((servicePage - 1) * SERVICES_PER_PAGE_MOBILE, servicePage * SERVICES_PER_PAGE_MOBILE),
+    [servicesList, servicePage]
+  );
+
+  const visibleDesktopServices = useMemo(
+    () => servicesList.slice((servicePage - 1) * SERVICES_PER_PAGE_DESKTOP, servicePage * SERVICES_PER_PAGE_DESKTOP),
+    [servicesList, servicePage]
+  );
+
+  useEffect(() => {
+    setServicePage(1);
+  }, [categoryFilter]);
+
+  useEffect(() => {
+    const maxPage = window.innerWidth < 768 ? mobileServicePages : desktopServicePages;
+    if (servicePage > maxPage) setServicePage(maxPage);
+  }, [servicePage, mobileServicePages, desktopServicePages]);
+
+  const scrollToMobileInfo = useCallback(() => {
+    mobileInfoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const Pagination = ({ totalPages }: { totalPages: number }) => {
+    if (totalPages <= 1) return null;
+    return (
+      <div className="flex items-center justify-center gap-1.5 pt-2">
+        <button
+          type="button"
+          onClick={() => setServicePage((p) => Math.max(1, p - 1))}
+          disabled={servicePage === 1}
+          className="w-9 h-9 rounded-xl border flex items-center justify-center disabled:opacity-30 transition-all"
+          style={{ borderColor: cardBorderColor, background: cardBackground, color: theme.textPrimary }}
+          aria-label="Página anterior"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <button
+            key={page}
+            type="button"
+            onClick={() => setServicePage(page)}
+            className="w-9 h-9 rounded-xl text-xs font-bold transition-all"
+            style={{
+              background: page === servicePage ? accent : "transparent",
+              color: page === servicePage ? theme.btnPrimaryText : theme.textSecondary,
+              border: `1px solid ${page === servicePage ? accent : cardBorderColor}`,
+            }}
+            aria-label={`Página ${page}`}
+            aria-current={page === servicePage ? "page" : undefined}
+          >
+            {page}
+          </button>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => setServicePage((p) => Math.min(totalPages, p + 1))}
+          disabled={servicePage === totalPages}
+          className="w-9 h-9 rounded-xl border flex items-center justify-center disabled:opacity-30 transition-all"
+          style={{ borderColor: cardBorderColor, background: cardBackground, color: theme.textPrimary }}
+          aria-label="Próxima página"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  };
 
   // Theme setup directly using preset defaults (Classic, Noir, Elegant)
   const theme = useMemo(() => {
@@ -402,7 +482,7 @@ export default function PublicStore() {
   const maxHomeRadiusKm = useMemo(() => {
     let list = professionalsList.filter((p: any) => p.status === 'active' || p.active);
     list = list.filter((p: any) => p.offers_home_service);
-    
+
     if (selectedService && storeData?.professionalServices && storeData.professionalServices.length > 0) {
       const allowedProIds = storeData.professionalServices
         .filter((ps: any) => ps.service_id === selectedService.id)
@@ -413,7 +493,7 @@ export default function PublicStore() {
         return allowedProIds.includes(p.id);
       });
     }
-    
+
     if (list.length === 0) return 0;
 
     const effectiveRadii = list.map((p: any) => Number(p.max_home_distance_km) || 0);
@@ -487,7 +567,7 @@ export default function PublicStore() {
   // Geo
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "denied" | "ok" | "ignored">("idle");
-        const todayWeekday = new Date().getDay();
+  const todayWeekday = new Date().getDay();
 
   const storeCoords = useMemo(
     () => ({
@@ -500,7 +580,7 @@ export default function PublicStore() {
   const geocodeAndCheckDistance = async (address: string) => {
     if (!settings?.latitude || !settings?.longitude) return 0;
     try {
-      
+
       setErrorMsg("");
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
       const data = await res.json();
@@ -517,14 +597,14 @@ export default function PublicStore() {
         return null;
       }
 
-      
-      
+
+
       return dist;
     } catch (err) {
       setErrorMsg("Erro ao validar endereço. Tente novamente.");
       return null;
     } finally {
-      
+
     }
   };
 
@@ -611,7 +691,7 @@ export default function PublicStore() {
 
   const travelFee = (() => {
     if (bookingMode !== 'home' || !selectedPro || selectedPro === 'any') return 0;
-    
+
     // Professional specific fee (per_km or fixed)
     if (selectedPro.home_fee_type === 'per_km') {
       return (selectedPro.home_fee_per_km || 0) * (homeLocationData?.distanceKm ?? 0);
@@ -734,7 +814,7 @@ export default function PublicStore() {
       list = list.filter((p: any) => {
         if (!p.offers_home_service) return false;
         if ((homeLocationData?.distanceKm ?? null) == null) return true;
-        
+
         const proRadius = Number(p.max_home_distance_km) || 0;
         return homeLocationData!.distanceKm! <= (proRadius + 2.5); // Add 2.5km tolerance to match backend
       });
@@ -912,62 +992,62 @@ export default function PublicStore() {
     setErrorMsg("");
 
     try {
-              let proId = selectedPro === "any" ? null : selectedPro?.id;
-        if (selectedPro === "any") {
-          const slot = availableSlots.find((s) => s.time === selectedTime);
-          if (slot?.availableProIds?.length) {
-            proId = slot.availableProIds[Math.floor(Math.random() * slot.availableProIds.length)];
-          } else {
-            proId = professionalsList[0]?.id || null;
-          }
+      let proId = selectedPro === "any" ? null : selectedPro?.id;
+      if (selectedPro === "any") {
+        const slot = availableSlots.find((s) => s.time === selectedTime);
+        if (slot?.availableProIds?.length) {
+          proId = slot.availableProIds[Math.floor(Math.random() * slot.availableProIds.length)];
+        } else {
+          proId = professionalsList[0]?.id || null;
         }
+      }
 
-        if (bookingMode === 'home' && (!proId || selectedPro === 'any')) {
-          setErrorMsg("Para atendimento a domicílio, escolha um profissional específico.");
-          setIsProcessing(false);
-          return;
-        }
+      if (bookingMode === 'home' && (!proId || selectedPro === 'any')) {
+        setErrorMsg("Para atendimento a domicílio, escolha um profissional específico.");
+        setIsProcessing(false);
+        return;
+      }
 
-        const pad = (n: number) => String(n).padStart(2, "0");
-        const tzOffsetMin = -new Date().getTimezoneOffset();
-        const tzSign = tzOffsetMin >= 0 ? "+" : "-";
-        const tzAbs = Math.abs(tzOffsetMin);
-        const tzStr = `${tzSign}${pad(Math.floor(tzAbs / 60))}:${pad(tzAbs % 60)}`;
-        const scheduledAt = `${format(selectedDate, "yyyy-MM-dd")}T${selectedTime}:00${tzStr}`;
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const tzOffsetMin = -new Date().getTimezoneOffset();
+      const tzSign = tzOffsetMin >= 0 ? "+" : "-";
+      const tzAbs = Math.abs(tzOffsetMin);
+      const tzStr = `${tzSign}${pad(Math.floor(tzAbs / 60))}:${pad(tzAbs % 60)}`;
+      const scheduledAt = `${format(selectedDate, "yyyy-MM-dd")}T${selectedTime}:00${tzStr}`;
 
-        const payload = {
-          tenant_id: tenant.id,
-          service_id: selectedService.id,
-          professional_id: proId,
-          customer: {
-            name: customerName,
-            phone: customerPhone,
-            email: customerEmail,
-          },
-          scheduled_at: scheduledAt,
-          booking_mode: bookingMode,
-          payment_scope: paymentScope,
-          payment_method: paymentMethod,
-          client_address: bookingMode === 'home' ? (homeLocationData?.address ?? "") : null,
-          client_lat: bookingMode === 'home' && homeLocationData ? homeLocationData?.lat : null,
-          client_lng: bookingMode === 'home' && homeLocationData ? homeLocationData?.lng : null,
-          customer_notes: customerNotes
-        };
+      const payload = {
+        tenant_id: tenant.id,
+        service_id: selectedService.id,
+        professional_id: proId,
+        customer: {
+          name: customerName,
+          phone: customerPhone,
+          email: customerEmail,
+        },
+        scheduled_at: scheduledAt,
+        booking_mode: bookingMode,
+        payment_scope: paymentScope,
+        payment_method: paymentMethod,
+        client_address: bookingMode === 'home' ? (homeLocationData?.address ?? "") : null,
+        client_lat: bookingMode === 'home' && homeLocationData ? homeLocationData?.lat : null,
+        client_lng: bookingMode === 'home' && homeLocationData ? homeLocationData?.lng : null,
+        customer_notes: customerNotes
+      };
 
-        const { data: functionResponse, error: functionError } = await supabase.functions.invoke("create-public-booking", {
-          body: payload
-        });
+      const { data: functionResponse, error: functionError } = await supabase.functions.invoke("create-public-booking", {
+        body: payload
+      });
 
-        if (functionError) {
-          throw new Error(functionError.message || "Erro ao agendar.");
-        }
+      if (functionError) {
+        throw new Error(functionError.message || "Erro ao agendar.");
+      }
 
-        if (functionResponse?.error) {
-           throw new Error(functionResponse.error);
-        }
+      if (functionResponse?.error) {
+        throw new Error(functionResponse.error);
+      }
 
-        const newBooking = functionResponse?.booking;
-        if (!newBooking) throw new Error("Erro desconhecido ao criar agendamento.");
+      const newBooking = functionResponse?.booking;
+      if (!newBooking) throw new Error("Erro desconhecido ao criar agendamento.");
 
       if (paymentScope !== "local" && paymentMethod !== "cash") {
         const { data: checkoutData, error: cErr2 } = await supabase.functions.invoke(
@@ -1097,86 +1177,86 @@ export default function PublicStore() {
         }}
       >
         {/* MAP MODAL */}
-      <AnimatePresence>
-        {showModeSelectionFor && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setShowModeSelectionFor(null)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-sm overflow-hidden rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border backdrop-blur-3xl"
-              style={{
-                background: `color-mix(in srgb, ${cardBackground} 95%, transparent)`,
-                borderColor: cardBorderColor,
-              }}
-            >
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-5">
-                  <h3 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
-                    Onde será o atendimento?
-                  </h3>
-                  <button
-                    onClick={() => setShowModeSelectionFor(null)}
-                    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                  >
-                    <X className="w-5 h-5" style={{ color: theme.textSecondary }} />
-                  </button>
+        <AnimatePresence>
+          {showModeSelectionFor && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={() => setShowModeSelectionFor(null)}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="relative w-full max-w-sm overflow-hidden rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border backdrop-blur-3xl"
+                style={{
+                  background: `color-mix(in srgb, ${cardBackground} 95%, transparent)`,
+                  borderColor: cardBorderColor,
+                }}
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-5">
+                    <h3 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
+                      Onde será o atendimento?
+                    </h3>
+                    <button
+                      onClick={() => setShowModeSelectionFor(null)}
+                      className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                    >
+                      <X className="w-5 h-5" style={{ color: theme.textSecondary }} />
+                    </button>
+                  </div>
+                  <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>
+                    O serviço <strong>{showModeSelectionFor.name}</strong> pode ser realizado tanto no estabelecimento quanto a domicílio.
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={() => {
+                        setBookingMode('instore');
+                        setSelectedService(showModeSelectionFor);
+                        setShowModeSelectionFor(null);
+                        setStep(2);
+                      }}
+                      className="flex items-center gap-4 p-4 rounded-2xl border hover:border-transparent transition-all"
+                      style={{ borderColor: cardBorderColor, background: theme.inputBg }}
+                    >
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: `${accent}15`, color: accent }}>
+                        <Store className="w-5 h-5" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-sm" style={{ color: theme.textPrimary }}>No Estabelecimento</p>
+                        <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>Ir até o salão</p>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setBookingMode('home');
+                        setSelectedService(showModeSelectionFor);
+                        setShowModeSelectionFor(null);
+                        // Don't advance to step 2; the wizard will appear.
+                      }}
+                      className="flex items-center gap-4 p-4 rounded-2xl border hover:border-transparent transition-all"
+                      style={{ borderColor: cardBorderColor, background: theme.inputBg }}
+                    >
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: `${accent}15`, color: accent }}>
+                        <Home className="w-5 h-5" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-sm" style={{ color: theme.textPrimary }}>A Domicílio</p>
+                        <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>Receber no meu endereço</p>
+                      </div>
+                    </button>
+                  </div>
                 </div>
-                <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>
-                  O serviço <strong>{showModeSelectionFor.name}</strong> pode ser realizado tanto no estabelecimento quanto a domicílio.
-                </p>
-                <div className="flex flex-col gap-3">
-                  <button
-                    onClick={() => {
-                      setBookingMode('instore');
-                      setSelectedService(showModeSelectionFor);
-                      setShowModeSelectionFor(null);
-                      setStep(2);
-                    }}
-                    className="flex items-center gap-4 p-4 rounded-2xl border hover:border-transparent transition-all"
-                    style={{ borderColor: cardBorderColor, background: theme.inputBg }}
-                  >
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: `${accent}15`, color: accent }}>
-                      <Store className="w-5 h-5" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-bold text-sm" style={{ color: theme.textPrimary }}>No Estabelecimento</p>
-                      <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>Ir até o salão</p>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setBookingMode('home');
-                      setSelectedService(showModeSelectionFor);
-                      setShowModeSelectionFor(null);
-                      // Don't advance to step 2; the wizard will appear.
-                    }}
-                    className="flex items-center gap-4 p-4 rounded-2xl border hover:border-transparent transition-all"
-                    style={{ borderColor: cardBorderColor, background: theme.inputBg }}
-                  >
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: `${accent}15`, color: accent }}>
-                      <Home className="w-5 h-5" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-bold text-sm" style={{ color: theme.textPrimary }}>A Domicílio</p>
-                      <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>Receber no meu endereço</p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
-      <AnimatePresence>
+        <AnimatePresence>
           {showMapModal && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -1589,7 +1669,7 @@ export default function PublicStore() {
                   {settings?.custom_palette?.slogan ?? settings?.slogan}
                 </p>
               )}
-
+              <br />
               {/* Bio / Description */}
               {(settings?.custom_palette?.description ?? settings?.description ?? settings?.short_description) !== '' && (
                 <p
@@ -1600,8 +1680,39 @@ export default function PublicStore() {
                 </p>
               )}
 
+              {/* ───────────────── MOBILE ONLY: TOP ACTIONS (PREMIUM) ───────────────── */}
+              <div className="lg:hidden mt-5 w-full flex items-center justify-center gap-3">
+                <a
+                  href={`/${slug}/portal`}
+                  className="flex items-center gap-2 py-2.5 px-5 rounded-2xl font-bold text-xs transition-all active:scale-95 border"
+                  style={{
+                    background: isDark ? "rgba(255,255,255,0.05)" : "#FFFFFF",
+                    borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)",
+                    color: theme.textPrimary,
+                    boxShadow: "0 4px 14px rgba(0,0,0,0.03)"
+                  }}
+                >
+                  <Calendar className="w-3.5 h-3.5" style={{ color: accent }} />
+                  Meus Agendamentos
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShowInfoModal(true)}
+                  className="flex items-center gap-1.5 py-2.5 cursor-pointer px-4 rounded-2xl font-bold text-xs transition-all active:scale-95 border"
+                  style={{
+                    background: isDark ? "rgba(255,255,255,0.05)" : "#FFFFFF",
+                    borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)",
+                    color: theme.textPrimary,
+                    boxShadow: "0 4px 14px rgba(0,0,0,0.03)"
+                  }}
+                >
+                  <Plus className="w-4 h-4" style={{ color: accent }} />
+                  Informações
+                </button>
+              </div>
+
               {/* Social Pill Buttons */}
-              <div className="flex items-center justify-center gap-2.5 mt-5 w-full max-w-[320px]">
+              <div className="hidden lg:flex items-center justify-center gap-2.5 mt-5 w-full max-w-[320px]">
                 {storeInsta && (
                   <motion.a
                     whileHover={{ scale: 1.02 }}
@@ -1642,7 +1753,7 @@ export default function PublicStore() {
 
               {/* Info Group */}
               <div
-                className="w-full mt-6 flex flex-col rounded-2xl overflow-hidden border shadow-sm text-left"
+                className="hidden lg:flex w-full mt-6 flex-col rounded-2xl overflow-hidden border shadow-sm text-left"
                 style={{
                   background: isDark ? "rgba(255,255,255,0.03)" : "#FFFFFF",
                   borderColor: cardBorderColor,
@@ -1822,8 +1933,8 @@ export default function PublicStore() {
                     {/* Category Filter */}
                     {uniqueCategories.length > 0 && (
                       <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-none items-center mb-2">
-                        <button 
-                          onClick={() => setCategoryFilter('Todos')} 
+                        <button
+                          onClick={() => setCategoryFilter('Todos')}
                           className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-all"
                           style={{
                             color: categoryFilter === 'Todos' ? theme.btnPrimaryText : theme.textSecondary,
@@ -1833,9 +1944,9 @@ export default function PublicStore() {
                           Todos
                         </button>
                         {uniqueCategories.map(cat => (
-                          <button 
-                            key={cat} 
-                            onClick={() => setCategoryFilter(cat)} 
+                          <button
+                            key={cat}
+                            onClick={() => setCategoryFilter(cat)}
                             className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-all"
                             style={{
                               color: categoryFilter === cat ? theme.btnPrimaryText : theme.textSecondary,
@@ -1851,335 +1962,337 @@ export default function PublicStore() {
                     {/* Mode selector moved to individual service clicks */}
 
                     <AnimatePresence>
-                          {bookingMode === 'home' && !isHomeLocationValidated && (
-                            <motion.div initial={{opacity:0, height:0}} animate={{opacity:1, height:'auto'}} exit={{opacity:0, height:0}}>
-                              <HomeLocationWizard
-                                theme={theme}
-                                storeCoords={storeCoords}
-                                maxRadiusKm={maxHomeRadiusKm}
-                                feeConfig={{
-                                  enabled: true,
-                                  feeType: settings?.home_fee_type || 'fixed',
-                                  feeAmount: settings?.home_fee_amount || 0,
-                                  feePerKm: settings?.home_fee_per_km || 0,
-                                  radiusKm: settings?.home_service_radius_km ?? 10
-                                }}
-                                onSuccess={(result) => {
-                                  setHomeLocationData(result);
-                                  setIsHomeLocationValidated(true);
-                                  setStep(2);
-                                }}
-                                onCancel={() => {
-                                  setBookingMode('instore');
-                                  setSelectedService(null);
-                                }}
-                              />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                        
-                        {(bookingMode === 'instore' || isHomeLocationValidated) && (
-                          <>
+                      {bookingMode === 'home' && !isHomeLocationValidated && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+                          <HomeLocationWizard
+                            theme={theme}
+                            storeCoords={storeCoords}
+                            maxRadiusKm={maxHomeRadiusKm}
+                            feeConfig={{
+                              enabled: true,
+                              feeType: settings?.home_fee_type || 'fixed',
+                              feeAmount: settings?.home_fee_amount || 0,
+                              feePerKm: settings?.home_fee_per_km || 0,
+                              radiusKm: settings?.home_service_radius_km ?? 10
+                            }}
+                            onSuccess={(result) => {
+                              setHomeLocationData(result);
+                              setIsHomeLocationValidated(true);
+                              setStep(2);
+                            }}
+                            onCancel={() => {
+                              setBookingMode('instore');
+                              setSelectedService(null);
+                            }}
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
-                    {servicesList.length === 0 ? (
-                      <div
-                        className="flex flex-col items-center justify-center py-16 px-6 text-center rounded-3xl border"
-                        style={{
-                          borderColor: cardBorderColor,
-                          background: cardBackground,
-                          boxShadow: cardShadowStyle,
-                        }}
-                      >
-                        <div
-                          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3.5"
-                          style={{ background: `${accent}15`, color: accent }}
-                        >
-                          <Scissors className="w-7 h-7" />
-                        </div>
-                        <h3 className="text-base font-bold" style={{ color: theme.textPrimary }}>
-                          Nenhum serviço disponível
-                        </h3>
-                        <p className="text-xs mt-1 max-w-xs font-medium" style={{ color: theme.textSecondary }}>
-                          O estabelecimento ainda não cadastrou serviços no catálogo.
-                        </p>
-                      </div>
-                    ) : (
+                    {(bookingMode === 'instore' || isHomeLocationValidated) && (
                       <>
-                        {/* ──────────────── MOBILE LAYOUT (List) ──────────────── */}
-                        <div className="md:hidden flex flex-col gap-3 w-full max-w-xl mx-auto">
-                          {servicesList.map((s, i) => {
-                            const hasDiscount = s.original_price && s.original_price > s.price;
-                            const discountPct = hasDiscount
-                              ? Math.round(((s.original_price - s.price) / s.original_price) * 100)
-                              : 0;
 
-                            return (
-                              <motion.button
-                                key={`mob-${s.id}`}
-                                initial={{ opacity: 0, y: 12 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.04 }}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={async () => {
-                                  const mode = s.service_mode || 'instore';
-                                  if (mode === 'both') {
-                                    setShowModeSelectionFor(s);
-                                  } else if (mode === 'home') {
-                                    setBookingMode('home');
-                                    setSelectedService(s);
-                                  } else {
-                                    setBookingMode('instore');
-                                    setSelectedService(s);
-                                    setStep(2);
-                                  }
-                                }}
-                                className="group relative text-left rounded-[24px] overflow-hidden border transition-all duration-200 flex items-center p-4 cursor-pointer"
-                                style={{
-                                  borderColor: cardBorderColor,
-                                  background: cardBackground,
-                                  boxShadow: cardShadowStyle,
-                                }}
-                              >
-                                {/* Left: Image or Icon */}
-                                {s.photo_url ? (
-                                  <div className="relative w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-[16px] overflow-hidden shrink-0 bg-neutral-900 shadow-sm mr-4">
-                                    <img
-                                      src={s.photo_url}
-                                      alt={s.name}
-                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                                    />
-                                    {hasDiscount && (
-                                      <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white bg-red-500 shadow-sm">
-                                        -{discountPct}%
-                                      </span>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div
-                                    className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-[16px] flex items-center justify-center shrink-0 shadow-sm mr-4"
-                                    style={{ background: `${accent}15`, color: accent }}
-                                  >
-                                    <Scissors className="w-6 h-6 sm:w-8 sm:h-8" />
-                                  </div>
-                                )}
+                        {servicesList.length === 0 ? (
+                          <div
+                            className="flex flex-col items-center justify-center py-16 px-6 text-center rounded-3xl border"
+                            style={{
+                              borderColor: cardBorderColor,
+                              background: cardBackground,
+                              boxShadow: cardShadowStyle,
+                            }}
+                          >
+                            <div
+                              className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3.5"
+                              style={{ background: `${accent}15`, color: accent }}
+                            >
+                              <Scissors className="w-7 h-7" />
+                            </div>
+                            <h3 className="text-base font-bold" style={{ color: theme.textPrimary }}>
+                              Nenhum serviço disponível
+                            </h3>
+                            <p className="text-xs mt-1 max-w-xs font-medium" style={{ color: theme.textSecondary }}>
+                              O estabelecimento ainda não cadastrou serviços no catálogo.
+                            </p>
+                          </div>
+                        ) : (
+                          <>
+                            {/* ──────────────── MOBILE LAYOUT (List) ──────────────── */}
+                            <div className="md:hidden flex flex-col gap-3 w-full max-w-xl mx-auto">
+                              {visibleMobileServices.map((s, i) => {
+                                const hasDiscount = s.original_price && s.original_price > s.price;
+                                const discountPct = hasDiscount
+                                  ? Math.round(((s.original_price - s.price) / s.original_price) * 100)
+                                  : 0;
 
-                                {/* Middle: Details */}
-                                <div className="flex flex-col flex-1 min-w-0 py-1">
-                                  <div className="flex items-center gap-2 mb-0.5">
-                                    <h3
-                                      className="text-base sm:text-lg font-bold leading-tight truncate"
-                                      style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
-                                    >
-                                      {s.name}
-                                    </h3>
-                                    {s.category && (
-                                      <span
-                                        className="px-2 py-0.5 rounded-full text-[9px] font-bold hidden sm:inline-block"
-                                        style={{ background: `${accent}15`, color: accent }}
-                                      >
-                                        {s.category}
-                                      </span>
-                                    )}
-                                  </div>
-                                  
-                                  <div className="flex items-center gap-2 mb-1.5">
-                                    <span
-                                      className="text-sm sm:text-base font-black"
-                                      style={{ color: accent, fontFamily: theme.fontSerif }}
-                                    >
-                                      {money(s.price)}
-                                    </span>
-                                    {hasDiscount && (
-                                      <span
-                                        className="text-[10px] sm:text-xs line-through opacity-60"
-                                        style={{ color: theme.textMuted }}
-                                      >
-                                        {money(s.original_price)}
-                                      </span>
-                                    )}
-                                  </div>
-                                  
-                                  <div className="flex items-center gap-3">
-                                    <span
-                                      className="flex items-center gap-1.5 text-xs font-semibold"
-                                      style={{ color: theme.textMuted }}
-                                    >
-                                      <Clock className="w-3.5 h-3.5 opacity-70" /> {s.duration_minutes} min
-                                    </span>
-                                    
-                                    {/* Service Mode indicator */}
-                                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium opacity-80" style={{ color: theme.textSecondary }}>
-                                      {s.service_mode === 'home' ? (
-                                        <><Home className="w-3.5 h-3.5 opacity-70" /> <span className="hidden sm:inline">À Domicílio</span></>
-                                      ) : s.service_mode === 'both' ? (
-                                        <><MapPin className="w-3.5 h-3.5 opacity-70" /> <span className="hidden sm:inline">Local/Domicílio</span></>
-                                      ) : null}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Right: Chevron */}
-                                <div className="shrink-0 pl-3">
-                                  <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 transition-opacity group-hover:translate-x-1" style={{ color: theme.textSecondary }} />
-                                </div>
-                              </motion.button>
-                            );
-                          })}
-                        </div>
-
-                        {/* ──────────────── DESKTOP LAYOUT (Original Grid) ──────────────── */}
-                        <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
-                          {servicesList.map((s, i) => {
-                            const hasDiscount = s.original_price && s.original_price > s.price;
-                            const discountPct = hasDiscount
-                              ? Math.round(((s.original_price - s.price) / s.original_price) * 100)
-                              : 0;
-
-                            return (
-                              <motion.button
-                                key={`desk-${s.id}`}
-                                initial={{ opacity: 0, y: 12 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.04 }}
-                                whileHover={{ y: -3 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={async () => {
-                                  const mode = s.service_mode || 'instore';
-                                  if (mode === 'both') {
-                                    setShowModeSelectionFor(s);
-                                  } else if (mode === 'home') {
-                                    setBookingMode('home');
-                                    setSelectedService(s);
-                                  } else {
-                                    setBookingMode('instore');
-                                    setSelectedService(s);
-                                    setStep(2);
-                                  }
-                                }}
-                                className="group relative text-left rounded-3xl overflow-hidden border transition-all duration-200 flex flex-col cursor-pointer"
-                                style={{
-                                  borderColor: cardBorderColor,
-                                  background: cardBackground,
-                                  boxShadow: cardShadowStyle,
-                                }}
-                              >
-                                {/* Service Photo */}
-                                {s.photo_url ? (
-                                  <div className="relative h-56 lg:h-64 overflow-hidden bg-neutral-900 w-full">
-                                    <img
-                                      src={s.photo_url}
-                                      alt={s.name}
-                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                                    />
-                                    <div
-                                      className="absolute inset-0"
-                                      style={{
-                                        background:
-                                          "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)",
-                                      }}
-                                    />
-                                    {hasDiscount && (
-                                      <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold text-white bg-red-500 shadow-sm">
-                                        -{discountPct}%
-                                      </span>
-                                    )}
-                                    {s.category && (
-                                      <span className="absolute top-3 right-3 px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-white bg-black/60 backdrop-blur-md">
-                                        {s.category}
-                                      </span>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div
-                                    className="h-20 flex items-center justify-between px-5 border-b w-full"
+                                return (
+                                  <motion.button
+                                    key={`mob-${s.id}`}
+                                    initial={{ opacity: 0, y: 12 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.04 }}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={async () => {
+                                      const mode = s.service_mode || 'instore';
+                                      if (mode === 'both') {
+                                        setShowModeSelectionFor(s);
+                                      } else if (mode === 'home') {
+                                        setBookingMode('home');
+                                        setSelectedService(s);
+                                      } else {
+                                        setBookingMode('instore');
+                                        setSelectedService(s);
+                                        setStep(2);
+                                      }
+                                    }}
+                                    className="group relative text-left rounded-[24px] overflow-hidden transition-all duration-300 flex items-center p-3.5 cursor-pointer hover:scale-[1.01]"
                                     style={{
-                                      borderColor: cardBorderColor,
-                                      background: `${accent}0a`,
+                                      background: isDark ? "rgba(255,255,255,0.035)" : "#FFFFFF",
+                                      border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"}`,
+                                      boxShadow: isDark ? "0 4px 24px rgba(0,0,0,0.15)" : "0 8px 30px rgba(0,0,0,0.04)",
                                     }}
                                   >
-                                    <div
-                                      className="w-10 h-10 rounded-xl flex items-center justify-center"
-                                      style={{ background: `${accent}15`, color: accent }}
-                                    >
-                                      <Scissors className="w-5 h-5" />
-                                    </div>
-                                    {s.category && (
-                                      <span
-                                        className="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                                    {/* Left: Image or Icon */}
+                                    {s.photo_url ? (
+                                      <div className="relative w-[68px] h-[68px] sm:w-[84px] sm:h-[84px] rounded-[15px] overflow-hidden shrink-0 bg-neutral-900 shadow-sm mr-4">
+                                        <img
+                                          src={s.photo_url}
+                                          alt={s.name}
+                                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                                        />
+                                        {hasDiscount && (
+                                          <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white bg-red-500 shadow-sm">
+                                            -{discountPct}%
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div
+                                        className="w-[68px] h-[68px] sm:w-[84px] sm:h-[84px] rounded-[15px] flex items-center justify-center shrink-0 shadow-sm mr-4"
                                         style={{ background: `${accent}15`, color: accent }}
                                       >
-                                        {s.category}
-                                      </span>
+                                        <Scissors className="w-6 h-6 sm:w-8 sm:h-8" />
+                                      </div>
                                     )}
-                                  </div>
-                                )}
 
-                                {/* Service Details */}
-                                <div className="p-4 sm:p-5 flex flex-col flex-1 w-full">
-                                  <div className="flex items-start justify-between gap-2 mb-1">
-                                    <h3
-                                      className="text-base font-bold leading-snug"
-                                      style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
-                                    >
-                                      {s.name}
-                                    </h3>
-                                  </div>
-                                  <div className="flex items-center gap-1.5 mb-2 text-[10px] font-medium" style={{ color: theme.textSecondary }}>
-                                    {s.service_mode === 'home' ? (
-                                      <><Home className="w-3 h-3" /> <span>À Domicílio</span></>
-                                    ) : s.service_mode === 'both' ? (
-                                      <><MapPin className="w-3 h-3" /> <span>Local ou Domicílio</span></>
-                                    ) : (
-                                      <><Store className="w-3 h-3" /> <span>No Local</span></>
-                                    )}
-                                  </div>
+                                    {/* Middle: Details */}
+                                    <div className="flex flex-col flex-1 min-w-0 py-1">
+                                      <div className="flex items-center gap-2 mb-0.5">
+                                        <h3
+                                          className="text-base sm:text-lg font-bold leading-tight truncate"
+                                          style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
+                                        >
+                                          {s.name}
+                                        </h3>
+                                        {s.category && (
+                                          <span
+                                            className="px-2 py-0.5 rounded-full text-[9px] font-bold hidden sm:inline-block"
+                                            style={{ background: `${accent}15`, color: accent }}
+                                          >
+                                            {s.category}
+                                          </span>
+                                        )}
+                                      </div>
 
-                                  {s.description && (
-                                    <p
-                                      className="text-xs leading-relaxed mb-3"
-                                      style={{ color: theme.textSecondary }}
-                                    >
-                                      {s.description}
-                                    </p>
-                                  )}
-
-                                  <div
-                                    className="flex items-center justify-between pt-3 mt-auto border-t w-full"
-                                    style={{ borderColor: cardBorderColor }}
-                                  >
-                                    <span
-                                      className="flex items-center gap-1.5 text-xs font-semibold"
-                                      style={{ color: theme.textMuted }}
-                                    >
-                                      <Clock className="w-3.5 h-3.5" /> {s.duration_minutes} min
-                                    </span>
-                                    <div className="text-right">
-                                      {hasDiscount && (
+                                      <div className="flex items-center gap-2 mb-1.5">
                                         <span
-                                          className="text-[10px] line-through block"
+                                          className="text-sm sm:text-base font-black"
+                                          style={{ color: accent, fontFamily: theme.fontSerif }}
+                                        >
+                                          {money(s.price)}
+                                        </span>
+                                        {hasDiscount && (
+                                          <span
+                                            className="text-[10px] sm:text-xs line-through opacity-60"
+                                            style={{ color: theme.textMuted }}
+                                          >
+                                            {money(s.original_price)}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      <div className="flex items-center gap-3">
+                                        <span
+                                          className="flex items-center gap-1.5 text-xs font-semibold"
                                           style={{ color: theme.textMuted }}
                                         >
-                                          {money(s.original_price)}
+                                          <Clock className="w-3.5 h-3.5 opacity-70" /> {s.duration_minutes} min
                                         </span>
-                                      )}
-                                      <span
-                                        className="text-base font-black"
-                                        style={{ color: accent, fontFamily: theme.fontSerif }}
-                                      >
-                                        {money(s.price)}
-                                      </span>
+
+                                        {/* Service Mode indicator */}
+                                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium opacity-80" style={{ color: theme.textSecondary }}>
+                                          {s.service_mode === 'home' ? (
+                                            <><Home className="w-3.5 h-3.5 opacity-70" /> <span className="hidden sm:inline">À Domicílio</span></>
+                                          ) : s.service_mode === 'both' ? (
+                                            <><MapPin className="w-3.5 h-3.5 opacity-70" /> <span className="hidden sm:inline">Local/Domicílio</span></>
+                                          ) : null}
+                                        </div>
+                                      </div>
                                     </div>
-                                  </div>
-                                </div>
-                              </motion.button>
-                            );
-                          })}
-                        </div>
+
+                                    {/* Right: Chevron */}
+                                    <div className="shrink-0 pl-3">
+                                      <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 transition-opacity group-hover:translate-x-1" style={{ color: theme.textSecondary }} />
+                                    </div>
+                                  </motion.button>
+                                );
+                              })}
+                            </div>
+                            <Pagination totalPages={mobileServicePages} />
+
+                            {/* ──────────────── DESKTOP LAYOUT (Original Grid) ──────────────── */}
+                            <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
+                              {visibleDesktopServices.map((s, i) => {
+                                const hasDiscount = s.original_price && s.original_price > s.price;
+                                const discountPct = hasDiscount
+                                  ? Math.round(((s.original_price - s.price) / s.original_price) * 100)
+                                  : 0;
+
+                                return (
+                                  <motion.button
+                                    key={`desk-${s.id}`}
+                                    initial={{ opacity: 0, y: 12 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.04 }}
+                                    whileHover={{ y: -3 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={async () => {
+                                      const mode = s.service_mode || 'instore';
+                                      if (mode === 'both') {
+                                        setShowModeSelectionFor(s);
+                                      } else if (mode === 'home') {
+                                        setBookingMode('home');
+                                        setSelectedService(s);
+                                      } else {
+                                        setBookingMode('instore');
+                                        setSelectedService(s);
+                                        setStep(2);
+                                      }
+                                    }}
+                                    className="group relative text-left rounded-3xl overflow-hidden border transition-all duration-200 flex flex-col cursor-pointer"
+                                    style={{
+                                      borderColor: cardBorderColor,
+                                      background: cardBackground,
+                                      boxShadow: cardShadowStyle,
+                                    }}
+                                  >
+                                    {/* Service Photo */}
+                                    {s.photo_url ? (
+                                      <div className="relative h-56 lg:h-64 overflow-hidden bg-neutral-900 w-full">
+                                        <img
+                                          src={s.photo_url}
+                                          alt={s.name}
+                                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                                        />
+                                        <div
+                                          className="absolute inset-0"
+                                          style={{
+                                            background:
+                                              "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)",
+                                          }}
+                                        />
+                                        {hasDiscount && (
+                                          <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold text-white bg-red-500 shadow-sm">
+                                            -{discountPct}%
+                                          </span>
+                                        )}
+                                        {s.category && (
+                                          <span className="absolute top-3 right-3 px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-white bg-black/60 backdrop-blur-md">
+                                            {s.category}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div
+                                        className="h-20 flex items-center justify-between px-5 border-b w-full"
+                                        style={{
+                                          borderColor: cardBorderColor,
+                                          background: `${accent}0a`,
+                                        }}
+                                      >
+                                        <div
+                                          className="w-10 h-10 rounded-xl flex items-center justify-center"
+                                          style={{ background: `${accent}15`, color: accent }}
+                                        >
+                                          <Scissors className="w-5 h-5" />
+                                        </div>
+                                        {s.category && (
+                                          <span
+                                            className="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                                            style={{ background: `${accent}15`, color: accent }}
+                                          >
+                                            {s.category}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Service Details */}
+                                    <div className="p-4 sm:p-5 flex flex-col flex-1 w-full">
+                                      <div className="flex items-start justify-between gap-2 mb-1">
+                                        <h3
+                                          className="text-base font-bold leading-snug"
+                                          style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
+                                        >
+                                          {s.name}
+                                        </h3>
+                                      </div>
+                                      <div className="flex items-center gap-1.5 mb-2 text-[10px] font-medium" style={{ color: theme.textSecondary }}>
+                                        {s.service_mode === 'home' ? (
+                                          <><Home className="w-3 h-3" /> <span>À Domicílio</span></>
+                                        ) : s.service_mode === 'both' ? (
+                                          <><MapPin className="w-3 h-3" /> <span>Local ou Domicílio</span></>
+                                        ) : (
+                                          <><Store className="w-3 h-3" /> <span>No Local</span></>
+                                        )}
+                                      </div>
+
+                                      {s.description && (
+                                        <p
+                                          className="text-xs leading-relaxed mb-3"
+                                          style={{ color: theme.textSecondary }}
+                                        >
+                                          {s.description}
+                                        </p>
+                                      )}
+
+                                      <div
+                                        className="flex items-center justify-between pt-3 mt-auto border-t w-full"
+                                        style={{ borderColor: cardBorderColor }}
+                                      >
+                                        <span
+                                          className="flex items-center gap-1.5 text-xs font-semibold"
+                                          style={{ color: theme.textMuted }}
+                                        >
+                                          <Clock className="w-3.5 h-3.5" /> {s.duration_minutes} min
+                                        </span>
+                                        <div className="text-right">
+                                          {hasDiscount && (
+                                            <span
+                                              className="text-[10px] line-through block"
+                                              style={{ color: theme.textMuted }}
+                                            >
+                                              {money(s.original_price)}
+                                            </span>
+                                          )}
+                                          <span
+                                            className="text-base font-black"
+                                            style={{ color: accent, fontFamily: theme.fontSerif }}
+                                          >
+                                            {money(s.price)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </motion.button>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
                       </>
                     )}
-                    </>
-                  )}
+
                   </motion.div>
                 )}
 
@@ -2250,16 +2363,16 @@ export default function PublicStore() {
                               >
                                 <Zap className="w-7 h-7 sm:w-8 sm:h-8" />
                               </div>
-                              
+
                               <div className="flex flex-col flex-1 min-w-0">
                                 <h3 className="font-bold text-base sm:text-lg truncate" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>
                                   Qualquer profissional
-                               </h3>
+                                </h3>
                                 <p className="text-xs sm:text-sm mt-0.5 font-medium truncate" style={{ color: theme.textSecondary }}>
                                   Encontrar o horário mais rápido
                                 </p>
                               </div>
-                              
+
                               <div className="shrink-0 pl-3 flex items-center">
                                 <span
                                   className="hidden sm:inline-block mr-3 text-[10px] font-bold px-2 py-0.5 rounded-full"
@@ -2309,7 +2422,7 @@ export default function PublicStore() {
                                   <User className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: theme.textMuted }} />
                                 </div>
                               )}
-                              
+
                               <div className="flex flex-col flex-1 min-w-0">
                                 <h3
                                   className="font-bold text-base sm:text-lg truncate"
@@ -2321,7 +2434,7 @@ export default function PublicStore() {
                                   {p.role_title || "Profissional"}
                                 </p>
                               </div>
-                              
+
                               <div className="shrink-0 pl-3">
                                 <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 transition-opacity group-hover:translate-x-1" style={{ color: theme.textSecondary }} />
                               </div>
@@ -2953,11 +3066,11 @@ export default function PublicStore() {
                             {bookingMode === 'home' && travelFee > 0 && (
                               <div className="flex justify-between" style={{ color: theme.textSecondary }}>
                                 <span>
-                                    Taxa de Deslocamento
-                                    {selectedPro && selectedPro !== 'any' && (selectedPro as any).home_fee_type === 'per_km' && homeLocationData?.distanceKm != null && (
-                                      <span className="block text-xs opacity-60 font-normal">{homeLocationData.distanceKm.toFixed(1)} km × {money((selectedPro as any).home_fee_per_km || 0)}/km</span>
-                                    )}
-                                  </span>
+                                  Taxa de Deslocamento
+                                  {selectedPro && selectedPro !== 'any' && (selectedPro as any).home_fee_type === 'per_km' && homeLocationData?.distanceKm != null && (
+                                    <span className="block text-xs opacity-60 font-normal">{homeLocationData.distanceKm.toFixed(1)} km × {money((selectedPro as any).home_fee_per_km || 0)}/km</span>
+                                  )}
+                                </span>
                                 <span className="font-semibold" style={{ color: theme.textPrimary }}>{money(travelFee)}</span>
                               </div>
                             )}
@@ -3181,6 +3294,136 @@ export default function PublicStore() {
           </main>
         </div>
       </div>
+
+      {/* ── STORE INFO MODAL ── */}
+      <AnimatePresence>
+        {showInfoModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowInfoModal(false)}
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            />
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-md rounded-t-[32px] sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
+              style={{
+                background: cardBackground,
+                border: `1px solid ${cardBorderColor}`,
+              }}
+            >
+              {/* Drag handle line */}
+              <div className="w-12 h-1.5 rounded-full bg-black/10 mx-auto mt-4 sm:hidden" style={{ background: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)" }} />
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-7 pt-4 pb-4">
+                <h3 className="text-xl font-black tracking-tight" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>
+                  Informações
+                </h3>
+                <button
+                  onClick={() => setShowInfoModal(false)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                  style={{ background: isDark ? "rgba(255,255,255,0.05)" : "#F1F5F9", color: theme.textPrimary }}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto px-7 pb-8">
+                <div className="flex flex-col rounded-3xl border" style={{ borderColor: cardBorderColor, background: isDark ? "rgba(255,255,255,0.02)" : "#FFFFFF" }}>
+
+                  {/* 1. Address */}
+                  {hasLocationInfo && (
+                    <div className="p-5 border-b flex items-start gap-4" style={{ borderColor: cardBorderColor }}>
+                      <MapPin className="w-5 h-5 shrink-0 mt-0.5" style={{ color: theme.textSecondary }} />
+                      <div>
+                        <p className="text-[13px] font-medium leading-relaxed" style={{ color: theme.textPrimary }}>
+                          {storeAddress}
+                        </p>
+                        <button
+                          onClick={() => {
+                            setShowInfoModal(false);
+                            setShowMapModal(true);
+                            if (geoStatus === "idle") requestLocation();
+                          }}
+                          className="text-[11px] font-bold underline mt-1.5 inline-block cursor-pointer active:opacity-70"
+                          style={{ color: accent }}
+                        >
+                          Ver no mapa
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 2. Business Hours */}
+                  {businessHoursList && businessHoursList.length > 0 && (
+                    <div className="p-5 border-b flex items-start gap-4" style={{ borderColor: cardBorderColor }}>
+                      <Clock className="w-5 h-5 shrink-0 mt-0.5" style={{ color: theme.textSecondary }} />
+                      <div className="text-[13px] font-medium space-y-2 w-full pr-2">
+                        {["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"].map((dayName, idx) => {
+                          const day = businessHoursList.find((h: any) => h.weekday === idx);
+                          if (!day) return null;
+                          return (
+                            <div key={idx} className="flex justify-between items-center w-full">
+                              <span style={{ color: theme.textSecondary }}>{dayName}:</span>
+                              <span style={{ color: theme.textPrimary }}>
+                                {day.is_open ? `${day.open_time.slice(0, 5)} às ${day.close_time.slice(0, 5)}` : "Fechado"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. Contact (Phone + Insta) */}
+                  {(storePhone || storeInsta) && (
+                    <div className="p-5 flex flex-col gap-4">
+                      {storePhone && (
+                        <div className="flex items-center gap-4">
+                          <WhatsAppIcon style={{ color: theme.textSecondary }} className="w-5 h-5" />
+                          <a
+                            href={`https://wa.me/${onlyDigits(storePhone)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[13px] font-medium transition-opacity hover:opacity-80"
+                            style={{ color: theme.textPrimary }}
+                          >
+                            {storePhone}
+                          </a>
+                        </div>
+                      )}
+                      {storeInsta && (
+                        <div className="flex items-center gap-4">
+                          <InstagramIcon style={{ color: theme.textSecondary }} className="w-5 h-5" />
+                          <a
+                            href={`https://instagram.com/${storeInsta}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[13px] font-medium transition-opacity hover:opacity-80"
+                            style={{ color: theme.textPrimary }}
+                          >
+                            @{storeInsta}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </>
   );
 }
