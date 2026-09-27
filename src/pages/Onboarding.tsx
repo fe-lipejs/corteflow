@@ -453,7 +453,7 @@ export default function Onboarding() {
         tenant_id: newTenant.id,
         fantasy_name: finalBusinessName,
         theme_preset: data.themePreset || 'elegant',
-        custom_palette: { primary: '#DE870D', fontStyle: 'sans' },
+        custom_palette: { primary: '#FD6500', fontStyle: 'sans', btnTextColor: '#FFFFFF' },
         logo_url: logoUrl,
         banner_url: bannerUrl,
         short_description: data.shortDescription || '',
@@ -505,16 +505,16 @@ export default function Onboarding() {
 
       // 7. Create template services tailored to the business type
       const defaultServices = data.businessType === 'barbearia' ? [
-        { tenant_id: newTenant.id, name: 'Corte Tradicional', price: 35.00, duration_minutes: 30, buffer_minutes: 0, category: 'Cortes', color: '#DE870D', active: true },
-        { tenant_id: newTenant.id, name: 'Barba & Toalha Quente', price: 30.00, duration_minutes: 30, buffer_minutes: 0, category: 'Barba', color: '#DE870D', active: true },
-        { tenant_id: newTenant.id, name: 'Combo Cabelo + Barba', price: 60.00, duration_minutes: 50, buffer_minutes: 0, category: 'Combos', color: '#DE870D', active: true },
+        { tenant_id: newTenant.id, name: 'Corte Tradicional', price: 35.00, duration_minutes: 30, buffer_minutes: 0, category: 'Cortes', color: '#FD6500', active: true },
+        { tenant_id: newTenant.id, name: 'Barba & Toalha Quente', price: 30.00, duration_minutes: 30, buffer_minutes: 0, category: 'Barba', color: '#FD6500', active: true },
+        { tenant_id: newTenant.id, name: 'Combo Cabelo + Barba', price: 60.00, duration_minutes: 50, buffer_minutes: 0, category: 'Combos', color: '#FD6500', active: true },
       ] : data.businessType === 'salao' ? [
-        { tenant_id: newTenant.id, name: 'Corte Feminino / Escova', price: 70.00, duration_minutes: 45, buffer_minutes: 0, category: 'Cabelo', color: '#DE870D', active: true },
-        { tenant_id: newTenant.id, name: 'Hidratação Profunda', price: 90.00, duration_minutes: 60, buffer_minutes: 0, category: 'Tratamentos', color: '#DE870D', active: true },
+        { tenant_id: newTenant.id, name: 'Corte Feminino / Escova', price: 70.00, duration_minutes: 45, buffer_minutes: 0, category: 'Cabelo', color: '#FD6500', active: true },
+        { tenant_id: newTenant.id, name: 'Hidratação Profunda', price: 90.00, duration_minutes: 60, buffer_minutes: 0, category: 'Tratamentos', color: '#FD6500', active: true },
       ] : [
-        { tenant_id: newTenant.id, name: 'Manicure Completa', price: 35.00, duration_minutes: 40, buffer_minutes: 0, category: 'Unhas', color: '#DE870D', active: true },
-        { tenant_id: newTenant.id, name: 'Pedicure Completa', price: 40.00, duration_minutes: 40, buffer_minutes: 0, category: 'Unhas', color: '#DE870D', active: true },
-        { tenant_id: newTenant.id, name: 'Alongamento em Gel', price: 120.00, duration_minutes: 90, buffer_minutes: 0, category: 'Alongamento', color: '#DE870D', active: true },
+        { tenant_id: newTenant.id, name: 'Manicure Completa', price: 35.00, duration_minutes: 40, buffer_minutes: 0, category: 'Unhas', color: '#FD6500', active: true },
+        { tenant_id: newTenant.id, name: 'Pedicure Completa', price: 40.00, duration_minutes: 40, buffer_minutes: 0, category: 'Unhas', color: '#FD6500', active: true },
+        { tenant_id: newTenant.id, name: 'Alongamento em Gel', price: 120.00, duration_minutes: 90, buffer_minutes: 0, category: 'Alongamento', color: '#FD6500', active: true },
       ];
 
       const { data: insertedServices } = await supabase.from('services').insert(defaultServices as any).select('id');

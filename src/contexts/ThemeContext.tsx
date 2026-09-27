@@ -262,31 +262,31 @@ export const THEME_ELEGANT: ThemeTokens = {
   textMuted: '#64748B',
   textInverse: '#FFFFFF',
 
-  accent: '#DE870D',
-  accentLight: '#F5A623',
-  accentMuted: 'rgba(222, 135, 13, 0.12)',
-  accentGradient: 'linear-gradient(135deg, #DE870D, #F5A623)',
-  accentHover: '#C67509',
+  accent: '#FD6500',
+  accentLight: '#FF8A33',
+  accentMuted: 'rgba(253, 101, 0, 0.12)',
+  accentGradient: 'linear-gradient(135deg, #FD6500, #FF8A33)',
+  accentHover: '#E05500',
 
   border: '#E2E8F0',
   borderHover: '#CBD5E1',
-  borderActive: '#DE870D',
+  borderActive: '#FD6500',
 
-  btnPrimaryBg: 'linear-gradient(135deg, #DE870D, #F5A623)',
+  btnPrimaryBg: 'linear-gradient(135deg, #FD6500, #FF8A33)',
   btnPrimaryText: '#FFFFFF',
   btnPrimaryHover: 'none',
   btnOutlineBorder: '#E2E8F0',
   btnOutlineText: '#0F172A',
   btnOutlineHoverBg: '#F1F5F9',
 
-  calendarActiveBg: '#DE870D',
+  calendarActiveBg: '#FD6500',
   calendarActiveText: '#FFFFFF',
-  calendarAvailableBg: 'rgba(222, 135, 13, 0.08)',
+  calendarAvailableBg: 'rgba(253, 101, 0, 0.08)',
   calendarUnavailableBg: '#F8FAFC',
 
   inputBg: '#FFFFFF',
   inputBorder: '#CBD5E1',
-  inputFocusBorder: '#DE870D',
+  inputFocusBorder: '#FD6500',
   inputPlaceholder: '#94A3B8',
   inputText: '#0F172A',
 
@@ -298,7 +298,7 @@ export const THEME_ELEGANT: ThemeTokens = {
   sidebarBg: '#FFFFFF',
   sidebarBorder: '#E2E8F0',
   sidebarHover: '#F1F5F9',
-  sidebarActiveItemBg: '#DE870D',
+  sidebarActiveItemBg: '#FD6500',
   sidebarActiveItemText: '#FFFFFF',
 
   success: '#16a34a',
@@ -450,7 +450,7 @@ export const ThemeProvider: React.FC<{
 }> = ({
   children,
   initialThemeId = 'elegant',
-  initialCustomPalette = { primary: '#DE870D', fontStyle: 'sans' },
+  initialCustomPalette = { primary: '#FD6500', fontStyle: 'sans', btnTextColor: '#FFFFFF' },
 }) => {
   const [themeId, setThemeId] = useState(initialThemeId);
   const [customPalette, setCustomPalette] = useState<CustomPaletteConfig | undefined>(initialCustomPalette);
