@@ -2121,8 +2121,8 @@ export default function PublicStore() {
                                       {/* Discount badge — bottom left over gradient */}
                                       {hasDiscount && (
                                         <span
-                                          className="absolute bottom-2 left-2 px-2 py-0.5 rounded-lg text-[10px] font-extrabold text-white shadow-md"
-                                          style={{ background: accent }}
+                                          className="absolute bottom-2 left-2 px-2 py-0.5 rounded-lg text-[10px] font-extrabold shadow-md"
+                                          style={{ background: accent, color: theme.btnPrimaryText }}
                                         >
                                           -{discountPct}%
                                         </span>
@@ -2236,7 +2236,10 @@ export default function PublicStore() {
                                           }}
                                         />
                                         {hasDiscount && (
-                                          <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold text-white bg-red-500 shadow-sm">
+                                          <span 
+                                            className="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm"
+                                            style={{ background: accent, color: theme.btnPrimaryText }}
+                                          >
                                             -{discountPct}%
                                           </span>
                                         )}
