@@ -1609,7 +1609,11 @@ export default function PublicStore() {
             {/* Profile & Info Content */}
             <div className="px-6 sm:px-8 relative z-10 flex flex-col items-center text-center -mt-16 sm:-mt-20 pb-8">
               {/* Avatar */}
-              <div className="relative mb-3.5">
+              <a
+                href={`/${slug}`}
+                className="relative mb-3.5 block cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300"
+                title="Página Inicial"
+              >
                 <div
                   className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl overflow-hidden relative"
                   style={{
@@ -1634,7 +1638,7 @@ export default function PublicStore() {
                     </div>
                   )}
                 </div>
-              </div>
+              </a>
 
               {/* Establishment Name */}
               <h1
@@ -1988,7 +1992,7 @@ export default function PublicStore() {
                       )}
                     </div>
 
-                    <br />
+
 
 
                     {/* Mode selector moved to individual service clicks */}
@@ -3276,6 +3280,17 @@ export default function PublicStore() {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Footer */}
+              <div className="w-full mt-10 pb-8 flex flex-col items-center justify-center text-center opacity-60">
+                <Sparkles className="w-3.5 h-3.5 mb-1.5" style={{ color: theme.textSecondary }} />
+                <p className="text-[9px] uppercase tracking-[0.2em] font-bold" style={{ color: theme.textSecondary }}>
+                  Powered by RAFFROS
+                </p>
+                <p className="text-[8px] mt-1 font-medium" style={{ color: theme.textMuted }}>
+                  Tecnologia em agendamentos
+                </p>
+              </div>
             </div>
 
             {/* ── MOBILE FIXED BOTTOM BAR (Step 4) ── */}

@@ -397,7 +397,11 @@ export default function ClientPortal() {
       {/* Profile & Info Content */}
       <div className="px-6 sm:px-8 relative z-10 flex flex-col items-center text-center -mt-16 sm:-mt-20 pb-8">
         {/* Avatar */}
-        <div className="relative mb-3.5">
+        <button 
+          onClick={() => navigate(`/${slug}`)}
+          className="relative mb-3.5 block cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300"
+          title="Voltar ao Salão"
+        >
           <div
             className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl overflow-hidden relative"
             style={{
@@ -422,7 +426,7 @@ export default function ClientPortal() {
               </div>
             )}
           </div>
-        </div>
+        </button>
 
         <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border mb-1" style={{ borderColor: `${theme.accent}40`, backgroundColor: `${theme.accent}15`, color: theme.accent }}>
           Portal do Cliente
