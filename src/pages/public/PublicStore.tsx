@@ -487,6 +487,44 @@ export default function PublicStore() {
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [step, setStep] = useState(1);
+  const stepRef = useRef(1);
+
+  // Sincroniza o passo atual com a URL (hash) para suportar o botão voltar do navegador
+  useEffect(() => {
+    stepRef.current = step;
+    const currentHash = window.location.hash;
+    const expectedHash = step === 1 ? '' : `#passo-${step}`;
+    
+    if (currentHash !== expectedHash) {
+      if (step === 1) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      } else {
+        window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${expectedHash}`);
+      }
+    }
+  }, [step]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash;
+      let newStep = 1;
+      if (hash.startsWith('#passo-')) {
+        newStep = parseInt(hash.replace('#passo-', '')) || 1;
+      }
+      if (newStep !== stepRef.current) {
+        setStep(newStep);
+      }
+    };
+    
+    // Se a pessoa carregar a página já com um hash de passo, limpamos para forçar a iniciar no passo 1 e não quebrar o fluxo
+    if (window.location.hash.startsWith('#passo-')) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const [selectedService, setSelectedService] = useState<any | null>(null);
 
   const maxHomeRadiusKm = useMemo(() => {
