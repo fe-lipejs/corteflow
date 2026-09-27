@@ -9,7 +9,7 @@ import { trackEvent } from '../lib/analytics';
 /* ============================================================
    /playlist — "No som da casa"
    Design system: Apple Noir × Âmbar Elétrico (idêntico à landing)
-   Accent: #FD6500 | Black: #050505 | Font: Inter / SF Pro
+   Accent: #FF9D2E | Black: #050505 | Font: Inter / SF Pro
 ============================================================ */
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
@@ -94,7 +94,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
                 width: '5px',
                 height: '5px',
                 borderRadius: '50%',
-                background: '#FD6500',
+                background: '#FF9D2E',
                 flexShrink: 0,
                 boxShadow: '0 0 16px rgba(255,157,46,.45)',
             }} />
@@ -201,7 +201,7 @@ export default function PlaylistPage() {
                         textDecoration: 'none',
                         transition: 'color 0.2s ease',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#FD6500')}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#FF9D2E')}
                     onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}
                 >
                     <ArrowLeft size={14} />
@@ -235,7 +235,7 @@ export default function PlaylistPage() {
                         height: '34px',
                         padding: '0 14px',
                         borderRadius: '999px',
-                        background: '#FD6500',
+                        background: '#FF9D2E',
                         color: '#080808',
                         fontSize: '10px',
                         fontWeight: 800,
@@ -290,7 +290,7 @@ export default function PlaylistPage() {
                             }}>
                                 O que a Raffros{' '}
                                 <br />
-                                <span style={{ color: '#FD6500' }}>está ouvindo.</span>
+                                <span style={{ color: '#FF9D2E' }}>está ouvindo.</span>
                             </h1>
 
                             <p style={{
@@ -441,8 +441,8 @@ export default function PlaylistPage() {
                             }}>
                                 <p style={{ margin: 0, color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>
                                     Defina{' '}
-                                    <code style={{ fontFamily: 'ui-monospace, monospace', color: '#FD6500' }}>VITE_SPOTIFY_PLAYLIST_ID</code>
-                                    {' '}no <code style={{ fontFamily: 'ui-monospace, monospace', color: '#FD6500' }}>.env</code>
+                                    <code style={{ fontFamily: 'ui-monospace, monospace', color: '#FF9D2E' }}>VITE_SPOTIFY_PLAYLIST_ID</code>
+                                    {' '}no <code style={{ fontFamily: 'ui-monospace, monospace', color: '#FF9D2E' }}>.env</code>
                                 </p>
                             </div>
                         )}
@@ -497,7 +497,7 @@ export default function PlaylistPage() {
                                         fontWeight: 700,
                                         letterSpacing: '.18em',
                                         textTransform: 'uppercase',
-                                        color: '#FD6500',
+                                        color: '#FF9D2E',
                                     }}>
                                         {verso.ref}
                                     </cite>
@@ -527,7 +527,7 @@ export default function PlaylistPage() {
                                     alignItems: 'center',
                                     gap: '9px',
                                     borderRadius: '999px',
-                                    background: '#FD6500',
+                                    background: '#FF9D2E',
                                     color: '#070707',
                                     fontSize: '11px',
                                     fontWeight: 800,
@@ -612,7 +612,7 @@ export default function PlaylistPage() {
                                 textDecoration: 'none',
                                 transition: 'color 0.2s ease',
                             }}
-                            onMouseEnter={e => (e.currentTarget.style.color = '#FD6500')}
+                            onMouseEnter={e => (e.currentTarget.style.color = '#FF9D2E')}
                             onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.38)')}
                         >
                             <ArrowLeft size={13} />

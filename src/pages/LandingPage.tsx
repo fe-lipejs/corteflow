@@ -25,7 +25,7 @@ import { usePageTracking } from '../hooks/usePageTracking';
    Apple × Nothing × Raffros
    ========================================================= */
 
-const ACCENT = "#FD6500";
+const ACCENT = "#FF9D2E";
 const M = {
   booking: "/Mockups/Iphone - Tela de Agendamento.PNG",
   services: "/Mockups/Iphone - Serviços.PNG",
@@ -535,7 +535,7 @@ function Header() {
                   trackEvent('click_playlist_nav_mobile');
                   goTo("/playlist");
                 }}
-                style={{ color: '#FD6500', fontSize: '18px' }}
+                style={{ color: '#FF9D2E', fontSize: '18px' }}
               >
                 ♫ Louvor & Palavra do Dia
               </a>
@@ -558,7 +558,7 @@ function Header() {
                   trackEvent('click_mobile_sticky_cta');
                   goTo("/cadastro");
                 }}
-                style={{ color: '#FD6500', fontSize: '30px' }}
+                style={{ color: '#FF9D2E', fontSize: '30px' }}
               >
                 Começar grátis
               </a>
@@ -1875,7 +1875,7 @@ export default function LandingPage() {
           right: 0,
           height: "3px",
           transformOrigin: "0%",
-          backgroundColor: "#FD6500",
+          backgroundColor: "#FF9D2E",
           zIndex: 999999,
         }}
       />
@@ -1901,7 +1901,7 @@ export default function LandingPage() {
           --rf-line: rgba(16,16,16,.10);
           --rf-line-dark: rgba(255,255,255,.11);
 
-          --rf-accent: #FD6500;
+          --rf-accent: #FF9D2E;
           --rf-accent-dark: #E8841A;
 
           --rf-max: 1240px;
