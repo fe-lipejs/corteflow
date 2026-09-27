@@ -110,19 +110,19 @@ export default function MobileTimeline({ currentDay, bookings, onDayChange, onBo
               >
                 <span 
                   className="text-[10px] font-bold uppercase mb-1 tracking-wide" 
-                  style={{ color: selected ? '#1a1a1a' : '#8B949E' }}
+                  style={{ color: selected ? theme.btnPrimaryText : '#8B949E' }}
                 >
                   {format(day, 'EEE', { locale: ptBR })}
                 </span>
                 <span 
                   className="text-[28px] font-extrabold leading-none tracking-tight mb-1"
-                  style={{ color: selected ? '#1a1a1a' : '#0F172A' }}
+                  style={{ color: selected ? theme.btnPrimaryText : '#0F172A' }}
                 >
                   {format(day, 'dd')}
                 </span>
                 <span 
                   className="text-[10px] font-bold uppercase tracking-wide" 
-                  style={{ color: selected ? '#1a1a1a' : '#8B949E' }}
+                  style={{ color: selected ? theme.btnPrimaryText : '#8B949E' }}
                 >
                   {format(day, 'MMM', { locale: ptBR })}
                 </span>

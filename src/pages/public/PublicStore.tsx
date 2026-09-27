@@ -2056,8 +2056,8 @@ export default function PublicStore() {
                           </div>
                         ) : (
                           <>
-                            {/* ──────────────── MOBILE LAYOUT (List) ──────────────── */}
-                            <div className="md:hidden flex flex-col gap-3 w-full max-w-xl mx-auto">
+                            {/* ──────────────── MOBILE LAYOUT (2-col Premium Grid) ──────────────── */}
+                            <div className="md:hidden grid grid-cols-2 gap-3 w-full">
                               {visibleMobileServices.map((s, i) => {
                                 const hasDiscount = s.original_price && s.original_price > s.price;
                                 const discountPct = hasDiscount
@@ -2070,8 +2070,7 @@ export default function PublicStore() {
                                     initial={{ opacity: 0, y: 12 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: i * 0.04 }}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
+                                    whileTap={{ scale: 0.97 }}
                                     onClick={async () => {
                                       const mode = s.service_mode || 'instore';
                                       if (mode === 'both') {
@@ -2085,97 +2084,104 @@ export default function PublicStore() {
                                         setStep(2);
                                       }
                                     }}
-                                    className="group relative text-left rounded-[28px] overflow-hidden transition-all duration-300 flex items-center p-4 sm:p-5 cursor-pointer hover:scale-[1.01]"
+                                    className="group relative text-left rounded-[22px] overflow-hidden flex flex-col cursor-pointer"
                                     style={{
-                                      background: isDark ? "rgba(255,255,255,0.035)" : "#FFFFFF",
-                                      border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"}`,
-                                      boxShadow: isDark ? "0 4px 24px rgba(0,0,0,0.15)" : "0 8px 30px rgba(0,0,0,0.04)",
+                                      background: isDark ? "rgba(255,255,255,0.04)" : "#FFFFFF",
+                                      border: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)"}`,
+                                      boxShadow: isDark
+                                        ? "0 4px 20px rgba(0,0,0,0.2)"
+                                        : "0 4px 20px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)",
                                     }}
                                   >
-                                    {/* Left: Image or Icon */}
-                                    {s.photo_url ? (
-                                      <div className="relative w-[76px] h-[76px] sm:w-[96px] sm:h-[96px] rounded-[20px] overflow-hidden shrink-0 bg-neutral-900 shadow-sm mr-5">
+                                    {/* Top: Image or Icon placeholder */}
+                                    <div className="relative w-full aspect-square overflow-hidden shrink-0">
+                                      {s.photo_url ? (
                                         <img
                                           src={s.photo_url}
                                           alt={s.name}
                                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                                         />
-                                      </div>
-                                    ) : (
+                                      ) : (
+                                        <div
+                                          className="w-full h-full flex items-center justify-center"
+                                          style={{ background: `${accent}15` }}
+                                        >
+                                          <Scissors className="w-8 h-8 opacity-60" style={{ color: accent }} />
+                                        </div>
+                                      )}
+
+                                      {/* Gradient overlay at bottom of image */}
                                       <div
-                                        className="w-[76px] h-[76px] sm:w-[96px] sm:h-[96px] rounded-[20px] flex items-center justify-center shrink-0 shadow-sm mr-5"
-                                        style={{ background: `${accent}15`, color: accent }}
-                                      >
-                                        <Scissors className="w-6 h-6 sm:w-8 sm:h-8" />
-                                      </div>
-                                    )}
+                                        className="absolute inset-0"
+                                        style={{
+                                          background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%)",
+                                        }}
+                                      />
 
-                                    {/* Middle: Details */}
-                                    <div className="flex flex-col flex-1 min-w-0 py-1">
-                                      <div className="flex items-center gap-2 mb-1.5">
-                                        <h3
-                                          className="text-[15px] sm:text-[17px] font-bold leading-tight truncate"
-                                          style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
-                                        >
-                                          {s.name}
-                                        </h3>
-                                      </div>
-
-                                      <div className="flex items-center gap-2 mb-2.5">
+                                      {/* Discount badge — bottom left over gradient */}
+                                      {hasDiscount && (
                                         <span
-                                          className="text-[16px] sm:text-[18px] font-black tracking-tight"
-                                          style={{ color: accent, fontFamily: theme.fontSerif }}
+                                          className="absolute bottom-2 left-2 px-2 py-0.5 rounded-lg text-[10px] font-extrabold text-white shadow-md"
+                                          style={{ background: accent }}
                                         >
-                                          {money(s.price)}
+                                          -{discountPct}%
                                         </span>
-                                        {hasDiscount && (
-                                          <>
+                                      )}
+
+                                      {/* Service mode badge — top right */}
+                                      {s.service_mode === 'home' && (
+                                        <span className="absolute top-2 right-2 px-2 py-0.5 rounded-lg text-[9px] font-bold text-white bg-black/50 backdrop-blur-sm flex items-center gap-1">
+                                          <Home className="w-2.5 h-2.5" /> Domicílio
+                                        </span>
+                                      )}
+                                      {s.service_mode === 'both' && (
+                                        <span className="absolute top-2 right-2 px-2 py-0.5 rounded-lg text-[9px] font-bold text-white bg-black/50 backdrop-blur-sm flex items-center gap-1">
+                                          <MapPin className="w-2.5 h-2.5" /> Local/Dom.
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {/* Bottom: Info */}
+                                    <div className="flex flex-col p-3 gap-1.5 flex-1">
+                                      <h3
+                                        className="text-[13px] font-bold leading-tight line-clamp-2"
+                                        style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
+                                      >
+                                        {s.name}
+                                      </h3>
+
+                                      <div className="flex items-end justify-between gap-1 mt-auto pt-1">
+                                        <div className="flex flex-col">
+                                          <span
+                                            className="text-[14px] font-extrabold tracking-tight leading-none"
+                                            style={{ color: accent, fontFamily: theme.fontSerif }}
+                                          >
+                                            {money(s.price)}
+                                          </span>
+                                          {hasDiscount && (
                                             <span
-                                              className="text-[11px] sm:text-xs line-through font-bold opacity-50"
+                                              className="text-[10px] line-through font-medium mt-0.5"
                                               style={{ color: theme.textMuted }}
                                             >
                                               {money(s.original_price)}
                                             </span>
-                                            <span
-                                              className="px-1.5 py-0.5 rounded-md text-[10px] font-bold shadow-sm"
-                                              style={{
-                                                background: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.4)",
-                                                color: isDark ? "#fff" : "#fff"
-                                              }}
-                                            >
-                                              -{discountPct}%
-                                            </span>
-                                          </>
-                                        )}
-                                      </div>
+                                          )}
+                                        </div>
 
-                                      <div className="flex items-center gap-3">
                                         <span
-                                          className="flex items-center gap-1.5 text-[13px] font-semibold"
+                                          className="flex items-center gap-1 text-[10px] font-semibold shrink-0"
                                           style={{ color: theme.textMuted }}
                                         >
-                                          <Clock className="w-4 h-4 opacity-70" /> {s.duration_minutes} min
+                                          <Clock className="w-3 h-3 opacity-70" />
+                                          {s.duration_minutes}m
                                         </span>
-
-                                        {/* Service Mode indicator */}
-                                        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-medium opacity-80" style={{ color: theme.textSecondary }}>
-                                          {s.service_mode === 'home' ? (
-                                            <><Home className="w-3.5 h-3.5 opacity-70" /> <span className="hidden sm:inline">À Domicílio</span></>
-                                          ) : s.service_mode === 'both' ? (
-                                            <><MapPin className="w-3.5 h-3.5 opacity-70" /> <span className="hidden sm:inline">Local/Domicílio</span></>
-                                          ) : null}
-                                        </div>
                                       </div>
-                                    </div>
-
-                                    {/* Right: Chevron */}
-                                    <div className="shrink-0 pl-3">
-                                      <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 transition-opacity group-hover:translate-x-1" style={{ color: theme.textSecondary }} />
                                     </div>
                                   </motion.button>
                                 );
                               })}
                             </div>
+
                             <Pagination totalPages={mobileServicePages} />
 
                             {/* ──────────────── DESKTOP LAYOUT (Original Grid) ──────────────── */}
