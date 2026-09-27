@@ -3195,9 +3195,9 @@ export default function Configuracoes() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {/* Cor 1: Âmbar */}
+                      {/* Cor 1: Laranja Padrão */}
                       {(() => {
-                        const hex = '#FF9D2E';
+                        const hex = '#FD6500';
                         const isActive = (customPalette?.primary || theme.accent).toUpperCase() === hex.toUpperCase();
                         return (
                           <button
@@ -3216,8 +3216,8 @@ export default function Configuracoes() {
                                 {isActive && <Check className="w-3 h-3 text-white" />}
                               </span>
                               <div>
-                                <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Âmbar Noir</p>
-                                <p className="text-[10px] font-mono" style={{ color: theme.textMuted }}>#FF9D2E</p>
+                                <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Laranja Padrão</p>
+                                <p className="text-[10px] font-mono" style={{ color: theme.textMuted }}>#FD6500</p>
                               </div>
                             </div>
                           </button>
@@ -3226,10 +3226,10 @@ export default function Configuracoes() {
 
                       {/* Cor 2: Cor da Logo ou Azul */}
                       {(() => {
-                        const hex = (customPalette?.primary && customPalette.primary.toUpperCase() !== '#FF9D2E')
+                        const hex = (customPalette?.primary && customPalette.primary.toUpperCase() !== '#FD6500')
                           ? customPalette.primary
                           : '#3B82F6';
-                        const isCustomSelected = (customPalette?.primary || theme.accent).toUpperCase() === hex.toUpperCase() && hex.toUpperCase() !== '#FF9D2E';
+                        const isCustomSelected = (customPalette?.primary || theme.accent).toUpperCase() === hex.toUpperCase() && hex.toUpperCase() !== '#FD6500';
                         return (
                           <button
                             key="brand-color"
