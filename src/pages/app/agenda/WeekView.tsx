@@ -270,8 +270,8 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
 
                   {/* Render Bookings (Ultra-Readable Cards) */}
                   {positionedBookings.map(({ booking: b, top, height, leftPercent, widthPercent }) => {
-                    const statusCfg = BOOKING_STATUS_CONFIG[b.status] || { label: 'Agendado', bg: 'rgba(201,150,59,0.15)', color: theme.accent };
-                    const proAccent = b.professional?.agenda_color || b.service?.color || theme.accent;
+                    const statusCfg = BOOKING_STATUS_CONFIG[b.status] || { label: 'Agendado', bg: `${theme.accent}15`, color: theme.accent };
+                    const accentColor = theme.accent;
                     const start = new Date(b.scheduled_at);
                     const duration = b.duration_minutes || 30;
                     const end = addMinutes(start, duration);
@@ -281,22 +281,28 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
                       <div
                         key={b.id}
                         onClick={e => { e.stopPropagation(); onBookingClick(b); }}
-                        className="absolute rounded-xl cursor-pointer shadow-sm hover:shadow-lg hover:z-50 transition-shadow group overflow-hidden border flex flex-col"
+                        className="absolute rounded-2xl cursor-pointer transition-all duration-300 group overflow-hidden border flex flex-col hover:-translate-y-0.5"
                         style={{
                           top: `${top}px`,
                           height: `${cardHeight}px`,
                           left: `calc(${leftPercent}% + 3px)`,
                           width: `calc(${widthPercent}% - 6px)`,
                           background: theme.cardBg,
-                          borderColor: theme.border,
-                          borderLeft: `3px solid ${proAccent}`,
+                          borderColor: `${theme.accent}30`,
+                          boxShadow: `0 4px 12px -4px rgba(0,0,0,0.05)`,
                         }}
                       >
-                        <div className="p-2.5 h-full flex flex-col justify-between min-w-0 gap-1">
+                        {/* Premium left bar using the store's exact accent */}
+                        <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ background: accentColor }} />
+                        
+                        {/* Subtle background glow */}
+                        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ background: accentColor }} />
+
+                        <div className="p-2.5 h-full flex flex-col justify-between min-w-0 gap-1 relative z-10 pl-3">
                           {/* Top: Customer Name & Status Badge */}
                           <div className="min-w-0">
                             <div className="flex items-center justify-between gap-1 mb-1">
-                              <p className="text-xs font-bold truncate leading-tight" style={{ color: theme.textPrimary }}>
+                              <p className="text-[13px] font-bold truncate leading-tight" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>
                                 {b.customer?.name ?? 'Cliente'}
                               </p>
                               <span 
@@ -307,20 +313,20 @@ export default function WeekView({ weekStart, bookings, businessHours, selectedP
                             </div>
 
                             {/* Service Title */}
-                            <p className="text-[11px] font-medium truncate flex items-center gap-1 leading-tight" style={{ color: theme.textSecondary }}>
-                              <Scissors className="w-3 h-3 shrink-0 opacity-60" style={{ color: proAccent }} />
+                            <p className="text-[11px] font-semibold truncate flex items-center gap-1 leading-tight" style={{ color: theme.textSecondary }}>
+                              <Scissors className="w-3 h-3 shrink-0 opacity-80" style={{ color: accentColor }} />
                               <span className="truncate">{b.service?.name || 'Serviço'}</span>
                             </p>
                           </div>
 
                           {/* Bottom Row: Time & Price */}
-                          <div className="flex items-center justify-between text-[11px] pt-1.5 border-t mt-auto min-w-0" style={{ borderColor: `${theme.border}80` }}>
+                          <div className="flex items-center justify-between text-[11px] pt-1.5 border-t mt-auto min-w-0" style={{ borderColor: `${theme.border}60` }}>
                             <span className="font-semibold flex items-center gap-1 shrink-0" style={{ color: theme.textSecondary }}>
-                              <Clock className="w-2.5 h-2.5 shrink-0 opacity-60" />
+                              <Clock className="w-2.5 h-2.5 shrink-0 opacity-70" />
                               {format(start, 'HH:mm')}
                             </span>
 
-                            <span className="font-bold shrink-0" style={{ color: theme.textPrimary }}>
+                            <span className="font-black shrink-0" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>
                               {fmt.format(b.amount_total || 0)}
                             </span>
                           </div>

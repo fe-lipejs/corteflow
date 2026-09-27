@@ -246,7 +246,7 @@ export default function Equipe() {
             <select
               value={sortKey}
               onChange={e => setSortKey(e.target.value as SortKey)}
-              className="rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none appearance-none cursor-pointer themed-input min-w-[145px]"
+              className="rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none appearance-none cursor-pointer themed-input min-w-[155px]"
             >
               <option value="newest">Mais recente</option>
               <option value="oldest">Mais antigo</option>
@@ -254,7 +254,7 @@ export default function Equipe() {
               <option value="name_desc">Nome Z–A</option>
               <option value="status">Status</option>
             </select>
-            <SlidersHorizontal className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: theme.textSecondary }} />
+            <SlidersHorizontal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: theme.textSecondary }} />
           </div>
         </div>
       </div>

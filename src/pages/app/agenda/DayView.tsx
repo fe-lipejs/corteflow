@@ -187,57 +187,63 @@ export default function DayView({ day, bookings, businessHours, onBookingClick, 
               const duration = b.duration_minutes || 30;
               const height = Math.max((duration / 60) * HOUR_HEIGHT - 6, 60);
               const end = addMinutes(start, duration);
-              const statusCfg = BOOKING_STATUS_CONFIG[b.status] || { label: 'Agendado', bg: 'rgba(201,150,59,0.15)', color: theme.accent };
-              const proAccent = b.professional?.agenda_color || b.service?.color || theme.accent;
+              const statusCfg = BOOKING_STATUS_CONFIG[b.status] || { label: 'Agendado', bg: `${theme.accent}15`, color: theme.accent };
+              const accentColor = theme.accent;
 
               return (
                 <div
                   key={b.id}
                   onClick={e => { e.stopPropagation(); onBookingClick(b); }}
-                  className="absolute left-3 right-3 rounded-2xl cursor-pointer shadow-sm hover:shadow-lg transition-shadow group overflow-hidden border flex flex-col justify-between p-4"
+                  className="absolute left-3 right-3 rounded-2xl cursor-pointer transition-all duration-300 group overflow-hidden border flex flex-col justify-between p-4 hover:-translate-y-0.5"
                   style={{
                     top: `${topOffset}px`,
                     height: `${height}px`,
                     background: theme.cardBg,
                     borderColor: `${theme.border}`,
-                    borderLeft: `4px solid ${proAccent}`,
+                    boxShadow: `0 4px 15px -3px rgba(0,0,0,0.05)`,
                   }}
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  {/* Premium left bar using the store's exact accent */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ background: accentColor }} />
+                  
+                  {/* Subtle background glow */}
+                  <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ background: accentColor }} />
+
+                  <div className="flex items-start justify-between gap-3 relative z-10">
                     <div className="min-w-0">
-                      <p className="text-sm font-bold truncate" style={{ color: theme.textPrimary }}>
+                      <p className="text-[15px] font-bold truncate" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>
                         {b.customer?.name ?? 'Cliente'}
                       </p>
 
-                      <p className="text-xs font-medium mt-1 flex items-center gap-1.5 truncate" style={{ color: theme.textSecondary }}>
-                        <Scissors className="w-3.5 h-3.5 shrink-0 opacity-60" style={{ color: proAccent }} />
+                      <p className="text-xs font-semibold mt-1 flex items-center gap-1.5 truncate" style={{ color: theme.textSecondary }}>
+                        <Scissors className="w-3.5 h-3.5 shrink-0 opacity-80" style={{ color: accentColor }} />
                         <span className="truncate">{b.service?.name || 'Serviço'}</span>
                         {b.service_location === 'home' ? (
-                          <Home className="w-3.5 h-3.5 shrink-0 opacity-60" />
+                          <Home className="w-3.5 h-3.5 shrink-0 opacity-50" />
                         ) : (
-                          <MapPin className="w-3.5 h-3.5 shrink-0 opacity-60" />
+                          <MapPin className="w-3.5 h-3.5 shrink-0 opacity-50" />
                         )}
                       </p>
                     </div>
 
                     <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide" style={{ background: statusCfg.bg, color: statusCfg.color }}>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide shadow-sm" style={{ background: statusCfg.bg, color: statusCfg.color }}>
                         {statusCfg.label}
                       </span>
-                      <span className="text-sm font-bold" style={{ color: theme.textPrimary }}>
+                      <span className="text-[14px] font-black tracking-tight" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>
                         {fmt.format(b.amount_total || 0)}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs pt-3 border-t mt-3" style={{ borderColor: `${theme.border}80` }}>
-                    <span className="font-medium flex items-center gap-1.5" style={{ color: theme.textSecondary }}>
+                  <div className="flex items-center justify-between text-xs pt-3 border-t mt-3 relative z-10" style={{ borderColor: `${theme.border}60` }}>
+                    <span className="font-semibold flex items-center gap-1.5" style={{ color: theme.textSecondary }}>
                       <Clock className="w-3.5 h-3.5 opacity-70" />
                       {format(start, 'HH:mm')} – {format(end, 'HH:mm')}
                     </span>
 
                     {b.professional?.name && (
-                      <span className="font-medium flex items-center gap-1.5 truncate" style={{ color: theme.textSecondary }}>
+                      <span className="font-semibold flex items-center gap-1.5 truncate" style={{ color: theme.textSecondary }}>
                         <User className="w-3.5 h-3.5 opacity-70 shrink-0" />
                         <span className="truncate">{b.professional.name}</span>
                       </span>
