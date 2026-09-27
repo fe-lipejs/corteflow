@@ -216,8 +216,8 @@ export default function Cadastro() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#F8FAFC] relative overflow-hidden">
       {/* Background glow */}
-      <div className="absolute top-[-30%] left-[-20%] w-[60%] h-[60%] bg-[#DE870D]/10 blur-[150px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] bg-[#DE870D]/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute top-[-30%] left-[-20%] w-[60%] h-[60%] bg-[#FD6500]/10 blur-[150px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] bg-[#FD6500]/5 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10">
 
@@ -241,15 +241,15 @@ export default function Cadastro() {
                 transition={{ duration: 0.3 }}
                 className="text-center py-4"
               >
-                <div className="w-20 h-20 bg-[#DE870D]/10 border border-[#DE870D]/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <Mail className="w-10 h-10 text-[#DE870D]" />
+                <div className="w-20 h-20 bg-[#FD6500]/10 border border-[#FD6500]/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Mail className="w-10 h-10 text-[#FD6500]" />
                 </div>
 
                 <h3 className="text-2xl font-black text-[#0F172A] mb-2">Verifique seu E-mail!</h3>
                 <p className="text-[#64748B] text-sm leading-relaxed mb-4">
                   Enviamos um link de ativação para:
                 </p>
-                <p className="text-sm font-bold text-[#DE870D] font-mono break-all mb-6 px-3 py-2 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
+                <p className="text-sm font-bold text-[#FD6500] font-mono break-all mb-6 px-3 py-2 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
                   {submittedEmail}
                 </p>
 
@@ -274,7 +274,7 @@ export default function Cadastro() {
                   <div>
                     Não recebeu o e-mail?{' '}
                     {resendTimer > 0 ? (
-                      <span className="text-[#DE870D] font-mono font-semibold">
+                      <span className="text-[#FD6500] font-mono font-semibold">
                         Reenviar em {resendTimer}s
                       </span>
                     ) : (
@@ -282,7 +282,7 @@ export default function Cadastro() {
                         type="button"
                         onClick={handleResend}
                         disabled={resending}
-                        className="text-[#DE870D] font-bold hover:underline cursor-pointer"
+                        className="text-[#FD6500] font-bold hover:underline cursor-pointer"
                       >
                         {resending ? 'Reenviando...' : 'Reenviar e-mail'}
                       </button>
@@ -315,7 +315,7 @@ export default function Cadastro() {
                     <input
                       type="text"
                       {...register('fullName')}
-                      className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
+                      className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FD6500] focus:ring-2 focus:ring-[#FD6500]/20 transition-all font-medium"
                       placeholder="João da Silva"
                     />
                     {errors.fullName && <p className="text-red-500 text-xs mt-1.5">{errors.fullName.message}</p>}
@@ -332,7 +332,7 @@ export default function Cadastro() {
                         setValue('phone', masked, { shouldValidate: true });
                         if (errorList.length > 0) setErrorList([]);
                       }}
-                      className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
+                      className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FD6500] focus:ring-2 focus:ring-[#FD6500]/20 transition-all font-medium"
                       placeholder="(27) 99730-3135"
                     />
                     {errors.phone && <p className="text-red-500 text-xs mt-1.5">{errors.phone.message}</p>}
@@ -344,7 +344,7 @@ export default function Cadastro() {
                     <input
                       type="email"
                       {...register('email')}
-                      className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
+                      className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FD6500] focus:ring-2 focus:ring-[#FD6500]/20 transition-all font-medium"
                       placeholder="joao@exemplo.com"
                     />
                     {errors.email && <p className="text-red-500 text-xs mt-1.5">{errors.email.message}</p>}
@@ -357,7 +357,7 @@ export default function Cadastro() {
                       <input
                         type={showPassword ? 'text' : 'password'}
                         {...register('password')}
-                        className="w-full px-4 py-3 pr-12 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
+                        className="w-full px-4 py-3 pr-12 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FD6500] focus:ring-2 focus:ring-[#FD6500]/20 transition-all font-medium"
                         placeholder="Mínimo 8 caracteres"
                       />
                       <button
@@ -378,7 +378,7 @@ export default function Cadastro() {
                       <input
                         type={showConfirmPassword ? 'text' : 'password'}
                         {...register('confirmPassword')}
-                        className="w-full px-4 py-3 pr-12 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
+                        className="w-full px-4 py-3 pr-12 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FD6500] focus:ring-2 focus:ring-[#FD6500]/20 transition-all font-medium"
                         placeholder="Repita sua senha"
                       />
                       <button
@@ -407,8 +407,8 @@ export default function Cadastro() {
                 <button
                   type="submit"
                   disabled={!isValid || loading}
-                  className="w-full mt-6 flex items-center justify-center px-6 py-3.5 rounded-xl font-bold text-sm text-white disabled:opacity-00 transition-all shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer"
-                  style={{ background: 'linear-gradient(135deg, #000000ff, #111010ff)' }}
+                  className="w-full mt-6 flex items-center justify-center px-6 py-3.5 rounded-xl font-bold text-sm text-white disabled:opacity-00 transition-all shadow-md hover:shadow-lg shadow-[#FD6500]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer"
+                  style={{ background: '#FD6500' }}
                 >
 
                   {loading ? 'Criando conta...' : 'Criar Conta'}

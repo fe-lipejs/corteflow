@@ -232,7 +232,7 @@ export default function Login() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute top-[-30%] left-[-20%] w-[60%] h-[60%] bg-[#DE870D]/10 blur-[150px] rounded-full pointer-events-none"
+            className="absolute top-[-30%] left-[-20%] w-[60%] h-[60%] bg-[#FD6500]/10 blur-[150px] rounded-full pointer-events-none"
           />
         )}
       </AnimatePresence>
@@ -280,7 +280,7 @@ export default function Login() {
                         type="button"
                         onClick={handleResendConfirmation}
                         disabled={resendingEmail}
-                        className="text-xs font-bold text-[#DE870D] hover:underline flex items-center gap-1"
+                        className="text-xs font-bold text-[#FD6500] hover:underline flex items-center gap-1"
                       >
                         {resendingEmail ? 'Reenviando...' : 'Clique aqui para reenviar o e-mail de confirmação →'}
                       </button>
@@ -296,7 +296,7 @@ export default function Login() {
                     <input
                       type="email"
                       required
-                      className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
+                      className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FD6500] focus:ring-2 focus:ring-[#FD6500]/20 transition-all font-medium"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="joao@exemplo.com"
@@ -310,7 +310,7 @@ export default function Login() {
                       <input
                         type={showPassword ? 'text' : 'password'}
                         required
-                        className="w-full px-4 py-3 pr-12 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
+                        className="w-full px-4 py-3 pr-12 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FD6500] focus:ring-2 focus:ring-[#FD6500]/20 transition-all font-medium"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
@@ -343,8 +343,8 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3.5 px-4 font-bold text-sm text-white  disabled:opacity-50 transition-all shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer mt-2"
-                    style={{ background: 'linear-gradient(135deg, #000000ff, #111010ff)' }}
+                    className="w-full py-3.5 px-4 font-bold text-sm text-white  disabled:opacity-50 transition-all shadow-md hover:shadow-lg shadow-[#FD6500]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer mt-2"
+                    style={{ background: '#FD6500' }}
                   >
                     {loading ? 'Entrando...' : t('login.submit')}
                   </button>
@@ -365,7 +365,7 @@ export default function Login() {
                       setPassword('');
                       setError(null);
                     }}
-                    className="text-xs text-[#94A3B8] hover:text-[#DE870D] font-medium transition-colors"
+                    className="text-xs text-[#94A3B8] hover:text-[#FD6500] font-medium transition-colors"
                   >
                     Acesso Admin Master
                   </button>
@@ -497,8 +497,8 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => setForgotPasswordOpen(false)}
-                    className="w-full mt-2 py-3 font-bold text-sm text-white rounded-xl shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer transition-all"
-                    style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
+                    className="w-full mt-2 py-3 font-bold text-sm text-white rounded-xl shadow-md hover:shadow-lg shadow-[#FD6500]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer transition-all"
+                    style={{ background: 'linear-gradient(135deg, #FD6500, #FF8A33)' }}
                   >
                     Entendido
                   </button>
@@ -507,7 +507,7 @@ export default function Login() {
                 /* Estado: Formulário de solicitação */
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-2xl bg-[#DE870D]/10 text-[#DE870D] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-2xl bg-[#FD6500]/10 text-[#FD6500] flex items-center justify-center">
                       <KeyRound className="w-5 h-5" />
                     </div>
                     <div>
@@ -534,7 +534,7 @@ export default function Login() {
                           value={forgotIdentifier}
                           onChange={(e) => setForgotIdentifier(e.target.value)}
                           placeholder="seuemail@exemplo.com ou 27999999999"
-                          className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium text-sm"
+                          className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FD6500] focus:ring-2 focus:ring-[#FD6500]/20 transition-all font-medium text-sm"
                         />
                       </div>
                     </div>
@@ -554,8 +554,8 @@ export default function Login() {
                       <button
                         type="submit"
                         disabled={forgotLoading}
-                        className="w-2/3 py-3 font-bold text-xs text-white rounded-xl shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer transition-all disabled:opacity-60"
-                        style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
+                        className="w-2/3 py-3 font-bold text-xs text-white rounded-xl shadow-md hover:shadow-lg shadow-[#FD6500]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer transition-all disabled:opacity-60"
+                        style={{ background: 'linear-gradient(135deg, #FD6500, #FF8A33)' }}
                       >
                         {forgotLoading ? 'Enviando...' : 'Enviar Instruções'}
                       </button>
