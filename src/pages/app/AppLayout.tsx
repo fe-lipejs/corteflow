@@ -126,8 +126,8 @@ export default function AppLayout() {
     return <TenantSelectorModal options={pendingTenantSelection} />;
   }
 
-  // BUG-05: Super Admin não tem tenant — deve ser redirecionado para /platform
-  if (role === 'super_admin') {
+  // Super Admin não tem tenant (não criou salão e não está impersonando) -> deve ir para /platform
+  if (role === 'super_admin' && !tenant) {
     return <Navigate to="/platform" replace />;
   }
 
