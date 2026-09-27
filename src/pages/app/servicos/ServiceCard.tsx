@@ -12,7 +12,8 @@ interface Props {
 
 export default function ServiceCard({ service: s, onEdit, onDelete }: Props) {
   const { theme } = useTheme();
-  const accent = s.color || theme.accent;
+  // Forçar o uso do accent global da loja para não destoar, conforme pedido do usuário.
+  const accent = theme.accent;
   const initials = s.name.substring(0, 2).toUpperCase();
 
   return (
