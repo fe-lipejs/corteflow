@@ -98,24 +98,23 @@ export default function MobileTimeline({ currentDay, bookings, onDayChange, onBo
                 key={day.toISOString()}
                 ref={selected ? activeDayRef : null}
                 onClick={() => onDayChange(day)}
-                className={`snap-center shrink-0 flex flex-col items-center justify-center w-[64px] h-[86px] rounded-[20px] transition-all relative ${
+                className={`snap-center shrink-0 flex flex-col items-center justify-center w-[64px] h-[96px] rounded-[20px] transition-all relative ${
                   selected ? 'scale-105 z-10' : 'hover:-translate-y-1'
                 }`}
                 style={{
                   background: selected ? theme.accentGradient : '#ffffff',
-                  boxShadow: selected 
-                    ? `0 12px 24px -6px ${theme.accent}60, 0 4px 12px -4px ${theme.accent}40` 
-                    : '0 4px 15px -2px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.03)',
+                  border: `1px solid ${selected ? 'transparent' : 'rgba(0,0,0,0.05)'}`,
+                  boxShadow: 'none',
                 }}
               >
                 <span 
-                  className="text-[10px] font-bold uppercase mb-1 tracking-wide" 
+                  className="text-[10px] font-bold uppercase tracking-wide" 
                   style={{ color: selected ? theme.btnPrimaryText : '#8B949E' }}
                 >
                   {format(day, 'EEE', { locale: ptBR })}
                 </span>
                 <span 
-                  className="text-[28px] font-extrabold leading-none tracking-tight mb-1"
+                  className="text-[28px] font-extrabold leading-none tracking-tight my-1"
                   style={{ color: selected ? theme.btnPrimaryText : '#0F172A' }}
                 >
                   {format(day, 'dd')}
@@ -131,7 +130,7 @@ export default function MobileTimeline({ currentDay, bookings, onDayChange, onBo
                 {hasBookings && (
                   <div 
                     className="absolute bottom-2 w-1.5 h-1.5 rounded-full" 
-                    style={{ background: selected ? '#1a1a1a' : theme.accent }} 
+                    style={{ background: selected ? theme.btnPrimaryText : theme.accent }} 
                   />
                 )}
               </button>
