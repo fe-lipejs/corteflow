@@ -588,17 +588,33 @@ export default function Configuracoes() {
   };
 
   // Select a specific color from extracted palette swatches (local draft only)
-  const handleSelectSwatchColor = (swatchHex: string) => {
+  const handleSelectSwatchColor = (swatchHex: string, overrideBtnText?: string) => {
+    const hex = swatchHex.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    const rVal = isNaN(r) ? 201 : r;
+    const gVal = isNaN(g) ? 150 : g;
+    const bVal = isNaN(b) ? 59 : b;
+    const lum = 0.2126 * rVal + 0.7152 * gVal + 0.0722 * bVal;
+    const autoBtnText = lum > 145 ? '#0F172A' : '#FFFFFF';
+    const btnText = overrideBtnText || (customPalette?.btnTextColor) || autoBtnText;
+
     const newPalette = bgMode === 'dark'
-      ? { primary: swatchHex }
+      ? { primary: swatchHex, btnTextColor: btnText }
       : {
         primary: swatchHex,
         background: '#F8FAFC',
         card: '#FFFFFF',
         text: '#0F172A',
+        btnTextColor: btnText,
       };
     setCustomPalette(newPalette);
     setSelectedTheme(bgMode === 'light' ? 'elegant' : 'noir');
+  };
+
+  const handleSetBtnTextColor = (color: '#FFFFFF' | '#0F172A') => {
+    setCustomPalette((prev: any) => ({ ...(prev || {}), btnTextColor: color }));
   };
 
   // Reset completely to default Noir Theme (local draft only)
@@ -3063,20 +3079,24 @@ export default function Configuracoes() {
               </div>
 
               {/* Modal Body - 2 Columns */}
-              <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-                {/* ── Left Column: Controls (Spacious & Clean) ── */}
-                <div className="lg:col-span-7 space-y-6">
+              <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-10">
+                {/* ── Left Column: Controls ── */}
+                <div className="lg:col-span-7 space-y-8">
+
                   {/* 1. Atmosfera */}
                   <div>
-                    <label className="block text-xs font-extrabold uppercase tracking-wider mb-2.5" style={{ color: theme.textSecondary }}>
-                      1. Atmosfera do Salão (Fundo)
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: `${customPalette?.primary || theme.accent}20`, color: customPalette?.primary || theme.accent }}>
+                        <span className="text-[10px] font-black">1</span>
+                      </div>
+                      <label className="text-xs font-extrabold uppercase tracking-widest" style={{ color: theme.textSecondary }}>Atmosfera do Salão</label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
                       {/* Modo Noturno */}
                       <button
                         type="button"
                         onClick={() => handleToggleBgMode('dark')}
-                        className="flex items-center justify-between p-3.5 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer"
+                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer"
                         style={{
                           background: bgMode === 'dark' ? '#09090B' : theme.inputBg,
                           borderColor: bgMode === 'dark' ? (customPalette?.primary || theme.accent) : theme.border,
@@ -3095,9 +3115,9 @@ export default function Configuracoes() {
                           </div>
                           <div>
                             <p className="text-xs font-bold" style={{ color: bgMode === 'dark' ? '#FFFFFF' : theme.textPrimary }}>
-                              Modo Noturno / Escuro
+                              Modo Escuro
                             </p>
-                            <p className="text-[11px]" style={{ color: bgMode === 'dark' ? '#A1A1AA' : theme.textMuted }}>
+                            <p className="text-[10px] mt-0.5" style={{ color: bgMode === 'dark' ? '#A1A1AA' : theme.textMuted }}>
                               Fundo escuro luxuoso
                             </p>
                           </div>
@@ -3113,7 +3133,7 @@ export default function Configuracoes() {
                       <button
                         type="button"
                         onClick={() => handleToggleBgMode('light')}
-                        className="flex items-center justify-between p-3.5 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer"
+                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer"
                         style={{
                           background: bgMode === 'light' ? '#FFFFFF' : theme.inputBg,
                           borderColor: bgMode === 'light' ? (customPalette?.primary || theme.accent) : theme.border,
@@ -3132,9 +3152,9 @@ export default function Configuracoes() {
                           </div>
                           <div>
                             <p className="text-xs font-bold" style={{ color: bgMode === 'light' ? '#0F172A' : theme.textPrimary }}>
-                              Modo Claro / Diurno
+                              Modo Claro
                             </p>
-                            <p className="text-[11px]" style={{ color: bgMode === 'light' ? '#64748B' : theme.textMuted }}>
+                            <p className="text-[10px] mt-0.5" style={{ color: bgMode === 'light' ? '#64748B' : theme.textMuted }}>
                               Fundo claro acetinado
                             </p>
                           </div>
@@ -3148,18 +3168,18 @@ export default function Configuracoes() {
                     </div>
                   </div>
 
-                  {/* 2. Cor de Destaque da Marca */}
-                  <div className="pt-3 border-t" style={{ borderColor: theme.border }}>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div>
-                        <label className="block text-xs font-extrabold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
-                          2. Cor Principal da Marca (Destaque)
-                        </label>
-                        <p className="text-[11px]" style={{ color: theme.textMuted }}>
-                          A cor que destaca seus botões e cartões
-                        </p>
+                  {/* 2. Cor de Destaque */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: `${customPalette?.primary || theme.accent}20`, color: customPalette?.primary || theme.accent }}>
+                          <span className="text-[10px] font-black">2</span>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-extrabold uppercase tracking-widest" style={{ color: theme.textSecondary }}>Cor Principal da Marca</label>
+                          <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Define botões, destaque e identidade</p>
+                        </div>
                       </div>
-
                       {(logoUrl || logoUpload.preview) && (
                         <button
                           type="button"
@@ -3169,14 +3189,13 @@ export default function Configuracoes() {
                           style={{ borderColor: theme.accent, color: theme.accent, background: `${theme.accent}12` }}
                         >
                           {isExtracting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                          Re-extrair da logo
+                          Extrair da logo
                         </button>
                       )}
                     </div>
 
-                    {/* 2 Cores Sugeridas Inteligentes + Personalizar */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                      {/* Cor 1: Âmbar Noir Clássico */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {/* Cor 1: Âmbar */}
                       {(() => {
                         const hex = '#FF9D2E';
                         const isActive = (customPalette?.primary || theme.accent).toUpperCase() === hex.toUpperCase();
@@ -3185,7 +3204,7 @@ export default function Configuracoes() {
                             key="noir-gold"
                             type="button"
                             onClick={() => handleSelectSwatchColor(hex)}
-                            className="flex items-center justify-between p-3 rounded-xl border text-left transition-all hover:scale-[1.02] cursor-pointer"
+                            className="flex items-center justify-between p-3.5 rounded-xl border text-left transition-all hover:scale-[1.02] cursor-pointer"
                             style={{
                               background: isActive ? `${hex}15` : theme.inputBg,
                               borderColor: isActive ? hex : theme.border,
@@ -3205,7 +3224,7 @@ export default function Configuracoes() {
                         );
                       })()}
 
-                      {/* Cor 2: Azul Real / Cor da Marca */}
+                      {/* Cor 2: Cor da Logo ou Azul */}
                       {(() => {
                         const hex = (customPalette?.primary && customPalette.primary.toUpperCase() !== '#FF9D2E')
                           ? customPalette.primary
@@ -3216,7 +3235,7 @@ export default function Configuracoes() {
                             key="brand-color"
                             type="button"
                             onClick={() => handleSelectSwatchColor(hex)}
-                            className="flex items-center justify-between p-3 rounded-xl border text-left transition-all hover:scale-[1.02] cursor-pointer"
+                            className="flex items-center justify-between p-3.5 rounded-xl border text-left transition-all hover:scale-[1.02] cursor-pointer"
                             style={{
                               background: isCustomSelected ? `${hex}15` : theme.inputBg,
                               borderColor: isCustomSelected ? hex : theme.border,
@@ -3240,7 +3259,7 @@ export default function Configuracoes() {
 
                       {/* Cor 3: Seletor Livre */}
                       <label
-                        className="flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all hover:scale-[1.02]"
+                        className="flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all hover:scale-[1.02]"
                         style={{
                           background: theme.inputBg,
                           borderColor: theme.border,
@@ -3254,20 +3273,73 @@ export default function Configuracoes() {
                             className="w-5 h-5 rounded-full cursor-pointer border-0 p-0 bg-transparent shrink-0"
                           />
                           <div>
-                            <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Personalizar...</p>
+                            <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Personalizar</p>
                             <p className="text-[10px]" style={{ color: theme.textMuted }}>Qualquer tom</p>
                           </div>
                         </div>
                       </label>
                     </div>
+
+                    {/* Cor do texto no botão */}
+                    <div className="mt-4 p-4 rounded-2xl border" style={{ borderColor: theme.border, background: theme.inputBg }}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Texto nos Botões</p>
+                          <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Ajuste quando o contraste automático não agrada</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleSetBtnTextColor('#FFFFFF')}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all"
+                            style={{
+                              background: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#FFFFFF' ? (customPalette?.primary || theme.accent) : 'transparent',
+                              borderColor: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#FFFFFF' ? (customPalette?.primary || theme.accent) : theme.border,
+                              color: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#FFFFFF' ? theme.btnPrimaryText : theme.textSecondary,
+                            }}
+                          >
+                            <span className="w-3 h-3 rounded-full border" style={{ background: '#FFFFFF', borderColor: theme.border }}></span>
+                            Branco
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSetBtnTextColor('#0F172A')}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all"
+                            style={{
+                              background: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#0F172A' ? (customPalette?.primary || theme.accent) : 'transparent',
+                              borderColor: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#0F172A' ? (customPalette?.primary || theme.accent) : theme.border,
+                              color: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#0F172A' ? theme.btnPrimaryText : theme.textSecondary,
+                            }}
+                          >
+                            <span className="w-3 h-3 rounded-full" style={{ background: '#0F172A' }}></span>
+                            Preto
+                          </button>
+                        </div>
+                      </div>
+                      {/* Preview do botão */}
+                      <div className="mt-3 flex items-center justify-center">
+                        <div
+                          className="px-6 py-2.5 rounded-xl text-xs font-bold shadow-md"
+                          style={{
+                            background: customPalette?.primary || theme.accent,
+                            color: customPalette?.btnTextColor || theme.btnPrimaryText,
+                          }}
+                        >
+                          Agendar agora
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* 3. Tipografia */}
-                  <div className="pt-3 border-t" style={{ borderColor: theme.border }}>
-                    <label className="block text-xs font-extrabold uppercase tracking-wider mb-2.5" style={{ color: theme.textSecondary }}>
-                      3. Estilo Tipográfico dos Títulos
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: `${customPalette?.primary || theme.accent}20`, color: customPalette?.primary || theme.accent }}>
+                        <span className="text-[10px] font-black">3</span>
+                      </div>
+                      <label className="text-xs font-extrabold uppercase tracking-widest" style={{ color: theme.textSecondary }}>Estilo Tipográfico</label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
                       {/* Playfair Display */}
                       <button
                         type="button"
@@ -3275,7 +3347,7 @@ export default function Configuracoes() {
                           setDraftFontStyle('serif');
                           setCustomPalette((prev: any) => ({ ...(prev || {}), fontStyle: 'serif' }));
                         }}
-                        className="flex items-center justify-between p-3.5 rounded-2xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
+                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
                         style={{
                           background: draftFontStyle === 'serif' ? (bgMode === 'dark' ? '#09090B' : '#FFFFFF') : theme.inputBg,
                           borderColor: draftFontStyle === 'serif' ? (customPalette?.primary || theme.accent) : theme.border,
@@ -3285,12 +3357,8 @@ export default function Configuracoes() {
                         <div className="flex items-center gap-2.5">
                           <span className="text-xl font-serif font-bold" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
                           <div>
-                            <p className="text-xs font-bold font-serif" style={{ color: theme.textPrimary }}>
-                              Clássico & Elegante
-                            </p>
-                            <p className="text-[11px]" style={{ color: theme.textMuted }}>
-                              Playfair Display refinada
-                            </p>
+                            <p className="text-xs font-bold font-serif" style={{ color: theme.textPrimary }}>Clássico &amp; Elegante</p>
+                            <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Playfair Display</p>
                           </div>
                         </div>
                         {draftFontStyle === 'serif' && (
@@ -3307,7 +3375,7 @@ export default function Configuracoes() {
                           setDraftFontStyle('sans');
                           setCustomPalette((prev: any) => ({ ...(prev || {}), fontStyle: 'sans' }));
                         }}
-                        className="flex items-center justify-between p-3.5 rounded-2xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
+                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
                         style={{
                           background: draftFontStyle === 'sans' ? (bgMode === 'dark' ? '#09090B' : '#FFFFFF') : theme.inputBg,
                           borderColor: draftFontStyle === 'sans' ? (customPalette?.primary || theme.accent) : theme.border,
@@ -3317,12 +3385,8 @@ export default function Configuracoes() {
                         <div className="flex items-center gap-2.5">
                           <span className="text-xl font-sans font-black" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
                           <div>
-                            <p className="text-xs font-bold font-sans" style={{ color: theme.textPrimary }}>
-                              Moderno & Minimalista
-                            </p>
-                            <p className="text-[11px]" style={{ color: theme.textMuted }}>
-                              Plus Jakarta Sans contemporânea
-                            </p>
+                            <p className="text-xs font-bold font-sans" style={{ color: theme.textPrimary }}>Moderno &amp; Minimalista</p>
+                            <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Plus Jakarta Sans</p>
                           </div>
                         </div>
                         {draftFontStyle === 'sans' && (
@@ -3382,11 +3446,15 @@ export default function Configuracoes() {
                     const prevFontFamily = draftFontStyle === 'serif' ? "'Playfair Display', Georgia, serif" : "'Plus Jakarta Sans', -apple-system, sans-serif";
 
                     const hex = activeAccent.replace('#', '');
-                    const r = parseInt(hex.substring(0, 2), 16) || 201;
-                    const g = parseInt(hex.substring(2, 4), 16) || 150;
-                    const b = parseInt(hex.substring(4, 6), 16) || 59;
-                    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-                    const prevBtnText = lum > 145 ? '#000000' : '#FFFFFF';
+                    const r = parseInt(hex.substring(0, 2), 16);
+                    const g = parseInt(hex.substring(2, 4), 16);
+                    const b = parseInt(hex.substring(4, 6), 16);
+                    const rVal = isNaN(r) ? 201 : r;
+                    const gVal = isNaN(g) ? 150 : g;
+                    const bVal = isNaN(b) ? 59 : b;
+                    const lum = 0.2126 * rVal + 0.7152 * gVal + 0.0722 * bVal;
+                    const autoPrevBtnText = lum > 145 ? '#000000' : '#FFFFFF';
+                    const prevBtnText = customPalette?.btnTextColor || autoPrevBtnText;
 
                     return (
                       <div

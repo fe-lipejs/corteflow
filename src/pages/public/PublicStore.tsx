@@ -415,11 +415,15 @@ export default function PublicStore() {
     let btnTextColor = base.btnPrimaryText;
     if (palette.primary) {
       const hex = palette.primary.replace("#", "");
-      const r = parseInt(hex.substring(0, 2), 16) || 201;
-      const g = parseInt(hex.substring(2, 4), 16) || 150;
-      const b = parseInt(hex.substring(4, 6), 16) || 59;
-      const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-      btnTextColor = lum > 145 ? "#0F172A" : "#FFFFFF";
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      const rVal = isNaN(r) ? 201 : r;
+      const gVal = isNaN(g) ? 150 : g;
+      const bVal = isNaN(b) ? 59 : b;
+      const lum = 0.2126 * rVal + 0.7152 * gVal + 0.0722 * bVal;
+      // If user has explicitly set btnTextColor override, respect it
+      btnTextColor = palette.btnTextColor || (lum > 145 ? "#0F172A" : "#FFFFFF");
     }
 
     const bgHex = (palette.background || base.bg).replace("#", "");

@@ -328,6 +328,7 @@ export interface CustomPaletteConfig {
   text?: string;
   card?: string;
   fontStyle?: FontStyle;
+  btnTextColor?: string; // User override for button text color (e.g. '#FFFFFF' or '#0F172A')
 }
 
 // ─── Theme Map ────────────────────────────────────────────────────────────────
@@ -469,13 +470,21 @@ export const ThemeProvider: React.FC<{
 
     let btnTextColor = baseTheme.btnPrimaryText;
     if (customPalette?.primary) {
-      // Calculate luminance for high contrast text on buttons
-      const hex = customPalette.primary.replace('#', '');
-      const r = parseInt(hex.substring(0, 2), 16) || 201;
-      const g = parseInt(hex.substring(2, 4), 16) || 150;
-      const b = parseInt(hex.substring(4, 6), 16) || 59;
-      const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-      btnTextColor = lum > 145 ? '#000000' : '#FFFFFF';
+      // If user explicitly set button text color, respect it
+      if (customPalette.btnTextColor) {
+        btnTextColor = customPalette.btnTextColor;
+      } else {
+        // Auto-calculate luminance for high contrast
+        const hex = customPalette.primary.replace('#', '');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        const rVal = isNaN(r) ? 201 : r;
+        const gVal = isNaN(g) ? 150 : g;
+        const bVal = isNaN(b) ? 59 : b;
+        const lum = 0.2126 * rVal + 0.7152 * gVal + 0.0722 * bVal;
+        btnTextColor = lum > 145 ? '#000000' : '#FFFFFF';
+      }
     }
 
     return {
