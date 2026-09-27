@@ -1904,128 +1904,279 @@ export default function PublicStore() {
                         </p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 w-full">
-                        {servicesList.map((s, i) => {
-                          const hasDiscount = s.original_price && s.original_price > s.price;
-                          const discountPct = hasDiscount
-                            ? Math.round(((s.original_price - s.price) / s.original_price) * 100)
-                            : 0;
+                      <>
+                        {/* ──────────────── MOBILE LAYOUT (List) ──────────────── */}
+                        <div className="md:hidden flex flex-col gap-3 w-full max-w-xl mx-auto">
+                          {servicesList.map((s, i) => {
+                            const hasDiscount = s.original_price && s.original_price > s.price;
+                            const discountPct = hasDiscount
+                              ? Math.round(((s.original_price - s.price) / s.original_price) * 100)
+                              : 0;
 
-                          return (
-                            <motion.button
-                              key={s.id}
-                              initial={{ opacity: 0, y: 12 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: i * 0.04 }}
-                              whileHover={{ scale: 1.01 }}
-                              whileTap={{ scale: 0.98 }}
-                              onClick={async () => {
-                                const mode = s.service_mode || 'instore';
-                                if (mode === 'both') {
-                                  setShowModeSelectionFor(s);
-                                } else if (mode === 'home') {
-                                  setBookingMode('home');
-                                  setSelectedService(s);
-                                  // Don't advance to step 2 yet; the Location Wizard will render and handle the rest.
-                                } else {
-                                  setBookingMode('instore');
-                                  setSelectedService(s);
-                                  setStep(2);
-                                }
-                              }}
-                              className="group relative text-left rounded-[24px] overflow-hidden border transition-all duration-200 flex items-center p-4 cursor-pointer"
-                              style={{
-                                borderColor: cardBorderColor,
-                                background: cardBackground,
-                                boxShadow: cardShadowStyle,
-                              }}
-                            >
-                              {/* Left: Image or Icon */}
-                              {s.photo_url ? (
-                                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-[16px] overflow-hidden shrink-0 bg-neutral-900 shadow-sm mr-4">
-                                  <img
-                                    src={s.photo_url}
-                                    alt={s.name}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                                  />
-                                  {hasDiscount && (
-                                    <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white bg-red-500 shadow-sm">
-                                      -{discountPct}%
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                <div
-                                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-[16px] flex items-center justify-center shrink-0 shadow-sm mr-4"
-                                  style={{ background: `${accent}15`, color: accent }}
-                                >
-                                  <Scissors className="w-6 h-6 sm:w-8 sm:h-8" />
-                                </div>
-                              )}
-
-                              {/* Middle: Details */}
-                              <div className="flex flex-col flex-1 min-w-0 py-1">
-                                <div className="flex items-center gap-2 mb-0.5">
-                                  <h3
-                                    className="text-base sm:text-lg font-bold leading-tight truncate"
-                                    style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
+                            return (
+                              <motion.button
+                                key={`mob-${s.id}`}
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.04 }}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={async () => {
+                                  const mode = s.service_mode || 'instore';
+                                  if (mode === 'both') {
+                                    setShowModeSelectionFor(s);
+                                  } else if (mode === 'home') {
+                                    setBookingMode('home');
+                                    setSelectedService(s);
+                                  } else {
+                                    setBookingMode('instore');
+                                    setSelectedService(s);
+                                    setStep(2);
+                                  }
+                                }}
+                                className="group relative text-left rounded-[24px] overflow-hidden border transition-all duration-200 flex items-center p-4 cursor-pointer"
+                                style={{
+                                  borderColor: cardBorderColor,
+                                  background: cardBackground,
+                                  boxShadow: cardShadowStyle,
+                                }}
+                              >
+                                {/* Left: Image or Icon */}
+                                {s.photo_url ? (
+                                  <div className="relative w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-[16px] overflow-hidden shrink-0 bg-neutral-900 shadow-sm mr-4">
+                                    <img
+                                      src={s.photo_url}
+                                      alt={s.name}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                                    />
+                                    {hasDiscount && (
+                                      <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white bg-red-500 shadow-sm">
+                                        -{discountPct}%
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div
+                                    className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-[16px] flex items-center justify-center shrink-0 shadow-sm mr-4"
+                                    style={{ background: `${accent}15`, color: accent }}
                                   >
-                                    {s.name}
-                                  </h3>
-                                  {s.category && (
-                                    <span
-                                      className="px-2 py-0.5 rounded-full text-[9px] font-bold hidden sm:inline-block"
-                                      style={{ background: `${accent}15`, color: accent }}
+                                    <Scissors className="w-6 h-6 sm:w-8 sm:h-8" />
+                                  </div>
+                                )}
+
+                                {/* Middle: Details */}
+                                <div className="flex flex-col flex-1 min-w-0 py-1">
+                                  <div className="flex items-center gap-2 mb-0.5">
+                                    <h3
+                                      className="text-base sm:text-lg font-bold leading-tight truncate"
+                                      style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
                                     >
-                                      {s.category}
-                                    </span>
-                                  )}
-                                </div>
-                                
-                                <div className="flex items-center gap-2 mb-1.5">
-                                  <span
-                                    className="text-sm sm:text-base font-black"
-                                    style={{ color: accent, fontFamily: theme.fontSerif }}
-                                  >
-                                    {money(s.price)}
-                                  </span>
-                                  {hasDiscount && (
+                                      {s.name}
+                                    </h3>
+                                    {s.category && (
+                                      <span
+                                        className="px-2 py-0.5 rounded-full text-[9px] font-bold hidden sm:inline-block"
+                                        style={{ background: `${accent}15`, color: accent }}
+                                      >
+                                        {s.category}
+                                      </span>
+                                    )}
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2 mb-1.5">
                                     <span
-                                      className="text-[10px] sm:text-xs line-through opacity-60"
+                                      className="text-sm sm:text-base font-black"
+                                      style={{ color: accent, fontFamily: theme.fontSerif }}
+                                    >
+                                      {money(s.price)}
+                                    </span>
+                                    {hasDiscount && (
+                                      <span
+                                        className="text-[10px] sm:text-xs line-through opacity-60"
+                                        style={{ color: theme.textMuted }}
+                                      >
+                                        {money(s.original_price)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-3">
+                                    <span
+                                      className="flex items-center gap-1.5 text-xs font-semibold"
                                       style={{ color: theme.textMuted }}
                                     >
-                                      {money(s.original_price)}
+                                      <Clock className="w-3.5 h-3.5 opacity-70" /> {s.duration_minutes} min
                                     </span>
-                                  )}
-                                </div>
-                                
-                                <div className="flex items-center gap-3">
-                                  <span
-                                    className="flex items-center gap-1.5 text-xs font-semibold"
-                                    style={{ color: theme.textMuted }}
-                                  >
-                                    <Clock className="w-3.5 h-3.5 opacity-70" /> {s.duration_minutes} min
-                                  </span>
-                                  
-                                  {/* Service Mode indicator */}
-                                  <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium opacity-80" style={{ color: theme.textSecondary }}>
-                                    {s.service_mode === 'home' ? (
-                                      <><Home className="w-3.5 h-3.5 opacity-70" /> <span className="hidden sm:inline">À Domicílio</span></>
-                                    ) : s.service_mode === 'both' ? (
-                                      <><MapPin className="w-3.5 h-3.5 opacity-70" /> <span className="hidden sm:inline">Local/Domicílio</span></>
-                                    ) : null}
+                                    
+                                    {/* Service Mode indicator */}
+                                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium opacity-80" style={{ color: theme.textSecondary }}>
+                                      {s.service_mode === 'home' ? (
+                                        <><Home className="w-3.5 h-3.5 opacity-70" /> <span className="hidden sm:inline">À Domicílio</span></>
+                                      ) : s.service_mode === 'both' ? (
+                                        <><MapPin className="w-3.5 h-3.5 opacity-70" /> <span className="hidden sm:inline">Local/Domicílio</span></>
+                                      ) : null}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
 
-                              {/* Right: Chevron */}
-                              <div className="shrink-0 pl-3">
-                                <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 transition-opacity group-hover:translate-x-1" style={{ color: theme.textSecondary }} />
-                              </div>
-                            </motion.button>
-                          );
-                        })}
-                      </div>
+                                {/* Right: Chevron */}
+                                <div className="shrink-0 pl-3">
+                                  <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 transition-opacity group-hover:translate-x-1" style={{ color: theme.textSecondary }} />
+                                </div>
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+
+                        {/* ──────────────── DESKTOP LAYOUT (Original Grid) ──────────────── */}
+                        <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
+                          {servicesList.map((s, i) => {
+                            const hasDiscount = s.original_price && s.original_price > s.price;
+                            const discountPct = hasDiscount
+                              ? Math.round(((s.original_price - s.price) / s.original_price) * 100)
+                              : 0;
+
+                            return (
+                              <motion.button
+                                key={`desk-${s.id}`}
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.04 }}
+                                whileHover={{ y: -3 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={async () => {
+                                  const mode = s.service_mode || 'instore';
+                                  if (mode === 'both') {
+                                    setShowModeSelectionFor(s);
+                                  } else if (mode === 'home') {
+                                    setBookingMode('home');
+                                    setSelectedService(s);
+                                  } else {
+                                    setBookingMode('instore');
+                                    setSelectedService(s);
+                                    setStep(2);
+                                  }
+                                }}
+                                className="group relative text-left rounded-3xl overflow-hidden border transition-all duration-200 flex flex-col cursor-pointer"
+                                style={{
+                                  borderColor: cardBorderColor,
+                                  background: cardBackground,
+                                  boxShadow: cardShadowStyle,
+                                }}
+                              >
+                                {/* Service Photo */}
+                                {s.photo_url ? (
+                                  <div className="relative h-56 lg:h-64 overflow-hidden bg-neutral-900 w-full">
+                                    <img
+                                      src={s.photo_url}
+                                      alt={s.name}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                                    />
+                                    <div
+                                      className="absolute inset-0"
+                                      style={{
+                                        background:
+                                          "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)",
+                                      }}
+                                    />
+                                    {hasDiscount && (
+                                      <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold text-white bg-red-500 shadow-sm">
+                                        -{discountPct}%
+                                      </span>
+                                    )}
+                                    {s.category && (
+                                      <span className="absolute top-3 right-3 px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-white bg-black/60 backdrop-blur-md">
+                                        {s.category}
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div
+                                    className="h-20 flex items-center justify-between px-5 border-b w-full"
+                                    style={{
+                                      borderColor: cardBorderColor,
+                                      background: `${accent}0a`,
+                                    }}
+                                  >
+                                    <div
+                                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                                      style={{ background: `${accent}15`, color: accent }}
+                                    >
+                                      <Scissors className="w-5 h-5" />
+                                    </div>
+                                    {s.category && (
+                                      <span
+                                        className="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                                        style={{ background: `${accent}15`, color: accent }}
+                                      >
+                                        {s.category}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Service Details */}
+                                <div className="p-4 sm:p-5 flex flex-col flex-1 w-full">
+                                  <div className="flex items-start justify-between gap-2 mb-1">
+                                    <h3
+                                      className="text-base font-bold leading-snug"
+                                      style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
+                                    >
+                                      {s.name}
+                                    </h3>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 mb-2 text-[10px] font-medium" style={{ color: theme.textSecondary }}>
+                                    {s.service_mode === 'home' ? (
+                                      <><Home className="w-3 h-3" /> <span>À Domicílio</span></>
+                                    ) : s.service_mode === 'both' ? (
+                                      <><MapPin className="w-3 h-3" /> <span>Local ou Domicílio</span></>
+                                    ) : (
+                                      <><Store className="w-3 h-3" /> <span>No Local</span></>
+                                    )}
+                                  </div>
+
+                                  {s.description && (
+                                    <p
+                                      className="text-xs leading-relaxed mb-3"
+                                      style={{ color: theme.textSecondary }}
+                                    >
+                                      {s.description}
+                                    </p>
+                                  )}
+
+                                  <div
+                                    className="flex items-center justify-between pt-3 mt-auto border-t w-full"
+                                    style={{ borderColor: cardBorderColor }}
+                                  >
+                                    <span
+                                      className="flex items-center gap-1.5 text-xs font-semibold"
+                                      style={{ color: theme.textMuted }}
+                                    >
+                                      <Clock className="w-3.5 h-3.5" /> {s.duration_minutes} min
+                                    </span>
+                                    <div className="text-right">
+                                      {hasDiscount && (
+                                        <span
+                                          className="text-[10px] line-through block"
+                                          style={{ color: theme.textMuted }}
+                                        >
+                                          {money(s.original_price)}
+                                        </span>
+                                      )}
+                                      <span
+                                        className="text-base font-black"
+                                        style={{ color: accent, fontFamily: theme.fontSerif }}
+                                      >
+                                        {money(s.price)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                      </>
                     )}
                     </>
                   )}
@@ -2074,107 +2225,199 @@ export default function PublicStore() {
                         </button>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 w-full">
-                        {/* Anyone Option */}
-                      {bookingMode !== 'home' && (
-                        <motion.button
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => {
-                            setSelectedPro("any");
-                            setStep(3);
-                          }}
-                          className="group relative rounded-[24px] border-2 p-4 flex items-center text-left transition-all cursor-pointer"
-                          style={{
-                            borderColor: `${accent}60`,
-                            background: isDark ? `${accent}0c` : `${accent}08`,
-                            boxShadow: cardShadowStyle,
-                          }}
-                        >
-                          <div
-                            className="w-16 h-16 sm:w-20 sm:h-20 rounded-[16px] flex items-center justify-center mr-4 shrink-0 shadow-sm transition-transform group-hover:scale-105"
-                            style={{ background: `${accent}20`, color: accent }}
-                          >
-                            <Zap className="w-7 h-7 sm:w-8 sm:h-8" />
-                          </div>
-                          
-                          <div className="flex flex-col flex-1 min-w-0">
-                            <h3 className="font-bold text-base sm:text-lg truncate" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>
-                              Qualquer profissional
-                            </h3>
-                            <p className="text-xs sm:text-sm mt-0.5 font-medium truncate" style={{ color: theme.textSecondary }}>
-                              Encontrar o horário mais rápido
-                            </p>
-                          </div>
-                          
-                          <div className="shrink-0 pl-3 flex items-center">
-                            <span
-                              className="hidden sm:inline-block mr-3 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                              style={{ background: `${accent}20`, color: accent }}
-                            >
-                              Recomendado
-                            </span>
-                            <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 transition-opacity group-hover:translate-x-1" style={{ color: theme.textSecondary }} />
-                          </div>
-                        </motion.button>
-                      )}
-
-                      {/* Professional Cards */}
-                      {availableProfessionals.map((p, i) => (
-                        <motion.button
-                          key={p.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.04 }}
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => {
-                            setSelectedPro(p);
-                            setStep(3);
-                          }}
-                          className="group relative rounded-[24px] border p-4 flex items-center text-left transition-all cursor-pointer"
-                          style={{
-                            borderColor: cardBorderColor,
-                            background: cardBackground,
-                            boxShadow: cardShadowStyle,
-                          }}
-                        >
-                          {p.photo_url ? (
-                            <img
-                              src={p.photo_url}
-                              alt={p.name}
-                              className="w-16 h-16 sm:w-20 sm:h-20 rounded-[16px] object-cover mr-4 shrink-0 shadow-sm transition-transform group-hover:scale-105"
-                            />
-                          ) : (
-                            <div
-                              className="w-16 h-16 sm:w-20 sm:h-20 rounded-[16px] flex items-center justify-center mr-4 shrink-0 border transition-transform group-hover:scale-105"
+                      <>
+                        {/* ──────────────── MOBILE LAYOUT (List) ──────────────── */}
+                        <div className="md:hidden flex flex-col gap-3 w-full max-w-xl mx-auto">
+                          {/* Anyone Option */}
+                          {bookingMode !== 'home' && (
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => {
+                                setSelectedPro("any");
+                                setStep(3);
+                              }}
+                              className="group relative rounded-[24px] border-2 p-4 flex items-center text-left transition-all cursor-pointer"
                               style={{
-                                borderColor: cardBorderColor,
-                                background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
+                                borderColor: `${accent}60`,
+                                background: isDark ? `${accent}0c` : `${accent}08`,
+                                boxShadow: cardShadowStyle,
                               }}
                             >
-                              <User className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: theme.textMuted }} />
-                            </div>
+                              <div
+                                className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-full flex items-center justify-center mr-4 shrink-0 shadow-sm transition-transform group-hover:scale-105"
+                                style={{ background: `${accent}20`, color: accent }}
+                              >
+                                <Zap className="w-7 h-7 sm:w-8 sm:h-8" />
+                              </div>
+                              
+                              <div className="flex flex-col flex-1 min-w-0">
+                                <h3 className="font-bold text-base sm:text-lg truncate" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>
+                                  Qualquer profissional
+                               </h3>
+                                <p className="text-xs sm:text-sm mt-0.5 font-medium truncate" style={{ color: theme.textSecondary }}>
+                                  Encontrar o horário mais rápido
+                                </p>
+                              </div>
+                              
+                              <div className="shrink-0 pl-3 flex items-center">
+                                <span
+                                  className="hidden sm:inline-block mr-3 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                  style={{ background: `${accent}20`, color: accent }}
+                                >
+                                  Recomendado
+                                </span>
+                                <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 transition-opacity group-hover:translate-x-1" style={{ color: theme.textSecondary }} />
+                              </div>
+                            </motion.button>
                           )}
-                          
-                          <div className="flex flex-col flex-1 min-w-0">
-                            <h3
-                              className="font-bold text-base sm:text-lg truncate"
-                              style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
+
+                          {/* Professional Cards */}
+                          {availableProfessionals.map((p, i) => (
+                            <motion.button
+                              key={`mob-pro-${p.id}`}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: i * 0.04 }}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => {
+                                setSelectedPro(p);
+                                setStep(3);
+                              }}
+                              className="group relative rounded-[24px] border p-4 flex items-center text-left transition-all cursor-pointer"
+                              style={{
+                                borderColor: cardBorderColor,
+                                background: cardBackground,
+                                boxShadow: cardShadowStyle,
+                              }}
                             >
-                              {p.name}
-                            </h3>
-                            <p className="text-xs sm:text-sm mt-0.5 truncate font-medium" style={{ color: theme.textSecondary }}>
-                              {p.role_title || "Profissional"}
-                            </p>
-                          </div>
-                          
-                          <div className="shrink-0 pl-3">
-                            <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 transition-opacity group-hover:translate-x-1" style={{ color: theme.textSecondary }} />
-                          </div>
-                        </motion.button>
-                      ))}
-                    </div>
+                              {p.photo_url ? (
+                                <img
+                                  src={p.photo_url}
+                                  alt={p.name}
+                                  className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-full object-cover mr-4 shrink-0 shadow-sm transition-transform group-hover:scale-105"
+                                />
+                              ) : (
+                                <div
+                                  className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-full flex items-center justify-center mr-4 shrink-0 border transition-transform group-hover:scale-105"
+                                  style={{
+                                    borderColor: cardBorderColor,
+                                    background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
+                                  }}
+                                >
+                                  <User className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: theme.textMuted }} />
+                                </div>
+                              )}
+                              
+                              <div className="flex flex-col flex-1 min-w-0">
+                                <h3
+                                  className="font-bold text-base sm:text-lg truncate"
+                                  style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
+                                >
+                                  {p.name}
+                                </h3>
+                                <p className="text-xs sm:text-sm mt-0.5 truncate font-medium" style={{ color: theme.textSecondary }}>
+                                  {p.role_title || "Profissional"}
+                                </p>
+                              </div>
+                              
+                              <div className="shrink-0 pl-3">
+                                <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 transition-opacity group-hover:translate-x-1" style={{ color: theme.textSecondary }} />
+                              </div>
+                            </motion.button>
+                          ))}
+                        </div>
+
+                        {/* ──────────────── DESKTOP LAYOUT (Original Grid) ──────────────── */}
+                        <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
+                          {/* Anyone Option */}
+                          {bookingMode !== 'home' && (
+                            <motion.button
+                              whileHover={{ y: -3 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => {
+                                setSelectedPro("any");
+                                setStep(3);
+                              }}
+                              className="group relative rounded-3xl border-2 p-5 sm:p-6 flex flex-col items-center justify-center text-center transition-all cursor-pointer"
+                              style={{
+                                borderColor: `${accent}60`,
+                                background: isDark ? `${accent}0c` : `${accent}08`,
+                                boxShadow: cardShadowStyle,
+                              }}
+                            >
+                              <div
+                                className="w-[84px] h-[84px] rounded-full flex items-center justify-center mb-3 shadow-md mx-auto"
+                                style={{ background: `${accent}20`, color: accent }}
+                              >
+                                <Zap className="w-8 h-8" />
+                              </div>
+                              <p className="font-bold text-xs sm:text-sm" style={{ color: theme.textPrimary }}>
+                                Qualquer profissional
+                              </p>
+                              <p className="text-[11px] mt-0.5 font-medium" style={{ color: theme.textSecondary }}>
+                                Horário mais rápido
+                              </p>
+                              <span
+                                className="mt-2.5 text-[9px] font-bold px-2 py-0.5 rounded-full"
+                                style={{ background: `${accent}20`, color: accent }}
+                              >
+                                Recomendado
+                              </span>
+                            </motion.button>
+                          )}
+
+                          {/* Professional Cards */}
+                          {availableProfessionals.map((p, i) => (
+                            <motion.button
+                              key={`desk-pro-${p.id}`}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: i * 0.04 }}
+                              whileHover={{ y: -3 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => {
+                                setSelectedPro(p);
+                                setStep(3);
+                              }}
+                              className="group relative rounded-3xl border p-5 sm:p-6 flex flex-col items-center text-center transition-all cursor-pointer"
+                              style={{
+                                borderColor: cardBorderColor,
+                                background: cardBackground,
+                                boxShadow: cardShadowStyle,
+                              }}
+                            >
+                              {p.photo_url ? (
+                                <img
+                                  src={p.photo_url}
+                                  alt={p.name}
+                                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover mb-3 shadow-md mx-auto"
+                                />
+                              ) : (
+                                <div
+                                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-full flex items-center justify-center mb-3 border mx-auto"
+                                  style={{
+                                    borderColor: cardBorderColor,
+                                    background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
+                                  }}
+                                >
+                                  <User className="w-10 h-10" style={{ color: theme.textMuted }} />
+                                </div>
+                              )}
+                              <p
+                                className="font-bold text-xs sm:text-sm"
+                                style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
+                              >
+                                {p.name}
+                              </p>
+                              <p className="text-[11px] mt-0.5 truncate w-full font-medium" style={{ color: theme.textSecondary }}>
+                                {p.role_title || "Profissional"}
+                              </p>
+                            </motion.button>
+                          ))}
+                        </div>
+                      </>
                     )}
                   </motion.div>
                 )}
