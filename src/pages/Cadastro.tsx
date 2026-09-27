@@ -216,7 +216,7 @@ export default function Cadastro() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#F8FAFC] relative overflow-hidden">
       {/* Background glow */}
-      <div className="absolute top-[-30%] left-[-20%] w-[60%] h-[60%] bg-[#FD6500]/10 blur-[150px] rounded-full pointer-events-none" />
+      <div className="absolute top-[-20%] left-[-10%] w-[40%] h-[40%] bg-[#FD6500]/5 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] bg-[#FD6500]/5 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10">

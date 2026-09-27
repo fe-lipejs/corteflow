@@ -232,7 +232,7 @@ export default function Login() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute top-[-30%] left-[-20%] w-[60%] h-[60%] bg-[#FD6500]/10 blur-[150px] rounded-full pointer-events-none"
+            className="absolute top-[-20%] left-[-10%] w-[40%] h-[40%] bg-[#FD6500]/5 blur-[120px] rounded-full pointer-events-none"
           />
         )}
       </AnimatePresence>
@@ -343,7 +343,7 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3.5 px-4 font-bold text-sm text-white  disabled:opacity-50 transition-all shadow-md hover:shadow-lg shadow-[#FD6500]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer mt-2"
+                    className="w-full py-3.5 px-4 font-bold text-sm text-white rounded-xl disabled:opacity-50 transition-all shadow-md hover:shadow-lg shadow-[#FD6500]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer mt-2"
                     style={{ background: '#FD6500' }}
                   >
                     {loading ? 'Entrando...' : t('login.submit')}
