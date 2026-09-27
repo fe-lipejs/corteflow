@@ -29,6 +29,7 @@ import {
   Store,
   Home,
   Plus,
+  Search,
 } from "lucide-react";
 import { format, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale/pt-BR";
@@ -305,6 +306,7 @@ export default function PublicStore() {
   const [homeLocationData, setHomeLocationData] = useState<LocationWizardResult | null>(null);
   const [showModeSelectionFor, setShowModeSelectionFor] = useState<any | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [categoryFilter, setCategoryFilter] = useState('Todos');
   const [servicePage, setServicePage] = useState(1);
@@ -318,8 +320,12 @@ export default function PublicStore() {
     if (categoryFilter !== 'Todos') {
       list = list.filter((s: any) => s.category === categoryFilter);
     }
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      list = list.filter((s: any) => s.name.toLowerCase().includes(q));
+    }
     return list;
-  }, [rawServicesList, categoryFilter]);
+  }, [rawServicesList, categoryFilter, searchQuery]);
 
   const uniqueCategories = useMemo(() => {
     const cats = new Set(rawServicesList.filter((s: any) => s.category).map((s: any) => s.category));
@@ -1669,7 +1675,7 @@ export default function PublicStore() {
                   {settings?.custom_palette?.slogan ?? settings?.slogan}
                 </p>
               )}
-              <br />
+
               {/* Bio / Description */}
               {(settings?.custom_palette?.description ?? settings?.description ?? settings?.short_description) !== '' && (
                 <p
@@ -1930,34 +1936,60 @@ export default function PublicStore() {
                       </p>
                     </div>
 
-                    {/* Category Filter */}
-                    {uniqueCategories.length > 0 && (
-                      <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-none items-center mb-2">
-                        <button
-                          onClick={() => setCategoryFilter('Todos')}
-                          className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-all"
+                    {/* Search and Category Filters */}
+                    <div className="flex flex-col gap-4 mb-4">
+                      {/* Search Bar */}
+                      <div className="relative w-full max-w-md">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                          <Search className="h-4 w-4 opacity-50" style={{ color: theme.textSecondary }} />
+                        </div>
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Buscar serviço..."
+                          className="w-full pl-10 pr-4 py-3 rounded-2xl text-sm transition-all focus:outline-none focus:ring-2"
                           style={{
-                            color: categoryFilter === 'Todos' ? theme.btnPrimaryText : theme.textSecondary,
-                            background: categoryFilter === 'Todos' ? accent : "transparent",
-                            borderColor: categoryFilter === 'Todos' ? accent : cardBorderColor,
-                          }}>
-                          Todos
-                        </button>
-                        {uniqueCategories.map(cat => (
-                          <button
-                            key={cat}
-                            onClick={() => setCategoryFilter(cat)}
-                            className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-all"
-                            style={{
-                              color: categoryFilter === cat ? theme.btnPrimaryText : theme.textSecondary,
-                              background: categoryFilter === cat ? accent : "transparent",
-                              borderColor: categoryFilter === cat ? accent : cardBorderColor,
-                            }}>
-                            {cat}
-                          </button>
-                        ))}
+                            background: isDark ? "rgba(255,255,255,0.04)" : "#FFFFFF",
+                            border: `1px solid ${cardBorderColor}`,
+                            color: theme.textPrimary,
+                            boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
+                          }}
+                        />
                       </div>
-                    )}
+
+                      {/* Category Filter */}
+                      {uniqueCategories.length > 0 && (
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none items-center">
+                          <button
+                            onClick={() => setCategoryFilter('Todos')}
+                            className="px-5 py-2.5 rounded-full text-[13px] font-bold whitespace-nowrap border transition-all"
+                            style={{
+                              color: categoryFilter === 'Todos' ? theme.btnPrimaryText : theme.textSecondary,
+                              background: categoryFilter === 'Todos' ? accent : "transparent",
+                              borderColor: categoryFilter === 'Todos' ? accent : cardBorderColor,
+                            }}>
+                            Todos
+                          </button>
+                          {uniqueCategories.map(cat => (
+                            <button
+                              key={cat}
+                              onClick={() => setCategoryFilter(cat)}
+                              className="px-5 py-2.5 rounded-full text-[13px] font-bold whitespace-nowrap border transition-all"
+                              style={{
+                                color: categoryFilter === cat ? theme.btnPrimaryText : theme.textSecondary,
+                                background: categoryFilter === cat ? accent : "transparent",
+                                borderColor: categoryFilter === cat ? accent : cardBorderColor,
+                              }}>
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <br />
+
 
                     {/* Mode selector moved to individual service clicks */}
 
@@ -2045,7 +2077,7 @@ export default function PublicStore() {
                                         setStep(2);
                                       }
                                     }}
-                                    className="group relative text-left rounded-[24px] overflow-hidden transition-all duration-300 flex items-center p-3.5 cursor-pointer hover:scale-[1.01]"
+                                    className="group relative text-left rounded-[28px] overflow-hidden transition-all duration-300 flex items-center p-4 sm:p-5 cursor-pointer hover:scale-[1.01]"
                                     style={{
                                       background: isDark ? "rgba(255,255,255,0.035)" : "#FFFFFF",
                                       border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"}`,
@@ -2054,21 +2086,16 @@ export default function PublicStore() {
                                   >
                                     {/* Left: Image or Icon */}
                                     {s.photo_url ? (
-                                      <div className="relative w-[68px] h-[68px] sm:w-[84px] sm:h-[84px] rounded-[15px] overflow-hidden shrink-0 bg-neutral-900 shadow-sm mr-4">
+                                      <div className="relative w-[76px] h-[76px] sm:w-[96px] sm:h-[96px] rounded-[20px] overflow-hidden shrink-0 bg-neutral-900 shadow-sm mr-5">
                                         <img
                                           src={s.photo_url}
                                           alt={s.name}
                                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                                         />
-                                        {hasDiscount && (
-                                          <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white bg-red-500 shadow-sm">
-                                            -{discountPct}%
-                                          </span>
-                                        )}
                                       </div>
                                     ) : (
                                       <div
-                                        className="w-[68px] h-[68px] sm:w-[84px] sm:h-[84px] rounded-[15px] flex items-center justify-center shrink-0 shadow-sm mr-4"
+                                        className="w-[76px] h-[76px] sm:w-[96px] sm:h-[96px] rounded-[20px] flex items-center justify-center shrink-0 shadow-sm mr-5"
                                         style={{ background: `${accent}15`, color: accent }}
                                       >
                                         <Scissors className="w-6 h-6 sm:w-8 sm:h-8" />
@@ -2077,50 +2104,53 @@ export default function PublicStore() {
 
                                     {/* Middle: Details */}
                                     <div className="flex flex-col flex-1 min-w-0 py-1">
-                                      <div className="flex items-center gap-2 mb-0.5">
+                                      <div className="flex items-center gap-2 mb-1.5">
                                         <h3
-                                          className="text-base sm:text-lg font-bold leading-tight truncate"
+                                          className="text-[15px] sm:text-[17px] font-bold leading-tight truncate"
                                           style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
                                         >
                                           {s.name}
                                         </h3>
-                                        {s.category && (
-                                          <span
-                                            className="px-2 py-0.5 rounded-full text-[9px] font-bold hidden sm:inline-block"
-                                            style={{ background: `${accent}15`, color: accent }}
-                                          >
-                                            {s.category}
-                                          </span>
-                                        )}
                                       </div>
 
-                                      <div className="flex items-center gap-2 mb-1.5">
+                                      <div className="flex items-center gap-2 mb-2.5">
                                         <span
-                                          className="text-sm sm:text-base font-black"
+                                          className="text-[16px] sm:text-[18px] font-black tracking-tight"
                                           style={{ color: accent, fontFamily: theme.fontSerif }}
                                         >
                                           {money(s.price)}
                                         </span>
                                         {hasDiscount && (
-                                          <span
-                                            className="text-[10px] sm:text-xs line-through opacity-60"
-                                            style={{ color: theme.textMuted }}
-                                          >
-                                            {money(s.original_price)}
-                                          </span>
+                                          <>
+                                            <span
+                                              className="text-[11px] sm:text-xs line-through font-bold opacity-50"
+                                              style={{ color: theme.textMuted }}
+                                            >
+                                              {money(s.original_price)}
+                                            </span>
+                                            <span
+                                              className="px-1.5 py-0.5 rounded-md text-[10px] font-bold shadow-sm"
+                                              style={{
+                                                background: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.4)",
+                                                color: isDark ? "#fff" : "#fff"
+                                              }}
+                                            >
+                                              -{discountPct}%
+                                            </span>
+                                          </>
                                         )}
                                       </div>
 
                                       <div className="flex items-center gap-3">
                                         <span
-                                          className="flex items-center gap-1.5 text-xs font-semibold"
+                                          className="flex items-center gap-1.5 text-[13px] font-semibold"
                                           style={{ color: theme.textMuted }}
                                         >
-                                          <Clock className="w-3.5 h-3.5 opacity-70" /> {s.duration_minutes} min
+                                          <Clock className="w-4 h-4 opacity-70" /> {s.duration_minutes} min
                                         </span>
 
                                         {/* Service Mode indicator */}
-                                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium opacity-80" style={{ color: theme.textSecondary }}>
+                                        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-medium opacity-80" style={{ color: theme.textSecondary }}>
                                           {s.service_mode === 'home' ? (
                                             <><Home className="w-3.5 h-3.5 opacity-70" /> <span className="hidden sm:inline">À Domicílio</span></>
                                           ) : s.service_mode === 'both' ? (
