@@ -621,7 +621,7 @@ export default function Onboarding() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 bg-white p-8 md:p-10 flex flex-col justify-between overflow-y-auto max-h-[85vh]">
+        <div className="flex-1 bg-white p-5 sm:p-8 md:p-10 flex flex-col justify-between overflow-y-auto max-h-[90vh]">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -1101,29 +1101,33 @@ export default function Onboarding() {
               )}
             </AnimatePresence>
 
-            {/* Bottom Fixed Navigation */}
+            {/* Bottom Navigation (Posicionado no fim natural do formulário, sem flutuar sobre campos no mobile) */}
             {step < 4 && (
-              <div className="p-6 border-t border-slate-100 bg-white/50 backdrop-blur-md sticky bottom-0 z-20 shrink-0">
+              <div className="pt-6 mt-8 border-t border-[#E2E8F0] shrink-0">
                 {error && (
-                  <div className="mt-4 p-3 rounded-xl text-xs font-semibold bg-red-500/10 border border-red-500/20 text-red-600">
+                  <div className="mb-4 p-3 rounded-xl text-xs font-semibold bg-red-500/10 border border-red-500/20 text-red-600">
                     ⚠️ {error}
                   </div>
                 )}
 
-                <div className="mt-8 pt-6 border-t border-[#E2E8F0] flex justify-between items-center">
+                <div className="flex justify-between items-center">
                   {step > 1 ? (
-                    <button type="button" onClick={() => { setError(null); setStep(step - 1); }} className="flex items-center px-4 py-2 text-[#64748B] hover:text-[#0F172A] font-semibold text-xs transition-colors cursor-pointer">
+                    <button
+                      type="button"
+                      onClick={() => { setError(null); setStep(step - 1); }}
+                      className="flex items-center px-4 py-2.5 text-[#64748B] hover:text-[#0F172A] font-semibold text-xs transition-colors cursor-pointer"
+                    >
                       <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
                     </button>
                   ) : (
-                    <div></div>
+                    <div />
                   )}
 
                   {step < 3 ? (
                     <button
                       type="button"
                       onClick={handleNextStep}
-                      className="px-6 py-3 rounded-xl font-bold text-xs text-white shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] transition-all flex items-center gap-1.5 cursor-pointer"
+                      className="px-6 py-3 rounded-xl font-bold text-xs text-white shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] transition-all flex items-center gap-1.5 cursor-pointer ml-auto"
                       style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
                     >
                       <span>Continuar</span>
@@ -1134,12 +1138,12 @@ export default function Onboarding() {
                       type="button"
                       onClick={handleSubmit(onSubmit)}
                       disabled={loading}
-                      className="px-7 py-3 rounded-xl font-bold text-xs text-white shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                      className="px-7 py-3 rounded-xl font-bold text-xs text-white shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 ml-auto"
                       style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
                     >
                       {loading ? (
                         <>
-                          <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                          <Loader2 className="w-4 h-4 animate-spin text-white" />
                           <span>Configurando seu Salão...</span>
                         </>
                       ) : (

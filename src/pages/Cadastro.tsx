@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Mail, Eye, EyeOff, CheckCircle2, RefreshCw } from 'lucide-react';
+import { ChevronRight, Mail, Eye, EyeOff, CheckCircle2, RefreshCw, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -27,6 +27,7 @@ export default function Cadastro() {
   usePageTracking();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<string>('');
   const [errorList, setErrorList] = useState<string[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -57,6 +58,7 @@ export default function Cadastro() {
 
   const onSubmit = async (data: CadastroForm) => {
     setLoading(true);
+    setLoadingStep('Validando informações...');
     setErrorList([]);
 
     // 1. Validação estrita de senha e confirmação de senha
@@ -78,12 +80,22 @@ export default function Cadastro() {
     const cleanEmail = data.email.trim().toLowerCase();
 
     try {
-      // 3. Verificação de duplicidade de e-mail e telefone no banco de dados via RPC (com fallback tolerante)
+      // 3. Verificação rápida de duplicidade com timeout tolerante de 3.5s
+      setLoadingStep('Verificando disponibilidade...');
       try {
-        const { data: availability, error: availError } = await supabase.rpc('check_registration_availability', {
+        const availabilityPromise = supabase.rpc('check_registration_availability', {
           p_email: cleanEmail,
           p_phone: cleanPhone
         });
+
+        const timeoutPromise = new Promise<{ data: any; error: any }>((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), 3500)
+        );
+
+        const { data: availability, error: availError } = await Promise.race([
+          availabilityPromise,
+          timeoutPromise
+        ]);
 
         if (!availError && availability) {
           const foundErrors: string[] = [];
@@ -105,27 +117,13 @@ export default function Cadastro() {
             setLoading(false);
             return;
           }
-        } else if (availError) {
-          console.warn('check_registration_availability fallback:', availError);
-          // Fallback de verificação em profiles / tenant_settings
-          const { data: existingProfile } = await supabase
-            .from('profiles')
-            .select('id, phone_normalized, phone')
-            .or(`phone_normalized.eq.${cleanPhone},phone.eq.${cleanPhone}`)
-            .limit(1)
-            .maybeSingle();
-
-          if (existingProfile) {
-            setErrorList(['Este número de telefone já está cadastrado.']);
-            setLoading(false);
-            return;
-          }
         }
       } catch (checkErr) {
-        console.warn('Pre-check availability skipped:', checkErr);
+        console.warn('Pre-check availability ignorado ou timeout:', checkErr);
       }
 
       // 4. Criação de conta no Supabase Auth com telefone normalizado
+      setLoadingStep('Criando conta e enviando confirmação...');
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: data.password,
@@ -253,9 +251,22 @@ export default function Cadastro() {
                   {submittedEmail}
                 </p>
 
-                <p className="text-xs text-[#64748B] leading-relaxed mb-8">
+                <p className="text-xs text-[#64748B] leading-relaxed mb-5">
                   Basta abrir o e-mail no seu celular ou computador e clicar no botão <strong className="text-[#0F172A]">"Ativar Minha Conta"</strong> para começar a configurar seu estabelecimento.
                 </p>
+
+                {/* Aviso Destacado de SPAM / Lixo Eletrônico */}
+                <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-left flex items-start gap-3 shadow-xs">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0 text-base font-bold">
+                    📬
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-xs font-bold text-amber-950 mb-0.5">Não encontrou na Caixa de Entrada?</h4>
+                    <p className="text-[11px] text-amber-900 leading-relaxed font-medium">
+                      Verifique sua <strong>pasta de Spam ou Lixo Eletrônico</strong>. Alguns provedores (como Hotmail, Yahoo ou Gmail) podem filtrar o primeiro e-mail de ativação.
+                    </p>
+                  </div>
+                </div>
 
                 {resendMessage && (
                   <div className="mb-6 p-3 bg-green-500/10 border border-green-500/20 text-green-700 text-xs rounded-xl font-medium">
@@ -407,12 +418,20 @@ export default function Cadastro() {
                 <button
                   type="submit"
                   disabled={!isValid || loading}
-                  className="w-full mt-6 flex items-center justify-center px-6 py-3.5 rounded-xl font-bold text-sm text-white disabled:opacity-00 transition-all shadow-md hover:shadow-lg shadow-[#FD6500]/20 hover:brightness-105 active:scale-[0.99] cursor-pointer"
+                  className="w-full mt-6 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg shadow-[#FD6500]/25 hover:brightness-105 active:scale-[0.99] cursor-pointer"
                   style={{ background: '#FD6500' }}
                 >
-
-                  {loading ? 'Criando conta...' : 'Criar Conta'}
-                  {!loading && <ChevronRight className="w-4 h-4 ml-1" />}
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white shrink-0" />
+                      <span>{loadingStep || 'Criando conta...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Criar Conta</span>
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </>
+                  )}
                 </button>
 
                 <div className="mt-6 text-center text-sm text-[#64748B]">

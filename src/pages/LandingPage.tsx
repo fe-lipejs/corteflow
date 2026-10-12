@@ -28,6 +28,7 @@ import { usePageTracking } from '../hooks/usePageTracking';
 const ACCENT = "#FF9D2E";
 const M = {
   booking: "/Mockups/Iphone - Tela de Agendamento.PNG",
+  booking2: "/Mockups/Iphone - Tela de Agendamento2.jpg",
   services: "/Mockups/Iphone - Serviços.PNG",
   domicilio: "/Mockups/Iphone - Tela de Escolha Domicilio.PNG",
   pix: "/Mockups/Iphone - Tela de Pagamento Pix.PNG",
@@ -48,9 +49,9 @@ type FAQItem = {
 
 const faqs: FAQItem[] = [
   {
-    question: "Preciso instalar algum aplicativo?",
+    question: "Tem mesmo 7 dias grátis, sem cartão?",
     answer:
-      "Não. O Raffros roda direto no navegador — computador, tablet ou celular. Você abre, usa e pronto. Sem instalação, sem atualização manual, sem dor de cabeça.",
+      "Tem. Você começa hoje, testa com seus clientes reais, vê funcionar na prática. Se não servir, cancela e não paga nada. Mas quem testou não voltou para o WhatsApp.",
   },
   {
     question: "Meus clientes agendam sozinhos de verdade?",
@@ -58,29 +59,14 @@ const faqs: FAQItem[] = [
       "De verdade. Você recebe uma página própria para colocar no Instagram, WhatsApp, Google ou onde quiser. O cliente escolhe serviço, profissional, dia e horário — sem mandar mensagem pra você.",
   },
   {
-    question: "Vale para barbearia, salão e esmalteria?",
+    question: "E se meus clientes estiverem acostumados com o WhatsApp?",
     answer:
-      "Sim. O Raffros foi construído pensando nos três tipos de negócio. Cada um com sua dinâmica, seus profissionais e seus serviços — tudo configurável do jeito que você trabalha.",
-  },
-  {
-    question: "Posso cadastrar minha equipe inteira?",
-    answer:
-      "Sim. Cada profissional tem seus próprios horários, serviços e permissões. A agenda de um não interfere no outro. Você continua no controle de tudo sem precisar centralizar na sua mão.",
-  },
-  {
-    question: "Tem mesmo 7 dias grátis, sem cartão?",
-    answer:
-      "Tem. Você começa hoje, testa com seus clientes reais, vê funcionar na prática. Se não servir, cancela e não paga nada. Mas quem testou não voltou para o WhatsApp.",
+      "Melhor ainda. Você compartilha o link da sua página por lá. O cliente clica, agenda em 30 segundos e você não precisa responder mais nada. Eles acostumam rápido quando é fácil.",
   },
   {
     question: "Consigo ver o dinheiro entrando?",
     answer:
       "Sim. Faturamento, ocupação, desempenho por profissional — tudo em uma tela. Você para de adivinhar como o mês foi e começa a tomar decisões com dado real.",
-  },
-  {
-    question: "E se meus clientes estiverem acostumados com o WhatsApp?",
-    answer:
-      "Melhor ainda. Você compartilha o link da sua página por lá. O cliente clica, agenda em 30 segundos e você não precisa responder mais nada. Eles acostumam rápido quando é fácil.",
   },
 ];
 
@@ -225,7 +211,7 @@ function Reveal({
    MOCKUP — PUBLIC BOOKING
    ========================================================= */
 
-function BookingPhone() {
+function BookingPhone({ imageSrc = M.booking }: { imageSrc?: string } = {}) {
   const reduced = useReducedMotion();
 
   return (
@@ -263,7 +249,7 @@ function BookingPhone() {
           <span className="rf-real-phone-island" />
           <div className="rf-real-phone-screen">
             <img
-              src={M.booking}
+              src={imageSrc}
               alt="Tela de agendamento online da Raffros"
               className="rf-real-phone-image"
               loading="eager"
@@ -883,7 +869,7 @@ function BookingSection() {
 
         <div className="rf-booking-layout">
           <Reveal className="rf-booking-visual">
-            <BookingPhone />
+            <BookingPhone imageSrc={M.booking2} />
           </Reveal>
 
           <div className="rf-booking-details">
@@ -6454,27 +6440,15 @@ export default function LandingPage() {
       <main>
         <Hero />
 
-        <Statement />
-
         <ProblemSection />
 
         <BookingSection />
 
-        <RealProductGallery />
-
         <DashboardSection />
-
-        <TeamSection />
 
         <PhilosophySection />
 
-        <FinanceRealSection />
-
         <PaymentRealSection />
-
-        <DomicilioRealSection />
-
-        <AudienceSection />
 
         <PricingSection />
 

@@ -1,172 +1,208 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-
+<html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Confirme seu e-mail — Navalha</title>
+  <title>Confirme seu e-mail — Raffros</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
+    
+    * {
+      box-sizing: border-box;
+    }
     body {
       margin: 0;
       padding: 0;
-      background-color: #F8FAFC;
+      width: 100% !important;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+      background-color: #0F172A;
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       color: #0F172A;
-      -webkit-font-smoothing: antialiased;
     }
-
     table {
       border-spacing: 0;
+      border-collapse: collapse;
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
     }
-
     td {
       padding: 0;
     }
-
     img {
       border: 0;
+      outline: none;
+      text-decoration: none;
+      -ms-interpolation-mode: bicubic;
     }
-
-    .wrapper {
-      width: 100%;
-      table-layout: fixed;
-      background-color: #F8FAFC;
-      padding-bottom: 40px;
-    }
-
-    .main {
+    .main-card {
       background-color: #FFFFFF;
       margin: 0 auto;
       width: 100%;
-      max-width: 600px;
-      border-spacing: 0;
-      border: 1px solid #E2E8F0;
+      max-width: 580px;
       border-radius: 24px;
       overflow: hidden;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
     }
-
-    .button {
-      background: linear-gradient(135deg, #DE870D 0%, #C77507 100%);
-      color: #FFFFFF !important;
-      text-decoration: none;
-      padding: 16px 36px;
-      font-size: 15px;
-      font-weight: 700;
-      border-radius: 14px;
-      display: inline-block;
-      box-shadow: 0 4px 14px rgba(222, 135, 13, 0.35);
-      letter-spacing: 0.2px;
-    }
-
-    @media screen and (max-width: 600px) {
-      .main {
+    @media only screen and (max-width: 620px) {
+      .main-card {
         border-radius: 16px !important;
-        margin: 10px !important;
-        width: auto !important;
+        margin: 12px !important;
+        width: calc(100% - 24px) !important;
       }
-
-      .content-padding {
-        padding: 24px !important;
+      .mobile-padding {
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+      }
+      .mobile-hero-padding {
+        padding: 32px 24px 28px 24px !important;
       }
     }
   </style>
 </head>
-
-<body>
-  <center class="wrapper">
-    <table class="main" width="100%">
-      <!-- Header / Logo -->
+<body style="margin: 0; padding: 32px 0 48px 0; background-color: #0B1120; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <center style="width: 100%; table-layout: fixed; background-color: #0B1120;">
+    <!-- Container Principal -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 580px; margin: 0 auto;">
+      
+      <!-- Logo Superior / Marca -->
       <tr>
-        <td style="padding: 36px 40px 24px 40px; text-align: center; border-bottom: 1px solid #F1F5F9;"
-          class="content-padding">
-          <table align="center" style="margin: 0 auto;">
+        <td align="center" style="padding: 0 0 24px 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0">
             <tr>
-              <td style="vertical-align: middle; padding-right: 10px;">
-                <div
-                  style="width: 44px; height: 44px; background: rgba(222, 135, 13, 0.12); border: 1px solid rgba(222, 135, 13, 0.25); border-radius: 12px; line-height: 44px; text-align: center;">
-                  <span style="font-size: 22px;">🪒</span>
+              <td align="center">
+                <div style="display: inline-block; padding: 8px 18px; background: rgba(253, 101, 0, 0.12); border: 1px solid rgba(253, 101, 0, 0.3); border-radius: 999px;">
+                  <span style="font-size: 13px; font-weight: 800; color: #FD6500; letter-spacing: 1.5px; text-transform: uppercase;">
+                    ⚡ RAFFROS CORTEFLOW
+                  </span>
                 </div>
-              </td>
-              <td style="vertical-align: middle; text-align: left;">
-                <span
-                  style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.5px; display: block;">Navalha</span>
-                <span
-                  style="font-size: 11px; font-weight: 600; color: #DE870D; text-transform: uppercase; letter-spacing: 1px; display: block;">Plataforma
-                  de Gestão & Agendamentos</span>
               </td>
             </tr>
           </table>
         </td>
       </tr>
 
-      <!-- Hero & Body Content -->
+      <!-- Cartão Branco Central -->
       <tr>
-        <td style="padding: 40px 40px 32px 40px;" class="content-padding">
-          <h1
-            style="margin: 0 0 16px 0; font-size: 22px; font-weight: 800; color: #0F172A; line-height: 1.35; letter-spacing: -0.3px;">
-            Falta apenas um clique para ativar seu salão! 💈
-          </h1>
-
-          <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #475569;">
-            Olá! Seja muito bem-vindo ao <strong>Navalha</strong>. Estamos muito felizes em ter você conosco para
-            modernizar a gestão e os agendamentos do seu estabelecimento.
-          </p>
-
-          <p style="margin: 0 0 28px 0; font-size: 15px; line-height: 1.6; color: #475569;">
-            Para garantir a segurança da sua conta e iniciar seu <strong>período de teste gratuito</strong>, por favor
-            clique no botão abaixo para confirmar seu e-mail:
-          </p>
-
-          <!-- Action Button -->
-          <table width="100%" style="margin: 0 0 32px 0;">
+        <td class="main-card" style="background-color: #FFFFFF; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+          
+          <!-- Faixa de Destaque Gradiente Superior -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr>
-              <td align="center">
-                <a href="{{ .ConfirmationURL }}" target="_blank" class="button">
-                  Confirmar meu E-mail →
-                </a>
+              <td height="6" style="background: linear-gradient(90deg, #FD6500 0%, #DE870D 50%, #FF9D2E 100%); line-height: 6px; font-size: 6px;">&nbsp;</td>
+            </tr>
+          </table>
+
+          <!-- Conteúdo Principal -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td class="mobile-hero-padding" style="padding: 44px 44px 36px 44px; text-align: center;">
+                
+                <!-- Ícone Estilizado de Confirmação -->
+                <div style="width: 68px; height: 68px; margin: 0 auto 24px auto; background: #FFF7ED; border: 2px solid #FFEDD5; border-radius: 20px; line-height: 68px; text-align: center; font-size: 30px;">
+                  ✉️
+                </div>
+
+                <!-- Título Principal -->
+                <h1 style="margin: 0 0 12px 0; font-size: 26px; font-weight: 800; color: #0F172A; line-height: 1.3; letter-spacing: -0.5px;">
+                  Falta pouco para ativar sua conta!
+                </h1>
+
+                <!-- Subtítulo -->
+                <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 1.6; color: #64748B;">
+                  Você está a um clique de transformar o agendamento e a gestão do seu salão ou barbearia com a <strong>Raffros</strong>.
+                </p>
+
+                <!-- Box Informativo -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 32px 0; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px;">
+                  <tr>
+                    <td style="padding: 16px 20px; text-align: left;">
+                      <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #334155;">
+                        🎁 <strong>7 dias grátis liberados:</strong> Seu período de teste já está pronto. Confirme seu e-mail abaixo para acessar seu painel imediatamente.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Botão CTA Principal -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 32px 0;">
+                  <tr>
+                    <td align="center">
+                      <!--[if mso]>
+                      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .ConfirmationURL }}" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="25%" strokecolor="#FD6500" fillcolor="#FD6500">
+                        <w:anchorlock/>
+                        <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">Confirmar Meu E-mail →</center>
+                      </v:roundrect>
+                      <![endif]-->
+                      <!--[if !mso]><!-->
+                      <a href="{{ .ConfirmationURL }}" target="_blank" style="background: linear-gradient(135deg, #FD6500 0%, #DE870D 100%); color: #FFFFFF !important; text-decoration: none; padding: 16px 38px; font-size: 15px; font-weight: 800; border-radius: 14px; display: inline-block; box-shadow: 0 6px 20px rgba(253, 101, 0, 0.35); letter-spacing: 0.3px;">
+                        Confirmar Meu E-mail →
+                      </a>
+                      <!--<![endif]-->
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Link Alternativo -->
+                <p style="margin: 0 0 24px 0; font-size: 12px; line-height: 1.6; color: #94A3B8;">
+                  Se o botão não funcionar, copie e cole o link abaixo no seu navegador:<br>
+                  <a href="{{ .ConfirmationURL }}" target="_blank" style="color: #FD6500; word-break: break-all; text-decoration: underline;">
+                    {{ .ConfirmationURL }}
+                  </a>
+                </p>
+
+                <!-- Dica de Segurança -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top: 1px solid #F1F5F9; padding-top: 20px;">
+                  <tr>
+                    <td style="text-align: center;">
+                      <p style="margin: 0; font-size: 11px; line-height: 1.5; color: #94A3B8;">
+                        🔒 Se você não realizou este cadastro na Raffros, não se preocupe. Pode ignorar este e-mail e nenhuma conta será ativada.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+
               </td>
             </tr>
           </table>
 
-          <!-- Security Callout Box -->
-          <table width="100%"
-            style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; margin: 0 0 24px 0;">
+          <!-- Rodapé do Cartão -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #F8FAFC; border-top: 1px solid #E2E8F0;">
             <tr>
-              <td style="padding: 16px 20px;">
-                <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #64748B;">
-                  🔒 <strong>Dica de Segurança:</strong> Se você não realizou este cadastro no Navalha, fique tranquilo.
-                  Basta ignorar esta mensagem e nenhuma conta será ativada.
+              <td class="mobile-padding" style="padding: 20px 40px; text-align: center;">
+                <p style="margin: 0; font-size: 12px; font-weight: 600; color: #64748B;">
+                  Raffros Corteflow — Gestão e Agendamento para Barbearias e Salões
+                </p>
+                <p style="margin: 4px 0 0 0; font-size: 11px; color: #94A3B8;">
+                  © 2026 Raffros. Todos os direitos reservados.
                 </p>
               </td>
             </tr>
           </table>
 
-          <!-- Fallback Link -->
-          <p style="margin: 0; font-size: 12px; line-height: 1.6; color: #94A3B8;">
-            Se o botão acima não funcionar, copie e cole o seguinte link no seu navegador:<br>
-            <a href="{{ .ConfirmationURL }}"
-              style="color: #DE870D; word-break: break-all; text-decoration: underline;">{{ .ConfirmationURL }}</a>
+        </td>
+      </tr>
+
+      <!-- Rodapé Externo -->
+      <tr>
+        <td align="center" style="padding: 24px 0 0 0;">
+          <p style="margin: 0; font-size: 11px; color: #64748B;">
+            Precisa de ajuda? Entre em contato com nossa equipe em suporte@raffros.com
           </p>
         </td>
       </tr>
 
-      <!-- Footer -->
-      <tr>
-        <td style="padding: 24px 40px; background-color: #F8FAFC; border-top: 1px solid #E2E8F0; text-align: center;"
-          class="content-padding">
-          <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #475569;">
-            Raffros — Gestão e Agendamento para Barbearias e Salões
-          </p>
-          <p style="margin: 0; font-size: 11px; color: #94A3B8;">
-            © 2026 Raffros. Todos os direitos reservados.
-          </p>
-        </td>
-      </tr>
     </table>
   </center>
 </body>
-
 </html>
