@@ -23,6 +23,7 @@ import ClientPortal from '../pages/public/ClientPortal';
 import AdminLayout from '../pages/admin/AdminLayout';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import AdminTenants from '../pages/admin/AdminTenants';
+import AdminDemoPortals from '../pages/admin/AdminDemoPortals';
 import AdminSettings from '../pages/admin/AdminSettings';
 import AdminPlans from '../pages/admin/AdminPlans';
 import AdminCustomPricing from '../pages/admin/AdminCustomPricing';
@@ -34,6 +35,7 @@ import AdminSeguranca from '../pages/admin/AdminSeguranca';
 import AdminAnalytics from '../pages/admin/AdminAnalytics';
 import AdminSuporte from '../pages/admin/AdminSuporte';
 import { AdminHistory } from '../pages/admin/AdminHistory';
+import PublicDemoStore from '../pages/public/PublicDemoStore';
 
 // App Pages (Tenant Admin/Manager/Professional)
 import AppLayout from '../pages/app/AppLayout';
@@ -141,6 +143,7 @@ function AdminRouteTree() {
       <Route index element={<AdminDashboard />} />
       <Route path="analytics" element={<AdminAnalytics />} />
       <Route path="tenants" element={<AdminTenants />} />
+      <Route path="demos" element={<AdminDemoPortals />} />
       <Route path="plans" element={<AdminPlans />} />
       <Route path="custom-pricing" element={<AdminCustomPricing />} />
       <Route path="financeiro" element={<AdminFinanceiro />} />
@@ -170,6 +173,17 @@ export default function AppRoutes() {
 
         {/* Super Admin (Dono da Plataforma) */}
         {AdminRouteTree()}
+
+        {/* Public Demo Portal route (Prospects) - Powered directly by real PublicStore & ClientPortal */}
+        <Route path="/paginas/:slug/portal" element={<ClientPortal />} />
+        <Route path="/paginas/:slug/sucesso" element={<SuccessBooking />} />
+        <Route path="/paginas/:slug" element={<PublicStore />} />
+
+        {/* Alias retrocompatível */}
+        <Route path="/testepaginas/:slug/portal" element={<ClientPortal />} />
+        <Route path="/testepaginas/:slug/sucesso" element={<SuccessBooking />} />
+        <Route path="/testepaginas/:slug" element={<PublicStore />} />
+
 
         {/* Public tenant routes (path-based) */}
         <Route path="/:slug/portal" element={<ClientPortal />} />

@@ -15,6 +15,7 @@ import { usePublicStore } from '../../hooks/usePublicStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getThemeContrastEngine } from '../../lib/themeEngine';
 import toast from 'react-hot-toast';
+import { getTenantPublicUrl } from '../../lib/tenantUrl';
 
 export default function ClientPortal() {
   const slugFromHook = useTenantSlug();
@@ -44,12 +45,56 @@ export default function ClientPortal() {
   const [newDate, setNewDate] = useState<Date | null>(null);
   const [newTime, setNewTime] = useState<string>('');
 
+  // Auto-login em modo demonstração
+  useEffect(() => {
+    if (tenant?.isDemo && tenant?.slug) {
+      const storedPhone = localStorage.getItem(`demo_${tenant.slug}_phone`);
+      if (storedPhone) {
+        setPhone(phoneFormat.format(storedPhone));
+        setCustomerId('demo_customer_' + storedPhone);
+        setIsLogged(true);
+      }
+    }
+  }, [tenant]);
+
   // Tenant Info
 
   // Bookings Fetch
-  const { data: bookings = [], isLoading: loadingBookings } = useQuery({
+  const { data: bookings = [], isLoading: loadingBookings } = useQuery<any[]>({
     queryKey: ['customer-bookings', customerId],
     queryFn: async () => {
+      if (tenant?.isDemo) {
+        const stored = JSON.parse(localStorage.getItem(`demo_${tenant.slug}_bookings`) || '[]');
+        return stored.map((b: any) => ({
+          id: b.id,
+          order_number: b.order_number,
+          scheduled_at: b.date ? `${b.date}T${b.time}:00` : new Date().toISOString(),
+          status: b.status || 'confirmed',
+          reschedule_count: 0,
+          notes: b.notes,
+          service_id: b.service_id,
+          professional_id: b.professional_id,
+          amount_total: b.service_price || 0,
+          service: {
+            name: b.service_name,
+            price: b.service_price,
+            duration_minutes: b.service_duration,
+          },
+          services: {
+            name: b.service_name,
+            price: b.service_price,
+            duration_minutes: b.service_duration,
+          },
+          professional: {
+            name: b.professional_name,
+            photo_url: b.professional_photo_url || null,
+          },
+          professionals: {
+            name: b.professional_name,
+            photo_url: b.professional_photo_url || null,
+          },
+        }));
+      }
       const { data, error } = await supabase
         .rpc('get_customer_bookings_secure', { p_customer_id: customerId });
       if (error) throw error;
@@ -182,6 +227,14 @@ export default function ClientPortal() {
       // FIX #5: bookings save phone as raw digits only (cleanPhone = customerPhone.replace(/\D/g, ''))
       // So we must search with digits-only too — NOT with the formatted mask version
       const cleanPhone = phone.replace(/\D/g, '');
+
+      if (tenant?.isDemo) {
+        setCustomerId('demo_customer_' + cleanPhone);
+        setIsLogged(true);
+        toast.success('Agendamentos carregados!');
+        return;
+      }
+
       const { data: customerIdData, error } = await supabase
         .rpc('get_customer_by_phone', { p_tenant_id: tenant.id, p_phone: cleanPhone });
 
@@ -214,6 +267,19 @@ export default function ClientPortal() {
   const handleCancelConfirm = async () => {
     if (!bookingToCancel) return;
     setLoading(true);
+    if (tenant?.isDemo) {
+      const stored = JSON.parse(localStorage.getItem(`demo_${tenant.slug}_bookings`) || '[]');
+      const updated = stored.map((b: any) =>
+        b.id === bookingToCancel.id ? { ...b, status: 'canceled', cancel_reason: cancelReason } : b
+      );
+      localStorage.setItem(`demo_${tenant.slug}_bookings`, JSON.stringify(updated));
+      toast.success('Agendamento cancelado com sucesso!');
+      qc.invalidateQueries({ queryKey: ['customer-bookings', customerId] });
+      setBookingToCancel(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       await cancelMutation.mutateAsync({
         bookingId: bookingToCancel.id,
@@ -277,6 +343,19 @@ export default function ClientPortal() {
     if (!hasReschedulesLeft(rescheduleBooking)) {
       const max = (s as any)?.max_reschedules ?? 1;
       toast.error(`Limite atingido. Este agendamento já foi reagendado ${max}x (máximo permitido pelo salão).`);
+      return;
+    }
+
+    if (tenant?.isDemo) {
+      const stored = JSON.parse(localStorage.getItem(`demo_${tenant.slug}_bookings`) || '[]');
+      const updated = stored.map((b: any) =>
+        b.id === rescheduleBooking.id ? { ...b, date: format(newDate, 'yyyy-MM-dd'), time: newTime } : b
+      );
+      localStorage.setItem(`demo_${tenant.slug}_bookings`, JSON.stringify(updated));
+      toast.success('Agendamento reagendado com sucesso!');
+      qc.invalidateQueries({ queryKey: ['customer-bookings', customerId] });
+      setRescheduleBooking(null);
+      setLoading(false);
       return;
     }
 
@@ -504,8 +583,8 @@ export default function ClientPortal() {
     );
   }
 
-  const futureBookings = bookings.filter((b) => new Date(b.scheduled_at) >= new Date() && !['canceled', 'no_show', 'completed'].includes(b.status));
-  const pastBookings = bookings.filter((b) => new Date(b.scheduled_at) < new Date() || ['canceled', 'no_show', 'completed'].includes(b.status));
+  const futureBookings = (bookings as any[]).filter((b: any) => new Date(b.scheduled_at) >= new Date() && !['canceled', 'no_show', 'completed'].includes(b.status));
+  const pastBookings = (bookings as any[]).filter((b: any) => new Date(b.scheduled_at) < new Date() || ['canceled', 'no_show', 'completed'].includes(b.status));
 
   return (
     <div className="min-h-screen pb-20 transition-colors bg-[#050505]" style={{ backgroundColor: theme.bg, color: theme.textPrimary, fontFamily: theme.fontSerif }}>
@@ -525,7 +604,7 @@ export default function ClientPortal() {
               </div>
               <p className="text-sm font-medium" style={{ color: theme.textSecondary }}>Você não tem nenhum agendamento futuro no momento.</p>
               <button
-                onClick={() => navigate(`/${slug}`)}
+                onClick={() => navigate(getTenantPublicUrl(slug || '', tenant?.isDemo))}
                 className="mt-6 px-6 py-3 rounded-2xl font-bold text-xs shadow-lg transition-transform hover:scale-105 active:scale-95 border"
                 style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
               >
@@ -534,7 +613,7 @@ export default function ClientPortal() {
             </div>
           ) : (
             <div className="space-y-4">
-              {futureBookings.map((b) => (
+              {futureBookings.map((b: any) => (
                 <div key={b.id} className="rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.1)] md:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border backdrop-blur-2xl transition-all hover:scale-[1.01]" style={{ backgroundColor: `color-mix(in srgb, ${theme.cardBg} 95%, transparent)`, borderColor: theme.cardBorder }}>
                   <div className="flex justify-between items-start mb-4 border-b pb-4" style={{ borderColor: theme.border }}>
                     <div>
@@ -634,7 +713,7 @@ export default function ClientPortal() {
         <section className="pt-4">
           <h2 className="text-xl font-serif font-bold mb-4 opacity-80" style={{ color: theme.textPrimary }}>Histórico Passado</h2>
           <div className="space-y-3">
-            {pastBookings.map((b) => (
+            {pastBookings.map((b: any) => (
               <div key={b.id} className="rounded-2xl p-4 border opacity-75 flex items-center justify-between" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
                 <div>
                   <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>{b.services?.name}</h4>

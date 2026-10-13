@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useTenantSlug } from "../../hooks/useTenantSlug";
-import { getTenantPortalUrl } from "../../lib/tenantUrl";
+import { getTenantPortalUrl, getTenantPublicUrl } from "../../lib/tenantUrl";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Calendar,
@@ -984,6 +984,12 @@ export default function PublicStore() {
 
   const whatsappUrl = useMemo(() => {
     if (!bookingCode || !selectedService || !selectedDate || !selectedTime) return "#";
+    if (tenant?.isDemo) {
+      const cleanOwnerPhone = onlyDigits(storePhone);
+      const dayFormatted = selectedDate ? format(selectedDate, "dd 'de' MMMM", { locale: ptBR }) : "";
+      const text = `Novo agendamento! ${customerName.trim()} marcou ${selectedService.name} com ${proName} em ${dayFormatted} às ${selectedTime}. Era isso que eu queria te mostrar: seus clientes marcando sozinhos 😉`;
+      return `https://wa.me/${cleanOwnerPhone}?text=${encodeURIComponent(text)}`;
+    }
     const lines = [
       `*NOVA RESERVA — ${storeName}*`,
       "",
@@ -1048,6 +1054,44 @@ export default function PublicStore() {
         } else {
           proId = professionalsList[0]?.id || null;
         }
+      }
+
+      if (tenant?.isDemo) {
+        // Fluxo de Demonstração Interativa (sem chamar edge functions de produção ou stripe)
+        const randomOrder = 'DEMO-' + Math.floor(1000 + Math.random() * 9000);
+        const dayFormatted = format(selectedDate, "dd 'de' MMMM", { locale: ptBR });
+        const cleanClientPhone = onlyDigits(customerPhone);
+
+        const newDemoBooking = {
+          id: 'demo_bk_' + Math.random().toString(36).substring(2, 9),
+          order_number: randomOrder,
+          customer_name: customerName.trim(),
+          customer_phone: cleanClientPhone,
+          service_id: selectedService.id,
+          service_name: selectedService.name,
+          service_price: selectedService.price,
+          service_duration: selectedService.duration_minutes,
+          professional_id: proId,
+          professional_name: proName,
+          date: format(selectedDate, "yyyy-MM-dd"),
+          date_formatted: dayFormatted,
+          time: selectedTime,
+          status: 'confirmed',
+          created_at: new Date().toISOString(),
+        };
+
+        const stored = JSON.parse(localStorage.getItem(`demo_${tenant.slug}_bookings`) || '[]');
+        localStorage.setItem(`demo_${tenant.slug}_bookings`, JSON.stringify([newDemoBooking, ...stored]));
+        localStorage.setItem(`demo_${tenant.slug}_phone`, cleanClientPhone);
+
+        const cleanOwnerPhone = onlyDigits(storePhone);
+        const messageText = `Novo agendamento! ${customerName.trim()} marcou ${selectedService.name} com ${proName} em ${dayFormatted} às ${selectedTime}. Era isso que eu queria te mostrar: seus clientes marcando sozinhos 😉`;
+        window.open(`https://wa.me/${cleanOwnerPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
+
+        setBookingCode(randomOrder);
+        setStep(5);
+        setIsProcessing(false);
+        return;
       }
 
       if (bookingMode === 'home' && (!proId || selectedPro === 'any')) {
@@ -1640,11 +1684,25 @@ export default function PublicStore() {
                 </>
               ) : (
                 <div
-                  className="w-full h-full relative"
+                  className="w-full h-full relative overflow-hidden"
                   style={{
-                    background: `linear-gradient(135deg, ${accent}25 0%, ${sidebarBackground} 100%)`,
+                    background: `linear-gradient(135deg, ${accent} 0%, ${adjustColorBrightness(accent, -18)} 100%)`,
                   }}
-                />
+                >
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.22) 0%, transparent 65%)",
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0 pointer-events-none opacity-15"
+                    style={{
+                      backgroundImage: `radial-gradient(${theme.btnPrimaryText || '#fff'} 1px, transparent 1px)`,
+                      backgroundSize: '16px 16px',
+                    }}
+                  />
+                </div>
               )}
             </div>
 
@@ -1652,7 +1710,7 @@ export default function PublicStore() {
             <div className="px-6 sm:px-8 relative z-10 flex flex-col items-center text-center -mt-16 sm:-mt-20 pb-8">
               {/* Avatar */}
               <a
-                href={`/${slug}`}
+                href={getTenantPublicUrl(slug || '', tenant?.isDemo)}
                 className="relative mb-3.5 block cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300"
                 title="Página Inicial"
               >
@@ -1735,7 +1793,7 @@ export default function PublicStore() {
               {/* ───────────────── MOBILE ONLY: TOP ACTIONS (PREMIUM) ───────────────── */}
               <div className="lg:hidden mt-5 w-full flex items-center justify-center gap-3">
                 <a
-                  href={`/${slug}/portal`}
+                  href={getTenantPortalUrl(slug || '', tenant?.isDemo)}
                   className="flex items-center gap-2 py-2.5 px-5 rounded-2xl font-bold text-xs transition-all active:scale-95 border"
                   style={{
                     background: isDark ? "rgba(255,255,255,0.05)" : "#FFFFFF",
@@ -1844,7 +1902,7 @@ export default function PublicStore() {
                 )}
 
                 <a
-                  href={`/${slug}/portal`}
+                  href={getTenantPortalUrl(slug || '', tenant?.isDemo)}
                   className="flex items-center justify-between p-3.5 transition-colors group cursor-pointer w-full text-left"
                 >
                   <div className="flex items-center gap-3 min-w-0 text-left">
@@ -3312,7 +3370,7 @@ export default function PublicStore() {
                       </motion.a>
 
                       <a
-                        href={`/${slug}/portal`}
+                        href={getTenantPortalUrl(slug || '', tenant?.isDemo)}
                         className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-semibold text-xs border transition-all hover:opacity-80 cursor-pointer"
                         style={{ borderColor: cardBorderColor, color: theme.textPrimary, background: cardBackground }}
                       >

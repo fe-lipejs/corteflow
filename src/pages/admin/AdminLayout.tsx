@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Building2, CreditCard, DollarSign,
   Users, ScrollText, Bell, Settings, Shield,
-  LogOut, Menu, X, ChevronRight, Zap, LifeBuoy, Activity
+  LogOut, Menu, X, ChevronRight, Zap, LifeBuoy, Activity,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../integrations/supabase/client';
@@ -29,6 +30,7 @@ const navGroups = [
     label: 'Plataforma',
     items: [
       { to: '/platform/tenants', icon: Building2, label: 'Empresas' },
+      { to: '/platform/demos', icon: Sparkles, label: 'Portais Demo' },
       { to: '/platform/plans', icon: CreditCard, label: 'Planos' },
       { to: '/platform/financeiro', icon: DollarSign, label: 'Financeiro' },
     ],

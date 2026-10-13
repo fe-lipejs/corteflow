@@ -5,7 +5,109 @@ import { addDays, startOfDay } from 'date-fns';
 export const PUBLIC_STORE_QUERY_KEY = (slug: string) => ['publicStore', slug];
 
 async function fetchPublicStore(slug: string) {
-  // Fetch tenant by slug
+  // 1. Verificar se é um Portal Demo em demo_portals
+  if (slug) {
+    const { data: demoPortal } = await supabase
+      .from('demo_portals')
+      .select('*')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (demoPortal) {
+      const isExpired = new Date(demoPortal.expires_at) <= new Date();
+      if (!demoPortal.active || isExpired) {
+        throw new Error('Demonstração expirada ou desativada');
+      }
+
+      // Incrementar contagem de visualizações
+      supabase.rpc('increment_demo_portal_views', { p_slug: slug }).then(() => {});
+
+      const demoTenant = {
+        id: demoPortal.id,
+        name: demoPortal.business_name,
+        slug: demoPortal.slug,
+        business_type: demoPortal.business_type || 'barbearia',
+        status: 'active',
+        isDemo: true,
+        owner_whatsapp: demoPortal.owner_whatsapp,
+      };
+
+      const demoSettings = {
+        id: 'settings_' + demoPortal.id,
+        tenant_id: demoPortal.id,
+        fantasy_name: demoPortal.business_name,
+        logo_url: demoPortal.logo_url || null,
+        banner_url: demoPortal.banner_url || null,
+        phone: demoPortal.owner_whatsapp,
+        whatsapp_number: demoPortal.owner_whatsapp,
+        theme_preset: 'elegant',
+        custom_palette: {
+          primary: demoPortal.primary_color || '#FD6500',
+          background: '#F8FAFC',
+          card: '#FFFFFF',
+          text: '#0F172A',
+          fontStyle: 'sans',
+          btnTextColor: '#FFFFFF',
+          slogan: '',
+          description: '',
+        },
+        booking_payment_mode: 'local',
+        accept_local_payment: true,
+        accept_online_payment: false,
+        allow_cancel: true,
+        allow_reschedule: true,
+        deposit_percentage: 50,
+        slogan: 'Agende seu horário online em menos de 1 minuto.',
+        full_address: 'Atendimento com horário marcado',
+      };
+
+      const demoServices = (demoPortal.services || []).map((s: any, idx: number) => ({
+        id: s.id || `srv_${idx}`,
+        tenant_id: demoPortal.id,
+        name: s.name,
+        price: Number(s.price) || 0,
+        duration_minutes: Number(s.duration_minutes) || 30,
+        photo_url: s.photo_url || null,
+        active: true,
+        display_order: idx,
+      }));
+
+      const demoPros = (demoPortal.professionals || []).map((p: any, idx: number) => ({
+        id: p.id || `pro_${idx}`,
+        tenant_id: demoPortal.id,
+        name: p.name,
+        photo_url: p.photo_url || null,
+        role_title: p.role_title || 'Profissional',
+        status: 'active',
+        active: true,
+      }));
+
+      const demoHours = [0, 1, 2, 3, 4, 5, 6].map((weekday) => ({
+        id: `h_${weekday}`,
+        tenant_id: demoPortal.id,
+        weekday,
+        is_open: weekday !== 0,
+        open_time: '09:00:00',
+        close_time: weekday === 6 ? '18:00:00' : '19:00:00',
+      }));
+
+      return {
+        tenant: demoTenant,
+        settings: demoSettings,
+        services: demoServices,
+        professionals: demoPros,
+        businessHours: demoHours,
+        professionalWorkingHours: [],
+        professionalBlockedTimes: [],
+        bookings: [],
+        professionalServices: [],
+        isStripeEnabled: false,
+        isDemo: true,
+      };
+    }
+  }
+
+  // 2. Buscar tenant real por slug na tabela tenants
   let { data: tenant } = await supabase.from('tenants').select('*').eq('slug', slug).maybeSingle();
   
   if (!tenant) {

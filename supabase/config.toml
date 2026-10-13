@@ -1,3 +1,12 @@
+project_id = "paefckmkawocjxzuoclq"
+
+[auth.email.template.confirmation]
+subject = "Confirme seu cadastro — Raffros Corteflow"
+content_path = "./supabase/templates/confirm_signup_email.html"
+
+[auth.email.template.recovery]
+subject = "Redefinir sua senha — Raffros Corteflow"
+content_path = "./supabase/templates/recovery_email.html"
 
 [functions.cancel-booking-financials]
 enabled = true
