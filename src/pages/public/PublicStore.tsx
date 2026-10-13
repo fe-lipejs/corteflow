@@ -704,6 +704,36 @@ export default function PublicStore() {
   const isDark = contrast.isDark;
   const storeName = settings?.fantasy_name || tenant?.name || "";
 
+  useEffect(() => {
+    if (storeName) {
+      document.title = `${storeName} | Agendamento Online`;
+
+      const updateMeta = (selector: string, attr: string, value: string) => {
+        let el = document.querySelector(selector);
+        if (!el) {
+          el = document.createElement("meta");
+          if (selector.includes("property=")) {
+            const prop = selector.match(/property="([^"]+)"/)?.[1];
+            if (prop) el.setAttribute("property", prop);
+          } else if (selector.includes("name=")) {
+            const name = selector.match(/name="([^"]+)"/)?.[1];
+            if (name) el.setAttribute("name", name);
+          }
+          document.head.appendChild(el);
+        }
+        el.setAttribute(attr, value);
+      };
+
+      const pageImg = settings?.logo_url || settings?.banner_url;
+      if (pageImg) {
+        updateMeta('meta[property="og:image"]', "content", pageImg);
+        updateMeta('meta[property="twitter:image"]', "content", pageImg);
+      }
+      updateMeta('meta[property="og:title"]', "content", `${storeName} | Agendamento Online`);
+      updateMeta('meta[property="twitter:title"]', "content", `${storeName} | Agendamento Online`);
+    }
+  }, [storeName, settings?.logo_url, settings?.banner_url]);
+
   // Apple-inspired canvas background for Light mode (#F5F5F7), or exact theme.bg for Dark mode
   const canvasBg = isDark ? theme.bg : "#F5F5F7";
   const sidebarBackground = isDark ? theme.sidebarBg : "#FFFFFF";
