@@ -568,11 +568,8 @@ function Hero() {
 
       <div className="rf-container rf-hero-container">
         <div className="rf-hero-copy">
-          <Reveal>
-            <SectionEyebrow dark>
-              SALÕES · ESMALTERIAS · BARBEARIAS
-            </SectionEyebrow>
-          </Reveal>
+          <br />
+
 
           <Reveal delay={0.08}>
             <h1>
@@ -655,7 +652,7 @@ function Hero() {
           </Reveal>
         </div>
 
-        <div className="rf-hero-product">
+        <div className="rf-hero-product -translate-y-10">
           <BookingPhone imageSrc={M.booking2} />
         </div>
 
@@ -843,7 +840,7 @@ function BookingSection() {
       id="como-funciona"
       className="rf-booking-section"
     >
-      <div className="rf-container">
+      <div className="rf-container ">
         <div className="rf-section-intro">
           <Reveal>
             <SectionEyebrow>
@@ -866,8 +863,8 @@ function BookingSection() {
           </Reveal>
         </div>
 
-        <div className="rf-booking-layout">
-          <Reveal className="rf-booking-visual">
+        <div className="rf-booking-layout ">
+          <Reveal className="rf-booking-visual ">
             <BookingPhone imageSrc={M.services} />
           </Reveal>
 
