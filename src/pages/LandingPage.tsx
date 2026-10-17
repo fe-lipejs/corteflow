@@ -675,18 +675,6 @@ function Hero() {
           </Reveal>
         </div>
 
-        <button
-          type="button"
-          className="rf-mobile-glass-scroll"
-          onClick={() => {
-            document.querySelector('.rf-hero-product')?.scrollIntoView({ behavior: 'smooth' });
-          }}
-          aria-label="Rolar para ver agendamento"
-        >
-          <span>Role para ver o agendamento</span>
-          <ChevronDown size={14} className="rf-bounce-down" />
-        </button>
-
         <div className="rf-hero-product">
           <BookingPhone imageSrc={M.booking2} />
         </div>
@@ -6452,14 +6440,16 @@ export default function LandingPage() {
             --rf-accent-dark: #E45E0B;
             --rf-blue: #2563EB;
             --rf-blue-muted: #60A5FA;
+            --rf-rose: #F472B6;
+            --rf-rose-light: #FBCFE8;
             --rf-ink: #0F172A;
             --rf-muted: #475569;
             --rf-line: #E2E8F0;
             --rf-paper: #FAF9F7;
             --rf-paper-2: #F1F5F9;
-            --rf-dark: #0E3B78;
-            --rf-dark-2: #144994;
-            --rf-dark-card: #1A5BB8;
+            --rf-dark: #0D2F66;
+            --rf-dark-2: #123F84;
+            --rf-dark-card: #184D9C;
           }
 
           /* ── CTAs: laranja puro ── */
@@ -6541,13 +6531,14 @@ export default function LandingPage() {
             color: var(--rf-ink) !important;
           }
 
-          /* ── HERO: fundo com azul vibrante cheio de vida ── */
+          /* ── HERO: fundo com azul vibrante indo para azul rosa claro degradê ── */
           main .rf-hero {
             background:
-              radial-gradient(circle at 75% 30%, rgba(37, 99, 235, 0.45), transparent 50%),
-              radial-gradient(circle at 18% 20%, rgba(252, 118, 29, 0.16), transparent 40%),
-              radial-gradient(circle at 50% 95%, rgba(20, 73, 148, 0.95), transparent 60%),
-              var(--rf-dark) !important;
+              radial-gradient(circle at 85% 15%, rgba(244, 114, 182, 0.42), transparent 48%),
+              radial-gradient(circle at 72% 40%, rgba(251, 207, 232, 0.22), transparent 45%),
+              radial-gradient(circle at 18% 22%, rgba(252, 118, 29, 0.15), transparent 38%),
+              radial-gradient(circle at 25% 75%, rgba(37, 99, 235, 0.48), transparent 55%),
+              linear-gradient(165deg, #0B2958 0%, #0F3775 35%, #18478E 70%, #203E76 100%) !important;
             color: #FFFFFF !important;
           }
           main .rf-hero h1 {
@@ -6563,7 +6554,7 @@ export default function LandingPage() {
             background-clip: initial !important;
           }
           main .rf-hero .rf-hero-description {
-            color: rgba(255, 255, 255, 0.75) !important;
+            color: rgba(255, 255, 255, 0.78) !important;
           }
           main .rf-hero .rf-eyebrow-dark {
             color: rgba(255, 255, 255, 0.65) !important;
@@ -6604,13 +6595,13 @@ export default function LandingPage() {
             background: rgba(255, 255, 255, 0.06) !important;
           }
           main .rf-hero .rf-hero-orb-one {
-            background: radial-gradient(circle, rgba(37, 99, 235, 0.40), transparent 68%) !important;
+            background: radial-gradient(circle, rgba(244, 114, 182, 0.38), rgba(37, 99, 235, 0.30) 45%, transparent 70%) !important;
           }
           main .rf-hero .rf-hero-orb-two {
-            background: radial-gradient(circle, rgba(252, 118, 29, 0.15), transparent 70%) !important;
+            background: radial-gradient(circle, rgba(252, 118, 29, 0.14), transparent 70%) !important;
           }
           main .rf-hero .rf-real-phone-glow {
-            background: radial-gradient(ellipse, rgba(37, 99, 235, 0.45), transparent 67%) !important;
+            background: radial-gradient(ellipse, rgba(244, 114, 182, 0.38), rgba(37, 99, 235, 0.40) 50%, transparent 68%) !important;
           }
 
           /* Spotify card no hero escuro */
@@ -6717,22 +6708,24 @@ export default function LandingPage() {
             color: var(--rf-muted) !important;
           }
 
-          /* ── Seções ESCURAS com azul vivo e vibrante ── */
+          /* ── Seções ESCURAS com degradê azul vibrante e azul-rosa claro suave ── */
           main .rf-problem,
           main .rf-dashboard-section,
           main .rf-pricing,
           main .rf-final-cta {
             background:
-              radial-gradient(circle at 85% 15%, rgba(37, 99, 235, 0.35), transparent 50%),
-              radial-gradient(circle at 15% 85%, rgba(252, 118, 29, 0.12), transparent 42%),
-              var(--rf-dark) !important;
+              radial-gradient(circle at 88% 14%, rgba(244, 114, 182, 0.28), transparent 46%),
+              radial-gradient(circle at 15% 85%, rgba(37, 99, 235, 0.38), transparent 50%),
+              radial-gradient(circle at 50% 50%, rgba(252, 118, 29, 0.08), transparent 42%),
+              linear-gradient(165deg, #0C2E68 0%, #113F85 50%, #1A3E78 100%) !important;
             color: #FFFFFF !important;
           }
           main .rf-real-gallery,
           main .rf-payment-real {
             background:
-              radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.38), transparent 55%),
-              var(--rf-dark-2) !important;
+              radial-gradient(circle at 20% 20%, rgba(244, 114, 182, 0.30), transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(37, 99, 235, 0.38), transparent 55%),
+              linear-gradient(165deg, #103874 0%, #164894 50%, #1E4684 100%) !important;
             color: #FFFFFF !important;
           }
           main .rf-problem h2,
@@ -6890,46 +6883,8 @@ export default function LandingPage() {
             color: var(--rf-ink) !important;
           }
 
-          /* Mobile glass scroll indicator */
-          .rf-mobile-glass-scroll {
-            display: none !important;
-          }
-          @keyframes rfBounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(4px); }
-          }
-          .rf-bounce-down {
-            animation: rfBounce 1.5s infinite ease-in-out;
-          }
-
-          /* Mobile: layout calibrado para o celular despontar como na img1 */
+          /* Mobile: layout com tipografia imponente e celular despontando */
           @media (max-width: 680px) {
-            .rf-mobile-glass-scroll {
-              display: inline-flex !important;
-              align-items: center !important;
-              justify-content: center !important;
-              gap: 8px !important;
-              padding: 8px 18px !important;
-              border-radius: 999px !important;
-              background: rgba(255, 255, 255, 0.14) !important;
-              backdrop-filter: blur(14px) !important;
-              -webkit-backdrop-filter: blur(14px) !important;
-              border: 1px solid rgba(255, 255, 255, 0.26) !important;
-              color: #FFFFFF !important;
-              font-size: 12px !important;
-              font-weight: 600 !important;
-              letter-spacing: 0.02em !important;
-              box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
-              margin: 10px auto 14px auto !important;
-              cursor: pointer !important;
-              order: 4 !important;
-              transition: background 0.2s ease, transform 0.2s ease !important;
-            }
-            .rf-mobile-glass-scroll:hover {
-              background: rgba(255, 255, 255, 0.22) !important;
-              transform: translateY(-1px) !important;
-            }
-
             main .rf-hero {
               height: auto !important;
               min-height: 0 !important;
@@ -6937,7 +6892,7 @@ export default function LandingPage() {
             }
 
             main .rf-hero-container {
-              padding-top: 60px !important;
+              padding-top: 54px !important;
               padding-bottom: 16px !important;
               display: flex !important;
               flex-direction: column !important;
@@ -6951,26 +6906,28 @@ export default function LandingPage() {
             }
 
             main .rf-hero h1 {
-              font-size: clamp(28px, 7.6vw, 36px) !important;
-              line-height: 1.05 !important;
-              letter-spacing: -0.04em !important;
-              margin: 10px 0 8px !important;
+              font-size: clamp(40px, 11.5vw, 56px) !important;
+              line-height: 0.93 !important;
+              letter-spacing: -0.055em !important;
+              font-weight: 800 !important;
+              margin: 16px 0 12px !important;
             }
 
             main .rf-hero-description {
-              font-size: 13.5px !important;
-              line-height: 1.45 !important;
-              margin: 0 0 14px !important;
-              max-width: 340px !important;
+              font-size: 14px !important;
+              line-height: 1.5 !important;
+              margin: 0 0 16px !important;
+              max-width: 350px !important;
+              color: rgba(255, 255, 255, 0.82) !important;
             }
 
             main .rf-hero-actions {
               display: flex !important;
               flex-direction: column !important;
               width: 100% !important;
-              max-width: 340px !important;
+              max-width: 350px !important;
               gap: 8px !important;
-              margin: 0 0 14px 0 !important;
+              margin: 0 0 16px 0 !important;
               box-sizing: border-box !important;
             }
 
