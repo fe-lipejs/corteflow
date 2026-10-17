@@ -477,13 +477,20 @@ function Header() {
             initial={{ opacity: 0, y: "-100%" }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: "-100%" }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="rf-mobile-nav-top">
-              <img src="/logo.svg" alt="Raffros" style={{ height: '32px', filter: 'invert(1)' }} />
+              <a href="/" onClick={() => setOpen(false)} className="rf-mobile-logo-link">
+                <img src="/logo.svg" alt="Raffros" style={{ height: '30px' }} />
+              </a>
               <button className="rf-mobile-close" onClick={() => setOpen(false)} aria-label="Fechar menu">
-                <X size={32} />
+                <X size={22} />
               </button>
+            </div>
+
+            <div className="rf-mobile-nav-eyebrow">
+              <span className="rf-eyebrow-dot" />
+              <span>Salões · Esmalterias · Barbearias</span>
             </div>
 
             <div className="rf-mobile-nav-links">
@@ -491,6 +498,7 @@ function Header() {
                 <a
                   key={link.href}
                   href={link.href}
+                  className="rf-mobile-nav-item"
                   onClick={(e) => {
                     e.preventDefault();
                     setOpen(false);
@@ -503,45 +511,70 @@ function Header() {
                     }
                   }}
                 >
-                  {link.label}
+                  <span>{link.label}</span>
+                  <ArrowRight size={15} className="rf-mobile-nav-arrow" />
                 </a>
               ))}
+
               <div className="rf-mobile-nav-divider" />
+
+              {/* Card Som da Casa com toque de azul royal */}
               <a
                 href="/playlist"
+                className="rf-mobile-playlist-card"
                 onClick={(e) => {
                   e.preventDefault();
                   setOpen(false);
                   trackEvent('click_playlist_nav_mobile');
                   goTo("/playlist");
                 }}
-                style={{ color: '#007FBD', fontSize: '18px' }}
               >
-                ♫ Louvor & Palavra do Dia
+                <div className="rf-mobile-playlist-left">
+                  <div className="rf-mobile-playlist-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.623.623 0 01-.857.208c-2.348-1.435-5.304-1.76-8.785-.964a.623.623 0 11-.277-1.215c3.809-.87 7.076-.496 9.712 1.115a.623.623 0 01.207.856zm1.223-2.72a.78.78 0 01-1.072.257C14.1 12.29 10.539 11.88 7.2 12.84a.78.78 0 01-.48-1.485c3.754-1.09 7.72-.562 10.832 1.277a.78.78 0 01.257 1.072zm.105-2.832C15.16 9.15 10.481 9 7.2 9.983a.937.937 0 11-.543-1.794C10.317 7.071 15.494 7.25 19.2 9.638a.937.937 0 01-1.286 1.234z" fill="#1DB954" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="rf-mobile-playlist-title">Som da Casa</div>
+                    <div className="rf-mobile-playlist-sub">Músicas & Palavra do Dia</div>
+                  </div>
+                </div>
+                <ArrowUpRight size={16} className="rf-mobile-playlist-arrow" />
               </a>
 
-              <a
-                href="/login"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setOpen(false);
-                  goTo("/login");
-                }}
-              >
-                Entrar
-              </a>
-              <a
-                href="/cadastro"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setOpen(false);
-                  trackEvent('click_mobile_sticky_cta');
-                  goTo("/cadastro");
-                }}
-                style={{ color: '#007FBD', fontSize: '30px' }}
-              >
-                Começar grátis
-              </a>
+              {/* Ações inferiores */}
+              <div className="rf-mobile-actions">
+                <a
+                  href="/login"
+                  className="rf-mobile-login-btn"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setOpen(false);
+                    goTo("/login");
+                  }}
+                >
+                  <span>Já tem conta? <strong>Entrar</strong></span>
+                  <ArrowRight size={15} />
+                </a>
+
+                <button
+                  type="button"
+                  className="rf-mobile-primary-cta"
+                  onClick={() => {
+                    setOpen(false);
+                    trackEvent('click_mobile_sticky_cta');
+                    goTo("/cadastro");
+                  }}
+                >
+                  Começar grátis (7 dias)
+                  <ArrowRight size={17} />
+                </button>
+
+                <p className="rf-mobile-trust-note">
+                  Sem cartão · Cancele quando quiser
+                </p>
+              </div>
             </div>
           </motion.div>
         )}
@@ -6526,15 +6559,223 @@ export default function LandingPage() {
             background: transparent !important;
           }
 
-          /* Menu mobile: fundo claro */
+          /* ── Menu Mobile: Fundo branco limpo, detalhes em azul e destaque em laranja (#FC761D) ── */
           .rf-mobile-nav-fullscreen {
-            background: var(--rf-paper) !important;
-            color: var(--rf-ink) !important;
+            position: fixed !important;
+            inset: 0 !important;
+            background: #FFFFFF !important;
+            color: #0F172A !important;
+            z-index: 999999 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            padding: 22px 24px 36px !important;
+            overflow-y: auto !important;
+            box-sizing: border-box !important;
           }
-          .rf-mobile-nav-fullscreen a,
-          .rf-mobile-nav-fullscreen button,
+
+          .rf-mobile-nav-top {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            margin-bottom: 18px !important;
+          }
+
+          .rf-mobile-logo-link img {
+            height: 28px !important;
+            filter: none !important;
+          }
+
           .rf-mobile-close {
-            color: var(--rf-ink) !important;
+            width: 38px !important;
+            height: 38px !important;
+            border-radius: 50% !important;
+            background: #F1F5F9 !important;
+            border: 1px solid #E2E8F0 !important;
+            color: #0F172A !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            transition: background 0.15s ease !important;
+          }
+
+          .rf-mobile-close:hover {
+            background: #E2E8F0 !important;
+          }
+
+          .rf-mobile-nav-eyebrow {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.14em !important;
+            text-transform: uppercase !important;
+            color: #64748B !important;
+            margin-bottom: 20px !important;
+          }
+
+          .rf-mobile-nav-eyebrow .rf-eyebrow-dot {
+            width: 6px !important;
+            height: 6px !important;
+            border-radius: 50% !important;
+            background: var(--rf-accent) !important;
+            box-shadow: 0 0 10px rgba(252, 118, 29, 0.45) !important;
+          }
+
+          .rf-mobile-nav-links {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 4px !important;
+            padding-left: 0 !important;
+          }
+
+          .rf-mobile-nav-item {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 13px 4px !important;
+            font-size: 18px !important;
+            font-weight: 700 !important;
+            letter-spacing: -0.02em !important;
+            color: #0F172A !important;
+            text-decoration: none !important;
+            border-bottom: 1px solid #F1F5F9 !important;
+            transition: color 0.15s ease, padding-left 0.15s ease !important;
+          }
+
+          .rf-mobile-nav-item:hover,
+          .rf-mobile-nav-item:active {
+            color: #103875 !important;
+            padding-left: 6px !important;
+          }
+
+          .rf-mobile-nav-arrow {
+            color: #94A3B8 !important;
+            transition: transform 0.15s ease, color 0.15s ease !important;
+          }
+
+          .rf-mobile-nav-item:hover .rf-mobile-nav-arrow {
+            color: #103875 !important;
+            transform: translateX(3px) !important;
+          }
+
+          .rf-mobile-nav-divider {
+            height: 1px !important;
+            width: 100% !important;
+            background: #E2E8F0 !important;
+            margin: 14px 0 12px !important;
+            opacity: 1 !important;
+          }
+
+          .rf-mobile-playlist-card {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 12px 14px !important;
+            border-radius: 14px !important;
+            background: rgba(16, 56, 117, 0.05) !important;
+            border: 1px solid rgba(16, 56, 117, 0.14) !important;
+            text-decoration: none !important;
+            transition: background 0.15s ease, border-color 0.15s ease !important;
+            margin-bottom: 14px !important;
+          }
+
+          .rf-mobile-playlist-card:hover {
+            background: rgba(16, 56, 117, 0.10) !important;
+            border-color: rgba(16, 56, 117, 0.25) !important;
+          }
+
+          .rf-mobile-playlist-left {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+          }
+
+          .rf-mobile-playlist-icon {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 10px !important;
+            background: #FFFFFF !important;
+            border: 1px solid #E2E8F0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+          }
+
+          .rf-mobile-playlist-title {
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            color: #103875 !important;
+            letter-spacing: -0.01em !important;
+            line-height: 1.2 !important;
+          }
+
+          .rf-mobile-playlist-sub {
+            font-size: 11px !important;
+            color: #64748B !important;
+            margin-top: 2px !important;
+          }
+
+          .rf-mobile-playlist-arrow {
+            color: #103875 !important;
+          }
+
+          .rf-mobile-actions {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            margin-top: 8px !important;
+          }
+
+          .rf-mobile-login-btn {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            height: 44px !important;
+            border-radius: 12px !important;
+            background: #F8FAFC !important;
+            border: 1px solid #E2E8F0 !important;
+            color: #103875 !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            text-decoration: none !important;
+            transition: background 0.15s ease !important;
+          }
+
+          .rf-mobile-login-btn:hover {
+            background: #F1F5F9 !important;
+          }
+
+          .rf-mobile-primary-cta {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            width: 100% !important;
+            height: 50px !important;
+            border-radius: 999px !important;
+            background: var(--rf-accent) !important;
+            color: #FFFFFF !important;
+            font-size: 14px !important;
+            font-weight: 800 !important;
+            border: none !important;
+            cursor: pointer !important;
+            box-shadow: 0 10px 24px rgba(252, 118, 29, 0.28) !important;
+            transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+          }
+
+          .rf-mobile-primary-cta:active {
+            transform: scale(0.98) !important;
+          }
+
+          .rf-mobile-trust-note {
+            text-align: center !important;
+            font-size: 11px !important;
+            color: #94A3B8 !important;
+            margin: 2px 0 0 !important;
           }
 
           /* ── HERO: fundo com azul vibrante como protagonista e azul-rosa claro tímido e sutil ── */
