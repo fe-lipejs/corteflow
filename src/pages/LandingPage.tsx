@@ -675,6 +675,18 @@ function Hero() {
           </Reveal>
         </div>
 
+        <button
+          type="button"
+          className="rf-mobile-glass-scroll"
+          onClick={() => {
+            document.querySelector('.rf-hero-product')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          aria-label="Rolar para ver agendamento"
+        >
+          <span>Role para ver o agendamento</span>
+          <ChevronDown size={14} className="rf-bounce-down" />
+        </button>
+
         <div className="rf-hero-product">
           <BookingPhone imageSrc={M.booking2} />
         </div>
@@ -6438,16 +6450,16 @@ export default function LandingPage() {
           :root {
             --rf-accent: #FC761D;
             --rf-accent-dark: #E45E0B;
-            --rf-blue: #1C54A8;
-            --rf-blue-muted: #4B7DC4;
-            --rf-ink: #111827;
-            --rf-muted: #4B5563;
-            --rf-line: #E5E7EB;
+            --rf-blue: #2563EB;
+            --rf-blue-muted: #60A5FA;
+            --rf-ink: #0F172A;
+            --rf-muted: #475569;
+            --rf-line: #E2E8F0;
             --rf-paper: #FAF9F7;
-            --rf-paper-2: #F3F1ED;
-            --rf-dark: #11264E;
-            --rf-dark-2: #163468;
-            --rf-dark-card: #1B3E7A;
+            --rf-paper-2: #F1F5F9;
+            --rf-dark: #0E3B78;
+            --rf-dark-2: #144994;
+            --rf-dark-card: #1A5BB8;
           }
 
           /* ── CTAs: laranja puro ── */
@@ -6529,12 +6541,12 @@ export default function LandingPage() {
             color: var(--rf-ink) !important;
           }
 
-          /* ── HERO: fundo com azul tonalidade #163468 vivo e elegante ── */
+          /* ── HERO: fundo com azul vibrante cheio de vida ── */
           main .rf-hero {
             background:
-              radial-gradient(circle at 75% 35%, rgba(28, 84, 168, 0.35), transparent 48%),
-              radial-gradient(circle at 18% 22%, rgba(252, 118, 29, 0.12), transparent 38%),
-              radial-gradient(circle at 50% 92%, rgba(22, 52, 104, 0.95), transparent 60%),
+              radial-gradient(circle at 75% 30%, rgba(37, 99, 235, 0.45), transparent 50%),
+              radial-gradient(circle at 18% 20%, rgba(252, 118, 29, 0.16), transparent 40%),
+              radial-gradient(circle at 50% 95%, rgba(20, 73, 148, 0.95), transparent 60%),
               var(--rf-dark) !important;
             color: #FFFFFF !important;
           }
@@ -6551,10 +6563,10 @@ export default function LandingPage() {
             background-clip: initial !important;
           }
           main .rf-hero .rf-hero-description {
-            color: rgba(255, 255, 255, 0.65) !important;
+            color: rgba(255, 255, 255, 0.75) !important;
           }
           main .rf-hero .rf-eyebrow-dark {
-            color: rgba(255, 255, 255, 0.6) !important;
+            color: rgba(255, 255, 255, 0.65) !important;
           }
           main .rf-hero .rf-secondary-button {
             color: rgba(255, 255, 255, 0.88) !important;
@@ -6592,13 +6604,13 @@ export default function LandingPage() {
             background: rgba(255, 255, 255, 0.06) !important;
           }
           main .rf-hero .rf-hero-orb-one {
-            background: radial-gradient(circle, rgba(28, 84, 168, 0.32), transparent 68%) !important;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.40), transparent 68%) !important;
           }
           main .rf-hero .rf-hero-orb-two {
-            background: radial-gradient(circle, rgba(252, 118, 29, 0.12), transparent 70%) !important;
+            background: radial-gradient(circle, rgba(252, 118, 29, 0.15), transparent 70%) !important;
           }
           main .rf-hero .rf-real-phone-glow {
-            background: radial-gradient(ellipse, rgba(28, 84, 168, 0.38), transparent 67%) !important;
+            background: radial-gradient(ellipse, rgba(37, 99, 235, 0.45), transparent 67%) !important;
           }
 
           /* Spotify card no hero escuro */
@@ -6705,21 +6717,21 @@ export default function LandingPage() {
             color: var(--rf-muted) !important;
           }
 
-          /* ── Seções ESCURAS com azul tonalidade #163468 vivo ── */
+          /* ── Seções ESCURAS com azul vivo e vibrante ── */
           main .rf-problem,
           main .rf-dashboard-section,
           main .rf-pricing,
           main .rf-final-cta {
             background:
-              radial-gradient(circle at 85% 15%, rgba(28, 84, 168, 0.22), transparent 48%),
-              radial-gradient(circle at 15% 85%, rgba(252, 118, 29, 0.08), transparent 40%),
+              radial-gradient(circle at 85% 15%, rgba(37, 99, 235, 0.35), transparent 50%),
+              radial-gradient(circle at 15% 85%, rgba(252, 118, 29, 0.12), transparent 42%),
               var(--rf-dark) !important;
             color: #FFFFFF !important;
           }
           main .rf-real-gallery,
           main .rf-payment-real {
             background:
-              radial-gradient(circle at 20% 20%, rgba(28, 84, 168, 0.25), transparent 50%),
+              radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.38), transparent 55%),
               var(--rf-dark-2) !important;
             color: #FFFFFF !important;
           }
@@ -6733,8 +6745,10 @@ export default function LandingPage() {
             -webkit-text-fill-color: #FFFFFF !important;
             background: none !important;
           }
-          /* Span em seções escuras: laranja ou branco suave */
+          /* Spans em seções escuras: laranja puro (#FC761D) */
           main .rf-problem h2 span,
+          main .rf-payment-real h2 span,
+          main .rf-pricing h2 span,
           main .rf-final-cta h2 span {
             color: var(--rf-accent) !important;
             -webkit-text-fill-color: var(--rf-accent) !important;
@@ -6751,9 +6765,7 @@ export default function LandingPage() {
             -webkit-text-fill-color: #FFFFFF !important;
             background: none !important;
           }
-          main .rf-pricing h2 span,
-          main .rf-real-gallery h2 span,
-          main .rf-payment-real h2 span {
+          main .rf-real-gallery h2 span {
             color: rgba(255, 255, 255, 0.5) !important;
             -webkit-text-fill-color: rgba(255, 255, 255, 0.5) !important;
             background: none !important;
@@ -6878,13 +6890,46 @@ export default function LandingPage() {
             color: var(--rf-ink) !important;
           }
 
-          /* Secondary button genérico */
-          .rf-secondary-button {
-            transition: background 0.2s ease, border-color 0.2s ease;
+          /* Mobile glass scroll indicator */
+          .rf-mobile-glass-scroll {
+            display: none !important;
+          }
+          @keyframes rfBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(4px); }
+          }
+          .rf-bounce-down {
+            animation: rfBounce 1.5s infinite ease-in-out;
           }
 
-          /* Mobile: layout calibrado para o celular despontar como na img2 */
+          /* Mobile: layout calibrado para o celular despontar como na img1 */
           @media (max-width: 680px) {
+            .rf-mobile-glass-scroll {
+              display: inline-flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              gap: 8px !important;
+              padding: 8px 18px !important;
+              border-radius: 999px !important;
+              background: rgba(255, 255, 255, 0.14) !important;
+              backdrop-filter: blur(14px) !important;
+              -webkit-backdrop-filter: blur(14px) !important;
+              border: 1px solid rgba(255, 255, 255, 0.26) !important;
+              color: #FFFFFF !important;
+              font-size: 12px !important;
+              font-weight: 600 !important;
+              letter-spacing: 0.02em !important;
+              box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+              margin: 10px auto 14px auto !important;
+              cursor: pointer !important;
+              order: 4 !important;
+              transition: background 0.2s ease, transform 0.2s ease !important;
+            }
+            .rf-mobile-glass-scroll:hover {
+              background: rgba(255, 255, 255, 0.22) !important;
+              transform: translateY(-1px) !important;
+            }
+
             main .rf-hero {
               height: auto !important;
               min-height: 0 !important;
@@ -6966,7 +7011,7 @@ export default function LandingPage() {
               display: flex !important;
               justify-content: center !important;
               overflow: visible !important;
-              order: 4 !important;
+              order: 5 !important;
             }
 
             main .rf-hero .rf-real-phone-wrap,
@@ -6984,6 +7029,9 @@ export default function LandingPage() {
 
             main .rf-real-phone {
               width: min(290px, 82vw) !important;
+              opacity: 1 !important;
+              visibility: visible !important;
+              display: block !important;
             }
 
             main .rf-real-floating-top {
