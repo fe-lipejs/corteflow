@@ -597,7 +597,7 @@ function Hero() {
 
           <Reveal delay={0.16}>
             <p className="rf-hero-description">
-              Agendamento online, página própria, controle da equipe e gestão completa do seu salão, esmalteria ou barbearia. Seu cliente agenda sozinho. Você faz o que ama. Simples assim.
+              Agendamento online e gestão simples. Seu cliente agenda sozinho pelo Instagram ou WhatsApp, 24 horas por dia.
             </p>
           </Reveal>
 
@@ -937,11 +937,9 @@ function DashboardSection() {
 
           <Reveal delay={0.08}>
             <h2>
-              Você administra
+              <span className="rf-highlight-orange">Você administra o salão</span>
               <br />
-              o salão
-              <br />
-              <span>sem largar o pincel.</span>
+              <span className="rf-highlight-white">sem largar o pincel.</span>
             </h2>
           </Reveal>
 
@@ -6446,16 +6444,16 @@ export default function LandingPage() {
           :root {
             --rf-accent: #FC761D;
             --rf-accent-dark: #E45E0B;
-            --rf-blue: #0284C7;
-            --rf-blue-muted: #38BDF8;
+            --rf-blue: #1C54A8;
+            --rf-blue-muted: #4B7DC4;
             --rf-ink: #111827;
             --rf-muted: #4B5563;
             --rf-line: #E5E7EB;
             --rf-paper: #FAF9F7;
             --rf-paper-2: #F3F1ED;
-            --rf-dark: #0A1E3F;
-            --rf-dark-2: #102A56;
-            --rf-dark-card: #153468;
+            --rf-dark: #11264E;
+            --rf-dark-2: #163468;
+            --rf-dark-card: #1B3E7A;
           }
 
           /* ── CTAs: laranja puro ── */
@@ -6713,13 +6711,13 @@ export default function LandingPage() {
             color: var(--rf-muted) !important;
           }
 
-          /* ── Seções ESCURAS com azul natural vivo ── */
+          /* ── Seções ESCURAS com azul tonalidade #163468 vivo ── */
           main .rf-problem,
           main .rf-dashboard-section,
           main .rf-pricing,
           main .rf-final-cta {
             background:
-              radial-gradient(circle at 85% 15%, rgba(2, 132, 199, 0.14), transparent 45%),
+              radial-gradient(circle at 85% 15%, rgba(28, 84, 168, 0.22), transparent 48%),
               radial-gradient(circle at 15% 85%, rgba(252, 118, 29, 0.08), transparent 40%),
               var(--rf-dark) !important;
             color: #FFFFFF !important;
@@ -6727,7 +6725,7 @@ export default function LandingPage() {
           main .rf-real-gallery,
           main .rf-payment-real {
             background:
-              radial-gradient(circle at 20% 20%, rgba(2, 132, 199, 0.16), transparent 50%),
+              radial-gradient(circle at 20% 20%, rgba(28, 84, 168, 0.25), transparent 50%),
               var(--rf-dark-2) !important;
             color: #FFFFFF !important;
           }
@@ -6748,7 +6746,17 @@ export default function LandingPage() {
             -webkit-text-fill-color: var(--rf-accent) !important;
             background: none !important;
           }
-          main .rf-dashboard-section h2 span,
+          /* im2: Você administra o salão (laranja) e sem largar o pincel (branco) */
+          main .rf-dashboard-section h2 .rf-highlight-orange {
+            color: var(--rf-accent) !important;
+            -webkit-text-fill-color: var(--rf-accent) !important;
+            background: none !important;
+          }
+          main .rf-dashboard-section h2 .rf-highlight-white {
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+            background: none !important;
+          }
           main .rf-pricing h2 span,
           main .rf-real-gallery h2 span,
           main .rf-payment-real h2 span {
@@ -6771,9 +6779,41 @@ export default function LandingPage() {
           /* Final CTA com orbs sutis */
           main .rf-final-cta {
             background:
-              radial-gradient(circle at 30% 0%, rgba(2, 132, 199, 0.24), transparent 45%),
-              radial-gradient(circle at 80% 100%, rgba(252, 118, 29, 0.14), transparent 45%),
+              radial-gradient(circle at 30% 0%, rgba(28, 84, 168, 0.35), transparent 48%),
+              radial-gradient(circle at 80% 100%, rgba(252, 118, 29, 0.15), transparent 45%),
               var(--rf-dark) !important;
+          }
+
+          /* ── Feature Strip (im3: textos com presença e legibilidade) ── */
+          main .rf-feature-strip {
+            margin-top: 54px !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+          }
+          main .rf-feature-strip > div {
+            min-height: auto !important;
+            padding: 24px 22px !important;
+          }
+          main .rf-feature-strip span {
+            font-size: 13px !important;
+            font-weight: 800 !important;
+            color: var(--rf-accent) !important;
+            margin-bottom: 8px !important;
+            letter-spacing: 0.08em !important;
+            display: block !important;
+          }
+          main .rf-feature-strip strong {
+            font-size: 20px !important;
+            font-weight: 700 !important;
+            color: #FFFFFF !important;
+            margin-bottom: 6px !important;
+            display: block !important;
+            letter-spacing: -0.01em !important;
+          }
+          main .rf-feature-strip p {
+            font-size: 14.5px !important;
+            line-height: 1.5 !important;
+            color: rgba(255, 255, 255, 0.78) !important;
+            margin: 0 !important;
           }
 
           /* ── Pricing cards ── */
@@ -6858,7 +6898,7 @@ export default function LandingPage() {
             }
 
             main .rf-hero-container {
-              padding-top: 76px !important;
+              padding-top: 60px !important;
               padding-bottom: 16px !important;
               display: flex !important;
               flex-direction: column !important;
@@ -6868,32 +6908,29 @@ export default function LandingPage() {
             }
 
             main .rf-hero-copy {
-              width: 100% !important;
-              padding-top: 0 !important;
-              display: flex !important;
-              flex-direction: column !important;
+              display: contents !important;
             }
 
             main .rf-hero h1 {
-              font-size: clamp(32px, 8.6vw, 42px) !important;
-              line-height: 1.04 !important;
+              font-size: clamp(28px, 7.6vw, 36px) !important;
+              line-height: 1.05 !important;
               letter-spacing: -0.04em !important;
-              margin: 14px 0 10px !important;
+              margin: 10px 0 8px !important;
             }
 
             main .rf-hero-description {
-              font-size: 13px !important;
-              line-height: 1.55 !important;
-              margin: 0 0 16px !important;
-              max-width: 360px !important;
+              font-size: 13.5px !important;
+              line-height: 1.45 !important;
+              margin: 0 0 14px !important;
+              max-width: 340px !important;
             }
 
             main .rf-hero-actions {
               display: flex !important;
               flex-direction: column !important;
               width: 100% !important;
-              max-width: 360px !important;
-              gap: 10px !important;
+              max-width: 340px !important;
+              gap: 8px !important;
               margin: 0 0 14px 0 !important;
               box-sizing: border-box !important;
             }
@@ -6901,9 +6938,9 @@ export default function LandingPage() {
             main .rf-hero .rf-primary-button,
             main .rf-hero .rf-secondary-button {
               width: 100% !important;
-              min-height: 48px !important;
-              height: 48px !important;
-              padding: 0 20px !important;
+              min-height: 44px !important;
+              height: 44px !important;
+              padding: 0 18px !important;
               box-sizing: border-box !important;
               display: inline-flex !important;
               align-items: center !important;
@@ -6927,37 +6964,15 @@ export default function LandingPage() {
               background: rgba(255, 255, 255, 0.08) !important;
             }
 
-            main .rf-hero-spotify-slot {
-              margin-top: 2px !important;
-              margin-bottom: 12px !important;
-              width: 100% !important;
-              max-width: 360px !important;
-              box-sizing: border-box !important;
-            }
-
-            main .rf-hero .rf-spotify-card {
-              width: fit-content !important;
-              max-width: 100% !important;
-              box-sizing: border-box !important;
-            }
-
-            main .rf-hero-trust {
-              width: 100% !important;
-              max-width: 360px !important;
-              margin-top: 4px !important;
-              padding-top: 14px !important;
-              border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
-              box-sizing: border-box !important;
-            }
-
             main .rf-hero-product {
               width: 100% !important;
               min-height: auto !important;
-              margin-top: 20px !important;
-              margin-bottom: 28px !important;
+              margin-top: 4px !important;
+              margin-bottom: 24px !important;
               display: flex !important;
               justify-content: center !important;
               overflow: visible !important;
+              order: 4 !important;
             }
 
             main .rf-hero .rf-real-phone-wrap,
@@ -6979,6 +6994,59 @@ export default function LandingPage() {
 
             main .rf-real-floating-top {
               display: none !important;
+            }
+
+            main .rf-hero-spotify-slot {
+              order: 5 !important;
+              margin-top: 8px !important;
+              margin-bottom: 12px !important;
+              width: 100% !important;
+              max-width: 340px !important;
+              box-sizing: border-box !important;
+            }
+
+            main .rf-hero .rf-spotify-card {
+              width: fit-content !important;
+              max-width: 100% !important;
+              box-sizing: border-box !important;
+            }
+
+            main .rf-hero-trust-slot {
+              order: 6 !important;
+              width: 100% !important;
+              max-width: 340px !important;
+            }
+
+            main .rf-hero-trust {
+              width: 100% !important;
+              max-width: 340px !important;
+              margin-top: 4px !important;
+              padding-top: 14px !important;
+              border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+              box-sizing: border-box !important;
+            }
+
+            main .rf-feature-strip {
+              grid-template-columns: 1fr !important;
+              gap: 12px !important;
+              margin-top: 36px !important;
+              border-top: none !important;
+            }
+
+            main .rf-feature-strip > div {
+              padding: 18px 20px !important;
+              border: 1px solid rgba(255, 255, 255, 0.08) !important;
+              border-radius: 16px !important;
+              background: rgba(255, 255, 255, 0.03) !important;
+            }
+
+            main .rf-feature-strip strong {
+              font-size: 18px !important;
+            }
+
+            main .rf-feature-strip p {
+              font-size: 14px !important;
+              color: rgba(255, 255, 255, 0.78) !important;
             }
           }
 
