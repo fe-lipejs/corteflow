@@ -238,13 +238,7 @@ function BookingPhone({ imageSrc = M.booking }: { imageSrc?: string } = {}) {
         }
       />
 
-      <motion.div
-        className="rf-real-phone"
-        initial={{ opacity: 0, y: 10 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.35 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-      >
+      <div className="rf-real-phone">
         <div className="rf-real-phone-frame">
           <span className="rf-real-phone-island" />
           <div className="rf-real-phone-screen">
@@ -257,7 +251,7 @@ function BookingPhone({ imageSrc = M.booking }: { imageSrc?: string } = {}) {
             <div className="rf-real-phone-shine" aria-hidden="true" />
           </div>
         </div>
-      </motion.div>
+      </div>
 
       <motion.div
         className="rf-real-floating-card rf-real-floating-top"
