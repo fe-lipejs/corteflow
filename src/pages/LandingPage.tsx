@@ -25,7 +25,7 @@ import { usePageTracking } from '../hooks/usePageTracking';
    Apple × Nothing × Raffros
    ========================================================= */
 
-const ACCENT = "#FF9D2E";
+const ACCENT = "#5B6EE8";
 const M = {
   booking: "/Mockups/Iphone - Tela de Agendamento.PNG",
   booking2: "/Mockups/Iphone - Tela de Agendamento2.jpg",
@@ -54,14 +54,14 @@ const faqs: FAQItem[] = [
       "Tem. Você começa hoje, testa com seus clientes reais, vê funcionar na prática. Se não servir, cancela e não paga nada. Mas quem testou não voltou para o WhatsApp.",
   },
   {
-    question: "Meus clientes agendam sozinhos de verdade?",
+    question: "Minhas clientes agendam sozinhas de verdade?",
     answer:
-      "De verdade. Você recebe uma página própria para colocar no Instagram, WhatsApp, Google ou onde quiser. O cliente escolhe serviço, profissional, dia e horário — sem mandar mensagem pra você.",
+      "De verdade. Você recebe uma página própria para colocar no Instagram, WhatsApp, Google ou onde quiser. A cliente escolhe o serviço (manicure, escova, coloração...), a profissional, o dia e o horário — sem mandar mensagem pra você.",
   },
   {
-    question: "E se meus clientes estiverem acostumados com o WhatsApp?",
+    question: "E se minhas clientes estiverem acostumadas com o WhatsApp?",
     answer:
-      "Melhor ainda. Você compartilha o link da sua página por lá. O cliente clica, agenda em 30 segundos e você não precisa responder mais nada. Eles acostumam rápido quando é fácil.",
+      "Melhor ainda. Você compartilha o link da sua página por lá. A cliente clica, agenda em 30 segundos e você não precisa largar o pincel nem a escova pra responder. Elas acostumam rápido quando é fácil.",
   },
   {
     question: "Consigo ver o dinheiro entrando?",
@@ -315,7 +315,7 @@ function DashboardMockup() {
 
       <div className="rf-real-browser-image-wrap">
         <img
-          src={M.barber}
+          src={M.salon}
           alt="Tela de agendamento e gestão da Raffros"
           className="rf-real-browser-image"
           loading="lazy"
@@ -521,7 +521,7 @@ function Header() {
                   trackEvent('click_playlist_nav_mobile');
                   goTo("/playlist");
                 }}
-                style={{ color: '#FF9D2E', fontSize: '18px' }}
+                style={{ color: '#5B6EE8', fontSize: '18px' }}
               >
                 ♫ Louvor & Palavra do Dia
               </a>
@@ -544,7 +544,7 @@ function Header() {
                   trackEvent('click_mobile_sticky_cta');
                   goTo("/cadastro");
                 }}
-                style={{ color: '#FF9D2E', fontSize: '30px' }}
+                style={{ color: '#5B6EE8', fontSize: '30px' }}
               >
                 Começar grátis
               </a>
@@ -576,7 +576,7 @@ function Hero() {
         <div className="rf-hero-copy">
           <Reveal>
             <SectionEyebrow dark>
-              BARBEARIAS · SALÕES · ESMALTERIAS
+              SALÕES · ESMALTERIAS · BARBEARIAS
             </SectionEyebrow>
           </Reveal>
 
@@ -584,7 +584,7 @@ function Hero() {
             <h1>
               Você não abriu
               <br />
-              a barbearia
+              seu salão
               <br />
               pra ficar{" "}
               <span>
@@ -597,7 +597,7 @@ function Hero() {
 
           <Reveal delay={0.16}>
             <p className="rf-hero-description">
-              Agendamento online, página própria, controle da equipe e gestão completa da barbearia ou salão. Seu cliente agenda. Você corta. Simples assim.
+              Agendamento online, página própria, controle da equipe e gestão completa do seu salão, esmalteria ou barbearia. Seu cliente agenda sozinho. Você faz o que ama. Simples assim.
             </p>
           </Reveal>
 
@@ -628,7 +628,7 @@ function Hero() {
             </div>
           </Reveal>
           <br /><br />
-          <Reveal delay={0.28}>
+          <Reveal delay={0.28} className="rf-hero-spotify-slot">
             <a
               href="/playlist"
               className="rf-spotify-card"
@@ -651,7 +651,7 @@ function Hero() {
           </Reveal>
           <br />
 
-          <Reveal delay={0.36}>
+          <Reveal delay={0.36} className="rf-hero-trust-slot">
             <div className="rf-hero-trust">
               <div className="rf-trust-item">
                 <span className="rf-trust-value">100%</span>
@@ -682,7 +682,7 @@ function Hero() {
         </div>
 
         <div className="rf-hero-product">
-          <BookingPhone />
+          <BookingPhone imageSrc={M.booking2} />
         </div>
       </div>
 
@@ -730,7 +730,7 @@ function Statement() {
 
             <Reveal delay={0.18}>
               <p>
-                Enquanto você está com a tesoura na mão, o cliente seguinte já deveria ter o horário confirmado. Não pelo WhatsApp. Automaticamente.
+                Enquanto você está com o pincel ou a escova na mão, a próxima cliente já deveria ter o horário confirmado. Não pelo WhatsApp. Automaticamente.
               </p>
             </Reveal>
           </div>
@@ -771,18 +771,18 @@ function ProblemSection() {
   const problems = [
     {
       number: "01",
-      title: "\"Que horas tem pra corte?\"",
-      text: "Cada mensagem respondida no celular é um minuto a menos cortando, colorindo ou fazendo unhas. Isso soma horas perdidas por semana.",
+      title: "\"Tem horário amanhã?\"",
+      text: "Cada mensagem respondida no celular é um minuto a menos fazendo unhas, escova ou corte. Com a mão ocupada, isso vira horas perdidas por semana.",
     },
     {
       number: "02",
-      title: "Cliente que suma sem avisar",
-      text: "Sem confirmação e sem sinal, o horário fica em aberto. O próximo cliente não entrou porque o furo já estava lá.",
+      title: "Cliente que some sem avisar",
+      text: "Sem confirmação e sem sinal, o horário fica vago. Aquela cliente que queria encaixe não entrou porque o furo já estava lá.",
     },
     {
       number: "03",
       title: "Equipe sem agenda clara",
-      text: "Cada profissional gerenciando o próprio WhatsApp significa conflito de horário, cliente errado e problema que cai no seu colo.",
+      text: "Cada manicure, cabeleireira ou barbeiro gerenciando o próprio WhatsApp significa horário duplicado, cliente esperando e problema que cai no seu colo.",
     },
   ];
 
@@ -802,7 +802,7 @@ function ProblemSection() {
               <br />
               que travam
               <br />
-              <span>qualquer barbearia.</span>
+              <span>qualquer salão.</span>
             </h2>
           </Reveal>
         </div>
@@ -862,14 +862,14 @@ function BookingSection() {
 
           <Reveal delay={0.16}>
             <p>
-              Às 23h, um cliente abre seu Instagram, clica no link da bio e agenda o corte de amanhã às 9h. Você não precisou responder nada. O horário está lá quando você acorda.
+              Às 23h, uma cliente abre seu Instagram, clica no link da bio e agenda a manicure de amanhã às 9h. Você não precisou responder nada. O horário está lá quando você acorda.
             </p>
           </Reveal>
         </div>
 
         <div className="rf-booking-layout">
           <Reveal className="rf-booking-visual">
-            <BookingPhone imageSrc={M.booking2} />
+            <BookingPhone imageSrc={M.services} />
           </Reveal>
 
           <div className="rf-booking-details">
@@ -877,7 +877,7 @@ function BookingSection() {
               {
                 icon: Globe2,
                 title: "Link na bio. Agenda feita.",
-                text: "Coloca o link no Instagram ou WhatsApp. O cliente abre, escolhe o serviço, o barbeiro e o horário. Em menos de 1 minuto.",
+                text: "Coloca o link no Instagram ou WhatsApp. A cliente abre, escolhe o serviço, a profissional e o horário. Em menos de 1 minuto.",
               },
               {
                 icon: CalendarDays,
@@ -887,7 +887,7 @@ function BookingSection() {
               {
                 icon: ShieldCheck,
                 title: "Confirmado. Sem WhatsApp.",
-                text: "O cliente recebe a confirmação na hora. Você abre o painel e vê a agenda cheia. Simples assim.",
+                text: "A cliente recebe a confirmação na hora. Você abre o painel e vê a agenda cheia. Simples assim.",
               },
             ].map((item, index) => {
               const Icon = item.icon;
@@ -939,9 +939,9 @@ function DashboardSection() {
             <h2>
               Você administra
               <br />
-              a barbearia
+              o salão
               <br />
-              <span>sem sair dela.</span>
+              <span>sem largar o pincel.</span>
             </h2>
           </Reveal>
 
@@ -953,7 +953,7 @@ function DashboardSection() {
         </div>
 
         <Reveal delay={0.1}>
-          <MacbookMockup image={M.barber} alt="Tela de agendamento e gestão da Raffros" path="app.raffros.com / agenda" className="rf-dashboard-macbook" />
+          <MacbookMockup image={M.salon} alt="Tela de agendamento e gestão da Raffros para salões e esmalterias" path="app.raffros.com / agenda" className="rf-dashboard-macbook" />
         </Reveal>
 
         <div className="rf-feature-strip">
@@ -994,7 +994,7 @@ function DashboardSection() {
 function RealProductGallery() {
   const screens = [
     { number: "01", label: "AGENDAMENTO", title: "30 segundos. Horário marcado.", text: "O cliente escolhe o serviço, o profissional e o horário sem precisar mandar uma mensagem sequer.", image: M.booking, className: "rf-gallery-main" },
-    { number: "02", label: "SERVIÇOS", title: "Corte, barba, colorist...tudo lá.", text: "Cada serviço com duração e preço exibidos antes de confirmar. O cliente sabe exatamente o que vai pagar.", image: M.services, className: "" },
+    { number: "02", label: "SERVIÇOS", title: "Unhas, escova, coloração...tudo lá.", text: "Cada serviço com duração e preço exibidos antes de confirmar. A cliente sabe exatamente o que vai pagar.", image: M.services, className: "" },
     { number: "03", label: "PIX", title: "Sinal na hora. Furo nunca.", text: "Você define o percentual de entrada. O cliente paga na hora de marcar. Sem sinal, sem horário.", image: M.pix, className: "" },
   ];
 
@@ -1074,7 +1074,7 @@ function TeamSection() {
 
             <Reveal delay={0.08}>
               <h2>
-                Cada barbeiro.
+                Cada manicure.
                 <br />
                 Cada cabeleireira.
                 <br />
@@ -1137,7 +1137,7 @@ function PhilosophySection() {
 
         <Reveal delay={0.16}>
           <p>
-            Um corte não feito não volta. Uma escova perdida não recupera. Cada furo na agenda é receita que não entrou. A Raffros existe para isso não acontecer mais.
+            Uma escova não feita não volta. Um alongamento perdido não se recupera. Cada furo na agenda é receita que não entrou. A Raffros existe para isso não acontecer mais.
           </p>
         </Reveal>
 
@@ -1160,27 +1160,27 @@ function AudienceSection() {
   const audiences = [
     {
       index: "01",
-      title: "Barbearias",
-      description:
-        "Mais horários preenchidos. Menos conversa para marcar um corte.",
-      icon: Scissors,
-      bgImage: "/images/barbearia.jpg"
-    },
-    {
-      index: "02",
-      title: "Salões",
+      title: "Salões de beleza",
       description:
         "Equipe, serviços e clientes organizados em uma única operação.",
       icon: Sparkles,
       bgImage: "/images/salao-cachos.jpg"
     },
     {
-      index: "03",
+      index: "02",
       title: "Esmalterias",
       description:
         "Uma agenda simples para você cuidar da experiência.",
       icon: CalendarDays,
       bgImage: "/images/manicure-celular.jpg"
+    },
+    {
+      index: "03",
+      title: "Studios & autônomas",
+      description:
+        "Mais horários preenchidos. Menos conversa para fechar cada atendimento.",
+      icon: Scissors,
+      bgImage: "/images/barbearia.jpg"
     },
   ];
 
@@ -1326,7 +1326,7 @@ function PaymentRealSection() {
             </h2>
 
             <p>
-              Você define a entrada. O cliente paga via Pix antes de confirmar. Se não pagou, o horário não é dele. Fim do furo.
+              Você define a entrada. A cliente paga via Pix antes de confirmar. Se não pagou, o horário não é dela. Fim do furo.
             </p>
 
             <div className="rf-payment-real-list">
@@ -1610,7 +1610,7 @@ function FinalCTA() {
           <h2>
             Amanhã você
             <br />
-            pode abrir a barbearia
+            pode abrir o salão
             <br />
             <span>com agenda cheia.</span>
           </h2>
@@ -1861,7 +1861,7 @@ export default function LandingPage() {
           right: 0,
           height: "3px",
           transformOrigin: "0%",
-          backgroundColor: "#FF9D2E",
+          backgroundColor: "#5B6EE8",
           zIndex: 999999,
         }}
       />
@@ -1872,13 +1872,13 @@ export default function LandingPage() {
            ===================================================== */
 
         :root {
-          --rf-black: #050505;
-          --rf-black-2: #0b0b0b;
-          --rf-black-3: #111111;
+          --rf-black: #0F172E;
+          --rf-black-2: #141D38;
+          --rf-black-3: #1B2645;
 
           --rf-white: #ffffff;
-          --rf-paper: #f5f5f2;
-          --rf-paper-2: #eeeeeb;
+          --rf-paper: #F5F7FC;
+          --rf-paper-2: #ECEFF8;
 
           --rf-text: #101010;
           --rf-muted: #747470;
@@ -1887,8 +1887,8 @@ export default function LandingPage() {
           --rf-line: rgba(16,16,16,.10);
           --rf-line-dark: rgba(255,255,255,.11);
 
-          --rf-accent: #FF9D2E;
-          --rf-accent-dark: #E8841A;
+          --rf-accent: #5B6EE8;
+          --rf-accent-dark: #4556D0;
 
           --rf-max: 1240px;
 
@@ -2040,7 +2040,7 @@ export default function LandingPage() {
           border-radius: 50%;
           background: var(--rf-accent);
           flex: 0 0 auto;
-          box-shadow: 0 0 16px rgba(255,157,46,.45);
+          box-shadow: 0 0 16px rgba(91,110,232,.45);
         }
 
         /* =====================================================
@@ -2188,8 +2188,8 @@ export default function LandingPage() {
           font-weight: 800;
           letter-spacing: -.01em;
           box-shadow:
-            0 0 0 1px rgba(255,157,46,.15),
-            0 5px 25px rgba(255,157,46,.10);
+            0 0 0 1px rgba(91,110,232,.15),
+            0 5px 25px rgba(91,110,232,.10);
           transition:
             transform .2s ease,
             box-shadow .2s ease;
@@ -2198,8 +2198,8 @@ export default function LandingPage() {
         .rf-header-cta:hover {
           transform: translateY(-1px);
           box-shadow:
-            0 0 0 1px rgba(255,157,46,.25),
-            0 8px 32px rgba(255,157,46,.18);
+            0 0 0 1px rgba(91,110,232,.25),
+            0 8px 32px rgba(91,110,232,.18);
         }
 
         .rf-mobile-menu {
@@ -2228,7 +2228,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle at 70% 46%,
-              rgba(255,157,46,.055),
+              rgba(91,110,232,.055),
               transparent 26%
             ),
             var(--rf-black);
@@ -2250,7 +2250,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle,
-              rgba(255,157,46,.08),
+              rgba(91,110,232,.08),
               transparent 68%
             );
         }
@@ -2338,7 +2338,7 @@ export default function LandingPage() {
         .rf-primary-button:hover {
           transform: translateY(-2px);
           box-shadow:
-            0 12px 35px rgba(255,157,46,.16);
+            0 12px 35px rgba(91,110,232,.16);
         }
 
         .rf-secondary-button {
@@ -2463,7 +2463,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               ellipse,
-              rgba(255,157,46,.12),
+              rgba(91,110,232,.12),
               transparent 67%
             );
           filter: blur(15px);
@@ -2545,7 +2545,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle at 50% 30%,
-              rgba(255,157,46,.16),
+              rgba(91,110,232,.16),
               transparent 48%
             ),
             #141414;
@@ -2557,7 +2557,7 @@ export default function LandingPage() {
           height: 39px;
           display: grid;
           place-items: center;
-          border: 1px solid rgba(255,157,46,.5);
+          border: 1px solid rgba(91,110,232,.5);
           border-radius: 50%;
           color: var(--rf-accent);
           font-weight: 800;
@@ -2771,7 +2771,7 @@ export default function LandingPage() {
           display: grid;
           place-items: center;
           border-radius: 7px;
-          background: rgba(255,157,46,.13);
+          background: rgba(91,110,232,.13);
           color: var(--rf-accent);
         }
 
@@ -2959,7 +2959,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle at 50% 50%,
-              rgba(255,157,46,.07),
+              rgba(91,110,232,.07),
               transparent 35%
             ),
             #eaeae6;
@@ -3162,7 +3162,7 @@ export default function LandingPage() {
         }
 
         .rf-sidebar-item.active {
-          background: rgba(255,157,46,.09);
+          background: rgba(91,110,232,.09);
           color: var(--rf-accent);
         }
 
@@ -3309,7 +3309,7 @@ export default function LandingPage() {
 
         .rf-appointment-line span {
           width: 1px;
-          background: rgba(255,157,46,.3);
+          background: rgba(91,110,232,.3);
         }
 
         .rf-appointment-line span::before {
@@ -3341,7 +3341,7 @@ export default function LandingPage() {
         }
 
         .rf-appointment-status {
-          color: rgba(255,157,46,.7);
+          color: rgba(91,110,232,.7);
           font-size: 5px;
           letter-spacing: .08em;
         }
@@ -3426,7 +3426,7 @@ export default function LandingPage() {
         .rf-bars span {
           flex: 1;
           border-radius: 2px 2px 0 0;
-          background: rgba(255,157,46,.55);
+          background: rgba(91,110,232,.55);
         }
 
         .rf-feature-strip {
@@ -3550,7 +3550,7 @@ export default function LandingPage() {
         .rf-panel-header > span {
           padding: 7px 9px;
           border-radius: 999px;
-          background: rgba(255,157,46,.25);
+          background: rgba(91,110,232,.25);
           color: #6B3600;
           font-size: 7px;
           font-weight: 700;
@@ -4012,7 +4012,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle at 50% 50%,
-              rgba(255,157,46,.07),
+              rgba(91,110,232,.07),
               transparent 30%
             ),
             var(--rf-black);
@@ -4068,7 +4068,7 @@ export default function LandingPage() {
         .rf-final-button:hover {
           transform: translateY(-2px);
           box-shadow:
-            0 15px 50px rgba(255,157,46,.18);
+            0 15px 50px rgba(91,110,232,.18);
         }
 
         .rf-final-note {
@@ -4318,7 +4318,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               ellipse,
-              rgba(255,157,46,.16),
+              rgba(91,110,232,.16),
               transparent 68%
             );
           filter: blur(25px);
@@ -4426,7 +4426,7 @@ export default function LandingPage() {
           place-items: center;
           flex: 0 0 auto;
           border-radius: 7px;
-          background: rgba(255,157,46,.13);
+          background: rgba(91,110,232,.13);
           color: var(--rf-accent);
         }
 
@@ -4552,7 +4552,7 @@ export default function LandingPage() {
           grid-row: span 2;
           min-height: 760px;
           background:
-            radial-gradient(circle at 75% 55%,rgba(255,157,46,.09),transparent 30%),
+            radial-gradient(circle at 75% 55%,rgba(91,110,232,.09),transparent 30%),
             #111;
         }
 
@@ -4701,7 +4701,7 @@ export default function LandingPage() {
           height: 7px;
           border-radius: 50%;
           background: var(--rf-accent);
-          box-shadow: 0 0 14px rgba(255,157,46,.35);
+          box-shadow: 0 0 14px rgba(91,110,232,.35);
         }
 
         .rf-team-real-badge strong,
@@ -4843,8 +4843,8 @@ export default function LandingPage() {
           align-items: center;
           gap: 7px;
           padding: 9px 12px;
-          border: 1px solid rgba(255,157,46,.28);
-          background: rgba(255,157,46,.1);
+          border: 1px solid rgba(91,110,232,.28);
+          background: rgba(91,110,232,.1);
           color: #ffb45c;
           font-family: ui-monospace,SFMono-Regular,Menlo,monospace;
           font-size: 8px;
@@ -5609,7 +5609,7 @@ export default function LandingPage() {
             position: absolute;
             inset: 0;
             pointer-events: none;
-            background: radial-gradient(circle at 85% 5%, rgba(255,157,46,.10), transparent 34%);
+            background: radial-gradient(circle at 85% 5%, rgba(91,110,232,.10), transparent 34%);
             opacity: 0;
             transition: opacity .35s ease;
           }
@@ -6434,6 +6434,177 @@ export default function LandingPage() {
             .rf-real-gallery-card:not(.rf-gallery-main) .rf-real-gallery-device { width: 160px; bottom: 0; }
             .rf-macbook-browser-top { grid-template-columns: 38px 1fr 38px; }
             .rf-team-real-badge { left: 8px; right: 8px; }
+          }
+
+          /* =====================================================
+             PALETA AZUL → ROSÉ
+             Genérica para salões, esmalterias e barbearias:
+             azul (sóbrio, barbearia) degradê para rosé (beleza/unhas).
+             Seções escuras em navy profundo no lugar do preto noir.
+             ===================================================== */
+
+          :root {
+            --rf-grad: linear-gradient(120deg, #4F6AE8 0%, #7B6FE2 52%, #D67FB0 100%);
+            --rf-ink: #111A2E;
+          }
+
+          /* ── Header claro ── */
+          .rf-header .rf-logo img { filter: none !important; }
+          .rf-header .rf-logo { color: var(--rf-ink) !important; }
+          .rf-header .rf-desktop-nav a { color: rgba(17, 26, 46, 0.62) !important; }
+          .rf-header .rf-desktop-nav a:hover { color: var(--rf-ink) !important; }
+          .rf-header .rf-login { color: rgba(17, 26, 46, 0.78) !important; }
+          .rf-header .rf-login:hover { color: var(--rf-ink) !important; }
+          .rf-header .rf-mobile-menu { color: var(--rf-ink) !important; }
+          .rf-header .rf-header-cta {
+            color: #ffffff !important;
+            background: var(--rf-grad) !important;
+            box-shadow: 0 6px 22px rgba(91, 110, 232, 0.28) !important;
+          }
+          .rf-header.rf-header-scrolled {
+            background: rgba(245, 247, 255, 0.82) !important;
+            border-bottom: 1px solid rgba(17, 26, 46, 0.08) !important;
+            box-shadow: 0 8px 32px rgba(40, 60, 140, 0.08) !important;
+          }
+
+          /* ── Menu mobile navy ── */
+          .rf-mobile-nav-fullscreen {
+            background:
+              radial-gradient(circle at 100% 100%, rgba(214, 127, 176, 0.22), transparent 45%),
+              linear-gradient(180deg, #141D38 0%, #0B1124 100%) !important;
+          }
+
+          /* ── Hero: degradê azul → azul rosado ── */
+          main .rf-hero {
+            background:
+              radial-gradient(circle at 82% 30%, rgba(214, 127, 176, 0.30), transparent 38%),
+              radial-gradient(circle at 10% 15%, rgba(79, 106, 232, 0.22), transparent 42%),
+              linear-gradient(160deg, #DFE8FF 0%, #E8E6FB 48%, #F7E4EF 100%) !important;
+            color: var(--rf-ink) !important;
+          }
+          main .rf-hero h1 { color: var(--rf-ink) !important; }
+          main .rf-hero h1 span {
+            background: var(--rf-grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent !important;
+          }
+          main .rf-hero .rf-eyebrow-dark { color: #5D6787 !important; }
+          main .rf-hero .rf-eyebrow-dot { background: var(--rf-grad) !important; }
+          main .rf-hero .rf-grid-lines-dark span { background: rgba(17, 26, 46, 0.045) !important; }
+          main .rf-hero .rf-noise { opacity: 0.025 !important; }
+          main .rf-hero .rf-hero-orb-one { background: radial-gradient(circle, rgba(123, 111, 226, 0.22), transparent 68%) !important; }
+          main .rf-hero .rf-hero-orb-two { background: radial-gradient(circle, rgba(255, 255, 255, 0.5), transparent 70%) !important; }
+          main .rf-hero .rf-hero-description { color: rgba(17, 26, 46, 0.66) !important; }
+          main .rf-hero .rf-primary-button {
+            color: #ffffff !important;
+            background: var(--rf-grad) !important;
+            box-shadow: 0 12px 32px rgba(91, 110, 232, 0.30) !important;
+          }
+          main .rf-hero .rf-secondary-button {
+            color: rgba(17, 26, 46, 0.82) !important;
+            border-color: rgba(17, 26, 46, 0.14) !important;
+            background: rgba(255, 255, 255, 0.6) !important;
+          }
+          main .rf-hero .rf-secondary-button:hover { background: #ffffff !important; border-color: rgba(17, 26, 46, 0.24) !important; }
+          main .rf-hero .rf-hero-trust { border-top-color: rgba(17, 26, 46, 0.10) !important; }
+          main .rf-hero .rf-trust-value { color: #4556D0 !important; }
+          main .rf-hero .rf-trust-label { color: rgba(17, 26, 46, 0.5) !important; }
+          main .rf-hero .rf-trust-line { background: rgba(17, 26, 46, 0.12) !important; }
+          main .rf-hero .rf-scroll-indicator { color: rgba(17, 26, 46, 0.35) !important; }
+          main .rf-hero .rf-scroll-indicator div { background: linear-gradient(to bottom, rgba(17, 26, 46, 0.35), transparent) !important; }
+          main .rf-hero .rf-hero-bottom-label { color: rgba(17, 26, 46, 0.22) !important; }
+          main .rf-hero .rf-real-phone-glow { background: radial-gradient(ellipse, rgba(123, 111, 226, 0.35), transparent 67%) !important; }
+          main .rf-hero .rf-spotify-card {
+            background: rgba(255, 255, 255, 0.7) !important;
+            border-color: rgba(17, 26, 46, 0.08) !important;
+            box-shadow: 0 6px 24px rgba(40, 60, 140, 0.08) !important;
+          }
+          main .rf-hero .rf-spotify-card-title { color: var(--rf-ink) !important; }
+          main .rf-hero .rf-spotify-card-sub { color: rgba(17, 26, 46, 0.55) !important; }
+          main .rf-hero .rf-spotify-card-arrow { color: rgba(17, 26, 46, 0.4) !important; }
+
+          /* ── Destaques nas seções: texto em degradê ── */
+          main .rf-problem-heading h2 span,
+          main .rf-section-intro h2 span,
+          main .rf-dashboard-copy h2 span,
+          main .rf-payment-real h2 span,
+          main .rf-pricing-header h2 span,
+          main .rf-final-cta h2 span {
+            background: var(--rf-grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent !important;
+          }
+          main .rf-problem h2 span,
+          main .rf-dashboard-section h2 span,
+          main .rf-payment-real h2 span,
+          main .rf-pricing h2 span,
+          main .rf-final-cta h2 span {
+            background: linear-gradient(120deg, #8EA2FF 0%, #B49CF5 50%, #F2A6CC 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+          }
+
+          /* ── Seções escuras: navy profundo ── */
+          main .rf-problem,
+          main .rf-dashboard-section,
+          main .rf-pricing {
+            background: #0F172E !important;
+          }
+          main .rf-payment-real {
+            background:
+              radial-gradient(circle at 18% 30%, rgba(91, 110, 232, 0.16), transparent 42%),
+              radial-gradient(circle at 90% 80%, rgba(214, 127, 176, 0.12), transparent 40%),
+              #111A33 !important;
+          }
+          main .rf-price-card:not(.rf-price-featured) { background: #16203D !important; }
+          main .rf-price-featured { background: #F5F7FF !important; border-color: #F5F7FF !important; color: var(--rf-ink) !important; }
+          main .rf-price-badge { color: #ffffff !important; background: var(--rf-grad) !important; }
+          main .rf-price-button.featured { color: #ffffff !important; background: var(--rf-grad) !important; border-color: transparent !important; }
+          main .rf-price-button.featured:hover { filter: brightness(1.06); }
+          main .rf-final-cta {
+            background:
+              radial-gradient(circle at 25% 0%, rgba(91, 110, 232, 0.30), transparent 45%),
+              radial-gradient(circle at 80% 100%, rgba(214, 127, 176, 0.24), transparent 45%),
+              linear-gradient(180deg, #141D38 0%, #0B1124 100%) !important;
+          }
+          main .rf-final-button { color: #ffffff !important; background: var(--rf-grad) !important; }
+
+          /* ── Seções claras ── */
+          main .rf-philosophy { background: linear-gradient(135deg, #E9EEFD 0%, #F4EAF3 100%) !important; }
+          main .rf-footer { background: #EEF1F9 !important; }
+
+          /* ── Mobile: celular do hero aparece já na primeira tela ── */
+          @media (max-width: 680px) {
+            main .rf-hero-container {
+              gap: 0 !important;
+              padding-top: 96px !important;
+            }
+            main .rf-hero-copy { display: contents; }
+            main .rf-hero-copy > br { display: none; }
+            main .rf-hero-copy > * { order: 1; position: relative; z-index: 4; }
+            main .rf-hero-product {
+              order: 2;
+              min-height: 0 !important;
+              margin-top: 44px !important;
+            }
+            main .rf-hero-copy > .rf-hero-spotify-slot { order: 3; margin-top: 40px; }
+            main .rf-hero-copy > .rf-hero-trust-slot { order: 4; }
+            main .rf-hero .rf-hero-actions {
+              max-width: none !important;
+              flex-direction: row !important;
+              gap: 8px !important;
+              margin-top: 22px !important;
+            }
+            main .rf-hero .rf-hero-actions > * {
+              flex: 1 1 0;
+              padding: 0 12px !important;
+              white-space: nowrap;
+            }
+            main .rf-hero h1 { margin-bottom: 16px !important; }
           }
       `}</style>
 
