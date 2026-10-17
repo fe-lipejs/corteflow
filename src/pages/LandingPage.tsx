@@ -1915,6 +1915,7 @@ export default function LandingPage() {
           --rf-line-dark: rgba(255,255,255,.11);
 
           --rf-accent: #FC761D;
+          --rf-accent-on-dark: #FF8738;
           --rf-accent-dark: #E45E0B;
 
           --rf-max: 1240px;
@@ -6793,11 +6794,17 @@ export default function LandingPage() {
             background: none !important;
           }
           main .rf-hero h1 span {
-            color: var(--rf-accent) !important;
-            -webkit-text-fill-color: var(--rf-accent) !important;
+            color: var(--rf-accent-on-dark) !important;
+            -webkit-text-fill-color: var(--rf-accent-on-dark) !important;
             background: none !important;
             -webkit-background-clip: initial !important;
             background-clip: initial !important;
+          }
+          main .rf-hero .rf-primary-button {
+            background: var(--rf-accent-on-dark) !important;
+            border-color: var(--rf-accent-on-dark) !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 10px 24px rgba(255, 135, 56, 0.32) !important;
           }
           main .rf-hero .rf-hero-description {
             color: rgba(255, 255, 255, 0.78) !important;
@@ -6815,7 +6822,7 @@ export default function LandingPage() {
             border-color: rgba(255, 255, 255, 0.32) !important;
           }
           main .rf-hero .rf-trust-value {
-            color: var(--rf-accent) !important;
+            color: var(--rf-accent-on-dark) !important;
           }
           main .rf-hero .rf-trust-label {
             color: rgba(255, 255, 255, 0.5) !important;
@@ -6832,7 +6839,7 @@ export default function LandingPage() {
             color: rgba(255, 255, 255, 0.35) !important;
           }
           main .rf-hero .rf-scroll-indicator div {
-            background: linear-gradient(to bottom, var(--rf-accent), transparent) !important;
+            background: linear-gradient(to bottom, var(--rf-accent-on-dark), transparent) !important;
           }
           main .rf-hero .rf-hero-bottom-label {
             color: rgba(255, 255, 255, 0.25) !important;
@@ -6984,20 +6991,37 @@ export default function LandingPage() {
             -webkit-text-fill-color: #FFFFFF !important;
             background: none !important;
           }
-          /* Spans em seções escuras: laranja puro (#FC761D) */
+          /* Spans em seções escuras com fundo azul: laranja mais claro e luminoso (#FF8738) */
           main .rf-problem h2 span,
           main .rf-payment-real h2 span,
           main .rf-pricing h2 span,
           main .rf-final-cta h2 span {
-            color: var(--rf-accent) !important;
-            -webkit-text-fill-color: var(--rf-accent) !important;
+            color: var(--rf-accent-on-dark) !important;
+            -webkit-text-fill-color: var(--rf-accent-on-dark) !important;
             background: none !important;
           }
-          /* im2: Você administra o salão (laranja) e sem largar o pincel (branco) */
+          /* im2: Você administra o salão (laranja mais claro no azul) e sem largar o pincel (branco) */
           main .rf-dashboard-section h2 .rf-highlight-orange {
-            color: var(--rf-accent) !important;
-            -webkit-text-fill-color: var(--rf-accent) !important;
+            color: var(--rf-accent-on-dark) !important;
+            -webkit-text-fill-color: var(--rf-accent-on-dark) !important;
             background: none !important;
+          }
+          main .rf-pricing .rf-price-button.featured,
+          main .rf-pricing .rf-price-badge,
+          main .rf-final-cta .rf-primary-button,
+          main .rf-final-cta .rf-final-button {
+            background: var(--rf-accent-on-dark) !important;
+            border-color: var(--rf-accent-on-dark) !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 10px 24px rgba(255, 135, 56, 0.32) !important;
+          }
+          main .rf-hero .rf-eyebrow-dark .rf-eyebrow-dot,
+          main .rf-problem .rf-eyebrow-dark .rf-eyebrow-dot,
+          main .rf-pricing .rf-eyebrow-dark .rf-eyebrow-dot,
+          main .rf-payment-real .rf-eyebrow-dark .rf-eyebrow-dot,
+          main .rf-dashboard-section .rf-eyebrow-dark .rf-eyebrow-dot {
+            background: var(--rf-accent-on-dark) !important;
+            box-shadow: 0 0 14px rgba(255, 135, 56, 0.55) !important;
           }
           main .rf-dashboard-section h2 .rf-highlight-white {
             color: #FFFFFF !important;
@@ -7203,9 +7227,9 @@ export default function LandingPage() {
             }
 
             main .rf-hero .rf-primary-button {
-              background: var(--rf-accent) !important;
+              background: var(--rf-accent-on-dark) !important;
               color: #FFFFFF !important;
-              box-shadow: 0 8px 22px rgba(252, 118, 29, 0.25) !important;
+              box-shadow: 0 8px 22px rgba(255, 135, 56, 0.30) !important;
             }
 
             main .rf-hero .rf-secondary-button {

@@ -94,9 +94,9 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
                 width: '6px',
                 height: '6px',
                 borderRadius: '50%',
-                background: '#FC761D',
+                background: '#FF8738',
                 flexShrink: 0,
-                boxShadow: '0 0 14px rgba(252,118,29,0.55)',
+                boxShadow: '0 0 14px rgba(255,135,56,0.55)',
             }} />
             {children}
         </div>
@@ -201,7 +201,7 @@ export default function PlaylistPage() {
                         textDecoration: 'none',
                         transition: 'color 0.2s ease',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#FC761D')}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#FF8738')}
                     onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.72)')}
                 >
                     <ArrowLeft size={15} />
@@ -235,22 +235,22 @@ export default function PlaylistPage() {
                         height: '36px',
                         padding: '0 16px',
                         borderRadius: '999px',
-                        background: '#FC761D',
+                        background: '#FF8738',
                         color: '#FFFFFF',
                         fontSize: '11px',
                         fontWeight: 800,
                         letterSpacing: '-0.01em',
                         textDecoration: 'none',
                         transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                        boxShadow: '0 8px 24px rgba(252, 118, 29, 0.30)',
+                        boxShadow: '0 8px 24px rgba(255, 135, 56, 0.32)',
                     }}
                     onMouseEnter={e => {
                         (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-1px)';
-                        (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 12px 30px rgba(252, 118, 29, 0.42)';
+                        (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 12px 30px rgba(255, 135, 56, 0.45)';
                     }}
                     onMouseLeave={e => {
                         (e.currentTarget as HTMLAnchorElement).style.transform = 'none';
-                        (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 8px 24px rgba(252, 118, 29, 0.30)';
+                        (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 8px 24px rgba(255, 135, 56, 0.32)';
                     }}
                 >
                     Começar grátis
@@ -290,7 +290,7 @@ export default function PlaylistPage() {
                             }}>
                                 O que a Raffros{' '}
                                 <br />
-                                <span style={{ color: '#FC761D' }}>está ouvindo.</span>
+                                <span style={{ color: '#FF8738' }}>está ouvindo.</span>
                             </h1>
 
                             <p style={{
@@ -470,7 +470,7 @@ export default function PlaylistPage() {
                     >
                         <Eyebrow>Palavra do dia</Eyebrow>
 
-                        <div style={{ margin: '28px 0 0', color: 'rgba(252,118,29,0.50)' }}>
+                        <div style={{ margin: '28px 0 0', color: 'rgba(255,135,56,0.55)' }}>
                             <Quote size={30} />
                         </div>
 
@@ -503,7 +503,7 @@ export default function PlaylistPage() {
                                         fontWeight: 800,
                                         letterSpacing: '.18em',
                                         textTransform: 'uppercase',
-                                        color: '#FC761D',
+                                        color: '#FF8738',
                                     }}>
                                         {verso.ref}
                                     </cite>
@@ -533,7 +533,7 @@ export default function PlaylistPage() {
                                     alignItems: 'center',
                                     gap: '9px',
                                     borderRadius: '999px',
-                                    background: '#FC761D',
+                                    background: '#FF8738',
                                     color: '#FFFFFF',
                                     fontSize: '12px',
                                     fontWeight: 800,
@@ -541,15 +541,15 @@ export default function PlaylistPage() {
                                     cursor: 'pointer',
                                     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                                     fontFamily: 'inherit',
-                                    boxShadow: '0 10px 28px rgba(252,118,29,0.32)',
+                                    boxShadow: '0 10px 28px rgba(255,135,56,0.32)',
                                 }}
                                 onMouseEnter={e => {
                                     (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
-                                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 14px 34px rgba(252,118,29,0.45)';
+                                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 14px 34px rgba(255,135,56,0.45)';
                                 }}
                                 onMouseLeave={e => {
                                     (e.currentTarget as HTMLButtonElement).style.transform = 'none';
-                                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 10px 28px rgba(252,118,29,0.32)';
+                                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 10px 28px rgba(255,135,56,0.32)';
                                 }}
                             >
                                 <RefreshCw size={15} />
@@ -621,7 +621,7 @@ export default function PlaylistPage() {
                                 textDecoration: 'none',
                                 transition: 'color 0.2s ease',
                             }}
-                            onMouseEnter={e => (e.currentTarget.style.color = '#FC761D')}
+                            onMouseEnter={e => (e.currentTarget.style.color = '#FF8738')}
                             onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.60)')}
                         >
                             <ArrowLeft size={14} />
