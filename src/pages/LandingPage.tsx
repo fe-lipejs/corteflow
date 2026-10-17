@@ -25,7 +25,7 @@ import { usePageTracking } from '../hooks/usePageTracking';
    Apple × Nothing × Raffros
    ========================================================= */
 
-const ACCENT = "#5B6EE8";
+const ACCENT = "#FC761D";
 const M = {
   booking: "/Mockups/Iphone - Tela de Agendamento.PNG",
   booking2: "/Mockups/Iphone - Tela de Agendamento2.jpg",
@@ -521,7 +521,7 @@ function Header() {
                   trackEvent('click_playlist_nav_mobile');
                   goTo("/playlist");
                 }}
-                style={{ color: '#5B6EE8', fontSize: '18px' }}
+                style={{ color: '#007FBD', fontSize: '18px' }}
               >
                 ♫ Louvor & Palavra do Dia
               </a>
@@ -544,7 +544,7 @@ function Header() {
                   trackEvent('click_mobile_sticky_cta');
                   goTo("/cadastro");
                 }}
-                style={{ color: '#5B6EE8', fontSize: '30px' }}
+                style={{ color: '#007FBD', fontSize: '30px' }}
               >
                 Começar grátis
               </a>
@@ -1861,7 +1861,7 @@ export default function LandingPage() {
           right: 0,
           height: "3px",
           transformOrigin: "0%",
-          backgroundColor: "#5B6EE8",
+          backgroundColor: "#FC761D",
           zIndex: 999999,
         }}
       />
@@ -1877,18 +1877,18 @@ export default function LandingPage() {
           --rf-black-3: #1B2645;
 
           --rf-white: #ffffff;
-          --rf-paper: #F5F7FC;
-          --rf-paper-2: #ECEFF8;
+          --rf-paper: #FAF9F7;
+          --rf-paper-2: #F3F1ED;
 
-          --rf-text: #101010;
-          --rf-muted: #747470;
+          --rf-text: #1A1F2E;
+          --rf-muted: #6B7280;
           --rf-muted-dark: #9a9a95;
 
           --rf-line: rgba(16,16,16,.10);
           --rf-line-dark: rgba(255,255,255,.11);
 
-          --rf-accent: #5B6EE8;
-          --rf-accent-dark: #4556D0;
+          --rf-accent: #FC761D;
+          --rf-accent-dark: #E45E0B;
 
           --rf-max: 1240px;
 
@@ -2040,7 +2040,7 @@ export default function LandingPage() {
           border-radius: 50%;
           background: var(--rf-accent);
           flex: 0 0 auto;
-          box-shadow: 0 0 16px rgba(91,110,232,.45);
+          box-shadow: 0 0 16px rgba(252,118,29,.45);
         }
 
         /* =====================================================
@@ -2188,8 +2188,8 @@ export default function LandingPage() {
           font-weight: 800;
           letter-spacing: -.01em;
           box-shadow:
-            0 0 0 1px rgba(91,110,232,.15),
-            0 5px 25px rgba(91,110,232,.10);
+            0 0 0 1px rgba(252,118,29,.15),
+            0 5px 25px rgba(252,118,29,.10);
           transition:
             transform .2s ease,
             box-shadow .2s ease;
@@ -2198,8 +2198,8 @@ export default function LandingPage() {
         .rf-header-cta:hover {
           transform: translateY(-1px);
           box-shadow:
-            0 0 0 1px rgba(91,110,232,.25),
-            0 8px 32px rgba(91,110,232,.18);
+            0 0 0 1px rgba(252,118,29,.25),
+            0 8px 32px rgba(252,118,29,.18);
         }
 
         .rf-mobile-menu {
@@ -2228,7 +2228,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle at 70% 46%,
-              rgba(91,110,232,.055),
+              rgba(0,127,189,.06),
               transparent 26%
             ),
             var(--rf-black);
@@ -2250,7 +2250,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle,
-              rgba(91,110,232,.08),
+              rgba(0,127,189,.08),
               transparent 68%
             );
         }
@@ -2338,7 +2338,7 @@ export default function LandingPage() {
         .rf-primary-button:hover {
           transform: translateY(-2px);
           box-shadow:
-            0 12px 35px rgba(91,110,232,.16);
+            0 12px 35px rgba(252,118,29,.16);
         }
 
         .rf-secondary-button {
@@ -2463,7 +2463,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               ellipse,
-              rgba(91,110,232,.12),
+              rgba(0,127,189,.12),
               transparent 67%
             );
           filter: blur(15px);
@@ -2545,7 +2545,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle at 50% 30%,
-              rgba(91,110,232,.16),
+              rgba(252,118,29,.16),
               transparent 48%
             ),
             #141414;
@@ -2557,7 +2557,7 @@ export default function LandingPage() {
           height: 39px;
           display: grid;
           place-items: center;
-          border: 1px solid rgba(91,110,232,.5);
+          border: 1px solid rgba(0,127,189,.45);
           border-radius: 50%;
           color: var(--rf-accent);
           font-weight: 800;
@@ -2771,7 +2771,7 @@ export default function LandingPage() {
           display: grid;
           place-items: center;
           border-radius: 7px;
-          background: rgba(91,110,232,.13);
+          background: rgba(252,118,29,.13);
           color: var(--rf-accent);
         }
 
@@ -2959,7 +2959,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle at 50% 50%,
-              rgba(91,110,232,.07),
+              rgba(0,127,189,.07),
               transparent 35%
             ),
             #eaeae6;
@@ -3162,7 +3162,7 @@ export default function LandingPage() {
         }
 
         .rf-sidebar-item.active {
-          background: rgba(91,110,232,.09);
+          background: rgba(0,127,189,.09);
           color: var(--rf-accent);
         }
 
@@ -3309,7 +3309,7 @@ export default function LandingPage() {
 
         .rf-appointment-line span {
           width: 1px;
-          background: rgba(91,110,232,.3);
+          background: rgba(0,127,189,.3);
         }
 
         .rf-appointment-line span::before {
@@ -3341,7 +3341,7 @@ export default function LandingPage() {
         }
 
         .rf-appointment-status {
-          color: rgba(91,110,232,.7);
+          color: rgba(0,127,189,.7);
           font-size: 5px;
           letter-spacing: .08em;
         }
@@ -3426,7 +3426,7 @@ export default function LandingPage() {
         .rf-bars span {
           flex: 1;
           border-radius: 2px 2px 0 0;
-          background: rgba(91,110,232,.55);
+          background: rgba(0,127,189,.55);
         }
 
         .rf-feature-strip {
@@ -3550,7 +3550,7 @@ export default function LandingPage() {
         .rf-panel-header > span {
           padding: 7px 9px;
           border-radius: 999px;
-          background: rgba(91,110,232,.25);
+          background: rgba(252,118,29,.25);
           color: #6B3600;
           font-size: 7px;
           font-weight: 700;
@@ -4012,7 +4012,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle at 50% 50%,
-              rgba(91,110,232,.07),
+              rgba(0,127,189,.07),
               transparent 30%
             ),
             var(--rf-black);
@@ -4068,7 +4068,7 @@ export default function LandingPage() {
         .rf-final-button:hover {
           transform: translateY(-2px);
           box-shadow:
-            0 15px 50px rgba(91,110,232,.18);
+            0 15px 50px rgba(252,118,29,.18);
         }
 
         .rf-final-note {
@@ -4318,7 +4318,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               ellipse,
-              rgba(91,110,232,.16),
+              rgba(252,118,29,.16),
               transparent 68%
             );
           filter: blur(25px);
@@ -4426,7 +4426,7 @@ export default function LandingPage() {
           place-items: center;
           flex: 0 0 auto;
           border-radius: 7px;
-          background: rgba(91,110,232,.13);
+          background: rgba(252,118,29,.13);
           color: var(--rf-accent);
         }
 
@@ -4552,7 +4552,7 @@ export default function LandingPage() {
           grid-row: span 2;
           min-height: 760px;
           background:
-            radial-gradient(circle at 75% 55%,rgba(91,110,232,.09),transparent 30%),
+            radial-gradient(circle at 75% 55%,rgba(0,127,189,.09),transparent 30%),
             #111;
         }
 
@@ -4701,7 +4701,7 @@ export default function LandingPage() {
           height: 7px;
           border-radius: 50%;
           background: var(--rf-accent);
-          box-shadow: 0 0 14px rgba(91,110,232,.35);
+          box-shadow: 0 0 14px rgba(252,118,29,.35);
         }
 
         .rf-team-real-badge strong,
@@ -4843,8 +4843,8 @@ export default function LandingPage() {
           align-items: center;
           gap: 7px;
           padding: 9px 12px;
-          border: 1px solid rgba(91,110,232,.28);
-          background: rgba(91,110,232,.1);
+          border: 1px solid rgba(252,118,29,.28);
+          background: rgba(252,118,29,.1);
           color: #ffb45c;
           font-family: ui-monospace,SFMono-Regular,Menlo,monospace;
           font-size: 8px;
@@ -5609,7 +5609,7 @@ export default function LandingPage() {
             position: absolute;
             inset: 0;
             pointer-events: none;
-            background: radial-gradient(circle at 85% 5%, rgba(91,110,232,.10), transparent 34%);
+            background: radial-gradient(circle at 85% 5%, rgba(252,118,29,.10), transparent 34%);
             opacity: 0;
             transition: opacity .35s ease;
           }
@@ -6436,176 +6436,552 @@ export default function LandingPage() {
             .rf-team-real-badge { left: 8px; right: 8px; }
           }
 
+
           /* =====================================================
-             PALETA AZUL → ROSÉ
-             Genérica para salões, esmalterias e barbearias:
-             azul (sóbrio, barbearia) degradê para rosé (beleza/unhas).
-             Seções escuras em navy profundo no lugar do preto noir.
+             RAFFROS — PALETA FINAL
+             Laranja = ação. Azul = secundário. Neutros = base.
+             Contraste claro/escuro preservado. Sem arco-íris.
              ===================================================== */
 
           :root {
-            --rf-grad: linear-gradient(120deg, #4F6AE8 0%, #7B6FE2 52%, #D67FB0 100%);
-            --rf-ink: #111A2E;
+            --rf-accent: #FC761D;
+            --rf-accent-dark: #E45E0B;
+            --rf-blue: #0284C7;
+            --rf-blue-muted: #38BDF8;
+            --rf-ink: #111827;
+            --rf-muted: #4B5563;
+            --rf-line: #E5E7EB;
+            --rf-paper: #FAF9F7;
+            --rf-paper-2: #F3F1ED;
+            --rf-dark: #0A1E3F;
+            --rf-dark-2: #102A56;
+            --rf-dark-card: #153468;
           }
 
-          /* ── Header claro ── */
-          .rf-header .rf-logo img { filter: none !important; }
-          .rf-header .rf-logo { color: var(--rf-ink) !important; }
-          .rf-header .rf-desktop-nav a { color: rgba(17, 26, 46, 0.62) !important; }
-          .rf-header .rf-desktop-nav a:hover { color: var(--rf-ink) !important; }
-          .rf-header .rf-login { color: rgba(17, 26, 46, 0.78) !important; }
-          .rf-header .rf-login:hover { color: var(--rf-ink) !important; }
-          .rf-header .rf-mobile-menu { color: var(--rf-ink) !important; }
-          .rf-header .rf-header-cta {
-            color: #ffffff !important;
-            background: var(--rf-grad) !important;
-            box-shadow: 0 6px 22px rgba(91, 110, 232, 0.28) !important;
+          /* ── CTAs: laranja puro ── */
+          .rf-primary-button,
+          .rf-header-cta,
+          .rf-price-button,
+          .rf-final-button,
+          .rf-price-button.featured {
+            background: var(--rf-accent) !important;
+            border-color: var(--rf-accent) !important;
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+            box-shadow: 0 8px 22px rgba(252, 118, 29, 0.22) !important;
+          }
+          .rf-primary-button:hover,
+          .rf-header-cta:hover,
+          .rf-price-button:hover,
+          .rf-final-button:hover,
+          .rf-price-button.featured:hover {
+            background: var(--rf-accent-dark) !important;
+            border-color: var(--rf-accent-dark) !important;
+            box-shadow: 0 10px 28px rgba(252, 118, 29, 0.28) !important;
+          }
+          .rf-price-badge {
+            background: var(--rf-accent) !important;
+            color: #FFFFFF !important;
+          }
+          .rf-eyebrow-dot {
+            background: var(--rf-accent) !important;
+            box-shadow: 0 0 0 4px rgba(252, 118, 29, 0.14) !important;
+          }
+
+          /* ── Header: claro, legível ── */
+          .rf-header {
+            background: transparent !important;
+            border-bottom: 1px solid transparent !important;
+            box-shadow: none !important;
           }
           .rf-header.rf-header-scrolled {
-            background: rgba(245, 247, 255, 0.82) !important;
-            border-bottom: 1px solid rgba(17, 26, 46, 0.08) !important;
-            box-shadow: 0 8px 32px rgba(40, 60, 140, 0.08) !important;
+            background: rgba(250, 249, 247, 0.92) !important;
+            backdrop-filter: blur(18px) saturate(160%) !important;
+            -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+            border-bottom: 1px solid var(--rf-line) !important;
+            box-shadow: 0 4px 24px rgba(15, 23, 46, 0.06) !important;
           }
-
-          /* ── Menu mobile navy ── */
-          .rf-mobile-nav-fullscreen {
-            background:
-              radial-gradient(circle at 100% 100%, rgba(214, 127, 176, 0.22), transparent 45%),
-              linear-gradient(180deg, #141D38 0%, #0B1124 100%) !important;
-          }
-
-          /* ── Hero: degradê azul → azul rosado ── */
-          main .rf-hero {
-            background:
-              radial-gradient(circle at 82% 30%, rgba(214, 127, 176, 0.30), transparent 38%),
-              radial-gradient(circle at 10% 15%, rgba(79, 106, 232, 0.22), transparent 42%),
-              linear-gradient(160deg, #DFE8FF 0%, #E8E6FB 48%, #F7E4EF 100%) !important;
+          .rf-header .rf-logo,
+          .rf-header.rf-header-scrolled .rf-logo {
             color: var(--rf-ink) !important;
           }
-          main .rf-hero h1 { color: var(--rf-ink) !important; }
-          main .rf-hero h1 span {
-            background: var(--rf-grad);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            color: transparent !important;
+          .rf-header .rf-logo img {
+            filter: none !important;
           }
-          main .rf-hero .rf-eyebrow-dark { color: #5D6787 !important; }
-          main .rf-hero .rf-eyebrow-dot { background: var(--rf-grad) !important; }
-          main .rf-hero .rf-grid-lines-dark span { background: rgba(17, 26, 46, 0.045) !important; }
-          main .rf-hero .rf-noise { opacity: 0.025 !important; }
-          main .rf-hero .rf-hero-orb-one { background: radial-gradient(circle, rgba(123, 111, 226, 0.22), transparent 68%) !important; }
-          main .rf-hero .rf-hero-orb-two { background: radial-gradient(circle, rgba(255, 255, 255, 0.5), transparent 70%) !important; }
-          main .rf-hero .rf-hero-description { color: rgba(17, 26, 46, 0.66) !important; }
-          main .rf-hero .rf-primary-button {
-            color: #ffffff !important;
-            background: var(--rf-grad) !important;
-            box-shadow: 0 12px 32px rgba(91, 110, 232, 0.30) !important;
+          .rf-header .rf-desktop-nav a {
+            color: rgba(26, 31, 46, 0.6) !important;
+          }
+          .rf-header .rf-desktop-nav a:hover {
+            color: var(--rf-ink) !important;
+          }
+          .rf-header .rf-login {
+            color: rgba(26, 31, 46, 0.7) !important;
+          }
+          .rf-header .rf-login:hover {
+            color: var(--rf-ink) !important;
+          }
+          .rf-header .rf-mobile-menu {
+            color: var(--rf-ink) !important;
+            border: none !important;
+            background: transparent !important;
+          }
+
+          /* Menu mobile: fundo claro */
+          .rf-mobile-nav-fullscreen {
+            background: var(--rf-paper) !important;
+            color: var(--rf-ink) !important;
+          }
+          .rf-mobile-nav-fullscreen a,
+          .rf-mobile-nav-fullscreen button,
+          .rf-mobile-close {
+            color: var(--rf-ink) !important;
+          }
+
+          /* ── HERO: fundo com azul natural vivo e iluminação elegante ── */
+          main .rf-hero {
+            background:
+              radial-gradient(circle at 75% 35%, rgba(2, 132, 199, 0.24), transparent 45%),
+              radial-gradient(circle at 18% 22%, rgba(252, 118, 29, 0.12), transparent 38%),
+              radial-gradient(circle at 50% 92%, rgba(16, 42, 86, 0.85), transparent 60%),
+              var(--rf-dark) !important;
+            color: #FFFFFF !important;
+          }
+          main .rf-hero h1 {
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+            background: none !important;
+          }
+          main .rf-hero h1 span {
+            color: var(--rf-accent) !important;
+            -webkit-text-fill-color: var(--rf-accent) !important;
+            background: none !important;
+            -webkit-background-clip: initial !important;
+            background-clip: initial !important;
+          }
+          main .rf-hero .rf-hero-description {
+            color: rgba(255, 255, 255, 0.65) !important;
+          }
+          main .rf-hero .rf-eyebrow-dark {
+            color: rgba(255, 255, 255, 0.6) !important;
           }
           main .rf-hero .rf-secondary-button {
-            color: rgba(17, 26, 46, 0.82) !important;
-            border-color: rgba(17, 26, 46, 0.14) !important;
-            background: rgba(255, 255, 255, 0.6) !important;
+            color: rgba(255, 255, 255, 0.88) !important;
+            border-color: rgba(255, 255, 255, 0.20) !important;
+            background: rgba(255, 255, 255, 0.08) !important;
           }
-          main .rf-hero .rf-secondary-button:hover { background: #ffffff !important; border-color: rgba(17, 26, 46, 0.24) !important; }
-          main .rf-hero .rf-hero-trust { border-top-color: rgba(17, 26, 46, 0.10) !important; }
-          main .rf-hero .rf-trust-value { color: #4556D0 !important; }
-          main .rf-hero .rf-trust-label { color: rgba(17, 26, 46, 0.5) !important; }
-          main .rf-hero .rf-trust-line { background: rgba(17, 26, 46, 0.12) !important; }
-          main .rf-hero .rf-scroll-indicator { color: rgba(17, 26, 46, 0.35) !important; }
-          main .rf-hero .rf-scroll-indicator div { background: linear-gradient(to bottom, rgba(17, 26, 46, 0.35), transparent) !important; }
-          main .rf-hero .rf-hero-bottom-label { color: rgba(17, 26, 46, 0.22) !important; }
-          main .rf-hero .rf-real-phone-glow { background: radial-gradient(ellipse, rgba(123, 111, 226, 0.35), transparent 67%) !important; }
+          main .rf-hero .rf-secondary-button:hover {
+            background: rgba(255, 255, 255, 0.14) !important;
+            border-color: rgba(255, 255, 255, 0.32) !important;
+          }
+          main .rf-hero .rf-trust-value {
+            color: var(--rf-accent) !important;
+          }
+          main .rf-hero .rf-trust-label {
+            color: rgba(255, 255, 255, 0.5) !important;
+          }
+          main .rf-hero .rf-trust-line,
+          main .rf-hero .rf-hero-trust {
+            border-color: rgba(255, 255, 255, 0.14) !important;
+            background-color: transparent;
+          }
+          main .rf-hero .rf-trust-line {
+            background: rgba(255, 255, 255, 0.14) !important;
+          }
+          main .rf-hero .rf-scroll-indicator {
+            color: rgba(255, 255, 255, 0.35) !important;
+          }
+          main .rf-hero .rf-scroll-indicator div {
+            background: linear-gradient(to bottom, var(--rf-accent), transparent) !important;
+          }
+          main .rf-hero .rf-hero-bottom-label {
+            color: rgba(255, 255, 255, 0.25) !important;
+          }
+          main .rf-hero .rf-grid-lines-dark span {
+            background: rgba(255, 255, 255, 0.06) !important;
+          }
+          main .rf-hero .rf-hero-orb-one {
+            background: radial-gradient(circle, rgba(2, 132, 199, 0.22), transparent 68%) !important;
+          }
+          main .rf-hero .rf-hero-orb-two {
+            background: radial-gradient(circle, rgba(252, 118, 29, 0.12), transparent 70%) !important;
+          }
+          main .rf-hero .rf-real-phone-glow {
+            background: radial-gradient(ellipse, rgba(2, 132, 199, 0.28), transparent 67%) !important;
+          }
+
+          /* Spotify card no hero escuro */
           main .rf-hero .rf-spotify-card {
-            background: rgba(255, 255, 255, 0.7) !important;
-            border-color: rgba(17, 26, 46, 0.08) !important;
-            box-shadow: 0 6px 24px rgba(40, 60, 140, 0.08) !important;
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: rgba(255, 255, 255, 0.14) !important;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25) !important;
           }
-          main .rf-hero .rf-spotify-card-title { color: var(--rf-ink) !important; }
-          main .rf-hero .rf-spotify-card-sub { color: rgba(17, 26, 46, 0.55) !important; }
-          main .rf-hero .rf-spotify-card-arrow { color: rgba(17, 26, 46, 0.4) !important; }
-
-          /* ── Destaques nas seções: texto em degradê ── */
-          main .rf-problem-heading h2 span,
-          main .rf-section-intro h2 span,
-          main .rf-dashboard-copy h2 span,
-          main .rf-payment-real h2 span,
-          main .rf-pricing-header h2 span,
-          main .rf-final-cta h2 span {
-            background: var(--rf-grad);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            color: transparent !important;
+          main .rf-hero .rf-spotify-card-title {
+            color: #FFFFFF !important;
           }
-          main .rf-problem h2 span,
-          main .rf-dashboard-section h2 span,
-          main .rf-payment-real h2 span,
-          main .rf-pricing h2 span,
-          main .rf-final-cta h2 span {
-            background: linear-gradient(120deg, #8EA2FF 0%, #B49CF5 50%, #F2A6CC 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
+          main .rf-hero .rf-spotify-card-sub {
+            color: rgba(255, 255, 255, 0.55) !important;
+          }
+          main .rf-hero .rf-spotify-card-arrow {
+            color: rgba(255, 255, 255, 0.45) !important;
+          }
+          main .rf-hero .rf-spotify-card:hover {
+            background: rgba(2, 132, 199, 0.16) !important;
+            border-color: rgba(2, 132, 199, 0.35) !important;
           }
 
-          /* ── Seções escuras: navy profundo ── */
+          /* Header no hero: logo e nav brancos quando no topo (sem scroll) */
+          .rf-header:not(.rf-header-scrolled) .rf-logo {
+            color: #FFFFFF !important;
+          }
+          .rf-header:not(.rf-header-scrolled) .rf-logo img {
+            filter: invert(1) !important;
+          }
+          .rf-header:not(.rf-header-scrolled) .rf-desktop-nav a {
+            color: rgba(255, 255, 255, 0.65) !important;
+          }
+          .rf-header:not(.rf-header-scrolled) .rf-desktop-nav a:hover {
+            color: #FFFFFF !important;
+          }
+          .rf-header:not(.rf-header-scrolled) .rf-login {
+            color: rgba(255, 255, 255, 0.75) !important;
+          }
+          .rf-header:not(.rf-header-scrolled) .rf-mobile-menu {
+            color: #FFFFFF !important;
+          }
+
+          /* ── Seções CLARAS ── */
+          main .rf-statement,
+          main .rf-booking-section,
+          main .rf-team-section,
+          main .rf-audience,
+          main .rf-faq,
+          main .rf-philosophy,
+          main .rf-finance-real,
+          main .rf-domicilio-real,
+          main .rf-personalization-real {
+            background: var(--rf-paper) !important;
+            color: var(--rf-ink) !important;
+          }
+          main .rf-philosophy {
+            background: var(--rf-paper-2) !important;
+          }
+          main .rf-statement h2,
+          main .rf-booking-section h2,
+          main .rf-team-section h2,
+          main .rf-audience h2,
+          main .rf-faq h2,
+          main .rf-philosophy h2,
+          main .rf-finance-real h2,
+          main .rf-domicilio-real h2,
+          main .rf-personalization-real h2 {
+            color: var(--rf-ink) !important;
+            -webkit-text-fill-color: var(--rf-ink) !important;
+            background: none !important;
+          }
+          /* Span/em em seções claras: azul secundário */
+          main .rf-statement h2 em,
+          main .rf-team-section h2 span,
+          main .rf-finance-real h2 span,
+          main .rf-domicilio-real h2 span,
+          main .rf-personalization-real h2 span {
+            color: var(--rf-blue) !important;
+            -webkit-text-fill-color: var(--rf-blue) !important;
+            background: none !important;
+            -webkit-background-clip: initial !important;
+            background-clip: initial !important;
+          }
+          /* Span "trabalha por você. 24h." em laranja (#FC761D) */
+          main .rf-booking-section h2 span {
+            color: var(--rf-accent) !important;
+            -webkit-text-fill-color: var(--rf-accent) !important;
+            background: none !important;
+            -webkit-background-clip: initial !important;
+            background-clip: initial !important;
+          }
+          main .rf-statement p,
+          main .rf-booking-section p,
+          main .rf-team-section p,
+          main .rf-audience p,
+          main .rf-faq p,
+          main .rf-philosophy p,
+          main .rf-finance-real p,
+          main .rf-domicilio-real p,
+          main .rf-personalization-real p {
+            color: var(--rf-muted) !important;
+          }
+          main .rf-eyebrow {
+            color: var(--rf-muted) !important;
+          }
+
+          /* ── Seções ESCURAS com azul natural vivo ── */
           main .rf-problem,
           main .rf-dashboard-section,
-          main .rf-pricing {
-            background: #0F172E !important;
-          }
-          main .rf-payment-real {
-            background:
-              radial-gradient(circle at 18% 30%, rgba(91, 110, 232, 0.16), transparent 42%),
-              radial-gradient(circle at 90% 80%, rgba(214, 127, 176, 0.12), transparent 40%),
-              #111A33 !important;
-          }
-          main .rf-price-card:not(.rf-price-featured) { background: #16203D !important; }
-          main .rf-price-featured { background: #F5F7FF !important; border-color: #F5F7FF !important; color: var(--rf-ink) !important; }
-          main .rf-price-badge { color: #ffffff !important; background: var(--rf-grad) !important; }
-          main .rf-price-button.featured { color: #ffffff !important; background: var(--rf-grad) !important; border-color: transparent !important; }
-          main .rf-price-button.featured:hover { filter: brightness(1.06); }
+          main .rf-pricing,
           main .rf-final-cta {
             background:
-              radial-gradient(circle at 25% 0%, rgba(91, 110, 232, 0.30), transparent 45%),
-              radial-gradient(circle at 80% 100%, rgba(214, 127, 176, 0.24), transparent 45%),
-              linear-gradient(180deg, #141D38 0%, #0B1124 100%) !important;
+              radial-gradient(circle at 85% 15%, rgba(2, 132, 199, 0.14), transparent 45%),
+              radial-gradient(circle at 15% 85%, rgba(252, 118, 29, 0.08), transparent 40%),
+              var(--rf-dark) !important;
+            color: #FFFFFF !important;
           }
-          main .rf-final-button { color: #ffffff !important; background: var(--rf-grad) !important; }
+          main .rf-real-gallery,
+          main .rf-payment-real {
+            background:
+              radial-gradient(circle at 20% 20%, rgba(2, 132, 199, 0.16), transparent 50%),
+              var(--rf-dark-2) !important;
+            color: #FFFFFF !important;
+          }
+          main .rf-problem h2,
+          main .rf-dashboard-section h2,
+          main .rf-pricing h2,
+          main .rf-final-cta h2,
+          main .rf-real-gallery h2,
+          main .rf-payment-real h2 {
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+            background: none !important;
+          }
+          /* Span em seções escuras: laranja ou branco suave */
+          main .rf-problem h2 span,
+          main .rf-final-cta h2 span {
+            color: var(--rf-accent) !important;
+            -webkit-text-fill-color: var(--rf-accent) !important;
+            background: none !important;
+          }
+          main .rf-dashboard-section h2 span,
+          main .rf-pricing h2 span,
+          main .rf-real-gallery h2 span,
+          main .rf-payment-real h2 span {
+            color: rgba(255, 255, 255, 0.5) !important;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.5) !important;
+            background: none !important;
+          }
+          main .rf-problem p,
+          main .rf-dashboard-section p,
+          main .rf-pricing p,
+          main .rf-final-cta p,
+          main .rf-real-gallery p,
+          main .rf-payment-real p {
+            color: rgba(255, 255, 255, 0.6) !important;
+          }
+          main .rf-eyebrow-dark {
+            color: rgba(255, 255, 255, 0.55) !important;
+          }
 
-          /* ── Seções claras ── */
-          main .rf-philosophy { background: linear-gradient(135deg, #E9EEFD 0%, #F4EAF3 100%) !important; }
-          main .rf-footer { background: #EEF1F9 !important; }
+          /* Final CTA com orbs sutis */
+          main .rf-final-cta {
+            background:
+              radial-gradient(circle at 30% 0%, rgba(2, 132, 199, 0.24), transparent 45%),
+              radial-gradient(circle at 80% 100%, rgba(252, 118, 29, 0.14), transparent 45%),
+              var(--rf-dark) !important;
+          }
 
-          /* ── Mobile: celular do hero aparece já na primeira tela ── */
+          /* ── Pricing cards ── */
+          main .rf-price-card:not(.rf-price-featured) {
+            background: var(--rf-dark-card) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: #FFFFFF !important;
+          }
+          main .rf-price-featured {
+            background: #FFFFFF !important;
+            border-color: rgba(252, 118, 29, 0.35) !important;
+            color: var(--rf-ink) !important;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2) !important;
+          }
+          main .rf-price-features svg {
+            color: var(--rf-accent) !important;
+          }
+
+          /* ── Acentos pontuais ── */
+          main .rf-problem-number,
+          main .rf-real-gallery-number,
+          main .rf-feature-strip span,
+          main .rf-trust-value {
+            color: var(--rf-accent) !important;
+          }
+          main .rf-detail-icon {
+            background: #EEF2F6 !important;
+            color: var(--rf-blue) !important;
+          }
+          main .rf-payment-tag {
+            border-color: rgba(252, 118, 29, 0.35) !important;
+            background: rgba(252, 118, 29, 0.12) !important;
+            color: #FFB45C !important;
+          }
+          main .rf-domicilio-real-points svg,
+          main .rf-philosophy-mark svg {
+            color: var(--rf-accent) !important;
+          }
+
+          /* Audience: mantém texto branco sobre foto */
+          main .rf-audience-card h3,
+          main .rf-audience-card p,
+          main .rf-audience-card span,
+          main .rf-audience-card svg {
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+          }
+
+          /* FAQ */
+          main .rf-faq-item button {
+            color: var(--rf-ink) !important;
+          }
+          main .rf-faq-answer-wrap p {
+            color: var(--rf-muted) !important;
+          }
+
+          /* Footer */
+          main .rf-footer {
+            background: #EEF0F4 !important;
+            color: var(--rf-ink) !important;
+          }
+          main .rf-footer a,
+          main .rf-footer button {
+            color: var(--rf-muted) !important;
+          }
+          main .rf-footer a:hover,
+          main .rf-footer button:hover {
+            color: var(--rf-ink) !important;
+          }
+
+          /* Secondary button genérico */
+          .rf-secondary-button {
+            transition: background 0.2s ease, border-color 0.2s ease;
+          }
+
+          /* Mobile: layout calibrado para o celular despontar como na img2 */
           @media (max-width: 680px) {
-            main .rf-hero-container {
-              gap: 0 !important;
-              padding-top: 96px !important;
-            }
-            main .rf-hero-copy { display: contents; }
-            main .rf-hero-copy > br { display: none; }
-            main .rf-hero-copy > * { order: 1; position: relative; z-index: 4; }
-            main .rf-hero-product {
-              order: 2;
+            main .rf-hero {
+              height: auto !important;
               min-height: 0 !important;
-              margin-top: 44px !important;
+              padding-bottom: 24px !important;
             }
-            main .rf-hero-copy > .rf-hero-spotify-slot { order: 3; margin-top: 40px; }
-            main .rf-hero-copy > .rf-hero-trust-slot { order: 4; }
-            main .rf-hero .rf-hero-actions {
-              max-width: none !important;
-              flex-direction: row !important;
-              gap: 8px !important;
-              margin-top: 22px !important;
+
+            main .rf-hero-container {
+              padding-top: 76px !important;
+              padding-bottom: 16px !important;
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: flex-start !important;
+              width: calc(100% - 32px) !important;
+              box-sizing: border-box !important;
             }
-            main .rf-hero .rf-hero-actions > * {
-              flex: 1 1 0;
-              padding: 0 12px !important;
-              white-space: nowrap;
+
+            main .rf-hero-copy {
+              width: 100% !important;
+              padding-top: 0 !important;
+              display: flex !important;
+              flex-direction: column !important;
             }
-            main .rf-hero h1 { margin-bottom: 16px !important; }
+
+            main .rf-hero h1 {
+              font-size: clamp(32px, 8.6vw, 42px) !important;
+              line-height: 1.04 !important;
+              letter-spacing: -0.04em !important;
+              margin: 14px 0 10px !important;
+            }
+
+            main .rf-hero-description {
+              font-size: 13px !important;
+              line-height: 1.55 !important;
+              margin: 0 0 16px !important;
+              max-width: 360px !important;
+            }
+
+            main .rf-hero-actions {
+              display: flex !important;
+              flex-direction: column !important;
+              width: 100% !important;
+              max-width: 360px !important;
+              gap: 10px !important;
+              margin: 0 0 14px 0 !important;
+              box-sizing: border-box !important;
+            }
+
+            main .rf-hero .rf-primary-button,
+            main .rf-hero .rf-secondary-button {
+              width: 100% !important;
+              min-height: 48px !important;
+              height: 48px !important;
+              padding: 0 20px !important;
+              box-sizing: border-box !important;
+              display: inline-flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              border-radius: 999px !important;
+              font-size: 13px !important;
+              font-weight: 700 !important;
+              text-align: center !important;
+              white-space: normal !important;
+            }
+
+            main .rf-hero .rf-primary-button {
+              background: var(--rf-accent) !important;
+              color: #FFFFFF !important;
+              box-shadow: 0 8px 22px rgba(252, 118, 29, 0.25) !important;
+            }
+
+            main .rf-hero .rf-secondary-button {
+              color: rgba(255, 255, 255, 0.88) !important;
+              border-color: rgba(255, 255, 255, 0.20) !important;
+              background: rgba(255, 255, 255, 0.08) !important;
+            }
+
+            main .rf-hero-spotify-slot {
+              margin-top: 2px !important;
+              margin-bottom: 12px !important;
+              width: 100% !important;
+              max-width: 360px !important;
+              box-sizing: border-box !important;
+            }
+
+            main .rf-hero .rf-spotify-card {
+              width: fit-content !important;
+              max-width: 100% !important;
+              box-sizing: border-box !important;
+            }
+
+            main .rf-hero-trust {
+              width: 100% !important;
+              max-width: 360px !important;
+              margin-top: 4px !important;
+              padding-top: 14px !important;
+              border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+              box-sizing: border-box !important;
+            }
+
+            main .rf-hero-product {
+              width: 100% !important;
+              min-height: auto !important;
+              margin-top: 20px !important;
+              margin-bottom: 28px !important;
+              display: flex !important;
+              justify-content: center !important;
+              overflow: visible !important;
+            }
+
+            main .rf-hero .rf-real-phone-wrap,
+            main .rf-real-phone-wrap {
+              width: 100% !important;
+              max-width: 320px !important;
+              height: auto !important;
+              min-height: 590px !important;
+              margin: 0 auto !important;
+              transform: none !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+            }
+
+            main .rf-real-phone {
+              width: min(290px, 82vw) !important;
+            }
+
+            main .rf-real-floating-top {
+              display: none !important;
+            }
           }
+
       `}</style>
 
       <main>
