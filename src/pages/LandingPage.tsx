@@ -6535,12 +6535,12 @@ export default function LandingPage() {
             color: var(--rf-ink) !important;
           }
 
-          /* ── HERO: fundo com azul natural vivo e iluminação elegante ── */
+          /* ── HERO: fundo com azul tonalidade #163468 vivo e elegante ── */
           main .rf-hero {
             background:
-              radial-gradient(circle at 75% 35%, rgba(2, 132, 199, 0.24), transparent 45%),
+              radial-gradient(circle at 75% 35%, rgba(28, 84, 168, 0.35), transparent 48%),
               radial-gradient(circle at 18% 22%, rgba(252, 118, 29, 0.12), transparent 38%),
-              radial-gradient(circle at 50% 92%, rgba(16, 42, 86, 0.85), transparent 60%),
+              radial-gradient(circle at 50% 92%, rgba(22, 52, 104, 0.95), transparent 60%),
               var(--rf-dark) !important;
             color: #FFFFFF !important;
           }
@@ -6598,13 +6598,13 @@ export default function LandingPage() {
             background: rgba(255, 255, 255, 0.06) !important;
           }
           main .rf-hero .rf-hero-orb-one {
-            background: radial-gradient(circle, rgba(2, 132, 199, 0.22), transparent 68%) !important;
+            background: radial-gradient(circle, rgba(28, 84, 168, 0.32), transparent 68%) !important;
           }
           main .rf-hero .rf-hero-orb-two {
             background: radial-gradient(circle, rgba(252, 118, 29, 0.12), transparent 70%) !important;
           }
           main .rf-hero .rf-real-phone-glow {
-            background: radial-gradient(ellipse, rgba(2, 132, 199, 0.28), transparent 67%) !important;
+            background: radial-gradient(ellipse, rgba(28, 84, 168, 0.38), transparent 67%) !important;
           }
 
           /* Spotify card no hero escuro */
