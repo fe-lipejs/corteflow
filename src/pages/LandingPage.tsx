@@ -581,6 +581,7 @@ function Hero() {
               seu salão
               <br />
               pra ficar{" "}
+              <br className="rf-hero-mobile-br" />
               <span>
                 respondendo
                 <br />
@@ -2276,6 +2277,10 @@ export default function LandingPage() {
           position: relative;
           z-index: 4;
           padding-top: 25px;
+        }
+
+        .rf-hero-mobile-br {
+          display: none;
         }
 
         .rf-hero h1 {
@@ -6531,14 +6536,13 @@ export default function LandingPage() {
             color: var(--rf-ink) !important;
           }
 
-          /* ── HERO: fundo com azul vibrante indo para azul rosa claro degradê ── */
+          /* ── HERO: fundo com azul vibrante como protagonista e azul-rosa claro tímido e sutil ── */
           main .rf-hero {
             background:
-              radial-gradient(circle at 85% 15%, rgba(244, 114, 182, 0.42), transparent 48%),
-              radial-gradient(circle at 72% 40%, rgba(251, 207, 232, 0.22), transparent 45%),
-              radial-gradient(circle at 18% 22%, rgba(252, 118, 29, 0.15), transparent 38%),
-              radial-gradient(circle at 25% 75%, rgba(37, 99, 235, 0.48), transparent 55%),
-              linear-gradient(165deg, #0B2958 0%, #0F3775 35%, #18478E 70%, #203E76 100%) !important;
+              radial-gradient(circle at 85% 15%, rgba(244, 114, 182, 0.16), transparent 38%),
+              radial-gradient(circle at 15% 75%, rgba(37, 99, 235, 0.35), transparent 50%),
+              radial-gradient(circle at 18% 24%, rgba(252, 118, 29, 0.10), transparent 30%),
+              linear-gradient(165deg, #0B2958 0%, #0F3775 35%, #164894 70%, #1A3E78 100%) !important;
             color: #FFFFFF !important;
           }
           main .rf-hero h1 {
@@ -6595,13 +6599,13 @@ export default function LandingPage() {
             background: rgba(255, 255, 255, 0.06) !important;
           }
           main .rf-hero .rf-hero-orb-one {
-            background: radial-gradient(circle, rgba(244, 114, 182, 0.38), rgba(37, 99, 235, 0.30) 45%, transparent 70%) !important;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.25), rgba(244, 114, 182, 0.10) 50%, transparent 70%) !important;
           }
           main .rf-hero .rf-hero-orb-two {
-            background: radial-gradient(circle, rgba(252, 118, 29, 0.14), transparent 70%) !important;
+            background: radial-gradient(circle, rgba(252, 118, 29, 0.12), transparent 70%) !important;
           }
           main .rf-hero .rf-real-phone-glow {
-            background: radial-gradient(ellipse, rgba(244, 114, 182, 0.38), rgba(37, 99, 235, 0.40) 50%, transparent 68%) !important;
+            background: radial-gradient(ellipse, rgba(37, 99, 235, 0.40), rgba(244, 114, 182, 0.12) 60%, transparent 70%) !important;
           }
 
           /* Spotify card no hero escuro */
@@ -6708,23 +6712,23 @@ export default function LandingPage() {
             color: var(--rf-muted) !important;
           }
 
-          /* ── Seções ESCURAS com degradê azul vibrante e azul-rosa claro suave ── */
+          /* ── Seções ESCURAS: azul vibrante protagonista e azul-rosa tímido sutil ── */
           main .rf-problem,
           main .rf-dashboard-section,
           main .rf-pricing,
           main .rf-final-cta {
             background:
-              radial-gradient(circle at 88% 14%, rgba(244, 114, 182, 0.28), transparent 46%),
-              radial-gradient(circle at 15% 85%, rgba(37, 99, 235, 0.38), transparent 50%),
-              radial-gradient(circle at 50% 50%, rgba(252, 118, 29, 0.08), transparent 42%),
-              linear-gradient(165deg, #0C2E68 0%, #113F85 50%, #1A3E78 100%) !important;
+              radial-gradient(circle at 85% 15%, rgba(244, 114, 182, 0.14), transparent 36%),
+              radial-gradient(circle at 15% 85%, rgba(37, 99, 235, 0.35), transparent 50%),
+              radial-gradient(circle at 50% 50%, rgba(252, 118, 29, 0.06), transparent 35%),
+              linear-gradient(165deg, #0C2E68 0%, #103A7C 45%, #164894 75%, #1A3E78 100%) !important;
             color: #FFFFFF !important;
           }
           main .rf-real-gallery,
           main .rf-payment-real {
             background:
-              radial-gradient(circle at 20% 20%, rgba(244, 114, 182, 0.30), transparent 50%),
-              radial-gradient(circle at 80% 80%, rgba(37, 99, 235, 0.38), transparent 55%),
+              radial-gradient(circle at 20% 20%, rgba(244, 114, 182, 0.15), transparent 40%),
+              radial-gradient(circle at 80% 80%, rgba(37, 99, 235, 0.35), transparent 55%),
               linear-gradient(165deg, #103874 0%, #164894 50%, #1E4684 100%) !important;
             color: #FFFFFF !important;
           }
@@ -6889,6 +6893,14 @@ export default function LandingPage() {
               height: auto !important;
               min-height: 0 !important;
               padding-bottom: 24px !important;
+              background:
+                radial-gradient(circle at 88% 12%, rgba(244, 114, 182, 0.15), transparent 36%),
+                radial-gradient(circle at 18% 80%, rgba(37, 99, 235, 0.35), transparent 50%),
+                linear-gradient(172deg, #0B2958 0%, #0F3775 35%, #164894 70%, #1A3E78 100%) !important;
+            }
+
+            .rf-hero-mobile-br {
+              display: block !important;
             }
 
             main .rf-hero-container {
@@ -6906,11 +6918,11 @@ export default function LandingPage() {
             }
 
             main .rf-hero h1 {
-              font-size: clamp(40px, 11.5vw, 56px) !important;
-              line-height: 0.93 !important;
-              letter-spacing: -0.055em !important;
-              font-weight: 800 !important;
-              margin: 16px 0 12px !important;
+              font-size: clamp(44px, 13vw, 62px) !important;
+              line-height: 0.88 !important;
+              letter-spacing: -0.065em !important;
+              font-weight: 850 !important;
+              margin: 14px 0 12px !important;
             }
 
             main .rf-hero-description {
