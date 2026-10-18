@@ -201,7 +201,7 @@ export default function Cadastro() {
       className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
       style={{
         background:
-          'radial-gradient(circle at 85% 12%, rgba(244, 114, 182, 0.14), transparent 38%), radial-gradient(circle at 12% 85%, rgba(37, 99, 235, 0.38), transparent 52%), linear-gradient(165deg, #0B2958 0%, #0F3775 40%, #164894 75%, #1A3E78 100%)',
+          'radial-gradient(circle at 85% 12%, rgba(99, 102, 241, 0.28), transparent 40%), radial-gradient(circle at 12% 85%, rgba(29, 94, 255, 0.45), transparent 52%), linear-gradient(165deg, #041033 0%, #071F63 40%, #0B329B 75%, #1249D6 100%)',
       }}
     >
       <style>{`
@@ -223,9 +223,9 @@ export default function Cadastro() {
           background: linear-gradient(
             90deg,
             transparent 0%,
-            rgba(255, 255, 255, 0.03) 30%,
-            rgba(173, 205, 255, 0.12) 50%,
-            rgba(255, 255, 255, 0.03) 70%,
+            rgba(255, 255, 255, 0.04) 25%,
+            rgba(96, 165, 250, 0.28) 50%,
+            rgba(255, 255, 255, 0.04) 75%,
             transparent 100%
           );
           filter: blur(20px);

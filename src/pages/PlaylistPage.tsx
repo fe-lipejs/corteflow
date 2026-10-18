@@ -199,7 +199,7 @@ export default function PlaylistPage() {
         <div style={{
             fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif",
             WebkitFontSmoothing: 'antialiased',
-            background: 'radial-gradient(circle at 85% 12%, rgba(244, 114, 182, 0.14), transparent 38%), radial-gradient(circle at 12% 85%, rgba(37, 99, 235, 0.38), transparent 52%), radial-gradient(circle at 50% 30%, rgba(252, 118, 29, 0.08), transparent 45%), linear-gradient(165deg, #0B2958 0%, #0F3775 40%, #164894 75%, #1A3E78 100%)',
+            background: 'radial-gradient(circle at 85% 12%, rgba(99, 102, 241, 0.28), transparent 40%), radial-gradient(circle at 12% 85%, rgba(29, 94, 255, 0.45), transparent 52%), radial-gradient(circle at 50% 30%, rgba(252, 118, 29, 0.10), transparent 45%), linear-gradient(165deg, #041033 0%, #071F63 40%, #0B329B 75%, #1249D6 100%)',
             color: '#ffffff',
             minHeight: '100vh',
             overflowX: 'hidden',
