@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../integrations/supabase/client';
 import { motion } from 'framer-motion';
-import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowLeft, KeyRound } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle2, AlertCircle, ArrowLeft, ArrowRight, KeyRound, Loader2 } from 'lucide-react';
 
 export default function RedefinirSenha() {
   const navigate = useNavigate();
@@ -96,42 +96,117 @@ export default function RedefinirSenha() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#F8FAFC] relative overflow-hidden font-sans">
-      {/* Ambient background glow */}
-      <div className="absolute top-[-30%] left-[-20%] w-[60%] h-[60%] bg-[#DE870D]/10 blur-[150px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] bg-[#DE870D]/5 blur-[120px] rounded-full pointer-events-none" />
+    <div
+      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{
+        background:
+          'radial-gradient(circle at 85% 12%, rgba(244, 114, 182, 0.14), transparent 38%), radial-gradient(circle at 12% 85%, rgba(37, 99, 235, 0.38), transparent 52%), linear-gradient(165deg, #0B2958 0%, #0F3775 40%, #164894 75%, #1A3E78 100%)',
+      }}
+    >
+      <style>{`
+        .rf-auth-noise {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          opacity: 0.035;
+          z-index: 1;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+        }
+        .rf-auth-light-sweep {
+          position: absolute;
+          top: -40%;
+          left: -60%;
+          width: 50%;
+          height: 180%;
+          transform: rotate(18deg);
+          background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.03) 30%,
+            rgba(173, 205, 255, 0.12) 50%,
+            rgba(255, 255, 255, 0.03) 70%,
+            transparent 100%
+          );
+          filter: blur(20px);
+          animation: rfAuthSweep 16s cubic-bezier(.45,.05,.55,.95) infinite;
+          will-change: transform;
+          pointer-events: none;
+          z-index: 1;
+        }
+        @keyframes rfAuthSweep {
+          0%   { transform: translateX(0) rotate(18deg); }
+          100% { transform: translateX(380%) rotate(18deg); }
+        }
+      `}</style>
 
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center justify-center mb-4">
-            <img src="/logo.svg" alt="Raffros Corteflow" className="h-16 md:h-20 w-auto" />
+      {/* Noise, Feixes de Luz e Grid Lines */}
+      <div className="rf-auth-noise" aria-hidden="true" />
+      <div className="rf-auth-light-sweep" aria-hidden="true" />
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-35 z-0" aria-hidden="true">
+        {[8, 25, 50, 75, 92].map((left, i) => (
+          <span
+            key={i}
+            className="absolute top-0 bottom-0 w-px bg-white/10"
+            style={{ left: `${left}%` }}
+          />
+        ))}
+      </div>
+
+      {/* Voltar ao site */}
+      <Link
+        to="/"
+        className="absolute top-6 left-6 z-20 inline-flex items-center gap-2 text-xs font-semibold text-white/75 hover:text-white transition-colors bg-white/10 hover:bg-white/15 px-3.5 py-2 rounded-full backdrop-blur-md border border-white/15"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />
+        <span>Início</span>
+      </Link>
+
+      <div className="w-full max-w-[440px] relative z-10 py-6">
+        {/* Logo Oficial com filtro branco no fundo azul */}
+        <div className="text-center mb-6">
+          <Link to="/" className="inline-flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
+            <img
+              src="/logo.svg"
+              alt="Raffros Corteflow"
+              className="h-11 md:h-12 w-auto filter invert brightness-200 drop-shadow-[0_4px_16px_rgba(0,0,0,0.3)]"
+            />
           </Link>
         </div>
 
-        <div className="bg-white rounded-3xl border border-[#E2E8F0] p-8 shadow-xl">
+        {/* Card em White Glassmorphism */}
+        <div
+          className="rounded-[28px] p-7 sm:p-9"
+          style={{
+            background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.90))',
+            backdropFilter: 'blur(24px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+            border: '1px solid rgba(255, 255, 255, 0.85)',
+            boxShadow: '0 30px 80px rgba(4, 18, 48, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.95)',
+          }}
+        >
           {success ? (
             /* ── TELA DE SUCESSO ── */
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-4 space-y-4"
+              className="text-center py-2 space-y-4"
             >
-              <div className="w-16 h-16 rounded-full bg-green-100 border border-green-200 text-green-600 flex items-center justify-center mx-auto">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-black text-[#0F172A]">Senha Redefinida!</h2>
-              <p className="text-sm text-[#64748B] leading-relaxed">
+              <h2 className="text-2xl font-black text-[#0F172A] tracking-tight">Senha Redefinida!</h2>
+              <p className="text-xs sm:text-sm text-[#5B6478] leading-relaxed">
                 Sua senha foi alterada com sucesso. Agora você já pode acessar sua conta com a nova credencial.
               </p>
-              <div className="pt-4">
+              <div className="pt-2">
                 <button
                   type="button"
                   onClick={() => navigate('/login')}
-                  className="w-full py-3.5 px-4 font-bold text-sm text-white rounded-xl shadow-md hover:shadow-lg shadow-[#DE870D]/25 hover:brightness-105 active:scale-[0.99] cursor-pointer transition-all"
-                  style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
+                  className="w-full h-[52px] rounded-full font-extrabold text-sm text-white shadow-[0_14px_30px_rgba(255,135,56,0.35)] hover:brightness-105 active:scale-[0.98] cursor-pointer transition-all flex items-center justify-center gap-2"
+                  style={{ background: '#FC761D' }}
                 >
-                  Ir para o Login
+                  <span>Ir para o Login</span>
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </motion.div>
@@ -140,23 +215,24 @@ export default function RedefinirSenha() {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-4 space-y-4"
+              className="text-center py-2 space-y-4"
             >
-              <div className="w-16 h-16 rounded-full bg-amber-100 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-700 flex items-center justify-center mx-auto shadow-inner">
                 <AlertCircle className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-black text-[#0F172A]">Link Expirado ou Inválido</h2>
-              <p className="text-sm text-[#64748B] leading-relaxed">
+              <h2 className="text-2xl font-black text-[#0F172A] tracking-tight">Link Expirado ou Inválido</h2>
+              <p className="text-xs sm:text-sm text-[#5B6478] leading-relaxed">
                 Por motivos de segurança, os links de redefinição de senha possuem tempo de validade limitado ou já foram utilizados.
               </p>
-              <div className="pt-4 space-y-3">
+              <div className="pt-2">
                 <button
                   type="button"
                   onClick={() => navigate('/login')}
-                  className="w-full py-3.5 px-4 font-bold text-sm text-white rounded-xl shadow-md hover:shadow-lg shadow-[#DE870D]/25 hover:brightness-105 active:scale-[0.99] cursor-pointer transition-all"
-                  style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
+                  className="w-full h-[52px] rounded-full font-extrabold text-sm text-white shadow-[0_14px_30px_rgba(255,135,56,0.35)] hover:brightness-105 active:scale-[0.98] cursor-pointer transition-all flex items-center justify-center gap-2"
+                  style={{ background: '#FC761D' }}
                 >
-                  Solicitar Novo Link de Recuperação
+                  <span>Solicitar Novo Link de Recuperação</span>
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </motion.div>
@@ -165,18 +241,21 @@ export default function RedefinirSenha() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-6"
             >
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-2xl bg-[#DE870D]/10 border border-[#DE870D]/20 text-[#DE870D] flex items-center justify-center mx-auto mb-3">
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-[#FC761D]/10 border border-[#FC761D]/20 text-[#FC761D] flex items-center justify-center mx-auto mb-3 shadow-inner">
                   <KeyRound className="w-6 h-6" />
                 </div>
-                <h2 className="text-2xl font-black text-[#0F172A]">Redefinir Senha</h2>
-                <p className="text-sm text-[#64748B] mt-1">Crie uma nova senha segura para sua conta</p>
+                <h2 className="text-2xl sm:text-[26px] font-black text-[#0F172A] tracking-[-0.035em] leading-tight">
+                  Redefinir Senha
+                </h2>
+                <p className="text-xs sm:text-sm text-[#5B6478] mt-1.5 font-normal">
+                  Crie uma nova senha segura para sua conta
+                </p>
               </div>
 
               {error && (
-                <div className="p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-sm font-medium">
+                <div className="mb-5 p-3.5 bg-red-500/10 border border-red-500/25 rounded-2xl text-red-700 text-xs sm:text-sm font-medium">
                   {error}
                 </div>
               )}
@@ -184,7 +263,7 @@ export default function RedefinirSenha() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Nova Senha */}
                 <div>
-                  <label className="block text-sm font-semibold text-[#334155] mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#1E293B] mb-1.5">
                     Nova Senha
                   </label>
                   <div className="relative">
@@ -194,21 +273,21 @@ export default function RedefinirSenha() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Mínimo 8 caracteres"
-                      className="w-full px-4 py-3 pr-12 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium text-sm"
+                      className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FC761D] focus:ring-4 focus:ring-[#FC761D]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#334155] transition-colors"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#0F172A] transition-colors p-1"
                     >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
 
                 {/* Confirmar Nova Senha */}
                 <div>
-                  <label className="block text-sm font-semibold text-[#334155] mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#1E293B] mb-1.5">
                     Confirmar Nova Senha
                   </label>
                   <div className="relative">
@@ -218,32 +297,40 @@ export default function RedefinirSenha() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Repita a nova senha"
-                      className="w-full px-4 py-3 pr-12 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium text-sm"
+                      className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FC761D] focus:ring-4 focus:ring-[#FC761D]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#334155] transition-colors"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#0F172A] transition-colors p-1"
                     >
-                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
 
+                {/* Botão no estilo pílula oficial da Landing Page */}
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 px-4 font-bold text-sm text-white rounded-xl shadow-md hover:shadow-lg shadow-[#DE870D]/25 hover:brightness-105 active:scale-[0.99] cursor-pointer transition-all disabled:opacity-60 mt-2"
-                  style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
+                  className="w-full h-[52px] mt-2 rounded-full font-extrabold text-sm text-white flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_14px_30px_rgba(255,135,56,0.35)] hover:brightness-105 active:scale-[0.98]"
+                  style={{ background: '#FC761D' }}
                 >
-                  {loading ? 'Atualizando senha...' : 'Salvar Nova Senha'}
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <span>Salvar Nova Senha</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </form>
 
-              <div className="pt-2 text-center">
+              <div className="mt-6 text-center">
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-1 text-xs text-[#64748B] hover:text-[#0F172A] font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs text-[#5B6478] hover:text-[#FC761D] font-bold transition-colors"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" /> Voltar para o login
                 </Link>
@@ -255,4 +342,3 @@ export default function RedefinirSenha() {
     </div>
   );
 }
-
