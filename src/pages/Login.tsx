@@ -231,7 +231,7 @@ export default function Login() {
           ? undefined
           : {
             background:
-              'radial-gradient(circle at 85% 12%, rgba(99, 102, 241, 0.28), transparent 40%), radial-gradient(circle at 12% 85%, rgba(29, 94, 255, 0.45), transparent 52%), linear-gradient(165deg, #041033 0%, #071F63 40%, #0B329B 75%, #1249D6 100%)',
+              'radial-gradient(circle at 86% 14%, rgba(217, 70, 239, 0.11), rgba(129, 140, 248, 0.18) 35%, transparent 55%), radial-gradient(circle at 12% 85%, rgba(29, 94, 255, 0.36), transparent 52%), linear-gradient(165deg, #040E2D 0%, #071C56 32%, #0C287A 58%, #1A206C 80%, #113EB8 100%)',
           }
       }
     >
@@ -246,21 +246,22 @@ export default function Login() {
         }
         .rf-auth-light-sweep {
           position: absolute;
-          top: -40%;
-          left: -60%;
-          width: 50%;
-          height: 180%;
-          transform: rotate(18deg);
+          top: -50%;
+          left: -50%;
+          width: 70%;
+          height: 200%;
+          transform: rotate(22deg);
           background: linear-gradient(
             90deg,
             transparent 0%,
-            rgba(255, 255, 255, 0.04) 25%,
-            rgba(96, 165, 250, 0.28) 50%,
-            rgba(255, 255, 255, 0.04) 75%,
+            rgba(255, 255, 255, 0.015) 25%,
+            rgba(147, 197, 253, 0.08) 48%,
+            rgba(216, 180, 254, 0.06) 55%,
+            rgba(255, 255, 255, 0.015) 75%,
             transparent 100%
           );
-          filter: blur(20px);
-          animation: rfAuthSweep 16s cubic-bezier(.45,.05,.55,.95) infinite;
+          filter: blur(55px);
+          animation: rfAuthSweep 24s cubic-bezier(.45,.05,.55,.95) infinite;
           will-change: transform;
           pointer-events: none;
           z-index: 1;

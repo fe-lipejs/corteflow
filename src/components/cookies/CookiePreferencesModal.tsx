@@ -78,7 +78,7 @@ export default function CookiePreferencesModal({
           transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
           className="w-full max-w-xl rounded-[32px] overflow-hidden flex flex-col max-h-[90vh] text-white relative"
           style={{
-            background: 'linear-gradient(160deg, #041033 0%, #071F63 45%, #0B329B 80%, #1249D6 100%)',
+            background: 'linear-gradient(160deg, #040E2D 0%, #071C56 35%, #0C287A 65%, #1A206C 82%, #113EB8 100%)',
             border: '1px solid rgba(255, 255, 255, 0.18)',
             boxShadow: '0 40px 100px rgba(0, 0, 0, 0.70), 0 0 50px rgba(252, 118, 29, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
           }}
