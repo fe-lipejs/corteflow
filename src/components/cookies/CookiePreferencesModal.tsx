@@ -70,59 +70,101 @@ export default function CookiePreferencesModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-[#040E20]/80 backdrop-blur-md">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-[#0A0A0A] border border-white/10 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] text-white"
+          initial={{ opacity: 0, scale: 0.94, y: 16 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.94, y: 16 }}
+          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-xl rounded-[32px] overflow-hidden flex flex-col max-h-[90vh] text-white relative"
+          style={{
+            background: 'linear-gradient(160deg, #0B2958 0%, #0F3775 45%, #164894 80%, #1A3E78 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            boxShadow: '0 40px 100px rgba(0, 0, 0, 0.70), 0 0 50px rgba(252, 118, 29, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
+          }}
         >
           {/* Header */}
-          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#FF9D2E]/10 border border-[#FF9D2E]/20 flex items-center justify-center text-[#FF9D2E] shadow-sm">
+          <div
+            className="p-6 border-b flex items-center justify-between"
+            style={{
+              background: 'rgba(255, 255, 255, 0.04)',
+              borderColor: 'rgba(255, 255, 255, 0.10)',
+            }}
+          >
+            <div className="flex items-center gap-3.5">
+              <div
+                className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(252, 118, 29, 0.25), rgba(255, 135, 56, 0.10))',
+                  border: '1px solid rgba(255, 135, 56, 0.35)',
+                  color: '#FF8738',
+                  boxShadow: '0 0 20px rgba(252, 118, 29, 0.25)',
+                }}
+              >
                 <Cookie className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-base text-white">Preferências de Cookies</h3>
-                <p className="text-xs text-zinc-400">Transparência e conformidade com a LGPD & GDPR</p>
+                <h3 className="font-extrabold text-base sm:text-lg text-white tracking-tight">
+                  Preferências de Cookies
+                </h3>
+                <p className="text-xs text-white/60">
+                  Transparência e total conformidade com a LGPD &amp; GDPR
+                </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 text-zinc-500 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
+              className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Body */}
-          <div className="p-6 space-y-4 overflow-y-auto flex-1 scrollbar-none text-xs text-zinc-400">
-            <p className="leading-relaxed">
-              Utilizamos cookies e armazenamento local estritamente necessários para permitir o funcionamento da autenticação e das reservas, além de preferências para aprimorar sua experiência. Você pode personalizar suas escolhas abaixo.
+          <div className="p-6 space-y-4 overflow-y-auto flex-1 scrollbar-none text-xs text-white/75">
+            <p className="leading-relaxed text-white/80">
+              Utilizamos cookies e armazenamento local para garantir o funcionamento seguro da plataforma, memorizar suas preferências e aprimorar a sua experiência. Você pode personalizar suas escolhas abaixo.
             </p>
 
-            {/* Category 1: Necessários */}
-            <div className="p-4 bg-white/5 border border-white/5 rounded-2xl space-y-2">
+            {/* Categoria 1: Necessários */}
+            <div
+              className="p-4.5 rounded-2xl space-y-2"
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.10)',
+              }}
+            >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 font-bold text-white text-sm">
-                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                <div className="flex items-center gap-2.5 font-bold text-white text-sm">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
                   <span>Estritamente Necessários</span>
                 </div>
-                <span className="text-[10px] uppercase font-bold px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span
+                  className="text-[10px] uppercase font-extrabold px-3 py-1 rounded-full text-emerald-400"
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid rgba(16, 185, 129, 0.30)',
+                  }}
+                >
                   Sempre Ativo
                 </span>
               </div>
-              <p className="text-zinc-500 leading-relaxed">
-                Essenciais para a segurança, login autenticado no Supabase e integridade dos agendamentos. Sem eles, o sistema não funciona.
+              <p className="text-white/60 leading-relaxed text-xs">
+                Essenciais para a segurança, autenticação de sessão no Supabase e integridade dos agendamentos. Sem eles, o sistema não funciona.
               </p>
             </div>
 
-            {/* Category 2: Preferências */}
-            <div className="p-4 bg-white/5 border border-white/5 rounded-2xl space-y-2">
+            {/* Categoria 2: Preferências */}
+            <div
+              className="p-4.5 rounded-2xl space-y-2"
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.10)',
+              }}
+            >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 font-bold text-white text-sm">
-                  <Sliders className="w-4 h-4 text-[#FF9D2E]" />
+                <div className="flex items-center gap-2.5 font-bold text-white text-sm">
+                  <Sliders className="w-4 h-4 text-[#FF8738]" />
                   <span>Preferências de Interface</span>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -132,20 +174,26 @@ export default function CookiePreferencesModal({
                     onChange={(e) => setPreferences(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FF9D2E]"></div>
+                  <div className="w-10 h-5.5 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#FC761D]"></div>
                 </label>
               </div>
-              <p className="text-zinc-500 leading-relaxed">
-                Lembram seu idioma de navegação (Português, Inglês, Francês, etc.) e tema escuro/claro escolhido.
+              <p className="text-white/60 leading-relaxed text-xs">
+                Lembram seu idioma de navegação (Português, Inglês, Francês, etc.) e preferências visuais.
               </p>
             </div>
 
-            {/* Category 3: Estatísticas & Desempenho */}
-            <div className="p-4 bg-white/5 border border-white/5 rounded-2xl space-y-2">
+            {/* Categoria 3: Estatísticas & Desempenho */}
+            <div
+              className="p-4.5 rounded-2xl space-y-2"
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.10)',
+              }}
+            >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 font-bold text-white text-sm">
-                  <Cookie className="w-4 h-4 text-[#FF9D2E]" />
-                  <span>Estatísticas & Desempenho</span>
+                <div className="flex items-center gap-2.5 font-bold text-white text-sm">
+                  <Cookie className="w-4 h-4 text-[#FF8738]" />
+                  <span>Estatísticas &amp; Desempenho</span>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -154,36 +202,42 @@ export default function CookiePreferencesModal({
                     onChange={(e) => setStatistics(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FF9D2E]"></div>
+                  <div className="w-10 h-5.5 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#FC761D]"></div>
                 </label>
               </div>
-              <p className="text-zinc-500 leading-relaxed">
+              <p className="text-white/60 leading-relaxed text-xs">
                 Ajudam a mensurar a velocidade de carregamento e estabilidade técnica da plataforma.
               </p>
             </div>
           </div>
 
-          {/* Footer Actions */}
-          <div className="p-4 border-t border-white/5 bg-[#050505] flex flex-col sm:flex-row items-center justify-between gap-3">
+          {/* Footer Actions — Pill Buttons estilo Landing Page */}
+          <div
+            className="p-5 border-t flex flex-col sm:flex-row items-center justify-between gap-3"
+            style={{
+              background: 'rgba(11, 41, 88, 0.85)',
+              borderColor: 'rgba(255, 255, 255, 0.10)',
+            }}
+          >
             <button
               type="button"
               onClick={handleRejectNonEssential}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-white/10 bg-transparent hover:bg-white/5 text-zinc-300 hover:text-white text-xs font-semibold transition-all text-center cursor-pointer"
+              className="w-full sm:w-auto h-10 px-5 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs font-semibold transition-all text-center cursor-pointer"
             >
               Rejeitar Não Essenciais
             </button>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={handleSaveCustom}
-                className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-transparent hover:bg-white/5 text-zinc-300 hover:text-white text-xs font-bold transition-all border border-white/10 cursor-pointer"
+                className="flex-1 sm:flex-initial h-10 px-5 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-all border border-white/20 cursor-pointer"
               >
                 Salvar Escolhas
               </button>
               <button
                 type="button"
                 onClick={handleAcceptAll}
-                className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-[#FF9D2E] hover:bg-[#e68d29] text-black text-xs font-bold transition-all shadow-md shadow-[#FF9D2E]/25 hover:shadow-lg hover:shadow-[#FF9D2E]/30 cursor-pointer"
+                className="flex-1 sm:flex-initial h-10 px-6 rounded-full bg-[#FC761D] hover:bg-[#FF8738] text-white text-xs font-black tracking-tight transition-all shadow-[0_8px_24px_rgba(255,135,56,0.38)] hover:shadow-[0_12px_28px_rgba(255,135,56,0.50)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
               >
                 Aceitar Todos
               </button>
@@ -194,4 +248,3 @@ export default function CookiePreferencesModal({
     </AnimatePresence>
   );
 }
-

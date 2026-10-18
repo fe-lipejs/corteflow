@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { trackEvent } from '../lib/analytics';
 import { usePageTracking } from '../hooks/usePageTracking';
+import { useAttentionTracker } from '../hooks/useAttentionTracker';
 
 /* =========================================================
    RAFFROS — LANDING PAGE
@@ -1896,6 +1897,7 @@ function Footer() {
 
 export default function LandingPage() {
   usePageTracking();
+  useAttentionTracker();
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
