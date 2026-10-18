@@ -1370,16 +1370,28 @@ function PaymentRealSection() {
               Você define a entrada. A cliente paga via Pix antes de confirmar. Se não pagou, o horário não é dela. Fim do furo.
             </p>
 
-            <div className="rf-payment-glass-list">
+            <div className="rf-payment-cards-list">
               {[
-                "Você define o percentual",
-                "Pagamento via Pix na hora",
-                "Horário confirmado só com sinal",
-              ].map((item, index) => (
-                <div key={item} className="rf-payment-glass-card">
-                  <span className="rf-payment-glass-number">0{index + 1}</span>
-                  <strong>{item}</strong>
-                  <CheckCircle2 size={18} className="rf-payment-glass-check" />
+                {
+                  number: "01",
+                  title: "Você define o percentual",
+                  desc: "Defina o valor da entrada que faz sentido para cada serviço.",
+                },
+                {
+                  number: "02",
+                  title: "Pagamento via Pix na hora",
+                  desc: "Cai direto na sua conta, em segundos, sem mandar comprovante.",
+                },
+                {
+                  number: "03",
+                  title: "Horário confirmado só com sinal",
+                  desc: "Se não pagou, a vaga continua aberta. Fim do furo na agenda.",
+                },
+              ].map((step) => (
+                <div key={step.number}>
+                  <span>{step.number}</span>
+                  <strong>{step.title}</strong>
+                  <p>{step.desc}</p>
                 </div>
               ))}
             </div>
@@ -7409,59 +7421,59 @@ export default function LandingPage() {
           }
 
           /* =====================================================
-             ANTI-FURO — LISTA EM CARDS GLASSMORPHISM
+             ANTI-FURO — CARDS NO MESMO ESTILO DE RF-FEATURE-STRIP (IMG2)
              ===================================================== */
-          .rf-payment-glass-list {
+          .rf-payment-cards-list {
             display: flex;
             flex-direction: column;
             gap: 12px;
-            margin-top: 32px;
+            margin-top: 36px;
             max-width: 520px;
           }
-          .rf-payment-glass-card {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            padding: 18px 20px;
-            border-radius: 18px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
-            border: 1px solid rgba(255,255,255,0.18);
-            backdrop-filter: blur(16px) saturate(160%);
-            -webkit-backdrop-filter: blur(16px) saturate(160%);
-            box-shadow: 0 10px 30px rgba(5, 20, 50, 0.22), inset 0 1px 0 rgba(255,255,255,0.14);
-            transition: transform .25s var(--rf-ease), border-color .25s ease, background .25s ease;
+          .rf-payment-cards-list > div {
+            padding: 18px 20px !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 16px !important;
+            background: rgba(255, 255, 255, 0.03) !important;
+            transition: border-color .2s ease, background .2s ease;
           }
-          .rf-payment-glass-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(255,135,56,0.45);
-            background: linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07));
+          .rf-payment-cards-list > div:hover {
+            border-color: rgba(255, 255, 255, 0.16) !important;
+            background: rgba(255, 255, 255, 0.05) !important;
           }
-          main .rf-payment-glass-number {
-            flex: 0 0 auto;
-            font-size: 22px;
-            font-weight: 800;
-            letter-spacing: -0.04em;
+          main .rf-payment-cards-list span {
+            font-size: 13px !important;
+            font-weight: 800 !important;
             color: var(--rf-accent-on-dark) !important;
             -webkit-text-fill-color: var(--rf-accent-on-dark) !important;
+            margin-bottom: 8px !important;
+            letter-spacing: 0.08em !important;
+            display: block !important;
             font-variant-numeric: tabular-nums;
-            min-width: 30px;
           }
-          main .rf-payment-glass-card strong {
-            flex: 1;
-            font-size: 17px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            line-height: 1.3;
+          main .rf-payment-cards-list strong {
+            font-size: 18px !important;
+            font-weight: 700 !important;
             color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+            margin-bottom: 6px !important;
+            display: block !important;
+            letter-spacing: -0.01em !important;
+            line-height: 1.3 !important;
           }
-          main .rf-payment-glass-check {
-            flex: 0 0 auto;
-            color: var(--rf-accent-on-dark) !important;
+          main .rf-payment-cards-list p {
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+            color: rgba(255, 255, 255, 0.78) !important;
+            margin: 0 !important;
           }
-          @media (max-width: 680px) {
-            .rf-payment-glass-card { padding: 16px 16px; gap: 14px; }
-            main .rf-payment-glass-number { font-size: 20px; }
-            main .rf-payment-glass-card strong { font-size: 16px; }
+          @media (min-width: 900px) {
+            main .rf-payment-cards-list strong {
+              font-size: 20px !important;
+            }
+            main .rf-payment-cards-list p {
+              font-size: 14.5px !important;
+            }
           }
 
           /* =====================================================
