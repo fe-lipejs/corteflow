@@ -8,11 +8,17 @@ import { trackEvent } from '../lib/analytics';
 
 /* ============================================================
    /playlist — "No som da casa"
-   Design system: Royal Blue & Laranja Puro (#FC761D)
-   Alinhado à Landing Page da Raffros
+   Design system: Royal Blue & Laranja (#FC761D / #FF8738 no azul)
+   Cards em glassmorphism branco para contrastar com o player escuro do Spotify
 ============================================================ */
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+const ACCENT = '#FC761D';
+const ACCENT_ON_DARK = '#FF8738';
+const INK = '#0F172A';
+const MUTED = '#5B6478';
+const ROYAL = '#103875';
 
 const PLAYLIST_ID = import.meta.env['VITE_SPOTIFY_PLAYLIST_ID'] || '6BcMYfYsOH9qUGNp2FRthF';
 const PLAYLIST_URL =
@@ -31,6 +37,17 @@ const VERSOS: { texto: string; ref: string }[] = [
     { texto: 'O amor é sofredor, é benigno; o amor não é invejoso.', ref: '1 Coríntios 13:4' },
     { texto: 'Vinde a mim, todos os que estais cansados e oprimidos, e eu vos aliviarei.', ref: 'Mateus 11:28' },
 ];
+
+/* Estilo base dos cards em glassmorphism branco */
+const whiteGlassCard: React.CSSProperties = {
+    background: 'linear-gradient(145deg, rgba(255,255,255,0.94), rgba(255,255,255,0.80))',
+    backdropFilter: 'blur(22px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(22px) saturate(180%)',
+    border: '1px solid rgba(255,255,255,0.75)',
+    borderRadius: '24px',
+    boxShadow: '0 30px 70px rgba(4, 18, 48, 0.35), inset 0 1px 0 rgba(255,255,255,0.9)',
+    color: INK,
+};
 
 function Noise() {
     return (
@@ -77,14 +94,15 @@ function GridLines() {
     );
 }
 
-function Eyebrow({ children }: { children: React.ReactNode }) {
+function Eyebrow({ children, onLight = false }: { children: React.ReactNode; onLight?: boolean }) {
+    const dot = onLight ? ACCENT : ACCENT_ON_DARK;
     return (
         <div style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: '9px',
-            color: 'rgba(255,255,255,0.7)',
-            fontSize: '9px',
+            color: onLight ? MUTED : 'rgba(255,255,255,0.7)',
+            fontSize: '10px',
             lineHeight: 1,
             letterSpacing: '.18em',
             fontWeight: 700,
@@ -94,9 +112,9 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
                 width: '6px',
                 height: '6px',
                 borderRadius: '50%',
-                background: '#FF8738',
+                background: dot,
                 flexShrink: 0,
-                boxShadow: '0 0 14px rgba(255,135,56,0.55)',
+                boxShadow: onLight ? '0 0 10px rgba(252,118,29,0.45)' : '0 0 14px rgba(255,135,56,0.55)',
             }} />
             {children}
         </div>
@@ -137,6 +155,21 @@ export default function PlaylistPage() {
         } catch {
             /* usuário cancelou */
         }
+    };
+
+    const lightButtonBase: React.CSSProperties = {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
+        borderRadius: '999px',
+        border: '1px solid rgba(16,56,117,0.16)',
+        background: 'rgba(16,56,117,0.06)',
+        color: ROYAL,
+        fontWeight: 700,
+        textDecoration: 'none',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        transition: 'background 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
     };
 
     return (
@@ -180,7 +213,7 @@ export default function PlaylistPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '0 32px',
+                padding: '0 24px',
                 background: 'rgba(10, 37, 80, 0.72)',
                 backdropFilter: 'blur(20px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(20px) saturate(180%)',
@@ -201,7 +234,7 @@ export default function PlaylistPage() {
                         textDecoration: 'none',
                         transition: 'color 0.2s ease',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#FF8738')}
+                    onMouseEnter={e => (e.currentTarget.style.color = ACCENT_ON_DARK)}
                     onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.72)')}
                 >
                     <ArrowLeft size={15} />
@@ -235,7 +268,7 @@ export default function PlaylistPage() {
                         height: '36px',
                         padding: '0 16px',
                         borderRadius: '999px',
-                        background: '#FF8738',
+                        background: ACCENT_ON_DARK,
                         color: '#FFFFFF',
                         fontSize: '11px',
                         fontWeight: 800,
@@ -262,12 +295,12 @@ export default function PlaylistPage() {
             <main style={{ position: 'relative', zIndex: 2, paddingTop: '120px', paddingBottom: '120px' }}>
 
                 {/* ── HERO COPY ── */}
-                <section style={{ position: 'relative', overflow: 'hidden', paddingBottom: '70px' }}>
+                <section style={{ position: 'relative', overflow: 'hidden', paddingBottom: '64px' }}>
                     <Noise />
                     <GridLines />
 
                     <div style={{
-                        width: 'min(calc(100% - 64px), 1240px)',
+                        width: 'min(calc(100% - 48px), 1240px)',
                         margin: '0 auto',
                         position: 'relative',
                         zIndex: 2,
@@ -290,13 +323,13 @@ export default function PlaylistPage() {
                             }}>
                                 O que a Raffros{' '}
                                 <br />
-                                <span style={{ color: '#FF8738' }}>está ouvindo.</span>
+                                <span style={{ color: ACCENT_ON_DARK }}>está ouvindo.</span>
                             </h1>
 
                             <p style={{
                                 margin: 0,
                                 maxWidth: '520px',
-                                color: 'rgba(255,255,255,0.72)',
+                                color: 'rgba(255,255,255,0.75)',
                                 fontSize: '15px',
                                 lineHeight: 1.65,
                                 letterSpacing: '-0.01em',
@@ -311,27 +344,19 @@ export default function PlaylistPage() {
 
                 {/* ── CARDS ── */}
                 <div style={{
-                    width: 'min(calc(100% - 40px), 920px)',
+                    width: 'min(calc(100% - 32px), 920px)',
                     margin: '0 auto',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '20px',
                 }}>
 
-                    {/* PLAYLIST CARD */}
+                    {/* PLAYLIST CARD — glass branco */}
                     <motion.section
                         initial={{ opacity: 0, y: reduce ? 0 : 24 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.75, delay: 0.1, ease: EASE }}
-                        style={{
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            backdropFilter: 'blur(20px)',
-                            WebkitBackdropFilter: 'blur(20px)',
-                            border: '1px solid rgba(255,255,255,0.12)',
-                            borderRadius: '20px',
-                            padding: '32px',
-                            boxShadow: '0 24px 60px rgba(0, 0, 0, 0.25)',
-                        }}
+                        style={{ ...whiteGlassCard, padding: 'clamp(20px, 4vw, 32px)' }}
                     >
                         {/* card header */}
                         <div style={{
@@ -340,35 +365,35 @@ export default function PlaylistPage() {
                             justifyContent: 'space-between',
                             gap: '16px',
                             flexWrap: 'wrap',
-                            marginBottom: '26px',
+                            marginBottom: '22px',
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                                 <div style={{
-                                    width: '46px',
-                                    height: '46px',
+                                    width: '48px',
+                                    height: '48px',
                                     borderRadius: '14px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    background: 'rgba(252,118,29,0.14)',
-                                    border: '1px solid rgba(252,118,29,0.28)',
+                                    background: '#121212',
+                                    boxShadow: '0 8px 20px rgba(0,0,0,0.18)',
                                     flexShrink: 0,
                                 }}>
                                     <SpotifyGlyph className="w-[24px] h-[24px]" />
                                 </div>
                                 <div>
                                     <div style={{
-                                        fontSize: '19px',
+                                        fontSize: '20px',
                                         fontWeight: 800,
-                                        letterSpacing: '-0.03em',
-                                        color: '#ffffff',
-                                        lineHeight: 1.2,
+                                        letterSpacing: '-0.035em',
+                                        color: INK,
+                                        lineHeight: 1.15,
                                     }}>
                                         Playlist oficial
                                     </div>
                                     <div style={{
                                         fontSize: '13px',
-                                        color: 'rgba(255,255,255,0.60)',
+                                        color: MUTED,
                                         marginTop: '4px',
                                     }}>
                                         Atualizada de vez em quando, no capricho.
@@ -383,29 +408,20 @@ export default function PlaylistPage() {
                                     rel="noreferrer noopener"
                                     onClick={() => trackEvent('click_spotify_abrir_externo', { metadata: { url: PLAYLIST_URL } })}
                                     style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '7px',
+                                        ...lightButtonBase,
                                         height: '40px',
                                         padding: '0 18px',
-                                        borderRadius: '999px',
-                                        border: '1px solid rgba(255,255,255,0.18)',
-                                        background: 'rgba(255,255,255,0.08)',
-                                        color: '#FFFFFF',
                                         fontSize: '12px',
-                                        fontWeight: 700,
-                                        textDecoration: 'none',
-                                        transition: 'background 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
                                         flexShrink: 0,
                                     }}
                                     onMouseEnter={e => {
-                                        (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.14)';
-                                        (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.32)';
+                                        (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(16,56,117,0.12)';
+                                        (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(16,56,117,0.28)';
                                         (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-1px)';
                                     }}
                                     onMouseLeave={e => {
-                                        (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.08)';
-                                        (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.18)';
+                                        (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(16,56,117,0.06)';
+                                        (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(16,56,117,0.16)';
                                         (e.currentTarget as HTMLAnchorElement).style.transform = 'none';
                                     }}
                                 >
@@ -419,10 +435,10 @@ export default function PlaylistPage() {
                         {/* iframe */}
                         {PLAYLIST_ID ? (
                             <div style={{
-                                borderRadius: '12px',
+                                borderRadius: '14px',
                                 overflow: 'hidden',
-                                border: '1px solid rgba(255,255,255,0.10)',
-                                background: '#07162E',
+                                background: '#121212',
+                                boxShadow: '0 14px 34px rgba(4,18,48,0.22)',
                             }}>
                                 <iframe
                                     title="Playlist da Raffros no Spotify"
@@ -437,40 +453,31 @@ export default function PlaylistPage() {
                             </div>
                         ) : (
                             <div style={{
-                                borderRadius: '12px',
-                                border: '1px dashed rgba(255,255,255,0.18)',
-                                background: '#07162E',
+                                borderRadius: '14px',
+                                border: '1px dashed rgba(16,56,117,0.25)',
+                                background: 'rgba(16,56,117,0.04)',
                                 padding: '48px 24px',
                                 textAlign: 'center',
                             }}>
-                                <p style={{ margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>
+                                <p style={{ margin: 0, color: MUTED, fontSize: '13px' }}>
                                     Defina{' '}
-                                    <code style={{ fontFamily: 'ui-monospace, monospace', color: '#FC761D' }}>VITE_SPOTIFY_PLAYLIST_ID</code>
-                                    {' '}no <code style={{ fontFamily: 'ui-monospace, monospace', color: '#FC761D' }}>.env</code>
+                                    <code style={{ fontFamily: 'ui-monospace, monospace', color: ACCENT }}>VITE_SPOTIFY_PLAYLIST_ID</code>
+                                    {' '}no <code style={{ fontFamily: 'ui-monospace, monospace', color: ACCENT }}>.env</code>
                                 </p>
                             </div>
                         )}
                     </motion.section>
 
-                    {/* VERSO CARD */}
+                    {/* VERSO CARD — glass branco */}
                     <motion.section
                         initial={{ opacity: 0, y: reduce ? 0 : 24 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.75, delay: 0.18, ease: EASE }}
-                        style={{
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            backdropFilter: 'blur(20px)',
-                            WebkitBackdropFilter: 'blur(20px)',
-                            border: '1px solid rgba(255,255,255,0.12)',
-                            borderRadius: '20px',
-                            padding: '48px 40px',
-                            boxShadow: '0 24px 60px rgba(0, 0, 0, 0.25)',
-                            textAlign: 'center',
-                        }}
+                        style={{ ...whiteGlassCard, padding: 'clamp(32px, 6vw, 48px) clamp(20px, 5vw, 40px)', textAlign: 'center' }}
                     >
-                        <Eyebrow>Palavra do dia</Eyebrow>
+                        <Eyebrow onLight>Palavra do dia</Eyebrow>
 
-                        <div style={{ margin: '28px 0 0', color: 'rgba(255,135,56,0.55)' }}>
+                        <div style={{ margin: '26px 0 0', color: 'rgba(252,118,29,0.55)' }}>
                             <Quote size={30} />
                         </div>
 
@@ -490,8 +497,8 @@ export default function PlaylistPage() {
                                         fontSize: 'clamp(22px, 4vw, 32px)',
                                         lineHeight: 1.25,
                                         letterSpacing: '-0.04em',
-                                        fontWeight: 700,
-                                        color: '#ffffff',
+                                        fontWeight: 750,
+                                        color: INK,
                                     }}>
                                         "{verso.texto}"
                                     </p>
@@ -499,11 +506,11 @@ export default function PlaylistPage() {
                                         display: 'block',
                                         marginTop: '20px',
                                         fontStyle: 'normal',
-                                        fontSize: '10px',
+                                        fontSize: '11px',
                                         fontWeight: 800,
                                         letterSpacing: '.18em',
                                         textTransform: 'uppercase',
-                                        color: '#FF8738',
+                                        color: ACCENT,
                                     }}>
                                         {verso.ref}
                                     </cite>
@@ -513,7 +520,7 @@ export default function PlaylistPage() {
 
                         {/* actions */}
                         <div style={{
-                            marginTop: '36px',
+                            marginTop: '34px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -527,29 +534,29 @@ export default function PlaylistPage() {
                                     trackEvent('click_sortear_versiculo', { metadata: { verso: verso.ref } });
                                 }}
                                 style={{
-                                    height: '46px',
+                                    height: '48px',
                                     padding: '0 24px',
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     gap: '9px',
                                     borderRadius: '999px',
-                                    background: '#FF8738',
+                                    background: ACCENT,
                                     color: '#FFFFFF',
-                                    fontSize: '12px',
+                                    fontSize: '13px',
                                     fontWeight: 800,
                                     border: 'none',
                                     cursor: 'pointer',
                                     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                                     fontFamily: 'inherit',
-                                    boxShadow: '0 10px 28px rgba(255,135,56,0.32)',
+                                    boxShadow: '0 10px 26px rgba(252,118,29,0.32)',
                                 }}
                                 onMouseEnter={e => {
                                     (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
-                                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 14px 34px rgba(255,135,56,0.45)';
+                                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 14px 32px rgba(252,118,29,0.42)';
                                 }}
                                 onMouseLeave={e => {
                                     (e.currentTarget as HTMLButtonElement).style.transform = 'none';
-                                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 10px 28px rgba(255,135,56,0.32)';
+                                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 10px 26px rgba(252,118,29,0.32)';
                                 }}
                             >
                                 <RefreshCw size={15} />
@@ -563,29 +570,19 @@ export default function PlaylistPage() {
                                     trackEvent('click_compartilhar_versiculo', { metadata: { verso: verso.ref } });
                                 }}
                                 style={{
-                                    height: '46px',
+                                    ...lightButtonBase,
+                                    height: '48px',
                                     padding: '0 20px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '9px',
-                                    borderRadius: '999px',
-                                    border: '1px solid rgba(255,255,255,0.18)',
-                                    background: 'rgba(255,255,255,0.08)',
-                                    color: '#FFFFFF',
-                                    fontSize: '12px',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    transition: 'background 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
-                                    fontFamily: 'inherit',
+                                    fontSize: '13px',
                                 }}
                                 onMouseEnter={e => {
-                                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.14)';
-                                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.32)';
+                                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(16,56,117,0.12)';
+                                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(16,56,117,0.28)';
                                     (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
                                 }}
                                 onMouseLeave={e => {
-                                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)';
-                                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.18)';
+                                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(16,56,117,0.06)';
+                                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(16,56,117,0.16)';
                                     (e.currentTarget as HTMLButtonElement).style.transform = 'none';
                                 }}
                             >
@@ -597,7 +594,7 @@ export default function PlaylistPage() {
                         <p style={{
                             margin: '28px auto 0',
                             fontSize: '12px',
-                            color: 'rgba(255,255,255,0.45)',
+                            color: MUTED,
                             maxWidth: '46ch',
                             lineHeight: 1.6,
                         }}>
@@ -614,15 +611,15 @@ export default function PlaylistPage() {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                color: 'rgba(255,255,255,0.60)',
+                                color: 'rgba(255,255,255,0.65)',
                                 fontSize: '12px',
                                 fontWeight: 600,
                                 letterSpacing: '0.01em',
                                 textDecoration: 'none',
                                 transition: 'color 0.2s ease',
                             }}
-                            onMouseEnter={e => (e.currentTarget.style.color = '#FF8738')}
-                            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.60)')}
+                            onMouseEnter={e => (e.currentTarget.style.color = ACCENT_ON_DARK)}
+                            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.65)')}
                         >
                             <ArrowLeft size={14} />
                             Voltar para a Raffros
@@ -642,7 +639,7 @@ export default function PlaylistPage() {
                 <p style={{
                     margin: 0,
                     fontSize: '11px',
-                    color: 'rgba(255,255,255,0.45)',
+                    color: 'rgba(255,255,255,0.5)',
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
                 }}>

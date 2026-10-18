@@ -473,108 +473,115 @@ function Header() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="rf-mobile-nav-fullscreen"
-            initial={{ opacity: 0, y: "-100%" }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: "-100%" }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="rf-menu"
+            initial={{ opacity: 0, clipPath: "circle(0% at 92% 4%)" }}
+            animate={{ opacity: 1, clipPath: "circle(150% at 92% 4%)" }}
+            exit={{ opacity: 0, clipPath: "circle(0% at 92% 4%)" }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="rf-mobile-nav-top">
-              <a href="/" onClick={() => setOpen(false)} className="rf-mobile-logo-link">
-                <img src="/logo.svg" alt="Raffros" style={{ height: '30px' }} />
-              </a>
-              <button className="rf-mobile-close" onClick={() => setOpen(false)} aria-label="Fechar menu">
-                <X size={22} />
-              </button>
+            <div className="rf-hero-light" aria-hidden="true">
+              <span className="rf-hero-light-beam rf-hero-light-beam-one" />
+              <span className="rf-hero-light-beam rf-hero-light-beam-two" />
+              <span className="rf-hero-light-glow" />
             </div>
 
-            <div className="rf-mobile-nav-eyebrow">
-              <span className="rf-eyebrow-dot" />
-              <span>Salões · Esmalterias · Barbearias</span>
-            </div>
+            <div className="rf-menu-inner">
+              <div className="rf-menu-top">
+                <a href="/" onClick={() => setOpen(false)} className="rf-menu-logo" aria-label="Raffros">
+                  <img src="/logo.svg" alt="Raffros" />
+                </a>
+                <button className="rf-menu-close" onClick={() => setOpen(false)} aria-label="Fechar menu">
+                  <X size={20} />
+                </button>
+              </div>
 
-            <div className="rf-mobile-nav-links">
-              {links.filter(l => !(l as { isExternal?: boolean }).isExternal).map((link) => (
+              <div className="rf-menu-eyebrow">
+                <span className="rf-menu-dot" />
+                Salões · Esmalterias · Barbearias
+              </div>
+
+              <nav className="rf-menu-links">
+                {links.filter(l => !(l as { isExternal?: boolean }).isExternal).map((link, index) => (
+                  <motion.a
+                    key={link.href}
+                    href={link.href}
+                    className="rf-menu-link"
+                    initial={{ opacity: 0, y: 18 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.45, delay: 0.12 + index * 0.06, ease: [0.22, 1, 0.36, 1] }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setOpen(false);
+                      const targetId = link.href.replace('#', '');
+                      const element = document.getElementById(targetId);
+                      if (element) {
+                        setTimeout(() => {
+                          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 120);
+                      }
+                    }}
+                  >
+                    <span className="rf-menu-link-number">0{index + 1}</span>
+                    <span className="rf-menu-link-label">{link.label}</span>
+                    <ArrowUpRight size={20} className="rf-menu-link-arrow" />
+                  </motion.a>
+                ))}
+              </nav>
+
+              <motion.div
+                className="rf-menu-bottom"
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              >
                 <a
-                  key={link.href}
-                  href={link.href}
-                  className="rf-mobile-nav-item"
+                  href="/playlist"
+                  className="rf-menu-glass-card"
                   onClick={(e) => {
                     e.preventDefault();
                     setOpen(false);
-                    const targetId = link.href.replace('#', '');
-                    const element = document.getElementById(targetId);
-                    if (element) {
-                      setTimeout(() => {
-                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }, 100);
-                    }
+                    trackEvent('click_playlist_nav_mobile');
+                    goTo("/playlist");
                   }}
                 >
-                  <span>{link.label}</span>
-                  <ArrowRight size={15} className="rf-mobile-nav-arrow" />
-                </a>
-              ))}
-
-              <div className="rf-mobile-nav-divider" />
-
-              {/* Card Som da Casa com toque de azul royal */}
-              <a
-                href="/playlist"
-                className="rf-mobile-playlist-card"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setOpen(false);
-                  trackEvent('click_playlist_nav_mobile');
-                  goTo("/playlist");
-                }}
-              >
-                <div className="rf-mobile-playlist-left">
-                  <div className="rf-mobile-playlist-icon">
+                  <span className="rf-menu-glass-icon">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                       <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.623.623 0 01-.857.208c-2.348-1.435-5.304-1.76-8.785-.964a.623.623 0 11-.277-1.215c3.809-.87 7.076-.496 9.712 1.115a.623.623 0 01.207.856zm1.223-2.72a.78.78 0 01-1.072.257C14.1 12.29 10.539 11.88 7.2 12.84a.78.78 0 01-.48-1.485c3.754-1.09 7.72-.562 10.832 1.277a.78.78 0 01.257 1.072zm.105-2.832C15.16 9.15 10.481 9 7.2 9.983a.937.937 0 11-.543-1.794C10.317 7.071 15.494 7.25 19.2 9.638a.937.937 0 01-1.286 1.234z" fill="#1DB954" />
                     </svg>
-                  </div>
-                  <div>
-                    <div className="rf-mobile-playlist-title">Som da Casa</div>
-                    <div className="rf-mobile-playlist-sub">Músicas & Palavra do Dia</div>
-                  </div>
-                </div>
-                <ArrowUpRight size={16} className="rf-mobile-playlist-arrow" />
-              </a>
-
-              {/* Ações inferiores */}
-              <div className="rf-mobile-actions">
-                <a
-                  href="/login"
-                  className="rf-mobile-login-btn"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setOpen(false);
-                    goTo("/login");
-                  }}
-                >
-                  <span>Já tem conta? <strong>Entrar</strong></span>
-                  <ArrowRight size={15} />
+                  </span>
+                  <span className="rf-menu-glass-text">
+                    <strong>Som da Casa</strong>
+                    <small>Músicas &amp; Palavra do Dia</small>
+                  </span>
+                  <ArrowUpRight size={16} className="rf-menu-glass-arrow" />
                 </a>
 
                 <button
                   type="button"
-                  className="rf-mobile-primary-cta"
+                  className="rf-menu-cta"
                   onClick={() => {
                     setOpen(false);
                     trackEvent('click_mobile_sticky_cta');
                     goTo("/cadastro");
                   }}
                 >
-                  Começar grátis (7 dias)
+                  Começar grátis
                   <ArrowRight size={17} />
                 </button>
 
-                <p className="rf-mobile-trust-note">
-                  Sem cartão · Cancele quando quiser
-                </p>
-              </div>
+                <button
+                  type="button"
+                  className="rf-menu-login"
+                  onClick={() => {
+                    setOpen(false);
+                    goTo("/login");
+                  }}
+                >
+                  Já tem conta? <strong>Entrar</strong>
+                </button>
+
+                <p className="rf-menu-note">7 dias grátis · Sem cartão · Cancele quando quiser</p>
+              </motion.div>
             </div>
           </motion.div>
         )}
@@ -598,6 +605,13 @@ function Hero() {
 
       <div className="rf-hero-orb rf-hero-orb-one" />
       <div className="rf-hero-orb rf-hero-orb-two" />
+
+      {/* Iluminação ambiente: feixes de luz passando lentamente por trás */}
+      <div className="rf-hero-light" aria-hidden="true">
+        <span className="rf-hero-light-beam rf-hero-light-beam-one" />
+        <span className="rf-hero-light-beam rf-hero-light-beam-two" />
+        <span className="rf-hero-light-glow" />
+      </div>
 
       <div className="rf-container rf-hero-container">
         <div className="rf-hero-copy">
@@ -1356,15 +1370,16 @@ function PaymentRealSection() {
               Você define a entrada. A cliente paga via Pix antes de confirmar. Se não pagou, o horário não é dela. Fim do furo.
             </p>
 
-            <div className="rf-payment-real-list">
+            <div className="rf-payment-glass-list">
               {[
                 "Você define o percentual",
                 "Pagamento via Pix na hora",
                 "Horário confirmado só com sinal",
               ].map((item, index) => (
-                <div key={item}>
-                  <span>0{index + 1}</span>
+                <div key={item} className="rf-payment-glass-card">
+                  <span className="rf-payment-glass-number">0{index + 1}</span>
                   <strong>{item}</strong>
+                  <CheckCircle2 size={18} className="rf-payment-glass-check" />
                 </div>
               ))}
             </div>
@@ -1788,11 +1803,10 @@ function Footer() {
           <div>
             <a
               href="#inicio"
-              className="rf-footer-logo"
+              className="rf-footer-logo rf-footer-logo-img"
+              aria-label="Raffros — voltar ao início"
             >
-              <span className="rf-logo-mark">R</span>
-              <span>raffros</span>
-              <i>.</i>
+              <img src="/logo.svg" alt="Raffros" />
             </a>
 
             <p>
@@ -7325,6 +7339,322 @@ export default function LandingPage() {
               font-size: 14px !important;
               color: rgba(255, 255, 255, 0.78) !important;
             }
+          }
+
+          /* =====================================================
+             HERO — ILUMINAÇÃO AMBIENTE (feixes lentos e contínuos)
+             ===================================================== */
+          .rf-hero-light {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+          }
+          .rf-hero-light-beam {
+            position: absolute;
+            top: -40%;
+            left: -60%;
+            width: 46%;
+            height: 180%;
+            transform: rotate(18deg);
+            background: linear-gradient(
+              90deg,
+              transparent 0%,
+              rgba(255, 255, 255, 0.025) 30%,
+              rgba(173, 205, 255, 0.11) 50%,
+              rgba(255, 255, 255, 0.025) 70%,
+              transparent 100%
+            );
+            filter: blur(18px);
+            animation: rfLightSweep 16s cubic-bezier(.45,.05,.55,.95) infinite;
+            will-change: transform;
+          }
+          .rf-hero-light-beam-two {
+            width: 28%;
+            animation-duration: 22s;
+            animation-delay: -9s;
+            background: linear-gradient(
+              90deg,
+              transparent 0%,
+              rgba(255, 210, 230, 0.03) 35%,
+              rgba(255, 196, 160, 0.08) 50%,
+              rgba(255, 210, 230, 0.03) 65%,
+              transparent 100%
+            );
+          }
+          .rf-hero-light-glow {
+            position: absolute;
+            width: 620px;
+            height: 620px;
+            top: -180px;
+            right: -160px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(120, 170, 255, 0.20), transparent 62%);
+            filter: blur(10px);
+            animation: rfLightBreath 9s ease-in-out infinite;
+          }
+          @keyframes rfLightSweep {
+            0%   { transform: translateX(0) rotate(18deg); }
+            100% { transform: translateX(380%) rotate(18deg); }
+          }
+          @keyframes rfLightBreath {
+            0%, 100% { opacity: 0.55; transform: translate(0, 0) scale(1); }
+            50%      { opacity: 1;    transform: translate(-60px, 40px) scale(1.12); }
+          }
+          main .rf-hero .rf-hero-container { position: relative; z-index: 2; }
+          @media (prefers-reduced-motion: reduce) {
+            .rf-hero-light-beam,
+            .rf-hero-light-glow { animation: none !important; }
+          }
+
+          /* =====================================================
+             ANTI-FURO — LISTA EM CARDS GLASSMORPHISM
+             ===================================================== */
+          .rf-payment-glass-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 32px;
+            max-width: 520px;
+          }
+          .rf-payment-glass-card {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 18px 20px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+            border: 1px solid rgba(255,255,255,0.18);
+            backdrop-filter: blur(16px) saturate(160%);
+            -webkit-backdrop-filter: blur(16px) saturate(160%);
+            box-shadow: 0 10px 30px rgba(5, 20, 50, 0.22), inset 0 1px 0 rgba(255,255,255,0.14);
+            transition: transform .25s var(--rf-ease), border-color .25s ease, background .25s ease;
+          }
+          .rf-payment-glass-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255,135,56,0.45);
+            background: linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07));
+          }
+          main .rf-payment-glass-number {
+            flex: 0 0 auto;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            color: var(--rf-accent-on-dark) !important;
+            -webkit-text-fill-color: var(--rf-accent-on-dark) !important;
+            font-variant-numeric: tabular-nums;
+            min-width: 30px;
+          }
+          main .rf-payment-glass-card strong {
+            flex: 1;
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.3;
+            color: #FFFFFF !important;
+          }
+          main .rf-payment-glass-check {
+            flex: 0 0 auto;
+            color: var(--rf-accent-on-dark) !important;
+          }
+          @media (max-width: 680px) {
+            .rf-payment-glass-card { padding: 16px 16px; gap: 14px; }
+            main .rf-payment-glass-number { font-size: 20px; }
+            main .rf-payment-glass-card strong { font-size: 16px; }
+          }
+
+          /* =====================================================
+             FOOTER — LOGO OFICIAL
+             ===================================================== */
+          .rf-footer-logo-img {
+            display: inline-flex;
+            align-items: center;
+          }
+          .rf-footer-logo-img img {
+            height: 38px;
+            width: auto;
+            display: block;
+          }
+
+          /* =====================================================
+             MENU MOBILE — MESMA LINGUAGEM DA LANDING
+             ===================================================== */
+          .rf-menu {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            overflow: hidden;
+            color: #FFFFFF;
+            background:
+              radial-gradient(circle at 85% 12%, rgba(244, 114, 182, 0.14), transparent 38%),
+              radial-gradient(circle at 12% 85%, rgba(37, 99, 235, 0.38), transparent 52%),
+              linear-gradient(165deg, #0B2958 0%, #0F3775 40%, #164894 75%, #1A3E78 100%);
+          }
+          .rf-menu-inner {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 24px calc(28px + env(safe-area-inset-bottom));
+            overflow-y: auto;
+            box-sizing: border-box;
+          }
+          .rf-menu-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 44px;
+          }
+          .rf-menu-logo img {
+            height: 30px;
+            filter: invert(1);
+            display: block;
+          }
+          .rf-menu-close {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.18) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: background .2s ease, transform .2s ease;
+          }
+          .rf-menu-close:active { transform: scale(0.94); background: rgba(255,255,255,0.18); }
+          .rf-menu-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            margin: 34px 0 10px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.62);
+          }
+          .rf-menu-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--rf-accent-on-dark);
+            box-shadow: 0 0 14px rgba(255,135,56,0.6);
+          }
+          .rf-menu-links {
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid rgba(255,255,255,0.12);
+          }
+          .rf-menu-link {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 2px;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+            color: #FFFFFF;
+            text-decoration: none;
+          }
+          .rf-menu-link-number {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: var(--rf-accent-on-dark);
+            min-width: 22px;
+            font-variant-numeric: tabular-nums;
+          }
+          .rf-menu-link-label {
+            flex: 1;
+            font-size: clamp(30px, 9vw, 40px);
+            line-height: 1;
+            font-weight: 800;
+            letter-spacing: -0.055em;
+            transition: color .2s ease, transform .25s var(--rf-ease);
+          }
+          .rf-menu-link-arrow {
+            color: rgba(255,255,255,0.35);
+            transition: color .2s ease, transform .25s var(--rf-ease);
+          }
+          .rf-menu-link:hover .rf-menu-link-label,
+          .rf-menu-link:active .rf-menu-link-label {
+            color: var(--rf-accent-on-dark);
+            transform: translateX(4px);
+          }
+          .rf-menu-link:hover .rf-menu-link-arrow,
+          .rf-menu-link:active .rf-menu-link-arrow {
+            color: var(--rf-accent-on-dark);
+            transform: translate(2px, -2px);
+          }
+          .rf-menu-bottom {
+            margin-top: auto;
+            padding-top: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+          }
+          .rf-menu-glass-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            text-decoration: none;
+            color: #FFFFFF;
+            background: linear-gradient(135deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05));
+            border: 1px solid rgba(255,255,255,0.18);
+            backdrop-filter: blur(16px) saturate(160%);
+            -webkit-backdrop-filter: blur(16px) saturate(160%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.14);
+          }
+          .rf-menu-glass-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.12);
+          }
+          .rf-menu-glass-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+          .rf-menu-glass-text strong { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+          .rf-menu-glass-text small { font-size: 11px; color: rgba(255,255,255,0.6); }
+          .rf-menu-glass-arrow { color: rgba(255,255,255,0.6); }
+          .rf-menu-cta {
+            height: 54px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            color: #FFFFFF;
+            background: var(--rf-accent-on-dark);
+            box-shadow: 0 14px 30px rgba(255,135,56,0.35);
+            transition: transform .15s ease;
+          }
+          .rf-menu-cta:active { transform: scale(0.98); }
+          .rf-menu-login {
+            height: 46px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.78);
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+          }
+          .rf-menu-login strong { color: #FFFFFF; font-weight: 700; }
+          .rf-menu-note {
+            margin: 2px 0 0;
+            text-align: center;
+            font-size: 11px;
+            color: rgba(255,255,255,0.45);
           }
 
       `}</style>
