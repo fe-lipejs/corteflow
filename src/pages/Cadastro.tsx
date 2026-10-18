@@ -386,12 +386,7 @@ export default function Cadastro() {
               >
                 {/* Eyebrow & Headline */}
                 <div className="text-center mb-6">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FC761D]/10 border border-[#FC761D]/20 mb-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#FC761D] shadow-[0_0_8px_#FC761D]" />
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#FC761D]">
-                      Teste Grátis por 7 Dias
-                    </span>
-                  </div>
+
                   <h2 className="text-2xl sm:text-[26px] font-black text-[#0F172A] tracking-[-0.035em] leading-tight">
                     Crie sua conta
                   </h2>

@@ -224,16 +224,15 @@ export default function Login() {
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-700 relative overflow-hidden ${
-        isSuperAdminMode ? 'bg-[#000000]' : ''
-      }`}
+      className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-700 relative overflow-hidden ${isSuperAdminMode ? 'bg-[#000000]' : ''
+        }`}
       style={
         isSuperAdminMode
           ? undefined
           : {
-              background:
-                'radial-gradient(circle at 85% 12%, rgba(244, 114, 182, 0.14), transparent 38%), radial-gradient(circle at 12% 85%, rgba(37, 99, 235, 0.38), transparent 52%), linear-gradient(165deg, #0B2958 0%, #0F3775 40%, #164894 75%, #1A3E78 100%)',
-            }
+            background:
+              'radial-gradient(circle at 85% 12%, rgba(244, 114, 182, 0.14), transparent 38%), radial-gradient(circle at 12% 85%, rgba(37, 99, 235, 0.38), transparent 52%), linear-gradient(165deg, #0B2958 0%, #0F3775 40%, #164894 75%, #1A3E78 100%)',
+          }
       }
     >
       <style>{`
@@ -340,12 +339,7 @@ export default function Login() {
               >
                 {/* Eyebrow & Headline */}
                 <div className="text-center mb-7">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FC761D]/10 border border-[#FC761D]/20 mb-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#FC761D] shadow-[0_0_8px_#FC761D]" />
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#FC761D]">
-                      Acesso ao Estabelecimento
-                    </span>
-                  </div>
+
                   <h2 className="text-2xl sm:text-[26px] font-black text-[#0F172A] tracking-[-0.035em] leading-tight">
                     {t('login.title') || 'Acesse sua conta'}
                   </h2>
