@@ -201,7 +201,7 @@ export default function Cadastro() {
       className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
       style={{
         background:
-          'radial-gradient(circle at 86% 14%, rgba(217, 70, 239, 0.11), rgba(129, 140, 248, 0.18) 35%, transparent 55%), radial-gradient(circle at 12% 85%, rgba(29, 94, 255, 0.36), transparent 52%), linear-gradient(165deg, #040E2D 0%, #071C56 32%, #0C287A 58%, #1A206C 80%, #113EB8 100%)',
+          'radial-gradient(circle at 85% 12%, rgba(244, 114, 182, 0.14), transparent 38%), radial-gradient(circle at 12% 85%, rgba(37, 99, 235, 0.38), transparent 52%), linear-gradient(165deg, #0B2958 0%, #0F3775 40%, #164894 75%, #1A3E78 100%)',
       }}
     >
       <style>{`
@@ -215,22 +215,21 @@ export default function Cadastro() {
         }
         .rf-auth-light-sweep {
           position: absolute;
-          top: -50%;
-          left: -50%;
-          width: 70%;
-          height: 200%;
-          transform: rotate(22deg);
+          top: -40%;
+          left: -60%;
+          width: 50%;
+          height: 180%;
+          transform: rotate(18deg);
           background: linear-gradient(
             90deg,
             transparent 0%,
-            rgba(255, 255, 255, 0.015) 25%,
-            rgba(147, 197, 253, 0.08) 48%,
-            rgba(216, 180, 254, 0.06) 55%,
-            rgba(255, 255, 255, 0.015) 75%,
+            rgba(255, 255, 255, 0.03) 30%,
+            rgba(173, 205, 255, 0.12) 50%,
+            rgba(255, 255, 255, 0.03) 70%,
             transparent 100%
           );
-          filter: blur(55px);
-          animation: rfAuthSweep 24s cubic-bezier(.45,.05,.55,.95) infinite;
+          filter: blur(20px);
+          animation: rfAuthSweep 16s cubic-bezier(.45,.05,.55,.95) infinite;
           will-change: transform;
           pointer-events: none;
           z-index: 1;
