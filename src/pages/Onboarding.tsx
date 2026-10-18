@@ -7,8 +7,11 @@ import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, CheckCircle2, Upload, Image, Scissors, MapPin, AtSign, Phone as PhoneIcon, FileText, Sparkles, Star, Mail, Globe, Loader2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, CheckCircle2, Upload, Image, Scissors, MapPin, AtSign, Phone as PhoneIcon, FileText, Sparkles, Star, Mail, Loader2, ArrowRight } from 'lucide-react';
 import { normalizeBrazilianPhone, formatPhoneMask } from '../lib/phoneUtils';
+
+const ACCENT = '#FC761D';
+const ACCENT_HOVER = '#FF8738';
 
 const onboardingSchema = z.object({
   language: z.enum(['pt', 'en', 'es', 'fr', 'de']),
@@ -453,7 +456,7 @@ export default function Onboarding() {
         tenant_id: newTenant.id,
         fantasy_name: finalBusinessName,
         theme_preset: data.themePreset || 'elegant',
-        custom_palette: { primary: '#FD6500', fontStyle: 'sans', btnTextColor: '#FFFFFF' },
+        custom_palette: { primary: ACCENT, fontStyle: 'sans', btnTextColor: '#FFFFFF' },
         logo_url: logoUrl,
         banner_url: bannerUrl,
         short_description: data.shortDescription || '',
@@ -505,16 +508,16 @@ export default function Onboarding() {
 
       // 7. Create template services tailored to the business type
       const defaultServices = data.businessType === 'barbearia' ? [
-        { tenant_id: newTenant.id, name: 'Corte Tradicional', price: 35.00, duration_minutes: 30, buffer_minutes: 0, category: 'Cortes', color: '#FD6500', active: true },
-        { tenant_id: newTenant.id, name: 'Barba & Toalha Quente', price: 30.00, duration_minutes: 30, buffer_minutes: 0, category: 'Barba', color: '#FD6500', active: true },
-        { tenant_id: newTenant.id, name: 'Combo Cabelo + Barba', price: 60.00, duration_minutes: 50, buffer_minutes: 0, category: 'Combos', color: '#FD6500', active: true },
+        { tenant_id: newTenant.id, name: 'Corte Tradicional', price: 35.00, duration_minutes: 30, buffer_minutes: 0, category: 'Cortes', color: ACCENT, active: true },
+        { tenant_id: newTenant.id, name: 'Barba & Toalha Quente', price: 30.00, duration_minutes: 30, buffer_minutes: 0, category: 'Barba', color: ACCENT, active: true },
+        { tenant_id: newTenant.id, name: 'Combo Cabelo + Barba', price: 60.00, duration_minutes: 50, buffer_minutes: 0, category: 'Combos', color: ACCENT, active: true },
       ] : data.businessType === 'salao' ? [
-        { tenant_id: newTenant.id, name: 'Corte Feminino / Escova', price: 70.00, duration_minutes: 45, buffer_minutes: 0, category: 'Cabelo', color: '#FD6500', active: true },
-        { tenant_id: newTenant.id, name: 'Hidratação Profunda', price: 90.00, duration_minutes: 60, buffer_minutes: 0, category: 'Tratamentos', color: '#FD6500', active: true },
+        { tenant_id: newTenant.id, name: 'Corte Feminino / Escova', price: 70.00, duration_minutes: 45, buffer_minutes: 0, category: 'Cabelo', color: ACCENT, active: true },
+        { tenant_id: newTenant.id, name: 'Hidratação Profunda', price: 90.00, duration_minutes: 60, buffer_minutes: 0, category: 'Tratamentos', color: ACCENT, active: true },
       ] : [
-        { tenant_id: newTenant.id, name: 'Manicure Completa', price: 35.00, duration_minutes: 40, buffer_minutes: 0, category: 'Unhas', color: '#FD6500', active: true },
-        { tenant_id: newTenant.id, name: 'Pedicure Completa', price: 40.00, duration_minutes: 40, buffer_minutes: 0, category: 'Unhas', color: '#FD6500', active: true },
-        { tenant_id: newTenant.id, name: 'Alongamento em Gel', price: 120.00, duration_minutes: 90, buffer_minutes: 0, category: 'Alongamento', color: '#FD6500', active: true },
+        { tenant_id: newTenant.id, name: 'Manicure Completa', price: 35.00, duration_minutes: 40, buffer_minutes: 0, category: 'Unhas', color: ACCENT, active: true },
+        { tenant_id: newTenant.id, name: 'Pedicure Completa', price: 40.00, duration_minutes: 40, buffer_minutes: 0, category: 'Unhas', color: ACCENT, active: true },
+        { tenant_id: newTenant.id, name: 'Alongamento em Gel', price: 120.00, duration_minutes: 90, buffer_minutes: 0, category: 'Alongamento', color: ACCENT, active: true },
       ];
 
       const { data: insertedServices } = await supabase.from('services').insert(defaultServices as any).select('id');
@@ -549,6 +552,10 @@ export default function Onboarding() {
         setError('Informe o nome do estabelecimento.');
         return;
       }
+      if (!slug || slug.trim().length === 0) {
+        setError('Defina o link exclusivo do seu salão.');
+        return;
+      }
       if (slugStatus === 'taken') {
         setError('A URL escolhida já está em uso. Escolha outra opção ou clique em uma das sugestões.');
         return;
@@ -573,55 +580,100 @@ export default function Onboarding() {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#F8FAFC] relative overflow-hidden">
-      {/* Background glow */}
-      <div className="absolute top-[-30%] right-[-20%] w-[50%] h-[50%] bg-[#DE870D]/10 blur-[150px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-20%] left-[-20%] w-[40%] h-[40%] bg-[#DE870D]/5 blur-[120px] rounded-full pointer-events-none" />
+    <div
+      className="min-h-screen flex items-center justify-center p-4 sm:p-6 relative overflow-hidden"
+      style={{
+        fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif",
+        WebkitFontSmoothing: 'antialiased',
+        background: 'radial-gradient(circle at 85% 10%, rgba(252, 118, 29, 0.05), transparent 45%), radial-gradient(circle at 10% 90%, rgba(15, 23, 42, 0.03), transparent 50%), #F8FAFC',
+      }}
+    >
+      {/* Brilhos sutis e quentes de fundo (sem azul) */}
+      <div
+        aria-hidden="true"
+        className="absolute top-[-20%] right-[-15%] w-[45%] h-[45%] rounded-full pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(252, 118, 29, 0.08), transparent 70%)',
+          filter: 'blur(120px)',
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="absolute bottom-[-15%] left-[-15%] w-[35%] h-[35%] rounded-full pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(252, 118, 29, 0.04), transparent 70%)',
+          filter: 'blur(100px)',
+        }}
+      />
 
-      <div className="w-full max-w-4xl rounded-3xl overflow-hidden flex flex-col md:flex-row border border-[#E2E8F0] shadow-2xl relative z-10 bg-white" style={{ minHeight: '660px' }}>
+      {/* Card Principal de Onboarding */}
+      <div
+        className="w-full max-w-4xl rounded-[32px] overflow-hidden flex flex-col md:flex-row border border-[#E2E8F0] shadow-2xl relative z-10 bg-white"
+        style={{
+          minHeight: '680px',
+          boxShadow: '0 25px 60px -15px rgba(15, 23, 42, 0.08), 0 0 40px rgba(252, 118, 29, 0.03)',
+        }}
+      >
 
-        {/* Sidebar Progress */}
-        <div className="bg-[#F8FAFC] p-8 md:w-64 flex flex-col border-r border-[#E2E8F0]">
-          <div className="flex items-center mb-10">
-            <img src="/logo.svg" alt="Raffros Corteflow" className="h-10 w-auto" />
-          </div>
+        {/* Sidebar Lateral de Progresso */}
+        <div className="bg-[#F8FAFC] p-8 md:w-68 flex flex-col justify-between border-r border-[#E2E8F0] shrink-0">
+          <div>
+            {/* Logo Oficial Raffros */}
+            <div className="flex items-center gap-3 mb-10">
+              <img
+                src="/logo.svg"
+                alt="Raffros"
+                className="h-8 w-8 rounded-lg object-contain shadow-sm"
+              />
+              <span className="font-black text-lg text-[#0F172A] tracking-[-0.04em]">
+                RAFFROS<span style={{ color: ACCENT }}>.</span>
+              </span>
+            </div>
 
-          <div className="flex-1 space-y-6">
-            {stepLabels.map((s) => (
-              <div
-                key={s.num}
-                onClick={() => {
-                  if (s.num < step) {
-                    setError(null);
-                    setStep(s.num);
-                  }
-                }}
-                className={`flex items-center gap-3.5 ${s.num < step ? 'cursor-pointer' : ''}`}
-              >
+            {/* Lista de Passos */}
+            <div className="space-y-6">
+              {stepLabels.map((s) => (
                 <div
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs transition-all ${step > s.num
-                    ? 'bg-green-100 text-green-700 border border-green-300'
-                    : step === s.num
-                      ? 'bg-[#DE870D] text-white shadow-md shadow-[#DE870D]/25'
-                      : 'bg-slate-100 text-slate-400 border border-slate-200'
-                    }`}
+                  key={s.num}
+                  onClick={() => {
+                    if (s.num < step) {
+                      setError(null);
+                      setStep(s.num);
+                    }
+                  }}
+                  className={`flex items-center gap-3.5 transition-all ${s.num < step ? 'cursor-pointer hover:opacity-80' : ''}`}
                 >
-                  {step > s.num ? <CheckCircle2 className="w-4 h-4" /> : s.num}
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-extrabold text-xs transition-all ${step > s.num
+                      ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-sm'
+                      : step === s.num
+                        ? 'text-white shadow-md'
+                        : 'bg-slate-100 text-slate-400 border border-slate-200'
+                      }`}
+                    style={step === s.num ? {
+                      background: ACCENT,
+                      boxShadow: '0 4px 14px rgba(252, 118, 29, 0.35)',
+                    } : undefined}
+                  >
+                    {step > s.num ? <CheckCircle2 className="w-4 h-4" /> : s.num}
+                  </div>
+                  <span className={`text-sm font-bold tracking-tight transition-colors ${step >= s.num ? 'text-[#0F172A]' : 'text-slate-400'}`}>
+                    {s.label}
+                  </span>
                 </div>
-                <span className={`text-sm font-semibold transition-colors ${step >= s.num ? 'text-[#0F172A]' : 'text-slate-400'}`}>
-                  {s.label}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          <div className="text-xs font-semibold text-slate-400">
-            Passo {step} de 3
+          <div className="pt-8 border-t border-slate-200/60 mt-8">
+            <span className="text-[11px] font-extrabold tracking-wider uppercase text-slate-400">
+              Passo {step} de 3
+            </span>
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 bg-white p-5 sm:p-8 md:p-10 flex flex-col justify-between overflow-y-auto max-h-[90vh]">
+        {/* Área de Conteúdo do Formulário */}
+        <div className="flex-1 bg-white p-6 sm:p-9 md:p-11 flex flex-col justify-between overflow-y-auto max-h-[90vh]">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -635,63 +687,118 @@ export default function Onboarding() {
             className="flex-1 flex flex-col justify-between"
           >
             <AnimatePresence mode="wait">
-              {/* Step 1: Idioma + Tipo de Negócio */}
+              {/* Passo 1: Idioma + Tipo de Negócio */}
               {step === 1 && (
-                <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1">
-                  <h3 className="text-2xl font-black mb-1 text-[#0F172A]">Qual é o seu negócio?</h3>
-                  <p className="text-sm mb-6 text-[#64748B]">Personalizaremos a plataforma para o seu segmento.</p>
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex-1"
+                >
+                  <h3 className="text-2xl sm:text-[28px] font-black mb-1.5 text-[#0F172A] tracking-[-0.035em] leading-tight">
+                    Qual é o seu negócio?
+                  </h3>
+                  <p className="text-sm mb-7 text-[#64748B] font-normal leading-relaxed">
+                    Personalizaremos a plataforma e os serviços sugeridos para o seu segmento.
+                  </p>
 
-                  <div className="mb-5">
-                    <label className="block text-sm font-semibold text-[#334155] mb-1.5">Idioma do Sistema</label>
-                    <select {...register('language')} className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium">
-                      <option value="pt">Português</option>
-                      <option value="en">English</option>
+                  <div className="mb-6">
+                    <label className="block text-xs sm:text-[13px] font-bold text-[#334155] mb-2 tracking-[-0.01em]">
+                      Idioma do Sistema
+                    </label>
+                    <select
+                      {...register('language')}
+                      className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-2xl text-[#0F172A] outline-none transition-all font-semibold text-sm cursor-pointer"
+                      style={{
+                        outline: 'none',
+                      }}
+                      onFocus={e => {
+                        e.currentTarget.style.borderColor = ACCENT;
+                        e.currentTarget.style.boxShadow = '0 0 0 4px rgba(252, 118, 29, 0.15)';
+                      }}
+                      onBlur={e => {
+                        e.currentTarget.style.borderColor = '#CBD5E1';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    >
+                      <option value="pt">Português (Brasil)</option>
+                      <option value="en">English (US)</option>
                       <option value="es">Español</option>
                       <option value="fr">Français</option>
                       <option value="de">Deutsch</option>
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-1 gap-3.5">
                     {[
-                      { id: 'barbearia', title: 'Barbearia', desc: 'Cortes, barba e navalha', icon: Scissors },
-                      { id: 'salao', title: 'Salão de Beleza', desc: 'Cabelo, coloração, tratamentos', icon: Star },
-                      { id: 'esmalteria', title: 'Esmalteria', desc: 'Manicure, pedicure, nail design', icon: Sparkles },
-                    ].map(type => (
-                      <div
-                        key={type.id}
-                        onClick={() => setValue('businessType', type.id as any, { shouldValidate: true })}
-                        className="p-4 rounded-2xl cursor-pointer transition-all border group hover:-translate-y-0.5"
-                        style={{
-                          borderColor: businessType === type.id ? '#DE870D' : '#E2E8F0',
-                          background: businessType === type.id ? '#DE870D0C' : '#FFFFFF',
-                          boxShadow: businessType === type.id ? '0 4px 12px rgba(222,135,13,0.12)' : 'none',
-                        }}
-                      >
-
-                        <div className="flex items-center gap-3">
-                          <type.icon className="w-6 h-6" style={{ color: businessType === type.id ? '#DE870D' : '#94A3B8' }} />
-                          <div>
-                            <div className="font-bold text-sm text-[#0F172A]">{type.title}</div>
-                            <div className="text-xs mt-0.5 text-[#64748B]">{type.desc}</div>
+                      { id: 'barbearia', title: 'Barbearia', desc: 'Cortes, barba, navalha e combos masculinos', icon: Scissors },
+                      { id: 'salao', title: 'Salão de Beleza', desc: 'Cabelo, escova, coloração e tratamentos', icon: Star },
+                      { id: 'esmalteria', title: 'Esmalteria & Nails', desc: 'Manicure, pedicure, alongamento em gel e nail design', icon: Sparkles },
+                    ].map(type => {
+                      const isSelected = businessType === type.id;
+                      return (
+                        <div
+                          key={type.id}
+                          onClick={() => setValue('businessType', type.id as any, { shouldValidate: true })}
+                          className="p-4.5 rounded-2xl cursor-pointer transition-all border group hover:-translate-y-0.5"
+                          style={{
+                            borderColor: isSelected ? ACCENT : '#E2E8F0',
+                            background: isSelected ? 'rgba(252, 118, 29, 0.05)' : '#FFFFFF',
+                            boxShadow: isSelected ? '0 8px 24px rgba(252, 118, 29, 0.12)' : '0 1px 3px rgba(0,0,0,0.02)',
+                          }}
+                        >
+                          <div className="flex items-center gap-3.5">
+                            <div
+                              className="w-11 h-11 rounded-xl flex items-center justify-center transition-all shrink-0"
+                              style={{
+                                background: isSelected ? ACCENT : '#F1F5F9',
+                                color: isSelected ? '#FFFFFF' : '#64748B',
+                                boxShadow: isSelected ? '0 4px 14px rgba(252, 118, 29, 0.30)' : 'none',
+                              }}
+                            >
+                              <type.icon className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-extrabold text-sm sm:text-[15px] text-[#0F172A] tracking-tight">
+                                {type.title}
+                              </div>
+                              <div className="text-xs text-[#64748B] mt-0.5 leading-snug">
+                                {type.desc}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </motion.div>
               )}
 
-              {/* Step 2: Nome + URL com Geração Automática e Live Check */}
+              {/* Passo 2: Nome + URL com Geração Automática e Live Check */}
               {step === 2 && (
-                <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1">
-                  <h3 className="text-2xl font-black mb-1 text-[#0F172A]">Como os clientes vão te encontrar?</h3>
-                  <p className="text-sm mb-6 text-[#64748B]">Seu link exclusivo para agendamentos online.</p>
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex-1"
+                >
+                  <h3 className="text-2xl sm:text-[28px] font-black mb-1.5 text-[#0F172A] tracking-[-0.035em] leading-tight">
+                    Como os clientes vão te encontrar?
+                  </h3>
+                  <p className="text-sm mb-7 text-[#64748B] font-normal leading-relaxed">
+                    Defina o nome do seu salão e seu link exclusivo para agendamentos online.
+                  </p>
 
-                  <div className="space-y-5">
+                  <div className="space-y-6">
                     {/* Nome do Estabelecimento */}
                     <div>
-                      <label className="block text-sm font-semibold text-[#334155] mb-1.5">Nome do Estabelecimento</label>
+                      <label className="block text-xs sm:text-[13px] font-bold text-[#334155] mb-2 tracking-[-0.01em]">
+                        Nome do Estabelecimento
+                      </label>
                       <input
                         {...register('businessName')}
                         placeholder="Ex: Maria Manicure ou Studio Barber"
@@ -704,23 +811,33 @@ export default function Onboarding() {
                           }
                           setError(null);
                         }}
-                        className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
+                        className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all font-semibold text-sm"
+                        onFocus={e => {
+                          e.currentTarget.style.borderColor = ACCENT;
+                          e.currentTarget.style.boxShadow = '0 0 0 4px rgba(252, 118, 29, 0.15)';
+                        }}
+                        onBlur={e => {
+                          e.currentTarget.style.borderColor = '#CBD5E1';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
                       />
                     </div>
 
                     {/* URL Personalizada com Live Check */}
                     <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="block text-sm font-semibold text-[#334155]">URL Personalizada da sua Página</label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs sm:text-[13px] font-bold text-[#334155] tracking-[-0.01em]">
+                          URL Personalizada da sua Página
+                        </label>
                         {isCheckingSlug && (
-                          <span className="text-xs text-[#DE870D] flex items-center gap-1 font-semibold">
-                            <span className="w-2 h-2 rounded-full bg-[#DE870D] animate-ping" /> Verificando...
+                          <span className="text-xs flex items-center gap-1 font-bold" style={{ color: ACCENT }}>
+                            <span className="w-2 h-2 rounded-full animate-ping" style={{ background: ACCENT }} /> Verificando...
                           </span>
                         )}
                       </div>
 
                       <div className="flex items-center">
-                        <span className="px-3.5 py-3 bg-[#F1F5F9] border border-[#CBD5E1] border-r-0 rounded-l-xl text-[#64748B] text-xs font-mono font-medium select-none">
+                        <span className="px-4 py-3 bg-[#F1F5F9] border border-[#CBD5E1] border-r-0 rounded-l-2xl text-[#64748B] text-xs font-mono font-bold select-none">
                           raffros.com/
                         </span>
                         <input
@@ -738,18 +855,18 @@ export default function Onboarding() {
                               setValue('slug', formatSlug(slug), { shouldValidate: true });
                             }
                           }}
-                          className={`w-full px-4 py-3 bg-[#F8FAFC] border rounded-r-xl text-[#0F172A] placeholder-[#94A3B8] font-mono text-sm outline-none transition-all font-semibold ${slugStatus === 'available'
-                            ? 'border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 text-green-700'
+                          className={`w-full px-4 py-3 bg-[#F8FAFC] border rounded-r-2xl text-[#0F172A] placeholder-[#94A3B8] font-mono text-sm outline-none transition-all font-bold ${slugStatus === 'available'
+                            ? 'border-emerald-500 focus:border-emerald-500 text-emerald-700'
                             : slugStatus === 'taken'
                               ? 'border-amber-500 focus:border-amber-500 text-amber-700'
-                              : 'border-[#CBD5E1] focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20'
+                              : 'border-[#CBD5E1]'
                             }`}
                         />
                       </div>
 
                       {/* Status Feedback */}
                       {slugStatus === 'available' && !isCheckingSlug && (
-                        <p className="text-green-600 text-xs mt-2 flex items-center gap-1.5 font-bold">
+                        <p className="text-emerald-600 text-xs mt-2 flex items-center gap-1.5 font-bold">
                           <CheckCircle2 className="w-3.5 h-3.5" /> URL exclusiva e disponível!
                         </p>
                       )}
@@ -762,8 +879,8 @@ export default function Onboarding() {
 
                           {/* Sugestões Inteligentes com 1 Clique */}
                           {slugSuggestions.length > 0 && (
-                            <div className="p-3 bg-[#FFFBEB] rounded-xl border border-amber-200">
-                              <p className="text-[11px] font-bold text-[#DE870D] mb-2 flex items-center gap-1.5 uppercase tracking-wider">
+                            <div className="p-3 bg-amber-50/70 rounded-2xl border border-amber-200/80">
+                              <p className="text-[11px] font-extrabold mb-2 flex items-center gap-1.5 uppercase tracking-wider" style={{ color: ACCENT }}>
                                 <Sparkles className="w-3.5 h-3.5" /> Sugestões disponíveis com 1 clique:
                               </p>
                               <div className="flex flex-wrap gap-2">
@@ -775,7 +892,7 @@ export default function Onboarding() {
                                       setValue('slug', sug, { shouldValidate: true });
                                       setUserManuallyEditedSlug(true);
                                     }}
-                                    className="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-white hover:bg-[#DE870D] text-[#DE870D] hover:text-white border border-[#DE870D]/40 hover:border-[#DE870D] transition-all active:scale-95 flex items-center gap-1 shadow-sm cursor-pointer"
+                                    className="px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-white text-[#FC761D] hover:bg-[#FC761D] hover:text-white border border-[#FC761D]/35 hover:border-[#FC761D] transition-all active:scale-95 flex items-center gap-1 shadow-sm cursor-pointer"
                                   >
                                     <span>{sug}</span>
                                     <span className="text-[10px] opacity-70">+</span>
@@ -794,25 +911,40 @@ export default function Onboarding() {
                 </motion.div>
               )}
 
-              {/* Step 3: Identidade, Contato & Localização Detalhada */}
+              {/* Passo 3: Identidade, Contato & Localização Detalhada */}
               {step === 3 && (
-                <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 space-y-6">
+                <motion.div
+                  key="step3"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex-1 space-y-6"
+                >
                   <div>
-                    <h3 className="text-2xl font-black mb-1 text-[#0F172A]">Onde você fica?</h3>
-                    <p className="text-slate-500 font-medium">Os clientes precisam saber como chegar até você.</p>
+                    <h3 className="text-2xl sm:text-[28px] font-black mb-1.5 text-[#0F172A] tracking-[-0.035em] leading-tight">
+                      Onde você fica e como te contatam?
+                    </h3>
+                    <p className="text-sm text-[#64748B] font-normal leading-relaxed">
+                      Os clientes precisam saber como chegar até seu estabelecimento e falar com você.
+                    </p>
                   </div>
-                  <div className="p-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/60 space-y-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#475569]">Imagens da Marca</h4>
+
+                  {/* Bloco 1: Imagens da Marca */}
+                  <div className="p-5 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/70 space-y-4">
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#475569]">
+                      Identidade Visual
+                    </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold text-[#334155] mb-1.5">Logo (Perfil)</label>
+                        <label className="block text-xs font-bold text-[#334155] mb-1.5">Logo (Perfil)</label>
                         <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                         <div
                           onClick={() => !isProcessingLogo && logoInputRef.current?.click()}
-                          className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#DE870D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative"
+                          className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#FC761D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative hover:bg-[#FC761D]/5"
                         >
                           {isProcessingLogo ? (
-                            <div className="flex flex-col items-center gap-2 text-[#DE870D]">
+                            <div className="flex flex-col items-center gap-2" style={{ color: ACCENT }}>
                               <Loader2 className="w-6 h-6 animate-spin" />
                               <span className="text-[10px] font-bold">PROCESSANDO...</span>
                             </div>
@@ -821,11 +953,11 @@ export default function Onboarding() {
                           ) : (
                             <div className="flex flex-col items-center gap-1 text-[#94A3B8]">
                               <Upload className="w-5 h-5" />
-                              <span className="text-xs font-medium">Enviar Logo</span>
+                              <span className="text-xs font-semibold">Enviar Logo</span>
                             </div>
                           )}
                           {logoSize && !isProcessingLogo && (
-                            <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded font-medium backdrop-blur-sm">
+                            <div className="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[9px] px-2 py-0.5 rounded-full font-medium backdrop-blur-sm">
                               {logoSize}
                             </div>
                           )}
@@ -833,14 +965,14 @@ export default function Onboarding() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-[#334155] mb-1.5">Banner (Capa Superior)</label>
+                        <label className="block text-xs font-bold text-[#334155] mb-1.5">Banner (Capa Superior)</label>
                         <input ref={bannerInputRef} type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
                         <div
                           onClick={() => !isProcessingBanner && bannerInputRef.current?.click()}
-                          className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#DE870D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative"
+                          className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#FC761D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative hover:bg-[#FC761D]/5"
                         >
                           {isProcessingBanner ? (
-                            <div className="flex flex-col items-center gap-2 text-[#DE870D]">
+                            <div className="flex flex-col items-center gap-2" style={{ color: ACCENT }}>
                               <Loader2 className="w-6 h-6 animate-spin" />
                               <span className="text-[10px] font-bold">PROCESSANDO...</span>
                             </div>
@@ -849,11 +981,11 @@ export default function Onboarding() {
                           ) : (
                             <div className="flex flex-col items-center gap-1 text-[#94A3B8]">
                               <Image className="w-5 h-5" />
-                              <span className="text-xs font-medium">Enviar Capa</span>
+                              <span className="text-xs font-semibold">Enviar Capa</span>
                             </div>
                           )}
                           {bannerSize && !isProcessingBanner && (
-                            <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded font-medium backdrop-blur-sm">
+                            <div className="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[9px] px-2 py-0.5 rounded-full font-medium backdrop-blur-sm">
                               {bannerSize}
                             </div>
                           )}
@@ -862,30 +994,40 @@ export default function Onboarding() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-[#334155] mb-1 flex items-center justify-between">
-                        <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> Descrição curta</span>
+                      <label className="block text-xs font-bold text-[#334155] mb-1.5 flex items-center justify-between">
+                        <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> Descrição curta</span>
                         <span className="text-[11px] text-[#94A3B8]">{shortDescription.length}/180</span>
                       </label>
                       <textarea
                         {...register('shortDescription')}
                         rows={2}
                         placeholder="Ex: Cortes modernos, atendimento exclusivo e ambiente climatizado."
-                        className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all resize-none text-xs font-medium"
+                        className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all resize-none text-xs font-medium"
+                        onFocus={e => {
+                          e.currentTarget.style.borderColor = ACCENT;
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                        }}
+                        onBlur={e => {
+                          e.currentTarget.style.borderColor = '#CBD5E1';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
                       />
                     </div>
                   </div>
 
                   {/* Bloco 2: Contato & Redes */}
-                  <div className="p-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/60 space-y-3">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#475569]">Contato</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-5 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/70 space-y-4">
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#475569]">
+                      Canais de Contato
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                       <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="block text-xs font-semibold text-[#334155] flex items-center gap-1">
-                            <PhoneIcon className="w-3 h-3 text-emerald-500" /> Telefone / WhatsApp do estabelecimento
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-xs font-bold text-[#334155] flex items-center gap-1">
+                            <PhoneIcon className="w-3.5 h-3.5 text-emerald-500" /> WhatsApp Oficial
                           </label>
                           {phoneCheckStatus === 'checking' && (
-                            <span className="text-[10px] text-[#DE870D] font-bold">Verificando...</span>
+                            <span className="text-[10px] font-bold" style={{ color: ACCENT }}>Verificando...</span>
                           )}
                         </div>
                         <input
@@ -897,57 +1039,73 @@ export default function Onboarding() {
                             setError(null);
                             validatePhoneLive(masked);
                           }}
-                          className={`w-full px-3 py-2 bg-white border rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all text-xs font-medium ${phoneCheckStatus === 'valid'
-                            ? 'border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 text-green-800'
+                          className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all text-xs font-medium ${phoneCheckStatus === 'valid'
+                            ? 'border-emerald-500 text-emerald-800'
                             : phoneCheckStatus === 'taken' || phoneCheckStatus === 'invalid'
-                              ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 text-red-700'
-                              : 'border-[#CBD5E1] focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20'
+                              ? 'border-red-500 text-red-700'
+                              : 'border-[#CBD5E1]'
                             }`}
                         />
                         {phoneFeedback && (
                           <p className={`text-[11px] mt-1 font-semibold flex items-center gap-1 ${phoneCheckStatus === 'valid'
-                            ? 'text-green-600'
+                            ? 'text-emerald-600'
                             : 'text-red-500'
                             }`}>
-                            {phoneCheckStatus === 'valid' ? <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" /> : '⚠️'} {phoneFeedback}
+                            {phoneCheckStatus === 'valid' ? <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" /> : '⚠️'} {phoneFeedback}
                           </p>
                         )}
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-[#334155] mb-1 flex items-center gap-1">
-                          <Mail className="w-3 h-3 text-blue-500" /> E-mail
+                        <label className="block text-xs font-bold text-[#334155] mb-1.5 flex items-center gap-1">
+                          <Mail className="w-3.5 h-3.5 text-blue-500" /> E-mail
                         </label>
                         <input
                           {...register('contactEmail')}
                           placeholder="contato@salao.com"
-                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                          className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
+                          onFocus={e => {
+                            e.currentTarget.style.borderColor = ACCENT;
+                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                          }}
+                          onBlur={e => {
+                            e.currentTarget.style.borderColor = '#CBD5E1';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-[#334155] mb-1 flex items-center gap-1">
-                          <AtSign className="w-3 h-3 text-pink-500" /> Instagram (@)
+                        <label className="block text-xs font-bold text-[#334155] mb-1.5 flex items-center gap-1">
+                          <AtSign className="w-3.5 h-3.5 text-pink-500" /> Instagram (@)
                         </label>
                         <input
                           {...register('instagramHandle')}
                           placeholder="arroba_do_salao"
-                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                          className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
+                          onFocus={e => {
+                            e.currentTarget.style.borderColor = ACCENT;
+                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                          }}
+                          onBlur={e => {
+                            e.currentTarget.style.borderColor = '#CBD5E1';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Bloco 3: Localização com cada dado em um input */}
-                  <div className="p-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/60 space-y-3">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#475569] flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-[#DE870D]" /> Localização do Estabelecimento
+                  <div className="p-5 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/70 space-y-4">
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#475569] flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5" style={{ color: ACCENT }} /> Localização do Estabelecimento
                     </h4>
 
                     {/* CEP + Rua + Número */}
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
                       <div className="sm:col-span-1">
-                        <label className="block text-xs font-semibold text-[#334155] mb-1">CEP</label>
+                        <label className="block text-xs font-bold text-[#334155] mb-1.5">CEP</label>
                         <input
                           {...register('zipCode', {
                             onChange: (e) => {
@@ -958,105 +1116,185 @@ export default function Onboarding() {
                           })}
                           placeholder="00000000"
                           maxLength={8}
-                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                          className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
+                          onFocus={e => {
+                            e.currentTarget.style.borderColor = ACCENT;
+                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                          }}
+                          onBlur={e => {
+                            e.currentTarget.style.borderColor = '#CBD5E1';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
                         />
                       </div>
                       <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-[#334155] mb-1">Rua / Logradouro</label>
+                        <label className="block text-xs font-bold text-[#334155] mb-1.5">Rua / Logradouro</label>
                         <input
                           {...register('street')}
                           placeholder="Ex: Av. Paulista ou Rua das Flores"
-                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                          className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
+                          onFocus={e => {
+                            e.currentTarget.style.borderColor = ACCENT;
+                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                          }}
+                          onBlur={e => {
+                            e.currentTarget.style.borderColor = '#CBD5E1';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
                         />
                       </div>
                       <div className="sm:col-span-1">
-                        <label className="block text-xs font-semibold text-[#334155] mb-1">Número</label>
+                        <label className="block text-xs font-bold text-[#334155] mb-1.5">Número</label>
                         <input
                           {...register('streetNumber')}
                           placeholder="123"
-                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                          className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
+                          onFocus={e => {
+                            e.currentTarget.style.borderColor = ACCENT;
+                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                          }}
+                          onBlur={e => {
+                            e.currentTarget.style.borderColor = '#CBD5E1';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
                         />
                       </div>
                     </div>
 
                     {/* Complemento + Bairro + Cidade + Estado */}
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
                       <div className="sm:col-span-1">
-                        <label className="block text-xs font-semibold text-[#334155] mb-1">Complemento</label>
+                        <label className="block text-xs font-bold text-[#334155] mb-1.5">Complemento</label>
                         <input
                           {...register('complement')}
                           placeholder="Sala 2, Bloco B..."
-                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                          className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
+                          onFocus={e => {
+                            e.currentTarget.style.borderColor = ACCENT;
+                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                          }}
+                          onBlur={e => {
+                            e.currentTarget.style.borderColor = '#CBD5E1';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
                         />
                       </div>
                       <div className="sm:col-span-1">
-                        <label className="block text-xs font-semibold text-[#334155] mb-1">Bairro</label>
+                        <label className="block text-xs font-bold text-[#334155] mb-1.5">Bairro</label>
                         <input
                           {...register('neighborhood')}
                           placeholder="Centro"
-                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                          className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
+                          onFocus={e => {
+                            e.currentTarget.style.borderColor = ACCENT;
+                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                          }}
+                          onBlur={e => {
+                            e.currentTarget.style.borderColor = '#CBD5E1';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
                         />
                       </div>
                       <div className="sm:col-span-1">
-                        <label className="block text-xs font-semibold text-[#334155] mb-1">Cidade</label>
+                        <label className="block text-xs font-bold text-[#334155] mb-1.5">Cidade</label>
                         <input
                           {...register('city')}
                           placeholder="São Paulo"
-                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                          className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
+                          onFocus={e => {
+                            e.currentTarget.style.borderColor = ACCENT;
+                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                          }}
+                          onBlur={e => {
+                            e.currentTarget.style.borderColor = '#CBD5E1';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
                         />
                       </div>
                       <div className="sm:col-span-1">
-                        <label className="block text-xs font-semibold text-[#334155] mb-1">Estado</label>
+                        <label className="block text-xs font-bold text-[#334155] mb-1.5">Estado (UF)</label>
                         <input
                           {...register('state')}
                           placeholder="SP"
                           maxLength={2}
-                          className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                          className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium uppercase"
+                          onFocus={e => {
+                            e.currentTarget.style.borderColor = ACCENT;
+                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                          }}
+                          onBlur={e => {
+                            e.currentTarget.style.borderColor = '#CBD5E1';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
                         />
                       </div>
                     </div>
 
                     {/* Google Maps Link */}
                     <div>
-                      <label className="block text-xs font-semibold text-[#334155] mb-1">
+                      <label className="block text-xs font-bold text-[#334155] mb-1.5">
                         Link do Google Maps (Opcional)
                       </label>
                       <input
                         {...register('googleMapsUrl')}
-                        placeholder="Cole o link curto do Google Maps aqui"
-                        className="w-full px-3 py-2 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] text-xs font-medium"
+                        placeholder="Cole o link do Google Maps aqui"
+                        className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
+                        onFocus={e => {
+                          e.currentTarget.style.borderColor = ACCENT;
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                        }}
+                        onBlur={e => {
+                          e.currentTarget.style.borderColor = '#CBD5E1';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
                       />
                     </div>
                   </div>
                 </motion.div>
               )}
 
+              {/* Passo 4: Conclusão & Trial 7 Dias */}
               {step === 4 && (
-                <motion.div key="step4" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="flex-1 flex flex-col items-center justify-center text-center px-4 w-full">
-                  <div className="w-16 h-16 bg-[#22C55E]/10 rounded-2xl flex items-center justify-center mb-4 shrink-0">
-                    <CheckCircle2 className="w-8 h-8 text-[#22C55E]" />
+                <motion.div
+                  key="step4"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex-1 flex flex-col items-center justify-center text-center px-4 w-full"
+                >
+                  <div className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-center mb-4 shrink-0 shadow-sm">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                   </div>
 
-                  <h3 className="text-2xl font-black mb-2 text-[#0F172A] shrink-0">Tudo pronto!</h3>
-                  <p className="text-slate-500 text-sm mb-6 max-w-[280px] mx-auto leading-relaxed shrink-0">
+                  <h3 className="text-2xl sm:text-3xl font-black mb-2 text-[#0F172A] tracking-tight shrink-0">
+                    Tudo pronto!
+                  </h3>
+                  <p className="text-[#64748B] text-sm mb-6 max-w-[320px] mx-auto leading-relaxed shrink-0">
                     Seu espaço foi configurado com sucesso e seus 7 dias grátis já estão valendo.
                   </p>
-                  <br />
 
-                  <div className="bg-white border-2 border-[#DE870D]/20 rounded-3xl p-6 w-full max-w-[280px] mb-4 relative shadow-sm shrink-0 flex flex-col items-center mt-3">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#22C55E] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1 whitespace-nowrap shadow-sm">
-                      <Star className="w-3 h-3 text-[#F5C542] fill-current" /> Recomendado
+                  <div
+                    className="bg-white border rounded-[28px] p-6 w-full max-w-[300px] mb-4 relative shadow-sm shrink-0 flex flex-col items-center mt-3"
+                    style={{
+                      borderColor: 'rgba(252, 118, 29, 0.25)',
+                      boxShadow: '0 8px 30px rgba(252, 118, 29, 0.08)',
+                    }}
+                  >
+                    <div
+                      className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1 whitespace-nowrap shadow-sm"
+                      style={{ background: ACCENT }}
+                    >
+                      <Star className="w-3 h-3 text-white fill-current" /> Recomendado
                     </div>
 
-                    <h4 className="text-[#0F172A] font-black text-xl mb-2 mt-2 text-center leading-tight">
-                      🎁 Você ganhou 7 dias grátis!
+                    <h4 className="text-[#0F172A] font-black text-xl mb-1.5 mt-2 text-center leading-tight">
+                      🎁 7 dias grátis liberados!
                     </h4>
-                    <br />
-                    <p className="text-slate-500 font-medium text-xs mb-5 text-center leading-relaxed">
-                      Sua agenda, clientes e equipe organizados em um só lugar
+                    <p className="text-[#64748B] font-medium text-xs mb-5 text-center leading-relaxed">
+                      Sua agenda, clientes e equipe organizados em um só lugar.
                       <br />
-
-                      Sem compromisso, sem burocracia!
+                      Sem compromisso, sem burocracia.
                     </p>
 
                     <button
@@ -1073,7 +1311,11 @@ export default function Onboarding() {
                           setLoading(false);
                         }
                       }}
-                      className="w-full bg-[#0F172A] text-white h-12 rounded-xl font-bold flex items-center justify-center hover:bg-[#1E293B] transition-colors shadow-md text-sm"
+                      className="w-full text-white h-12 rounded-full font-extrabold flex items-center justify-center transition-all shadow-md text-sm hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                      style={{
+                        background: ACCENT,
+                        boxShadow: '0 8px 24px rgba(252, 118, 29, 0.30)',
+                      }}
                     >
                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Começar grátis →'}
                     </button>
@@ -1093,7 +1335,7 @@ export default function Onboarding() {
                         setLoading(false);
                       }
                     }}
-                    className="text-[#475569] font-medium text-xs hover:text-[#0F172A] transition-colors underline underline-offset-2 shrink-0 mt-1"
+                    className="text-[#64748B] font-bold text-xs hover:text-[#0F172A] transition-colors underline underline-offset-4 shrink-0 mt-2 cursor-pointer"
                   >
                     Decidir depois (ir para o painel)
                   </button>
@@ -1101,11 +1343,11 @@ export default function Onboarding() {
               )}
             </AnimatePresence>
 
-            {/* Bottom Navigation (Posicionado no fim natural do formulário, sem flutuar sobre campos no mobile) */}
+            {/* Bottom Navigation com Botões Pill no estilo Landing Page */}
             {step < 4 && (
               <div className="pt-6 mt-8 border-t border-[#E2E8F0] shrink-0">
                 {error && (
-                  <div className="mb-4 p-3 rounded-xl text-xs font-semibold bg-red-500/10 border border-red-500/20 text-red-600">
+                  <div className="mb-4 p-3.5 rounded-2xl text-xs font-bold bg-red-500/10 border border-red-500/20 text-red-600">
                     ⚠️ {error}
                   </div>
                 )}
@@ -1115,7 +1357,7 @@ export default function Onboarding() {
                     <button
                       type="button"
                       onClick={() => { setError(null); setStep(step - 1); }}
-                      className="flex items-center px-4 py-2.5 text-[#64748B] hover:text-[#0F172A] font-semibold text-xs transition-colors cursor-pointer"
+                      className="flex items-center px-5 py-2.5 rounded-full text-[#64748B] hover:text-[#0F172A] hover:bg-slate-100 font-bold text-xs transition-colors cursor-pointer"
                     >
                       <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
                     </button>
@@ -1127,19 +1369,25 @@ export default function Onboarding() {
                     <button
                       type="button"
                       onClick={handleNextStep}
-                      className="px-6 py-3 rounded-xl font-bold text-xs text-white shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] transition-all flex items-center gap-1.5 cursor-pointer ml-auto"
-                      style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
+                      className="h-12 px-8 rounded-full font-extrabold text-xs sm:text-sm text-white transition-all flex items-center gap-2 cursor-pointer ml-auto hover:-translate-y-0.5 active:translate-y-0"
+                      style={{
+                        background: ACCENT,
+                        boxShadow: '0 8px 24px rgba(252, 118, 29, 0.28)',
+                      }}
                     >
                       <span>Continuar</span>
-                      <ChevronRight className="w-4 h-4" />
+                      <ArrowRight className="w-4 h-4" />
                     </button>
                   ) : (
                     <button
                       type="button"
                       onClick={handleSubmit(onSubmit)}
                       disabled={loading}
-                      className="px-7 py-3 rounded-xl font-bold text-xs text-white shadow-md hover:shadow-lg shadow-[#DE870D]/20 hover:brightness-105 active:scale-[0.99] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 ml-auto"
-                      style={{ background: 'linear-gradient(135deg, #DE870D, #F5A623)' }}
+                      className="h-12 px-8 rounded-full font-extrabold text-xs sm:text-sm text-white transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60 ml-auto hover:-translate-y-0.5 active:translate-y-0"
+                      style={{
+                        background: ACCENT,
+                        boxShadow: '0 8px 24px rgba(252, 118, 29, 0.28)',
+                      }}
                     >
                       {loading ? (
                         <>
@@ -1149,7 +1397,7 @@ export default function Onboarding() {
                       ) : (
                         <>
                           <span>Concluir e Acessar Painel</span>
-                          <ChevronRight className="w-4 h-4" />
+                          <ArrowRight className="w-4 h-4" />
                         </>
                       )}
                     </button>
@@ -1164,4 +1412,3 @@ export default function Onboarding() {
     </div>
   );
 }
-
