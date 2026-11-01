@@ -190,7 +190,14 @@ export default function AppLayout() {
         className="md:hidden fixed top-0 left-0 right-0 h-16 backdrop-blur-xl z-40 flex items-center justify-between px-4"
         style={{ background: theme.sidebarBg, borderBottom: `1px solid ${theme.border}` }}
       >
-        <div className="flex items-center gap-2">
+        <div 
+          onClick={() => {
+            setIsMobileMenuOpen(false);
+            navigate('/admin');
+          }}
+          className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity"
+          title="Ir para a tela inicial do Admin (Visão Geral)"
+        >
           {tenantSettings?.logo_url ? (
             <img src={tenantSettings.logo_url} alt="Logo do Salão" className="w-8 h-8 rounded-full object-cover border" style={{ borderColor: theme.border }} />
           ) : (
@@ -232,21 +239,28 @@ export default function AppLayout() {
           boxShadow: `0 25px 50px -12px rgba(0,0,0,0.25)`
         }}
       >
-        {/* Logo & Tenant Area */}
+        {/* Logo & Tenant Area - Clicável para voltar a /admin */}
         <div className="p-6 border-b flex items-center justify-between gap-3" style={{ borderColor: theme.sidebarBorder }}>
-          <div className="flex items-center gap-3 truncate flex-1">
+          <div 
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              navigate('/admin');
+            }}
+            className="flex items-center gap-3 truncate flex-1 cursor-pointer group hover:opacity-85 transition-opacity"
+            title="Ir para a tela inicial do Admin (Visão Geral)"
+          >
             {tenantSettings?.logo_url ? (
-              <img src={tenantSettings.logo_url} alt="Logo do Salão" className="w-9 h-9 rounded-full object-cover border" style={{ borderColor: theme.border }} />
+              <img src={tenantSettings.logo_url} alt="Logo do Salão" className="w-9 h-9 rounded-full object-cover border group-hover:scale-105 transition-transform" style={{ borderColor: theme.border }} />
             ) : (
               <div 
-                className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm"
+                className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 group-hover:scale-105 transition-transform"
                 style={{ background: theme.accent, color: theme.textInverse }}
               >
                 {initials}
               </div>
             )}
             <div className="truncate flex-1">
-              <h2 className="font-bold text-sm leading-tight truncate" style={{ color: theme.textPrimary }}>{tenant.name}</h2>
+              <h2 className="font-bold text-sm leading-tight truncate group-hover:underline" style={{ color: theme.textPrimary }}>{tenant.name}</h2>
               <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wide inline-block mt-0.5" style={{ background: `${theme.accent}15`, color: theme.accent }}>
                 {tenant.business_type}
               </span>
@@ -306,18 +320,25 @@ export default function AppLayout() {
           ))}
         </nav>
 
-        {/* User profile footer */}
+        {/* User profile footer - Clicável para voltar a /admin */}
         <div className="p-4 border-t" style={{ borderColor: theme.sidebarBorder }}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 truncate">
+            <div 
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                navigate('/admin');
+              }}
+              className="flex items-center gap-2 truncate cursor-pointer group hover:opacity-85 transition-opacity"
+              title="Ir para a tela inicial do Admin (Visão Geral)"
+            >
               <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
+                className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 group-hover:scale-105 transition-transform"
                 style={{ background: theme.accent, color: theme.textInverse }}
               >
                 {initials}
               </div>
               <div className="truncate w-24">
-                <p className="text-xs font-semibold leading-tight truncate" style={{ color: theme.textPrimary }}>{displayName.split(' ')[0]}</p>
+                <p className="text-xs font-semibold leading-tight truncate group-hover:underline" style={{ color: theme.textPrimary }}>{displayName.split(' ')[0]}</p>
                 <p className="text-xs leading-tight truncate" style={{ color: theme.textMuted }}>{role === 'professional' ? 'Profissional' : tenant.name}</p>
               </div>
             </div>
@@ -367,4 +388,3 @@ export default function AppLayout() {
     </div>
   );
 }
-

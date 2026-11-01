@@ -61,25 +61,25 @@ function NavItemComponent({ item, onClick, externalBadge }: { item: NavItem; onC
       end={item.to === '/platform'}
       onClick={onClick}
       className={({ isActive }) =>
-        `group flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
+        `group flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150 ${
           isActive
-            ? 'bg-white/[0.06] text-white'
-            : 'text-[#777] hover:text-[#bbb] hover:bg-white/[0.03]'
+            ? 'bg-blue-50 text-blue-700 font-semibold shadow-xs border border-blue-100/80'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
         }`
       }
     >
       {({ isActive }) => (
         <>
           <span className="flex items-center gap-3">
-            <item.icon className={`w-4 h-4 transition-colors ${isActive ? 'text-white' : 'text-[#555] group-hover:text-[#888]'}`} />
+            <item.icon className={`w-4 h-4 transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
             {item.label}
           </span>
           {(item.badge || externalBadge) ? (
-            <span className="bg-violet-500/20 text-violet-400 text-xs font-bold px-1.5 py-0.5 rounded-full">
+            <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">
               {item.badge ?? externalBadge}
             </span>
           ) : isActive ? (
-            <div className="w-1.5 h-1.5 bg-white rounded-full opacity-60" />
+            <div className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
           ) : null}
         </>
       )}
@@ -114,7 +114,7 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white flex font-sans antialiased">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex font-sans antialiased selection:bg-blue-100 selection:text-blue-900">
 
       {/* ── Mobile Overlay ── */}
       <AnimatePresence>
@@ -123,21 +123,23 @@ export default function AdminLayout() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+            className="md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40"
             onClick={() => setIsMobileOpen(false)}
           />
         )}
       </AnimatePresence>
 
       {/* ── Mobile Top Bar ── */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#000]/90 border-b border-[#1a1a1a] z-50 flex items-center justify-between px-4">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white/95 border-b border-slate-200 z-50 flex items-center justify-between px-4 shadow-xs">
         <div className="flex items-center gap-2">
           <img src="/logo.svg" alt="Raffros Corteflow" className="h-8 md:h-10 w-auto" />
-          <span className="text-[10px] font-bold text-[#555] uppercase tracking-widest ml-1">Platform</span>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200/60 ml-1">
+            Platform
+          </span>
         </div>
         <button
           onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="w-8 h-8 flex items-center justify-center rounded-md text-[#666] hover:text-white hover:bg-[#1a1a1a] transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
         >
           {isMobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
         </button>
@@ -147,17 +149,19 @@ export default function AdminLayout() {
       <aside
         className={`
           w-60 flex flex-col fixed top-0 left-0 md:top-4 md:left-4 h-full md:h-[calc(100vh-32px)] z-50 
-          bg-[#050505]/85 border border-[#222]/50 md:rounded-3xl shadow-2xl backdrop-blur-2xl
+          bg-white/95 border border-slate-200/90 md:rounded-3xl shadow-sm md:shadow-md backdrop-blur-xl
           transition-transform duration-300 ease-in-out
           md:translate-x-0
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center px-4 border-b border-[#111] gap-2.5">
-          <img src="/logo.svg" alt="Raffros Corteflow" className="h-12 w-auto flex-shrink-0" />
+        <div className="h-16 flex items-center px-4 border-b border-slate-100 gap-2.5">
+          <img src="/logo.svg" alt="Raffros Corteflow" className="h-10 w-auto flex-shrink-0" />
           <div className="min-w-0">
-            <p className="text-[10px] text-[#444] font-medium uppercase tracking-widest mt-0.5">Platform Admin</p>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200/60">
+              <Sparkles className="w-2.5 h-2.5 text-blue-600" /> Platform Admin
+            </span>
           </div>
         </div>
 
@@ -165,7 +169,7 @@ export default function AdminLayout() {
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-5">
           {navGroups.map((group) => (
             <div key={group.label}>
-              <p className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-widest text-[#333]">
+              <p className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 {group.label}
               </p>
               <div className="space-y-0.5">
@@ -190,21 +194,19 @@ export default function AdminLayout() {
         </nav>
 
         {/* User + Logout */}
-        <div className="border-t border-[#111] p-3">
+        <div className="border-t border-slate-100 p-3 bg-slate-50/50 md:rounded-b-3xl">
           <div className="flex items-center gap-3 px-3 py-2 mb-1">
-            <div className="w-7 h-7 bg-[#1a1a1a] border border-[#2a2a2a] rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-bold text-[#888]">
-                {firstName.charAt(0).toUpperCase()}
-              </span>
+            <div className="w-8 h-8 bg-blue-100 border border-blue-200 rounded-full flex items-center justify-center flex-shrink-0 text-blue-700 font-bold text-xs shadow-xs">
+              {firstName.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-[#ccc] truncate">{firstName}</p>
-              <p className="text-[10px] text-[#444]">Super Admin</p>
+              <p className="text-xs font-semibold text-slate-800 truncate">{firstName}</p>
+              <p className="text-[10px] text-blue-600 font-medium">Super Admin</p>
             </div>
           </div>
           <button
             onClick={signOut}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#555] hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
           >
             <LogOut className="w-4 h-4" />
             Sair da plataforma
@@ -214,17 +216,17 @@ export default function AdminLayout() {
 
       {/* ── Main Content ── */}
       <main className="flex-1 min-w-0 w-full min-h-screen md:ml-[270px] flex flex-col md:pt-4 md:pr-4 md:pb-4 transition-all">
-        <div className="flex-1 min-h-0 bg-[#0A0A0A]/40 backdrop-blur-3xl md:rounded-3xl border border-transparent md:border-white/5 shadow-2xl overflow-hidden flex flex-col relative">
+        <div className="flex-1 min-h-0 bg-white md:rounded-3xl border border-transparent md:border-slate-200/90 shadow-xs overflow-hidden flex flex-col relative">
           
         {/* Top Header */}
-        <header className="sticky top-0 z-30 h-14 bg-transparent border-b border-white/5 hidden md:flex items-center justify-between px-8">
+        <header className="sticky top-0 z-30 h-14 bg-white/80 backdrop-blur-md border-b border-slate-100 hidden md:flex items-center justify-between px-8">
           {/* Breadcrumb */}
           <BreadcrumbFromPath />
 
           {/* Right: greeting */}
-          <p className="text-sm text-[#444]">
+          <p className="text-sm text-slate-500">
             {getGreeting()},{' '}
-            <span className="text-[#888] font-medium">{firstName}.</span>
+            <span className="text-slate-800 font-semibold">{firstName}.</span>
           </p>
         </header>
 
@@ -244,9 +246,9 @@ export default function AdminLayout() {
         </div>
 
         {/* Footer */}
-        <footer className="px-8 py-4 border-t border-white/5 flex items-center justify-between mt-auto">
-          <p className="text-xs text-[#555]">Raffros Corteflow · Admin Console</p>
-          <p className="text-xs text-[#333]">v2.0.0</p>
+        <footer className="px-8 py-4 border-t border-slate-100 flex items-center justify-between mt-auto bg-slate-50/50">
+          <p className="text-xs text-slate-500">Raffros Corteflow · Admin Console</p>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">v2.0.0</span>
         </footer>
         
         </div>
@@ -257,8 +259,10 @@ export default function AdminLayout() {
 
 // ── Helper: Dynamic Breadcrumb ──────────────────────────────────────────────
 const routeLabels: Record<string, string> = {
+  platform: 'Platform',
   admin: 'Admin',
   tenants: 'Empresas',
+  demos: 'Portais Demo',
   plans: 'Planos',
   financeiro: 'Financeiro',
   usuarios: 'Usuários',
@@ -267,6 +271,9 @@ const routeLabels: Record<string, string> = {
   seguranca: 'Segurança',
   settings: 'Configurações',
   'custom-pricing': 'Preços Customizados',
+  analytics: 'Visitas & Cliques',
+  history: 'CRM & Histórico',
+  suporte: 'Suporte',
 };
 
 function BreadcrumbFromPath() {
@@ -280,8 +287,8 @@ function BreadcrumbFromPath() {
         const isLast = i === parts.length - 1;
         return (
           <span key={i} className="flex items-center gap-1">
-            {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-[#2a2a2a]" />}
-            <span className={isLast ? 'text-[#888] font-medium' : 'text-[#333]'}>
+            {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-slate-300" />}
+            <span className={isLast ? 'text-slate-800 font-semibold' : 'text-slate-400 hover:text-blue-600'}>
               {label}
             </span>
           </span>
@@ -290,4 +297,3 @@ function BreadcrumbFromPath() {
     </nav>
   );
 }
-

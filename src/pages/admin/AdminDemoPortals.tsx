@@ -434,11 +434,11 @@ export default function AdminDemoPortals() {
       <AdminPageHeader
         title="Portais Demo"
         subtitle="Crie demonstrações personalizadas em minutos para prospectar donos de barbearias e salões."
-        icon={<Sparkles className="w-5 h-5 text-[#D4AF37]" />}
+        icon={<Sparkles className="w-5 h-5 text-blue-600" />}
         actions={
           <button
             onClick={handleOpenCreate}
-            className="flex items-center gap-2 bg-[#D4AF37] hover:bg-[#e0bc46] text-black font-semibold px-4 py-2.5 rounded-xl shadow-lg transition-all duration-200 active:scale-95 text-sm"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-xs transition-all duration-200 active:scale-95 text-sm"
           >
             <Plus className="w-4 h-4" />
             Novo Portal Demo
@@ -451,61 +451,61 @@ export default function AdminDemoPortals() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-[#0c0c0c] border border-[#222] p-5 rounded-2xl relative overflow-hidden"
+          className="bg-white border border-slate-200 p-5 rounded-2xl relative overflow-hidden shadow-xs"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#777] uppercase tracking-wider">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Total Criados
             </span>
-            <Sparkles className="w-4 h-4 text-[#D4AF37] opacity-80" />
+            <Sparkles className="w-4 h-4 text-blue-600 opacity-90" />
           </div>
-          <div className="text-2xl font-bold text-white mt-2">{demos.length}</div>
-          <p className="text-xs text-[#555] mt-1">Demos gerados no sistema</p>
+          <div className="text-2xl font-bold text-slate-900 mt-2">{demos.length}</div>
+          <p className="text-xs text-slate-500 mt-1">Demos gerados no sistema</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="bg-[#0c0c0c] border border-[#222] p-5 rounded-2xl relative overflow-hidden"
+          className="bg-white border border-slate-200 p-5 rounded-2xl relative overflow-hidden shadow-xs"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#777] uppercase tracking-wider">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Ativos Agora
             </span>
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           </div>
-          <div className="text-2xl font-bold text-emerald-400 mt-2">{activeCount}</div>
-          <p className="text-xs text-[#555] mt-1">Prontos para acesso do cliente</p>
+          <div className="text-2xl font-bold text-emerald-600 mt-2">{activeCount}</div>
+          <p className="text-xs text-slate-500 mt-1">Prontos para acesso do cliente</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-[#0c0c0c] border border-[#222] p-5 rounded-2xl relative overflow-hidden"
+          className="bg-white border border-slate-200 p-5 rounded-2xl relative overflow-hidden shadow-xs"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#777] uppercase tracking-wider">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Total de Visualizações
             </span>
-            <Eye className="w-4 h-4 text-blue-400 opacity-80" />
+            <Eye className="w-4 h-4 text-blue-600 opacity-90" />
           </div>
-          <div className="text-2xl font-bold text-white mt-2">{totalViews}</div>
-          <p className="text-xs text-[#555] mt-1">Acessos recebidos nos links</p>
+          <div className="text-2xl font-bold text-slate-900 mt-2">{totalViews}</div>
+          <p className="text-xs text-slate-500 mt-1">Acessos recebidos nos links</p>
         </motion.div>
       </div>
 
       {/* ── Filter Bar ── */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#0a0a0a] border border-[#1e1e1e] p-3 rounded-2xl">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white border border-slate-200 p-3 rounded-2xl shadow-xs">
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-[#555] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Buscar por nome, slug ou WhatsApp..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#121212] border border-[#262626] rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#D4AF37] transition-colors"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:bg-white transition-colors"
           />
         </div>
 
@@ -522,8 +522,8 @@ export default function AdminDemoPortals() {
               onClick={() => setFilterStatus(tab.key)}
               className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                 filterStatus === tab.key
-                  ? 'bg-[#222] text-white shadow-sm'
-                  : 'text-[#666] hover:text-[#aaa] hover:bg-[#161616]'
+                  ? 'bg-blue-50 text-blue-700 font-semibold shadow-xs border border-blue-200'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               {tab.label}
@@ -546,7 +546,7 @@ export default function AdminDemoPortals() {
           action={
             <button
               onClick={handleOpenCreate}
-              className="bg-[#D4AF37] text-black font-semibold px-4 py-2 rounded-xl text-xs"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-xl text-xs shadow-xs transition-colors"
             >
               Criar Primeiro Demo
             </button>
@@ -567,16 +567,16 @@ export default function AdminDemoPortals() {
                 layout
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-[#0c0c0c] border border-[#222] rounded-2xl p-5 flex flex-col justify-between hover:border-[#333] transition-all group"
+                className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between hover:border-slate-300 hover:shadow-md transition-all group shadow-xs"
               >
                 <div>
                   {/* Top: Logo + Name + Status */}
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-base overflow-hidden border border-[#262626] flex-shrink-0 shadow-md"
+                        className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-base overflow-hidden border border-slate-200 flex-shrink-0 shadow-xs"
                         style={{
-                          backgroundColor: demo.primary_color || '#1a1a1a',
+                          backgroundColor: demo.primary_color || '#2563EB',
                           color: '#fff',
                         }}
                       >
@@ -591,18 +591,18 @@ export default function AdminDemoPortals() {
                         )}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-white text-base leading-snug line-clamp-1">
+                        <h3 className="font-semibold text-slate-900 text-base leading-snug line-clamp-1">
                           {demo.business_name}
                         </h3>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#1e1e1e] text-[#aaa]">
+                          <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
                             {demo.business_type === 'esmalteria'
                               ? 'Esmalteria'
                               : demo.business_type === 'salao'
                                 ? 'Salão'
                                 : 'Barbearia'}
                           </span>
-                          <span className="text-xs text-[#666] font-mono">
+                          <span className="text-xs text-slate-500 font-mono">
                             /paginas/{demo.slug}
                           </span>
                         </div>
@@ -621,32 +621,32 @@ export default function AdminDemoPortals() {
                   </div>
 
                   {/* Info stats */}
-                  <div className="grid grid-cols-2 gap-2 bg-[#121212] p-3 rounded-xl border border-[#1e1e1e] mb-4 text-xs">
-                    <div className="flex items-center gap-2 text-[#888]">
-                      <Eye className="w-3.5 h-3.5 text-blue-400" />
+                  <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4 text-xs">
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <Eye className="w-3.5 h-3.5 text-blue-500" />
                       <span>
-                        <strong className="text-white">{demo.views}</strong> visualizações
+                        <strong className="text-slate-900">{demo.views}</strong> visualizações
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-[#888]">
-                      <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <Clock className="w-3.5 h-3.5 text-amber-500" />
                       <span>
                         {isExpired ? (
-                          <span className="text-red-400 font-medium">Expirado</span>
+                          <span className="text-red-500 font-medium">Expirado</span>
                         ) : (
                           <span>
-                            Expira em <strong className="text-white">{daysLeft}d</strong>
+                            Expira em <strong className="text-slate-900">{daysLeft}d</strong>
                           </span>
                         )}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-[#888] col-span-2">
-                      <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                    <div className="flex items-center gap-2 text-slate-600 col-span-2">
+                      <Phone className="w-3.5 h-3.5 text-emerald-500" />
                       <a
                         href={`https://wa.me/${demo.owner_whatsapp.replace(/\D/g, '')}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[#aaa] hover:text-emerald-400 transition-colors truncate"
+                        className="text-slate-600 hover:text-emerald-600 transition-colors truncate"
                       >
                         WhatsApp: {demo.owner_whatsapp}
                       </a>
@@ -654,11 +654,11 @@ export default function AdminDemoPortals() {
                   </div>
 
                   {/* Summary of services & pros com badges de fotos */}
-                  <div className="flex items-center gap-2 text-xs text-[#555] mb-4">
+                  <div className="flex items-center gap-2 text-xs text-slate-500 mb-4">
                     <span>
                       {demo.services?.length || 0} serviços{' '}
                       {demo.services?.some((s) => s.photo_url) && (
-                        <span className="text-emerald-400/80 font-medium">(com fotos)</span>
+                        <span className="text-emerald-600 font-medium">(com fotos)</span>
                       )}
                     </span>
                     <span>•</span>
@@ -667,17 +667,17 @@ export default function AdminDemoPortals() {
                 </div>
 
                 {/* Actions Bottom Bar */}
-                <div className="pt-3 border-t border-[#1a1a1a] flex items-center justify-between gap-2">
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => copyDemoLink(demo.slug)}
                       title="Copiar Link Demo"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a1a1a] hover:bg-[#252525] text-xs text-[#ccc] hover:text-white transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs text-slate-700 font-medium transition-colors"
                     >
                       {copiedSlug === demo.slug ? (
                         <>
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          <span className="text-emerald-400 font-medium">Copiado</span>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-emerald-600 font-medium">Copiado</span>
                         </>
                       ) : (
                         <>
@@ -690,7 +690,7 @@ export default function AdminDemoPortals() {
                     <button
                       onClick={() => handleOpenEdit(demo)}
                       title="Editar Serviços e Profissionais deste Demo"
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#1a1a1a] hover:bg-[#252525] text-xs text-[#ccc] hover:text-[#D4AF37] transition-colors"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs text-slate-700 hover:text-blue-600 font-medium transition-colors"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                       <span>Editar</span>
@@ -701,7 +701,7 @@ export default function AdminDemoPortals() {
                       target="_blank"
                       rel="noreferrer"
                       title="Abrir Demonstração"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#D4AF37]/15 hover:bg-[#D4AF37]/25 text-[#D4AF37] border border-[#D4AF37]/30 text-xs font-semibold transition-all shadow-sm"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold transition-all shadow-xs"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                       <span>Abrir Demo</span>
@@ -714,19 +714,19 @@ export default function AdminDemoPortals() {
                         toggleActiveMutation.mutate({ id: demo.id, active: !demo.active })
                       }
                       title={demo.active ? 'Desativar link' : 'Ativar link'}
-                      className="p-1.5 text-[#888] hover:text-white transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-slate-700 transition-colors"
                     >
                       {demo.active ? (
-                        <ToggleRight className="w-5 h-5 text-emerald-400" />
+                        <ToggleRight className="w-5 h-5 text-emerald-600" />
                       ) : (
-                        <ToggleLeft className="w-5 h-5 text-[#555]" />
+                        <ToggleLeft className="w-5 h-5 text-slate-300" />
                       )}
                     </button>
 
                     <button
                       onClick={() => setDeleteConfirmId(demo.id)}
                       title="Excluir Demo"
-                      className="p-2 rounded-lg text-[#666] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -741,23 +741,23 @@ export default function AdminDemoPortals() {
       {/* ── Modal de Criação / Edição de Portal Demo ── */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-[#0d0d0d] border border-[#222] rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-8"
+              className="bg-white border border-slate-200 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-8"
             >
-              <div className="flex items-center justify-between pb-5 border-b border-[#1e1e1e]">
+              <div className="flex items-center justify-between pb-5 border-b border-slate-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37]">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
                     {editingDemo ? <Pencil className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-white">
+                    <h2 className="text-xl font-bold text-slate-900">
                       {editingDemo ? 'Editar Portal Demo' : 'Criar Portal Demo'}
                     </h2>
-                    <p className="text-xs text-[#666]">
+                    <p className="text-xs text-slate-500">
                       {editingDemo
                         ? `Atualize os dados, serviços e profissionais de ${editingDemo.business_name}`
                         : 'Gere uma página de agendamento personalizada para seu prospect'}
@@ -766,7 +766,7 @@ export default function AdminDemoPortals() {
                 </div>
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="w-8 h-8 rounded-lg bg-[#1a1a1a] flex items-center justify-center text-[#777] hover:text-white transition-colors"
+                  className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -776,7 +776,7 @@ export default function AdminDemoPortals() {
                 {/* Dados Gerais */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-[#aaa] uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
                       Nome do Estabelecimento *
                     </label>
                     <input
@@ -790,21 +790,21 @@ export default function AdminDemoPortals() {
                           setCustomSlug(demoPortalsService.sanitizeSlug(val));
                         }
                       }}
-                      className="w-full bg-[#141414] border border-[#262626] rounded-xl px-4 py-3 text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#FF5C95]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all"
                       required
                     />
                   </div>
 
                   {/* Link Personalizado (URL) */}
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-[#aaa] uppercase tracking-wider mb-2 flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
                       <span>Link da Página Demo (URL)</span>
-                      <span className="text-[10px] text-[#777] font-normal lowercase">
+                      <span className="text-[10px] text-slate-400 font-normal lowercase">
                         {editingDemo ? 'personalizável' : 'opcional'}
                       </span>
                     </label>
-                    <div className="flex items-center bg-[#141414] border border-[#262626] rounded-xl px-4 py-3 text-sm focus-within:border-[#FF5C95] transition-colors">
-                      <span className="text-[#666] select-none font-mono text-xs pr-1">
+                    <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 focus-within:bg-white transition-all">
+                      <span className="text-slate-400 select-none font-mono text-xs pr-1">
                         /paginas/
                       </span>
                       <input
@@ -815,10 +815,10 @@ export default function AdminDemoPortals() {
                           setIsCustomSlugEdited(true);
                           setCustomSlug(demoPortalsService.sanitizeSlug(e.target.value));
                         }}
-                        className="w-full bg-transparent text-white font-mono placeholder-[#555] focus:outline-none text-sm"
+                        className="w-full bg-transparent text-slate-900 font-mono placeholder-slate-400 focus:outline-none text-sm"
                       />
                     </div>
-                    <p className="text-[11px] text-[#555] mt-1">
+                    <p className="text-[11px] text-slate-500 mt-1">
                       {editingDemo
                         ? 'Você pode trocar o link do prospect a qualquer momento (apenas letras minúsculas, números e traços).'
                         : 'Se deixar em branco, geraremos automaticamente a partir do nome com um código seguro.'}
@@ -827,7 +827,7 @@ export default function AdminDemoPortals() {
 
                   {/* Tipo de Negócio */}
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-[#aaa] uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
                       Tipo de Negócio *
                     </label>
                     <div className="grid grid-cols-3 gap-2.5">
@@ -845,19 +845,19 @@ export default function AdminDemoPortals() {
                             onClick={() => setBusinessType(type.id as any)}
                             className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
                               isSelected
-                                ? 'bg-[#FF5C95]/10 border-[#FF5C95] text-white'
-                                : 'bg-[#141414] border-[#262626] text-[#888] hover:border-[#383838] hover:text-[#ccc]'
+                                ? 'bg-blue-50 border-blue-500 text-blue-900 shadow-xs'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900'
                             }`}
                           >
                             <div className="flex items-center justify-between w-full mb-1.5">
-                              <Icon className={`w-4 h-4 ${isSelected ? 'text-[#FF5C95]' : 'text-[#666]'}`} />
-                              {isSelected && <Check className="w-3.5 h-3.5 text-[#FF5C95]" />}
+                              <Icon className={`w-4 h-4 ${isSelected ? 'text-blue-600' : 'text-slate-400'}`} />
+                              {isSelected && <Check className="w-3.5 h-3.5 text-blue-600" />}
                             </div>
                             <div>
-                              <p className={`text-xs font-bold leading-tight ${isSelected ? 'text-white' : 'text-[#ccc]'}`}>
+                              <p className={`text-xs font-bold leading-tight ${isSelected ? 'text-blue-900' : 'text-slate-800'}`}>
                                 {type.label}
                               </p>
-                              <p className="text-[10px] text-[#666] mt-0.5">{type.desc}</p>
+                              <p className="text-[10px] text-slate-500 mt-0.5">{type.desc}</p>
                             </div>
                           </button>
                         );
@@ -866,7 +866,7 @@ export default function AdminDemoPortals() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#aaa] uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
                       WhatsApp do Dono (com DDD) *
                     </label>
                     <input
@@ -874,16 +874,16 @@ export default function AdminDemoPortals() {
                       placeholder="Ex: (11) 98888-7777"
                       value={ownerWhatsapp}
                       onChange={(e) => setOwnerWhatsapp(e.target.value)}
-                      className="w-full bg-[#141414] border border-[#262626] rounded-xl px-4 py-3 text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#D4AF37]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all"
                       required
                     />
-                    <p className="text-[11px] text-[#555] mt-1">
+                    <p className="text-[11px] text-slate-500 mt-1">
                       Receberá a notificação de teste quando o cliente agendar.
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#aaa] uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
                       Expiração do Link (dias a partir de hoje)
                     </label>
                     <input
@@ -892,27 +892,27 @@ export default function AdminDemoPortals() {
                       max={90}
                       value={expiresInDays}
                       onChange={(e) => setExpiresInDays(Number(e.target.value))}
-                      className="w-full bg-[#141414] border border-[#262626] rounded-xl px-4 py-3 text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#D4AF37]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all"
                     />
-                    <p className="text-[11px] text-[#555] mt-1">Padrão: 7 dias</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Padrão: 7 dias</p>
                   </div>
                 </div>
 
                 {/* Logo & Cor */}
-                <div className="bg-[#121212] p-4 rounded-2xl border border-[#1f1f1f] space-y-4">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-[#aaa] uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                         Logo / Foto do Negócio (opcional)
                       </label>
-                      <p className="text-xs text-[#666]">
+                      <p className="text-xs text-slate-500">
                         Faça upload da imagem ou deixe o ícone automático
                       </p>
                     </div>
 
                     <div className="flex items-center gap-3">
                       {logoUrl && (
-                        <div className="w-12 h-12 rounded-xl overflow-hidden border border-[#333] relative group">
+                        <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-200 relative group shadow-xs">
                           <img
                             src={logoUrl}
                             alt="Logo preview"
@@ -921,18 +921,18 @@ export default function AdminDemoPortals() {
                           <button
                             type="button"
                             onClick={() => setLogoUrl('')}
-                            className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-red-400"
+                            className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
                           >
                             <X className="w-4 h-4" />
                           </button>
                         </div>
                       )}
 
-                      <label className="cursor-pointer flex items-center gap-2 bg-[#1e1e1e] hover:bg-[#282828] text-xs font-medium text-white px-3.5 py-2.5 rounded-xl border border-[#333] transition-colors">
+                      <label className="cursor-pointer flex items-center gap-2 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 px-3.5 py-2.5 rounded-xl border border-slate-200 shadow-xs transition-colors">
                         {isUploadingLogo ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-[#D4AF37]" />
+                          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
                         ) : (
-                          <Upload className="w-4 h-4 text-[#D4AF37]" />
+                          <Upload className="w-4 h-4 text-blue-600" />
                         )}
                         <span>{logoUrl ? 'Trocar Logo' : 'Enviar Logo'}</span>
                         <input
@@ -947,20 +947,20 @@ export default function AdminDemoPortals() {
                   </div>
 
                   {/* Fundo / Capa do Salão (Banner) */}
-                  <div className="pt-4 border-t border-[#1f1f1f]">
+                  <div className="pt-4 border-t border-slate-200">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div>
-                        <label className="block text-xs font-semibold text-[#aaa] uppercase tracking-wider mb-1">
+                        <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                           Imagem de Fundo / Capa do Topo (opcional)
                         </label>
-                        <p className="text-xs text-[#666]">
+                        <p className="text-xs text-slate-500">
                           Se não carregar imagem, o topo usará o fundo na cor de destaque ({primaryColor})
                         </p>
                       </div>
 
                       <div className="flex items-center gap-3">
                         {bannerUrl ? (
-                          <div className="w-24 h-12 rounded-xl overflow-hidden border border-[#333] relative group">
+                          <div className="w-24 h-12 rounded-xl overflow-hidden border border-slate-200 relative group shadow-xs">
                             <img
                               src={bannerUrl}
                               alt="Banner preview"
@@ -969,14 +969,14 @@ export default function AdminDemoPortals() {
                             <button
                               type="button"
                               onClick={() => setBannerUrl('')}
-                              className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-red-400"
+                              className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
                             >
                               <X className="w-4 h-4" />
                             </button>
                           </div>
                         ) : (
                           <div
-                            className="w-24 h-12 rounded-xl border border-[#333] flex items-center justify-center text-[10px] font-bold text-white shadow-inner"
+                            className="w-24 h-12 rounded-xl border border-slate-200 flex items-center justify-center text-[10px] font-bold text-white shadow-inner"
                             style={{
                               background: `linear-gradient(135deg, ${primaryColor}, ${primaryColor}cc)`,
                             }}
@@ -985,11 +985,11 @@ export default function AdminDemoPortals() {
                           </div>
                         )}
 
-                        <label className="cursor-pointer flex items-center gap-2 bg-[#1e1e1e] hover:bg-[#282828] text-xs font-medium text-white px-3.5 py-2.5 rounded-xl border border-[#333] transition-colors">
+                        <label className="cursor-pointer flex items-center gap-2 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 px-3.5 py-2.5 rounded-xl border border-slate-200 shadow-xs transition-colors">
                           {isUploadingBanner ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-[#FF5C95]" />
+                            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
                           ) : (
-                            <Camera className="w-4 h-4 text-[#FF5C95]" />
+                            <Camera className="w-4 h-4 text-blue-600" />
                           )}
                           <span>{bannerUrl ? 'Trocar Fundo' : 'Enviar Fundo'}</span>
                           <input
@@ -1006,7 +1006,7 @@ export default function AdminDemoPortals() {
 
                   {/* Seletor de cor */}
                   <div>
-                    <label className="block text-xs font-semibold text-[#aaa] uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
                       Cor Principal da Página
                     </label>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -1017,14 +1017,14 @@ export default function AdminDemoPortals() {
                           onClick={() => setPrimaryColor(preset.hex)}
                           className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
                             primaryColor.toLowerCase() === preset.hex.toLowerCase()
-                              ? 'ring-2 ring-white scale-110'
+                              ? 'ring-2 ring-blue-600 ring-offset-2 scale-110'
                               : 'opacity-70 hover:opacity-100'
                           }`}
                           style={{ backgroundColor: preset.hex }}
                           title={preset.name}
                         >
                           {primaryColor.toLowerCase() === preset.hex.toLowerCase() && (
-                            <Check className="w-3.5 h-3.5 text-black stroke-[3]" />
+                            <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
                           )}
                         </button>
                       ))}
@@ -1036,7 +1036,7 @@ export default function AdminDemoPortals() {
                           onChange={(e) => setPrimaryColor(e.target.value)}
                           className="w-7 h-7 rounded-md cursor-pointer bg-transparent border-0"
                         />
-                        <span className="text-xs font-mono text-[#777]">{primaryColor}</span>
+                        <span className="text-xs font-mono text-slate-600">{primaryColor}</span>
                       </div>
                     </div>
                   </div>
@@ -1046,13 +1046,13 @@ export default function AdminDemoPortals() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Scissors className="w-4 h-4 text-[#D4AF37]" />
-                      <h4 className="text-sm font-semibold text-white">Serviços Oferecidos (com fotos)</h4>
+                      <Scissors className="w-4 h-4 text-blue-600" />
+                      <h4 className="text-sm font-semibold text-slate-900">Serviços Oferecidos (com fotos)</h4>
                     </div>
                     <button
                       type="button"
                       onClick={handleAddService}
-                      className="text-xs text-[#D4AF37] hover:underline flex items-center gap-1 font-medium"
+                      className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-semibold"
                     >
                       <Plus className="w-3.5 h-3.5" /> Adicionar Serviço
                     </button>
@@ -1062,13 +1062,13 @@ export default function AdminDemoPortals() {
                     {services.map((srv, idx) => (
                       <div
                         key={idx}
-                        className="bg-[#121212] p-3 rounded-2xl border border-[#222] space-y-2.5 transition-all hover:border-[#333]"
+                        className="bg-white p-3 rounded-2xl border border-slate-200 space-y-2.5 transition-all hover:border-slate-300 shadow-xs"
                       >
                         <div className="flex items-center gap-2">
                           {/* Miniatura ou Botão de Foto do Serviço */}
                           <div className="flex-shrink-0 relative">
                             {srv.photo_url ? (
-                              <div className="w-12 h-12 rounded-xl overflow-hidden border border-[#333] relative group">
+                              <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-200 relative group shadow-xs">
                                 <img
                                   src={srv.photo_url}
                                   alt={srv.name || 'Serviço'}
@@ -1078,7 +1078,7 @@ export default function AdminDemoPortals() {
                                   type="button"
                                   onClick={() => handleUpdateService(idx, 'photo_url', null)}
                                   title="Remover foto"
-                                  className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-red-400"
+                                  className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
                                 >
                                   <X className="w-3.5 h-3.5" />
                                 </button>
@@ -1086,10 +1086,10 @@ export default function AdminDemoPortals() {
                             ) : (
                               <label
                                 title="Adicionar imagem do serviço"
-                                className="w-12 h-12 rounded-xl border border-dashed border-[#333] hover:border-[#D4AF37] bg-[#181818] hover:bg-[#202020] flex flex-col items-center justify-center cursor-pointer transition-colors text-[#666] hover:text-[#D4AF37]"
+                                className="w-12 h-12 rounded-xl border border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 hover:bg-slate-100 flex flex-col items-center justify-center cursor-pointer transition-colors text-slate-400 hover:text-blue-600"
                               >
                                 {uploadingServiceIndex === idx ? (
-                                  <Loader2 className="w-4 h-4 animate-spin text-[#D4AF37]" />
+                                  <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
                                 ) : (
                                   <>
                                     <Camera className="w-4 h-4" />
@@ -1116,12 +1116,12 @@ export default function AdminDemoPortals() {
                             placeholder="Nome do serviço (ex: Corte Degradê)"
                             value={srv.name}
                             onChange={(e) => handleUpdateService(idx, 'name', e.target.value)}
-                            className="flex-1 bg-[#181818] border border-[#262626] rounded-xl px-3 py-2 text-xs text-white placeholder-[#555] focus:outline-none focus:border-[#D4AF37]"
+                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white"
                           />
 
                           {/* Preço */}
-                          <div className="flex items-center gap-1 bg-[#181818] px-2.5 py-1.5 rounded-xl border border-[#262626]">
-                            <span className="text-[11px] text-[#666]">R$</span>
+                          <div className="flex items-center gap-1 bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-200">
+                            <span className="text-[11px] text-slate-500 font-medium">R$</span>
                             <input
                               type="number"
                               min={0}
@@ -1130,12 +1130,12 @@ export default function AdminDemoPortals() {
                               onChange={(e) =>
                                 handleUpdateService(idx, 'price', Number(e.target.value))
                               }
-                              className="w-14 bg-transparent text-xs text-white focus:outline-none text-right font-medium"
+                              className="w-14 bg-transparent text-xs text-slate-900 focus:outline-none text-right font-semibold"
                             />
                           </div>
 
                           {/* Duração */}
-                          <div className="flex items-center gap-1 bg-[#181818] px-2.5 py-1.5 rounded-xl border border-[#262626]">
+                          <div className="flex items-center gap-1 bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-200">
                             <input
                               type="number"
                               min={5}
@@ -1145,16 +1145,16 @@ export default function AdminDemoPortals() {
                               onChange={(e) =>
                                 handleUpdateService(idx, 'duration_minutes', Number(e.target.value))
                               }
-                              className="w-10 bg-transparent text-xs text-white focus:outline-none text-right"
+                              className="w-10 bg-transparent text-xs text-slate-900 focus:outline-none text-right font-semibold"
                             />
-                            <span className="text-[11px] text-[#666]">min</span>
+                            <span className="text-[11px] text-slate-500 font-medium">min</span>
                           </div>
 
                           {/* Excluir Serviço */}
                           <button
                             type="button"
                             onClick={() => handleRemoveService(idx)}
-                            className="p-2 text-[#666] hover:text-red-400 transition-colors"
+                            className="p-2 text-slate-400 hover:text-red-600 transition-colors"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -1168,13 +1168,13 @@ export default function AdminDemoPortals() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <UserCheck className="w-4 h-4 text-blue-400" />
-                      <h4 className="text-sm font-semibold text-white">Profissionais / Equipe (com fotos)</h4>
+                      <UserCheck className="w-4 h-4 text-blue-600" />
+                      <h4 className="text-sm font-semibold text-slate-900">Profissionais / Equipe (com fotos)</h4>
                     </div>
                     <button
                       type="button"
                       onClick={handleAddProfessional}
-                      className="text-xs text-blue-400 hover:underline flex items-center gap-1 font-medium"
+                      className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-semibold"
                     >
                       <Plus className="w-3.5 h-3.5" /> Adicionar Profissional
                     </button>
@@ -1184,12 +1184,12 @@ export default function AdminDemoPortals() {
                     {professionals.map((pro, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center gap-2 bg-[#121212] p-2.5 rounded-xl border border-[#222] hover:border-[#333] transition-all"
+                        className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 transition-all shadow-xs"
                       >
                         {/* Foto do Profissional */}
                         <div className="flex-shrink-0">
                           {pro.photo_url ? (
-                            <div className="w-10 h-10 rounded-xl overflow-hidden border border-[#333] relative group">
+                            <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 relative group shadow-xs">
                               <img
                                 src={pro.photo_url}
                                 alt={pro.name}
@@ -1199,7 +1199,7 @@ export default function AdminDemoPortals() {
                                 type="button"
                                 onClick={() => handleUpdateProfessional(idx, 'photo_url', null)}
                                 title="Remover foto"
-                                className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-red-400"
+                                className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </button>
@@ -1207,10 +1207,10 @@ export default function AdminDemoPortals() {
                           ) : (
                             <label
                               title="Adicionar foto do profissional"
-                              className="w-10 h-10 rounded-xl border border-dashed border-[#333] hover:border-blue-400 bg-[#181818] flex items-center justify-center cursor-pointer text-[#666] hover:text-blue-400 transition-colors"
+                              className="w-10 h-10 rounded-xl border border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 flex items-center justify-center cursor-pointer text-slate-400 hover:text-blue-600 transition-colors"
                             >
                               {uploadingProIndex === idx ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
                               ) : (
                                 <Camera className="w-3.5 h-3.5" />
                               )}
@@ -1233,7 +1233,7 @@ export default function AdminDemoPortals() {
                           placeholder="Nome do profissional (ex: Carlos Barbeiro)"
                           value={pro.name}
                           onChange={(e) => handleUpdateProfessional(idx, 'name', e.target.value)}
-                          className="flex-1 bg-[#181818] border border-[#262626] rounded-xl px-3 py-2 text-xs text-white placeholder-[#555] focus:outline-none focus:border-blue-400"
+                          className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white"
                         />
 
                         <input
@@ -1241,13 +1241,13 @@ export default function AdminDemoPortals() {
                           placeholder="Cargo/Especialidade (ex: Barbeiro Chefe)"
                           value={pro.role_title || ''}
                           onChange={(e) => handleUpdateProfessional(idx, 'role_title', e.target.value)}
-                          className="w-36 bg-[#181818] border border-[#262626] rounded-xl px-3 py-2 text-xs text-white placeholder-[#555] focus:outline-none focus:border-blue-400 hidden sm:block"
+                          className="w-36 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white hidden sm:block"
                         />
 
                         <button
                           type="button"
                           onClick={() => handleRemoveProfessional(idx)}
-                          className="p-1 text-[#666] hover:text-red-400 transition-colors"
+                          className="p-1 text-slate-400 hover:text-red-600 transition-colors"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -1257,18 +1257,18 @@ export default function AdminDemoPortals() {
                 </div>
 
                 {/* Botões submit */}
-                <div className="pt-4 border-t border-[#1e1e1e] flex items-center justify-end gap-3">
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl text-xs font-medium text-[#777] hover:text-white transition-colors"
+                    className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={createMutation.isPending || updateMutation.isPending}
-                    className="flex items-center gap-2 bg-[#D4AF37] hover:bg-[#e0bc46] disabled:opacity-50 text-black font-semibold px-6 py-2.5 rounded-xl text-sm shadow-lg transition-all"
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-xl text-sm shadow-xs transition-all active:scale-95"
                   >
                     {createMutation.isPending || updateMutation.isPending ? (
                       <>
@@ -1292,30 +1292,30 @@ export default function AdminDemoPortals() {
       {/* ── Modal de Sucesso pós-criação ── */}
       <AnimatePresence>
         {createdDemo && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-3xl p-6 sm:p-8 max-w-md w-full text-center space-y-6 shadow-2xl"
+              className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-md w-full text-center space-y-6 shadow-2xl"
             >
-              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
                 <Check className="w-8 h-8 stroke-[3]" />
               </div>
 
               <div>
-                <h3 className="text-xl font-bold text-white">Portal Demo Criado!</h3>
-                <p className="text-xs text-[#888] mt-1.5">
+                <h3 className="text-xl font-bold text-slate-900">Portal Demo Criado!</h3>
+                <p className="text-xs text-slate-600 mt-1.5">
                   A demonstração personalizada para <strong>{createdDemo.business_name}</strong> já
                   está ativa e pronta para envio.
                 </p>
               </div>
 
-              <div className="bg-[#161616] border border-[#262626] rounded-2xl p-3 text-left">
-                <span className="text-[10px] text-[#666] uppercase font-bold tracking-wider block mb-1">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-left">
+                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block mb-1">
                   Link de Acesso Único
                 </span>
-                <p className="text-xs font-mono text-[#D4AF37] break-all">
+                <p className="text-xs font-mono text-blue-600 font-semibold break-all">
                   {window.location.origin}/paginas/{createdDemo.slug}
                 </p>
               </div>
@@ -1323,7 +1323,7 @@ export default function AdminDemoPortals() {
               <div className="flex flex-col gap-2.5">
                 <button
                   onClick={() => copyDemoLink(createdDemo.slug)}
-                  className="flex items-center justify-center gap-2 w-full bg-[#D4AF37] hover:bg-[#e0bc46] text-black font-semibold py-3 rounded-xl text-sm transition-all shadow-lg active:scale-98"
+                  className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl text-sm transition-all shadow-xs active:scale-98"
                 >
                   <Copy className="w-4 h-4" />
                   Copiar Link para o WhatsApp
@@ -1333,7 +1333,7 @@ export default function AdminDemoPortals() {
                   href={`/paginas/${createdDemo.slug}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center justify-center gap-2 w-full bg-[#222] hover:bg-[#2c2c2c] text-white font-medium py-3 rounded-xl text-sm transition-all"
+                  className="flex items-center justify-center gap-2 w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-3 rounded-xl text-sm transition-all"
                 >
                   <ExternalLink className="w-4 h-4" />
                   Testar Portal Agora
@@ -1344,7 +1344,7 @@ export default function AdminDemoPortals() {
                     setCreatedDemo(null);
                     setIsModalOpen(false);
                   }}
-                  className="text-xs text-[#777] hover:text-white pt-2 transition-colors"
+                  className="text-xs text-slate-500 hover:text-slate-800 pt-2 transition-colors font-medium"
                 >
                   Fechar
                 </button>
@@ -1357,20 +1357,20 @@ export default function AdminDemoPortals() {
       {/* ── Modal de Confirmação de Exclusão ── */}
       <AnimatePresence>
         {deleteConfirmId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#121212] border border-[#262626] rounded-2xl p-6 max-w-sm w-full text-center space-y-4"
+              className="bg-white border border-slate-200 rounded-2xl p-6 max-w-sm w-full text-center space-y-4 shadow-xl"
             >
-              <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 mx-auto flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-100 text-red-600 mx-auto flex items-center justify-center">
                 <Trash2 className="w-6 h-6" />
               </div>
 
               <div>
-                <h4 className="text-base font-bold text-white">Excluir este Portal Demo?</h4>
-                <p className="text-xs text-[#777] mt-1">
+                <h4 className="text-base font-bold text-slate-900">Excluir este Portal Demo?</h4>
+                <p className="text-xs text-slate-500 mt-1">
                   O link deixará de funcionar imediatamente para qualquer pessoa que tentar
                   acessá-lo.
                 </p>
@@ -1379,14 +1379,14 @@ export default function AdminDemoPortals() {
               <div className="flex items-center gap-2 pt-2">
                 <button
                   onClick={() => setDeleteConfirmId(null)}
-                  className="flex-1 py-2.5 rounded-xl bg-[#1e1e1e] hover:bg-[#262626] text-xs font-semibold text-white transition-colors"
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={() => deleteMutation.mutate(deleteConfirmId)}
                   disabled={deleteMutation.isPending}
-                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-semibold text-white transition-colors"
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-semibold text-white transition-colors shadow-xs"
                 >
                   {deleteMutation.isPending ? 'Excluindo...' : 'Sim, Excluir'}
                 </button>

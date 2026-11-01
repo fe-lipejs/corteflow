@@ -4,8 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Edit2, Trash2, CheckCircle, Ban, CreditCard,
-  X, Save, Users, Package, Clock, Lock, Unlock,
-  LayoutDashboard, Calendar, Scissors, DollarSign, BarChart3, Settings, Sparkles
+  X, Save, Users, Settings, Sparkles
 } from 'lucide-react';
 import AdminPageHeader from './components/AdminPageHeader';
 import AdminEmptyState from './components/AdminEmptyState';
@@ -50,12 +49,11 @@ interface PlanFormData {
   is_default: boolean;
   is_trial_plan: boolean;
   
-  // Nova estrutura dinâmica
   permissions: string[];
   features: Record<string, boolean>;
   limits: Record<string, number | 'unlimited'>;
   
-  display_features: string[]; // Marketing bullets
+  display_features: string[];
 }
 
 const EMPTY_FORM: PlanFormData = {
@@ -166,21 +164,21 @@ function PlanModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 16 }}
         transition={{ duration: 0.2 }}
-        className="w-full max-w-3xl bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden max-h-[90vh] flex flex-col shadow-2xl"
+        className="w-full max-w-3xl bg-white border border-slate-200 rounded-2xl overflow-hidden max-h-[90vh] flex flex-col shadow-2xl"
       >
         {/* Header */}
-        <div className="flex flex-col border-b border-[#1a1a1a]">
+        <div className="flex flex-col border-b border-slate-100 bg-white">
           <div className="flex items-center justify-between px-6 py-4">
-            <h2 className="text-base font-semibold text-white">
+            <h2 className="text-base font-semibold text-slate-900">
               {plan ? 'Editar Plano' : 'Novo Plano'}
             </h2>
-            <button onClick={onClose} className="p-1.5 text-[#444] hover:text-white hover:bg-[#1a1a1a] rounded-lg transition-colors">
+            <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -196,7 +194,7 @@ function PlanModal({
                 key={t.id}
                 onClick={() => setActiveTab(t.id as any)}
                 className={`py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === t.id ? 'border-emerald-500 text-white' : 'border-transparent text-[#666] hover:text-[#999]'
+                  activeTab === t.id ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-900'
                 }`}
               >
                 {t.label}
@@ -213,20 +211,20 @@ function PlanModal({
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-[#555] mb-1.5">Nome do Plano *</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Nome do Plano *</label>
                   <input
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    className="w-full px-3 py-2 bg-[#111] border border-[#1a1a1a] rounded-lg text-sm text-white placeholder-[#333] outline-none focus:border-[#333] transition-colors"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                     placeholder="Ex: Growth"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#555] mb-1.5">Chave Interna</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Chave Interna</label>
                   <input
                     value={form.key}
                     onChange={e => setForm(f => ({ ...f, key: e.target.value.toLowerCase().replace(/\s+/g, '_') }))}
-                    className={`w-full px-3 py-2 bg-[#111] border border-[#1a1a1a] rounded-lg text-sm font-mono transition-colors ${hasSubs ? 'text-[#888] cursor-not-allowed opacity-70' : 'text-white placeholder-[#333] focus:border-[#333] outline-none'}`}
+                    className={`w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono transition-colors ${hasSubs ? 'text-slate-400 cursor-not-allowed opacity-70' : 'text-slate-900 placeholder-slate-400 focus:border-blue-500 outline-none'}`}
                     disabled={hasSubs}
                   />
                 </div>
@@ -234,12 +232,12 @@ function PlanModal({
               
               {/* Configurações de Papel do Plano */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex items-center justify-between p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                <div className="flex items-center justify-between p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
                   <div>
-                    <label htmlFor="is_trial_plan" className="text-xs font-bold text-amber-400 cursor-pointer flex items-center gap-1.5">
+                    <label htmlFor="is_trial_plan" className="text-xs font-bold text-amber-700 cursor-pointer flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5" /> Plano Padrão de Trial
                     </label>
-                    <p className="text-[10px] text-amber-200/70 mt-0.5">
+                    <p className="text-[10px] text-amber-600/80 mt-0.5">
                       Novos cadastros iniciarão neste plano durante os dias de teste.
                     </p>
                   </div>
@@ -248,16 +246,16 @@ function PlanModal({
                     id="is_trial_plan"
                     checked={form.is_trial_plan}
                     onChange={e => setForm(f => ({ ...f, is_trial_plan: e.target.checked }))}
-                    className="w-4 h-4 rounded bg-[#111] border-[#333] text-amber-500 focus:ring-amber-500"
+                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3.5 bg-violet-500/10 border border-violet-500/20 rounded-xl">
+                <div className="flex items-center justify-between p-3.5 bg-blue-50 border border-blue-200 rounded-xl">
                   <div>
-                    <label htmlFor="is_default" className="text-xs font-bold text-violet-400 cursor-pointer">
+                    <label htmlFor="is_default" className="text-xs font-bold text-blue-700 cursor-pointer">
                       Plano Fallback Gratuito
                     </label>
-                    <p className="text-[10px] text-violet-300/70 mt-0.5">
+                    <p className="text-[10px] text-blue-600/80 mt-0.5">
                       Usado quando a conta não possui assinatura ativa.
                     </p>
                   </div>
@@ -266,81 +264,81 @@ function PlanModal({
                     id="is_default"
                     checked={form.is_default}
                     onChange={e => setForm(f => ({ ...f, is_default: e.target.checked }))}
-                    className="w-4 h-4 rounded bg-[#111] border-[#333] text-violet-500"
+                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#555] mb-1.5">Descrição</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Descrição</label>
                 <textarea
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   rows={2}
-                  className="w-full px-3 py-2 bg-[#111] border border-[#1a1a1a] rounded-lg text-sm text-white resize-none"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 resize-none outline-none focus:border-blue-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-[#555] mb-1.5">Trial (dias)</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Trial (dias)</label>
                   <input
                     type="number"
                     value={form.trial_days}
                     onChange={e => setForm(f => ({ ...f, trial_days: Number(e.target.value) }))}
-                    className="w-full px-3 py-2 bg-[#111] border border-[#1a1a1a] rounded-lg text-sm text-white"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
 
-              <div className="space-y-3 mt-4 pt-4 border-t border-[#1a1a1a]">
-                <h4 className="text-sm font-medium text-white mb-2">Preços e Stripe (Multi-Moedas)</h4>
+              <div className="space-y-3 mt-4 pt-4 border-t border-slate-100">
+                <h4 className="text-sm font-semibold text-slate-900 mb-2">Preços e Stripe (Multi-Moedas)</h4>
                 
                 {/* BRL */}
-                <div className="grid grid-cols-3 gap-3 p-3 bg-[#111] border border-[#1a1a1a] rounded-xl">
+                <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
                   <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-[#888] mb-1">BRL (R$)</label>
-                    <input type="number" value={form.price_brl} onChange={e => setForm(f => ({ ...f, price_brl: Number(e.target.value) }))} className="w-full px-2 py-1.5 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white" placeholder="0.00" />
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">BRL (R$)</label>
+                    <input type="number" value={form.price_brl} onChange={e => setForm(f => ({ ...f, price_brl: Number(e.target.value) }))} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900" placeholder="0.00" />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-[#888] mb-1">Stripe Price ID (BRL)</label>
-                    <input value={form.stripe_price_brl} onChange={e => setForm(f => ({ ...f, stripe_price_brl: e.target.value }))} className="w-full px-2 py-1.5 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white font-mono placeholder-[#333]" placeholder="price_1U8..." />
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">Stripe Price ID (BRL)</label>
+                    <input value={form.stripe_price_brl} onChange={e => setForm(f => ({ ...f, stripe_price_brl: e.target.value }))} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 font-mono placeholder-slate-400" placeholder="price_1U8..." />
                   </div>
                 </div>
 
                 {/* USD */}
-                <div className="grid grid-cols-3 gap-3 p-3 bg-[#111] border border-[#1a1a1a] rounded-xl">
+                <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
                   <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-[#888] mb-1">USD ($)</label>
-                    <input type="number" value={form.price_usd} onChange={e => setForm(f => ({ ...f, price_usd: Number(e.target.value) }))} className="w-full px-2 py-1.5 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white" placeholder="0.00" />
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">USD ($)</label>
+                    <input type="number" value={form.price_usd} onChange={e => setForm(f => ({ ...f, price_usd: Number(e.target.value) }))} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900" placeholder="0.00" />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-[#888] mb-1">Stripe Price ID (USD)</label>
-                    <input value={form.stripe_price_usd} onChange={e => setForm(f => ({ ...f, stripe_price_usd: e.target.value }))} className="w-full px-2 py-1.5 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white font-mono placeholder-[#333]" placeholder="price_1U8..." />
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">Stripe Price ID (USD)</label>
+                    <input value={form.stripe_price_usd} onChange={e => setForm(f => ({ ...f, stripe_price_usd: e.target.value }))} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 font-mono placeholder-slate-400" placeholder="price_1U8..." />
                   </div>
                 </div>
 
                 {/* EUR */}
-                <div className="grid grid-cols-3 gap-3 p-3 bg-[#111] border border-[#1a1a1a] rounded-xl">
+                <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
                   <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-[#888] mb-1">EUR (€)</label>
-                    <input type="number" value={form.price_eur} onChange={e => setForm(f => ({ ...f, price_eur: Number(e.target.value) }))} className="w-full px-2 py-1.5 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white" placeholder="0.00" />
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">EUR (€)</label>
+                    <input type="number" value={form.price_eur} onChange={e => setForm(f => ({ ...f, price_eur: Number(e.target.value) }))} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900" placeholder="0.00" />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-[#888] mb-1">Stripe Price ID (EUR)</label>
-                    <input value={form.stripe_price_eur} onChange={e => setForm(f => ({ ...f, stripe_price_eur: e.target.value }))} className="w-full px-2 py-1.5 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white font-mono placeholder-[#333]" placeholder="price_1U8..." />
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">Stripe Price ID (EUR)</label>
+                    <input value={form.stripe_price_eur} onChange={e => setForm(f => ({ ...f, stripe_price_eur: e.target.value }))} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 font-mono placeholder-slate-400" placeholder="price_1U8..." />
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#555] mb-2">Bullets de Marketing</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-2">Bullets de Marketing</label>
                 <div className="space-y-1.5 mb-2">
                   {form.display_features.map((f, i) => (
-                    <div key={i} className="flex items-center gap-2 bg-[#111] border border-[#1a1a1a] rounded-lg px-3 py-2">
+                    <div key={i} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
                       <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
-                      <span className="text-sm text-[#bbb] flex-1">{f}</span>
-                      <button onClick={() => setForm(form => ({...form, display_features: form.display_features.filter((_, idx) => idx !== i)}))} className="text-[#333] hover:text-red-400">
+                      <span className="text-sm text-slate-700 flex-1">{f}</span>
+                      <button onClick={() => setForm(form => ({...form, display_features: form.display_features.filter((_, idx) => idx !== i)}))} className="text-slate-400 hover:text-red-500">
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -352,9 +350,9 @@ function PlanModal({
                     onChange={e => setNewFeature(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addMarketingFeature()}
                     placeholder="Adicionar bullet..."
-                    className="flex-1 px-3 py-2 bg-[#111] border border-[#1a1a1a] rounded-lg text-sm text-white"
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400"
                   />
-                  <button onClick={addMarketingFeature} className="px-3 py-2 bg-[#1a1a1a] text-[#888] rounded-lg">
+                  <button onClick={addMarketingFeature} className="px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
@@ -365,12 +363,11 @@ function PlanModal({
           {/* Aba: Features Comerciais */}
           {activeTab === 'features' && (
             <div className="space-y-4">
-              <p className="text-xs text-[#888] mb-4">Estas chaves representam os gatilhos comerciais (FeatureGates). Se habilitado, a tela de "Faça Upgrade" não aparecerá para o recurso.</p>
+              <p className="text-xs text-slate-500 mb-4">Estas chaves representam os gatilhos comerciais (FeatureGates). Se habilitado, a tela de &quot;Faça Upgrade&quot; não aparecerá para o recurso.</p>
               
               {sysFeatures.length === 0 ? (
-                <div className="p-4 border border-dashed border-[#1a1a1a] rounded-xl text-center text-sm text-[#555]">
+                <div className="p-4 border border-dashed border-slate-200 rounded-xl text-center text-sm text-slate-500">
                   Nenhuma feature comercial cadastrada no banco (`sys_features`).
-                  (Mas você pode usar as antigas se quiser, o código antigo validava chaves hardcoded).
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -381,14 +378,14 @@ function PlanModal({
                         key={feat.key}
                         onClick={() => toggleFeature(feat.key)}
                         className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all select-none ${
-                          enabled ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-[#1a1a1a] bg-[#111] opacity-60'
+                          enabled ? 'border-blue-300 bg-blue-50/60' : 'border-slate-200 bg-slate-50 opacity-70'
                         }`}
                       >
                         <div>
-                          <p className={`text-sm font-medium ${enabled ? 'text-white' : 'text-[#555]'}`}>{feat.key}</p>
-                          <p className="text-[10px] text-[#444] mt-0.5">{feat.description}</p>
+                          <p className={`text-sm font-semibold ${enabled ? 'text-blue-900' : 'text-slate-600'}`}>{feat.key}</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">{feat.description}</p>
                         </div>
-                        <div className={`w-8 h-4 rounded-full relative flex-shrink-0 ${enabled ? 'bg-emerald-600' : 'bg-[#222]'}`}>
+                        <div className={`w-8 h-4 rounded-full relative flex-shrink-0 transition-colors ${enabled ? 'bg-blue-600' : 'bg-slate-300'}`}>
                           <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${enabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
                         </div>
                       </div>
@@ -403,17 +400,17 @@ function PlanModal({
           {activeTab === 'permissoes' && (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
-                <p className="text-xs text-[#888]">Controle de acesso restrito (RBAC). O que não estiver marcado, será bloqueado pelo PermissionGate.</p>
+                <p className="text-xs text-slate-500">Controle de acesso restrito (RBAC). O que não estiver marcado, será bloqueado pelo PermissionGate.</p>
                 <div className="flex gap-4">
                   <button 
                     onClick={() => setForm(f => ({...f, permissions: sysPermissions.map(p => p.key)}))}
-                    className="text-xs text-emerald-400 hover:text-emerald-300 font-medium"
+                    className="text-xs text-blue-600 hover:text-blue-700 font-bold"
                   >
                     Selecionar Tudo
                   </button>
                   <button 
                     onClick={() => setForm(f => ({...f, permissions: []}))}
-                    className="text-xs text-red-400 hover:text-red-300 font-medium"
+                    className="text-xs text-red-600 hover:text-red-700 font-bold"
                   >
                     Desmarcar Tudo
                   </button>
@@ -421,29 +418,28 @@ function PlanModal({
               </div>
 
               {sysPermissions.length === 0 ? (
-                <div className="text-center p-6 text-[#555] border border-dashed border-[#1a1a1a] rounded-lg">
+                <div className="text-center p-6 text-slate-400 border border-dashed border-slate-200 rounded-lg">
                   Nenhuma permissão encontrada.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-2 max-h-[60vh] overflow-y-auto pr-2">
-                  {/* Agrupar por módulo */}
                   {Array.from(new Set(sysPermissions.map(p => p.module))).map(module => (
                     <div key={module} className="mb-4">
-                      <h4 className="text-[11px] font-bold text-[#444] uppercase tracking-wider mb-2">{module}</h4>
+                      <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">{module}</h4>
                       <div className="space-y-1.5">
                         {sysPermissions.filter(p => p.module === module).map(p => {
                           const enabled = form.permissions.includes(p.key);
                           return (
-                            <label key={p.key} className="flex items-start gap-3 p-2.5 rounded-lg border border-[#1a1a1a] bg-[#0f0f0f] hover:bg-[#151515] cursor-pointer">
+                            <label key={p.key} className="flex items-start gap-3 p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer shadow-xs">
                               <input 
                                 type="checkbox" 
                                 checked={enabled}
                                 onChange={() => togglePermission(p.key)}
-                                className="mt-0.5 rounded bg-[#222] border-[#333] text-emerald-500"
+                                className="mt-0.5 rounded text-blue-600 focus:ring-blue-500"
                               />
                               <div>
-                                <p className="text-sm text-white font-medium">{p.key}</p>
-                                <p className="text-[11px] text-[#555]">{p.description}</p>
+                                <p className="text-sm text-slate-800 font-medium">{p.key}</p>
+                                <p className="text-[11px] text-slate-400">{p.description}</p>
                               </div>
                             </label>
                           );
@@ -459,39 +455,39 @@ function PlanModal({
           {/* Aba: Limites */}
           {activeTab === 'limites' && (
             <div className="space-y-4">
-              <p className="text-xs text-[#888] mb-4">Métricas contáveis que o plano restringe. Digite -1 para ilimitado.</p>
+              <p className="text-xs text-slate-500 mb-4">Métricas contáveis que o plano restringe. Digite -1 para ilimitado.</p>
               
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 border border-[#1a1a1a] bg-[#111] rounded-xl">
-                  <label className="block text-sm font-medium text-white mb-1">Profissionais</label>
-                  <p className="text-[10px] text-[#555] mb-3">Máximo de barbeiros ativos.</p>
+                <div className="p-4 border border-slate-200 bg-slate-50 rounded-xl">
+                  <label className="block text-sm font-semibold text-slate-800 mb-1">Profissionais</label>
+                  <p className="text-[10px] text-slate-400 mb-3">Máximo de profissionais ativos.</p>
                   <input
                     type="number"
                     value={form.limits.profissionais === 'unlimited' ? -1 : (form.limits.profissionais || 0)}
                     onChange={e => setLimit('profissionais', Number(e.target.value) === -1 ? 'unlimited' : Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 outline-none focus:border-blue-500"
                   />
                 </div>
                 
-                <div className="p-4 border border-[#1a1a1a] bg-[#111] rounded-xl">
-                  <label className="block text-sm font-medium text-white mb-1">Serviços</label>
-                  <p className="text-[10px] text-[#555] mb-3">Máximo de serviços no catálogo.</p>
+                <div className="p-4 border border-slate-200 bg-slate-50 rounded-xl">
+                  <label className="block text-sm font-semibold text-slate-800 mb-1">Serviços</label>
+                  <p className="text-[10px] text-slate-400 mb-3">Máximo de serviços no catálogo.</p>
                   <input
                     type="number"
                     value={form.limits.servicos === 'unlimited' ? -1 : (form.limits.servicos ?? 0)}
                     onChange={e => setLimit('servicos', Number(e.target.value) === -1 ? 'unlimited' : Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 outline-none focus:border-blue-500"
                   />
                 </div>
 
-                <div className="p-4 border border-[#1a1a1a] bg-[#111] rounded-xl">
-                  <label className="block text-sm font-medium text-white mb-1">Produtos</label>
-                  <p className="text-[10px] text-[#555] mb-3">Máximo de produtos de revenda.</p>
+                <div className="p-4 border border-slate-200 bg-slate-50 rounded-xl">
+                  <label className="block text-sm font-semibold text-slate-800 mb-1">Produtos</label>
+                  <p className="text-[10px] text-slate-400 mb-3">Máximo de produtos de revenda.</p>
                   <input
                     type="number"
                     value={form.limits.produtos === 'unlimited' ? -1 : (form.limits.produtos ?? 0)}
                     onChange={e => setLimit('produtos', Number(e.target.value) === -1 ? 'unlimited' : Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-[#0a0a0a] border border-[#222] rounded-lg text-sm text-white"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -501,14 +497,14 @@ function PlanModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-[#1a1a1a] px-6 py-4 flex items-center justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-[#555] hover:text-white transition-colors">
+        <div className="border-t border-slate-100 px-6 py-4 flex items-center justify-end gap-3 bg-slate-50/70">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-900 font-medium transition-colors">
             Cancelar
           </button>
           <button
             onClick={() => onSave(form, plan?.id)}
             disabled={saving || !form.name || !form.key}
-            className="flex items-center gap-2 px-5 py-2 bg-white text-black text-sm font-medium rounded-lg hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-xs"
           >
             <Save className="w-4 h-4" />
             {saving ? 'Salvando...' : 'Salvar Plano'}
@@ -519,114 +515,77 @@ function PlanModal({
   );
 }
 
-// ── Page ─────────────────────────────────────────────────────────────────────
+// ── Main Page ────────────────────────────────────────────────────────────────
 export default function AdminPlans() {
+  const [modalPlan, setModalPlan] = useState<Plan | 'new' | 'closed'>('closed');
+  const isModalOpen = modalPlan !== 'closed';
   const queryClient = useQueryClient();
-  const [modalPlan, setModalPlan] = useState<Plan | null | 'new'>('closed' as any);
-  const isModalOpen = modalPlan !== 'closed' as any;
 
-  // Carrega Catálogos (Dicts)
+  const { data: plans = [], isLoading } = useQuery({
+    queryKey: ['admin_plans_v2'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('plans')
+        .select(`
+          *,
+          plan_prices (*),
+          subscriptions (count)
+        `)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as Plan[];
+    }
+  });
+
   const { data: sysPermissions = [] } = useQuery({
     queryKey: ['sys_permissions'],
     queryFn: async () => {
-      const { data } = await supabase.from('sys_permissions').select('*');
-      return data as SysPermission[] || [];
+      const { data } = await supabase.from('sys_permissions').select('*').order('module');
+      return (data ?? []) as SysPermission[];
     }
   });
 
   const { data: sysFeatures = [] } = useQuery({
     queryKey: ['sys_features'],
     queryFn: async () => {
-      const { data } = await supabase.from('sys_features').select('*');
-      return data as SysFeature[] || [];
-    }
-  });
-
-  // Carrega Planos
-  const { data: plans = [], isLoading } = useQuery({
-    queryKey: ['admin_plans_v2'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('plans')
-        .select('*, plan_prices (*), subscriptions(count)');
-      if (error) throw error;
-      
-      const sortedPlans = (data as Plan[]).sort((a, b) => {
-        if (a.is_default) return -1;
-        if (b.is_default) return 1;
-        
-        const aPrice = a.plan_prices?.find(p => p.currency === 'BRL')?.amount || 0;
-        const bPrice = b.plan_prices?.find(p => p.currency === 'BRL')?.amount || 0;
-        return aPrice - bPrice;
-      });
-      return sortedPlans;
+      const { data } = await supabase.from('sys_features').select('*').order('module');
+      return (data ?? []) as SysFeature[];
     }
   });
 
   const savePlan = useMutation({
-    mutationFn: async ({ form, id, isDuplicate }: { form: PlanFormData; id?: string, isDuplicate?: boolean }) => {
-      
-      // Monta JSONs finais
-      const featuresJsonb = {
-        ...form.features,
-        display_features: form.display_features, // backwards compatibility
-      };
-
-      let finalPermissions = form.permissions || [];
-      const hasProductPerm = finalPermissions.some(p => p.startsWith('produto.'));
-      const allowProducts = Boolean(form.features.produtos || hasProductPerm);
-
-      if (!allowProducts) {
-        finalPermissions = finalPermissions.filter(p => !p.startsWith('produto.'));
-      }
-
-      const planData = {
+    mutationFn: async ({ form, id }: { form: PlanFormData; id?: string }) => {
+      const planPayload: any = {
         name: form.name,
         key: form.key,
-        description: form.description || null,
-        max_professionals: form.limits.profissionais === 'unlimited' ? 999 : Number(form.limits.profissionais || 1), // fallback for old column
-        allow_products: allowProducts,
+        description: form.description,
         trial_days: form.trial_days,
         sort_order: form.sort_order,
-        features: {
-          ...featuresJsonb,
-          produtos: allowProducts,
-        },
-        permissions: finalPermissions,
-        limits: form.limits,
         is_default: form.is_default,
         is_trial_plan: form.is_trial_plan,
-        active: true,
+        permissions: form.permissions,
+        features: {
+          ...form.features,
+          display_features: form.display_features,
+        },
+        limits: form.limits,
+        max_professionals: typeof form.limits.profissionais === 'number' ? form.limits.profissionais : null,
       };
-
-      if (form.is_default) {
-        await supabase.from('plans').update({ is_default: false }).neq('id', '00000000-0000-0000-0000-000000000000');
-      }
-
-      if (form.is_trial_plan) {
-        await supabase.from('plans').update({ is_trial_plan: false } as any).neq('id', '00000000-0000-0000-0000-000000000000');
-      }
 
       let planId = id;
 
-      if (id && !isDuplicate) {
-        const { error } = await supabase.from('plans').update(planData as any).eq('id', id);
+      if (id) {
+        const { error } = await supabase.from('plans').update(planPayload).eq('id', id);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from('plans').insert(planData as any).select().single();
+        const { data, error } = await supabase.from('plans').insert(planPayload).select().single();
         if (error) throw error;
         planId = data.id;
-        
-        if (isDuplicate && id) {
-          await supabase.from('plans').update({ active: false }).eq('id', id);
-        }
       }
 
       if (planId) {
-        const syncPrice = async (currency: string, country: string, amount: number, stripeId: string) => {
-          const existingPlan = plans.find(p => p.id === planId);
-          const existingPrice = existingPlan?.plan_prices?.find(p => p.currency === currency);
-          
+        const syncPrice = async (currency: string, country: string, amount: number, stripeId?: string) => {
+          const existingPrice = plans.find(p => p.id === planId)?.plan_prices?.find(p => p.currency === currency);
           if (existingPrice) {
             await supabase.from('plan_prices').update({ 
               amount, 
@@ -680,13 +639,13 @@ export default function AdminPlans() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title="Planos & Permissões"
+        title="Planos &amp; Permissões"
         subtitle="Configure as regras e limites do SaaS via Permission Engine"
         icon={<Settings className="w-5 h-5" />}
         actions={
           <button
             onClick={() => setModalPlan('new' as any)}
-            className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded-lg hover:bg-zinc-200 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-xs"
           >
             <Plus className="w-4 h-4" /> Novo Plano
           </button>
@@ -694,12 +653,12 @@ export default function AdminPlans() {
       />
 
       {!isLoading && !plans.some(p => p.is_default) && (
-        <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl p-6 flex items-center justify-between">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 flex items-center justify-between">
           <div>
-            <h3 className="text-violet-400 font-bold text-lg mb-1">Nenhum Plano Padrão</h3>
-            <p className="text-[#888] text-sm">Crie o fallback gratuito.</p>
+            <h3 className="text-blue-800 font-bold text-lg mb-1">Nenhum Plano Padrão</h3>
+            <p className="text-slate-600 text-sm">Crie o fallback gratuito.</p>
           </div>
-          <button onClick={() => setModalPlan('new' as any)} className="bg-violet-600 px-4 py-2 text-white font-bold rounded-lg">Criar Agora</button>
+          <button onClick={() => setModalPlan('new' as any)} className="bg-blue-600 hover:bg-blue-700 px-4 py-2 text-white font-bold rounded-lg transition-colors">Criar Agora</button>
         </div>
       )}
 
@@ -720,48 +679,48 @@ export default function AdminPlans() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.08 }}
-                className={`bg-[#0a0a0a] border rounded-xl overflow-hidden flex flex-col ${plan.active ? 'border-[#1a1a1a]' : 'border-[#111] opacity-60'}`}
+                className={`bg-white border rounded-xl overflow-hidden flex flex-col shadow-xs hover:shadow-md hover:border-blue-300 transition-all ${plan.active ? 'border-slate-200' : 'border-slate-100 opacity-60'}`}
               >
-                <div className="p-5 border-b border-[#111] flex-1">
+                <div className="p-5 border-b border-slate-100 flex-1">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-white font-bold">{plan.name}</h3>
+                    <h3 className="text-slate-900 font-bold text-base">{plan.name}</h3>
                     <div className="flex flex-wrap gap-1.5 justify-end">
                       {(plan as any).is_trial_plan && (
-                        <span className="text-[9px] text-amber-400 border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 rounded font-mono font-bold flex items-center gap-1">
+                        <span className="text-[9px] text-amber-700 border border-amber-300 bg-amber-50 px-1.5 py-0.5 rounded font-mono font-bold flex items-center gap-1">
                           <Sparkles className="w-2.5 h-2.5" /> TRIAL ({plan.trial_days}D)
                         </span>
                       )}
-                      {plan.is_default && <span className="text-[9px] text-violet-400 border border-violet-500/20 bg-violet-500/5 px-1.5 py-0.5 rounded font-mono">FALLBACK</span>}
+                      {plan.is_default && <span className="text-[9px] text-blue-700 border border-blue-200 bg-blue-50 px-1.5 py-0.5 rounded font-mono font-bold">FALLBACK</span>}
                       {(!plan.active && subCount > 0) ? (
-                        <span className="text-[9px] text-amber-400 border border-amber-500/20 bg-amber-500/5 px-1.5 py-0.5 rounded font-mono">LEGADO</span>
+                        <span className="text-[9px] text-amber-700 border border-amber-200 bg-amber-50 px-1.5 py-0.5 rounded font-mono">LEGADO</span>
                       ) : (
-                        <span className={`text-[9px] border px-1.5 py-0.5 rounded font-mono ${plan.active ? 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5' : 'text-[#555] border-[#222]'}`}>{plan.active ? 'ATIVO' : 'INATIVO'}</span>
+                        <span className={`text-[9px] border px-1.5 py-0.5 rounded font-mono font-semibold ${plan.active ? 'text-emerald-700 border-emerald-200 bg-emerald-50' : 'text-slate-500 border-slate-200 bg-slate-100'}`}>{plan.active ? 'ATIVO' : 'INATIVO'}</span>
                       )}
                     </div>
                   </div>
-                  <p className="text-xs text-[#666] min-h-[32px]">{plan.description}</p>
+                  <p className="text-xs text-slate-500 min-h-[32px]">{plan.description}</p>
                   
                   <div className="mt-4 mb-4">
                     {brlPrice ? (
-                      <div><span className="text-xl font-black text-white">{money(brlPrice.amount)}</span><span className="text-xs text-[#555]">/mês</span></div>
-                    ) : <span className="text-xs text-[#444]">Sem preço</span>}
+                      <div><span className="text-xl font-black text-slate-900">{money(brlPrice.amount)}</span><span className="text-xs text-slate-400">/mês</span></div>
+                    ) : <span className="text-xs text-slate-400">Sem preço</span>}
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs text-[#777]">
-                    <Users className="w-3.5 h-3.5" />
-                    Limite: {profLimit === 'unlimited' ? 'Ilimitado' : `${profLimit} profissional(is)`}
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <Users className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Limite: <strong className="text-slate-800">{profLimit === 'unlimited' ? 'Ilimitado' : `${profLimit} profissional(is)`}</strong></span>
                   </div>
                 </div>
 
-                <div className="bg-[#0f0f0f] p-3 flex gap-2">
-                  <button onClick={() => setModalPlan(plan)} className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-white bg-[#1a1a1a] hover:bg-[#222] rounded-lg">
+                <div className="bg-slate-50/70 p-3 flex gap-2 border-t border-slate-100">
+                  <button onClick={() => setModalPlan(plan)} className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:text-blue-600 rounded-lg transition-colors shadow-xs">
                     <Edit2 className="w-3.5 h-3.5" /> Editar
                   </button>
-                  <button onClick={() => toggleActive.mutate({ id: plan.id, active: !plan.active })} className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-white bg-[#1a1a1a] hover:bg-[#222] rounded-lg">
-                    {plan.active ? <Ban className="w-3.5 h-3.5 text-amber-400"/> : <CheckCircle className="w-3.5 h-3.5 text-emerald-400"/>}
+                  <button onClick={() => toggleActive.mutate({ id: plan.id, active: !plan.active })} className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors shadow-xs">
+                    {plan.active ? <Ban className="w-3.5 h-3.5 text-amber-500"/> : <CheckCircle className="w-3.5 h-3.5 text-emerald-500"/>}
                     {plan.active ? 'Desativar' : 'Ativar'}
                   </button>
-                  <button onClick={() => { if(window.confirm('Excluir?')) deletePlan.mutate(plan.id); }} disabled={subCount > 0} className="w-10 flex items-center justify-center bg-[#1a1a1a] hover:bg-red-500/20 text-[#555] hover:text-red-400 rounded-lg disabled:opacity-30">
+                  <button onClick={() => { if(window.confirm('Excluir?')) deletePlan.mutate(plan.id); }} disabled={subCount > 0} className="w-10 flex items-center justify-center bg-white border border-slate-200 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg disabled:opacity-30 transition-colors shadow-xs">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -787,4 +746,3 @@ export default function AdminPlans() {
     </div>
   );
 }
-

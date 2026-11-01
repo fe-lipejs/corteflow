@@ -14,6 +14,7 @@ import { useServices } from '../../hooks/useServices';
 import { useCreateBooking, useBookingsRealtime, useUpdateBookingStatus } from '../../hooks/useBookings';
 import BookingModal from './agenda/BookingModal';
 import BookingDetailSheet from './agenda/BookingDetailSheet';
+
 export default function Dashboard() {
   const { profile, tenant, professionalProfile } = useAuth();
   const { theme } = useTheme();
@@ -148,6 +149,20 @@ export default function Dashboard() {
         .eq('tenant_id', tenantId);
       if (error) throw error;
       return data || [];
+    },
+    enabled: !!tenantId,
+  });
+
+  // 5. Fetch tenant settings (logo_url) para o ícone de foto da tela inicial
+  const { data: tenantSettings } = useQuery({
+    queryKey: ['dashboard_tenant_settings', tenantId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('tenant_settings')
+        .select('logo_url')
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+      return data;
     },
     enabled: !!tenantId,
   });
@@ -293,18 +308,42 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
-      {/* Header com Saudação */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>Visão Geral</p>
-          <h1 className="font-serif text-3xl md:text-4xl font-bold tracking-tight" style={{ color: theme.textPrimary }}>
-            {getGreeting()}, <span style={{ color: theme.accent }}>{firstName}.</span>
-          </h1>
-          <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-            {todayBookings.length > 0 
-              ? `Você tem ${todayBookings.length} agendamentos hoje.` 
-              : 'Nenhum agendamento para hoje.'}
-          </p>
+      {/* Header com Saudação e Foto/Logo Clicável */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div className="flex items-center gap-4">
+          <button 
+            type="button"
+            onClick={() => navigate('/admin')}
+            className="cursor-pointer group flex-shrink-0 relative focus:outline-none transition-transform hover:scale-105 active:scale-95"
+            title="Voltar para a tela inicial do Admin (Visão Geral)"
+          >
+            {tenantSettings?.logo_url ? (
+              <img 
+                src={tenantSettings.logo_url} 
+                alt="Logo do Estabelecimento" 
+                className="w-14 h-14 md:w-16 md:h-16 rounded-2xl object-cover border shadow-sm group-hover:border-blue-400 transition-all"
+                style={{ borderColor: theme.border }} 
+              />
+            ) : (
+              <div 
+                className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center font-bold text-lg md:text-xl shadow-sm"
+                style={{ background: theme.accent, color: theme.textInverse }}
+              >
+                {tenant?.name?.substring(0, 2).toUpperCase() || 'RF'}
+              </div>
+            )}
+          </button>
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>Visão Geral</p>
+            <h1 className="font-serif text-3xl md:text-4xl font-bold tracking-tight" style={{ color: theme.textPrimary }}>
+              {getGreeting()}, <span style={{ color: theme.accent }}>{firstName}.</span>
+            </h1>
+            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
+              {todayBookings.length > 0 
+                ? `Você tem ${todayBookings.length} agendamentos hoje.` 
+                : 'Nenhum agendamento para hoje.'}
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-1">
           <a 

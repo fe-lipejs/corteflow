@@ -6,7 +6,7 @@ import {
   Building2, CheckCircle, Ban, Clock, XCircle,
   Users, UserCheck, Briefcase, Calendar,
   DollarSign, TrendingUp, BarChart3, CreditCard,
-  ArrowUpRight, ArrowDownRight, Minus, Activity
+  ArrowUpRight, Activity
 } from 'lucide-react';
 import { supabase } from '../../integrations/supabase/client';
 import AdminPageHeader from './components/AdminPageHeader';
@@ -73,7 +73,6 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   // Revenue calculation from active subscriptions (respecting custom overrides)
   let monthlyRevenue = 0;
   subsList.forEach((sub) => {
-    // Check if there is an active override for this tenant and plan
     const override = customPricingList.find(c => c.tenant_id === sub.tenant_id && c.plan_id === sub.plan_id);
     
     if (override && override.amount_override !== undefined) {
@@ -122,25 +121,25 @@ interface StatCardProps {
   delay?: number;
 }
 
-function StatCard({ icon: Icon, label, value, sub, accent = '#7c3aed', delay = 0 }: StatCardProps) {
+function StatCard({ icon: Icon, label, value, sub, accent = '#2563eb', delay = 0 }: StatCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay }}
-      className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-5 hover:border-[#2a2a2a] transition-all group"
+      className="bg-white border border-slate-200/90 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all group shadow-xs"
     >
       <div className="flex items-start justify-between mb-4">
-        <p className="text-xs font-medium text-[#555] uppercase tracking-wider">{label}</p>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center opacity-70 group-hover:opacity-100 transition-opacity"
-          style={{ background: `${accent}18` }}
+          className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
+          style={{ background: `${accent}15` }}
         >
           <Icon className="w-4 h-4" style={{ color: accent }} />
         </div>
       </div>
-      <p className="text-2xl font-bold text-white mb-1 tracking-tight">{value}</p>
-      {sub && <p className="text-xs text-[#444]">{sub}</p>}
+      <p className="text-2xl font-bold text-slate-900 mb-1 tracking-tight">{value}</p>
+      {sub && <p className="text-xs text-slate-400">{sub}</p>}
     </motion.div>
   );
 }
@@ -203,25 +202,25 @@ export default function AdminDashboard() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-amber-500/10 via-[#121216] to-[#121216] border border-amber-500/30 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl"
+        className="bg-gradient-to-r from-blue-50/80 via-white to-blue-50/30 border border-blue-200/80 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs"
       >
         <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-[#F59E0B] shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
             <Activity className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-display font-semibold text-base text-white flex items-center gap-2">
+            <h3 className="font-semibold text-base text-slate-900 flex items-center gap-2">
               Motor de Visitas, Cliques &amp; Tráfego Ativo
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </h3>
-            <p className="text-xs text-[#A1A1A6]">
+            <p className="text-xs text-slate-500">
               Acompanhe em tempo real os acessos à Landing Page, tráfego do Instagram e engajamento com a Playlist &amp; Mensagens de Fé.
             </p>
           </div>
         </div>
         <Link
           to="/platform/analytics"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#F59E0B] text-black font-bold text-xs hover:bg-[#FBBF24] transition-all shadow-md shrink-0"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition-all shadow-sm shadow-blue-500/20 shrink-0"
         >
           <span>Ver Motor de Visitas</span>
           <ArrowUpRight className="w-4 h-4" />
@@ -230,33 +229,33 @@ export default function AdminDashboard() {
 
       {/* ── Empresas ── */}
       <section>
-        <p className="text-xs font-bold uppercase tracking-widest text-[#333] mb-3">Empresas</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Empresas</p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          <StatCard icon={Building2}   label="Total"      value={tenants.total}    accent="#7c3aed" delay={0}    />
+          <StatCard icon={Building2}   label="Total"      value={tenants.total}    accent="#2563eb" delay={0}    />
           <StatCard icon={CheckCircle} label="Ativas"     value={tenants.active}   accent="#10b981" delay={0.05} sub={`${tenants.total > 0 ? Math.round(tenants.active / tenants.total * 100) : 0}% do total`} />
           <StatCard icon={Clock}       label="Em Trial"   value={tenants.trial}    accent="#f59e0b" delay={0.1}  />
           <StatCard icon={Ban}         label="Bloqueadas" value={tenants.blocked}  accent="#ef4444" delay={0.15} />
-          <StatCard icon={XCircle}     label="Canceladas" value={tenants.canceled} accent="#6b7280" delay={0.2}  />
+          <StatCard icon={XCircle}     label="Canceladas" value={tenants.canceled} accent="#64748b" delay={0.2}  />
         </div>
       </section>
 
       {/* ── Usuários ── */}
       <section>
-        <p className="text-xs font-bold uppercase tracking-widest text-[#333] mb-3">Usuários</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Usuários</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <StatCard icon={Users}      label="Total de Usuários"  value={users.total}         accent="#3b82f6" delay={0.25} />
-          <StatCard icon={UserCheck}  label="Clientes"           value={users.clients}       accent="#06b6d4" delay={0.3}  />
-          <StatCard icon={Briefcase}  label="Profissionais"      value={users.professionals} accent="#8b5cf6" delay={0.35} />
+          <StatCard icon={Users}      label="Total de Usuários"  value={users.total}         accent="#2563eb" delay={0.25} />
+          <StatCard icon={UserCheck}  label="Clientes"           value={users.clients}       accent="#0284c7" delay={0.3}  />
+          <StatCard icon={Briefcase}  label="Profissionais"      value={users.professionals} accent="#6366f1" delay={0.35} />
         </div>
       </section>
 
       {/* ── Agendamentos + Receita ── */}
       <section>
-        <p className="text-xs font-bold uppercase tracking-widest text-[#333] mb-3">Agendamentos & Receita</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Agendamentos &amp; Receita</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard icon={Calendar}    label="Agendamentos"   value={bookings.total}         accent="#7c3aed"  delay={0.4}  />
+          <StatCard icon={Calendar}    label="Agendamentos"   value={bookings.total}         accent="#2563eb"  delay={0.4}  />
           <StatCard icon={DollarSign}  label="MRR"            value={fmt(revenue.monthly)}   accent="#10b981"  delay={0.45} sub="Receita mensal recorrente" />
-          <StatCard icon={TrendingUp}  label="ARR"            value={fmt(revenue.annual)}    accent="#06b6d4"  delay={0.5}  sub="Receita anual projetada" />
+          <StatCard icon={TrendingUp}  label="ARR"            value={fmt(revenue.annual)}    accent="#0284c7"  delay={0.5}  sub="Receita anual projetada" />
           <StatCard icon={CreditCard}  label="Ticket Médio"   value={fmt(revenue.avgTicket)} accent="#f59e0b"  delay={0.55} sub="Por assinatura ativa" />
         </div>
       </section>
@@ -264,9 +263,9 @@ export default function AdminDashboard() {
       {/* ── Últimas Empresas ── */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#333]">Empresas Recentes</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Empresas Recentes</p>
         </div>
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
           {recentTenants.length === 0 ? (
             <AdminEmptyState
               title="Nenhuma empresa cadastrada"
@@ -274,29 +273,27 @@ export default function AdminDashboard() {
               icon={<Building2 className="w-6 h-6" />}
             />
           ) : (
-            <div className="divide-y divide-[#111]">
+            <div className="divide-y divide-slate-100">
               {recentTenants.map((tenant, i) => (
                 <motion.div
                   key={tenant.id}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.6 + i * 0.05 }}
-                  className="flex items-center justify-between px-5 py-3.5 hover:bg-[#111] transition-colors"
+                  className="flex items-center justify-between px-5 py-3.5 hover:bg-slate-50/80 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg flex items-center justify-center">
-                      <span className="text-xs font-bold text-[#666]">
-                        {tenant.name.charAt(0).toUpperCase()}
-                      </span>
+                    <div className="w-9 h-9 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-blue-700 font-bold text-xs shadow-xs">
+                      {tenant.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white">{tenant.name}</p>
-                      <p className="text-xs text-[#444]">{getTenantPublicUrl(tenant.slug).replace(/^https?:\/\//, '')} · {BusinessTypeLabel(tenant.business_type)}</p>
+                      <p className="text-sm font-semibold text-slate-800">{tenant.name}</p>
+                      <p className="text-xs text-slate-400">{getTenantPublicUrl(tenant.slug).replace(/^https?:\/\//, '')} · {BusinessTypeLabel(tenant.business_type)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <AdminBadge value={tenant.status} dot />
-                    <p className="text-xs text-[#333] hidden md:block">
+                    <p className="text-xs text-slate-400 hidden md:block">
                       {new Date(tenant.created_at).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
@@ -309,4 +306,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-

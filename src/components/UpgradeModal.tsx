@@ -216,11 +216,9 @@ export function UpgradeModal({
               hoje
             </span>
           </div>
-
-
         </div>
 
-        {/* CTA */}
+        {/* CTA - Agora utilizando a cor de destaque (accent) do tema selecionado */}
         <button
           type="button"
           onClick={handleAction}
@@ -229,17 +227,18 @@ export function UpgradeModal({
             w-full
             rounded-xl
             py-3.5
-            text-[12px]
+            text-[13px]
             font-bold
             shadow-lg
             transition-all
-            hover:opacity-90
+            hover:opacity-95
+            hover:brightness-105
             active:scale-[0.97]
           "
           style={{
-            background: theme.id !== 'elegant' ? '#FFFFFF' : '#0f172a',
-            color: theme.id !== 'elegant' ? '#000000' : '#FFFFFF',
-            boxShadow: theme.id !== 'elegant' ? '0 10px 30px rgba(255, 255, 255, 0.15)' : (theme.shadowAccent || '0 10px 25px rgba(15,23,42,0.16)')
+            background: theme.btnPrimaryBg || theme.accent,
+            color: theme.btnPrimaryText || '#FFFFFF',
+            boxShadow: `0 10px 25px color-mix(in srgb, ${theme.accent} 35%, transparent)`
           }}
         >
           Experimentar gratuitamente

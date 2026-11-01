@@ -1,16 +1,16 @@
 type BadgeVariant = 'active' | 'trial' | 'suspended' | 'blocked' | 'canceled' | 'neutral' | 'violet' | 'blue' | 'deleted' | 'past_due';
 
 const variantMap: Record<BadgeVariant, string> = {
-  active:    'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  trial:     'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  suspended: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-  blocked:   'bg-red-500/10 text-red-400 border-red-500/20',
-  canceled:  'bg-zinc-800/50 text-zinc-500 border-zinc-700/30',
-  deleted:   'bg-red-950/50 text-red-500 border-red-500/30 line-through decoration-red-500/50',
-  past_due:  'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-  neutral:   'bg-[#1a1a1a] text-[#777] border-[#333]',
-  violet:    'bg-violet-500/10 text-violet-400 border-violet-500/20',
-  blue:      'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  active:    'bg-emerald-50 text-emerald-700 border-emerald-200',
+  trial:     'bg-amber-50 text-amber-700 border-amber-200',
+  suspended: 'bg-orange-50 text-orange-700 border-orange-200',
+  blocked:   'bg-red-50 text-red-700 border-red-200',
+  canceled:  'bg-slate-100 text-slate-600 border-slate-200',
+  deleted:   'bg-red-50 text-red-600 border-red-200 line-through decoration-red-400',
+  past_due:  'bg-amber-50 text-amber-700 border-amber-200',
+  neutral:   'bg-slate-100 text-slate-600 border-slate-200',
+  violet:    'bg-indigo-50 text-indigo-700 border-indigo-200',
+  blue:      'bg-blue-50 text-blue-700 border-blue-200',
 };
 
 const labelMap: Record<string, string> = {
@@ -47,4 +47,3 @@ export default function AdminBadge({ variant = 'neutral', label, value, dot = fa
     </span>
   );
 }
-

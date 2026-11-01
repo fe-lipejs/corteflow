@@ -21,13 +21,12 @@ export default function AdminEmptyState({
       animate={{ opacity: 1 }}
       className="flex flex-col items-center justify-center py-20 px-8 text-center"
     >
-      <div className="w-16 h-16 bg-[#111] border border-[#222] rounded-2xl flex items-center justify-center text-[#333] mb-5">
+      <div className="w-16 h-16 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center text-blue-500 mb-5 shadow-xs">
         {icon ?? <Inbox className="w-7 h-7" />}
       </div>
-      <h3 className="text-white font-semibold text-base mb-2">{title}</h3>
-      {description && <p className="text-[#555] text-sm max-w-sm leading-relaxed">{description}</p>}
+      <h3 className="text-slate-900 font-semibold text-base mb-2">{title}</h3>
+      {description && <p className="text-slate-500 text-sm max-w-sm leading-relaxed">{description}</p>}
       {action && <div className="mt-6">{action}</div>}
     </motion.div>
   );
 }
-

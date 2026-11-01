@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Users, Shield, MoreVertical,
   ChevronLeft, ChevronRight, AlertTriangle, ChevronDown, ChevronUp,
-  X, Trash2, CreditCard, CheckCircle2, ShieldAlert
+  X, Trash2, CreditCard, ShieldAlert
 } from 'lucide-react';
 import { supabase } from '../../integrations/supabase/client';
 import AdminPageHeader from './components/AdminPageHeader';
@@ -109,7 +109,6 @@ export default function AdminUsuarios() {
     mutationFn: async (user: AdminUser) => {
       if (!user.tenant_id) throw new Error('Este usuário não possui empresa vinculada.');
 
-      // 1. Invoke Edge Function to cancel on Stripe immediately
       try {
         await supabase.functions.invoke('delete-account', {
           body: { target_tenant_id: user.tenant_id }
@@ -118,7 +117,6 @@ export default function AdminUsuarios() {
         console.warn('Edge function warning:', err);
       }
 
-      // 2. Mark subscription as canceled in database
       const { error } = await supabase
         .from('subscriptions')
         .update({ status: 'canceled', canceled_at: new Date().toISOString() } as any)
@@ -141,7 +139,6 @@ export default function AdminUsuarios() {
   const deleteAccount = useMutation({
     mutationFn: async (user: AdminUser) => {
       if (user.tenant_id) {
-        // 1. Guarantee Stripe subscription is canceled first
         try {
           await supabase.functions.invoke('delete-account', {
             body: { target_tenant_id: user.tenant_id }
@@ -150,20 +147,17 @@ export default function AdminUsuarios() {
           console.warn('Stripe cancellation on delete warning:', e);
         }
 
-        // 2. Cancel subscription record
         await supabase
           .from('subscriptions')
           .update({ status: 'canceled', canceled_at: new Date().toISOString() } as any)
           .eq('tenant_id', user.tenant_id);
 
-        // 3. Safe Soft Delete on tenant
         const { error: tenantErr } = await supabase.rpc('delete_tenant_safely', { p_tenant_id: user.tenant_id });
         if (tenantErr) {
           await supabase.from('tenants').update({ deleted_at: new Date().toISOString(), status: 'canceled' } as any).eq('id', user.tenant_id);
         }
       }
 
-      // 4. Update profile status / detach tenant
       await supabase.from('profiles').update({ role: 'client' } as any).eq('id', user.id);
     },
     onSuccess: () => {
@@ -192,7 +186,7 @@ export default function AdminUsuarios() {
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const roleColors: Record<string, string> = {
-    super_admin: 'violet',
+    super_admin: 'blue',
     admin: 'blue',
     manager: 'blue',
     professional: 'neutral',
@@ -211,19 +205,19 @@ export default function AdminUsuarios() {
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-3">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#444]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             placeholder="Buscar usuário ou empresa..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(0); }}
-            className="w-full pl-9 pr-4 py-2 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg text-sm text-white placeholder-[#444] outline-none focus:border-[#333] transition-colors"
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors shadow-xs"
           />
         </div>
         <select
           value={roleFilter}
           onChange={e => { setRoleFilter(e.target.value as UserRole | 'all'); setPage(0); }}
-          className="px-3 py-2 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg text-sm text-[#888] outline-none focus:border-[#333]"
+          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 outline-none focus:border-blue-500 shadow-xs"
         >
           <option value="all">Todos os papéis</option>
           {ROLES.map(r => (
@@ -233,9 +227,9 @@ export default function AdminUsuarios() {
       </div>
 
       {/* Table */}
-      <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
         {/* Header */}
-        <div className="grid grid-cols-12 gap-4 px-5 py-3 border-b border-[#111] text-[10px] font-bold uppercase tracking-widest text-[#333]">
+        <div className="grid grid-cols-12 gap-4 px-5 py-3 border-b border-slate-100 bg-slate-50/70 text-[10px] font-bold uppercase tracking-wider text-slate-400">
           <div className="col-span-5">Usuário</div>
           <div className="col-span-3 hidden md:block">Empresa</div>
           <div className="col-span-2">Papel</div>
@@ -251,38 +245,36 @@ export default function AdminUsuarios() {
             icon={<Users className="w-6 h-6" />}
           />
         ) : (
-          <div className="divide-y divide-[#0d0d0d]">
+          <div className="divide-y divide-slate-100">
             {paginated.map((user, i) => (
               <motion.div
                 key={user.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: i * 0.03 }}
-                className={`group grid grid-cols-12 gap-4 items-center px-5 py-3.5 hover:bg-[#0f0f0f] transition-colors relative ${openMenuId === user.id ? 'z-40' : 'z-0'}`}
+                className={`group grid grid-cols-12 gap-4 items-center px-5 py-3.5 hover:bg-slate-50/80 transition-colors relative ${openMenuId === user.id ? 'z-40' : 'z-0'}`}
               >
                 {/* Name */}
                 <div 
                   className="col-span-5 flex items-center gap-3 min-w-0 cursor-pointer"
                   onClick={() => { setSelectedUser(user); setShowDangerZone(false); }}
                 >
-                  <div className="w-8 h-8 bg-[#111] border border-[#1a1a1a] rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-blue-50 border border-blue-100 rounded-full flex items-center justify-center flex-shrink-0 text-blue-700 font-bold text-xs shadow-xs">
                     {user.avatar_url ? (
                       <img src={user.avatar_url} alt={user.full_name} className="w-full h-full rounded-full object-cover" />
                     ) : (
-                      <span className="text-xs font-bold text-[#555]">
-                        {user.full_name.charAt(0).toUpperCase()}
-                      </span>
+                      <span>{user.full_name.charAt(0).toUpperCase()}</span>
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-white truncate hover:underline">{user.full_name}</p>
-                    <p className="text-xs text-[#333] font-mono truncate">{user.id.slice(0, 8)}...</p>
+                    <p className="text-sm font-semibold text-slate-900 truncate hover:text-blue-600 transition-colors">{user.full_name}</p>
+                    <p className="text-xs text-slate-400 font-mono truncate">{user.id.slice(0, 8)}...</p>
                   </div>
                 </div>
 
                 {/* Tenant */}
                 <div className="col-span-3 hidden md:block">
-                  <p className="text-xs text-[#555] truncate">
+                  <p className="text-xs text-slate-600 truncate">
                     {user.tenant_name ?? (user.role === 'super_admin' ? 'Plataforma' : '—')}
                   </p>
                 </div>
@@ -295,7 +287,7 @@ export default function AdminUsuarios() {
                       onChange={e => updateRole.mutate({ id: user.id, role: e.target.value as UserRole })}
                       onBlur={() => setEditingRole(null)}
                       autoFocus
-                      className="px-2 py-1 bg-[#111] border border-[#333] rounded text-xs text-white outline-none"
+                      className="px-2 py-1 bg-white border border-blue-400 rounded text-xs text-slate-800 outline-none"
                     >
                       {ROLES.map(r => (
                         <option key={r} value={r}>{r}</option>
@@ -310,7 +302,7 @@ export default function AdminUsuarios() {
                 <div className="col-span-2 flex items-center justify-end gap-1.5 relative">
                   <button
                     onClick={() => { setSelectedUser(user); setShowDangerZone(false); }}
-                    className="px-2.5 py-1 text-xs bg-[#111] hover:bg-[#1a1a1a] text-[#888] hover:text-white border border-[#222] rounded-lg transition-colors font-medium hidden sm:inline-flex"
+                    className="px-2.5 py-1 text-xs bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-700 border border-slate-200 rounded-lg transition-colors font-medium hidden sm:inline-flex shadow-xs"
                   >
                     Gerenciar
                   </button>
@@ -318,27 +310,27 @@ export default function AdminUsuarios() {
                   <div className="relative">
                     <button
                       onClick={() => setOpenMenuId(openMenuId === user.id ? null : user.id)}
-                      className="p-1.5 text-[#333] hover:text-white hover:bg-[#1a1a1a] rounded-lg transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
                     >
                       <MoreVertical className="w-3.5 h-3.5" />
                     </button>
                     {openMenuId === user.id && (
-                      <div className="absolute right-0 top-8 w-48 bg-[#0f0f0f] border border-[#222] rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[999] overflow-hidden">
+                      <div className="absolute right-0 top-8 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-[999] overflow-hidden py-1">
                         <button
                           onClick={() => { setSelectedUser(user); setShowDangerZone(false); setOpenMenuId(null); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#aaa] hover:bg-[#1a1a1a] hover:text-white transition-colors"
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors font-medium"
                         >
-                          <Users className="w-3.5 h-3.5 text-blue-400" /> Ver Detalhes
+                          <Users className="w-3.5 h-3.5 text-blue-600" /> Ver Detalhes
                         </button>
                         <button
                           onClick={() => { setEditingRole(user.id); setOpenMenuId(null); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#aaa] hover:bg-[#1a1a1a] hover:text-blue-400 transition-colors"
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors font-medium"
                         >
-                          <Shield className="w-3.5 h-3.5 text-blue-400" /> Alterar Papel
+                          <Shield className="w-3.5 h-3.5 text-blue-600" /> Alterar Papel
                         </button>
                         <button
                           onClick={() => { setSelectedUser(user); setShowDangerZone(true); setOpenMenuId(null); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors border-t border-[#1a1a1a] font-medium"
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors border-t border-slate-100 font-medium"
                         >
                           <ShieldAlert className="w-3.5 h-3.5" /> Zona de Perigo
                         </button>
@@ -353,8 +345,8 @@ export default function AdminUsuarios() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="border-t border-[#111] px-5 py-3 flex items-center justify-between">
-            <p className="text-xs text-[#444]">
+          <div className="border-t border-slate-100 px-5 py-3 flex items-center justify-between bg-slate-50/50">
+            <p className="text-xs text-slate-500">
               {filtered.length} usuário{filtered.length !== 1 ? 's' : ''}
               {' · '}Página {page + 1} de {totalPages}
             </p>
@@ -362,14 +354,14 @@ export default function AdminUsuarios() {
               <button
                 onClick={() => setPage(Math.max(0, page - 1))}
                 disabled={page === 0}
-                className="p-1.5 text-[#444] hover:text-white hover:bg-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
+                className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
                 disabled={page >= totalPages - 1}
-                className="p-1.5 text-[#444] hover:text-white hover:bg-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
+                className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -381,45 +373,45 @@ export default function AdminUsuarios() {
       {/* ── USER DETAILS & DANGER ZONE MODAL ── */}
       <AnimatePresence>
         {selectedUser && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#0f0f0f] border border-[#222] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+              className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
             >
               {/* Header */}
-              <div className="p-6 border-b border-[#1a1a1a] flex items-center justify-between">
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#161616] border border-[#262626] flex items-center justify-center text-sm font-bold text-white">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center text-sm font-bold text-blue-700 shadow-xs">
                     {selectedUser.full_name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-base">{selectedUser.full_name}</h3>
-                    <p className="text-xs text-[#666] font-mono">{selectedUser.id}</p>
+                    <h3 className="font-bold text-slate-900 text-base">{selectedUser.full_name}</h3>
+                    <p className="text-xs text-slate-400 font-mono">{selectedUser.id}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => { setSelectedUser(null); setShowDangerZone(false); setDeleteConfirmText(''); }}
-                  className="p-1.5 text-[#555] hover:text-white rounded-lg transition-colors"
+                  className="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Body */}
-              <div className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-none">
+              <div className="p-6 space-y-6 overflow-y-auto flex-1">
                 {/* Info Cards */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3.5 bg-[#141414] border border-[#222] rounded-xl space-y-1">
-                    <p className="text-[10px] uppercase font-bold text-[#666] tracking-wider">Papel Atual</p>
+                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Papel Atual</p>
                     <div className="pt-0.5">
                       <AdminBadge variant={(roleColors[selectedUser.role] ?? 'neutral') as any} value={selectedUser.role} />
                     </div>
                   </div>
-                  <div className="p-3.5 bg-[#141414] border border-[#222] rounded-xl space-y-1">
-                    <p className="text-[10px] uppercase font-bold text-[#666] tracking-wider">Empresa Vinculada</p>
-                    <p className="text-sm font-medium text-white truncate">
+                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Empresa Vinculada</p>
+                    <p className="text-sm font-semibold text-slate-900 truncate">
                       {selectedUser.tenant_name || 'Nenhuma'}
                     </p>
                   </div>
@@ -427,37 +419,37 @@ export default function AdminUsuarios() {
 
                 {/* Subscription status if tenant exists */}
                 {selectedUser.tenant_id && (
-                  <div className="p-4 bg-[#141414] border border-[#222] rounded-xl space-y-2 text-xs">
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
                     <div className="flex items-center justify-between">
-                      <span className="text-[#888]">Status da Assinatura:</span>
-                      <span className="font-semibold capitalize text-white">
+                      <span className="text-slate-500">Status da Assinatura:</span>
+                      <span className="font-semibold capitalize text-slate-800">
                         {selectedUser.subscription_status || 'Sem assinatura'}
                       </span>
                     </div>
                     {selectedUser.stripe_subscription_id && (
                       <div className="flex items-center justify-between">
-                        <span className="text-[#888]">Stripe ID:</span>
-                        <span className="font-mono text-[#aaa]">{selectedUser.stripe_subscription_id.slice(0, 14)}...</span>
+                        <span className="text-slate-500">Stripe ID:</span>
+                        <span className="font-mono text-slate-600">{selectedUser.stripe_subscription_id.slice(0, 14)}...</span>
                       </div>
                     )}
                   </div>
                 )}
 
                 {/* ── DANGER ZONE (ZONA DE PERIGO) ── */}
-                <div className="border border-red-500/30 rounded-2xl bg-red-950/10 overflow-hidden transition-all">
+                <div className="border border-red-200 rounded-2xl bg-red-50/30 overflow-hidden transition-all">
                   <button
                     type="button"
                     onClick={() => setShowDangerZone(!showDangerZone)}
-                    className="w-full p-4 flex items-center justify-between text-left hover:bg-red-500/5 transition-colors"
+                    className="w-full p-4 flex items-center justify-between text-left hover:bg-red-50/50 transition-colors"
                   >
-                    <div className="flex items-center gap-2.5 text-red-400 font-bold text-xs uppercase tracking-wider">
-                      <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+                    <div className="flex items-center gap-2.5 text-red-600 font-bold text-xs uppercase tracking-wider">
+                      <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
                       <span>Zona de Perigo (Ações Críticas)</span>
                     </div>
                     {showDangerZone ? (
-                      <ChevronUp className="w-4 h-4 text-red-400" />
+                      <ChevronUp className="w-4 h-4 text-red-600" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-red-400" />
+                      <ChevronDown className="w-4 h-4 text-red-600" />
                     )}
                   </button>
 
@@ -467,19 +459,19 @@ export default function AdminUsuarios() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="px-4 pb-5 pt-1 border-t border-red-500/20 space-y-4"
+                        className="px-4 pb-5 pt-1 border-t border-red-200 space-y-4"
                       >
-                        <p className="text-xs text-red-300/70 leading-relaxed">
+                        <p className="text-xs text-red-700 leading-relaxed">
                           Ações nesta seção afetam diretamente o faturamento do Stripe e o acesso deste usuário.
                         </p>
 
                         {/* Action 1: Cancel Subscription */}
-                        <div className="p-3.5 bg-black/40 border border-red-500/20 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="p-3.5 bg-white border border-red-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
                           <div>
-                            <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                              <CreditCard className="w-3.5 h-3.5 text-amber-400" /> Cancelar Assinatura / Plano
+                            <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                              <CreditCard className="w-3.5 h-3.5 text-amber-500" /> Cancelar Assinatura / Plano
                             </h4>
-                            <p className="text-[11px] text-[#888] mt-0.5">
+                            <p className="text-[11px] text-slate-500 mt-0.5">
                               Cancela no Stripe e encerra cobranças recorrentes.
                             </p>
                           </div>
@@ -491,39 +483,39 @@ export default function AdminUsuarios() {
                               }
                             }}
                             disabled={cancelSubscription.isPending || !selectedUser.tenant_id}
-                            className="px-3 py-2 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg text-xs font-bold transition-all disabled:opacity-40 whitespace-nowrap"
+                            className="px-3 py-2 bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-300 rounded-lg text-xs font-bold transition-all disabled:opacity-40 whitespace-nowrap"
                           >
                             {cancelSubscription.isPending ? 'Cancelando...' : 'Cancelar Assinatura'}
                           </button>
                         </div>
 
                         {/* Action 2: Delete Account */}
-                        <div className="p-3.5 bg-black/40 border border-red-500/20 rounded-xl space-y-3">
+                        <div className="p-3.5 bg-white border border-red-200 rounded-xl space-y-3 shadow-xs">
                           <div>
-                            <h4 className="text-xs font-bold text-red-400 flex items-center gap-1.5">
-                              <Trash2 className="w-3.5 h-3.5 text-red-400" /> Apagar Conta Permanentemente
+                            <h4 className="text-xs font-bold text-red-600 flex items-center gap-1.5">
+                              <Trash2 className="w-3.5 h-3.5 text-red-600" /> Apagar Conta Permanentemente
                             </h4>
-                            <p className="text-[11px] text-[#888] mt-0.5">
+                            <p className="text-[11px] text-slate-500 mt-0.5">
                               Cancela o Stripe primeiro e desativa a conta do salão.
                             </p>
                           </div>
 
                           <div className="space-y-2 pt-1">
-                            <label className="block text-[10px] uppercase font-bold text-[#777] tracking-wider">
-                              Digite o nome do usuário para confirmar: <span className="text-white select-none">{selectedUser.full_name}</span>
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                              Digite o nome do usuário para confirmar: <span className="text-slate-900 select-none font-bold">{selectedUser.full_name}</span>
                             </label>
                             <input
                               type="text"
                               value={deleteConfirmText}
                               onChange={e => setDeleteConfirmText(e.target.value)}
                               placeholder={selectedUser.full_name}
-                              className="w-full px-3 py-2 bg-[#111] border border-red-500/30 rounded-lg text-xs text-white outline-none focus:border-red-500 transition-colors"
+                              className="w-full px-3 py-2 bg-slate-50 border border-red-200 rounded-lg text-xs text-slate-900 outline-none focus:border-red-500 transition-colors"
                             />
                             <button
                               type="button"
                               onClick={() => deleteAccount.mutate(selectedUser)}
                               disabled={deleteConfirmText !== selectedUser.full_name || deleteAccount.isPending}
-                              className="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg"
+                              className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-xs"
                             >
                               {deleteAccount.isPending ? 'Apagando conta e cancelando Stripe...' : 'Confirmar e Apagar Conta'}
                             </button>
@@ -536,11 +528,11 @@ export default function AdminUsuarios() {
               </div>
 
               {/* Footer */}
-              <div className="p-4 border-t border-[#1a1a1a] bg-[#0a0a0a] flex justify-end">
+              <div className="p-4 border-t border-slate-100 bg-slate-50/70 flex justify-end">
                 <button
                   type="button"
                   onClick={() => { setSelectedUser(null); setShowDangerZone(false); setDeleteConfirmText(''); }}
-                  className="px-4 py-2 text-xs font-medium text-[#888] hover:text-white transition-colors"
+                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors"
                 >
                   Fechar
                 </button>
@@ -552,4 +544,3 @@ export default function AdminUsuarios() {
     </div>
   );
 }
-
