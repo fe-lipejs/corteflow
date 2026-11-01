@@ -6918,10 +6918,10 @@ export default function LandingPage() {
             -webkit-text-fill-color: var(--rf-ink) !important;
             background: none !important;
           }
-          /* "Cada horário vazio é dinheiro que foi embora." na cor rosa accent */
+          /* "Cada horário vazio é dinheiro que foi embora." na cor preta */
           main .rf-philosophy h2 {
-            color: var(--rf-accent) !important;
-            -webkit-text-fill-color: var(--rf-accent) !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
             background: none !important;
           }
           /* Span/em em seções claras: azul secundário */
