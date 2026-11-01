@@ -679,7 +679,7 @@ export default function Configuracoes() {
     const phoneValidation = normalizeBrazilianPhone(rawPhone);
     if (!phoneValidation.isValid || !phoneValidation.normalized) {
       setPhoneCheckStatus('invalid');
-      setPhoneFeedback(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.');
+      setPhoneFeedback(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (11) 98888-7777.');
       return;
     }
 
@@ -881,7 +881,7 @@ export default function Configuracoes() {
       if (cleanWhatsapp) {
         const phoneValidation = normalizeBrazilianPhone(cleanWhatsapp);
         if (!phoneValidation.isValid || !phoneValidation.normalized) {
-          toast.error(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.');
+          toast.error(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (11) 98888-7777.');
           setLoading(false);
           return;
         }
@@ -1880,7 +1880,7 @@ export default function Configuracoes() {
                         ? 'border-red-500 text-red-700'
                         : ''
                       }`}
-                    placeholder="(27) 99730-3135"
+                    placeholder="(11) 98888-7777"
                   />
                   {phoneFeedback && (
                     <p className={`text-[11px] mt-1 font-semibold flex items-center gap-1 ${phoneCheckStatus === 'valid'

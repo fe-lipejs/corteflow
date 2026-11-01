@@ -871,7 +871,7 @@ export default function AdminDemoPortals() {
                     </label>
                     <input
                       type="text"
-                      placeholder="Ex: (27) 99730-3135"
+                      placeholder="Ex: (11) 98888-7777"
                       value={ownerWhatsapp}
                       onChange={(e) => setOwnerWhatsapp(e.target.value)}
                       className="w-full bg-[#141414] border border-[#262626] rounded-xl px-4 py-3 text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#D4AF37]"

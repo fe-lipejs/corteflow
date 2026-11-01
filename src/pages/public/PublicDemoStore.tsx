@@ -459,7 +459,7 @@ export default function PublicDemoStore() {
 
           <div className="pt-2 flex flex-col gap-3">
             <a
-              href="https://wa.me/5527997303135?text=Ol%C3%A1!%20Gostaria%20de%20solicitar%20um%20novo%20link%20de%20demonstra%C3%A7%C3%A3o%20do%20Raffros."
+              href="https://wa.me/5511988887777?text=Ol%C3%A1!%20Gostaria%20de%20solicitar%20um%20novo%20link%20de%20demonstra%C3%A7%C3%A3o%20do%20Raffros."
               target="_blank"
               rel="noreferrer"
               className="flex items-center justify-center gap-2 w-full bg-[#D4AF37] hover:bg-[#e0bc46] text-black font-semibold py-3.5 rounded-xl text-sm transition-all shadow-lg"
@@ -737,7 +737,7 @@ export default function PublicDemoStore() {
                     type="tel"
                     value={portalPhoneInput}
                     onChange={(e) => setPortalPhoneInput(formatPhoneMask(e.target.value))}
-                    placeholder="(27) 99730-3135"
+                    placeholder="(11) 98888-7777"
                     className="w-full p-3.5 rounded-2xl bg-[#141414] border border-[#2a2a2a] focus:border-[#D4AF37] focus:outline-none text-white font-mono text-sm"
                     required
                   />
@@ -1696,7 +1696,7 @@ export default function PublicDemoStore() {
                       </label>
                       <input
                         type="tel"
-                        placeholder="Ex: (27) 99730-3135"
+                        placeholder="Ex: (11) 98888-7777"
                         value={clientPhone}
                         onChange={(e) => setClientPhone(formatPhoneMask(e.target.value))}
                         className="w-full bg-[#141414] border border-[#282828] rounded-2xl px-4 py-3 text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#D4AF37] font-mono"

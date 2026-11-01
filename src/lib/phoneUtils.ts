@@ -32,7 +32,7 @@ export interface PhoneValidationResult {
  * 6. Exige obrigatoriamente o 9º dígito móvel (número deve começar com '9' após o DDD).
  * 7. Exige exatamente 11 dígitos no total (2 do DDD + 9 do celular).
  * 
- * Retorna { isValid, normalized: '27997303135', formatted: '(27) 99730-3135', error }
+ * Retorna { isValid, normalized: '11988887777', formatted: '(11) 98888-7777', error }
  */
 export function normalizeBrazilianPhone(rawPhone: string | null | undefined): PhoneValidationResult {
   if (!rawPhone || typeof rawPhone !== 'string' || !rawPhone.trim()) {
@@ -40,19 +40,19 @@ export function normalizeBrazilianPhone(rawPhone: string | null | undefined): Ph
       isValid: false,
       normalized: null,
       formatted: null,
-      error: 'Informe o telefone com DDD. Ex.: (27) 99730-3135.'
+      error: 'Informe o telefone com DDD. Ex.: (11) 98888-7777.'
     };
   }
 
   const trimmed = rawPhone.trim();
 
-  // 1. Rejeita múltiplos zeros antes do número (ex: 0027..., 00055...)
+  // 1. Rejeita múltiplos zeros antes do número (ex: 0011..., 00055...)
   if (/^00+/.test(trimmed) || /^(\+?00+)/.test(trimmed)) {
     return {
       isValid: false,
       normalized: null,
       formatted: null,
-      error: 'Informe um telefone brasileiro válido. Ex.: (27) 99730-3135.'
+      error: 'Informe um telefone brasileiro válido. Ex.: (11) 98888-7777.'
     };
   }
 
@@ -64,19 +64,19 @@ export function normalizeBrazilianPhone(rawPhone: string | null | undefined): Ph
       isValid: false,
       normalized: null,
       formatted: null,
-      error: 'Informe o telefone com DDD. Ex.: (27) 99730-3135.'
+      error: 'Informe o telefone com DDD. Ex.: (11) 98888-7777.'
     };
   }
 
   // 3. Remove código internacional 55 se presente no início
-  // Exemplos: 5527997303135 (13 dígitos) -> 27997303135 (11 dígitos)
-  // ou 55027997303135 (14 dígitos) -> 027997303135 -> 27997303135
+  // Exemplos: 5511988887777 (13 dígitos) -> 11988887777 (11 dígitos)
+  // ou 55011988887777 (14 dígitos) -> 011988887777 -> 11988887777
   if (digits.startsWith('55') && digits.length >= 13) {
     digits = digits.slice(2);
   }
 
   // 4. Remove prefixo nacional único '0' antes do DDD se presente
-  // Exemplo: 027997303135 (12 dígitos) -> 27997303135 (11 dígitos)
+  // Exemplo: 011988887777 (12 dígitos) -> 11988887777 (11 dígitos)
   if (digits.startsWith('0') && digits.length === 12) {
     digits = digits.slice(1);
   }
@@ -88,17 +88,17 @@ export function normalizeBrazilianPhone(rawPhone: string | null | undefined): Ph
       isValid: false,
       normalized: null,
       formatted: null,
-      error: 'Informe o telefone com DDD. Ex.: (27) 99730-3135.'
+      error: 'Informe o telefone com DDD. Ex.: (11) 98888-7777.'
     };
   }
 
-  // Se tiver 10 dígitos: provavelmente falta o 9º dígito (ex: 2797303135)
+  // Se tiver 10 dígitos: provavelmente falta o 9º dígito (ex: 1188887777)
   if (digits.length === 10) {
     return {
       isValid: false,
       normalized: null,
       formatted: null,
-      error: 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.'
+      error: 'Informe um telefone celular válido com DDD. Ex.: (11) 98888-7777.'
     };
   }
 
@@ -108,7 +108,7 @@ export function normalizeBrazilianPhone(rawPhone: string | null | undefined): Ph
       isValid: false,
       normalized: null,
       formatted: null,
-      error: 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.'
+      error: 'Informe um telefone celular válido com DDD. Ex.: (11) 98888-7777.'
     };
   }
 
@@ -130,7 +130,7 @@ export function normalizeBrazilianPhone(rawPhone: string | null | undefined): Ph
       isValid: false,
       normalized: null,
       formatted: null,
-      error: 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.'
+      error: 'Informe um telefone celular válido com DDD. Ex.: (11) 98888-7777.'
     };
   }
 

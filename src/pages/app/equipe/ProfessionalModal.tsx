@@ -445,7 +445,7 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                       onChange={e => setName(e.target.value)}
                       className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input"
                       style={{ borderColor: errors.name ? theme.error : theme.border, background: theme.inputBg, color: theme.textPrimary }}
-                      placeholder="Ex: João da Silva"
+                      placeholder="Ex: Nome completo"
                     />
                     {errors.name && <p className="text-xs mt-1" style={{ color: theme.error }}>{errors.name}</p>}
                   </div>
@@ -472,7 +472,7 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                     onChange={e => setPhone(formatPhoneMask(e.target.value))} 
                     className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" 
                     style={{ borderColor: errors.phone ? theme.error : theme.border, background: theme.inputBg, color: theme.textPrimary }} 
-                    placeholder="(11) 99999-9999" 
+                    placeholder="(11) 98888-7777" 
                   />
                   {errors.phone && <p className="text-xs mt-1" style={{ color: theme.error }}>{errors.phone}</p>}
                 </div>
@@ -482,7 +482,7 @@ export default function ProfessionalModal({ professional, services, onClose, onC
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: theme.textSecondary }}>E-mail (opcional)</label>
-                  <input value={email} onChange={e => setEmail(e.target.value)} className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} placeholder="joao@exemplo.com" />
+                  <input value={email} onChange={e => setEmail(e.target.value)} className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none themed-input" style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }} placeholder="contato@exemplo.com" />
                 </div>
               </div>
 

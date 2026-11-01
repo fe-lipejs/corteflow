@@ -92,7 +92,7 @@ export default function Onboarding() {
     const phoneValidation = normalizeBrazilianPhone(rawPhone);
     if (!phoneValidation.isValid || !phoneValidation.normalized) {
       setPhoneCheckStatus('invalid');
-      setPhoneFeedback(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.');
+      setPhoneFeedback(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (11) 98888-7777.');
       return;
     }
 
@@ -363,7 +363,7 @@ export default function Onboarding() {
     if (data.phoneNumber && data.phoneNumber.trim()) {
       const phoneValidation = normalizeBrazilianPhone(data.phoneNumber);
       if (!phoneValidation.isValid || !phoneValidation.normalized) {
-        setError(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.');
+        setError(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (11) 98888-7777.');
         setLoading(false);
         return;
       }
@@ -1032,7 +1032,7 @@ export default function Onboarding() {
                         </div>
                         <input
                           {...register('phoneNumber')}
-                          placeholder="(27) 99730-3135"
+                          placeholder="(11) 98888-7777"
                           onChange={(e) => {
                             const masked = formatPhoneMask(e.target.value);
                             setValue('phoneNumber', masked, { shouldValidate: true });

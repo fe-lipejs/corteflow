@@ -12,7 +12,7 @@ import { trackEvent } from '../lib/analytics';
 
 const cadastroSchema = z.object({
   fullName: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
-  phone: z.string().min(1, "Informe o telefone com DDD. Ex.: (27) 99730-3135."),
+  phone: z.string().min(1, "Informe o telefone com DDD. Ex.: (11) 98888-7777."),
   email: z.string().email("E-mail inválido"),
   password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres"),
   confirmPassword: z.string().min(8, "Confirme sua senha"),
@@ -71,7 +71,7 @@ export default function Cadastro() {
     // 2. Validação e normalização arquitetural do telefone brasileiro (SSOT)
     const phoneValidation = normalizeBrazilianPhone(data.phone);
     if (!phoneValidation.isValid || !phoneValidation.normalized) {
-      setErrorList([phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.']);
+      setErrorList([phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (11) 98888-7777.']);
       setLoading(false);
       return;
     }
@@ -109,7 +109,7 @@ export default function Cadastro() {
           }
 
           if (availability.phone_invalid) {
-            foundErrors.push('Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.');
+            foundErrors.push('Informe um telefone celular válido com DDD. Ex.: (11) 98888-7777.');
           }
 
           if (foundErrors.length > 0) {
@@ -405,7 +405,7 @@ export default function Cadastro() {
                       type="text"
                       {...register('fullName')}
                       className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FF95BA] focus:ring-4 focus:ring-[#FF95BA]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
-                      placeholder="João da Silva"
+                      placeholder="Seu nome completo"
                     />
                     {errors.fullName && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.fullName.message}</p>}
                   </div>
@@ -424,7 +424,7 @@ export default function Cadastro() {
                         if (errorList.length > 0) setErrorList([]);
                       }}
                       className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FF95BA] focus:ring-4 focus:ring-[#FF95BA]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
-                      placeholder="(27) 99730-3135"
+                      placeholder="(11) 98888-7777"
                     />
                     {errors.phone && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.phone.message}</p>}
                   </div>
@@ -438,7 +438,7 @@ export default function Cadastro() {
                       type="email"
                       {...register('email')}
                       className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FF95BA] focus:ring-4 focus:ring-[#FF95BA]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
-                      placeholder="joao@seusalao.com.br"
+                      placeholder="seuemail@email.com"
                     />
                     {errors.email && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.email.message}</p>}
                   </div>

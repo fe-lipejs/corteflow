@@ -67,7 +67,7 @@ export default function Login() {
     if (!isEmail) {
       const phoneValidation = normalizeBrazilianPhone(input);
       if (!phoneValidation.isValid || !phoneValidation.normalized) {
-        setForgotError(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.');
+        setForgotError(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (11) 98888-7777.');
         return;
       }
       searchIdentifier = phoneValidation.normalized;
@@ -649,7 +649,7 @@ export default function Login() {
                         required
                         value={forgotIdentifier}
                         onChange={(e) => setForgotIdentifier(e.target.value)}
-                        placeholder="seuemail@exemplo.com ou 27999999999"
+                        placeholder="seuemail@exemplo.com ou 11988887777"
                         className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FF95BA] focus:ring-4 focus:ring-[#FF95BA]/15 focus:bg-white transition-all font-medium text-sm"
                       />
                     </div>

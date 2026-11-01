@@ -12,7 +12,7 @@ interface PhoneConfig {
 const PHONE_CONFIGS: Record<CountryCode, PhoneConfig> = {
   BR: {
     mask: '(##) #####-####',
-    placeholder: '(27) 99730-3135',
+    placeholder: '(11) 98888-7777',
     countryCode: '+55',
     maxLength: 15,
   },

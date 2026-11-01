@@ -3,36 +3,36 @@ import { normalizeBrazilianPhone } from '../phoneUtils';
 
 describe('normalizeBrazilianPhone — Suite Oficial de Testes', () => {
   const VALID_EQUIVALENTS = [
-    '27997303135',
-    '027997303135',
-    '(27) 99730-3135',
-    '27 99730-3135',
-    '27-99730-3135',
-    '+55 27 99730-3135',
-    '+5527997303135',
-    '5527997303135',
+    '11988887777',
+    '011988887777',
+    '(11) 98888-7777',
+    '11 98888-7777',
+    '11-98888-7777',
+    '+55 11 98888-7777',
+    '+5511988887777',
+    '5511988887777',
   ];
 
-  it('deve normalizar todos os formatos válidos equivalentes para 27997303135', () => {
+  it('deve normalizar todos os formatos válidos equivalentes para 11988887777', () => {
     for (const input of VALID_EQUIVALENTS) {
       const result = normalizeBrazilianPhone(input);
       expect(result.isValid, `Falhou em validar: "${input}"`).toBe(true);
-      expect(result.normalized, `Falhou na normalização de: "${input}"`).toBe('27997303135');
-      expect(result.formatted).toBe('(27) 99730-3135');
+      expect(result.normalized, `Falhou na normalização de: "${input}"`).toBe('11988887777');
+      expect(result.formatted).toBe('(11) 98888-7777');
       expect(result.error).toBeNull();
     }
   });
 
   const INVALID_CASES = [
-    { input: '997303135', reason: 'Sem DDD' },
-    { input: '2797303135', reason: 'Celular sem o 9º dígito' },
-    { input: '02797303135', reason: 'Celular com 0 mas sem o 9º dígito' },
-    { input: '0027997303135', reason: 'Dois zeros antes do DDD' },
-    { input: '00027997303135', reason: 'Prefixo inválido com múltiplos zeros' },
-    { input: '0005527997303135', reason: 'Prefixo inválido com múltiplos zeros e DDI' },
-    { input: '2799730313', reason: 'Quantidade incorreta de dígitos (10 dígitos)' },
-    { input: '279973031356', reason: 'Quantidade incorreta de dígitos (12 dígitos)' },
-    { input: '10997303135', reason: 'DDD 10 inexistente no Brasil' },
+    { input: '988887777', reason: 'Sem DDD' },
+    { input: '1188887777', reason: 'Celular sem o 9º dígito' },
+    { input: '01188887777', reason: 'Celular com 0 mas sem o 9º dígito' },
+    { input: '0011988887777', reason: 'Dois zeros antes do DDD' },
+    { input: '00011988887777', reason: 'Prefixo inválido com múltiplos zeros' },
+    { input: '0005511988887777', reason: 'Prefixo inválido com múltiplos zeros e DDI' },
+    { input: '1198888777', reason: 'Quantidade incorreta de dígitos (10 dígitos)' },
+    { input: '119888877779', reason: 'Quantidade incorreta de dígitos (12 dígitos)' },
+    { input: '10988887777', reason: 'DDD 10 inexistente no Brasil' },
     { input: '00', reason: 'Apenas zeros' },
     { input: '', reason: 'String vazia' },
   ];
