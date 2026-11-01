@@ -523,12 +523,7 @@ function Header() {
                 ))}
               </nav>
 
-              <motion.div
-                className="rf-menu-bottom"
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              >
+              <div className="rf-menu-bottom">
                 <a
                   href="/playlist"
                   className="rf-menu-glass-card"
@@ -576,7 +571,7 @@ function Header() {
                 </button>
 
                 <p className="rf-menu-note">7 dias grátis · Sem cartão · Cancele quando quiser</p>
-              </motion.div>
+              </div>
             </div>
           </motion.div>
         )}
@@ -7581,19 +7576,22 @@ export default function LandingPage() {
             border-radius: 16px;
             text-decoration: none;
             color: #FFFFFF;
-            background: linear-gradient(135deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05)) !important;
-            border: 1px solid rgba(255,255,255,0.18) !important;
-            backdrop-filter: blur(16px) saturate(160%);
-            -webkit-backdrop-filter: blur(16px) saturate(160%);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.14);
+            background: rgba(255, 255, 255, 0.08) !important;
+            border: 1px solid rgba(255, 255, 255, 0.14) !important;
+            backdrop-filter: blur(14px) !important;
+            -webkit-backdrop-filter: blur(14px) !important;
+            box-shadow: none !important;
             transition: none !important;
           }
           .rf-menu-glass-card:hover,
           .rf-menu-glass-card:active,
           .rf-menu-glass-card:focus {
-            background: linear-gradient(135deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05)) !important;
-            border-color: rgba(255,255,255,0.18) !important;
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: rgba(255, 255, 255, 0.14) !important;
             color: #FFFFFF !important;
+            box-shadow: none !important;
+            transform: none !important;
+            filter: none !important;
           }
           .rf-menu-glass-icon {
             width: 38px;
