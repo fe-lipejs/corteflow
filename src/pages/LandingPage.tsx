@@ -480,12 +480,6 @@ function Header() {
             exit={{ opacity: 0, clipPath: "circle(0% at 92% 4%)" }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="rf-hero-light" aria-hidden="true">
-              <span className="rf-hero-light-beam rf-hero-light-beam-one" />
-              <span className="rf-hero-light-beam rf-hero-light-beam-two" />
-              <span className="rf-hero-light-glow" />
-            </div>
-
             <div className="rf-menu-inner">
               <div className="rf-menu-top">
                 <a href="/" onClick={() => setOpen(false)} className="rf-menu-logo" aria-label="Raffros">
@@ -704,27 +698,6 @@ function Hero() {
           <BookingPhone imageSrc={M.booking2} />
         </div>
 
-        <Reveal delay={0.28} className="rf-hero-spotify-slot">
-          <a
-            href="/playlist"
-            className="rf-spotify-card"
-            aria-label="Som da Casa e Palavra do Dia — ver playlist"
-            onClick={() => trackEvent('click_spotify_card_hero', { metadata: { origem: 'hero' } })}
-          >
-            <div className="rf-spotify-card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.623.623 0 01-.857.208c-2.348-1.435-5.304-1.76-8.785-.964a.623.623 0 11-.277-1.215c3.809-.87 7.076-.496 9.712 1.115a.623.623 0 01.207.856zm1.223-2.72a.78.78 0 01-1.072.257C14.1 12.29 10.539 11.88 7.2 12.84a.78.78 0 01-.48-1.485c3.754-1.09 7.72-.562 10.832 1.277a.78.78 0 01.257 1.072zm.105-2.832C15.16 9.15 10.481 9 7.2 9.983a.937.937 0 11-.543-1.794C10.317 7.071 15.494 7.25 19.2 9.638a.937.937 0 01-1.286 1.234z" fill="#1DB954" />
-              </svg>
-            </div>
-            <div className="rf-spotify-card-text">
-              <span className="rf-spotify-card-title">Som da Casa</span>
-              <span className="rf-spotify-card-sub">& Palavra do Dia</span>
-            </div>
-            <div className="rf-spotify-card-arrow">
-              <ArrowUpRight size={14} />
-            </div>
-          </a>
-        </Reveal>
         <br />
       </div>
 
@@ -6938,12 +6911,17 @@ export default function LandingPage() {
           main .rf-team-section h2,
           main .rf-audience h2,
           main .rf-faq h2,
-          main .rf-philosophy h2,
           main .rf-finance-real h2,
           main .rf-domicilio-real h2,
           main .rf-personalization-real h2 {
             color: var(--rf-ink) !important;
             -webkit-text-fill-color: var(--rf-ink) !important;
+            background: none !important;
+          }
+          /* "Cada horário vazio é dinheiro que foi embora." na cor rosa accent */
+          main .rf-philosophy h2 {
+            color: var(--rf-accent) !important;
+            -webkit-text-fill-color: var(--rf-accent) !important;
             background: none !important;
           }
           /* Span/em em seções claras: azul secundário */
@@ -6958,10 +6936,10 @@ export default function LandingPage() {
             -webkit-background-clip: initial !important;
             background-clip: initial !important;
           }
-          /* Span "trabalha por você. 24h." em azul primário (#1C89C0) — legível em fundo claro */
+          /* Span "trabalha por você. 24h." em rosa (#FF95BA) accent */
           main .rf-booking-section h2 span {
-            color: var(--rf-blue) !important;
-            -webkit-text-fill-color: var(--rf-blue) !important;
+            color: var(--rf-accent) !important;
+            -webkit-text-fill-color: var(--rf-accent) !important;
             background: none !important;
             -webkit-background-clip: initial !important;
             background-clip: initial !important;
@@ -7125,8 +7103,8 @@ export default function LandingPage() {
             color: var(--rf-accent) !important;
           }
           main .rf-detail-icon {
-            background: #EEF2F6 !important;
-            color: var(--rf-blue) !important;
+            background: rgba(255, 149, 186, 0.12) !important;
+            color: var(--rf-accent) !important;
           }
           main .rf-payment-tag {
             border-color: rgba(255, 149, 186, 0.35) !important;
@@ -7603,11 +7581,19 @@ export default function LandingPage() {
             border-radius: 16px;
             text-decoration: none;
             color: #FFFFFF;
-            background: linear-gradient(135deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05));
-            border: 1px solid rgba(255,255,255,0.18);
+            background: linear-gradient(135deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05)) !important;
+            border: 1px solid rgba(255,255,255,0.18) !important;
             backdrop-filter: blur(16px) saturate(160%);
             -webkit-backdrop-filter: blur(16px) saturate(160%);
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.14);
+            transition: none !important;
+          }
+          .rf-menu-glass-card:hover,
+          .rf-menu-glass-card:active,
+          .rf-menu-glass-card:focus {
+            background: linear-gradient(135deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05)) !important;
+            border-color: rgba(255,255,255,0.18) !important;
+            color: #FFFFFF !important;
           }
           .rf-menu-glass-icon {
             width: 38px;
