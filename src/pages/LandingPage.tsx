@@ -1357,10 +1357,7 @@ function PaymentRealSection() {
                 <img src={M.pix} alt="Pagamento via Pix Raffros" loading="lazy" onError={handleImageFallback} />
               </div>
 
-              <div className="rf-payment-tag">
-                <Check size={12} />
-                Horário protegido
-              </div>
+
             </div>
           </Reveal>
 
@@ -3021,6 +3018,18 @@ export default function LandingPage() {
           place-items: center;
           background: transparent;
           overflow: visible;
+        }
+
+        .rf-booking-visual .rf-real-phone-frame {
+          box-shadow:
+            inset 1px 1px 1px rgba(255,255,255,.16),
+            inset -2px -2px 4px rgba(0,0,0,.85),
+            0 28px 60px -8px rgba(0,0,0,.22),
+            0 12px 28px -5px rgba(0,0,0,.15);
+        }
+
+        .rf-booking-visual .rf-real-phone-glow {
+          opacity: 0.4;
         }
 
         .rf-booking-visual .rf-phone-wrap {
