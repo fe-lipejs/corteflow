@@ -3019,15 +3019,8 @@ export default function LandingPage() {
           min-height: 590px;
           display: grid;
           place-items: center;
-          border-radius: 2px;
-          background:
-            radial-gradient(
-              circle at 50% 50%,
-              rgba(28, 137, 192,.07),
-              transparent 35%
-            ),
-            #eaeae6;
-          overflow: hidden;
+          background: transparent;
+          overflow: visible;
         }
 
         .rf-booking-visual .rf-phone-wrap {
