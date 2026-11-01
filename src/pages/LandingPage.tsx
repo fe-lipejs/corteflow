@@ -626,6 +626,9 @@ function Hero() {
       id="inicio"
       className="rf-hero"
     >
+      <br /><br />
+
+
       <div className="rf-container rf-hero-container">
         <div className="rf-hero-copy">
           <Reveal delay={0.08}>
@@ -2305,15 +2308,15 @@ export default function LandingPage() {
 
         .rf-hero h1 {
           margin: 0 0 20px;
-          max-width: 640px;
+          max-width: 680px;
           font-size: clamp(
-            38px,
-            4.6vw,
-            64px
+            55px,
+            7vw,
+            100px
           );
-          line-height: 1.12;
-          letter-spacing: -.035em;
-          font-weight: 800;
+          line-height: .91;
+          letter-spacing: -.075em;
+          font-weight: 730;
         }
 
         .rf-hero h1 span {
@@ -6777,6 +6780,10 @@ export default function LandingPage() {
             color: #FFFFFF !important;
             -webkit-text-fill-color: #FFFFFF !important;
             background: none !important;
+            font-size: clamp(55px, 7vw, 100px) !important;
+            line-height: .91 !important;
+            letter-spacing: -.075em !important;
+            font-weight: 730 !important;
           }
           main .rf-hero h1 span {
             color: var(--rf-accent-on-dark) !important;
@@ -7169,10 +7176,10 @@ export default function LandingPage() {
             }
 
             main .rf-hero h1 {
-              font-size: clamp(32px, 9.5vw, 48px) !important;
-              line-height: 1.15 !important;
-              letter-spacing: -0.035em !important;
-              font-weight: 800 !important;
+              font-size: clamp(39px, 11.5vw, 54px) !important;
+              line-height: .94 !important;
+              letter-spacing: -.07em !important;
+              font-weight: 730 !important;
               margin: 16px 0 16px !important;
             }
 
