@@ -26,7 +26,7 @@ import { useAttentionTracker } from '../hooks/useAttentionTracker';
    Apple × Nothing × Raffros
    ========================================================= */
 
-const ACCENT = "#FC761D";
+const ACCENT = "#FF95BA";
 const M = {
   booking: "/Mockups/Iphone - Tela de Agendamento.PNG",
   booking2: "/Mockups/Iphone - Tela de Agendamento2.jpg",
@@ -1916,7 +1916,7 @@ export default function LandingPage() {
           right: 0,
           height: "3px",
           transformOrigin: "0%",
-          backgroundColor: "#FC761D",
+          backgroundColor: "#FF95BA",
           zIndex: 999999,
         }}
       />
@@ -1942,9 +1942,9 @@ export default function LandingPage() {
           --rf-line: rgba(16,16,16,.10);
           --rf-line-dark: rgba(255,255,255,.11);
 
-          --rf-accent: #FC761D;
-          --rf-accent-on-dark: #FF8738;
-          --rf-accent-dark: #E45E0B;
+          --rf-accent: #FF95BA;
+          --rf-accent-on-dark: #FF95BA;
+          --rf-accent-dark: #F27BA5;
 
           --rf-max: 1240px;
 
@@ -2096,7 +2096,7 @@ export default function LandingPage() {
           border-radius: 50%;
           background: var(--rf-accent);
           flex: 0 0 auto;
-          box-shadow: 0 0 16px rgba(252,118,29,.45);
+          box-shadow: none;
         }
 
         /* =====================================================
@@ -2243,9 +2243,7 @@ export default function LandingPage() {
           font-size: 10px;
           font-weight: 800;
           letter-spacing: -.01em;
-          box-shadow:
-            0 0 0 1px rgba(252,118,29,.15),
-            0 5px 25px rgba(252,118,29,.10);
+          box-shadow: none;
           transition:
             transform .2s ease,
             box-shadow .2s ease;
@@ -2253,9 +2251,7 @@ export default function LandingPage() {
 
         .rf-header-cta:hover {
           transform: translateY(-1px);
-          box-shadow:
-            0 0 0 1px rgba(252,118,29,.25),
-            0 8px 32px rgba(252,118,29,.18);
+          box-shadow: none;
         }
 
         .rf-mobile-menu {
@@ -2284,7 +2280,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle at 70% 46%,
-              rgba(0,127,189,.06),
+              rgba(28, 137, 192,.06),
               transparent 26%
             ),
             var(--rf-black);
@@ -2306,7 +2302,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle,
-              rgba(0,127,189,.08),
+              rgba(28, 137, 192,.08),
               transparent 68%
             );
         }
@@ -2397,8 +2393,7 @@ export default function LandingPage() {
 
         .rf-primary-button:hover {
           transform: translateY(-2px);
-          box-shadow:
-            0 12px 35px rgba(252,118,29,.16);
+          box-shadow: none;
         }
 
         .rf-secondary-button {
@@ -2523,7 +2518,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               ellipse,
-              rgba(0,127,189,.12),
+              rgba(28, 137, 192,.12),
               transparent 67%
             );
           filter: blur(15px);
@@ -2605,7 +2600,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle at 50% 30%,
-              rgba(252,118,29,.16),
+              rgba(255, 149, 186,.16),
               transparent 48%
             ),
             #141414;
@@ -2617,7 +2612,7 @@ export default function LandingPage() {
           height: 39px;
           display: grid;
           place-items: center;
-          border: 1px solid rgba(0,127,189,.45);
+          border: 1px solid rgba(28, 137, 192,.45);
           border-radius: 50%;
           color: var(--rf-accent);
           font-weight: 800;
@@ -2831,7 +2826,7 @@ export default function LandingPage() {
           display: grid;
           place-items: center;
           border-radius: 7px;
-          background: rgba(252,118,29,.13);
+          background: rgba(255, 149, 186,.13);
           color: var(--rf-accent);
         }
 
@@ -3019,7 +3014,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle at 50% 50%,
-              rgba(0,127,189,.07),
+              rgba(28, 137, 192,.07),
               transparent 35%
             ),
             #eaeae6;
@@ -3222,7 +3217,7 @@ export default function LandingPage() {
         }
 
         .rf-sidebar-item.active {
-          background: rgba(0,127,189,.09);
+          background: rgba(28, 137, 192,.09);
           color: var(--rf-accent);
         }
 
@@ -3369,7 +3364,7 @@ export default function LandingPage() {
 
         .rf-appointment-line span {
           width: 1px;
-          background: rgba(0,127,189,.3);
+          background: rgba(28, 137, 192,.3);
         }
 
         .rf-appointment-line span::before {
@@ -3401,7 +3396,7 @@ export default function LandingPage() {
         }
 
         .rf-appointment-status {
-          color: rgba(0,127,189,.7);
+          color: rgba(28, 137, 192,.7);
           font-size: 5px;
           letter-spacing: .08em;
         }
@@ -3486,7 +3481,7 @@ export default function LandingPage() {
         .rf-bars span {
           flex: 1;
           border-radius: 2px 2px 0 0;
-          background: rgba(0,127,189,.55);
+          background: rgba(28, 137, 192,.55);
         }
 
         .rf-feature-strip {
@@ -3610,8 +3605,8 @@ export default function LandingPage() {
         .rf-panel-header > span {
           padding: 7px 9px;
           border-radius: 999px;
-          background: rgba(252,118,29,.25);
-          color: #6B3600;
+          background: rgba(255, 149, 186,.25);
+          color: #7A2346;
           font-size: 7px;
           font-weight: 700;
         }
@@ -3735,7 +3730,7 @@ export default function LandingPage() {
         }
 
         .rf-philosophy-mark svg {
-          color: #C26D12;
+          color: #1C89C0;
         }
 
         /* =====================================================
@@ -4072,7 +4067,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               circle at 50% 50%,
-              rgba(0,127,189,.07),
+              rgba(28, 137, 192,.07),
               transparent 30%
             ),
             var(--rf-black);
@@ -4127,8 +4122,7 @@ export default function LandingPage() {
 
         .rf-final-button:hover {
           transform: translateY(-2px);
-          box-shadow:
-            0 15px 50px rgba(252,118,29,.18);
+          box-shadow: none;
         }
 
         .rf-final-note {
@@ -4378,7 +4372,7 @@ export default function LandingPage() {
           background:
             radial-gradient(
               ellipse,
-              rgba(252,118,29,.16),
+              rgba(255, 149, 186,.16),
               transparent 68%
             );
           filter: blur(25px);
@@ -4486,7 +4480,7 @@ export default function LandingPage() {
           place-items: center;
           flex: 0 0 auto;
           border-radius: 7px;
-          background: rgba(252,118,29,.13);
+          background: rgba(255, 149, 186,.13);
           color: var(--rf-accent);
         }
 
@@ -4612,7 +4606,7 @@ export default function LandingPage() {
           grid-row: span 2;
           min-height: 760px;
           background:
-            radial-gradient(circle at 75% 55%,rgba(0,127,189,.09),transparent 30%),
+            radial-gradient(circle at 75% 55%,rgba(28, 137, 192,.09),transparent 30%),
             #111;
         }
 
@@ -4761,7 +4755,7 @@ export default function LandingPage() {
           height: 7px;
           border-radius: 50%;
           background: var(--rf-accent);
-          box-shadow: 0 0 14px rgba(252,118,29,.35);
+          box-shadow: none;
         }
 
         .rf-team-real-badge strong,
@@ -4903,9 +4897,9 @@ export default function LandingPage() {
           align-items: center;
           gap: 7px;
           padding: 9px 12px;
-          border: 1px solid rgba(252,118,29,.28);
-          background: rgba(252,118,29,.1);
-          color: #ffb45c;
+          border: 1px solid rgba(255, 149, 186,.28);
+          background: rgba(255, 149, 186,.1);
+          color: #FF95BA;
           font-family: ui-monospace,SFMono-Regular,Menlo,monospace;
           font-size: 8px;
           text-transform: uppercase;
@@ -5669,7 +5663,7 @@ export default function LandingPage() {
             position: absolute;
             inset: 0;
             pointer-events: none;
-            background: radial-gradient(circle at 85% 5%, rgba(252,118,29,.10), transparent 34%);
+            background: radial-gradient(circle at 85% 5%, rgba(255, 149, 186,.10), transparent 34%);
             opacity: 0;
             transition: opacity .35s ease;
           }
@@ -6504,20 +6498,20 @@ export default function LandingPage() {
              ===================================================== */
 
           :root {
-            --rf-accent: #FC761D;
-            --rf-accent-dark: #E45E0B;
-            --rf-blue: #2563EB;
-            --rf-blue-muted: #60A5FA;
-            --rf-rose: #F472B6;
-            --rf-rose-light: #FBCFE8;
+            --rf-accent: #FF95BA;
+            --rf-accent-dark: #F27BA5;
+            --rf-blue: #1C89C0;
+            --rf-blue-muted: #5CB3DE;
+            --rf-rose: #FF95BA;
+            --rf-rose-light: #FFD6E5;
             --rf-ink: #0F172A;
             --rf-muted: #475569;
             --rf-line: #E2E8F0;
             --rf-paper: #FAF9F7;
             --rf-paper-2: #F1F5F9;
-            --rf-dark: #0D2F66;
-            --rf-dark-2: #123F84;
-            --rf-dark-card: #184D9C;
+            --rf-dark: #1C89C0;
+            --rf-dark-2: #1679AB;
+            --rf-dark-card: #1679AB;
           }
 
           /* ── CTAs: laranja puro ── */
@@ -6528,9 +6522,9 @@ export default function LandingPage() {
           .rf-price-button.featured {
             background: var(--rf-accent) !important;
             border-color: var(--rf-accent) !important;
-            color: #FFFFFF !important;
-            -webkit-text-fill-color: #FFFFFF !important;
-            box-shadow: 0 8px 22px rgba(252, 118, 29, 0.22) !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            box-shadow: none !important;
           }
           .rf-primary-button:hover,
           .rf-header-cta:hover,
@@ -6539,15 +6533,15 @@ export default function LandingPage() {
           .rf-price-button.featured:hover {
             background: var(--rf-accent-dark) !important;
             border-color: var(--rf-accent-dark) !important;
-            box-shadow: 0 10px 28px rgba(252, 118, 29, 0.28) !important;
+            box-shadow: none !important;
           }
           .rf-price-badge {
             background: var(--rf-accent) !important;
-            color: #FFFFFF !important;
+            color: #000000 !important;
           }
           .rf-eyebrow-dot {
             background: var(--rf-accent) !important;
-            box-shadow: 0 0 0 4px rgba(252, 118, 29, 0.14) !important;
+            box-shadow: none !important;
           }
 
           /* ── Header: claro, legível ── */
@@ -6588,7 +6582,7 @@ export default function LandingPage() {
             background: transparent !important;
           }
 
-          /* ── Menu Mobile: Fundo branco limpo, detalhes em azul e destaque em laranja (#FC761D) ── */
+          /* ── Menu Mobile: Fundo branco limpo, detalhes em azul e destaque em laranja (#FF95BA) ── */
           .rf-mobile-nav-fullscreen {
             position: fixed !important;
             inset: 0 !important;
@@ -6649,7 +6643,7 @@ export default function LandingPage() {
             height: 6px !important;
             border-radius: 50% !important;
             background: var(--rf-accent) !important;
-            box-shadow: 0 0 10px rgba(252, 118, 29, 0.45) !important;
+            box-shadow: none !important;
           }
 
           .rf-mobile-nav-links {
@@ -6675,7 +6669,7 @@ export default function LandingPage() {
 
           .rf-mobile-nav-item:hover,
           .rf-mobile-nav-item:active {
-            color: #103875 !important;
+            color: #1C89C0 !important;
             padding-left: 6px !important;
           }
 
@@ -6685,7 +6679,7 @@ export default function LandingPage() {
           }
 
           .rf-mobile-nav-item:hover .rf-mobile-nav-arrow {
-            color: #103875 !important;
+            color: #1C89C0 !important;
             transform: translateX(3px) !important;
           }
 
@@ -6703,16 +6697,16 @@ export default function LandingPage() {
             justify-content: space-between !important;
             padding: 12px 14px !important;
             border-radius: 14px !important;
-            background: rgba(16, 56, 117, 0.05) !important;
-            border: 1px solid rgba(16, 56, 117, 0.14) !important;
+            background: rgba(28, 137, 192, 0.05) !important;
+            border: 1px solid rgba(28, 137, 192, 0.14) !important;
             text-decoration: none !important;
             transition: background 0.15s ease, border-color 0.15s ease !important;
             margin-bottom: 14px !important;
           }
 
           .rf-mobile-playlist-card:hover {
-            background: rgba(16, 56, 117, 0.10) !important;
-            border-color: rgba(16, 56, 117, 0.25) !important;
+            background: rgba(28, 137, 192, 0.10) !important;
+            border-color: rgba(28, 137, 192, 0.25) !important;
           }
 
           .rf-mobile-playlist-left {
@@ -6736,7 +6730,7 @@ export default function LandingPage() {
           .rf-mobile-playlist-title {
             font-size: 14px !important;
             font-weight: 700 !important;
-            color: #103875 !important;
+            color: #1C89C0 !important;
             letter-spacing: -0.01em !important;
             line-height: 1.2 !important;
           }
@@ -6748,7 +6742,7 @@ export default function LandingPage() {
           }
 
           .rf-mobile-playlist-arrow {
-            color: #103875 !important;
+            color: #1C89C0 !important;
           }
 
           .rf-mobile-actions {
@@ -6767,7 +6761,7 @@ export default function LandingPage() {
             border-radius: 12px !important;
             background: #F8FAFC !important;
             border: 1px solid #E2E8F0 !important;
-            color: #103875 !important;
+            color: #1C89C0 !important;
             font-size: 13px !important;
             font-weight: 600 !important;
             text-decoration: none !important;
@@ -6787,12 +6781,12 @@ export default function LandingPage() {
             height: 50px !important;
             border-radius: 999px !important;
             background: var(--rf-accent) !important;
-            color: #FFFFFF !important;
+            color: #000000 !important;
             font-size: 14px !important;
             font-weight: 800 !important;
             border: none !important;
             cursor: pointer !important;
-            box-shadow: 0 10px 24px rgba(252, 118, 29, 0.28) !important;
+            box-shadow: none !important;
             transition: transform 0.15s ease, box-shadow 0.15s ease !important;
           }
 
@@ -6810,10 +6804,7 @@ export default function LandingPage() {
           /* ── HERO: fundo com azul vibrante como protagonista e azul-rosa claro tímido e sutil ── */
           main .rf-hero {
             background:
-              radial-gradient(circle at 85% 15%, rgba(244, 114, 182, 0.16), transparent 38%),
-              radial-gradient(circle at 15% 75%, rgba(37, 99, 235, 0.35), transparent 50%),
-              radial-gradient(circle at 18% 24%, rgba(252, 118, 29, 0.10), transparent 30%),
-              linear-gradient(165deg, #0B2958 0%, #0F3775 35%, #164894 70%, #1A3E78 100%) !important;
+              #1C89C0 !important;
             color: #FFFFFF !important;
           }
           main .rf-hero h1 {
@@ -6831,8 +6822,9 @@ export default function LandingPage() {
           main .rf-hero .rf-primary-button {
             background: var(--rf-accent-on-dark) !important;
             border-color: var(--rf-accent-on-dark) !important;
-            color: #FFFFFF !important;
-            box-shadow: 0 10px 24px rgba(255, 135, 56, 0.32) !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            box-shadow: none !important;
           }
           main .rf-hero .rf-hero-description {
             color: rgba(255, 255, 255, 0.78) !important;
@@ -6876,13 +6868,13 @@ export default function LandingPage() {
             background: rgba(255, 255, 255, 0.06) !important;
           }
           main .rf-hero .rf-hero-orb-one {
-            background: radial-gradient(circle, rgba(37, 99, 235, 0.25), rgba(244, 114, 182, 0.10) 50%, transparent 70%) !important;
+            background: radial-gradient(circle, rgba(28, 137, 192, 0.25), rgba(255, 149, 186, 0.10) 50%, transparent 70%) !important;
           }
           main .rf-hero .rf-hero-orb-two {
-            background: radial-gradient(circle, rgba(252, 118, 29, 0.12), transparent 70%) !important;
+            background: radial-gradient(circle, rgba(255, 149, 186, 0.12), transparent 70%) !important;
           }
           main .rf-hero .rf-real-phone-glow {
-            background: radial-gradient(ellipse, rgba(37, 99, 235, 0.40), rgba(244, 114, 182, 0.12) 60%, transparent 70%) !important;
+            background: radial-gradient(ellipse, rgba(28, 137, 192, 0.40), rgba(255, 149, 186, 0.12) 60%, transparent 70%) !important;
           }
 
           /* Spotify card no hero escuro */
@@ -6901,8 +6893,8 @@ export default function LandingPage() {
             color: rgba(255, 255, 255, 0.45) !important;
           }
           main .rf-hero .rf-spotify-card:hover {
-            background: rgba(2, 132, 199, 0.16) !important;
-            border-color: rgba(2, 132, 199, 0.35) !important;
+            background: rgba(28, 137, 192, 0.16) !important;
+            border-color: rgba(28, 137, 192, 0.35) !important;
           }
 
           /* Header no hero: logo e nav brancos quando no topo (sem scroll) */
@@ -6966,10 +6958,10 @@ export default function LandingPage() {
             -webkit-background-clip: initial !important;
             background-clip: initial !important;
           }
-          /* Span "trabalha por você. 24h." em laranja (#FC761D) */
+          /* Span "trabalha por você. 24h." em azul primário (#1C89C0) — legível em fundo claro */
           main .rf-booking-section h2 span {
-            color: var(--rf-accent) !important;
-            -webkit-text-fill-color: var(--rf-accent) !important;
+            color: var(--rf-blue) !important;
+            -webkit-text-fill-color: var(--rf-blue) !important;
             background: none !important;
             -webkit-background-clip: initial !important;
             background-clip: initial !important;
@@ -6995,18 +6987,13 @@ export default function LandingPage() {
           main .rf-pricing,
           main .rf-final-cta {
             background:
-              radial-gradient(circle at 85% 15%, rgba(244, 114, 182, 0.14), transparent 36%),
-              radial-gradient(circle at 15% 85%, rgba(37, 99, 235, 0.35), transparent 50%),
-              radial-gradient(circle at 50% 50%, rgba(252, 118, 29, 0.06), transparent 35%),
-              linear-gradient(165deg, #0C2E68 0%, #103A7C 45%, #164894 75%, #1A3E78 100%) !important;
+              #1C89C0 !important;
             color: #FFFFFF !important;
           }
           main .rf-real-gallery,
           main .rf-payment-real {
             background:
-              radial-gradient(circle at 20% 20%, rgba(244, 114, 182, 0.15), transparent 40%),
-              radial-gradient(circle at 80% 80%, rgba(37, 99, 235, 0.35), transparent 55%),
-              linear-gradient(165deg, #103874 0%, #164894 50%, #1E4684 100%) !important;
+              #1C89C0 !important;
             color: #FFFFFF !important;
           }
           main .rf-problem h2,
@@ -7019,7 +7006,7 @@ export default function LandingPage() {
             -webkit-text-fill-color: #FFFFFF !important;
             background: none !important;
           }
-          /* Spans em seções escuras com fundo azul: laranja mais claro e luminoso (#FF8738) */
+          /* Spans em seções escuras com fundo azul: laranja mais claro e luminoso (#FF95BA) */
           main .rf-problem h2 span,
           main .rf-payment-real h2 span,
           main .rf-pricing h2 span,
@@ -7040,8 +7027,9 @@ export default function LandingPage() {
           main .rf-final-cta .rf-final-button {
             background: var(--rf-accent-on-dark) !important;
             border-color: var(--rf-accent-on-dark) !important;
-            color: #FFFFFF !important;
-            box-shadow: 0 10px 24px rgba(255, 135, 56, 0.32) !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            box-shadow: none !important;
           }
           main .rf-hero .rf-eyebrow-dark .rf-eyebrow-dot,
           main .rf-problem .rf-eyebrow-dark .rf-eyebrow-dot,
@@ -7049,7 +7037,7 @@ export default function LandingPage() {
           main .rf-payment-real .rf-eyebrow-dark .rf-eyebrow-dot,
           main .rf-dashboard-section .rf-eyebrow-dark .rf-eyebrow-dot {
             background: var(--rf-accent-on-dark) !important;
-            box-shadow: 0 0 14px rgba(255, 135, 56, 0.55) !important;
+            box-shadow: none !important;
           }
           main .rf-dashboard-section h2 .rf-highlight-white {
             color: #FFFFFF !important;
@@ -7076,8 +7064,8 @@ export default function LandingPage() {
           /* Final CTA com orbs sutis */
           main .rf-final-cta {
             background:
-              radial-gradient(circle at 30% 0%, rgba(28, 84, 168, 0.35), transparent 48%),
-              radial-gradient(circle at 80% 100%, rgba(252, 118, 29, 0.15), transparent 45%),
+              radial-gradient(circle at 30% 0%, rgba(28, 137, 192, 0.35), transparent 48%),
+              radial-gradient(circle at 80% 100%, rgba(255, 149, 186, 0.15), transparent 45%),
               var(--rf-dark) !important;
           }
 
@@ -7121,7 +7109,7 @@ export default function LandingPage() {
           }
           main .rf-price-featured {
             background: #FFFFFF !important;
-            border-color: rgba(252, 118, 29, 0.35) !important;
+            border-color: rgba(255, 149, 186, 0.35) !important;
             color: var(--rf-ink) !important;
             box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2) !important;
           }
@@ -7141,9 +7129,9 @@ export default function LandingPage() {
             color: var(--rf-blue) !important;
           }
           main .rf-payment-tag {
-            border-color: rgba(252, 118, 29, 0.35) !important;
-            background: rgba(252, 118, 29, 0.12) !important;
-            color: #FFB45C !important;
+            border-color: rgba(255, 149, 186, 0.35) !important;
+            background: rgba(255, 149, 186, 0.12) !important;
+            color: #FF95BA !important;
           }
           main .rf-domicilio-real-points svg,
           main .rf-philosophy-mark svg {
@@ -7188,9 +7176,7 @@ export default function LandingPage() {
               min-height: 0 !important;
               padding-bottom: 24px !important;
               background:
-                radial-gradient(circle at 88% 12%, rgba(244, 114, 182, 0.15), transparent 36%),
-                radial-gradient(circle at 18% 80%, rgba(37, 99, 235, 0.35), transparent 50%),
-                linear-gradient(172deg, #0B2958 0%, #0F3775 35%, #164894 70%, #1A3E78 100%) !important;
+                #1C89C0 !important;
             }
 
             .rf-hero-mobile-br {
@@ -7256,8 +7242,9 @@ export default function LandingPage() {
 
             main .rf-hero .rf-primary-button {
               background: var(--rf-accent-on-dark) !important;
-              color: #FFFFFF !important;
-              box-shadow: 0 8px 22px rgba(255, 135, 56, 0.30) !important;
+              color: #000000 !important;
+              -webkit-text-fill-color: #000000 !important;
+              box-shadow: none !important;
             }
 
             main .rf-hero .rf-secondary-button {
@@ -7376,7 +7363,7 @@ export default function LandingPage() {
               90deg,
               transparent 0%,
               rgba(255, 255, 255, 0.025) 30%,
-              rgba(173, 205, 255, 0.11) 50%,
+              rgba(255, 255, 255, 0.11) 50%,
               rgba(255, 255, 255, 0.025) 70%,
               transparent 100%
             );
@@ -7392,7 +7379,7 @@ export default function LandingPage() {
               90deg,
               transparent 0%,
               rgba(255, 210, 230, 0.03) 35%,
-              rgba(255, 196, 160, 0.08) 50%,
+              rgba(255, 149, 186, 0.08) 50%,
               rgba(255, 210, 230, 0.03) 65%,
               transparent 100%
             );
@@ -7404,7 +7391,7 @@ export default function LandingPage() {
             top: -180px;
             right: -160px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(120, 170, 255, 0.20), transparent 62%);
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.20), transparent 62%);
             filter: blur(10px);
             animation: rfLightBreath 9s ease-in-out infinite;
           }
@@ -7501,9 +7488,7 @@ export default function LandingPage() {
             overflow: hidden;
             color: #FFFFFF;
             background:
-              radial-gradient(circle at 85% 12%, rgba(244, 114, 182, 0.14), transparent 38%),
-              radial-gradient(circle at 12% 85%, rgba(37, 99, 235, 0.38), transparent 52%),
-              linear-gradient(165deg, #0B2958 0%, #0F3775 40%, #164894 75%, #1A3E78 100%);
+              #1C89C0;
           }
           .rf-menu-inner {
             position: relative;
@@ -7557,7 +7542,7 @@ export default function LandingPage() {
             height: 6px;
             border-radius: 50%;
             background: var(--rf-accent-on-dark);
-            box-shadow: 0 0 14px rgba(255,135,56,0.6);
+            box-shadow: none;
           }
           .rf-menu-links {
             display: flex;
@@ -7648,9 +7633,9 @@ export default function LandingPage() {
             font-size: 15px;
             font-weight: 800;
             letter-spacing: -0.01em;
-            color: #FFFFFF;
+            color: #000000;
             background: var(--rf-accent-on-dark);
-            box-shadow: 0 14px 30px rgba(255,135,56,0.35);
+            box-shadow: none;
             transition: transform .15s ease;
           }
           .rf-menu-cta:active { transform: scale(0.98); }

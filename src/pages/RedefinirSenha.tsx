@@ -100,7 +100,7 @@ export default function RedefinirSenha() {
       className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
       style={{
         background:
-          'radial-gradient(circle at 85% 12%, rgba(244, 114, 182, 0.14), transparent 38%), radial-gradient(circle at 12% 85%, rgba(37, 99, 235, 0.38), transparent 52%), linear-gradient(165deg, #0B2958 0%, #0F3775 40%, #164894 75%, #1A3E78 100%)',
+          '#1C89C0',
       }}
     >
       <style>{`
@@ -123,7 +123,7 @@ export default function RedefinirSenha() {
             90deg,
             transparent 0%,
             rgba(255, 255, 255, 0.03) 30%,
-            rgba(173, 205, 255, 0.12) 50%,
+            rgba(255, 255, 255, 0.12) 50%,
             rgba(255, 255, 255, 0.03) 70%,
             transparent 100%
           );
@@ -202,8 +202,8 @@ export default function RedefinirSenha() {
                 <button
                   type="button"
                   onClick={() => navigate('/login')}
-                  className="w-full h-[52px] rounded-full font-extrabold text-sm text-white shadow-[0_14px_30px_rgba(255,135,56,0.35)] hover:brightness-105 active:scale-[0.98] cursor-pointer transition-all flex items-center justify-center gap-2"
-                  style={{ background: '#FC761D' }}
+                  className="w-full h-[52px] rounded-full font-extrabold text-sm text-black hover:brightness-105 active:scale-[0.98] cursor-pointer transition-all flex items-center justify-center gap-2"
+                  style={{ background: '#FF95BA' }}
                 >
                   <span>Ir para o Login</span>
                   <ArrowRight className="w-4 h-4" />
@@ -228,8 +228,8 @@ export default function RedefinirSenha() {
                 <button
                   type="button"
                   onClick={() => navigate('/login')}
-                  className="w-full h-[52px] rounded-full font-extrabold text-sm text-white shadow-[0_14px_30px_rgba(255,135,56,0.35)] hover:brightness-105 active:scale-[0.98] cursor-pointer transition-all flex items-center justify-center gap-2"
-                  style={{ background: '#FC761D' }}
+                  className="w-full h-[52px] rounded-full font-extrabold text-sm text-black hover:brightness-105 active:scale-[0.98] cursor-pointer transition-all flex items-center justify-center gap-2"
+                  style={{ background: '#FF95BA' }}
                 >
                   <span>Solicitar Novo Link de Recuperação</span>
                   <ArrowRight className="w-4 h-4" />
@@ -243,7 +243,7 @@ export default function RedefinirSenha() {
               animate={{ opacity: 1, y: 0 }}
             >
               <div className="text-center mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-[#FC761D]/10 border border-[#FC761D]/20 text-[#FC761D] flex items-center justify-center mx-auto mb-3 shadow-inner">
+                <div className="w-12 h-12 rounded-2xl bg-[#FF95BA]/10 border border-[#FF95BA]/20 text-[#1C89C0] flex items-center justify-center mx-auto mb-3 shadow-inner">
                   <KeyRound className="w-6 h-6" />
                 </div>
                 <h2 className="text-2xl sm:text-[26px] font-black text-[#0F172A] tracking-[-0.035em] leading-tight">
@@ -273,7 +273,7 @@ export default function RedefinirSenha() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Mínimo 8 caracteres"
-                      className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FC761D] focus:ring-4 focus:ring-[#FC761D]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                      className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FF95BA] focus:ring-4 focus:ring-[#FF95BA]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
                     />
                     <button
                       type="button"
@@ -297,7 +297,7 @@ export default function RedefinirSenha() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Repita a nova senha"
-                      className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FC761D] focus:ring-4 focus:ring-[#FC761D]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                      className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FF95BA] focus:ring-4 focus:ring-[#FF95BA]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
                     />
                     <button
                       type="button"
@@ -313,8 +313,8 @@ export default function RedefinirSenha() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-[52px] mt-2 rounded-full font-extrabold text-sm text-white flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_14px_30px_rgba(255,135,56,0.35)] hover:brightness-105 active:scale-[0.98]"
-                  style={{ background: '#FC761D' }}
+                  className="w-full h-[52px] mt-2 rounded-full font-extrabold text-sm text-black flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-105 active:scale-[0.98]"
+                  style={{ background: '#FF95BA' }}
                 >
                   {loading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -330,7 +330,7 @@ export default function RedefinirSenha() {
               <div className="mt-6 text-center">
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-1.5 text-xs text-[#5B6478] hover:text-[#FC761D] font-bold transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs text-[#5B6478] hover:text-[#1C89C0] font-bold transition-colors"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" /> Voltar para o login
                 </Link>

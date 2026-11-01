@@ -86,11 +86,11 @@ export default function CookieConsentBanner() {
             <div
               className="p-5 sm:p-6 rounded-[28px] text-white space-y-4 relative overflow-hidden"
               style={{
-                background: 'linear-gradient(135deg, rgba(11, 41, 88, 0.94) 0%, rgba(15, 55, 117, 0.90) 50%, rgba(22, 72, 148, 0.85) 100%)',
+                background: 'linear-gradient(135deg, rgba(18, 108, 153, 0.94) 0%, rgba(18, 108, 153, 0.90) 50%, rgba(18, 108, 153, 0.85) 100%)',
                 backdropFilter: 'blur(28px) saturate(190%)',
                 WebkitBackdropFilter: 'blur(28px) saturate(190%)',
                 border: '1px solid rgba(255, 255, 255, 0.16)',
-                boxShadow: '0 30px 80px rgba(4, 18, 48, 0.65), 0 0 40px rgba(252, 118, 29, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
+                boxShadow: '0 30px 80px rgba(4, 18, 48, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
               }}
             >
               {/* Brilho âmbar de fundo sutil */}
@@ -98,7 +98,7 @@ export default function CookieConsentBanner() {
                 aria-hidden="true"
                 className="absolute -top-16 -right-16 w-44 h-44 rounded-full pointer-events-none"
                 style={{
-                  background: 'radial-gradient(circle, rgba(255, 135, 56, 0.20), transparent 70%)',
+                  background: 'radial-gradient(circle, rgba(255, 149, 186, 0.20), transparent 70%)',
                   filter: 'blur(35px)',
                 }}
               />
@@ -108,10 +108,10 @@ export default function CookieConsentBanner() {
                 <div
                   className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(252, 118, 29, 0.25), rgba(255, 135, 56, 0.10))',
-                    border: '1px solid rgba(255, 135, 56, 0.35)',
-                    color: '#FF8738',
-                    boxShadow: '0 0 20px rgba(252, 118, 29, 0.25)',
+                    background: 'linear-gradient(135deg, rgba(255, 149, 186, 0.25), rgba(255, 149, 186, 0.10))',
+                    border: '1px solid rgba(255, 149, 186, 0.35)',
+                    color: '#FF95BA',
+                    boxShadow: 'none',
                   }}
                 >
                   <Cookie className="w-5 h-5" />
@@ -121,9 +121,9 @@ export default function CookieConsentBanner() {
                   <div className="flex items-center gap-2">
                     <span
                       className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em]"
-                      style={{ color: '#FF8738' }}
+                      style={{ color: '#FF95BA' }}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF8738] shadow-[0_0_8px_#FF8738]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF95BA]" />
                       Privacidade &amp; LGPD
                     </span>
                   </div>
@@ -145,7 +145,7 @@ export default function CookieConsentBanner() {
                   onClick={() => setShowModal(true)}
                   className="px-3.5 py-2 rounded-full text-xs font-semibold text-white/70 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-white/10 hover:border-white/20"
                 >
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-[#FF8738]" />
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-[#FF95BA]" />
                   Preferências
                 </button>
 
@@ -160,7 +160,7 @@ export default function CookieConsentBanner() {
                   <button
                     type="button"
                     onClick={handleAcceptAll}
-                    className="flex-1 sm:flex-initial h-10 px-5 sm:px-6 rounded-full bg-[#FC761D] hover:bg-[#FF8738] text-white text-xs font-black tracking-tight transition-all text-center cursor-pointer hover:-translate-y-0.5 active:translate-y-0 shadow-[0_8px_24px_rgba(255,135,56,0.38)] hover:shadow-[0_12px_28px_rgba(255,135,56,0.50)]"
+                    className="flex-1 sm:flex-initial h-10 px-5 sm:px-6 rounded-full bg-[#FF95BA] hover:bg-[#FF95BA] text-black text-xs font-black tracking-tight transition-all text-center cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
                   >
                     Aceitar Todos
                   </button>

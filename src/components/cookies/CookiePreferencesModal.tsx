@@ -78,9 +78,9 @@ export default function CookiePreferencesModal({
           transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
           className="w-full max-w-xl rounded-[32px] overflow-hidden flex flex-col max-h-[90vh] text-white relative"
           style={{
-            background: 'linear-gradient(160deg, #0B2958 0%, #0F3775 45%, #164894 80%, #1A3E78 100%)',
+            background: '#1C89C0',
             border: '1px solid rgba(255, 255, 255, 0.18)',
-            boxShadow: '0 40px 100px rgba(0, 0, 0, 0.70), 0 0 50px rgba(252, 118, 29, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
+            boxShadow: '0 40px 100px rgba(0, 0, 0, 0.70), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
           }}
         >
           {/* Header */}
@@ -95,10 +95,10 @@ export default function CookiePreferencesModal({
               <div
                 className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(252, 118, 29, 0.25), rgba(255, 135, 56, 0.10))',
-                  border: '1px solid rgba(255, 135, 56, 0.35)',
-                  color: '#FF8738',
-                  boxShadow: '0 0 20px rgba(252, 118, 29, 0.25)',
+                  background: 'linear-gradient(135deg, rgba(255, 149, 186, 0.25), rgba(255, 149, 186, 0.10))',
+                  border: '1px solid rgba(255, 149, 186, 0.35)',
+                  color: '#FF95BA',
+                  boxShadow: 'none',
                 }}
               >
                 <Cookie className="w-5 h-5" />
@@ -164,7 +164,7 @@ export default function CookiePreferencesModal({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5 font-bold text-white text-sm">
-                  <Sliders className="w-4 h-4 text-[#FF8738]" />
+                  <Sliders className="w-4 h-4 text-[#FF95BA]" />
                   <span>Preferências de Interface</span>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -174,7 +174,7 @@ export default function CookiePreferencesModal({
                     onChange={(e) => setPreferences(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-10 h-5.5 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#FC761D]"></div>
+                  <div className="w-10 h-5.5 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#FF95BA]"></div>
                 </label>
               </div>
               <p className="text-white/60 leading-relaxed text-xs">
@@ -192,7 +192,7 @@ export default function CookiePreferencesModal({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5 font-bold text-white text-sm">
-                  <Cookie className="w-4 h-4 text-[#FF8738]" />
+                  <Cookie className="w-4 h-4 text-[#FF95BA]" />
                   <span>Estatísticas &amp; Desempenho</span>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -202,7 +202,7 @@ export default function CookiePreferencesModal({
                     onChange={(e) => setStatistics(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-10 h-5.5 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#FC761D]"></div>
+                  <div className="w-10 h-5.5 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#FF95BA]"></div>
                 </label>
               </div>
               <p className="text-white/60 leading-relaxed text-xs">
@@ -215,7 +215,7 @@ export default function CookiePreferencesModal({
           <div
             className="p-5 border-t flex flex-col sm:flex-row items-center justify-between gap-3"
             style={{
-              background: 'rgba(11, 41, 88, 0.85)',
+              background: 'rgba(18, 108, 153, 0.85)',
               borderColor: 'rgba(255, 255, 255, 0.10)',
             }}
           >
@@ -237,7 +237,7 @@ export default function CookiePreferencesModal({
               <button
                 type="button"
                 onClick={handleAcceptAll}
-                className="flex-1 sm:flex-initial h-10 px-6 rounded-full bg-[#FC761D] hover:bg-[#FF8738] text-white text-xs font-black tracking-tight transition-all shadow-[0_8px_24px_rgba(255,135,56,0.38)] hover:shadow-[0_12px_28px_rgba(255,135,56,0.50)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                className="flex-1 sm:flex-initial h-10 px-6 rounded-full bg-[#FF95BA] hover:bg-[#FF95BA] text-black text-xs font-black tracking-tight transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
               >
                 Aceitar Todos
               </button>

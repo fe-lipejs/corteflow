@@ -10,8 +10,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, CheckCircle2, Upload, Image, Scissors, MapPin, AtSign, Phone as PhoneIcon, FileText, Sparkles, Star, Mail, Loader2, ArrowRight } from 'lucide-react';
 import { normalizeBrazilianPhone, formatPhoneMask } from '../lib/phoneUtils';
 
-const ACCENT = '#FC761D';
-const ACCENT_HOVER = '#FF8738';
+const ACCENT = '#FF95BA';
+const ACCENT_HOVER = '#FF95BA';
 
 const onboardingSchema = z.object({
   language: z.enum(['pt', 'en', 'es', 'fr', 'de']),
@@ -585,7 +585,7 @@ export default function Onboarding() {
       style={{
         fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif",
         WebkitFontSmoothing: 'antialiased',
-        background: 'radial-gradient(circle at 85% 10%, rgba(252, 118, 29, 0.05), transparent 45%), radial-gradient(circle at 10% 90%, rgba(15, 23, 42, 0.03), transparent 50%), #F8FAFC',
+        background: 'radial-gradient(circle at 85% 10%, rgba(255, 149, 186, 0.05), transparent 45%), radial-gradient(circle at 10% 90%, rgba(15, 23, 42, 0.03), transparent 50%), #F8FAFC',
       }}
     >
       {/* Brilhos sutis e quentes de fundo (sem azul) */}
@@ -593,7 +593,7 @@ export default function Onboarding() {
         aria-hidden="true"
         className="absolute top-[-20%] right-[-15%] w-[45%] h-[45%] rounded-full pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, rgba(252, 118, 29, 0.08), transparent 70%)',
+          background: 'radial-gradient(circle, rgba(255, 149, 186, 0.08), transparent 70%)',
           filter: 'blur(120px)',
         }}
       />
@@ -601,7 +601,7 @@ export default function Onboarding() {
         aria-hidden="true"
         className="absolute bottom-[-15%] left-[-15%] w-[35%] h-[35%] rounded-full pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, rgba(252, 118, 29, 0.04), transparent 70%)',
+          background: 'radial-gradient(circle, rgba(255, 149, 186, 0.04), transparent 70%)',
           filter: 'blur(100px)',
         }}
       />
@@ -611,7 +611,7 @@ export default function Onboarding() {
         className="w-full max-w-4xl rounded-[32px] overflow-hidden flex flex-col md:flex-row border border-[#E2E8F0] shadow-2xl relative z-10 bg-white"
         style={{
           minHeight: '680px',
-          boxShadow: '0 25px 60px -15px rgba(15, 23, 42, 0.08), 0 0 40px rgba(252, 118, 29, 0.03)',
+          boxShadow: '0 25px 60px -15px rgba(15, 23, 42, 0.08)',
         }}
       >
 
@@ -652,7 +652,7 @@ export default function Onboarding() {
                       }`}
                     style={step === s.num ? {
                       background: ACCENT,
-                      boxShadow: '0 4px 14px rgba(252, 118, 29, 0.35)',
+                      boxShadow: 'none',
                     } : undefined}
                   >
                     {step > s.num ? <CheckCircle2 className="w-4 h-4" /> : s.num}
@@ -716,7 +716,7 @@ export default function Onboarding() {
                       }}
                       onFocus={e => {
                         e.currentTarget.style.borderColor = ACCENT;
-                        e.currentTarget.style.boxShadow = '0 0 0 4px rgba(252, 118, 29, 0.15)';
+                        e.currentTarget.style.boxShadow = 'none';
                       }}
                       onBlur={e => {
                         e.currentTarget.style.borderColor = '#CBD5E1';
@@ -745,8 +745,8 @@ export default function Onboarding() {
                           className="p-4.5 rounded-2xl cursor-pointer transition-all border group hover:-translate-y-0.5"
                           style={{
                             borderColor: isSelected ? ACCENT : '#E2E8F0',
-                            background: isSelected ? 'rgba(252, 118, 29, 0.05)' : '#FFFFFF',
-                            boxShadow: isSelected ? '0 8px 24px rgba(252, 118, 29, 0.12)' : '0 1px 3px rgba(0,0,0,0.02)',
+                            background: isSelected ? 'rgba(255, 149, 186, 0.05)' : '#FFFFFF',
+                            boxShadow: isSelected ? '0 8px 24px rgba(255, 149, 186, 0.12)' : '0 1px 3px rgba(0,0,0,0.02)',
                           }}
                         >
                           <div className="flex items-center gap-3.5">
@@ -755,7 +755,7 @@ export default function Onboarding() {
                               style={{
                                 background: isSelected ? ACCENT : '#F1F5F9',
                                 color: isSelected ? '#FFFFFF' : '#64748B',
-                                boxShadow: isSelected ? '0 4px 14px rgba(252, 118, 29, 0.30)' : 'none',
+                                boxShadow: isSelected ? '0 4px 14px rgba(255, 149, 186, 0.30)' : 'none',
                               }}
                             >
                               <type.icon className="w-5 h-5" />
@@ -814,7 +814,7 @@ export default function Onboarding() {
                         className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all font-semibold text-sm"
                         onFocus={e => {
                           e.currentTarget.style.borderColor = ACCENT;
-                          e.currentTarget.style.boxShadow = '0 0 0 4px rgba(252, 118, 29, 0.15)';
+                          e.currentTarget.style.boxShadow = 'none';
                         }}
                         onBlur={e => {
                           e.currentTarget.style.borderColor = '#CBD5E1';
@@ -892,7 +892,7 @@ export default function Onboarding() {
                                       setValue('slug', sug, { shouldValidate: true });
                                       setUserManuallyEditedSlug(true);
                                     }}
-                                    className="px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-white text-[#FC761D] hover:bg-[#FC761D] hover:text-white border border-[#FC761D]/35 hover:border-[#FC761D] transition-all active:scale-95 flex items-center gap-1 shadow-sm cursor-pointer"
+                                    className="px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-white text-[#1C89C0] hover:bg-[#FF95BA] hover:text-white border border-[#FF95BA]/35 hover:border-[#FF95BA] transition-all active:scale-95 flex items-center gap-1 shadow-sm cursor-pointer"
                                   >
                                     <span>{sug}</span>
                                     <span className="text-[10px] opacity-70">+</span>
@@ -941,7 +941,7 @@ export default function Onboarding() {
                         <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                         <div
                           onClick={() => !isProcessingLogo && logoInputRef.current?.click()}
-                          className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#FC761D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative hover:bg-[#FC761D]/5"
+                          className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#FF95BA] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative hover:bg-[#FF95BA]/5"
                         >
                           {isProcessingLogo ? (
                             <div className="flex flex-col items-center gap-2" style={{ color: ACCENT }}>
@@ -969,7 +969,7 @@ export default function Onboarding() {
                         <input ref={bannerInputRef} type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
                         <div
                           onClick={() => !isProcessingBanner && bannerInputRef.current?.click()}
-                          className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#FC761D] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative hover:bg-[#FC761D]/5"
+                          className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#FF95BA] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative hover:bg-[#FF95BA]/5"
                         >
                           {isProcessingBanner ? (
                             <div className="flex flex-col items-center gap-2" style={{ color: ACCENT }}>
@@ -1005,7 +1005,7 @@ export default function Onboarding() {
                         className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all resize-none text-xs font-medium"
                         onFocus={e => {
                           e.currentTarget.style.borderColor = ACCENT;
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                          e.currentTarget.style.boxShadow = 'none';
                         }}
                         onBlur={e => {
                           e.currentTarget.style.borderColor = '#CBD5E1';
@@ -1066,7 +1066,7 @@ export default function Onboarding() {
                           className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
                           onFocus={e => {
                             e.currentTarget.style.borderColor = ACCENT;
-                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                            e.currentTarget.style.boxShadow = 'none';
                           }}
                           onBlur={e => {
                             e.currentTarget.style.borderColor = '#CBD5E1';
@@ -1085,7 +1085,7 @@ export default function Onboarding() {
                           className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
                           onFocus={e => {
                             e.currentTarget.style.borderColor = ACCENT;
-                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                            e.currentTarget.style.boxShadow = 'none';
                           }}
                           onBlur={e => {
                             e.currentTarget.style.borderColor = '#CBD5E1';
@@ -1119,7 +1119,7 @@ export default function Onboarding() {
                           className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
                           onFocus={e => {
                             e.currentTarget.style.borderColor = ACCENT;
-                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                            e.currentTarget.style.boxShadow = 'none';
                           }}
                           onBlur={e => {
                             e.currentTarget.style.borderColor = '#CBD5E1';
@@ -1135,7 +1135,7 @@ export default function Onboarding() {
                           className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
                           onFocus={e => {
                             e.currentTarget.style.borderColor = ACCENT;
-                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                            e.currentTarget.style.boxShadow = 'none';
                           }}
                           onBlur={e => {
                             e.currentTarget.style.borderColor = '#CBD5E1';
@@ -1151,7 +1151,7 @@ export default function Onboarding() {
                           className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
                           onFocus={e => {
                             e.currentTarget.style.borderColor = ACCENT;
-                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                            e.currentTarget.style.boxShadow = 'none';
                           }}
                           onBlur={e => {
                             e.currentTarget.style.borderColor = '#CBD5E1';
@@ -1171,7 +1171,7 @@ export default function Onboarding() {
                           className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
                           onFocus={e => {
                             e.currentTarget.style.borderColor = ACCENT;
-                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                            e.currentTarget.style.boxShadow = 'none';
                           }}
                           onBlur={e => {
                             e.currentTarget.style.borderColor = '#CBD5E1';
@@ -1187,7 +1187,7 @@ export default function Onboarding() {
                           className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
                           onFocus={e => {
                             e.currentTarget.style.borderColor = ACCENT;
-                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                            e.currentTarget.style.boxShadow = 'none';
                           }}
                           onBlur={e => {
                             e.currentTarget.style.borderColor = '#CBD5E1';
@@ -1203,7 +1203,7 @@ export default function Onboarding() {
                           className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
                           onFocus={e => {
                             e.currentTarget.style.borderColor = ACCENT;
-                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                            e.currentTarget.style.boxShadow = 'none';
                           }}
                           onBlur={e => {
                             e.currentTarget.style.borderColor = '#CBD5E1';
@@ -1220,7 +1220,7 @@ export default function Onboarding() {
                           className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium uppercase"
                           onFocus={e => {
                             e.currentTarget.style.borderColor = ACCENT;
-                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                            e.currentTarget.style.boxShadow = 'none';
                           }}
                           onBlur={e => {
                             e.currentTarget.style.borderColor = '#CBD5E1';
@@ -1241,7 +1241,7 @@ export default function Onboarding() {
                         className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none text-xs font-medium"
                         onFocus={e => {
                           e.currentTarget.style.borderColor = ACCENT;
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(252, 118, 29, 0.15)';
+                          e.currentTarget.style.boxShadow = 'none';
                         }}
                         onBlur={e => {
                           e.currentTarget.style.borderColor = '#CBD5E1';
@@ -1277,8 +1277,8 @@ export default function Onboarding() {
                   <div
                     className="bg-white border rounded-[28px] p-6 w-full max-w-[300px] mb-4 relative shadow-sm shrink-0 flex flex-col items-center mt-3"
                     style={{
-                      borderColor: 'rgba(252, 118, 29, 0.25)',
-                      boxShadow: '0 8px 30px rgba(252, 118, 29, 0.08)',
+                      borderColor: 'rgba(255, 149, 186, 0.25)',
+                      boxShadow: 'none',
                     }}
                   >
                     <div
@@ -1314,7 +1314,7 @@ export default function Onboarding() {
                       className="w-full text-white h-12 rounded-full font-extrabold flex items-center justify-center transition-all shadow-md text-sm hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                       style={{
                         background: ACCENT,
-                        boxShadow: '0 8px 24px rgba(252, 118, 29, 0.30)',
+                        boxShadow: 'none',
                       }}
                     >
                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Começar grátis →'}
@@ -1372,7 +1372,7 @@ export default function Onboarding() {
                       className="h-12 px-8 rounded-full font-extrabold text-xs sm:text-sm text-white transition-all flex items-center gap-2 cursor-pointer ml-auto hover:-translate-y-0.5 active:translate-y-0"
                       style={{
                         background: ACCENT,
-                        boxShadow: '0 8px 24px rgba(252, 118, 29, 0.28)',
+                        boxShadow: 'none',
                       }}
                     >
                       <span>Continuar</span>
@@ -1386,7 +1386,7 @@ export default function Onboarding() {
                       className="h-12 px-8 rounded-full font-extrabold text-xs sm:text-sm text-white transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60 ml-auto hover:-translate-y-0.5 active:translate-y-0"
                       style={{
                         background: ACCENT,
-                        boxShadow: '0 8px 24px rgba(252, 118, 29, 0.28)',
+                        boxShadow: 'none',
                       }}
                     >
                       {loading ? (

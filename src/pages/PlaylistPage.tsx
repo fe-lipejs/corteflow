@@ -8,14 +8,15 @@ import { trackEvent } from '../lib/analytics';
 
 /* ============================================================
    /playlist — "No som da casa"
-   Design system: Royal Blue & Laranja (#FC761D / #FF8738 no azul)
+   Design system: Azul #1C89C0 (primária) & Rosa #FF95BA (accent)
    Fundo dinâmico com feixe de luz + Cards BRANCOS em white glassmorphism premium
 ============================================================ */
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-const ACCENT = '#FC761D';
-const ACCENT_ON_DARK = '#FF8738';
+const ACCENT = '#FF95BA';
+const ACCENT_ON_DARK = '#FF95BA';
+const PRIMARY = '#1C89C0';
 const INK = '#0F172A';
 const MUTED = '#5B6478';
 
@@ -105,9 +106,9 @@ function Eyebrow({ children, onLight = false }: { children: React.ReactNode; onL
                 gap: '8px',
                 padding: '6px 14px',
                 borderRadius: '9999px',
-                background: 'rgba(252, 118, 29, 0.08)',
-                border: '1px solid rgba(252, 118, 29, 0.20)',
-                color: '#C25400',
+                background: 'rgba(255, 149, 186, 0.08)',
+                border: '1px solid rgba(255, 149, 186, 0.20)',
+                color: '#1C89C0',
                 fontSize: '11px',
                 lineHeight: 1,
                 letterSpacing: '.16em',
@@ -120,7 +121,7 @@ function Eyebrow({ children, onLight = false }: { children: React.ReactNode; onL
                     borderRadius: '50%',
                     background: ACCENT,
                     flexShrink: 0,
-                    boxShadow: '0 0 10px rgba(252,118,29,0.5)',
+                    boxShadow: 'none',
                 }} />
                 {children}
             </div>
@@ -152,7 +153,7 @@ function Eyebrow({ children, onLight = false }: { children: React.ReactNode; onL
                 borderRadius: '50%',
                 background: ACCENT_ON_DARK,
                 flexShrink: 0,
-                boxShadow: '0 0 12px #FF8738',
+                boxShadow: 'none',
             }} />
             {children}
         </div>
@@ -199,7 +200,7 @@ export default function PlaylistPage() {
         <div style={{
             fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif",
             WebkitFontSmoothing: 'antialiased',
-            background: 'radial-gradient(circle at 85% 12%, rgba(244, 114, 182, 0.14), transparent 38%), radial-gradient(circle at 12% 85%, rgba(37, 99, 235, 0.38), transparent 52%), radial-gradient(circle at 50% 30%, rgba(252, 118, 29, 0.08), transparent 45%), linear-gradient(165deg, #0B2958 0%, #0F3775 40%, #164894 75%, #1A3E78 100%)',
+            background: '#1C89C0',
             color: '#ffffff',
             minHeight: '100vh',
             overflowX: 'hidden',
@@ -242,7 +243,7 @@ export default function PlaylistPage() {
                     left: 0;
                     width: 480px;
                     height: 140vh;
-                    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), rgba(255, 135, 56, 0.06), transparent);
+                    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), rgba(255, 149, 186, 0.06), transparent);
                     filter: blur(45px);
                     pointer-events: none;
                     z-index: 0;
@@ -254,7 +255,7 @@ export default function PlaylistPage() {
                     left: 20%;
                     width: 320px;
                     height: 130vh;
-                    background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.15), rgba(244, 114, 182, 0.08), transparent);
+                    background: linear-gradient(90deg, transparent, rgba(28, 137, 192, 0.15), rgba(255, 149, 186, 0.08), transparent);
                     filter: blur(55px);
                     pointer-events: none;
                     z-index: 0;
@@ -267,7 +268,7 @@ export default function PlaylistPage() {
                     width: 580px;
                     height: 580px;
                     border-radius: 50%;
-                    background: radial-gradient(circle, rgba(244, 114, 182, 0.12), rgba(37, 99, 235, 0.20), transparent 68%);
+                    background: radial-gradient(circle, rgba(255, 149, 186, 0.12), rgba(28, 137, 192, 0.20), transparent 68%);
                     filter: blur(50px);
                     pointer-events: none;
                     z-index: 0;
@@ -292,7 +293,7 @@ export default function PlaylistPage() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '0 clamp(16px, 4vw, 36px)',
-                background: 'rgba(11, 41, 88, 0.78)',
+                background: 'rgba(18, 108, 153, 0.78)',
                 backdropFilter: 'blur(20px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.10)',
@@ -389,21 +390,21 @@ export default function PlaylistPage() {
                         padding: '0 20px',
                         borderRadius: '9999px',
                         background: ACCENT_ON_DARK,
-                        color: '#FFFFFF',
+                        color: '#000000',
                         fontSize: '12px',
                         fontWeight: 800,
                         letterSpacing: '-0.01em',
                         textDecoration: 'none',
                         transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                        boxShadow: '0 8px 24px rgba(255, 135, 56, 0.38)',
+                        boxShadow: 'none',
                     }}
                     onMouseEnter={e => {
                         (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-1px)';
-                        (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 12px 30px rgba(255, 135, 56, 0.50)';
+                        (e.currentTarget as HTMLAnchorElement).style.boxShadow = 'none';
                     }}
                     onMouseLeave={e => {
                         (e.currentTarget as HTMLAnchorElement).style.transform = 'none';
-                        (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 8px 24px rgba(255, 135, 56, 0.38)';
+                        (e.currentTarget as HTMLAnchorElement).style.boxShadow = 'none';
                     }}
                 >
                     Começar grátis
@@ -592,15 +593,15 @@ export default function PlaylistPage() {
                         ) : (
                             <div style={{
                                 borderRadius: '18px',
-                                border: '1px dashed rgba(16, 56, 117, 0.25)',
-                                background: 'rgba(16, 56, 117, 0.04)',
+                                border: '1px dashed rgba(28, 137, 192, 0.25)',
+                                background: 'rgba(28, 137, 192, 0.04)',
                                 padding: '48px 24px',
                                 textAlign: 'center',
                             }}>
                                 <p style={{ margin: 0, color: MUTED, fontSize: '13px' }}>
                                     Defina{' '}
-                                    <code style={{ fontFamily: 'ui-monospace, monospace', color: ACCENT }}>VITE_SPOTIFY_PLAYLIST_ID</code>
-                                    {' '}no <code style={{ fontFamily: 'ui-monospace, monospace', color: ACCENT }}>.env</code>
+                                    <code style={{ fontFamily: 'ui-monospace, monospace', color: PRIMARY }}>VITE_SPOTIFY_PLAYLIST_ID</code>
+                                    {' '}no <code style={{ fontFamily: 'ui-monospace, monospace', color: PRIMARY }}>.env</code>
                                 </p>
                             </div>
                         )}
@@ -625,13 +626,13 @@ export default function PlaylistPage() {
                                 width: '56px',
                                 height: '56px',
                                 borderRadius: '18px',
-                                background: 'linear-gradient(135deg, rgba(252, 118, 29, 0.14), rgba(252, 118, 29, 0.04))',
-                                border: '1px solid rgba(252, 118, 29, 0.25)',
-                                color: ACCENT,
+                                background: 'linear-gradient(135deg, rgba(255, 149, 186, 0.14), rgba(255, 149, 186, 0.04))',
+                                border: '1px solid rgba(255, 149, 186, 0.25)',
+                                color: PRIMARY,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                boxShadow: '0 8px 22px rgba(252, 118, 29, 0.15)',
+                                boxShadow: 'none',
                             }}>
                                 <Quote size={28} />
                             </div>
@@ -671,11 +672,11 @@ export default function PlaylistPage() {
                                             fontWeight: 800,
                                             letterSpacing: '.20em',
                                             textTransform: 'uppercase',
-                                            color: ACCENT,
+                                            color: PRIMARY,
                                             padding: '6px 16px',
                                             borderRadius: '9999px',
-                                            background: 'rgba(252, 118, 29, 0.08)',
-                                            border: '1px solid rgba(252, 118, 29, 0.22)',
+                                            background: 'rgba(255, 149, 186, 0.08)',
+                                            border: '1px solid rgba(255, 149, 186, 0.22)',
                                         }}>
                                             {verso.ref}
                                         </cite>
@@ -706,22 +707,22 @@ export default function PlaylistPage() {
                                         gap: '10px',
                                         borderRadius: '9999px',
                                         background: ACCENT,
-                                        color: '#FFFFFF',
+                                        color: '#000000',
                                         fontSize: '13.5px',
                                         fontWeight: 800,
                                         border: 'none',
                                         cursor: 'pointer',
                                         transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                                         fontFamily: 'inherit',
-                                        boxShadow: '0 10px 26px rgba(252, 118, 29, 0.35)',
+                                        boxShadow: 'none',
                                     }}
                                     onMouseEnter={e => {
                                         e.currentTarget.style.transform = 'translateY(-2px)';
-                                        e.currentTarget.style.boxShadow = '0 14px 32px rgba(252, 118, 29, 0.45)';
+                                        e.currentTarget.style.boxShadow = 'none';
                                     }}
                                     onMouseLeave={e => {
                                         e.currentTarget.style.transform = 'none';
-                                        e.currentTarget.style.boxShadow = '0 10px 26px rgba(252, 118, 29, 0.35)';
+                                        e.currentTarget.style.boxShadow = 'none';
                                     }}
                                 >
                                     <RefreshCw size={15} />
@@ -813,7 +814,7 @@ export default function PlaylistPage() {
                 borderTop: '1px solid rgba(255,255,255,0.10)',
                 padding: '36px 24px',
                 textAlign: 'center',
-                background: 'rgba(10, 37, 80, 0.45)',
+                background: 'rgba(18, 108, 153, 0.45)',
             }}>
                 <p style={{
                     margin: 0,
