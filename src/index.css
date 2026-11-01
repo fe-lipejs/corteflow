@@ -7,7 +7,7 @@
 
 :root {
   /* Theme variables are set dynamically by ThemeContext.tsx */
-  /* Default: Modo Claro com Accent #DE870D e Fonte Plus Jakarta Sans */
+  /* Default: Modo Claro com Accent #FF5C95 e Fonte Plus Jakarta Sans */
   --theme-bg: #F8FAFC;
   --theme-bg-card: #FFFFFF;
   --theme-bg-input: #FFFFFF;
@@ -21,27 +21,27 @@
   --theme-text-muted: #64748B;
   --theme-text-inverse: #FFFFFF;
 
-  --theme-accent: #DE870D;
-  --theme-accent-light: #F5A623;
-  --theme-accent-muted: rgba(222, 135, 13, 0.12);
-  --theme-accent-gradient: linear-gradient(135deg, #DE870D, #F5A623);
-  --theme-accent-hover: #C67509;
+  --theme-accent: #FF5C95;
+  --theme-accent-light: #FF74A5;
+  --theme-accent-muted: rgba(255, 92, 149, 0.12);
+  --theme-accent-gradient: linear-gradient(135deg, #FF5C95, #FF5C95);
+  --theme-accent-hover: #F2447F;
 
   --theme-border: #E2E8F0;
   --theme-border-hover: #CBD5E1;
-  --theme-border-active: #DE870D;
+  --theme-border-active: #FF5C95;
 
-  --theme-btn-primary-bg: linear-gradient(135deg, #DE870D, #F5A623);
+  --theme-btn-primary-bg: linear-gradient(135deg, #FF5C95, #FF5C95);
   --theme-btn-primary-text: #FFFFFF;
   --theme-btn-primary-hover: none;
 
-  --theme-calendar-active-bg: #DE870D;
+  --theme-calendar-active-bg: #FF5C95;
   --theme-calendar-active-text: #FFFFFF;
-  --theme-calendar-available-bg: rgba(222, 135, 13, 0.08);
+  --theme-calendar-available-bg: rgba(255, 92, 149, 0.08);
 
   --theme-input-bg: #FFFFFF;
   --theme-input-border: #CBD5E1;
-  --theme-input-focus-border: #DE870D;
+  --theme-input-focus-border: #FF5C95;
   --theme-input-placeholder: #94A3B8;
   --theme-input-text: #0F172A;
 
@@ -53,7 +53,7 @@
   --theme-sidebar-bg: #FFFFFF;
   --theme-sidebar-border: #E2E8F0;
   --theme-sidebar-hover: #F1F5F9;
-  --theme-sidebar-active-bg: #DE870D;
+  --theme-sidebar-active-bg: #FF5C95;
   --theme-sidebar-active-text: #FFFFFF;
 
   --theme-success: #16a34a;

@@ -327,7 +327,7 @@ export default function AdminAnalytics() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
-              <Activity className="w-7 h-7 text-[#FC761D] shrink-0" />
+              <Activity className="w-7 h-7 text-[#FF5C95] shrink-0" />
               <span>Rastreabilidade &amp; Inteligência de Atenção</span>
             </h1>
             {isLive && (
@@ -352,7 +352,7 @@ export default function AdminAnalytics() {
                 onClick={() => setTimeRange(r)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   timeRange === r
-                    ? 'bg-[#FC761D] text-white shadow-md'
+                    ? 'bg-[#FF5C95] text-white'
                     : 'text-[#A1A1A6] hover:text-white'
                 }`}
               >
@@ -364,10 +364,10 @@ export default function AdminAnalytics() {
           {/* Export & Refresh */}
           <button
             onClick={exportToCSV}
-            className="p-2.5 px-3.5 rounded-xl bg-[#121216] border border-white/[0.08] text-[#A1A1A6] hover:text-white hover:border-[#FC761D]/40 transition-all flex items-center gap-1.5 text-xs font-semibold"
+            className="p-2.5 px-3.5 rounded-xl bg-[#121216] border border-white/[0.08] text-[#A1A1A6] hover:text-white hover:border-[#FF5C95]/40 transition-all flex items-center gap-1.5 text-xs font-semibold"
             title="Exportar dados para CSV"
           >
-            <Download className="w-4 h-4 text-[#FC761D]" />
+            <Download className="w-4 h-4 text-[#FF5C95]" />
             <span>CSV</span>
           </button>
 
@@ -377,7 +377,7 @@ export default function AdminAnalytics() {
             className="p-2.5 rounded-xl bg-[#121216] border border-white/[0.08] text-[#A1A1A6] hover:text-white hover:border-white/20 transition-all flex items-center justify-center text-xs font-medium"
             title="Atualizar dados"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#FC761D]' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#FF5C95]' : ''}`} />
           </button>
         </div>
       </div>
@@ -413,7 +413,7 @@ export default function AdminAnalytics() {
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#A1A1A6]">Cliques em Ações</span>
             <div className="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.1] flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-[#FC761D]" />
+              <Sparkles className="w-4 h-4 text-[#FF5C95]" />
             </div>
           </div>
           <p className="text-3xl font-black text-white mt-3 font-mono">{conversionClicks}</p>
@@ -443,7 +443,7 @@ export default function AdminAnalytics() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
-              <Flame className="w-5 h-5 text-[#FC761D]" />
+              <Flame className="w-5 h-5 text-[#FF5C95]" />
               <span>Mapa de Atenção</span>
             </h2>
             <p className="text-xs text-[#A1A1A6] mt-0.5">
@@ -585,7 +585,7 @@ export default function AdminAnalytics() {
       <div className="bg-[#0C0D12] border border-white/[0.08] rounded-2xl p-6 shadow-xl space-y-5">
         <div>
           <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-            <Target className="w-4 h-4 text-[#FC761D]" />
+            <Target className="w-4 h-4 text-[#FF5C95]" />
             <span>Funil de atenção — em que etapa as pessoas param</span>
           </h3>
           <p className="text-xs text-[#A1A1A6] mt-0.5">
@@ -682,7 +682,7 @@ export default function AdminAnalytics() {
               </span>
             </div>
             <div className="w-full h-3 rounded-full bg-white/[0.06] overflow-hidden">
-              <div className="h-full bg-[#FC761D] rounded-full" style={{ width: '1.3%' }} />
+              <div className="h-full bg-[#FF5C95] rounded-full" style={{ width: '1.3%' }} />
             </div>
           </div>
         </div>
@@ -727,7 +727,7 @@ export default function AdminAnalytics() {
         <div className="bg-[#0C0D12] border border-white/[0.08] rounded-2xl p-6 shadow-xl space-y-4">
           <div>
             <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-              <Flame className="w-4 h-4 text-[#FC761D]" />
+              <Flame className="w-4 h-4 text-[#FF5C95]" />
               <span>Ponto focal — onde passam mais tempo</span>
             </h3>
             <p className="text-xs text-[#A1A1A6] mt-0.5">
@@ -850,7 +850,7 @@ export default function AdminAnalytics() {
       <div className="bg-[#0C0D12] border border-white/[0.08] rounded-2xl p-6 shadow-xl space-y-4">
         <div>
           <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#FC761D]" />
+            <Sparkles className="w-4 h-4 text-[#FF5C95]" />
             <span>Elementos que mais prendem o olhar</span>
           </h3>
           <p className="text-xs text-[#A1A1A6] mt-0.5">
@@ -874,10 +874,10 @@ export default function AdminAnalytics() {
             <tbody className="divide-y divide-white/[0.04]">
               {attentionElements.map((item) => (
                 <tr key={item.pos} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="py-3.5 px-4 font-mono font-bold text-[#FC761D]">{item.pos}</td>
+                  <td className="py-3.5 px-4 font-mono font-bold text-[#FF5C95]">{item.pos}</td>
                   <td className="py-3.5 px-4 font-semibold text-white">{item.name}</td>
                   <td className="py-3.5 px-4 text-center font-mono text-[#D4D4D8]">{item.views}</td>
-                  <td className="py-3.5 px-4 text-center font-mono text-[#FC761D] font-bold">{item.time}</td>
+                  <td className="py-3.5 px-4 text-center font-mono text-[#FF5C95] font-bold">{item.time}</td>
                   <td className="py-3.5 px-4 text-center font-mono text-white font-bold">{item.clicks}</td>
                   <td className="py-3.5 px-4 text-center font-mono font-bold text-emerald-400">{item.conv}</td>
                   <td className="py-3.5 px-4">
@@ -888,7 +888,7 @@ export default function AdminAnalytics() {
                           : item.status.includes('não clicam')
                           ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
                           : item.status.includes('Principal')
-                          ? 'bg-[#FC761D]/15 text-[#FC761D] border border-[#FC761D]/25'
+                          ? 'bg-[#FF5C95]/15 text-[#FF5C95] border border-[#FF5C95]/25'
                           : 'bg-white/[0.06] text-white'
                       }`}
                     >
@@ -910,7 +910,7 @@ export default function AdminAnalytics() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-[#FC761D]" />
+                <BarChart3 className="w-4 h-4 text-[#FF5C95]" />
                 <span>Gráfico de Visitas</span>
               </h3>
             </div>
@@ -1054,14 +1054,14 @@ export default function AdminAnalytics() {
         {/* 2. Top Elementos Mais Clicados */}
         <div className="bg-[#0C0D12] border border-white/[0.08] rounded-2xl p-6 shadow-xl space-y-4">
           <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
-            <MousePointerClick className="w-4 h-4 text-[#FC761D]" />
+            <MousePointerClick className="w-4 h-4 text-[#FF5C95]" />
             <span>Top Elementos Mais Clicados</span>
           </h3>
 
           <div className="space-y-3 pt-1">
             <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
               <div className="flex items-center gap-2.5 min-w-0">
-                <span className="w-5 h-5 rounded-full bg-[#FC761D] text-white font-bold text-xs flex items-center justify-center shrink-0">
+                <span className="w-5 h-5 rounded-full bg-[#FF5C95] text-white font-bold text-xs flex items-center justify-center shrink-0">
                   1
                 </span>
                 <span className="text-xs font-semibold text-white truncate">
@@ -1116,7 +1116,7 @@ export default function AdminAnalytics() {
         <div className="p-4 sm:p-6 border-b border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="font-extrabold text-base sm:text-lg text-white flex items-center gap-2">
-              <Clock className="w-4 h-4 text-[#FC761D]" />
+              <Clock className="w-4 h-4 text-[#FF5C95]" />
               <span>Registro de Eventos &amp; Telemetria</span>
             </h2>
             <p className="text-xs text-[#A1A1A6] mt-0.5">
@@ -1132,7 +1132,7 @@ export default function AdminAnalytics() {
                 placeholder="Buscar evento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-[#121216] border border-white/[0.1] rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-[#71717A] focus:outline-none focus:border-[#FC761D] w-full sm:w-[200px]"
+                className="bg-[#121216] border border-white/[0.1] rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-[#71717A] focus:outline-none focus:border-[#FF5C95] w-full sm:w-[200px]"
               />
             </div>
 
@@ -1147,7 +1147,7 @@ export default function AdminAnalytics() {
                   key={c.key}
                   onClick={() => setSelectedCategory(c.key as any)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                    selectedCategory === c.key ? 'bg-[#FC761D] text-white' : 'text-[#71717A] hover:text-white'
+                    selectedCategory === c.key ? 'bg-[#FF5C95] text-white' : 'text-[#71717A] hover:text-white'
                   }`}
                 >
                   {c.label}
@@ -1174,7 +1174,7 @@ export default function AdminAnalytics() {
               {loading && events.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-10 text-center text-[#71717A]">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[#FC761D] mb-2" />
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[#FF5C95] mb-2" />
                     Carregando atividades...
                   </td>
                 </tr>

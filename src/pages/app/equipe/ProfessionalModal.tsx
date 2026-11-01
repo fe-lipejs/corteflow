@@ -363,7 +363,7 @@ export default function ProfessionalModal({ professional, services, onClose, onC
       <button
         onClick={handleSubmit}
         disabled={isLoading}
-        className="flex-1 py-3 px-2 rounded-xl font-bold text-sm transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.4)] disabled:opacity-50 flex items-center justify-center gap-2 text-center"
+        className="flex-1 py-3 px-2 rounded-xl font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-center"
         style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
       >
         {isLoading ? (

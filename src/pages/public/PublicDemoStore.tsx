@@ -515,7 +515,7 @@ export default function PublicDemoStore() {
             className="w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-2xl"
             style={{
               backgroundColor: themeColor,
-              boxShadow: `0 0 40px ${themeColor}50`,
+              boxShadow: 'none',
             }}
           >
             <div className="w-16 h-16 rounded-full border-4 border-[#070707] flex items-center justify-center">

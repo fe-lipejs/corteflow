@@ -180,7 +180,7 @@ export const SpotlightGuideTour: React.FC = () => {
                 width: targetRect.width + 8,
                 height: targetRect.height + 8,
                 border: `2px solid ${theme.accent}`,
-                boxShadow: `0 0 0 4px ${theme.accent}35, 0 0 25px ${theme.accent}70`,
+                boxShadow: `0 0 0 4px ${theme.accent}35`,
               }}
             />
 

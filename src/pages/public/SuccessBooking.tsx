@@ -71,7 +71,7 @@ export default function SuccessBooking() {
         className="w-full max-w-md flex flex-col items-center text-center"
       >
         {/* Circle Check Icon */}
-        <div className="w-20 h-20 rounded-full bg-[#C9963B] flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(201,150,59,0.3)]">
+        <div className="w-20 h-20 rounded-full bg-[#C9963B] flex items-center justify-center mb-6">
           <div className="w-16 h-16 rounded-full border-4 border-[#1A1714] flex items-center justify-center">
             <Check className="w-8 h-8 text-[#1A1714]" strokeWidth={4} />
           </div>

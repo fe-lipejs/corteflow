@@ -37,7 +37,7 @@ import { demoPortalsService } from '../../services/demoPortalsService';
 import type { DemoPortal, DemoService, DemoProfessional, CreateDemoPortalInput } from '../../types/demoPortal';
 
 const COLOR_PRESETS = [
-  { name: 'Laranja Padrão', hex: '#FD6500' },
+  { name: 'Rosa Padrão', hex: '#FF5C95' },
   { name: 'Dourado Navalha', hex: '#D4AF37' },
   { name: 'Esmeralda', hex: '#10B981' },
   { name: 'Âmbar Solar', hex: '#F59E0B' },
@@ -76,7 +76,7 @@ export default function AdminDemoPortals() {
   const [businessName, setBusinessName] = useState('');
   const [businessType, setBusinessType] = useState<'barbearia' | 'salao' | 'esmalteria'>('barbearia');
   const [ownerWhatsapp, setOwnerWhatsapp] = useState('');
-  const [primaryColor, setPrimaryColor] = useState('#FD6500');
+  const [primaryColor, setPrimaryColor] = useState('#FF5C95');
   const [expiresInDays, setExpiresInDays] = useState(7);
   const [logoUrl, setLogoUrl] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
@@ -167,7 +167,7 @@ export default function AdminDemoPortals() {
     setBusinessName('');
     setBusinessType('barbearia');
     setOwnerWhatsapp('');
-    setPrimaryColor('#FD6500');
+    setPrimaryColor('#FF5C95');
     setExpiresInDays(7);
     setLogoUrl('');
     setBannerUrl('');
@@ -195,7 +195,7 @@ export default function AdminDemoPortals() {
     setBusinessName(demo.business_name);
     setBusinessType((demo.business_type as any) || 'barbearia');
     setOwnerWhatsapp(demo.owner_whatsapp);
-    setPrimaryColor(demo.primary_color || '#FD6500');
+    setPrimaryColor(demo.primary_color || '#FF5C95');
     setLogoUrl(demo.logo_url || '');
     setBannerUrl(demo.banner_url || '');
     setCustomSlug(demo.slug || '');
@@ -790,7 +790,7 @@ export default function AdminDemoPortals() {
                           setCustomSlug(demoPortalsService.sanitizeSlug(val));
                         }
                       }}
-                      className="w-full bg-[#141414] border border-[#262626] rounded-xl px-4 py-3 text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#FD6500]"
+                      className="w-full bg-[#141414] border border-[#262626] rounded-xl px-4 py-3 text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#FF5C95]"
                       required
                     />
                   </div>
@@ -803,7 +803,7 @@ export default function AdminDemoPortals() {
                         {editingDemo ? 'personalizável' : 'opcional'}
                       </span>
                     </label>
-                    <div className="flex items-center bg-[#141414] border border-[#262626] rounded-xl px-4 py-3 text-sm focus-within:border-[#FD6500] transition-colors">
+                    <div className="flex items-center bg-[#141414] border border-[#262626] rounded-xl px-4 py-3 text-sm focus-within:border-[#FF5C95] transition-colors">
                       <span className="text-[#666] select-none font-mono text-xs pr-1">
                         /paginas/
                       </span>
@@ -845,13 +845,13 @@ export default function AdminDemoPortals() {
                             onClick={() => setBusinessType(type.id as any)}
                             className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
                               isSelected
-                                ? 'bg-[#1e1710] border-[#FD6500] text-white shadow-sm'
+                                ? 'bg-[#FF5C95]/10 border-[#FF5C95] text-white'
                                 : 'bg-[#141414] border-[#262626] text-[#888] hover:border-[#383838] hover:text-[#ccc]'
                             }`}
                           >
                             <div className="flex items-center justify-between w-full mb-1.5">
-                              <Icon className={`w-4 h-4 ${isSelected ? 'text-[#FD6500]' : 'text-[#666]'}`} />
-                              {isSelected && <Check className="w-3.5 h-3.5 text-[#FD6500]" />}
+                              <Icon className={`w-4 h-4 ${isSelected ? 'text-[#FF5C95]' : 'text-[#666]'}`} />
+                              {isSelected && <Check className="w-3.5 h-3.5 text-[#FF5C95]" />}
                             </div>
                             <div>
                               <p className={`text-xs font-bold leading-tight ${isSelected ? 'text-white' : 'text-[#ccc]'}`}>
@@ -987,9 +987,9 @@ export default function AdminDemoPortals() {
 
                         <label className="cursor-pointer flex items-center gap-2 bg-[#1e1e1e] hover:bg-[#282828] text-xs font-medium text-white px-3.5 py-2.5 rounded-xl border border-[#333] transition-colors">
                           {isUploadingBanner ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-[#FD6500]" />
+                            <Loader2 className="w-4 h-4 animate-spin text-[#FF5C95]" />
                           ) : (
-                            <Camera className="w-4 h-4 text-[#FD6500]" />
+                            <Camera className="w-4 h-4 text-[#FF5C95]" />
                           )}
                           <span>{bannerUrl ? 'Trocar Fundo' : 'Enviar Fundo'}</span>
                           <input

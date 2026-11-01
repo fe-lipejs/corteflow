@@ -1,5 +1,17 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 
+// ─── Brand Accent ─────────────────────────────────────────────────────────────
+export const DEFAULT_ACCENT = '#FF5C95';
+
+// Cores laranja que eram o padrão antigo do sistema. Tenants que ainda têm
+// esses valores salvos em custom_palette passam a usar o novo accent padrão.
+const LEGACY_DEFAULT_ACCENTS = ['#FD6500', '#DE870D', '#FF9D2E'];
+
+export function normalizeAccentColor(hex?: string | null): string | undefined {
+  if (!hex) return hex ?? undefined;
+  return LEGACY_DEFAULT_ACCENTS.includes(hex.toUpperCase()) ? DEFAULT_ACCENT : hex;
+}
+
 // ─── Theme Token Interface ────────────────────────────────────────────────────
 export interface ThemeTokens {
   id: string;
@@ -113,16 +125,16 @@ export const THEME_CLASSIC: ThemeTokens = {
   accent: '#C9963B',
   accentLight: '#E8B86D',
   accentMuted: 'rgba(201, 150, 59, 0.15)',
-  accentGradient: 'linear-gradient(135deg, #C9963B, #E8B960)',
+  accentGradient: 'linear-gradient(135deg, #C9963B, #C9963B)',
   accentHover: '#D9A64B',
 
   border: '#2A2520',
   borderHover: '#3A3530',
   borderActive: '#C9963B',
 
-  btnPrimaryBg: 'linear-gradient(135deg, #C9963B, #E8B960)',
+  btnPrimaryBg: 'linear-gradient(135deg, #C9963B, #C9963B)',
   btnPrimaryText: '#1A1714',
-  btnPrimaryHover: '0 0 20px rgba(201, 150, 59, 0.4)',
+  btnPrimaryHover: 'none',
   btnOutlineBorder: '#2A2520',
   btnOutlineText: '#FFFFFF',
   btnOutlineHoverBg: 'rgba(201, 150, 59, 0.1)',
@@ -157,7 +169,7 @@ export const THEME_CLASSIC: ThemeTokens = {
   shadowSm: '0 1px 2px rgba(0, 0, 0, 0.3)',
   shadowMd: '0 4px 6px rgba(0, 0, 0, 0.3)',
   shadowLg: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
-  shadowAccent: '0 0 20px rgba(201, 150, 59, 0.2)',
+  shadowAccent: 'none',
 
   fontSans: "'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   fontSerif: "'Playfair Display', Georgia, serif",
@@ -171,7 +183,7 @@ export const THEME_CLASSIC: ThemeTokens = {
 export const THEME_NOIR: ThemeTokens = {
   id: 'noir',
   name: 'Noir',
-  description: 'Preto absoluto com âmbar',
+  description: 'Preto absoluto com rosa',
 
   bg: '#09090b', // zinc-950
   bgCard: 'rgba(24, 24, 27, 0.9)', // zinc-900
@@ -186,31 +198,31 @@ export const THEME_NOIR: ThemeTokens = {
   textMuted: '#71717a', // zinc-500
   textInverse: '#09090b',
 
-  accent: '#FF9D2E',
-  accentLight: '#FFB154',
-  accentMuted: 'rgba(255, 157, 46, 0.12)',
-  accentGradient: 'linear-gradient(135deg, #FF9D2E, #FFB154)',
-  accentHover: '#E68A27',
+  accent: '#FF5C95',
+  accentLight: '#FF74A5',
+  accentMuted: 'rgba(255, 92, 149, 0.12)',
+  accentGradient: 'linear-gradient(135deg, #FF5C95, #FF5C95)',
+  accentHover: '#F2447F',
 
   border: '#27272a', // zinc-800
   borderHover: '#3f3f46', // zinc-700
-  borderActive: '#FF9D2E',
+  borderActive: '#FF5C95',
 
-  btnPrimaryBg: 'linear-gradient(135deg, #FF9D2E, #FFB154)',
+  btnPrimaryBg: 'linear-gradient(135deg, #FF5C95, #FF5C95)',
   btnPrimaryText: '#09090b',
-  btnPrimaryHover: '0 0 25px rgba(255, 157, 46, 0.4)',
+  btnPrimaryHover: 'none',
   btnOutlineBorder: '#27272a',
   btnOutlineText: '#FFFFFF',
-  btnOutlineHoverBg: 'rgba(255, 157, 46, 0.08)',
+  btnOutlineHoverBg: 'rgba(255, 92, 149, 0.08)',
 
-  calendarActiveBg: '#FF9D2E',
+  calendarActiveBg: '#FF5C95',
   calendarActiveText: '#09090b',
-  calendarAvailableBg: 'rgba(255, 157, 46, 0.08)',
+  calendarAvailableBg: 'rgba(255, 92, 149, 0.08)',
   calendarUnavailableBg: 'rgba(255, 255, 255, 0.03)',
 
   inputBg: '#18181b',
   inputBorder: '#27272a',
-  inputFocusBorder: '#DE870D',
+  inputFocusBorder: '#FF5C95',
   inputPlaceholder: '#71717a',
   inputText: '#FFFFFF',
 
@@ -222,7 +234,7 @@ export const THEME_NOIR: ThemeTokens = {
   sidebarBg: 'rgba(9, 9, 11, 0.9)',
   sidebarBorder: '#27272a',
   sidebarHover: '#18181b',
-  sidebarActiveItemBg: '#DE870D',
+  sidebarActiveItemBg: '#FF5C95',
   sidebarActiveItemText: '#09090b',
 
   success: '#22c55e',
@@ -233,7 +245,7 @@ export const THEME_NOIR: ThemeTokens = {
   shadowSm: '0 1px 2px rgba(0, 0, 0, 0.4)',
   shadowMd: '0 4px 6px rgba(0, 0, 0, 0.4)',
   shadowLg: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-  shadowAccent: '0 0 25px rgba(222, 135, 13, 0.3)',
+  shadowAccent: 'none',
 
   fontSans: "'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   fontSerif: "'Playfair Display', Georgia, serif",
@@ -247,7 +259,7 @@ export const THEME_NOIR: ThemeTokens = {
 export const THEME_ELEGANT: ThemeTokens = {
   id: 'elegant',
   name: 'Modo Claro',
-  description: 'Branco puro, limpo e profissional com toque âmbar',
+  description: 'Branco puro, limpo e profissional com toque rosa',
 
   bg: '#F8FAFC',
   bgCard: '#FFFFFF',
@@ -262,31 +274,31 @@ export const THEME_ELEGANT: ThemeTokens = {
   textMuted: '#64748B',
   textInverse: '#FFFFFF',
 
-  accent: '#FD6500',
-  accentLight: '#FF8A33',
-  accentMuted: 'rgba(253, 101, 0, 0.12)',
-  accentGradient: 'linear-gradient(135deg, #FD6500, #FF8A33)',
-  accentHover: '#E05500',
+  accent: '#FF5C95',
+  accentLight: '#FF74A5',
+  accentMuted: 'rgba(255, 92, 149, 0.12)',
+  accentGradient: 'linear-gradient(135deg, #FF5C95, #FF5C95)',
+  accentHover: '#F2447F',
 
   border: '#E2E8F0',
   borderHover: '#CBD5E1',
-  borderActive: '#FD6500',
+  borderActive: '#FF5C95',
 
-  btnPrimaryBg: 'linear-gradient(135deg, #FD6500, #FF8A33)',
+  btnPrimaryBg: 'linear-gradient(135deg, #FF5C95, #FF5C95)',
   btnPrimaryText: '#FFFFFF',
   btnPrimaryHover: 'none',
   btnOutlineBorder: '#E2E8F0',
   btnOutlineText: '#0F172A',
   btnOutlineHoverBg: '#F1F5F9',
 
-  calendarActiveBg: '#FD6500',
+  calendarActiveBg: '#FF5C95',
   calendarActiveText: '#FFFFFF',
-  calendarAvailableBg: 'rgba(253, 101, 0, 0.08)',
+  calendarAvailableBg: 'rgba(255, 92, 149, 0.08)',
   calendarUnavailableBg: '#F8FAFC',
 
   inputBg: '#FFFFFF',
   inputBorder: '#CBD5E1',
-  inputFocusBorder: '#FD6500',
+  inputFocusBorder: '#FF5C95',
   inputPlaceholder: '#94A3B8',
   inputText: '#0F172A',
 
@@ -298,7 +310,7 @@ export const THEME_ELEGANT: ThemeTokens = {
   sidebarBg: '#FFFFFF',
   sidebarBorder: '#E2E8F0',
   sidebarHover: '#F1F5F9',
-  sidebarActiveItemBg: '#FD6500',
+  sidebarActiveItemBg: '#FF5C95',
   sidebarActiveItemText: '#FFFFFF',
 
   success: '#16a34a',
@@ -450,7 +462,7 @@ export const ThemeProvider: React.FC<{
 }> = ({
   children,
   initialThemeId = 'elegant',
-  initialCustomPalette = { primary: '#FD6500', fontStyle: 'sans', btnTextColor: '#FFFFFF' },
+  initialCustomPalette = { primary: DEFAULT_ACCENT, fontStyle: 'sans', btnTextColor: '#FFFFFF' },
 }) => {
   const [themeId, setThemeId] = useState(initialThemeId);
   const [customPalette, setCustomPalette] = useState<CustomPaletteConfig | undefined>(initialCustomPalette);
@@ -468,14 +480,16 @@ export const ThemeProvider: React.FC<{
       ? "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif"
       : "'Playfair Display', Georgia, serif";
 
+    const primary = normalizeAccentColor(customPalette?.primary);
+
     let btnTextColor = baseTheme.btnPrimaryText;
-    if (customPalette?.primary) {
+    if (primary) {
       // If user explicitly set button text color, respect it
-      if (customPalette.btnTextColor) {
+      if (customPalette?.btnTextColor) {
         btnTextColor = customPalette.btnTextColor;
       } else {
         // Auto-calculate luminance for high contrast
-        const hex = customPalette.primary.replace('#', '');
+        const hex = primary.replace('#', '');
         const r = parseInt(hex.substring(0, 2), 16);
         const g = parseInt(hex.substring(2, 4), 16);
         const b = parseInt(hex.substring(4, 6), 16);
@@ -504,23 +518,23 @@ export const ThemeProvider: React.FC<{
         bgCard: customPalette.card,
       }),
       ...(customPalette?.text && { textPrimary: customPalette.text }),
-      ...(customPalette?.primary && {
-        accent: customPalette.primary,
-        accentLight: adjustColorBrightness(customPalette.primary, 15),
-        accentHover: adjustColorBrightness(customPalette.primary, 8),
-        accentMuted: `${customPalette.primary}25`,
-        accentGradient: `linear-gradient(135deg, ${customPalette.primary}, ${adjustColorBrightness(customPalette.primary, 18)})`,
-        btnPrimaryBg: `linear-gradient(135deg, ${customPalette.primary}, ${adjustColorBrightness(customPalette.primary, 18)})`,
+      ...(primary && {
+        accent: primary,
+        accentLight: adjustColorBrightness(primary, 15),
+        accentHover: adjustColorBrightness(primary, 8),
+        accentMuted: `${primary}25`,
+        accentGradient: `linear-gradient(135deg, ${primary}, ${primary})`,
+        btnPrimaryBg: `linear-gradient(135deg, ${primary}, ${primary})`,
         btnPrimaryText: btnTextColor,
-        btnPrimaryHover: isLightMode ? 'none' : `0 0 20px ${customPalette.primary}60`,
-        borderActive: customPalette.primary,
-        inputFocusBorder: customPalette.primary,
-        calendarActiveBg: customPalette.primary,
+        btnPrimaryHover: 'none',
+        borderActive: primary,
+        inputFocusBorder: primary,
+        calendarActiveBg: primary,
         calendarActiveText: btnTextColor,
-        calendarAvailableBg: `${customPalette.primary}18`,
-        sidebarActiveItemBg: customPalette.primary,
+        calendarAvailableBg: `${primary}18`,
+        sidebarActiveItemBg: primary,
         sidebarActiveItemText: btnTextColor,
-        shadowAccent: isLightMode ? 'none' : `0 0 25px ${customPalette.primary}40`,
+        shadowAccent: 'none',
       }),
     };
   }, [themeId, customPalette, fontStyle]);

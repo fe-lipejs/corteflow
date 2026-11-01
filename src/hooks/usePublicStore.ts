@@ -42,7 +42,7 @@ async function fetchPublicStore(slug: string) {
         whatsapp_number: demoPortal.owner_whatsapp,
         theme_preset: 'elegant',
         custom_palette: {
-          primary: demoPortal.primary_color || '#FD6500',
+          primary: demoPortal.primary_color || '#FF5C95',
           background: '#F8FAFC',
           card: '#FFFFFF',
           text: '#0F172A',

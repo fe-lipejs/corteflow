@@ -73,7 +73,7 @@ export default function ChangePassword() {
             <button
               type="button"
               onClick={() => window.location.href = '/admin'}
-              className="w-full bg-[#DE870D] hover:bg-[#c2760b] text-white py-3.5 rounded-xl font-bold transition-all shadow-[0_4px_14px_0_rgba(222,135,13,0.39)] flex justify-center items-center gap-2"
+              className="w-full bg-[#FF5C95] hover:bg-[#F2447F] text-white py-3.5 rounded-xl font-bold transition-all flex justify-center items-center gap-2"
             >
               Acessar meu painel →
             </button>
@@ -116,7 +116,7 @@ export default function ChangePassword() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
+                  className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FF5C95] focus:ring-2 focus:ring-[#FF5C95]/20 transition-all font-medium"
                   placeholder="Mínimo 8 caracteres"
                   required
                 />
@@ -139,7 +139,7 @@ export default function ChangePassword() {
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#DE870D] focus:ring-2 focus:ring-[#DE870D]/20 transition-all font-medium"
+                  className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FF5C95] focus:ring-2 focus:ring-[#FF5C95]/20 transition-all font-medium"
                   placeholder="Digite a senha novamente"
                   required
                 />
@@ -153,7 +153,7 @@ export default function ChangePassword() {
             <button
               type="submit"
               disabled={loading || !password || !confirmPassword}
-              className="w-full bg-[#DE870D] hover:bg-[#c2760b] text-white py-3.5 rounded-xl font-bold transition-all shadow-[0_4px_14px_0_rgba(222,135,13,0.39)] disabled:opacity-50 disabled:shadow-none mt-2 flex justify-center items-center gap-2"
+              className="w-full bg-[#FF5C95] hover:bg-[#F2447F] text-white py-3.5 rounded-xl font-bold transition-all disabled:opacity-50 disabled:shadow-none mt-2 flex justify-center items-center gap-2"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Salvar Senha e Entrar →'}
             </button>

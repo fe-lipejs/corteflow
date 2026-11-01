@@ -5,7 +5,7 @@ import { supabase } from '../../integrations/supabase/client';
 import { useAuth } from '../../hooks/useAuth';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 import { useTranslation } from 'react-i18next';
-import { useTheme, THEMES } from '../../contexts/ThemeContext';
+import { useTheme, THEMES, normalizeAccentColor } from '../../contexts/ThemeContext';
 import { useImageUpload } from '../../hooks/useImageUpload';
 import { usePhoneFormat } from '../../hooks/usePhoneFormat';
 import { normalizeBrazilianPhone, formatPhoneMask } from '../../lib/phoneUtils';
@@ -1764,7 +1764,7 @@ export default function Configuracoes() {
                         key={item.id}
                         type="button"
                         onClick={() => setBusinessType(item.id as any)}
-                        className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${businessType === item.id ? 'ring-2 ring-[#DE870D]' : ''
+                        className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${businessType === item.id ? 'ring-2 ring-[#FF5C95]' : ''
                           }`}
                         style={{
                           background: businessType === item.id ? `${theme.accent}15` : theme.inputBg,
@@ -1867,7 +1867,7 @@ export default function Configuracoes() {
                       <WhatsAppIcon className="w-3.5 h-3.5" style={{ color: '#25D366' }} /> WhatsApp Agendamento
                     </label>
                     {phoneCheckStatus === 'checking' && (
-                      <span className="text-[10px] text-[#DE870D] font-bold">Verificando...</span>
+                      <span className="text-[10px] text-[#FF5C95] font-bold">Verificando...</span>
                     )}
                   </div>
                   <input
@@ -3100,7 +3100,7 @@ export default function Configuracoes() {
                         style={{
                           background: bgMode === 'dark' ? '#09090B' : theme.inputBg,
                           borderColor: bgMode === 'dark' ? (customPalette?.primary || theme.accent) : theme.border,
-                          boxShadow: bgMode === 'dark' ? `0 0 18px ${(customPalette?.primary || theme.accent)}30` : 'none',
+                          boxShadow: 'none',
                         }}
                       >
                         <div className="flex items-center gap-3">
@@ -3137,7 +3137,7 @@ export default function Configuracoes() {
                         style={{
                           background: bgMode === 'light' ? '#FFFFFF' : theme.inputBg,
                           borderColor: bgMode === 'light' ? (customPalette?.primary || theme.accent) : theme.border,
-                          boxShadow: bgMode === 'light' ? `0 0 18px ${(customPalette?.primary || theme.accent)}30` : 'none',
+                          boxShadow: 'none',
                         }}
                       >
                         <div className="flex items-center gap-3">
@@ -3195,10 +3195,10 @@ export default function Configuracoes() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {/* Cor 1: Laranja Padrão */}
+                      {/* Cor 1: Rosa Padrão */}
                       {(() => {
-                        const hex = '#FD6500';
-                        const isActive = (customPalette?.primary || theme.accent).toUpperCase() === hex.toUpperCase();
+                        const hex = '#FF5C95';
+                        const isActive = (normalizeAccentColor(customPalette?.primary) || theme.accent).toUpperCase() === hex.toUpperCase();
                         return (
                           <button
                             key="noir-gold"
@@ -3208,7 +3208,7 @@ export default function Configuracoes() {
                             style={{
                               background: isActive ? `${hex}15` : theme.inputBg,
                               borderColor: isActive ? hex : theme.border,
-                              boxShadow: isActive ? `0 0 16px ${hex}30` : 'none',
+                              boxShadow: 'none',
                             }}
                           >
                             <div className="flex items-center gap-2.5">
@@ -3216,8 +3216,8 @@ export default function Configuracoes() {
                                 {isActive && <Check className="w-3 h-3 text-white" />}
                               </span>
                               <div>
-                                <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Laranja Padrão</p>
-                                <p className="text-[10px] font-mono" style={{ color: theme.textMuted }}>#FD6500</p>
+                                <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Rosa Padrão</p>
+                                <p className="text-[10px] font-mono" style={{ color: theme.textMuted }}>#FF5C95</p>
                               </div>
                             </div>
                           </button>
@@ -3226,10 +3226,10 @@ export default function Configuracoes() {
 
                       {/* Cor 2: Cor da Logo ou Azul */}
                       {(() => {
-                        const hex = (customPalette?.primary && customPalette.primary.toUpperCase() !== '#FD6500')
+                        const hex = (customPalette?.primary && normalizeAccentColor(customPalette.primary)!.toUpperCase() !== '#FF5C95')
                           ? customPalette.primary
                           : '#3B82F6';
-                        const isCustomSelected = (customPalette?.primary || theme.accent).toUpperCase() === hex.toUpperCase() && hex.toUpperCase() !== '#FD6500';
+                        const isCustomSelected = (normalizeAccentColor(customPalette?.primary) || theme.accent).toUpperCase() === hex.toUpperCase() && hex.toUpperCase() !== '#FF5C95';
                         return (
                           <button
                             key="brand-color"
@@ -3239,7 +3239,7 @@ export default function Configuracoes() {
                             style={{
                               background: isCustomSelected ? `${hex}15` : theme.inputBg,
                               borderColor: isCustomSelected ? hex : theme.border,
-                              boxShadow: isCustomSelected ? `0 0 16px ${hex}30` : 'none',
+                              boxShadow: 'none',
                             }}
                           >
                             <div className="flex items-center gap-2.5">
@@ -3351,7 +3351,7 @@ export default function Configuracoes() {
                         style={{
                           background: draftFontStyle === 'serif' ? (bgMode === 'dark' ? '#09090B' : '#FFFFFF') : theme.inputBg,
                           borderColor: draftFontStyle === 'serif' ? (customPalette?.primary || theme.accent) : theme.border,
-                          boxShadow: draftFontStyle === 'serif' ? `0 0 16px ${(customPalette?.primary || theme.accent)}25` : 'none',
+                          boxShadow: 'none',
                         }}
                       >
                         <div className="flex items-center gap-2.5">
@@ -3379,7 +3379,7 @@ export default function Configuracoes() {
                         style={{
                           background: draftFontStyle === 'sans' ? (bgMode === 'dark' ? '#09090B' : '#FFFFFF') : theme.inputBg,
                           borderColor: draftFontStyle === 'sans' ? (customPalette?.primary || theme.accent) : theme.border,
-                          boxShadow: draftFontStyle === 'sans' ? `0 0 16px ${(customPalette?.primary || theme.accent)}25` : 'none',
+                          boxShadow: 'none',
                         }}
                       >
                         <div className="flex items-center gap-2.5">

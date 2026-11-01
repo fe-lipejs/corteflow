@@ -205,7 +205,7 @@ export default function ProductModal({ product, tenantId, onClose, onSave, isLoa
         {/* Footer */}
         <div className="flex gap-3 pt-4 border-t mt-4" style={{ borderColor: theme.border }}>
           <button onClick={onClose} className="flex-1 py-3 rounded-xl border font-semibold text-sm transition-all hover:bg-[var(--theme-bg-hover)]" style={{ borderColor: theme.border, color: theme.textPrimary }}>Cancelar</button>
-          <button onClick={handleSave} disabled={isLoading} className="flex-1 py-3 rounded-xl font-bold text-sm transition-all shadow-[0_0_20px_rgba(201,150,59,0.2)] hover:shadow-[0_0_30px_rgba(201,150,59,0.4)] disabled:opacity-50 flex items-center justify-center gap-2" style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}>
+          <button onClick={handleSave} disabled={isLoading} className="flex-1 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2" style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}>
             {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</> : <><Check className="w-4 h-4" /> {isEdit ? 'Salvar' : 'Criar Produto'}</>}
           </button>
         </div>

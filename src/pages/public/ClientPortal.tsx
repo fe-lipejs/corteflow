@@ -10,7 +10,7 @@ import type { Slot } from '../../lib/availability';
 import { ptBR } from 'date-fns/locale';
 import { Calendar, Clock, ArrowLeft, Loader2, ShieldCheck, X, AlertTriangle } from 'lucide-react';
 import { usePhoneFormat } from '../../hooks/usePhoneFormat';
-import { getThemeById, adjustColorBrightness } from '../../contexts/ThemeContext';
+import { getThemeById, adjustColorBrightness, normalizeAccentColor } from '../../contexts/ThemeContext';
 import { usePublicStore } from '../../hooks/usePublicStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getThemeContrastEngine } from '../../lib/themeEngine';
@@ -144,7 +144,7 @@ export default function ClientPortal() {
     const base = getThemeById(presetId);
     if (!settings?.custom_palette) return base;
 
-    const palette = settings.custom_palette;
+    const palette = { ...settings.custom_palette, primary: normalizeAccentColor(settings.custom_palette.primary) };
     let btnTextColor = base.btnPrimaryText;
     if (palette.primary) {
       const hex = palette.primary.replace("#", "");
@@ -194,13 +194,13 @@ export default function ClientPortal() {
         accentLight: adjustColorBrightness(palette.primary, 15),
         accentHover: adjustColorBrightness(palette.primary, 8),
         accentMuted: `${palette.primary}25`,
-        accentGradient: `linear-gradient(135deg, ${palette.primary}, ${adjustColorBrightness(palette.primary, 18)})`,
-        btnPrimaryBg: `linear-gradient(135deg, ${palette.primary}, ${adjustColorBrightness(palette.primary, 18)})`,
+        accentGradient: `linear-gradient(135deg, ${palette.primary}, ${palette.primary})`,
+        btnPrimaryBg: `linear-gradient(135deg, ${palette.primary}, ${palette.primary})`,
         btnPrimaryText: btnTextColor,
-        btnPrimaryHover: `0 0 20px ${palette.primary}60`,
+        btnPrimaryHover: 'none',
         borderActive: palette.primary,
         inputFocusBorder: palette.primary,
-        shadowAccent: `0 0 20px ${palette.primary}40`,
+        shadowAccent: 'none',
       }),
     };
   }, [settings?.theme_preset, settings?.custom_palette]);

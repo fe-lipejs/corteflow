@@ -391,7 +391,7 @@ export default function Agenda() {
                         color: isSelected ? '#fff' : theme.textSecondary,
                         background: isSelected ? accent : theme.cardBg,
                         borderColor: isSelected ? 'transparent' : theme.cardBorder,
-                        boxShadow: isSelected ? `0 0 15px ${accent}40` : 'none',
+                        boxShadow: 'none',
                       }}
                     >
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ background: isSelected ? '#fff' : accent }} />

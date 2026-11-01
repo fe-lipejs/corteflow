@@ -9,9 +9,9 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 bg-[#DE870D] rounded-full animate-bounce"></div>
-          <div className="w-2.5 h-2.5 bg-[#DE870D] rounded-full animate-bounce [animation-delay:0.2s]"></div>
-          <div className="w-2.5 h-2.5 bg-[#DE870D] rounded-full animate-bounce [animation-delay:0.4s]"></div>
+          <div className="w-2.5 h-2.5 bg-[#FF5C95] rounded-full animate-bounce"></div>
+          <div className="w-2.5 h-2.5 bg-[#FF5C95] rounded-full animate-bounce [animation-delay:0.2s]"></div>
+          <div className="w-2.5 h-2.5 bg-[#FF5C95] rounded-full animate-bounce [animation-delay:0.4s]"></div>
         </div>
       </div>
     );
