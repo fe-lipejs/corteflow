@@ -28,19 +28,53 @@ import { useAttentionTracker } from '../hooks/useAttentionTracker';
 
 const ACCENT = "#FF95BA";
 const M = {
-  booking: "/Mockups/Iphone - Tela de Agendamento.PNG",
-  booking2: "/Mockups/Iphone - Tela de Agendamento2.jpg",
-  services: "/Mockups/Iphone - Serviços.PNG",
-  domicilio: "/Mockups/Iphone - Tela de Escolha Domicilio.PNG",
-  pix: "/Mockups/Iphone - Tela de Pagamento Pix.PNG",
-  payment: "/Mockups/Iphone - Tela de Pagamento.PNG",
-  themeA: "/Mockups/Iphone - Personalização Tema 1.PNG",
-  themeB: "/Mockups/Iphone - Personalização Tema 2.PNG",
-  themeC: "/Mockups/Iphone - Personalização Tema 3.PNG",
+  booking: "/Mockups/Iphone - Tela de Agendamento.png",
+  booking2: "/Mockups/Iphone - Tela de Agendamento2.jpeg",
+  services: "/Mockups/Iphone - Serviços.jpeg",
+  domicilio: "/Mockups/Iphone - Tela de Escolha Domicilio.png",
+  pix: "/Mockups/Iphone - Tela de Pagamento Pix.png",
+  payment: "/Mockups/Iphone - Tela de Pagamento.png",
+  themeA: "/Mockups/Iphone - Personalização Tema 1.png",
+  themeB: "/Mockups/Iphone - Personalização Tema 2.png",
+  themeC: "/Mockups/Iphone - Personalização Tema 3.png",
   barber: "/Mockups/Tablet Horizontal - Tela de Agendamento Barbearia.png",
-  salon: "/Mockups/Tablet Horizontal - Tela de Agendamento Salão.png",
+  salon: "/Mockups/Tablet Horizontal - Tela de Agendamento Salão.jpg",
   metrics: "/Mockups/Tablet Horizontal - Visão Geral Metricas.jpg",
 } as const;
+
+function handleImageFallback(e: React.SyntheticEvent<HTMLImageElement, Event>) {
+  const img = e.currentTarget;
+  const currentSrc = img.src;
+  const extensions = ['.png', '.PNG', '.jpg', '.jpeg', '.JPG', '.JPEG'];
+
+  const base = currentSrc.replace(/\.(png|jpe?g|PNG|JPE?G)(\?.*)?$/, '');
+
+  for (const ext of extensions) {
+    const candidate = `${base}${ext}`;
+    const tried = img.dataset.tried || '';
+    if (!tried.includes(ext) && candidate !== currentSrc) {
+      img.dataset.tried = tried + ',' + ext;
+      img.src = candidate;
+      return;
+    }
+  }
+
+  if (!img.dataset.triedFallback) {
+    img.dataset.triedFallback = 'true';
+    if (currentSrc.includes('Servi')) {
+      img.src = '/Mockups/Iphone - Serviços.jpeg';
+      return;
+    }
+    if (currentSrc.includes('Agendamento2')) {
+      img.src = '/Mockups/Iphone - Tela de Agendamento2.jpeg';
+      return;
+    }
+    if (currentSrc.includes('Sal')) {
+      img.src = '/Mockups/Tablet Horizontal - Tela de Agendamento Salão.jpg';
+      return;
+    }
+  }
+}
 
 
 type FAQItem = {
@@ -248,6 +282,7 @@ function BookingPhone({ imageSrc = M.booking }: { imageSrc?: string } = {}) {
               alt="Tela de agendamento online da Raffros"
               className="rf-real-phone-image"
               loading="eager"
+              onError={handleImageFallback}
             />
             <div className="rf-real-phone-shine" aria-hidden="true" />
           </div>
@@ -314,6 +349,7 @@ function DashboardMockup() {
           alt="Tela de agendamento e gestão da Raffros"
           className="rf-real-browser-image"
           loading="lazy"
+          onError={handleImageFallback}
         />
       </div>
     </div>
@@ -337,7 +373,7 @@ function MacbookMockup({ image, alt, path, className = "" }: { image: string; al
           <span>{path}</span>
           <div className="rf-real-browser-secure"><ShieldCheck size={10} />seguro</div>
         </div>
-        <div className="rf-macbook-screen-image"><img src={image} alt={alt} loading="lazy" /></div>
+        <div className="rf-macbook-screen-image"><img src={image} alt={alt} loading="lazy" onError={handleImageFallback} /></div>
       </div>
       <div className="rf-macbook-shadow" aria-hidden="true" style={{ bottom: '-15px' }} />
     </div>
@@ -754,18 +790,21 @@ function Statement() {
                 alt="Tema Claro"
                 style={{ position: 'absolute', width: '42%', left: '5%', zIndex: 1, filter: 'blur(1px) brightness(0.8)', transform: 'rotate(-16deg) translateY(20px) scale(0.9)', borderRadius: '24px', boxShadow: '0 20px 30px rgba(0,0,0,0.3)' }}
                 loading="lazy"
+                onError={handleImageFallback}
               />
               <img
                 src={M.themeC}
                 alt="Tema Elegante"
                 style={{ position: 'absolute', width: '42%', right: '5%', zIndex: 1, filter: 'blur(1px) brightness(0.8)', transform: 'rotate(16deg) translateY(20px) scale(0.9)', borderRadius: '24px', boxShadow: '0 20px 30px rgba(0,0,0,0.3)' }}
                 loading="lazy"
+                onError={handleImageFallback}
               />
               <img
                 src={M.themeB}
                 alt="Raffros App"
                 style={{ position: 'relative', width: '52%', zIndex: 3, transform: 'translateY(-10px) scale(1.05)', borderRadius: '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.6)' }}
                 loading="lazy"
+                onError={handleImageFallback}
               />
             </div>
           </Reveal>
@@ -1053,6 +1092,7 @@ function RealProductGallery() {
                       src={screen.image}
                       alt={screen.title}
                       loading="lazy"
+                      onError={handleImageFallback}
                     />
                   </div>
                 </div>
@@ -1309,12 +1349,12 @@ function PaymentRealSection() {
             <div className="rf-payment-real-devices">
               <div className="rf-payment-device rf-payment-device-back">
                 <span className="rf-real-phone-island" />
-                <img src={M.payment} alt="Pagamento Raffros" loading="lazy" />
+                <img src={M.payment} alt="Pagamento Raffros" loading="lazy" onError={handleImageFallback} />
               </div>
 
               <div className="rf-payment-device rf-payment-device-front">
                 <span className="rf-real-phone-island" />
-                <img src={M.pix} alt="Pagamento via Pix Raffros" loading="lazy" />
+                <img src={M.pix} alt="Pagamento via Pix Raffros" loading="lazy" onError={handleImageFallback} />
               </div>
 
               <div className="rf-payment-tag">
@@ -1424,6 +1464,7 @@ function DomicilioRealSection() {
                   src={M.domicilio}
                   alt="Escolha de atendimento a domicílio na Raffros"
                   loading="lazy"
+                  onError={handleImageFallback}
                 />
               </div>
 
@@ -1496,7 +1537,7 @@ function PersonalizationRealSection() {
               >
                 <div className="rf-theme-phone-frame">
                   <span className="rf-real-phone-island" />
-                  <img src={theme.image} alt={`Tema ${theme.label}`} loading="lazy" />
+                  <img src={theme.image} alt={`Tema ${theme.label}`} loading="lazy" onError={handleImageFallback} />
                 </div>
                 {index === 1 && (
                   <span className="rf-theme-label">{theme.label}</span>
