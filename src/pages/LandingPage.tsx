@@ -626,47 +626,24 @@ function Hero() {
       id="inicio"
       className="rf-hero"
     >
-      <Noise />
-      <GridLines dark />
-
-      <div className="rf-hero-orb rf-hero-orb-one" />
-      <div className="rf-hero-orb rf-hero-orb-two" />
-
-      {/* Iluminação ambiente: feixes de luz passando lentamente por trás */}
-      <div className="rf-hero-light" aria-hidden="true">
-        <span className="rf-hero-light-beam rf-hero-light-beam-one" />
-        <span className="rf-hero-light-beam rf-hero-light-beam-two" />
-        <span className="rf-hero-light-glow" />
-      </div>
-
       <div className="rf-container rf-hero-container">
         <div className="rf-hero-copy">
-          <br />
-
-
           <Reveal delay={0.08}>
             <h1>
-              Você não abriu
-              <br />
-              seu salão
+              Você não abriu seu salão
               <br />
               pra ficar{" "}
-              <br className="rf-hero-mobile-br" />
-              <span>
-                respondendo
-                <br />
-                WhatsApp.
-              </span>
+              <span>respondendo WhatsApp.</span>
             </h1>
           </Reveal>
 
-          <Reveal delay={0.16}>
+          <Reveal delay={0.14}>
             <p className="rf-hero-description">
               Agendamento online e gestão simples. Seu cliente agenda sozinho pelo Instagram ou WhatsApp, 24 horas por dia.
             </p>
           </Reveal>
 
-          <Reveal delay={0.22}>
+          <Reveal delay={0.20}>
             <div className="rf-hero-actions">
               <button
                 className="rf-primary-button"
@@ -693,58 +670,35 @@ function Hero() {
             </div>
           </Reveal>
 
-
-
-          <Reveal delay={0.36} className="rf-hero-trust-slot">
+          <Reveal delay={0.28} className="rf-hero-trust-slot">
             <div className="rf-hero-trust">
               <div className="rf-trust-item">
                 <span className="rf-trust-value">100%</span>
-                <span className="rf-trust-label">
-                  online
-                </span>
+                <span className="rf-trust-label">online</span>
               </div>
 
               <div className="rf-trust-line" />
 
               <div className="rf-trust-item">
                 <span className="rf-trust-value">7 dias</span>
-                <span className="rf-trust-label">
-                  grátis
-                </span>
+                <span className="rf-trust-label">grátis</span>
               </div>
 
               <div className="rf-trust-line" />
 
               <div className="rf-trust-item">
                 <span className="rf-trust-value">0 furos</span>
-                <span className="rf-trust-label">
-                  na agenda
-                </span>
+                <span className="rf-trust-label">na agenda</span>
               </div>
             </div>
           </Reveal>
         </div>
 
-        <div className="rf-hero-product -translate-y-10">
+        <div className="rf-hero-product">
           <BookingPhone imageSrc={M.booking2} />
         </div>
-
-        <br />
       </div>
-
-
-
-      <div className="rf-scroll-indicator">
-        <span>SCROLL</span>
-        <div />
-      </div>
-
-      <div className="rf-hero-bottom-label">
-        RAFFROS / 01
-      </div>
-      <br />
     </section>
-
   );
 }
 
@@ -2327,21 +2281,22 @@ export default function LandingPage() {
         }
 
         .rf-hero-container {
-          min-height: 820px;
+          min-height: 780px;
           height: 100%;
           display: grid;
           grid-template-columns:
-            minmax(0, 1fr)
-            minmax(420px, .9fr);
+            minmax(0, 1.15fr)
+            minmax(380px, .85fr);
           align-items: center;
-          gap: 40px;
-          padding-top: 62px;
+          gap: 56px;
+          padding-top: 76px;
+          padding-bottom: 50px;
         }
 
         .rf-hero-copy {
           position: relative;
           z-index: 4;
-          padding-top: 25px;
+          padding-top: 10px;
         }
 
         .rf-hero-mobile-br {
@@ -2349,16 +2304,16 @@ export default function LandingPage() {
         }
 
         .rf-hero h1 {
-          margin: 25px 0 22px;
-          max-width: 680px;
+          margin: 0 0 20px;
+          max-width: 640px;
           font-size: clamp(
-            54px,
-            5.8vw,
-            84px
+            38px,
+            4.6vw,
+            64px
           );
-          line-height: .93;
-          letter-spacing: -.065em;
-          font-weight: 750;
+          line-height: 1.12;
+          letter-spacing: -.035em;
+          font-weight: 800;
         }
 
         .rf-hero h1 span {
@@ -2366,11 +2321,11 @@ export default function LandingPage() {
         }
 
         .rf-hero-description {
-          max-width: 510px;
+          max-width: 480px;
           margin: 0;
-          color: rgba(255,255,255,.53);
-          font-size: 14px;
-          line-height: 1.6;
+          color: rgba(255,255,255,.80);
+          font-size: 16px;
+          line-height: 1.65;
           letter-spacing: -.01em;
         }
 
@@ -7214,19 +7169,19 @@ export default function LandingPage() {
             }
 
             main .rf-hero h1 {
-              font-size: clamp(44px, 13vw, 62px) !important;
-              line-height: 0.88 !important;
-              letter-spacing: -0.065em !important;
-              font-weight: 850 !important;
-              margin: 14px 0 12px !important;
+              font-size: clamp(32px, 9.5vw, 48px) !important;
+              line-height: 1.15 !important;
+              letter-spacing: -0.035em !important;
+              font-weight: 800 !important;
+              margin: 16px 0 16px !important;
             }
 
             main .rf-hero-description {
-              font-size: 14px !important;
-              line-height: 1.5 !important;
-              margin: 0 0 16px !important;
-              max-width: 350px !important;
-              color: rgba(255, 255, 255, 0.82) !important;
+              font-size: 15px !important;
+              line-height: 1.6 !important;
+              margin: 0 0 24px !important;
+              max-width: 360px !important;
+              color: rgba(255, 255, 255, 0.85) !important;
             }
 
             main .rf-hero-actions {
