@@ -802,40 +802,22 @@ export default function Assinatura() {
         </div>
       </header>
 
-      {/* ======================================================
-          AVISO DE MODO DE TESTES / SANDBOX ATIVO NA PLATAFORMA
-      ====================================================== */}
+      {/* Aviso Discreto: Modo de Testes / Sandbox */}
       {stripeMode === 'test' && (
         <div
-          className="mb-8 p-4 rounded-2xl border flex items-start gap-3.5 shadow-lg transition-all animate-fade-in"
+          className="mb-4 px-4 py-2.5 rounded-xl border flex items-center gap-3 text-xs transition-all shadow-sm animate-fade-in"
           style={{
-            backgroundColor: 'rgba(245, 158, 11, 0.08)',
-            borderColor: 'rgba(245, 158, 11, 0.3)',
+            background: theme.cardBg,
+            borderColor: theme.border,
           }}
         >
-          <div
-            className="p-2 rounded-xl shrink-0 mt-0.5"
-            style={{
-              backgroundColor: 'rgba(245, 158, 11, 0.15)',
-              color: '#f59e0b',
-            }}
-          >
-            <AlertTriangle className="w-5 h-5 text-amber-400" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h4 className="text-sm font-bold text-amber-300">
-                Ambiente de Demonstração / Testes (Sandbox) Ativo
-              </h4>
-              <span className="text-[10px] font-mono uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                Modo Teste
-              </span>
-            </div>
-            <p className="text-xs text-amber-200/90 mt-1 leading-relaxed">
-              O sistema de pagamentos da plataforma está operando em <b>modo de testes</b>. Nenhuma cobrança real será debitada no seu cartão.
-              Você pode simular e testar contratações ou trocas de plano livremente.
-            </p>
-          </div>
+          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md font-bold text-[10px] uppercase tracking-wider shrink-0 bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Modo Teste
+          </span>
+          <p className="truncate" style={{ color: theme.textSecondary }}>
+            Ambiente de testes ativo • Nenhuma cobrança real será debitada.
+          </p>
         </div>
       )}
 
@@ -878,73 +860,41 @@ export default function Assinatura() {
 
       {isTrialExpired && (
         <div
-          className="mb-6 px-4 py-3.5 rounded-xl border flex items-center gap-3"
+          className="mb-4 px-4 py-2.5 rounded-xl border flex items-center gap-3 text-xs transition-all shadow-sm"
           style={{
-            background: `${theme.warning}08`,
-            borderColor: `${theme.warning}25`,
+            background: theme.cardBg,
+            borderColor: theme.border,
           }}
         >
-          <AlertTriangle
-            className="w-4 h-4 shrink-0"
-            style={{
-              color: theme.warning,
-            }}
-          />
+          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md font-bold text-[10px] uppercase tracking-wider shrink-0 bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Teste Finalizado
+          </span>
+          <p className="truncate" style={{ color: theme.textSecondary }}>
+            Seu período de teste terminou. Escolha um plano para continuar.
+          </p>
+        </div>
+      )}
 
-          <div>
-            <p
-              className="text-xs font-bold"
-              style={{
-                color: theme.warning,
-              }}
-            >
-              Seu período de teste terminou.
-            </p>
-
-            <p
-              className="text-xs mt-0.5"
-              style={{
-                color:
-                  theme.textSecondary,
-              }}
-            >
-              Escolha um plano para continuar.
+      {subscription?.status === 'canceled' && (
+        <div
+          className="mb-4 px-4 py-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs transition-all shadow-sm"
+          style={{
+            background: theme.cardBg,
+            borderColor: theme.border,
+          }}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md font-bold text-[10px] uppercase tracking-wider shrink-0 bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25">
+              <Clock className="w-3.5 h-3.5" />
+              Cancelada
+            </span>
+            <p className="truncate" style={{ color: theme.textSecondary }}>
+              Seu acesso continua ativo até <strong style={{ color: theme.textPrimary }}>{formatDate(subscription.current_period_end || subscription.trial_ends_at)}</strong>.
             </p>
           </div>
         </div>
       )}
-
-      {subscription?.status ===
-        'canceled' && (
-          <div
-            className="mb-6 px-4 py-3.5 rounded-xl border flex items-center gap-3"
-            style={{
-              background:
-                'rgba(245,158,11,0.07)',
-              borderColor:
-                'rgba(245,158,11,0.20)',
-            }}
-          >
-            <Clock className="w-4 h-4 shrink-0 text-amber-500" />
-
-            <div>
-              <p className="text-xs font-bold text-amber-600">
-                Assinatura cancelada
-              </p>
-
-              <p className="text-xs mt-0.5 text-amber-700/80">
-                Seu acesso continua até{' '}
-                <strong>
-                  {formatDate(
-                    subscription.current_period_end ||
-                    subscription.trial_ends_at
-                  )}
-                </strong>
-                .
-              </p>
-            </div>
-          </div>
-        )}
 
       {/* ======================================================
           CURRENT ACTIVE PLAN

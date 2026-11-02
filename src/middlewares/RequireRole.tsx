@@ -1,17 +1,19 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../contexts/ThemeContext';
 import type { UserRole } from '../types/database';
 
 export default function RequireRole({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: UserRole[] }) {
   const { role, profile, tenant, onboardingCompleted, loading } = useAuth();
+  const { theme } = useTheme();
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#1A1714] text-white">
-        <div className="animate-pulse flex items-center gap-2">
-          <div className="w-2 h-2 bg-[#C9963B] rounded-full"></div>
-          <div className="w-2 h-2 bg-[#C9963B] rounded-full animation-delay-200"></div>
-          <div className="w-2 h-2 bg-[#C9963B] rounded-full animation-delay-400"></div>
+      <div className="py-24 flex items-center justify-center w-full min-h-[300px]">
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full animate-bounce" style={{ background: theme.accent }}></div>
+          <div className="w-2.5 h-2.5 rounded-full animate-bounce [animation-delay:0.2s]" style={{ background: theme.accent }}></div>
+          <div className="w-2.5 h-2.5 rounded-full animate-bounce [animation-delay:0.4s]" style={{ background: theme.accent }}></div>
         </div>
       </div>
     );

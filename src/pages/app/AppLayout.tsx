@@ -3,7 +3,7 @@ import { Outlet, NavLink, Navigate, useNavigate, useLocation } from 'react-route
 import {
   LayoutDashboard, Calendar, Users, Scissors,
   DollarSign, Settings, LogOut, Bell, CreditCard, Shield, Loader2, Menu, X,
-  AlertTriangle, Clock, LifeBuoy, UserCircle
+  AlertTriangle, Clock, LifeBuoy, UserCircle, ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +24,7 @@ export default function AppLayout() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [tenantSettings, setTenantSettings] = useState<any>(null);
+
   const engine = usePermissionEngine();
   const features = {
     subscription_status: engine.subscription?.status,
@@ -132,7 +133,7 @@ export default function AppLayout() {
 
   if (loading || !tenant) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: theme.bg }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: theme.accent }} />
       </div>
     );
@@ -357,68 +358,78 @@ export default function AppLayout() {
                boxShadow: `0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.05)`
              }}>
 
-          {/* Banner de Status: Assinatura Cancelada */}
-          {engine.subscriptionStatus === 'canceled' && location.pathname !== '/admin/assinatura' && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-500 rounded-2xl p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-500" />
-                <div>
-                  <h3 className="font-bold text-sm text-red-500">Assinatura Cancelada</h3>
-                  <p className="text-xs opacity-90 text-red-400">
-                    Sua assinatura foi cancelada e o acesso operacional ao seu salão está pausado. Escolha um plano para reativar seu negócio imediatamente.
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={() => navigate('/admin/assinatura')}
-                className="whitespace-nowrap px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-opacity hover:opacity-95 w-full md:w-auto text-center shrink-0 cursor-pointer shadow-sm"
-              >
-                Reativar Assinatura
-              </button>
-            </div>
-          )}
+          {/* Banner Discreto, Compacto e Elegante de Assinatura */}
+          {(() => {
+            const subStatus = engine.subscriptionStatus;
+            const isAlertStatus = (subStatus === 'canceled' || subStatus === 'trial_expired' || subStatus === 'past_due' || subStatus === 'unpaid') && location.pathname !== '/admin/assinatura';
 
-          {/* Banner de Status: Teste Expirado */}
-          {engine.subscriptionStatus === 'trial_expired' && location.pathname !== '/admin/assinatura' && (
-            <div className="bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-2xl p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="flex items-start gap-3">
-                <Clock className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-500" />
-                <div>
-                  <h3 className="font-bold text-sm text-amber-500">Período de Teste Finalizado</h3>
-                  <p className="text-xs opacity-90 text-amber-400">
-                    Seus 7 dias gratuitos chegaram ao fim. Escolha o melhor plano para continuar gerenciando sua agenda, clientes e equipe sem interrupções.
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={() => navigate('/admin/assinatura')}
-                className="whitespace-nowrap px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition-opacity hover:opacity-95 w-full md:w-auto text-center shrink-0 cursor-pointer shadow-sm"
-              >
-                Escolher um Plano
-              </button>
-            </div>
-          )}
+            if (!isAlertStatus) return null;
 
-          {/* Banner de Status: Fatura Pendente */}
-          {(engine.subscriptionStatus === 'past_due' || engine.subscriptionStatus === 'unpaid') && location.pathname !== '/admin/assinatura' && (
-            <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 rounded-2xl p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-yellow-500" />
-                <div>
-                  <h3 className="font-bold text-sm text-yellow-500">Problema no Pagamento da Assinatura</h3>
-                  <p className="text-xs opacity-90 text-yellow-400">
-                    Identificamos uma pendência no processamento da fatura da sua assinatura. Regularize a situação para evitar o bloqueio dos seus recursos.
+            const alertConfig = {
+              canceled: {
+                badge: 'Assinatura Inativa',
+                dotColor: 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.7)]',
+                text: 'Reative seu plano para desbloquear todos os recursos.',
+                action: 'Reativar Plano',
+              },
+              trial_expired: {
+                badge: 'Teste Finalizado',
+                dotColor: 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.7)]',
+                text: 'Escolha um plano para continuar aproveitando as ferramentas.',
+                action: 'Escolher Plano',
+              },
+              past_due: {
+                badge: 'Pagamento Pendente',
+                dotColor: 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.7)]',
+                text: 'Regularize sua fatura para evitar pausas no salão.',
+                action: 'Regularizar Fatura',
+              },
+              unpaid: {
+                badge: 'Pagamento Pendente',
+                dotColor: 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.7)]',
+                text: 'Regularize sua fatura para evitar pausas no salão.',
+                action: 'Regularizar Fatura',
+              },
+            }[subStatus] || null;
+
+            if (!alertConfig) return null;
+
+            return (
+              <div
+                className="p-2.5 sm:px-4 sm:py-2 rounded-2xl border mb-4 flex items-center justify-between gap-3 text-xs shadow-sm transition-all"
+                style={{
+                  background: `color-mix(in srgb, ${theme.cardBg} 85%, transparent)`,
+                  borderColor: theme.border,
+                  backdropFilter: 'blur(12px)',
+                }}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${alertConfig.dotColor}`} />
+                  <span
+                    className="font-bold text-[11px] uppercase tracking-wider shrink-0"
+                    style={{ color: theme.textPrimary }}
+                  >
+                    {alertConfig.badge}
+                  </span>
+                  <span className="hidden sm:inline opacity-30">•</span>
+                  <p className="text-xs truncate hidden sm:block" style={{ color: theme.textSecondary }}>
+                    {alertConfig.text}
                   </p>
                 </div>
+
+                <div className="flex items-center shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/admin/assinatura')}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-md shadow-red-500/20"
+                  >
+                    <span>{alertConfig.action}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-              <button 
-                onClick={() => navigate('/admin/assinatura')}
-                className="whitespace-nowrap px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold rounded-xl text-xs transition-opacity hover:opacity-95 w-full md:w-auto text-center shrink-0 cursor-pointer shadow-sm"
-              >
-                Regularizar Fatura
-              </button>
-            </div>
-          )}
+            );
+          })()}
 
           <Outlet />
         </div>

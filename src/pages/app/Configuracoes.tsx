@@ -2937,6 +2937,61 @@ export default function Configuracoes() {
         </motion.div>
       </AnimatePresence>
 
+      {/* ── Barra de Ação de Salvamento Integrada ao Conteúdo da Página ── */}
+      <div
+        className="p-5 rounded-3xl border flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl mt-6 transition-all"
+        style={{
+          background: theme.cardBg,
+          borderColor: theme.border,
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+            style={{
+              background: `${theme.accent}15`,
+              color: theme.accent,
+            }}
+          >
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold" style={{ color: theme.textPrimary }}>
+              Salvar Alterações das Configurações
+            </h4>
+            <p className="text-xs" style={{ color: theme.textSecondary }}>
+              Todas as modificações de horário, dados do salão e visual só entram em vigor após salvar.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={loading}
+          className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 disabled:opacity-50"
+          style={{
+            background: saved ? theme.success : theme.btnPrimaryBg || theme.accent,
+            color: saved ? '#fff' : theme.btnPrimaryText,
+            boxShadow: saved ? 'none' : theme.shadowAccent,
+          }}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
+            </>
+          ) : saved ? (
+            <>
+              <CheckCircle2 className="w-4 h-4" /> Salvo com sucesso!
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4" /> Salvar Configurações
+            </>
+          )}
+        </button>
+      </div>
+
       {typeof document !== 'undefined' && createPortal((
         <>
           {/* Cancel Subscription Modal */}
@@ -3615,61 +3670,6 @@ export default function Configuracoes() {
           </div>
         )}
       </AnimatePresence>
-
-      {/* ── Barra de Ação de Salvamento Integrada ao Container ── */}
-      <div
-        className="p-5 rounded-3xl border flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl mt-6 transition-all"
-        style={{
-          background: theme.cardBg,
-          borderColor: theme.border,
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
-            style={{
-              background: `${theme.accent}15`,
-              color: theme.accent,
-            }}
-          >
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
-          <div>
-            <h4 className="text-sm font-bold" style={{ color: theme.textPrimary }}>
-              Salvar Alterações das Configurações
-            </h4>
-            <p className="text-xs" style={{ color: theme.textSecondary }}>
-              Todas as modificações de horário, dados do salão e visual só entram em vigor após salvar.
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={loading}
-          className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 disabled:opacity-50"
-          style={{
-            background: saved ? theme.success : theme.btnPrimaryBg || theme.accent,
-            color: saved ? '#fff' : theme.btnPrimaryText,
-            boxShadow: saved ? 'none' : theme.shadowAccent,
-          }}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
-            </>
-          ) : saved ? (
-            <>
-              <CheckCircle2 className="w-4 h-4" /> Salvo com sucesso!
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" /> Salvar Configurações
-            </>
-          )}
-        </button>
-      </div>
 
       {/* Stripe Connect Activation & Guided Choice Modal */}
       <StripeActivatedModal
