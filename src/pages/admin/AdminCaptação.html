@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Raffros · Máquina de Captação</title>
+<style>
+:root{--bg:#0a1030;--card:rgba(255,255,255,.065);--card2:rgba(255,255,255,.1);--bd:rgba(255,255,255,.13);--tx:#eaeeff;--mut:#9fabdb;--pk:#FF5C95;--vi:#7c5cff;--bl:#3b82f6;--ok:#34d399;--warn:#fbbf24;--bad:#f87171}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--tx);line-height:1.55;font-size:15px;
+background:radial-gradient(1100px 700px at 8% -10%,rgba(60,70,220,.38),transparent),radial-gradient(900px 600px at 100% 8%,rgba(255,92,149,.22),transparent),linear-gradient(160deg,#0a1030,#111858 60%,#1c1065);background-attachment:fixed;min-height:100vh}
+a{color:#9db4ff}
+.app{display:flex;align-items:flex-start}
+aside{width:264px;flex:none;position:sticky;top:0;height:100vh;overflow:auto;padding:18px 14px;border-right:1px solid var(--bd);background:rgba(8,12,40,.6);backdrop-filter:blur(16px);z-index:30}
+.brand{display:flex;gap:10px;align-items:center;padding:6px 8px 16px}
+.logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--bl),var(--vi),var(--pk));display:grid;place-items:center;font-weight:800}
+.brand b{display:block;font-size:15px}.brand small{color:var(--mut);font-size:11px}
+nav a{display:flex;gap:10px;align-items:center;padding:9px 11px;border-radius:11px;color:var(--mut);text-decoration:none;font-size:14px;cursor:pointer;margin-bottom:2px}
+nav a:hover{background:var(--card);color:var(--tx)}
+nav a.on{background:linear-gradient(90deg,rgba(124,92,255,.35),rgba(255,92,149,.25));color:#fff;border:1px solid var(--bd)}
+nav .sep{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#6f7bb0;margin:14px 10px 6px}
+.topbar{display:none;position:sticky;top:0;z-index:25;padding:10px 14px;background:rgba(8,12,40,.8);backdrop-filter:blur(14px);border-bottom:1px solid var(--bd);align-items:center;gap:12px}
+main{flex:1;min-width:0;padding:30px 28px 80px;max-width:1140px;margin:0 auto}
+h1{font-size:30px;line-height:1.15;margin:0 0 6px;letter-spacing:-.02em}
+h2{font-size:21px;margin:26px 0 10px;letter-spacing:-.01em}
+h3{font-size:16px;margin:0 0 6px}
+.sub{color:var(--mut);margin:0 0 20px;max-width:760px}
+.grad{background:linear-gradient(90deg,#7aa2ff,#b28cff,var(--pk));-webkit-background-clip:text;background-clip:text;color:transparent}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:18px;backdrop-filter:blur(10px)}
+.card.hl{background:linear-gradient(135deg,rgba(59,130,246,.22),rgba(124,92,255,.22),rgba(255,92,149,.2))}
+.g2,.g3,.g4{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.kpi{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.kpi small{font-size:12px;color:var(--mut);font-weight:500;display:block;letter-spacing:0}
+.tag{display:inline-block;font-size:11.5px;padding:2px 9px;border-radius:99px;border:1px solid var(--bd);background:rgba(255,255,255,.07);color:var(--mut);margin:0 4px 4px 0;white-space:nowrap}
+.tag.ok{color:var(--ok);border-color:rgba(52,211,153,.4)}.tag.warn{color:var(--warn);border-color:rgba(251,191,36,.4)}.tag.bad{color:var(--bad);border-color:rgba(248,113,113,.4)}.tag.pk{color:var(--pk);border-color:rgba(255,92,149,.5)}.tag.bl{color:#8db0ff;border-color:rgba(141,176,255,.4)}
+.btn{background:var(--card2);border:1px solid var(--bd);color:var(--tx);padding:7px 13px;border-radius:10px;cursor:pointer;font:inherit;font-size:13.5px}
+.btn:hover{border-color:var(--pk)}
+.btn.pk{background:linear-gradient(90deg,var(--vi),var(--pk));border:none;font-weight:600}
+.btn.sm{padding:4px 10px;font-size:12.5px}
+input,select,textarea{background:rgba(5,8,30,.55);border:1px solid var(--bd);color:var(--tx);padding:8px 10px;border-radius:10px;font:inherit;font-size:14px;width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid rgba(255,92,149,.5)}
+label.f{display:block;font-size:12px;color:var(--mut);margin-bottom:3px}
+.note{border-left:3px solid var(--warn);background:rgba(251,191,36,.08);padding:10px 14px;border-radius:0 12px 12px 0;margin:12px 0;font-size:14px}
+.note.bad{border-color:var(--bad);background:rgba(248,113,113,.08)}.note.ok{border-color:var(--ok);background:rgba(52,211,153,.07)}.note.pk{border-color:var(--pk);background:rgba(255,92,149,.08)}
+.msg{white-space:pre-wrap;background:rgba(5,8,30,.55);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;font-size:14.5px;margin:8px 0}
+.why{font-size:13px;color:var(--mut)}.why b{color:#c9d3ff}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}
+th{color:var(--mut);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em}
+.scroll{overflow-x:auto}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch;margin:10px 0 18px}
+.stage{flex:1 1 120px;min-width:112px;padding:12px 10px;border-radius:14px;background:var(--card);border:1px solid var(--bd);cursor:pointer;text-align:center;position:relative;font-size:13px}
+.stage:hover{border-color:var(--pk)}
+.stage.on{background:linear-gradient(135deg,rgba(124,92,255,.5),rgba(255,92,149,.4));border-color:transparent}
+.stage .n{display:block;font-size:11px;color:var(--mut);margin-bottom:2px}.stage .i{font-size:20px;display:block}
+.stage:not(:last-child)::after{content:"›";position:absolute;right:-9px;top:50%;transform:translateY(-50%);color:var(--pk);font-size:18px;z-index:2}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px}
+.tab{padding:6px 13px;border-radius:99px;border:1px solid var(--bd);background:var(--card);cursor:pointer;font-size:13.5px;color:var(--mut)}
+.tab.on{background:linear-gradient(90deg,var(--vi),var(--pk));color:#fff;border-color:transparent}
+.opt{display:block;width:100%;text-align:left;margin:6px 0;padding:11px 14px;border-radius:12px;background:var(--card);border:1px solid var(--bd);color:var(--tx);cursor:pointer;font:inherit}
+.opt:hover{border-color:var(--pk);background:var(--card2)}
+.crumb{font-size:12.5px;color:var(--mut);margin-bottom:8px}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:8px 4px;border-bottom:1px dashed var(--bd);cursor:pointer}
+.chk input{width:18px;height:18px;margin-top:2px;accent-color:var(--pk);flex:none}
+.chk.done span{text-decoration:line-through;color:var(--mut)}
+.bar{height:10px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--bl),var(--vi),var(--pk));transition:width .3s}
+.chat{display:flex;flex-direction:column;gap:7px;margin:8px 0}
+.b{max-width:86%;padding:8px 12px;border-radius:14px;font-size:14px;white-space:pre-wrap}
+.b.me{align-self:flex-end;background:linear-gradient(135deg,var(--vi),#a24cd6);border-bottom-right-radius:4px}
+.b.her{align-self:flex-start;background:rgba(255,255,255,.1);border-bottom-left-radius:4px}
+.b.cm{align-self:center;background:rgba(251,191,36,.1);border:1px dashed rgba(251,191,36,.45);font-size:12.5px;color:#f3dca0;max-width:96%}
+details{border:1px solid var(--bd);border-radius:12px;padding:10px 14px;background:var(--card);margin:8px 0}
+summary{cursor:pointer;font-weight:600}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#111a55;border:1px solid var(--pk);padding:9px 18px;border-radius:12px;z-index:99;opacity:0;pointer-events:none;transition:.25s}
+.toast.show{opacity:1}
+ul.t{margin:6px 0 6px 18px;padding:0}ul.t li{margin:3px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pill{display:inline-block;min-width:26px;text-align:center;padding:1px 8px;border-radius:99px;background:rgba(255,255,255,.1);font-size:12px}
+.sc{font-size:46px;font-weight:800}
+@media(max-width:880px){
+ aside{position:fixed;left:-290px;transition:left .25s;width:272px}
+ aside.open{left:0;box-shadow:0 0 0 100vmax rgba(0,0,0,.55)}
+ .topbar{display:flex}
+ main{padding:18px 14px 70px}
+ h1{font-size:25px}
+ .stage:not(:last-child)::after{display:none}
+}
+
+/* =========================================================
+   RAFFROS — DARK NOIR / GREEN ACCENT
+   Camada visual: preserva conteúdo, navegação e interações.
+   ========================================================= */
+:root{
+  color-scheme:dark;
+  --bg:#080A09;
+  --card:rgba(255,255,255,.045);
+  --card2:rgba(255,255,255,.075);
+  --bd:rgba(226,239,229,.105);
+  --tx:#F1F5F1;
+  --mut:#929C94;
+  --pk:#B7F36B;
+  --vi:#8FCB50;
+  --bl:#A6D96F;
+  --ok:#B7F36B;
+  --warn:#E8C878;
+  --bad:#F08080;
+  --rf-noir:#080A09;
+  --rf-panel:#101411;
+  --rf-panel-raised:#151B16;
+  --rf-green:#B7F36B;
+  --rf-green-soft:rgba(183,243,107,.12);
+  --rf-green-line:rgba(183,243,107,.28);
+  --rf-muted:#929C94;
+}
+html{background:var(--rf-noir);scrollbar-color:#39443A #090C0A}
+body{
+  color:var(--tx);
+  background:
+    radial-gradient(900px 560px at 8% -12%,rgba(183,243,107,.075),transparent 68%),
+    radial-gradient(760px 520px at 100% 8%,rgba(183,243,107,.035),transparent 70%),
+    linear-gradient(155deg,#080A09 0%,#0B0F0C 54%,#080A09 100%);
+  background-attachment:fixed;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+::selection{background:rgba(183,243,107,.28);color:#F7FFF0}
+a{color:#C8EAA5}
+.app{min-height:100vh}
+aside{
+  background:rgba(9,12,10,.88);
+  border-right:1px solid rgba(226,239,229,.08);
+  box-shadow:12px 0 44px rgba(0,0,0,.12);
+  backdrop-filter:blur(24px) saturate(120%);
+}
+.brand{padding:8px 9px 20px}
+.logo{
+  color:#10150D;
+  background:linear-gradient(145deg,#D5F9A5 0%,#A8E65D 58%,#83C83D 100%);
+  border:1px solid rgba(223,255,193,.55);
+  border-radius:12px;
+  box-shadow:0 5px 22px rgba(159,224,91,.16),inset 0 1px 0 rgba(255,255,255,.55);
+}
+.brand b{letter-spacing:-.035em;font-size:15px}
+.brand small{color:#7F8B80;letter-spacing:.015em}
+nav a{
+  gap:11px;
+  min-height:42px;
+  padding:9px 11px;
+  border:1px solid transparent;
+  border-radius:11px;
+  color:#929C94;
+  transition:background .22s ease,border-color .22s ease,color .22s ease,transform .22s cubic-bezier(.22,1,.36,1);
+}
+nav a:hover{
+  background:rgba(255,255,255,.045);
+  color:#F2F6F1;
+  border-color:rgba(255,255,255,.055);
+  transform:translateX(2px);
+}
+nav a.on{
+  color:#EAF8DF;
+  background:linear-gradient(100deg,rgba(183,243,107,.13),rgba(183,243,107,.045));
+  border:1px solid rgba(183,243,107,.18);
+  box-shadow:inset 2px 0 0 #B7F36B,0 6px 20px rgba(0,0,0,.12);
+}
+.nav-icon{
+  display:grid;place-items:center;flex:none;
+  width:27px;height:27px;border-radius:8px;
+  color:#879287;
+  background:rgba(255,255,255,.035);
+  transition:color .22s ease,background .22s ease,transform .22s ease;
+}
+.nav-icon svg{width:16px;height:16px;display:block}
+nav a:hover .nav-icon{color:#C9F49B;background:rgba(183,243,107,.09)}
+nav a.on .nav-icon{color:#C7F69A;background:rgba(183,243,107,.13)}
+.nav-label{min-width:0}
+nav .sep{
+  color:#657166;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.16em;
+  margin:19px 10px 7px;
+}
+.topbar{
+  background:rgba(9,12,10,.9);
+  border-bottom:1px solid rgba(226,239,229,.09);
+  backdrop-filter:blur(22px);
+}
+main{max-width:1220px}
+h1,h2,h3{color:#F2F5F1;letter-spacing:-.035em}
+h1{font-size:clamp(25px,3vw,32px);font-weight:740;letter-spacing:-.045em}
+h2{font-size:21px;font-weight:680}
+.sub{color:#929C94;line-height:1.7}
+.grad{
+  background:none;
+  color:var(--rf-green);
+  -webkit-text-fill-color:var(--rf-green);
+}
+.card{
+  background:linear-gradient(145deg,rgba(22,28,23,.92),rgba(14,18,15,.94));
+  border:1px solid rgba(226,239,229,.09);
+  border-radius:17px;
+  box-shadow:0 12px 35px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.025);
+  backdrop-filter:blur(16px);
+  transition:border-color .22s ease,transform .22s cubic-bezier(.22,1,.36,1),box-shadow .22s ease;
+}
+.card:hover{border-color:rgba(183,243,107,.17);box-shadow:0 16px 42px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.035)}
+.card.hl{
+  background:
+    radial-gradient(500px 220px at 0% 0%,rgba(183,243,107,.09),transparent 72%),
+    linear-gradient(145deg,#151B15,#101411 78%);
+  border-color:rgba(183,243,107,.19);
+}
+.kpi{color:#F4F7F2;letter-spacing:-.055em}
+.kpi small{color:#929C94}
+.tag{background:rgba(255,255,255,.035);border-color:rgba(226,239,229,.12);color:#AAB4AA}
+.tag.ok,.tag.pk{color:#C7F69A;border-color:rgba(183,243,107,.28);background:rgba(183,243,107,.07)}
+.tag.bl{color:#C4D5B6;border-color:rgba(183,243,107,.2)}
+.btn{
+  color:#E8EEE7;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(226,239,229,.12);
+  border-radius:10px;
+  transition:background .2s ease,border-color .2s ease,color .2s ease,transform .2s ease,box-shadow .2s ease;
+}
+.btn:hover{border-color:rgba(183,243,107,.42);background:rgba(183,243,107,.07);transform:translateY(-1px)}
+.btn.pk{
+  color:#10150D;
+  background:linear-gradient(135deg,#D1F79F,#A9E45D 65%,#91D44A);
+  border:1px solid rgba(221,255,188,.45);
+  box-shadow:0 6px 20px rgba(151,214,82,.16),inset 0 1px 0 rgba(255,255,255,.55);
+  font-weight:700;
+}
+.btn.pk:hover{background:linear-gradient(135deg,#DDFBB6,#B8F174);box-shadow:0 9px 26px rgba(151,214,82,.22)}
+input,select,textarea{
+  color:#F0F5EF;
+  background:#0B100C;
+  border:1px solid rgba(226,239,229,.13);
+  border-radius:10px;
+  transition:border-color .2s ease,box-shadow .2s ease,background .2s ease;
+}
+input::placeholder,textarea::placeholder{color:#657166}
+input:focus,select:focus,textarea:focus{
+  outline:0;
+  border-color:rgba(183,243,107,.55);
+  box-shadow:0 0 0 3px rgba(183,243,107,.10);
+  background:#0D130E;
+}
+label.f{color:#A0AAA0}
+.note{
+  border-left:2px solid var(--warn);
+  background:rgba(232,200,120,.065);
+  border-radius:0 12px 12px 0;
+  color:#D9D9C9;
+}
+.note.ok{border-color:var(--rf-green);background:rgba(183,243,107,.065)}
+.note.pk{border-color:var(--rf-green);background:rgba(183,243,107,.065)}
+.note.bad{border-color:var(--bad);background:rgba(240,128,128,.065)}
+.msg{
+  color:#E8EEE7;
+  background:#0B100C;
+  border:1px solid rgba(226,239,229,.10);
+  border-radius:13px;
+  line-height:1.65;
+}
+.why{color:#929C94;line-height:1.65}
+.why b{color:#D9E4D7}
+table{color:#E7ECE5}
+th{color:#8D998E}
+th,td{border-bottom-color:rgba(226,239,229,.09)}
+.flow{gap:9px}
+.stage{
+  color:#DDE5DB;
+  background:linear-gradient(145deg,rgba(22,28,23,.88),rgba(13,17,14,.92));
+  border:1px solid rgba(226,239,229,.10);
+  border-radius:14px;
+  transition:transform .24s cubic-bezier(.22,1,.36,1),border-color .24s ease,background .24s ease,box-shadow .24s ease;
+}
+.stage:hover{border-color:rgba(183,243,107,.35);transform:translateY(-2px)}
+.stage.on{
+  color:#F3F9EF;
+  background:linear-gradient(145deg,rgba(183,243,107,.17),rgba(183,243,107,.055));
+  border-color:rgba(183,243,107,.34);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 26px rgba(0,0,0,.16);
+}
+.stage .n{color:#849184;font-weight:650;letter-spacing:.06em}
+.stage .i{
+  display:grid;place-items:center;
+  width:36px;height:36px;
+  margin:7px auto 8px;
+  border-radius:11px;
+  background:rgba(183,243,107,.075);
+  border:1px solid rgba(183,243,107,.12);
+  font-size:18px;
+  filter:grayscale(1);
+  opacity:.88;
+}
+.stage.on .i{background:rgba(183,243,107,.14);border-color:rgba(183,243,107,.25);filter:none;opacity:1}
+.stage:not(:last-child)::after{color:#A9E76A}
+.tabs{gap:7px}
+.tab{
+  color:#A2ADA2;
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(226,239,229,.11);
+  border-radius:99px;
+  transition:all .2s ease;
+}
+.tab:hover{color:#EAF5E4;border-color:rgba(183,243,107,.3)}
+.tab.on{
+  color:#11160E;
+  background:linear-gradient(135deg,#D1F79F,#A9E45D);
+  border-color:transparent;
+  box-shadow:0 5px 18px rgba(151,214,82,.13);
+}
+.opt{
+  color:#E5ECE3;
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(226,239,229,.10);
+  border-radius:12px;
+  transition:background .2s ease,border-color .2s ease,transform .2s ease;
+}
+.opt:hover{border-color:rgba(183,243,107,.34);background:rgba(183,243,107,.055);transform:translateX(2px)}
+.crumb{color:#879487}
+.chk{border-bottom-color:rgba(226,239,229,.08)}
+.chk input{accent-color:#B7F36B}
+.chk.done span{color:#718071}
+.bar{background:rgba(255,255,255,.08)}
+.bar>i{background:linear-gradient(90deg,#8FCB50,#B7F36B);border-radius:99px;box-shadow:0 0 18px rgba(183,243,107,.2)}
+.chat{gap:9px}
+.b{border:1px solid rgba(226,239,229,.08);border-radius:14px;line-height:1.55}
+.b.me{
+  color:#10150D;
+  background:linear-gradient(135deg,#C9F39A,#9EDB59);
+  border-color:rgba(221,255,188,.25);
+  border-bottom-right-radius:5px;
+}
+.b.her{color:#E6ECE4;background:#171E18;border-bottom-left-radius:5px}
+.b.cm{color:#D8D1B3;background:rgba(232,200,120,.07);border:1px dashed rgba(232,200,120,.28)}
+details{background:rgba(255,255,255,.025);border-color:rgba(226,239,229,.10);border-radius:13px}
+summary{color:#EAF0E8}
+.pill{color:#C5E9A0;background:rgba(183,243,107,.10)}
+.sc{color:var(--rf-green);letter-spacing:-.06em}
+.toast{
+  color:#EAF5E4;
+  background:rgba(17,23,18,.96);
+  border:1px solid rgba(183,243,107,.34);
+  box-shadow:0 12px 38px rgba(0,0,0,.35);
+  backdrop-filter:blur(16px);
+}
+#burger{font-size:0;width:40px;height:40px;position:relative}
+#burger:before,#burger:after{content:"";position:absolute;left:11px;width:16px;height:1.5px;background:#DDE8D9;border-radius:3px}
+#burger:before{top:15px;box-shadow:0 5px 0 #DDE8D9}
+#burger:after{top:25px;width:10px}
+@media(max-width:880px){
+  aside{background:rgba(9,12,10,.97);border-right-color:rgba(226,239,229,.10)}
+  aside.open{box-shadow:0 0 0 100vmax rgba(0,0,0,.68),12px 0 50px rgba(0,0,0,.35)}
+  main{padding-top:22px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}
+}
+
+</style>
+</head>
+<body>
+<div class="topbar"><button class="btn" id="burger" aria-label="Abrir menu"></button><b>Raffros · Captação</b></div>
+<div class="app">
+<aside id="side"><div class="brand"><div class="logo">R</div><div><b>Raffros</b><small>Máquina de captação</small></div></div><nav id="nav"></nav></aside>
+<main id="main"></main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+
+/* ========= HELPERS ========= */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const mem={};
+const S={get(k,d){try{const v=localStorage.getItem('rf_'+k);return v?JSON.parse(v):(k in mem?mem[k]:d)}catch(e){return k in mem?mem[k]:d}},
+ set(k,v){mem[k]=v;try{localStorage.setItem('rf_'+k,JSON.stringify(v))}catch(e){}}};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const todayKey=()=>new Date().toISOString().slice(0,10);
+let REG=[];
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>e.classList.remove('show'),1600)}
+function fill(t){const p=S.get('P',{});const m={'[Nome]':p.nome,'[Negócio]':p.neg,'[Bairro]':p.bairro,'[Link]':p.link,'[Seu nome]':p.eu};
+ let o=t;for(const k in m){if(m[k])o=o.split(k).join(m[k])}return o}
+function cp(i){const t=fill(REG[i]);const done=()=>toast('Mensagem copiada ✓');
+ if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(done,()=>fb(t,done))}else fb(t,done)}
+function fb(t,done){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(e){}a.remove();done()}
+function msg(t){REG.push(t);const i=REG.length-1;return `<div class="msg">${esc(fill(t))}</div><button class="btn sm pk" onclick="cp(${i})">Copiar mensagem</button>`}
+function ev(l){const m={r:['ok','Relato 1ª pessoa'],o:['warn','Opinião'],v:['bl','Caso de fornecedor (auto-reportado)'],h:['pk','Hipótese minha'],f:['bad','Não verificado']};return `<span class="tag ${m[l][0]}">${m[l][1]}</span>`}
+
+/* ========= MODULES / NAV ========= */
+const MODS=[
+['dash','home','Dashboard'],['sep','Estratégia'],['prod','puzzle','Produto → argumentos'],['conv','target','Estratégia de conversão'],
+['sep','Operação'],['mapa','map','Mapa do processo'],['arv','tree','Árvore de decisão'],['msgs','message','Mensagens prontas'],['obj','shield','Manual de objeções'],['sim','users','Conversas simuladas'],
+['sep','Prospecção'],['leads','pin','Onde achar + score'],['check','check','Checklist diário'],['plano','calendar','Plano de 30 dias'],['kpi','chart','Indicadores & CRM'],
+['sep','Base'],['fontes','link','Pesquisa & fontes']];
+function navIcon(name){
+ const paths={
+  home:'<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  puzzle:'<path d="M8 3H5a2 2 0 0 0-2 2v3h3a2 2 0 1 1 0 4H3v4a2 2 0 0 0 2 2h4v-3a2 2 0 1 1 4 0v3h4a2 2 0 0 0 2-2v-4h-3a2 2 0 1 1 0-4h3V5a2 2 0 0 0-2-2h-4v3a2 2 0 1 1-4 0z"/>',
+  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  map:'<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15m6-12v15"/>',
+  tree:'<path d="M12 22v-7m0-4V3m0 8-5-4m5 4 5-4"/><circle cx="12" cy="4" r="2"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="13" r="2"/>',
+  message:'<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-5.5a9 9 0 0 1-.9-4A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8z"/>',
+  shield:'<path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/><path d="m9 12 2 2 4-4"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  pin:'<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.5"/>',
+  check:'<path d="m5 12 4 4L19 6"/>',
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+  chart:'<path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-5 5"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 2.9l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21.1l1.7-1.7"/>'
+ };
+ return `<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${paths[name]||paths.home}</g></svg>`;
+}
+function buildNav(){$('#nav').innerHTML=MODS.map(m=>m[0]==='sep'?`<div class="sep">${m[1]}</div>`:`<a data-m="${m[0]}" onclick="go('${m[0]}')"><span class="nav-icon">${navIcon(m[1])}</span><span class="nav-label">${m[2]}</span></a>`).join('')}
+function go(id){S.set('mod',id);location.hash=id;$('#side').classList.remove('open');render()}
+
+/* ========= PROCESS MAP DATA ========= */
+const STAGES=[
+{ico:'🔎',n:'Prospecção',obj:'Ter uma lista curta de pessoas CERTAS para abordar hoje — não uma lista enorme.',
+ fazer:['Buscar 25 perfis/estabelecimentos por dia (Google Maps + Instagram).','Dar nota no score (módulo "Onde achar") e abordar primeiro as notas A.','Olhar 3 posts/stories de cada uma antes de abordar.'],
+ como:['Google Maps: "esmalteria [bairro]", "manicure [bairro]", "salão de beleza [bairro]", "barbearia [bairro]".','No perfil do Instagram, procure sinais: "agenda pelo direct/WhatsApp", stories de "horários disponíveis", sem link de agendamento na bio.','Registre nome, @, canal, score e observação na aba Indicadores & CRM.'],
+ falar:null,prox:[['Lead nota A/B','Vai para o primeiro contato hoje'],['Nota C','Fica na lista fria; só aborde se faltar lead'],['Já tem sistema bom na bio','Prioridade baixa']],
+ evitar:['Montar lista de 500 contatos e não abordar ninguém.','Contar seguidores como se fossem clientes.','Abordar sem olhar o perfil.']},
+{ico:'👋',n:'Primeiro contato',obj:'Conseguir UMA resposta. Não vender nada nessa mensagem.',
+ fazer:['Enviar mensagem curta, personalizada, com UMA pergunta sobre como ela marca horários hoje.','Mandar em horário comercial (manicures: fora de pico de atendimento; evite sábado).','No máx. 15–20 novos contatos por dia no começo.'],
+ como:['Instagram DM para autônomas; WhatsApp só se o número é publicado como contato comercial.','Cite algo REAL do perfil (um serviço, uma foto).','Sem link, sem preço, sem áudio longo, sem "oferta imperdível".'],
+ falar:'Oi, [Nome]! Vi seu trabalho no Instagram, ficou muito bonito o [detalhe real]. Uma curiosidade: quando uma cliente nova quer marcar, ela chama no direct/WhatsApp e você responde os horários na mão, ou ela já escolhe sozinha?',
+ prox:[['Respondeu','→ Resposta'],['Visualizou, sem resposta','Follow-up 24h → 48h → 3 dias (e para)'],['Respondeu "não tenho interesse"','Agradeça, pergunte se pode falar em 30 dias, arquive']],
+ evitar:['Copiar e colar texto idêntico para todas.','Elogio falso.','Começar com "Somos uma plataforma líder…".']},
+{ico:'📩',n:'Resposta',obj:'Manter a conversa viva e descobrir a rotina dela, sem despejar o sistema.',
+ fazer:['Responder em até 1h.','Fazer a segunda pergunta (a dor): faltas, tempo no WhatsApp, horários cruzados.','Deixar ela falar mais que você.'],
+ como:['Espelhe o tom dela (formal/informal).','Reaja ao que ela disse antes de perguntar de novo.'],
+ falar:'Entendi! E isso te toma muito tempo no dia? Me conta: quando uma cliente falta ou desmarca em cima da hora, o que acontece com aquele horário?',
+ prox:[['Descreveu uma dor','→ Qualificação'],['Resposta vaga ("ok", "legal")','Mais uma pergunta concreta; se continuar vaga, follow-up leve'],['Pediu preço','Ver árvore de decisão: "pediu preço"']],
+ evitar:['Mandar link logo após o "oi".','Responder com texto gigante.','Discutir se o WhatsApp dela está "errado".']},
+{ico:'🎯',n:'Qualificação',obj:'Decidir se vale seu tempo: ela tem dor, decide sozinha e usa celular no trabalho?',
+ fazer:['Confirmar 3 coisas: (1) tem dor real; (2) quem decide; (3) quantas pessoas atendem.','Anotar números dela (quantas faltas, quanto vale um horário).'],
+ como:['Pergunte: "Quantas vezes por semana uma cliente falta ou desmarca em cima da hora?"','"Quanto vale, em média, um horário vago pra você?"','"Quem cuida da agenda: você mesma ou alguém ajuda?"'],
+ falar:'Quantas vezes por semana, mais ou menos, uma cliente falta ou desmarca em cima da hora? E quanto vale um horário desses pra você?',
+ prox:[['Tem dor e decide','→ Apresentação'],['Sem dor ("tá tranquilo")','Agradeça, deixe porta aberta, arquive'],['Quem decide é outra pessoa','Ofereça material curto/demonstração para as duas']],
+ evitar:['Vender para quem não sente dor.','Pular a qualificação por ansiedade.']},
+{ico:'🪄',n:'Apresentação',obj:'Ligar a dor DELA a UMA solução do Raffros, em 3 frases.',
+ fazer:['Repetir com as palavras dela o problema.','Apresentar só 1–2 funções ligadas à dor.','Propor ver com o nome dela.'],
+ como:['Dor = faltas → sinal opcional para segurar o horário.','Dor = tempo no WhatsApp → link de agendamento na bio.','Dor = bagunça/horários cruzados → agenda que só mostra horários livres.'],
+ falar:'Entendi. O que montei resolve justamente isso: você coloca um link na bio, a cliente escolhe serviço e horário sozinha, só aparecem horários livres e já cai na sua agenda. Quer ver como ficaria com o seu nome? Eu monto e te mando.',
+ prox:[['Quer ver','→ Demonstração'],['Hesita','Ofereça a versão mínima: 3 serviços, teste com 2 clientes'],['Pergunta preço','Responda direto (módulo Mensagens → B5)']],
+ evitar:['Listar 20 funcionalidades.','Falar de React, Supabase, Stripe Connect, telemetria.','Prometer lembrete automático de WhatsApp (ver "Produto").']},
+{ico:'📱',n:'Demonstração',obj:'Fazer ela VER e SENTIR a página dela funcionando no celular dela.',
+ fazer:['Mandar o link de uma página-exemplo já com o nome e serviços dela (demo gerada) ou fazer vídeo/chamada de 10 min.','Agendar ao vivo como se fosse cliente e mostrar cair na agenda.','Mostrar o sinal anti-furo só se a dor for falta.'],
+ como:['Ordem: página pública no celular → agendar como cliente → ver cair na agenda do admin → sinal → ficha da cliente.','Deixe CLARO que é uma demonstração; use apenas informações públicas dela; apague se ela pedir.','Pergunte no fim: "Se isso estivesse no seu Instagram hoje, o que você mudaria?"'],
+ falar:'Montei uma página de exemplo com o seu nome pra você ver como ficaria: [Link]. A cliente escolhe o serviço, o dia e o horário sozinha e já aparece na sua agenda. Se não fizer sentido, é só ignorar 🙂',
+ prox:[['Gostou','→ Fechamento (proponha o teste assistido)'],['Tem dúvidas','→ Objeções'],['Sumiu depois do link','Follow-up com valor (Mensagens → C)']],
+ evitar:['Tour por todas as telas.','Demo sem os dados dela.','Usar fotos/logo dela sem permissão.']},
+{ico:'🛡️',n:'Contorno de objeções',obj:'Entender a preocupação real, responder com honestidade e propor o menor próximo passo.',
+ fazer:['Perguntar antes de responder: "o que te preocupa mais?".','Usar o manual de objeções.','Se a objeção for verdadeira (ela realmente não precisa), aceite.'],
+ como:['Valide → pergunte → responda com os números dela → proponha teste pequeno.','Preço: compare com um serviço dela, não com concorrentes.'],
+ falar:'Faz todo sentido. Me conta: o que você ainda quer ter certeza antes de testar?',
+ prox:[['Objeção resolvida','→ Fechamento'],['Objeção real e sem solução','Arquive com respeito e agende recontato'],['"Vou pensar"','Combine data de retorno e peça a dúvida específica']],
+ evitar:['Argumentar para "vencer".','Dar desconto na primeira reação.','Insistir após dois "não".']},
+{ico:'🤝',n:'Fechamento',obj:'Conseguir o "sim" para começar o teste assistido — o fechamento real é ela ativar a conta e usar.',
+ fazer:['Propor o próximo passo concreto, com data/hora ("hoje à tarde configuramos juntas?").','Coletar os dados: serviços, preços, durações, horários, logo/foto.','Explicar o que acontece depois dos 7 dias.'],
+ como:['Fechamento por "sim pequeno": "começamos com 3 serviços e 1 semana de teste".','Só cobre depois do teste, se ficar claro que ela quer.','Confirmar TUDO que o plano inclui (e o que não inclui) antes de ela assinar.'],
+ falar:'Perfeito! Então fazemos assim: me manda a lista dos seus serviços com preço e tempo, e seus horários de atendimento. Eu deixo tudo configurado hoje e você testa 7 dias com clientes reais. Depois decide se continua.',
+ prox:[['Aceitou','→ Onboarding'],['Hesitou','Reduza o passo (menos serviços, 1 cliente)'],['Disse não','Registre o motivo — é dado de produto']],
+ evitar:['Falsa urgência ("promoção acaba hoje").','Prometer o que o produto ainda não faz.','Cobrar antes de ela ver funcionando.']},
+{ico:'🚀',n:'Onboarding',obj:'Fazer a primeira cliente DELA agendar sozinha em até 48h. Esse é o momento que gera retenção.',
+ fazer:['Cadastrar serviços, horários e identidade visual com ela.','Colocar o link na bio do Instagram e como resposta automática do WhatsApp Business.','Pedir que poste um story avisando as clientes do novo link.','Acompanhar a primeira semana por mensagem.'],
+ como:['Faça a configuração JUNTO, por chamada curta.','Teste um agendamento falso com o celular dela.','Dia 2 e dia 5: "alguma cliente usou? deu algum problema?"'],
+ falar:'Tudo pronto! Seu link é [Link]. Coloca na bio e manda no story hoje. Amanhã eu passo aqui pra ver se alguma cliente já marcou e se apareceu algum problema. Qualquer dúvida me chama direto.',
+ prox:[['Primeira cliente agendou','→ Indicação'],['48h sem uso','Ajude a divulgar (story, resposta automática)'],['Problema técnico','Resolva rápido e registre no backlog do produto']],
+ evitar:['"Configurei e sumi".','Deixar ela descobrir sozinha onde está o link.']},
+{ico:'🌱',n:'Indicação',obj:'Transformar a primeira cliente satisfeita em fonte de apresentações e prova social.',
+ fazer:['Pedir indicação logo após a primeira cliente agendar sozinha.','Pedir permissão para usar o relato (print + frase) como depoimento.','Perguntar quem mais ela conhece que sofre com o mesmo problema.'],
+ como:['Peça UMA pessoa, não "alguém".','Ofereça ajudar você mesma a explicar para a indicada.','Incentivo opcional (ex.: mês grátis para as duas) — decisão sua, hipótese não testada.'],
+ falar:'Que bom que a primeira cliente já marcou sozinha! Você conhece alguma colega (manicure, dona de salão, barbeiro) que também vive no "tem horário?" por mensagem? Se quiser, me apresenta e eu cuido de tudo por lá.',
+ prox:[['Indicou alguém','Aborde mencionando quem indicou'],['Aceitou depoimento','Salve print/frase com autorização por escrito'],['Não indicou','Pergunte de novo em 30 dias']],
+ evitar:['Pedir indicação antes de ela ter resultado.','Inventar depoimento.']}
+];
+
+/* ========= DECISION TREE ========= */
+const T={
+root:{t:'Qual é a situação da conversa agora?',b:'Escolha o que mais se parece com o que ela respondeu (ou não respondeu).',o:[
+ ['✅ Respondeu positivamente','pos'],['👀 Visualizou e não respondeu','seen'],['🤔 Demonstrou curiosidade ("como funciona?")','cur'],['💰 Pediu o preço logo de cara','price'],
+ ['📱 Já usa outro sistema/app','other'],['💬 "Eu marco tudo pelo WhatsApp"','wa'],['🚫 Disse que não tem interesse','no'],['📅 Viu a demonstração e não fechou','demo'],['👻 Demonstrou interesse e sumiu','ghost']]},
+pos:{t:'Respondeu positivamente',g:'Transformar a abertura em conversa sobre a rotina dela, antes de falar do Raffros.',d:['Responda em até 1h.','Reaja ao que ela disse e faça UMA pergunta sobre a dor.','Ainda sem link, sem preço.'],
+ m:'Que legal! E como funciona hoje: ela te chama, você olha a agenda e responde os horários? Quanto tempo isso te toma por dia, mais ou menos?',o:[['Ela descreveu uma dor concreta','qual'],['Resposta vaga ("ok", "legal")','vague']]},
+vague:{t:'Resposta vaga',g:'Tirar uma resposta concreta sem pressionar.',d:['Faça uma pergunta fácil de responder com um número.','Se a próxima resposta também for vaga, deixe esfriar 48h e faça 1 follow-up.'],
+ m:'Só pra eu entender melhor: nessa semana, quantas clientes pediram horário por mensagem? Mais ou menos, só pra ter ideia.',o:[['Deu um número / descreveu','qual'],['Continuou vaga ou sumiu','seen']]},
+qual:{t:'Qualificação: tem dor?',g:'Confirmar dor, quem decide e tamanho do negócio.',d:['Pergunte faltas e valor de um horário.','Pergunte se tem equipe.','Anote os números dela.'],
+ m:'Quantas vezes por semana uma cliente falta ou desmarca em cima da hora? E quanto vale um horário desses pra você?',o:[['Tem dor clara','apres'],['"Tá tranquilo, quase não tenho problema"','semdor'],['Outra pessoa decide','outra']]},
+semdor:{t:'Sem dor aparente',g:'Não forçar. Deixar uma porta aberta e liberar seu tempo.',d:['Agradeça.','Peça permissão para falar em 30 dias.','Marque no CRM com data.'],
+ m:'Que bom que tá sob controle! Se um dia a agenda começar a virar bagunça ou as faltas aumentarem, me chama. Posso te dar um toque daqui a um mês pra ver como está?',o:[['Voltar ao início','root']]},
+outra:{t:'Outra pessoa decide',g:'Chegar até quem decide sem passar por cima de quem te atendeu.',d:['Ofereça um resumo que ela possa repassar.','Proponha chamada curta com as duas.'],
+ m:'Faz sentido. Quer que eu te mande a página de exemplo e um resumo de 5 linhas pra você mostrar? Ou, se preferir, faço uma chamada de 10 min com vocês duas.',o:[['Aceitou','demoOffer'],['Voltar ao início','root']]},
+apres:{t:'Apresentação (3 frases)',g:'Ligar a dor dela a uma solução, só uma.',d:['Repita o problema com as palavras dela.','Apresente 1–2 funções ligadas à dor.','Feche com a proposta de ver com o nome dela.'],
+ m:'Então o que eu montei resolve isso: você coloca um link na bio, a cliente escolhe serviço e horário sozinha, só aparecem horários livres e já cai na sua agenda. Quer ver como ficaria com o seu nome? Eu monto e te mando.',o:[['Quer ver','demoOffer'],['Perguntou o preço','price'],['Hesitou / tem dúvida','objs']]},
+demoOffer:{t:'Oferecer demonstração',g:'Escolher o formato de menor atrito para ela.',d:['Ofereça duas opções: página pronta por link (assíncrono) ou chamada de 10 min.','Se disser "manda aí", mande a página com o nome dela.','Depois combine quando conversam de novo.'],
+ m:'Posso te mostrar de duas formas: eu te mando uma página de exemplo agora e você olha com calma, ou fazemos uma chamada rápida de 10 min e eu configuro junto com você. Qual fica melhor?',o:[['Ela viu e gostou','trial'],['Viu e não fechou','demo'],['Sumiu depois do link','ghost']]},
+trial:{t:'Fechar o teste assistido',g:'Ela ativar o teste de 7 dias com você configurando tudo.',d:['Peça lista de serviços/preços/duração e horários.','Marque horário para configurar juntos.','Combine a primeira checagem em 48h.','[CONFIRMAR] se pede cartão no início do teste e diga isso com clareza.'],
+ m:'Perfeito! Me manda a lista dos seus serviços com preço e tempo, e seus horários de atendimento. Eu deixo tudo configurado e você testa 7 dias com clientes reais. Só depois decide se continua.',o:[['Voltar ao início','root']]},
+seen:{t:'Visualizou e não respondeu',g:'Mais uma chance de resposta, com valor, e parar.',d:['24h: follow-up curto com algo útil.','48h: pergunta de sim/não.','3 dias: despedida leve e para.','Máximo 3 toques para contato frio.'],
+ m:'Oi, [Nome]! Sei que a rotina é corrida. Montei aqui como ficaria uma página de agendamento com os seus serviços, só pra você olhar quando puder: [Link]. Se não fizer sentido, me avisa que eu paro por aqui 🙂',o:[['Respondeu','pos'],['Silêncio após 3 toques','fim']]},
+fim:{t:'Encerrar com elegância',g:'Parar sem queimar o contato.',d:['Envie a mensagem de despedida.','Registre "sem resposta" no CRM.','Tente de novo só em 60+ dias, se fizer sentido.'],
+ m:'Vou encerrar por aqui pra não incomodar. Deixo o link da página de exemplo: [Link]. Se a agenda um dia virar dor de cabeça, é só me chamar 🙂',o:[['Voltar ao início','root']]},
+cur:{t:'Curiosa ("como funciona?")',g:'Responder curto e levar para a demonstração, não explicar tudo por texto.',d:['Responda em 2 frases.','Devolva uma pergunta de qualificação.','Mostre com o nome dela.'],
+ m:'Resumindo: você coloca um link na bio e a cliente escolhe serviço e horário sozinha; só aparecem horários livres e já cai na sua agenda. Hoje como você faz quando uma cliente nova pede horário?',o:[['Ela explicou a rotina','qual'],['Quer ver','demoOffer']]},
+price:{t:'Pediu o preço de cara',g:'Responder com transparência e voltar ao valor sem esconder o preço.',d:['Responda o preço em uma linha.','Compare com um serviço DELA.','Pergunte sobre a dor para contextualizar.','[CONFIRMAR] os valores finais antes de enviar.'],
+ m:'O plano para quem atende sozinha é R$ [CONFIRMAR]/mês e tem 7 dias de teste; com equipe, R$ [CONFIRMAR]/mês. Pra comparar: é menos que uma mão de manicure no mês. Posso te mostrar como ficaria com o seu nome antes de você decidir qualquer coisa?',o:[['Aceitou ver','demoOffer'],['"Está caro"','objs'],['Sumiu','ghost']]},
+other:{t:'Já usa outro sistema',g:'Descobrir se está satisfeita. Sem atacar o concorrente.',d:['Pergunte o que ela mais gosta e o que menos gosta.','Se satisfeita, deixe porta aberta e siga em frente.','Se há reclamações, explore (preço, cadastro da cliente, complexidade).'],
+ m:'Legal que você já tem um sistema! Tá satisfeita com ele? Se tiver algo que incomoda (preço, cliente reclamando de cadastro, complexidade), me conta que eu vejo se o Raffros resolve melhor.',o:[['Satisfeita','otherOk'],['Reclamou de algo','otherBad']]},
+otherOk:{t:'Satisfeita com o atual',g:'Não gastar tempo. Prioridade baixa.',d:['Agradeça e deixe contato.','Registre o sistema que ela usa.','Revisite em 90 dias.'],
+ m:'Ótimo, então não vou te tirar do que funciona. Se um dia quiser comparar, é só me chamar!',o:[['Voltar ao início','root']]},
+otherBad:{t:'Tem reclamação do atual',g:'Mostrar que o seu resolve aquele ponto específico, sem prometer o que não existe.',d:['Mostre apenas o ponto que ela citou.','Cuidado com migração: [VERIFICAR] se há importação de clientes.','Sugira rodar em paralelo, só com clientes novas.'],
+ m:'Entendi, esse ponto realmente incomoda. Posso te mostrar como ficaria no Raffros só essa parte? Dá pra testar em paralelo, sem desmontar o que você já tem.',o:[['Aceitou ver','demoOffer']]},
+wa:{t:'"Eu marco tudo pelo WhatsApp"',g:'Respeitar o hábito e quantificar o custo escondido.',d:['Valide: funciona mesmo.','Pergunte quantas mensagens de "tem horário?" por dia.','Posicione como um caminho a mais para clientes novas, sem substituir o WhatsApp.'],
+ m:'Faz sentido, o WhatsApp funciona. A ideia não é te tirar dele, é a cliente nova não depender de você responder na hora. Quantas mensagens de "tem horário?" chegam por dia, mais ou menos?',o:[['Muitas / incomoda','demoOffer'],['"Poucas, tá ótimo"','semdor']]},
+no:{t:'Sem interesse',g:'Sair bem. A reputação vale mais que uma venda.',d:['Não insista.','Pergunte, uma vez, se é falta de momento ou falta de necessidade.','Peça permissão para recontato.'],
+ m:'Tranquilo, obrigado por responder! Só por curiosidade: é questão de momento ou a agenda não é um problema aí? Se for momento, posso te chamar daqui a 30 dias?',o:[['Disse que é momento','semdor'],['Disse que não precisa','fim']]},
+demo:{t:'Viu a demonstração e não fechou',g:'Descobrir a dúvida real e reduzir o próximo passo.',d:['Pergunte o que ficou pendente.','Ofereça o menor passo possível: 3 serviços, 1 semana.','Se for preço ou medo, use o manual de objeções.'],
+ m:'Depois que você viu a página, ficou alguma dúvida? Se quiser, ativo o teste de 7 dias hoje, deixo tudo configurado e você só decide depois de ver funcionando com clientes reais.',o:[['Disse sim','trial'],['Tem objeção específica','objs'],['Sumiu','ghost']]},
+ghost:{t:'Teve interesse e sumiu',g:'Reativar sem cobrar, com um motivo real para falar.',d:['Espere 3–5 dias.','Volte com um gancho real (feriado, semana cheia, algo do perfil dela).','Faça uma pergunta de sim/não.','No máximo 2 reativações.'],
+ m:'Oi, [Nome]! Lembrei de você por causa da [semana cheia/feriado]. Ainda faz sentido testar a agenda online ou o momento mudou? Pode ser sincera, me ajuda a entender.',o:[['Respondeu','pos'],['Sem resposta','fim']]},
+objs:{t:'Há uma objeção',g:'Entender a preocupação real e responder com honestidade.',d:['Abra o Manual de objeções, ache a frase dela e use a resposta.'],m:'',o:[['Ir para o Manual de objeções','@obj'],['Voltar ao início','root']]}
+};
+
+/* ========= MESSAGE LIBRARY ========= */
+const ML=[
+{k:'A',nome:'A. Primeiro contato',itens:[
+ ['Manicure autônoma (Instagram)','Oi, [Nome]! Vi seu trabalho no Instagram, ficou muito bonito o [detalhe real de um post]. Uma curiosidade: quando uma cliente nova quer marcar, ela chama no direct/WhatsApp e você responde os horários na mão, ou ela já escolhe sozinha?','Abrir conversa com uma pergunta sobre o processo dela, sem pitch.','Pergunta fácil faz ela falar da própria rotina; nada para ela rejeitar. O elogio PRECISA ser real: olhe 3 posts antes.'],
+ ['Dona de salão','Oi, [Nome], boa tarde! Sou [Seu nome], aqui da região de [Bairro]. Estou conversando com donas de salão sobre como organizam a agenda da equipe: cada profissional marca no próprio WhatsApp ou existe uma agenda central? Pergunto porque desenvolvi uma ferramenta pra isso e queria ouvir como funciona aí antes de mostrar qualquer coisa.','Entender a complexidade da agenda de equipe e abrir espaço para demonstração.','Posiciona você como alguém que escuta; o assunto (agenda da equipe) é um problema típico de quem tem mais de uma profissional.'],
+ ['Profissional que atende em casa','Oi, [Nome]! Vi que você atende em casa 😊 Como você faz pra não marcar duas clientes uma em cima da outra e pra lembrar quem confirmou? Montei uma agenda em que a cliente escolhe o horário por um link e ele já fica bloqueado pra você. Posso te mostrar em 2 minutos?','Mostrar relevância pro cenário dela (sem recepção, sem sistema).','Fala do problema específico de quem atende sozinha em casa. Cuidado: nunca exponha o endereço dela em página pública sem ela pedir.'],
+ ['Barbearia','Fala, [Nome]! Passei no perfil da [Negócio], os cortes tão muito bons. Vocês marcam tudo no WhatsApp ou tem alguma agenda? Tô testando um sistema onde o cliente marca sozinho pelo link da bio e dá pra pedir sinal de quem costuma furar. Se quiser, te mando uma página de exemplo com o nome de vocês.','Abrir conversa com barbearia mencionando as duas dores (agenda e furo).','Barbearias costumam lidar com horário no dia e faltas; o gancho do "furo" tende a ser forte. Hipótese minha, teste.'],
+ ['Quem já tem sistema','Oi, [Nome]! Vi que você já tem link de agendamento na bio, bacana. Tá satisfeita com ele? Não vou querer te convencer a trocar do nada, mas se algum dia algo te incomodar (preço, cliente reclamando do cadastro, complexidade), me chama que eu mostro uma opção mais simples.','Descobrir satisfação sem atacar o concorrente.','Reclamações reais viram abertura; satisfação real = prioridade baixa. Não gaste follow-up demais aqui.'],
+ ['Pessoalmente (balcão)','Oi, tudo bem? Sou [Seu nome], estou conversando com profissionais da região sobre agenda online pra manicure/salão. Posso te fazer duas perguntas rápidas? Não vou tomar mais de 2 minutos e, se fizer sentido, te mostro no meu celular com o nome do seu salão.','Pedir 2 minutos de atenção presencialmente.','Pedido pequeno e honesto de tempo. Evite horário de pico de atendimento; se ela estiver ocupada, deixe um cartão/QR e volte.']]},
+{k:'B',nome:'B. Durante a conversa',itens:[
+ ['Despertar curiosidade','Uma coisa que percebi falando com outras profissionais: o que mais come tempo não é o atendimento, é o "tem horário amanhã?" repetido várias vezes por dia. Isso acontece aí também?','Provocar identificação com um problema comum.','ATENÇÃO: só use a frase "falando com outras profissionais" quando for verdade. Se ainda não conversou com ninguém, troque por "imagino que…".'],
+ ['Identificar problemas (4 perguntas)','1) Onde ficam anotados os horários hoje?\n2) Quantas vezes por semana alguma cliente falta ou desmarca em cima da hora?\n3) Quanto vale, em média, um horário vago?\n4) Quanto tempo por dia você gasta respondendo horário por mensagem?','Obter números dela para depois usar no fechamento.','Os próprios números dela são o melhor argumento: você não precisa inventar estatística.'],
+ ['Apresentar o Raffros','Entendi. O que eu montei resolve justamente isso: você coloca um link na bio, a cliente escolhe serviço e horário sozinha, só aparecem horários livres e o horário já fica reservado na sua agenda. Se você quiser, também dá pra pedir um sinal pra garantir o horário. Quer ver como ficaria com o seu nome? Eu monto e te mando.','Conectar a dor dela a uma solução simples.','Fala de resultado, não de tecnologia. Só mencione sinal por Pix depois de TESTAR o Pix de ponta a ponta.'],
+ ['Oferecer demonstração','Posso te mostrar de duas formas: eu te mando uma página de exemplo agora e você olha com calma, ou fazemos uma chamada rápida de 10 min e eu configuro junto com você. Qual fica melhor?','Dar escolha entre assíncrono e ao vivo.','Escolha entre duas opções é mais fácil de aceitar que um "quer ver?" aberto.'],
+ ['Apresentar preços','O plano pra quem atende sozinha é R$ [CONFIRMAR]/mês, e com equipe (até 10 profissionais) R$ [CONFIRMAR]/mês. Tem 7 dias de teste. [CONFIRMAR: fidelidade/cancelamento]. Pra comparar: é menos que uma mão de manicure no mês.','Informar preço com transparência e ancorar em algo que ela conhece.','O dossiê tem preços inconsistentes (R$27–49 e R$77–89). Defina a tabela final antes de enviar. A faixa de R$30–55 por manicure (mão) vem de um blog da InfinitePay, não é dado oficial.']]},
+{k:'C',nome:'C. Follow-up',itens:[
+ ['Após 24h sem resposta','Oi, [Nome]! Sei que a rotina é corrida. Montei aqui como ficaria uma página de agendamento com seus serviços, só pra você olhar quando puder: [Link]. Se não fizer sentido, me avisa que eu paro por aqui 🙂','Voltar com algo de valor, não só "viu minha mensagem?".','Dar algo palpável (página) aumenta a chance de resposta; oferecer saída reduz sensação de pressão.'],
+ ['Após 48h','Imagino que a semana esteja corrida! Só uma pergunta rápida: pra você faz sentido ter agendamento online ou hoje o WhatsApp resolve bem? Qualquer resposta me ajuda.','Obter um sim/não simples.','Pergunta binária é fácil; "qualquer resposta me ajuda" tira o peso de recusar.'],
+ ['Após 3 dias (última)','Vou encerrar por aqui pra não incomodar. Deixo o link da página de exemplo: [Link]. Se a agenda um dia virar dor de cabeça, é só me chamar 🙂','Fechar o ciclo com respeito.','Despedida honesta gera respostas tardias e preserva a reputação. Depois dela, não mande mais nada.'],
+ ['Após demonstração sem fechamento','Oi, [Nome]! Depois que você viu a página, ficou alguma dúvida? Se quiser, ativo o teste de 7 dias hoje, deixo tudo configurado e você só decide depois de ver funcionando com clientes reais.','Descobrir a dúvida e reduzir o próximo passo.','Pergunta aberta + risco baixo (teste assistido).'],
+ ['Interesse e sumiu','Oi, [Nome]! Lembrei de você porque [gancho real: semana cheia / feriado / algo do perfil dela]. Ainda faz sentido testar a agenda online ou o momento mudou? Pode ser sincera, isso me ajuda a entender.','Reativar com motivo real.','Dar licença para dizer "não" costuma gerar resposta. Máximo 2 reativações.']]},
+{k:'D',nome:'D. Fechamento',itens:[
+ ['Interessada, mas indecisa','Que tal começar pequeno? A gente cadastra só 3 serviços e você testa com uma cliente nova essa semana. Eu configuro tudo. Se não fizer sentido, você sabe antes de pagar.','Reduzir o tamanho da decisão.','Um "sim pequeno" é mais fácil que um "sim ao sistema". [CONFIRMAR] política de cobrança após o teste antes de enviar.'],
+ ['Achou caro','Entendo. Posso te perguntar como você está olhando? É o valor em si ou você ainda não tem certeza de que vai render? Pra ter uma ideia: se evitar uma falta por mês de um serviço de R$ [valor dela], já se pagou. Mas se hoje você quase não tem falta nem perde tempo com agenda, faz sentido esperar mesmo.','Separar preço de valor percebido, com honestidade.','Usar o valor do serviço DELA e admitir quando não faz sentido gera confiança. Não dê desconto na primeira reação.'],
+ ['Quer pensar','Claro! Pra eu te ajudar a decidir: o que você ainda quer ter certeza? (a) se as clientes conseguem usar, (b) se vale o valor, (c) se dá trabalho configurar. Se for o (a), testa com 2 clientes por 7 dias, eu te ajudo.','Descobrir a dúvida escondida atrás do "vou pensar".','Dar 3 opções facilita a resposta e mostra que existe uma solução para cada uma.'],
+ ['Quer testar antes','Perfeito, é o melhor jeito. Eu monto sua conta com seus serviços e horários, você usa 7 dias com clientes reais e decide. Preciso só da lista de serviços com preço e tempo, seus horários de atendimento e sua logo/foto.','Transformar o pedido em ação imediata.','Responder "sim" rápido e pedir os dados já converte interesse em compromisso.'],
+ ['Precisa falar com outra pessoa','Faz sentido. Quer que eu mande um resumo de 5 linhas e a página de exemplo pra você mostrar? Ou faço uma chamada de 10 min com vocês duas.','Dar material e acesso à pessoa que decide.','Você vende para quem decide, sem passar por cima da que te atendeu.']]}
+];
+
+/* ========= OBJECTIONS ========= */
+const OB=[
+{q:'"Eu já anoto tudo no WhatsApp."',pensa:'Funciona pra mim, não quero mudar o que já dá certo.',nao:'"Isso é amador" / "você perde cliente assim".',como:'Valide, não tente tirá-la do WhatsApp. Posicione como caminho EXTRA para clientes novas e quantifique o tempo gasto.',m:'Faz sentido, o WhatsApp funciona mesmo. A ideia não é te tirar dele, é a cliente nova não depender de você responder na hora. Quantas mensagens de "tem horário?" chegam por dia, mais ou menos?',prox:'Pegue o número; se for alto, ofereça página de exemplo. Se for baixo, aceite e arquive.'},
+{q:'"Não preciso de sistema."',pensa:'Não vejo problema grande; isso é mais uma coisa.',nao:'Listar funções ou insistir que ela "precisa".',como:'Pergunte o que mais dá trabalho hoje. Se ela não tem dor, aceite.',m:'Entendo! Posso perguntar só uma coisa: hoje, o que mais te dá trabalho na agenda, se é que dá algum?',prox:'Se citar algo (faltas, horário cruzado, tempo), retome a árvore em "qualificação". Se não, agradeça e agende recontato.'},
+{q:'"Já tenho agenda."',pensa:'Já resolvi isso (caderno/app).',nao:'Falar mal do que ela usa.',como:'Reconheça o hábito e pergunte o que a agenda atual NÃO faz — normalmente: cliente marcar sozinha.',m:'Ótimo, então você já tem o hábito! Só pra eu entender: sua agenda atual deixa a cliente marcar sozinha ou você ainda precisa responder cada pedido?',prox:'Se "preciso responder", mostre a página pública com o nome dela. Se "já marca sozinha", veja a objeção "já uso outro aplicativo".'},
+{q:'"Está caro."',pensa:'Não tenho certeza de que vale ou meu caixa está apertado.',nao:'Dar desconto imediato ou comparar com concorrentes.',como:'Pergunte se é o valor ou a dúvida de retorno. Use os números dela e compare com um serviço dela.',m:'Entendo. É o valor em si ou você ainda não tem certeza de que vai render? Se evitar uma falta por mês de um serviço de R$ [valor dela], ele já se pagou. Mas se hoje você quase não tem falta nem perde tempo com agenda, faz sentido esperar.',prox:'Proponha teste de 7 dias; se o problema for caixa, ofereça retornar em 30 dias.'},
+{q:'"Não sei mexer com tecnologia."',pensa:'Vou me atrapalhar e perder tempo.',nao:'"É super fácil, qualquer um faz!"',como:'Mostre que VOCÊ configura e que ela só precisa mandar informações.',m:'Se você usa Instagram e WhatsApp, você usa isso. E eu configuro tudo: você só me manda seus serviços e preços. Se travar, me chama direto.',prox:'Marque a configuração em 10–15 min por chamada e mostre o resultado no celular dela.'},
+{q:'"Minhas clientes não utilizariam isso."',pensa:'Minhas clientes preferem falar comigo.',nao:'Afirmar que "todo mundo usa".',como:'Concorde que algumas preferem chamar; é um caminho a mais, não o único. Sugira testar com as novas.',m:'Pode ser, algumas clientes preferem chamar mesmo. Por isso o link é um caminho a mais: quem chama no WhatsApp continua sendo atendida e você lança na agenda também. Dá pra testar só com as clientes novas do Instagram?',prox:'Proponha teste de 7 dias só com clientes novas; peça um story avisando o link.'},
+{q:'"Vou pensar."',pensa:'Tenho uma dúvida que ainda não disse, ou só quero sair da conversa.',nao:'"Mas por que precisa pensar?" ou "a promoção acaba".',como:'Ajude ela a pensar: descubra a dúvida e combine data para retorno.',m:'Claro! Pra eu te ajudar a decidir: o que você ainda quer ter certeza? (a) se as clientes conseguem usar, (b) se vale o valor, (c) se dá trabalho configurar.',prox:'Anote a resposta e combine "te chamo na quinta?". Se ela não disser a dúvida, mande a página de exemplo e programe follow-up.'},
+{q:'"Agora não tenho interesse."',pensa:'Não é prioridade ou estou ocupada.',nao:'Insistir ou voltar na semana seguinte.',como:'Agradeça, pergunte se é momento ou necessidade, peça permissão para falar em 30 dias.',m:'Tranquilo, obrigado por responder! Só por curiosidade: é questão de momento ou a agenda não é problema aí? Se for momento, posso te chamar daqui a 30 dias?',prox:'Registre no CRM com a data. Respeite o "não".'},
+{q:'"Não tenho tempo para aprender."',pensa:'Não consigo parar para aprender coisa nova.',nao:'"É rapidinho".',como:'Elimine o esforço dela: você faz a configuração.',m:'Por isso eu configuro pra você. Você só me manda a lista de serviços e horários e eu deixo pronto. Você aprende vendo funcionar com as suas clientes.',prox:'Peça os dados por áudio ou foto da tabela de preços e agende a configuração.'},
+{q:'"Tenho medo de pagar e não conseguir usar."',pensa:'Já paguei por coisa que não usei.',nao:'Prometer garantia que você não pode cumprir.',como:'Reduza o risco: teste sem pagar, configuração assistida, suporte direto. [CONFIRMAR] política de cobrança e cancelamento.',m:'Entendo, por isso o primeiro passo é o teste de 7 dias com configuração assistida: você usa com clientes reais antes de decidir. [CONFIRMAR: como funciona a cobrança ao fim do teste]. E se travar em algo, me chama direto.',prox:'Seja claro sobre o que acontece no dia 8 (cartão? cancela sozinho?).'},
+{q:'"Depois eu vejo."',pensa:'Não quero me comprometer agora.',nao:'Aceitar e não registrar nada (você nunca mais fala com ela).',como:'Peça permissão para uma data de retorno concreta e deixe algo útil.',m:'Combinado! Pra eu não esquecer nem te incomodar: posso te chamar daqui a 15 dias? Enquanto isso, deixo a página de exemplo aqui: [Link].',prox:'Registre data de follow-up no CRM.'},
+{q:'"Já uso outro aplicativo."',pensa:'Já tenho; trocar dá trabalho.',nao:'Criticar o concorrente ou prometer migração que o produto não faz.',como:'Pergunte o que ela mais e menos gosta. [VERIFICAR] se existe importação de clientes antes de falar em migrar.',m:'Legal que você já usa um! Tá satisfeita? Se algum ponto incomoda (preço, cadastro da cliente, complexidade), me conta que eu vejo se o Raffros resolve melhor. Dá pra testar em paralelo sem desmontar nada.',prox:'Se satisfeita, arquive. Se reclamou, mostre só o ponto específico.'}
+];
+
+/* ========= SIMULATED CHATS ========= */
+const SIMS=[
+{t:'Manicure autônoma — caminho feliz',c:[['me','Oi, Jéssica! Vi seu trabalho no Instagram, ficou lindo o nail art de flores do último post. Uma curiosidade: quando uma cliente nova quer marcar, ela chama no direct e você responde os horários na mão, ou já escolhe sozinha?'],['her','Oi! Obrigada 😍 chama no direct mesmo, eu respondo quando consigo'],['cm','✔ Resposta ao elogio real. Agora aprofunde a dor, sem link.'],['me','Imagino que quando você tá com cliente é difícil responder né. Já aconteceu de perder cliente nova porque demorou a responder?'],['her','Já sim, às vezes a pessoa nem volta 😕 E ainda tem as que marcam e não aparecem'],['cm','✔ Duas dores reais. Agora qualifique números.'],['me','Quantas faltas, mais ou menos, por semana? E quanto vale um horário seu?'],['her','Umas 2 por semana. Mão e pé tá R$ 90'],['me','Então são uns R$ 180 por semana que ficam vazios. O que eu montei resolve isso: um link na bio, a cliente escolhe o horário sozinha, e dá pra pedir um sinal pra segurar o horário. Quer ver como ficaria com o seu nome? Eu monto e te mando.'],['her','Quero sim!'],['cm','✔ Ela falou os números; você apenas somou. [VERIFICAR] sinal por Pix antes de prometer.']]},
+{t:'Barbearia — pediu preço logo no começo',c:[['me','Fala, Marcos! Passei no perfil da barbearia, os cortes tão muito bons. Vocês marcam tudo no WhatsApp ou tem alguma agenda?'],['her','Quanto custa o sistema?'],['cm','✔ Pediu preço: responda direto e volte à conversa. Esconder o preço gera desconfiança.'],['me','Pra barbearia com equipe o plano é R$ [CONFIRMAR]/mês, com 7 dias de teste; sozinho é R$ [CONFIRMAR]. Antes de você decidir qualquer coisa: posso te mandar uma página de exemplo com o nome de vocês? Aí você vê se faz sentido pra rotina daí.'],['her','Pode mandar'],['me','Mando hoje à tarde. Só pra eu caprichar: vocês têm problema com cliente que marca e não aparece?'],['her','Todo dia kkk'],['cm','✔ A dor apareceu depois do preço, e tudo bem.']]},
+{t:'Dona de salão — já usa outro app',c:[['me','Oi, Renata! Vi que o salão já tem link de agendamento na bio. Tá satisfeita com ele?'],['her','Uso o X há 2 anos. Tá ok'],['me','Legal! E o que você mais gosta nele? E o que menos gosta?'],['her','Gosto da agenda. Não gosto que a cliente tem que baixar o app pra marcar'],['cm','✔ Reclamação real. Não critique o concorrente; mostre só esse ponto.'],['me','Entendi, isso é chato mesmo pra quem só quer marcar um horário. No Raffros a cliente marca pelo link, sem baixar nada e sem criar senha. [CONFIRMAR em teste real]. Quer que eu te mande um exemplo só dessa parte?'],['her','Pode ser, mas não vou trocar agora'],['me','Sem pressão! Te mando e você olha quando quiser. Se um dia quiser testar em paralelo, é só falar.'],['cm','✔ Resultado: lead morno para follow-up em 30 dias. Não force a troca.']]},
+{t:'Interesse e sumiu — reativação',c:[['me','Oi, Camila! Lembrei de você porque amanhã é feriado e imagino que a agenda esteja cheia. Ainda faz sentido testar a agenda online ou o momento mudou? Pode ser sincera, me ajuda a entender.'],['her','Oi! Nossa, sumi né 😅 Tô com a agenda lotada mesmo, mas queria ver sim depois do feriado'],['me','Combinado! Te chamo na terça, pode ser? Enquanto isso deixo a página de exemplo aqui: [Link]'],['cm','✔ Data combinada. Registre no CRM.']]}
+];
+
+/* ========= PRODUCT ========= */
+const FEAT=[
+['Página pública + link na bio (agendamento em 4 passos)','Cliente nova chama no direct perguntando horário e a profissional demora a responder.','"A cliente marca sozinha enquanto você atende."','Mostrar a página dela no celular dela.','Dossiê é barbearia-cêntrico (CorteFlow, "barbeiro", "cadeira"). Ajuste exemplos e fotos para manicure/salão.'],
+['Só horários livres (duração + intervalo/buffer + almoço + bloqueios)','Dois agendamentos no mesmo horário; tempo de preparação ignorado.','"Nunca mais marcar dois no mesmo horário."','Agendar ao vivo e ver o horário sumir.','[VERIFICAR] no código/produção; o dossiê afirma, não prova.'],
+['Sinal anti-furo (configurável)','Faltas e desmarcações em cima da hora.','"Quem paga sinal aparece."','Configuração do sinal + cliente pagando.','Exige Stripe Connect (onboarding da profissional). Dossiê cita "PIX ou Cartão": teste Pix de ponta a ponta. Pode afastar cliente nova; sugira começar com "pagar no local" e ativar o sinal depois. Cielo: pode cobrar taxa de falta se informar antes da confirmação.'],
+['Portal da cliente (reagendar/cancelar sozinha)','Remarcar por mensagem toma tempo.','"A cliente remarca sozinha; você não precisa responder."','Cliente remarcando pelo link.','"Sem senha, acessível pelo telefone": risco de privacidade se qualquer um digitar um número e ver agendamentos. [VERIFICAR] se há confirmação (SMS/código).'],
+['CRM automático + WhatsApp em 1 clique + notas','Perder o histórico da cliente; esquecer preferências.','"Cada cliente que marca já vira ficha."','Ficha com histórico e notas.','CRM só é alimentado por agendamentos; [VERIFICAR] importação de lista de clientes. Aniversário é campo, não mensagem automática.'],
+['Financeiro + comissões + acesso por nível (Minha Comissão)','Dona de salão não sabe quanto cada profissional gerou.','"Cada profissional vê só o que é dela."','Tela de comissão (só para salão com equipe).','Irrelevante para a manicure autônoma; use só com salões.'],
+['Identidade visual (3 presets + paleta própria)','Página genérica sem "a cara" do negócio.','"Sua página, sua marca."','Trocar cores/logo ao vivo.','Presets são "Barbearia Clássica", "Noir" e "Claro": falta um visual feminino/nail pronto. Paleta própria resolve; considere um preset.'],
+['Gerador de página demo (Super Admin)','Falta de prova antes de comprar.','"Já montei a sua para você ver."','Link com o nome dela.','Principal ARMA de vendas segundo o dossiê. Rotule como "demonstração"; use só dados públicos; apague se pedirem.']
+];
+const VERIF=[
+'Fazer um cadastro completo como se fosse uma manicure (do zero ao link na bio) e cronometrar.',
+'Agendar como cliente pelo celular (Android e iPhone) e ver cair na agenda do admin.',
+'Testar sinal/entrada por Pix e por cartão com uma conta Stripe Connect real do Brasil.',
+'Confirmar se o portal da cliente protege agendamentos (código/validação) ou se o telefone basta.',
+'Confirmar o que acontece ao fim dos 7 dias: pede cartão antes? cancela sozinho? cobra automático?',
+'Definir tabela única de preços (dossiê: R$27–49 e R$77–89) e limites por plano.',
+'Verificar se existe importação de clientes (CSV) ou se a base só nasce de agendamentos.',
+'Conferir se há lembrete/confirmação AUTOMÁTICA para a cliente (dossiê indica botão que abre WhatsApp, não envio automático).',
+'Trocar "barbeiro/cadeira" por termos neutros ou configuráveis (manicure/profissional/horário).',
+'Criar 2 páginas-exemplo de manicure e 1 de salão para mostrar hoje, sem fotos de terceiros sem permissão.',
+'Definir como você dá suporte (WhatsApp direto? horário?) e escrever isso na mensagem de onboarding.'
+];
+const RISCOS=[
+['Marca e linguagem','Nome "CorteFlow", presets e exemplos do dossiê falam de barbearia; seu público-alvo inicial é manicure/salão.'],
+['Sem lembrete automático','Dossiê só descreve um botão que abre o WhatsApp com mensagem pronta (a cliente envia ao salão). Lembrete automático aparece como futuro upsell. Fornecedores concorrentes vendem lembrete automático como benefício central; a empresa russa de call center relatou que a conversão veio de online-booking + SMS de lembrete. Não prometa o que não existe.'],
+['Pix e Stripe Connect','Cobrar sinal exige cadastro da profissional na Stripe. Para autônoma, é atrito. Teste e documente os passos.'],
+['Preço inconsistente','Dossiê: Starter R$27 ou R$27–49; Growth R$77 ou R$89. Defina uma tabela antes de abordar.'],
+['Números do dossiê não comprovados','"Até 30% do faturamento perdido", "menos de 45 s", "se paga em 3 dias", "95% mobile", "100% validada": não use em vendas sem dados seus. Use os números da própria cliente.'],
+['Comparativo com Booksy/Trinks','Afirmações sobre concorrentes (taxas abusivas, tela poluída) não foram verificadas. Não use em conversa; evite risco de desinformação.'],
+['Privacidade (LGPD) e portal sem senha','Se o telefone basta para ver agendamentos, qualquer pessoa pode ver dados alheios. Verifique antes de vender.'],
+['Migração','Quem tem base de clientes quer levá-la. Sem importação, só dá para começar com clientes novas (rodar em paralelo).'],
+['7 dias de teste','Cliente de manicure volta em ciclos de 7–20 dias (afirmação de blog de concorrente). 7 dias podem não cobrir um ciclo; considere 14 dias para quem você configurar.'],
+['Não traz clientes novas','Raffros organiza a agenda; não tem marketplace. É vantagem (não mostra concorrentes) e limite (não gera demanda). Diga isso com clareza.'],
+['Prova social zero','Você não tem depoimentos. Venda com demonstração personalizada e teste assistido; peça permissão para depoimento após o primeiro resultado real.']
+];
+
+/* ========= SOURCES ========= */
+const FONTES=[
+['Indie Hackers — "Indie hackers share how they got their first 10, 100, and 1,000 customers"','https://www.indiehackers.com/post/indie-hackers-share-how-they-got-their-first-10-100-and-1-000-customers-620ce768ba','r','Relatos curtos de fundadores. Marek Piechut: primeiros 10 clientes por vendas diretas (telefone e visitas de carro); ~40 seguintes por indicação e algum Instagram; SEO, anúncios e estande "não levaram a lugar nenhum". Slay.so: primeiros 10 pela rede de clientes e conhecidos da esposa, no primeiro mês.','Visita presencial + indicação; ceticismo com canais escaláveis no começo.'],
+['Indie Hackers — "If you had a B2B SaaS with 0 customers today, how would you get the first 10?"','https://www.indiehackers.com/post/if-you-had-a-b2b-saas-with-0-customers-today-how-would-you-get-the-first-10-e733c4b8e1','o','Respostas de usuários (maioria opinião; alguns relatos). Pontos recorrentes: escolher um tipo de cliente, contato pessoal com 30–50 pessoas, onboarding manual, "migração grátis" como porta de entrada, vídeo curto em vez de texto, cold email em lista raspada com retorno zero (relato de uma pessoa). Página protegida contra leitura automática; usei apenas o trecho visível na busca.','Onboarding assistido (concierge) e personalização; volume de 30–50 contatos.'],
+['Indie Hackers — "How did you get your first customers?"','https://www.indiehackers.com/post/how-did-you-get-your-first-customers-0116a1c4a7','r','Comentários. Um fundador brasileiro (SaaS para marketing no WhatsApp/Telegram) cita oferta direta a freelancers como forma de chegar aos primeiros 10; outro relata DM a pequenos negócios do Instagram com versão gratuita e suporte gratuito. "Os primeiros clientes vêm de conversa direta".','Instagram DM com oferta de ajuda + suporte.'],
+['Indie Hackers — "I built a SaaS in 10 days… 0 paying customers"','https://www.indiehackers.com/post/i-built-a-saas-in-10-days-3-weeks-live-0-paying-customers-heres-the-data-7cb6b6accf','o','Fundador com 0 clientes após ~10 DMs. Comentaristas dizem que 10 DMs é amostra insuficiente e que as primeiras respostas costumam aparecer entre 50–100 aberturas personalizadas (opinião de comentarista, não dado verificado).','Calibra expectativa: volume mínimo antes de concluir que "não funciona".'],
+['Hacker News — "Ask HN: How do you get first 10 customers?"','https://news.ycombinator.com/item?id=44544542','o','Discussão: ICP muito específico, lista de ~10 nomes reais, usar rede de contatos, chamar quem já testou. Majoritariamente opinião.','Comece por quem já te conhece.'],
+['Call center (Rússia) — "Холодные звонки для CRM-системы в салонах красоты: кейс и результаты"','https://zvonki-i-prodazhi.ru/nash-opyt-crm-salony-krasoty','v','Caso publicado por empresa de telemarketing (vende o serviço): 12.986 ligações, 1.725 cadastros no CRM (~13%), 334 propostas, 4.977 recusas, 2.211 sem atender. Maior objeção: "já temos um programa". A conversão veio principalmente da demonstração de agendamento online e lembretes por SMS. São CADASTROS, não clientes pagantes, e é auto-reportado por fornecedor.','Dor de salão: agendamento online + lembrete; objeção dominante é "já tenho programa".'],
+['T-Journal (Rússia) — "Как искать клиентов: способы привлечения новых клиентов"','https://t-j.ru/list/free-clients/','o','Autor relata que sua conversão de outreach direto chegou a 50% de respostas em período bom (afirmação individual, não verificada, não específica de beleza). Sugere trocas de divulgação entre negócios vizinhos (ex.: salão e academia).','Parcerias locais como canal de indicação (hipótese).'],
+['Zhihu (China) — "美业saas软件分析对比（一）"','https://zhuanlan.zhihu.com/p/385657702','v','Análise de terceiro (2021) sobre SaaS de beleza: o líder analisado tentou entrar pelo cliente final, "não funcionou", e voltou ao B2B com equipe de vendas e parceiros de canal; tentou "地推" (promoção presencial) e depois mudou para produto + canal. Dados de clientes e preços do próprio relato; não verificados.','Presencial e parceiros de canal existem na China, mas exigem equipe; não é seu caso agora.'],
+['Casa do Dev — "Os primeiros 10 clientes do seu SaaS: roteiro de 2026"','https://casado.dev/startups/primeiros-10-clientes-saas-roteiro-comunidade-2026','o','Artigo que cita relatos recentes (de segunda mão): maratona de 30 dias com volume pequeno e medição diária (19 e-mails, 10 DMs, 5 conexões no 1º dia, resultados modestos); teste de depósito com 12 pessoas em que 11 elogiaram e nenhuma pagou.','Elogio ≠ compra: peça um compromisso real (teste/pagamento).'],
+['YC — "Squire is OpenTable for Barbershops"','https://www.ycombinator.com/blog/squire','v','Entrevista com os fundadores: as barbearias gostavam do produto, mas usavam o app só para os clientes que ele trazia e o sistema antigo para o resto.','Adoção parcial: garanta que a cliente use o Raffros como agenda PRINCIPAL.'],
+['TechCrunch — Mangomint','https://techcrunch.com/2024/09/06/how-a-cold-email-to-a-vc-helped-salon-software-startup-mangomint-raise-35m','v','Mangomint atende principalmente SMBs de salão/spa com 5+ profissionais. Mostra que players maiores miram salões maiores; solo e micro ficam para outros.','Autônoma é nicho de alto volume e baixo ticket; salão com equipe tem ticket maior.'],
+['Cielo — "No-show: como evitar que seus clientes faltem"','https://blog.cielo.com.br/?p=21367','v','Informa que é permitido cobrar taxa de reserva ou multa por falta, desde que o cliente seja avisado antes de confirmar o agendamento. Conteúdo de empresa que vende pagamento.','Base para falar de sinal sem prometer o que a lei não diz.'],
+['Sebrae PE — "Tatuadores e designers de sobrancelhas: como evitar o no-show"','https://sebrae.com.br/Sebrae/Portal%20Sebrae/UFs/PE/Anexos/Tatuadores-e-designers-de-sobrancelhas-saiba%20-como-evitar-o-temido-no-show.pdf','o','Material do Sebrae PE: no-show é problema recorrente em beleza; sugere adiantamento percentual e agendamento online com lembretes.','Fonte institucional para a dor "falta".'],
+['Rede Negócio — "Prospecção ativa pelo WhatsApp sem spam"','https://redenegocio.com.br/blog/prospeccao-ativa-whatsapp-sem-spam','o','Defende poucas tentativas para contato frio, horário comercial, origem do número documentada e menção à LGPD (finalidade, origem, opção de parar).','Limites e cuidados no contato frio.'],
+['Disparo em Massa — "Como prospectar clientes pelo WhatsApp (2026)"','https://disparoemassa.com.br/blog/como-prospectar-clientes-pelo-whatsapp','v','Guia de fornecedor: comece com 10–20 conversas novas/dia e aumente em 3–4 semanas; mensagem de 4–5 linhas, sem link no primeiro contato. Recomendação de mercado, não evidência de conversão.','Teto de volume no WhatsApp.'],
+['Digisac / ActiveCampaign / respond.io — banimento de WhatsApp','https://www.digisac.com.br/blog/whatsapp-bloqueado-por-denuncias','v','Fornecedores explicam que bloqueios e denúncias de usuários aumentam risco de restrição ou banimento; mensagens sem consentimento e em massa são fatores.','Por que cold WhatsApp deve ser pequeno, personalizado e com saída fácil.'],
+['Agendali — "Agendamento online para manicure e pedicure"','https://agendali.com.br/blog/agendamento-online-manicure-pedicure/','v','Blog de concorrente: sugere postar horários toda segunda com o link; afirma que manicures que fazem isso relatam agenda cheia (não verificado).','Ideia de uso para onboarding: story semanal com horários.'],
+['InfinitePay — "Tabela de preço manicure"','https://www.infinitepay.io/blog/tabela-de-preco-manicure','o','Blog: em 2026, manicure simples (mão) varia entre R$30 e R$55 na maior parte do Brasil.','Ancoragem de preço (faixa citada por blog, não oficial).']
+];
+const LACUNAS=[
+'Reddit: as buscas não devolveram threads de fundadores de software para beleza com relatos de 1ª pessoa e números. Não inventei nenhum. Para completar, busque manualmente em r/SaaS, r/startups, r/Entrepreneur e r/smallbusiness por "salon software first customers".',
+'Fóruns/comunidades chinesas: só achei análises de mercado e artigos genéricos de operação de SaaS. Nenhum relato verificável de primeiros clientes para agenda de beleza.',
+'Comunidades russas: um caso de call center (fornecedor) e um artigo de opinião. Nada de fundador de SaaS contando seus primeiros 10 clientes na beleza.',
+'Comunidades brasileiras de beleza (grupos de Facebook/WhatsApp de manicures e donas de salão): o que apareceu foi principalmente blog de concorrente. Nada primário.',
+'Taxas de conversão de DM/WhatsApp para SaaS de beleza no Brasil: não encontrei dado confiável. Os números do plano de 30 dias são pressupostos para você testar.',
+'Algumas páginas bloquearam a leitura automática; nesses casos usei só o trecho da busca e indiquei.'
+];
+
+/* ========= RENDERERS ========= */
+const DAILY=[
+['Preparação (30 min)',['Abrir o CRM e ver os follow-ups de hoje','Listar 25 novos leads (Maps/Instagram) e dar score','Escolher os 15–20 melhores (nota A/B)']],
+['Primeiros contatos (60 min)',['Olhar 3 posts de cada lead antes de escrever','Enviar 15–20 mensagens personalizadas (sem copiar e colar)','Registrar cada contato no CRM']],
+['Conversas e respostas (45 min)',['Responder TODAS as respostas em até 1h (horário comercial)','Fazer perguntas de dor, não de venda','Enviar páginas-exemplo para quem aceitou ver']],
+['Follow-ups (30 min)',['24h: contatos de ontem sem resposta','48h: contatos de anteontem','3 dias: despedida e encerrar quem não respondeu']],
+['Demonstração e onboarding (30 min)',['Fazer 1–3 demos/páginas-exemplo','Configurar contas de quem aceitou o teste','Checar quem está no teste (dia 2 e dia 5)']],
+['Fechamento do dia (15 min)',['Atualizar números do dia (Indicadores)','Anotar a objeção mais ouvida','Definir amanhã: 3 prioridades']]
+];
+const WEEKLY=['Contar: contatos, respostas, demos, testes, pagantes','Calcular taxas e ver qual abordagem respondeu mais','Escolher UMA mudança para testar na semana (mensagem, canal, horário)','Ler 10 conversas e achar onde a pessoa esfriou','Listar o que o produto precisa corrigir (dados dos "nãos")','Pedir 1 indicação a cada cliente que já agendou pelo link'];
+const SCORE=[['Perfil ativo (postou nos últimos 14 dias)',2],['Publica contato/WhatsApp ou horário no perfil',1],['Marca por direct/WhatsApp (sem link de agendamento)',3],['Stories de "horários disponíveis" / "agenda aberta"',2],['Já reclamou de falta ou cliente que não aparece',3],['Tem 2–5 profissionais (precisa agenda central)',2],['Atende sozinha e mostra bom trabalho com fotos',1],['Já usa link de outro sistema na bio',-3],['Perfil parado há +30 dias',-3],['Parece rede/franquia (decisão longe)',-2]];
+const ESTAGIOS=['Novo','Contatada','Respondeu','Qualificada','Demo enviada','Teste ativo','Pagante','Arquivada'];
+const PRESETS={'Conservador':[15,10,25,50,30],'Intermediário':[20,18,35,55,40],'Otimista':[25,25,45,60,50]};
+const GOALS={7:{c:50,r:5,d:2,t:0,p:0},15:{c:180,r:25,d:8,t:3,p:1},30:{c:350,r:60,d:20,t:8,p:3}};
+
+function dash(){
+ const log=S.get('log',{});let T0={c:0,r:0,d:0,t:0,p:0};for(const k in log){for(const f in T0)T0[f]+=+log[k][f]||0}
+ const ck=S.get('chk_'+todayKey(),{});const tot=DAILY.reduce((a,g)=>a+g[1].length,0);const dn=Object.values(ck).filter(Boolean).length;
+ return `<h1>Máquina de <span class="grad">captação orgânica</span> do Raffros</h1>
+<p class="sub">Material de treinamento para conseguir as primeiras assinaturas por conversa direta: Instagram, WhatsApp e presencial, sem anúncios.</p>
+<div class="g4">
+<div class="card"><div class="kpi">${T0.c}<small>contatos enviados</small></div></div>
+<div class="card"><div class="kpi">${T0.r}<small>respostas</small></div></div>
+<div class="card"><div class="kpi">${T0.d}<small>demonstrações</small></div></div>
+<div class="card hl"><div class="kpi">${T0.p}<small>assinantes pagantes</small></div></div></div>
+<div class="g2" style="margin-top:14px">
+<div class="card"><h3>Hoje</h3><div class="bar"><i style="width:${Math.round(dn/tot*100)}%"></i></div><p class="why">${dn} de ${tot} tarefas do checklist · <a href="#check" onclick="go('check');return false">abrir checklist</a></p></div>
+<div class="card"><h3>Meta de 30 dias (atividade)</h3><p class="why">${GOALS[30].c} contatos · ${GOALS[30].r} conversas · ${GOALS[30].d} demonstrações · ${GOALS[30].t} testes · ${GOALS[30].p} pagantes. Metas de atividade você controla; os resultados são hipóteses.</p></div></div>
+<h2>A estratégia em uma frase</h2>
+<div class="card hl"><b>Mande uma pergunta sobre a agenda dela → mostre a página DELA pronta → configure junto no teste assistido de 7 dias → peça indicação quando a primeira cliente agendar sozinha.</b>
+<p class="why">Baseada nos relatos de primeiros clientes (contato direto, manual, onboarding assistido) e nas características do Raffros (gerador de demo, página pública, sinal). É uma recomendação a testar, não uma garantia.</p></div>
+<h2>Leia isto antes de começar</h2>
+<div class="note bad"><b>Eu não recebi o código-fonte, só o dossiê.</b> Tudo sobre o produto vem do dossiê (marketing/estratégico). Várias afirmações estão como "[VERIFICAR]". Faça o checklist de verificação na tela <a href="#prod" onclick="go('prod');return false">Produto</a> antes de prometer qualquer coisa.</div>
+<div class="note"><b>Evidência fraca por natureza.</b> Os relatos que encontrei são de software em geral, quase nenhum específico de beleza no Brasil. Não achei taxas de conversão confiáveis para o seu nicho. Veja os limites na tela <a href="#fontes" onclick="go('fontes');return false">Pesquisa & fontes</a>.</div>
+<div class="note pk"><b>Cold WhatsApp tem risco.</b> Denúncias e bloqueios podem restringir seu número. Comece pequeno (10–20 conversas novas/dia), personalizado e com saída fácil. Prefira Instagram e visitas presenciais.</div>
+<h2>Como usar este material</h2>
+<div class="g3">
+<div class="card"><h3>1. Prepare</h3><p class="why">Verifique o produto, defina preços, crie 3 páginas-exemplo. Telas <b>Produto</b> e <b>Conversão</b>.</p></div>
+<div class="card"><h3>2. Execute</h3><p class="why">Todo dia: <b>Checklist</b>, <b>Mensagens</b>, <b>Árvore de decisão</b> e <b>Objeções</b> abertas ao lado.</p></div>
+<div class="card"><h3>3. Meça</h3><p class="why">Registre os números em <b>Indicadores & CRM</b>. Na revisão semanal, mude UMA coisa.</p></div></div>
+<h2>Legenda de evidência</h2><div>${ev('r')}${ev('o')}${ev('v')}${ev('h')}${ev('f')}</div>`}
+
+function prod(){
+ const vk=S.get('verif',{});
+ return `<h1>Do produto ao <span class="grad">argumento de venda</span></h1>
+<p class="sub">Venda a solução de um problema, não a funcionalidade. Tabela baseada no dossiê (não vi o código).</p>
+<div class="note bad">O dossiê diz "100% construída, validada e operacional". Sem código, isso é uma afirmação; trate como não verificada até você testar.</div>
+<div class="card scroll"><table><tr><th>Funcionalidade</th><th>Dor que resolve</th><th>Como falar</th><th>Mostrar</th><th>Cuidado</th></tr>
+${FEAT.map(f=>`<tr><td><b>${esc(f[0])}</b></td><td>${esc(f[1])}</td><td>${esc(f[2])}</td><td>${esc(f[3])}</td><td class="why">${esc(f[4])}</td></tr>`).join('')}</table></div>
+<h2>Ordem da demonstração (5 minutos)</h2>
+<div class="flow"><div class="stage">1<span class="i">📱</span>Página pública dela no celular</div><div class="stage">2<span class="i">👆</span>Agendar como cliente</div><div class="stage">3<span class="i">📅</span>Cair na agenda do admin</div><div class="stage">4<span class="i">🛡️</span>Sinal (se a dor for falta)</div><div class="stage">5<span class="i">📇</span>Ficha da cliente</div></div>
+<p class="why"><b>Não demonstre:</b> finanças/comissão para autônoma, painel Super Admin, telemetria, idiomas, React/Supabase/Stripe Connect. Cliente não compra arquitetura.</p>
+<h2>Limitações e riscos de conversão/retenção</h2>
+<div class="g2">${RISCOS.map(r=>`<div class="card"><h3>${esc(r[0])}</h3><p class="why">${esc(r[1])}</p></div>`).join('')}</div>
+<h2>Checklist de verificação (faça antes de prospectar)</h2>
+<div class="card">${VERIF.map((v,i)=>`<label class="chk ${vk[i]?'done':''}"><input type="checkbox" ${vk[i]?'checked':''} onchange="tg('verif',${i})"><span>${esc(v)}</span></label>`).join('')}</div>`}
+function tg(key,i){const o=S.get(key,{});o[i]=!o[i];S.set(key,o);render()}
+
+function mapa(){
+ const i=S.get('stage',0),s=STAGES[i];
+ return `<h1>Mapa do <span class="grad">processo de captação</span></h1>
+<p class="sub">Clique em cada etapa. Para cada uma: objetivo, o que fazer, como, o que falar, próximo passo e erros a evitar.</p>
+<div class="flow">${STAGES.map((x,k)=>`<div class="stage ${k===i?'on':''}" onclick="setStage(${k})"><span class="n">${k+1}</span><span class="i">${x.ico}</span>${x.n}</div>`).join('')}</div>
+<div class="card hl"><h2 style="margin-top:0">${s.ico} ${i+1}. ${s.n}</h2><p><b>🎯 Objetivo:</b> ${esc(s.obj)}</p></div>
+<div class="g2" style="margin-top:14px">
+<div class="card"><h3>✅ O que fazer</h3><ul class="t">${s.fazer.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+<div class="card"><h3>🛠️ Como executar</h3><ul class="t">${s.como.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+${s.falar?`<div class="card"><h3>💬 O que falar</h3>${msg(s.falar)}</div>`:`<div class="card"><h3>💬 O que falar</h3><p class="why">Nesta etapa você ainda não fala com ela; você prepara. Veja "Como executar".</p></div>`}
+<div class="card"><h3>🔀 Próximo passo conforme a resposta</h3><table>${s.prox.map(p=>`<tr><td><b>${esc(p[0])}</b></td><td>${esc(p[1])}</td></tr>`).join('')}</table></div></div>
+<div class="note bad" style="margin-top:14px"><b>⚠️ Evite:</b><ul class="t">${s.evitar.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+<div class="row"><button class="btn" onclick="setStage(${Math.max(0,i-1)})">← Anterior</button><button class="btn pk" onclick="setStage(${Math.min(STAGES.length-1,i+1)})">Próxima →</button><button class="btn" onclick="go('arv')">Ver árvore de decisão</button></div>`}
+function setStage(k){S.set('stage',k);render();window.scrollTo(0,0)}
+
+let TP=['root'];
+function arv(){
+ const id=TP[TP.length-1],n=T[id];
+ const crumbs=TP.map(x=>T[x].t).join(' › ');
+ return `<h1>Árvore de <span class="grad">decisão comercial</span></h1>
+<p class="sub">Consulte durante a prospecção: escolha a situação e siga os passos.</p>
+<div class="crumb">${esc(crumbs)}</div>
+<div class="card hl"><h2 style="margin-top:0">${esc(n.t)}</h2>${n.b?`<p>${esc(n.b)}</p>`:''}${n.g?`<p><b>🎯 Objetivo:</b> ${esc(n.g)}</p>`:''}
+${n.d?`<ul class="t">${n.d.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+${n.m?`<p class="why"><b>Mensagem sugerida:</b></p>${msg(n.m)}`:''}</div>
+<h3 style="margin-top:16px">E agora, o que aconteceu?</h3>
+${n.o.map(o=>`<button class="opt" onclick="treeGo('${o[1]}')">${esc(o[0])}</button>`).join('')}
+<div class="row" style="margin-top:12px">${TP.length>1?'<button class="btn" onclick="treeBack()">← Voltar</button>':''}<button class="btn" onclick="TP=[\'root\'];render()">Recomeçar</button></div>`}
+function treeGo(t){if(t==='@obj'){go('obj');return}if(t==='root'){TP=['root']}else TP.push(t);render();window.scrollTo(0,0)}
+function treeBack(){if(TP.length>1)TP.pop();render()}
+
+let MT=0;
+function msgs(){
+ const p=S.get('P',{});
+ return `<h1>Biblioteca de <span class="grad">mensagens prontas</span></h1>
+<p class="sub">Preencha seus dados para personalizar. Os trechos entre colchetes ([detalhe real], [CONFIRMAR]) você precisa completar antes de enviar.</p>
+<div class="card"><div class="g4">${[['nome','[Nome] da cliente'],['neg','[Negócio]'],['bairro','[Bairro]'],['link','[Link] da página-exemplo'],['eu','[Seu nome]']].map(f=>`<div><label class="f">${f[1]}</label><input value="${esc(p[f[0]]||'')}" oninput="setP('${f[0]}',this.value)"></div>`).join('')}</div></div>
+<div class="note">Regra de ouro: mensagem copiada e colada igual para todas é percebida como spam. Troque pelo menos o detalhe real do perfil. Evite insistência excessiva, falsa urgência e promessas que o produto não cumpre.</div>
+<div class="tabs">${ML.map((g,i)=>`<div class="tab ${i===MT?'on':''}" onclick="MT=${i};render()">${esc(g.nome)}</div>`).join('')}</div>
+<div id="mlist">${msgList()}</div>`}
+function msgList(){return ML[MT].itens.map(it=>`<div class="card" style="margin-bottom:12px"><h3>${esc(it[0])}</h3>${msg(it[1])}<p class="why"><b>Quando usar / objetivo:</b> ${esc(it[2])}</p><p class="why"><b>Por que funciona (psicologia e cuidado):</b> ${esc(it[3])}</p></div>`).join('')}
+function setP(k,v){const p=S.get('P',{});p[k]=v;S.set('P',p);REG=[];$('#mlist').innerHTML=msgList()}
+
+let OQ='';
+function obj(){return `<h1>Manual de <span class="grad">objeções</span></h1>
+<p class="sub">Objeção quase sempre é uma dúvida disfarçada. Entenda antes de responder.</p>
+<input placeholder="Buscar objeção (ex.: caro, pensar, WhatsApp)…" value="${esc(OQ)}" oninput="OQ=this.value;REG=[];$('#olist').innerHTML=objList()" style="margin-bottom:14px"><div id="olist">${objList()}</div>`}
+function objList(){const q=OQ.toLowerCase();return OB.filter(o=>!q||(o.q+o.m).toLowerCase().includes(q)).map(o=>`<details><summary>${esc(o.q)}</summary>
+<p><b>🧠 O que ela provavelmente pensa:</b> ${esc(o.pensa)}</p><p><b>🚫 Não responda:</b> ${esc(o.nao)}</p><p><b>🧭 Como responder:</b> ${esc(o.como)}</p><p><b>💬 Mensagem pronta:</b></p>${msg(o.m)}<p><b>➡️ Próximo passo:</b> ${esc(o.prox)}</p></details>`).join('')||'<p class="why">Nada encontrado.</p>'}
+
+let SM=0;
+function sim(){const s=SIMS[SM];return `<h1>Conversas <span class="grad">simuladas</span></h1>
+<p class="sub">Exemplos escritos por mim para treino. Não são conversas reais nem resultados de clientes.</p>
+<div class="tabs">${SIMS.map((x,i)=>`<div class="tab ${i===SM?'on':''}" onclick="SM=${i};render()">${esc(x.t)}</div>`).join('')}</div>
+<div class="card"><div class="chat">${s.c.map(m=>`<div class="b ${m[0]}">${esc(m[1])}</div>`).join('')}</div></div>
+<p class="why">Nos exemplos, "você" está à direita (roxo), "ela" à esquerda; as caixas amarelas são comentários de treino.</p>`}
+
+function leads(){
+ const sc=S.get('sc',{});const total=SCORE.reduce((a,x,i)=>a+(sc[i]?x[1]:0),0);const band=total>=9?['A','ok','Prioridade máxima: aborde hoje']:total>=5?['B','warn','Aborde se sobrar tempo']:['C','bad','Fila fria: só se faltar lead'];
+ return `<h1>Onde encontrar <span class="grad">clientes</span> (de graça)</h1>
+<p class="sub">Métodos práticos baseados em lógica de prospecção local; a maioria é hipótese minha, sem fonte de conversão específica.</p>
+<div class="g2">
+<div class="card"><h3>📍 Google Maps</h3><p class="why">${ev('h')}</p><ul class="t"><li>Busque: "esmalteria [bairro]", "manicure [bairro]", "salão de beleza [bairro]", "barbearia [bairro]".</li><li>Abra o perfil: fotos, horário, avaliações, telefone, site/Instagram.</li><li>Sinais bons: telefone/WhatsApp visível, sem link de agendamento, avaliações recentes.</li><li>Cuidado: Maps mostra muito estabelecimento parado.</li></ul></div>
+<div class="card"><h3>📸 Instagram (perfil e hashtags)</h3><p class="why">${ev('h')}</p><ul class="t"><li>Hashtags locais: #manicure[cidade], #esmalteria[cidade], #salaodebeleza[bairro], #nailart[cidade].</li><li>Olhe stories: "agenda aberta", "horários disponíveis" = sinal de agenda por mensagem.</li><li>Evite seguir/curtir em massa (risco de limitação de ações).</li></ul></div>
+<div class="card"><h3>👥 Grupos de Facebook/WhatsApp</h3><p class="why">${ev('h')}</p><ul class="t"><li>Grupos tipo "manicures de [cidade]" ou "empreendedoras da beleza".</li><li>Leia as regras: muitos proíbem divulgação.</li><li>Ajude com dúvidas de agenda e faltas; só ofereça o produto a quem pedir.</li></ul></div>
+<div class="card"><h3>🤝 Indicações e parceiros</h3><p class="why">${ev('o')}</p><ul class="t"><li>Primeiras clientes: peça 1 indicação concreta (relatos de Indie Hackers apontam rede/indicação como fonte dos primeiros clientes).</li><li>Fornecedores/distribuidoras de esmaltes e cosméticos e escolas de manicure: hipótese de canal.</li><li>Troca de indicação entre negócios vizinhos (sugestão de artigo russo, não verificada).</li></ul></div>
+<div class="card"><h3>🚶 Presencial por bairro</h3><p class="why">${ev('r')} (fundador no Indie Hackers: primeiros 10 por visitas)</p><ul class="t"><li>Escolha uma região e percorra a pé: 8–10 estabelecimentos por bloco de 90 min.</li><li>Evite horários de pico; sábado e segunda costumam ser cheios ou vazios demais (hipótese).</li><li>Peça 2 minutos, mostre no seu celular a página com o nome do salão.</li></ul></div>
+<div class="card"><h3>🧱 Quem NÃO priorizar</h3><ul class="t"><li>Perfis parados.</li><li>Redes/franquias (decisão longe).</li><li>Quem já tem sistema e está satisfeita.</li><li>Listas compradas ou raspadas.</li></ul></div></div>
+<h2>Score de leads</h2>
+<div class="card"><div class="g2"><div>${SCORE.map((x,i)=>`<label class="chk ${sc[i]?'done':''}"><input type="checkbox" ${sc[i]?'checked':''} onchange="tg('sc',${i})"><span>${esc(x[0])} <span class="pill">${x[1]>0?'+':''}${x[1]}</span></span></label>`).join('')}</div>
+<div style="text-align:center"><div class="sc">${total}</div><span class="tag ${band[1]}">Nota ${band[0]}</span><p class="why">${band[2]}</p><p class="why">A: 9+ · B: 5–8 · C: abaixo de 5. Pesos são palpites; ajuste conforme seus resultados.</p>
+<input id="ln" placeholder="Nome ou @ do lead" style="margin:8px 0"><button class="btn pk" onclick="saveLead(${total})">Salvar no CRM</button> <button class="btn" onclick="S.set('sc',{});render()">Zerar</button></div></div></div>`}
+function saveLead(sc){const n=$('#ln').value.trim();if(!n){toast('Digite o nome/@');return}const L=S.get('leads',[]);L.push({n,tipo:'',canal:'Instagram',sc,e:'Novo',fu:'',obs:''});S.set('leads',L);S.set('sc',{});toast('Lead salvo ✓');render()}
+
+function check(){
+ const k='chk_'+todayKey(),ck=S.get(k,{});let idx=0;const tot=DAILY.reduce((a,g)=>a+g[1].length,0),dn=Object.values(ck).filter(Boolean).length;
+ return `<h1>Checklist diário de <span class="grad">prospecção</span></h1><p class="sub">Cerca de 3h30 por dia. Marque conforme faz. O progresso é salvo por data.</p>
+<div class="card hl"><div class="bar"><i style="width:${Math.round(dn/tot*100)}%"></i></div><p class="why">${dn}/${tot} concluídas hoje</p></div>
+<div class="g2" style="margin-top:14px">${DAILY.map(g=>`<div class="card"><h3>${esc(g[0])}</h3>${g[1].map(t=>{const i=idx++;return `<label class="chk ${ck[i]?'done':''}"><input type="checkbox" ${ck[i]?'checked':''} onchange="tgDay(${i})"><span>${esc(t)}</span></label>`}).join('')}</div>`).join('')}</div>
+<h2>Revisão semanal (30 min)</h2><div class="card">${WEEKLY.map((w,i)=>`<label class="chk ${S.get('wk',{})[i]?'done':''}"><input type="checkbox" ${S.get('wk',{})[i]?'checked':''} onchange="tg('wk',${i})"><span>${esc(w)}</span></label>`).join('')}<button class="btn sm" onclick="S.set('wk',{});render()">Zerar semana</button></div>`}
+function tgDay(i){const k='chk_'+todayKey(),o=S.get(k,{});o[i]=!o[i];S.set(k,o);render()}
+
+function wd(d){return Math.max(0,d-Math.floor(d/7)-2)} // dias úteis de prospecção até o dia d (2 dias de preparação)
+function funnel(v,d){const c=v[0]*wd(d),r=c*v[1]/100,de=r*v[2]/100,t=de*v[3]/100,p=t*v[4]/100;return [c,r,de,t,p]}
+let SCN=S.get('scn',[15,10,25,50,30]);
+function plano(){
+ const rows=[];for(let d=1;d<=30;d++){let foco,tar;
+  if(d===1){foco='Preparar o produto';tar='Fazer o checklist de verificação, definir tabela de preços, criar 3 páginas-exemplo.'}
+  else if(d===2){foco='Preparar a máquina';tar='Perfil do Instagram/WhatsApp Business em ordem, CRM, 50 primeiros leads com score, ajustar mensagens.'}
+  else if(d%7===0){foco='Revisão';tar='Contar números, escolher UMA mudança, ler 10 conversas, responder pendências.'}
+  else{const c=d<=8?10+Math.min(5,d-3):d<=16?15+Math.min(5,Math.floor((d-8)/2)):20+Math.min(5,Math.floor((d-16)/3));
+   foco=d<=8?'Testar abordagens':d<=16?'Escalar e demonstrar':d<=24?'Dobrar no que funciona':'Fechar e coletar prova';
+   tar=`${c} novos contatos · follow-ups 24h/48h/3d · ${d<=8?'1':'2–3'} demos${[10,17,24].includes(d)?' · bloco presencial (8–10 visitas)':''}`}
+  rows.push([d,foco,tar])}
+ const sc=SCN;const f=d=>funnel(sc,d);
+ return `<h1>Plano de <span class="grad">30 dias</span></h1><p class="sub">Para quem começa sozinho. Tempo diário ≈ 3h30; descanso/revisão leve nos dias 7, 14, 21 e 28.</p>
+<h2>Distribuição do tempo (por dia)</h2><div class="card scroll"><table><tr><th>Atividade</th><th>Tempo</th><th>Meta</th></tr>
+<tr><td>Achar leads e dar score</td><td>30 min</td><td>25 leads/dia</td></tr><tr><td>Primeiros contatos</td><td>60 min</td><td>10 → 15 → 20 → 25/dia (progressivo)</td></tr>
+<tr><td>Conversas</td><td>45 min</td><td>Responder tudo em até 1h</td></tr><tr><td>Follow-ups</td><td>30 min</td><td>Todos os marcos de 24h, 48h e 3 dias</td></tr>
+<tr><td>Demos / onboarding</td><td>30 min</td><td>1–3 por dia</td></tr><tr><td>CRM e revisão</td><td>15 min</td><td>100% registrado</td></tr></table></div>
+<h2>Metas progressivas (de atividade)</h2><div class="g3">${[7,15,30].map(d=>`<div class="card"><h3>Dia ${d}</h3><ul class="t"><li>${GOALS[d].c} contatos</li><li>${GOALS[d].r} conversas</li><li>${GOALS[d].d} demonstrações</li><li>${GOALS[d].t} testes ativos</li><li>${GOALS[d].p} pagante(s)</li></ul></div>`).join('')}</div>
+<div class="note">Estas metas são alvos de ATIVIDADE para você aprender a taxa real. Se você cumprir a atividade e não converter, o problema é mensagem, público ou produto, e isso é informação útil.</div>
+<h2>Cenários (projeções, não garantias)</h2>
+<div class="note bad"><b>Não encontrei taxas de conversão confiáveis para o seu nicho.</b> Os cenários usam pressupostos que você pode editar. Um comentarista do Indie Hackers diz que respostas aparecem após 50–100 aberturas personalizadas (opinião). O caso de call center russo teve ~13% de cadastros por ligação, mas são cadastros, não pagantes, e é dado de fornecedor.</div>
+<div class="card"><div class="tabs">${Object.keys(PRESETS).map(k=>`<div class="tab" onclick="SCN=PRESETS['${k}'].slice();S.set('scn',SCN);render()">${k}</div>`).join('')}</div>
+<div class="g4">${['Contatos/dia','% resposta','% responde→demo','% demo→teste','% teste→pago'].map((l,i)=>`<div><label class="f">${l}</label><input type="number" min="0" value="${sc[i]}" onchange="SCN[${i}]=+this.value;S.set('scn',SCN);render()"></div>`).join('')}</div>
+<div class="scroll"><table style="margin-top:12px"><tr><th>Dia</th><th>Contatos</th><th>Respostas</th><th>Demos</th><th>Testes</th><th>Pagantes</th></tr>${[7,15,30].map(d=>`<tr><td>${d}</td>${f(d).map(x=>`<td>${x<10?x.toFixed(1):Math.round(x)}</td>`).join('')}</tr>`).join('')}</table></div>
+<p class="why">Cálculo: contatos/dia × dias de prospecção (ignora 2 dias de preparo e 1 de cada 7). Presets: conservador 15/dia, intermediário 20/dia, otimista 25/dia, com taxas crescentes. São chutes para planejar, não previsões.</p></div>
+<h2>Dia a dia</h2><div class="card scroll"><table><tr><th>Dia</th><th>Foco</th><th>O que fazer</th></tr>${rows.map(r=>`<tr><td>${r[0]}</td><td><b>${r[1]}</b></td><td>${esc(r[2])}</td></tr>`).join('')}</table></div>`}
+
+function kpi(){
+ const log=S.get('log',{}),L=S.get('leads',[]);let T0={c:0,r:0,d:0,t:0,p:0};for(const k in log)for(const f in T0)T0[f]+=+log[k][f]||0;
+ const pc=(a,b)=>b?Math.round(a/b*1000)/10+'%':'—';const td=log[todayKey()]||{};
+ return `<h1>Indicadores & <span class="grad">CRM</span></h1><p class="sub">Dados salvos neste navegador. Exporte o CRM se for trocar de aparelho.</p>
+<div class="g2"><div class="card"><h3>Registro de hoje (${todayKey()})</h3><div class="g4">${[['c','Contatos'],['r','Respostas'],['d','Demos'],['t','Testes'],['p','Pagantes']].map(f=>`<div><label class="f">${f[1]}</label><input type="number" min="0" value="${td[f[0]]||0}" onchange="setLog('${f[0]}',this.value)"></div>`).join('')}</div></div>
+<div class="card"><h3>Totais e taxas</h3><table><tr><td>Contatos</td><td>${T0.c}</td><td>Resposta</td><td>${pc(T0.r,T0.c)}</td></tr><tr><td>Respostas</td><td>${T0.r}</td><td>Demo</td><td>${pc(T0.d,T0.r)}</td></tr><tr><td>Demos</td><td>${T0.d}</td><td>Teste</td><td>${pc(T0.t,T0.d)}</td></tr><tr><td>Testes</td><td>${T0.t}</td><td>Pago</td><td>${pc(T0.p,T0.t)}</td></tr></table></div></div>
+<h2>Progresso vs. meta de 30 dias</h2><div class="card">${[['c','Contatos'],['r','Conversas'],['d','Demos'],['t','Testes'],['p','Pagantes']].map(f=>`<div style="margin:8px 0"><div class="why">${f[1]}: ${T0[f[0]]} / ${GOALS[30][f[0]]}</div><div class="bar"><i style="width:${Math.min(100,Math.round(T0[f[0]]/GOALS[30][f[0]]*100))}%"></i></div></div>`).join('')}</div>
+<h2>CRM de leads (${L.length})</h2>
+<div class="card scroll"><table><tr><th>Lead</th><th>Score</th><th>Estágio</th><th>Próx. contato</th><th>Observação</th><th></th></tr>
+${L.map((l,i)=>`<tr><td>${esc(l.n)}</td><td><span class="pill">${l.sc}</span></td><td><select onchange="upL(${i},'e',this.value)">${ESTAGIOS.map(e=>`<option ${e===l.e?'selected':''}>${e}</option>`).join('')}</select></td><td><input type="date" value="${l.fu}" onchange="upL(${i},'fu',this.value)"></td><td><input value="${esc(l.obs)}" onchange="upL(${i},'obs',this.value)"></td><td><button class="btn sm" onclick="delL(${i})">✕</button></td></tr>`).join('')||'<tr><td colspan="6" class="why">Sem leads. Adicione na tela "Onde achar + score".</td></tr>'}</table>
+<div class="row" style="margin-top:10px"><input id="nl" placeholder="Adicionar lead rápido (nome ou @)" style="max-width:320px"><button class="btn" onclick="addL()">Adicionar</button><button class="btn" onclick="expL()">Copiar CSV</button></div></div>`}
+function setLog(f,v){const o=S.get('log',{});const k=todayKey();o[k]=o[k]||{};o[k][f]=+v;S.set('log',o);render()}
+function upL(i,f,v){const L=S.get('leads',[]);L[i][f]=v;S.set('leads',L);if(f==='e')render()}
+function delL(i){const L=S.get('leads',[]);L.splice(i,1);S.set('leads',L);render()}
+function addL(){const n=$('#nl').value.trim();if(!n)return;const L=S.get('leads',[]);L.push({n,tipo:'',canal:'',sc:0,e:'Novo',fu:'',obs:''});S.set('leads',L);render()}
+function expL(){const L=S.get('leads',[]);const csv='Lead;Score;Estagio;Proximo;Obs\n'+L.map(l=>[l.n,l.sc,l.e,l.fu,l.obs].map(x=>String(x).replace(/;/g,',')).join(';')).join('\n');REG=[csv];cp(0)}
+
+function conv(){
+ const D=[
+ ['Demonstração ou teste gratuito?','Os dois, em sequência: página-exemplo personalizada → teste assistido de 7 dias com você configurando.','r','Relatos de Indie Hackers apontam onboarding manual e "fazer o trabalho por ela" para os primeiros clientes; o dossiê inclui gerador de demo e 7 dias de teste. Cuidado: [CONFIRMAR] se o teste pede cartão e se 7 dias cobrem o ciclo de clientes (considere 14 dias para as que você configurar).'],
+ ['Preço logo ou depois?','Se ela perguntar, responda na hora. Se não, mencione depois de ela falar da dor e ver a página.','h','Sem evidência direta. Esconder o preço gera desconfiança; despejá-lo antes de ela sentir valor atrapalha. O plano de ~R$27 é baixo e fácil de ancorar contra um serviço dela. Antes: defina a tabela final.'],
+ ['WhatsApp ou Instagram?','Instagram primeiro para autônomas/manicures; WhatsApp em volume baixo e só para números publicados como contato comercial; presencial para salões.','h','Fornecedores e guias alertam para bloqueio/denúncia em contato frio por WhatsApp e para LGPD; a conversão relatada em Indie Hackers vem de contato direto, não de canal específico. A escolha é por risco e contexto, não por prova de conversão.'],
+ ['Vale oferecer configuração inicial?','Sim, no começo. É o que torna o teste viável para quem "não sabe mexer".','r','Vários comentaristas descrevem onboarding manual como o que converteu os primeiros clientes. Padronize num checklist de 15–20 min para não virar prestador de serviço.'],
+ ['Como reduzir o medo de migrar?','Rodar em paralelo: o caderno/WhatsApp continuam; o link é um caminho a mais para clientes novas.','h','O dossiê não descreve importação de clientes; sem ela, não prometa migração. Veja a objeção "já uso outro aplicativo".'],
+ ['Primeira venda sem depoimentos?','Venda com a página dela já pronta, teste assistido e honestidade ("você é uma das primeiras clientes, eu cuido do suporte").','h','Considere condição de "cliente fundadora" (ex.: preço travado). Decisão sua: não prometa algo que não possa manter. Nunca invente depoimento.'],
+ ['Como conseguir indicações?','Peça UMA indicação logo após a primeira cliente dela agendar pelo link e peça autorização para usar o relato.','o','Relatos de Indie Hackers citam indicação e rede como fontes dos primeiros clientes (Slay.so e Marek Piechut). Incentivo opcional, não testado.']];
+ return `<h1>Estratégia de <span class="grad">conversão</span></h1><p class="sub">O caminho mais curto entre achar uma profissional e ter uma assinatura, com justificativa e nível de evidência.</p>
+<div class="card hl"><h3>Estratégia principal recomendada</h3><div class="flow"><div class="stage">1<span class="i">🔎</span>Lead com nota A/B</div><div class="stage">2<span class="i">❓</span>Pergunta no direct</div><div class="stage">3<span class="i">📱</span>Página DELA pronta</div><div class="stage">4<span class="i">🛠️</span>Teste assistido 7–14 dias</div><div class="stage">5<span class="i">✅</span>1ª cliente agenda sozinha</div><div class="stage">6<span class="i">🌱</span>Pede indicação</div></div>
+<p class="why">Por quê: os relatos disponíveis convergem em contato direto e manual + trabalho assistido; seu produto tem um gerador de demo que vira "prova" sem depoimentos. É uma hipótese forte, não comprovada para o seu nicho.</p></div>
+<h2>Decisões, uma a uma</h2>${D.map(d=>`<div class="card" style="margin-bottom:12px"><h3>${esc(d[0])}</h3><p><b>${esc(d[1])}</b></p><p>${ev(d[2])}</p><p class="why">${esc(d[3])}</p></div>`).join('')}
+<h2>O que eu NÃO recomendo agora</h2>
+<div class="g2"><div class="card"><h3>Disparo em massa por WhatsApp</h3><p class="why">Risco de banimento, LGPD e reputação. Mensagem curta e personalizada em baixo volume é outra coisa.</p></div>
+<div class="card"><h3>Comprar/raspar lista</h3><p class="why">Um relato no Indie Hackers cita retorno zero com cold email para lista raspada (opinião isolada, mas condiz com os riscos).</p></div>
+<div class="card"><h3>Product Hunt, SEO, i18n, mapa de atenção</h3><p class="why">Não ajudam a fechar a primeira assinatura de manicure em dias. O dossiê tem muitas dessas coisas; ignore-as na venda.</p></div>
+<div class="card"><h3>Desconto antes de entender a objeção</h3><p class="why">Treina a cliente a pedir desconto e pode esconder o problema real. Em vez disso, reduza o risco (teste assistido).</p></div></div>`}
+
+function fontes(){return `<h1>Pesquisa & <span class="grad">fontes</span></h1><p class="sub">O que encontrei, o que cada fonte realmente diz, e onde não encontrei nada. ${ev('r')}${ev('o')}${ev('v')}${ev('f')}</p>
+<div class="note bad"><b>Resumo honesto:</b> a pesquisa não achou relatos detalhados de primeiros clientes para agenda de beleza no Brasil. O que há são relatos gerais de SaaS (Indie Hackers/HN), um caso de fornecedor russo, uma análise do mercado chinês e conteúdo de blogs. Nenhum número aqui prova que a sua abordagem vai converter.</div>
+<h2>Lacunas</h2><div class="card"><ul class="t">${LACUNAS.map(l=>`<li>${esc(l)}</li>`).join('')}</ul></div>
+<h2>Fontes consultadas</h2>${FONTES.map(f=>`<div class="card" style="margin-bottom:12px"><div>${ev(f[2])}</div><h3><a href="${esc(f[1])}" target="_blank" rel="noopener">${esc(f[0])}</a></h3><p class="why">${esc(f[3])}</p><p class="why"><b>Uso aqui:</b> ${esc(f[4])}</p></div>`).join('')}
+<h2>Sobre o produto</h2><p class="why">As informações do Raffros vêm do dossiê enviado (versão 2.0). Código-fonte não foi recebido, então nada sobre o funcionamento interno foi verificado.</p>`}
+
+/* ========= ROUTER ========= */
+const VIEWS={dash,prod,conv,mapa,arv,msgs,obj,sim,leads,check,plano,kpi,fontes};
+function render(){REG=[];const id=S.get('mod','dash');const fn=VIEWS[id]||dash;$('#main').innerHTML=fn();
+ $$('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.m===id))}
+$('#burger').onclick=()=>$('#side').classList.toggle('open');
+buildNav();
+const h0=location.hash.replace('#','');if(VIEWS[h0])S.set('mod',h0);
+render();
+</script>
+</body>
+</html>

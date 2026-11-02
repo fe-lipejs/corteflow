@@ -15,7 +15,7 @@ import { useServices } from '../../hooks/useServices';
 import { useTheme } from '../../contexts/ThemeContext';
 import {
   useBookingsByWeek, useBookingsByDay,
-  useCreateBooking, useUpdateBookingStatus, useDeleteBooking,
+  useCreateBooking, useUpdateBookingStatus, useDeleteBooking, useUpdateBooking,
   type Booking, type BookingStatus, type CreateBookingInput,
   useBookingsRealtime
 } from '../../hooks/useBookings';
@@ -25,6 +25,7 @@ import WeekView from './agenda/WeekView';
 import DayView from './agenda/DayView';
 import MobileTimeline from './agenda/MobileTimeline';
 import BookingModal from './agenda/BookingModal';
+import EditBookingModal from './agenda/EditBookingModal';
 import BookingDetailSheet from './agenda/BookingDetailSheet';
 import { UpgradeModal } from '../../components/UpgradeModal';
 import PendingBookingsModal from './agenda/PendingBookingsModal';
@@ -45,6 +46,7 @@ export default function Agenda() {
   const [weekStart, setWeekStart] = useState<Date>(() => startOfDay(new Date()));
   const [currentDay, setCurrentDay] = useState<Date>(new Date());
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
@@ -95,6 +97,8 @@ export default function Agenda() {
   // Mutations
   const createBooking = useCreateBooking(tenantId);
   const updateStatus = useUpdateBookingStatus(tenantId);
+  const updateBooking = useUpdateBooking(tenantId);
+  const deleteBooking = useDeleteBooking(tenantId);
 
   // Active bookings for current context
   const isLoading = isMobile || view === 'day' ? loadingDay : loadingWeek;
@@ -153,7 +157,6 @@ export default function Agenda() {
     }
   };
 
-  const deleteBooking = useDeleteBooking(tenantId);
   const handleDelete = async (id: string) => {
     if (!engine.hasPermission('agenda.cancelar')) {
       setShowUpgradeModal('agenda.cancelar');
@@ -319,7 +322,7 @@ export default function Agenda() {
                   { label: 'Confirmados (Hoje)', value: stats.pending, icon: Clock, color: '#f59e0b' },
                   { label: 'Esquecidos / Pendentes', value: 'Ver Lista', icon: Bell, color: '#ef4444', isButton: true },
                   { label: 'Finalizados', value: stats.completed, icon: CheckCircle, color: theme.success },
-                  { label: 'Em atendimento', value: stats.inProgress, icon: Users, color: '#a78bfa' }, // Keeping standard status colors
+                  { label: 'Em atendimento', value: stats.inProgress, icon: Users, color: '#a78bfa' },
                   { label: 'Próximo', value: nextBooking ? format(new Date(nextBooking.scheduled_at), 'HH:mm') : '—', icon: Clock, color: theme.info },
                   { label: 'Receita prevista', value: fmt.format(stats.revenue), icon: DollarSign, color: theme.warning },
                 ].map((s, i) => (
@@ -363,9 +366,8 @@ export default function Agenda() {
                 <span className="text-xs font-bold shrink-0 mr-1" style={{ color: theme.textSecondary }}>Filtrar por:</span>
                 <button
                   onClick={() => {
-                    // Only owners/admins can see all professionals — professionals only see themselves
                     if (!engine.hasPermission('agenda.visualizar_todos')) {
-                      return; // Silently block (the filter chip is already hidden in practice for professionals)
+                      return;
                     }
                     setSelectedProfessionalId(null);
                   }}
@@ -471,9 +473,39 @@ export default function Agenda() {
             onClose={() => setSelectedBooking(null)}
             onStatusChange={handleStatusChange}
             onDelete={handleDelete}
+            onEdit={(b) => {
+              if (!engine.hasPermission('agenda.editar')) {
+                setShowUpgradeModal('agenda.editar');
+                return;
+              }
+              setEditingBooking(b);
+            }}
             isUpdating={updateStatus.isPending || deleteBooking.isPending}
           />
         )}
+
+        {/* ── Booking Edit / Reschedule Modal (Protegido por agenda.editar) ── */}
+        {editingBooking && (
+          <EditBookingModal
+            tenantId={tenantId}
+            booking={editingBooking}
+            services={services}
+            professionals={professionals}
+            businessHours={businessHours}
+            onClose={() => setEditingBooking(null)}
+            onSave={async (fields) => {
+              if (!engine.hasPermission('agenda.editar')) {
+                setShowUpgradeModal('agenda.editar');
+                return;
+              }
+              await updateBooking.mutateAsync(fields);
+              setEditingBooking(null);
+              setSelectedBooking(null);
+            }}
+            isLoading={updateBooking.isPending}
+          />
+        )}
+
         {/* ── Modal: Upgrade Plan ── */}
         {showUpgradeModal && (
           <UpgradeModal
@@ -492,6 +524,4 @@ export default function Agenda() {
       </div>
     </>
   );
-
 }
-

@@ -227,10 +227,10 @@ export default function AdminAnalytics() {
     return [
       { label: '< 5s', pct: 88, color: 'bg-red-500', isDrop: true },
       { label: '5–15s', pct: 9.2, color: 'bg-slate-300', isDrop: false },
-      { label: '15–30s', pct: 0, color: 'bg-slate-200', isDrop: false },
-      { label: '30–60s', pct: 0, color: 'bg-slate-200', isDrop: false },
+      { label: '15–30s', pct: 0, color: 'bg-zinc-800', isDrop: false },
+      { label: '30–60s', pct: 0, color: 'bg-zinc-800', isDrop: false },
       { label: '1–3min', pct: 1.3, color: 'bg-slate-400', isDrop: false },
-      { label: '3min+', pct: 1.3, color: 'bg-blue-600', isDrop: false },
+      { label: '3min+', pct: 1.3, color: 'bg-emerald-500', isDrop: false },
     ];
   }, []);
 
@@ -238,7 +238,7 @@ export default function AdminAnalytics() {
   const exitPoints = useMemo(() => {
     return [
       { name: 'Tabela de Planos & Preços', pct: 92, count: 70, color: 'bg-emerald-500' },
-      { name: 'Busca & Filtros / Demonstração', pct: 3.9, count: 3, color: 'bg-blue-600' },
+      { name: 'Busca & Filtros / Demonstração', pct: 3.9, count: 3, color: 'bg-emerald-500' },
       { name: 'Topo / Banner Hero', pct: 2.6, count: 2, color: 'bg-indigo-500' },
       { name: 'Carregando (antes da tela abrir)', pct: 1.3, count: 1, color: 'bg-slate-400' },
     ];
@@ -248,7 +248,7 @@ export default function AdminAnalytics() {
   const focalPoints = useMemo(() => {
     return [
       { name: 'Tabela de Planos & Preços', pct: 65, avg: '4.7s', color: 'bg-emerald-500' },
-      { name: 'Busca & Filtros / Demonstração', pct: 17, avg: '1.2s', color: 'bg-blue-600' },
+      { name: 'Busca & Filtros / Demonstração', pct: 17, avg: '1.2s', color: 'bg-emerald-500' },
       { name: 'Topo / Banner Hero', pct: 14, avg: '1.0s', color: 'bg-indigo-500' },
       { name: 'Carregando (primeira pintura)', pct: 4.3, avg: '0.3s', color: 'bg-slate-400' },
     ];
@@ -314,20 +314,20 @@ export default function AdminAnalytics() {
   };
 
   const getDeviceIcon = (dev: string | null) => {
-    if (dev === 'mobile') return <Smartphone className="w-3.5 h-3.5 text-blue-600" />;
+    if (dev === 'mobile') return <Smartphone className="w-3.5 h-3.5 text-emerald-400" />;
     if (dev === 'tablet') return <Tablet className="w-3.5 h-3.5 text-indigo-600" />;
-    return <Monitor className="w-3.5 h-3.5 text-slate-500" />;
+    return <Monitor className="w-3.5 h-3.5 text-zinc-400" />;
   };
 
   return (
-    <div className="space-y-8 min-h-screen pb-16 font-sans text-slate-900">
+    <div className="space-y-8 min-h-screen pb-16 font-sans text-white">
 
       {/* ── TOP HEADER COM CONTROLES ── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-6">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2.5">
-              <Activity className="w-7 h-7 text-blue-600 shrink-0" />
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
+              <Activity className="w-7 h-7 text-emerald-400 shrink-0" />
               <span>Rastreabilidade &amp; Inteligência de Atenção</span>
             </h1>
             {isLive && (
@@ -337,7 +337,7 @@ export default function AdminAnalytics() {
               </span>
             )}
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1.5">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1.5">
             Onde o cliente mais clica, mais fica, onde passa menos tempo e onde você perde vendas.
           </p>
         </div>
@@ -345,15 +345,15 @@ export default function AdminAnalytics() {
         {/* Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Time range buttons */}
-          <div className="flex bg-white border border-slate-200 p-1 rounded-xl items-center shadow-xs">
+          <div className="flex bg-[#0B0B0E] border border-white/10 p-1 rounded-xl items-center shadow-xs">
             {(['today', '24h', '7d', '30d', 'all'] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setTimeRange(r)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   timeRange === r
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    ? 'bg-emerald-500 text-black font-bold shadow-xs'
+                    : 'text-zinc-400 hover:text-white hover:bg-[#13131A]'
                 }`}
               >
                 {r === 'today' ? 'Hoje' : r === '24h' ? '24h' : r === '7d' ? '7 Dias' : r === '30d' ? '30 Dias' : 'Tudo'}
@@ -364,20 +364,20 @@ export default function AdminAnalytics() {
           {/* Export & Refresh */}
           <button
             onClick={exportToCSV}
-            className="p-2.5 px-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:border-slate-300 transition-all flex items-center gap-1.5 text-xs font-semibold shadow-xs"
+            className="p-2.5 px-3.5 rounded-xl bg-[#0B0B0E] border border-white/10 text-zinc-300 hover:text-white hover:border-slate-300 transition-all flex items-center gap-1.5 text-xs font-semibold shadow-xs"
             title="Exportar dados para CSV"
           >
-            <Download className="w-4 h-4 text-blue-600" />
+            <Download className="w-4 h-4 text-emerald-400" />
             <span>CSV</span>
           </button>
 
           <button
             onClick={fetchAnalytics}
             disabled={loading}
-            className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:border-slate-300 transition-all flex items-center justify-center text-xs font-medium shadow-xs"
+            className="p-2.5 rounded-xl bg-[#0B0B0E] border border-white/10 text-zinc-300 hover:text-white hover:border-slate-300 transition-all flex items-center justify-center text-xs font-medium shadow-xs"
             title="Atualizar dados"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-400' : ''}`} />
           </button>
         </div>
       </div>
@@ -385,55 +385,55 @@ export default function AdminAnalytics() {
       {/* ── 1. TOP 4 KPI CARDS ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Visualizações */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs relative overflow-hidden">
+        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-5 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Visualizações</span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
-              <Eye className="w-4 h-4 text-blue-600" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Visualizações</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center">
+              <Eye className="w-4 h-4 text-emerald-400" />
             </div>
           </div>
-          <p className="text-3xl font-black text-slate-900 mt-3 font-mono">{totalPageViews}</p>
-          <p className="text-xs text-slate-500 mt-1">Páginas acessadas</p>
+          <p className="text-3xl font-black text-white mt-3 font-mono">{totalPageViews}</p>
+          <p className="text-xs text-zinc-400 mt-1">Páginas acessadas</p>
         </div>
 
         {/* Visitantes Únicos */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs relative overflow-hidden">
+        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-5 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Visitantes Únicos</span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
-              <Users className="w-4 h-4 text-blue-600" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Visitantes Únicos</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center">
+              <Users className="w-4 h-4 text-emerald-400" />
             </div>
           </div>
-          <p className="text-3xl font-black text-slate-900 mt-3 font-mono">{uniqueVisitors}</p>
-          <p className="text-xs text-slate-500 mt-1">Pessoas reais no site</p>
+          <p className="text-3xl font-black text-white mt-3 font-mono">{uniqueVisitors}</p>
+          <p className="text-xs text-zinc-400 mt-1">Pessoas reais no site</p>
         </div>
 
         {/* Cliques em Ações */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs relative overflow-hidden">
+        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-5 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Cliques em Ações</span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-blue-600" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Cliques em Ações</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-emerald-400" />
             </div>
           </div>
-          <p className="text-3xl font-black text-slate-900 mt-3 font-mono">{conversionClicks}</p>
-          <p className="text-xs text-slate-500 mt-1">Intenções de assinatura / teste</p>
+          <p className="text-3xl font-black text-white mt-3 font-mono">{conversionClicks}</p>
+          <p className="text-xs text-zinc-400 mt-1">Intenções de assinatura / teste</p>
         </div>
 
         {/* Funil & Conversão */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs relative overflow-hidden">
+        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-5 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Funil &amp; Conversão</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Funil &amp; Conversão</span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
               <Target className="w-4 h-4 text-emerald-600" />
             </div>
           </div>
           <div className="flex items-baseline gap-2 mt-3">
-            <span className="text-3xl font-black text-slate-900 font-mono">{conversionRate}%</span>
+            <span className="text-3xl font-black text-white font-mono">{conversionRate}%</span>
             <span className="text-xs font-bold text-emerald-600 font-mono">Clicaram</span>
           </div>
           <p className="text-xs text-red-600 font-bold mt-1 font-mono">
-            {dropOffRate}% <span className="text-slate-500 font-normal">Desistiram (Saíram sem clicar)</span>
+            {dropOffRate}% <span className="text-zinc-400 font-normal">Desistiram (Saíram sem clicar)</span>
           </p>
         </div>
       </div>
@@ -442,21 +442,21 @@ export default function AdminAnalytics() {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-              <Flame className="w-5 h-5 text-blue-600" />
+            <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
+              <Flame className="w-5 h-5 text-emerald-400" />
               <span>Mapa de Atenção</span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-zinc-400 mt-0.5">
               Onde o visitante passa o tempo, até onde rola e em que ponto desiste. {uniqueVisitors} sessões no período.
             </p>
           </div>
 
           {/* Segmented control: Celular | Computador | Todos */}
-          <div className="flex bg-white border border-slate-200 p-1 rounded-xl self-start sm:self-auto shadow-xs">
+          <div className="flex bg-[#0B0B0E] border border-white/10 p-1 rounded-xl self-start sm:self-auto shadow-xs">
             <button
               onClick={() => setDeviceFilter('mobile')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                deviceFilter === 'mobile' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                deviceFilter === 'mobile' ? 'bg-emerald-500 text-black font-bold shadow-xs' : 'text-zinc-400 hover:text-white hover:bg-[#13131A]'
               }`}
             >
               Celular
@@ -464,7 +464,7 @@ export default function AdminAnalytics() {
             <button
               onClick={() => setDeviceFilter('desktop')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                deviceFilter === 'desktop' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                deviceFilter === 'desktop' ? 'bg-emerald-500 text-black font-bold shadow-xs' : 'text-zinc-400 hover:text-white hover:bg-[#13131A]'
               }`}
             >
               Computador
@@ -472,7 +472,7 @@ export default function AdminAnalytics() {
             <button
               onClick={() => setDeviceFilter('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                deviceFilter === 'all' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                deviceFilter === 'all' ? 'bg-emerald-500 text-black font-bold shadow-xs' : 'text-zinc-400 hover:text-white hover:bg-[#13131A]'
               }`}
             >
               Todos
@@ -484,38 +484,38 @@ export default function AdminAnalytics() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           
           {/* Card: Diagnóstico Automático */}
-          <div className="lg:col-span-6 bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between shadow-xs relative">
+          <div className="lg:col-span-6 bg-[#0B0B0E] border border-white/10 rounded-2xl p-6 flex flex-col justify-between shadow-xs relative">
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-amber-600 font-bold text-sm">
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
                 <span>Diagnóstico automático</span>
               </div>
 
-              <div className="space-y-3.5 text-xs text-slate-600 leading-relaxed">
+              <div className="space-y-3.5 text-xs text-zinc-400 leading-relaxed">
                 <div className="flex items-start gap-2.5">
                   <span className="w-2 h-2 rounded-full bg-red-500 mt-1.5 shrink-0" />
                   <p>
-                    <strong className="text-slate-900">88% saíram em menos de 5 segundos.</strong> A primeira tela (banner/hero) não está retendo o suficiente — a proposta de valor e demonstração precisam prender a atenção logo de cara.
+                    <strong className="text-white">88% saíram em menos de 5 segundos.</strong> A primeira tela (banner/hero) não está retendo o suficiente — a proposta de valor e demonstração precisam prender a atenção logo de cara.
                   </p>
                 </div>
 
                 <div className="flex items-start gap-2.5">
                   <span className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 shrink-0" />
                   <p>
-                    <strong className="text-slate-900">Principal ponto de saída de quem não assinou:</strong> "Tabela de Planos &amp; Preços" (92% dos desistentes saíram logo após olhar os preços).
+                    <strong className="text-white">Principal ponto de saída de quem não assinou:</strong> "Tabela de Planos &amp; Preços" (92% dos desistentes saíram logo após olhar os preços).
                   </p>
                 </div>
 
                 <div className="flex items-start gap-2.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                   <p>
-                    <strong className="text-slate-900">Olham mas não clicam: #4 (Anti-Furo), #1 (Plano Growth), #3 (Starter).</strong> Recebem tempo de tela mas ninguém clica — teste reforçar os 7 dias grátis sem cartão.
+                    <strong className="text-white">Olham mas não clicam: #4 (Anti-Furo), #1 (Plano Growth), #3 (Starter).</strong> Recebem tempo de tela mas ninguém clica — teste reforçar os 7 dias grátis sem cartão.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <div className="mt-5 pt-3.5 border-t border-white/5 flex items-center justify-between text-[11px] text-zinc-400">
               <span>Motor de IA de Conversão</span>
               <span className="text-emerald-600 font-bold font-mono">100% Calibrado</span>
             </div>
@@ -524,53 +524,53 @@ export default function AdminAnalytics() {
           {/* Grid de 6 Mini Métricas */}
           <div className="lg:col-span-6 grid grid-cols-2 gap-3.5">
             {/* 1. Tempo mediano */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <Clock className="w-3.5 h-3.5 text-blue-600" />
+            <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
+              <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                <Clock className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Tempo mediano na página</span>
               </div>
-              <p className="text-2xl font-black text-slate-900 mt-2 font-mono">3.5s</p>
+              <p className="text-2xl font-black text-white mt-2 font-mono">3.5s</p>
             </div>
 
             {/* 2. Rolagem média */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <Layers className="w-3.5 h-3.5 text-blue-600" />
+            <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
+              <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                <Layers className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Rolagem média da página</span>
               </div>
-              <p className="text-2xl font-black text-slate-900 mt-2 font-mono">92%</p>
+              <p className="text-2xl font-black text-white mt-2 font-mono">92%</p>
             </div>
 
             {/* 3. Viram ao menos 1 item */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <Eye className="w-3.5 h-3.5 text-blue-600" />
+            <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
+              <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                <Eye className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Viram ao menos 1 seção</span>
               </div>
-              <p className="text-2xl font-black text-slate-900 mt-2 font-mono">97%</p>
+              <p className="text-2xl font-black text-white mt-2 font-mono">97%</p>
             </div>
 
             {/* 4. Conteúdo aparece em */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <Zap className="w-3.5 h-3.5 text-blue-600" />
+            <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
+              <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                <Zap className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Conteúdo aparece em</span>
               </div>
-              <p className="text-2xl font-black text-slate-900 mt-2 font-mono">0.4s</p>
+              <p className="text-2xl font-black text-white mt-2 font-mono">0.4s</p>
             </div>
 
             {/* 5. Posição média mais funda */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <ArrowDownRight className="w-3.5 h-3.5 text-blue-600" />
+            <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
+              <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                <ArrowDownRight className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Posição média mais funda</span>
               </div>
-              <p className="text-2xl font-black text-slate-900 mt-2 font-mono">#4.6</p>
+              <p className="text-2xl font-black text-white mt-2 font-mono">#4.6</p>
             </div>
 
             {/* 6. Desistentes */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+            <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
+              <div className="flex items-center gap-1.5 text-xs text-zinc-400">
                 <ArrowUpRight className="w-3.5 h-3.5 text-red-500" />
                 <span>Desistentes (não clicaram)</span>
               </div>
@@ -582,13 +582,13 @@ export default function AdminAnalytics() {
       </div>
 
       {/* ── 3. FUNIL DE ATENÇÃO (EM QUE ETAPA AS PESSOAS PARAM) ── */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5">
+      <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-6 shadow-xs space-y-5">
         <div>
-          <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-            <Target className="w-4 h-4 text-blue-600" />
+          <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+            <Target className="w-4 h-4 text-emerald-400" />
             <span>Funil de atenção — em que etapa as pessoas param</span>
           </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-zinc-400 mt-0.5">
             Acompanhamento passo a passo do fluxo do visitante na landing page até a conversão.
           </p>
         </div>
@@ -597,28 +597,28 @@ export default function AdminAnalytics() {
           {/* Etapa 1 */}
           <div>
             <div className="flex justify-between items-center text-xs font-bold mb-1.5">
-              <span className="text-slate-900">1. Acessaram a página inicial</span>
-              <span className="font-mono text-slate-900">76 (100%)</span>
+              <span className="text-white">1. Acessaram a página inicial</span>
+              <span className="font-mono text-white">76 (100%)</span>
             </div>
-            <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden">
-              <div className="h-full bg-blue-600 rounded-full w-full" />
+            <div className="w-full h-3 rounded-full bg-[#13131A] overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full w-full" />
             </div>
           </div>
 
           {/* Etapa 2 - MAIOR VAZAMENTO */}
           <div>
             <div className="flex justify-between items-center text-xs font-bold mb-1.5">
-              <span className="text-slate-900 flex items-center gap-2">
+              <span className="text-white flex items-center gap-2">
                 2. Ficaram mais de 5 segundos
                 <span className="px-2 py-0.5 rounded text-[10px] uppercase font-black bg-red-500 text-white shadow-xs">
                   MAIOR VAZAMENTO
                 </span>
               </span>
-              <span className="font-mono text-slate-900">
+              <span className="font-mono text-white">
                 9 (12%) <span className="text-red-600 ml-1 font-semibold">-67 aqui</span>
               </span>
             </div>
-            <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden">
+            <div className="w-full h-3 rounded-full bg-[#13131A] overflow-hidden">
               <div className="h-full bg-red-500 rounded-full" style={{ width: '12%' }} />
             </div>
           </div>
@@ -626,36 +626,36 @@ export default function AdminAnalytics() {
           {/* Etapa 3 */}
           <div>
             <div className="flex justify-between items-center text-xs font-bold mb-1.5">
-              <span className="text-slate-900">3. Conteúdo principal e demonstração visíveis</span>
-              <span className="font-mono text-slate-900">75 (99%)</span>
+              <span className="text-white">3. Conteúdo principal e demonstração visíveis</span>
+              <span className="font-mono text-white">75 (99%)</span>
             </div>
-            <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden">
-              <div className="h-full bg-blue-400 rounded-full" style={{ width: '99%' }} />
+            <div className="w-full h-3 rounded-full bg-[#13131A] overflow-hidden">
+              <div className="h-full bg-emerald-400 rounded-full" style={{ width: '99%' }} />
             </div>
           </div>
 
           {/* Etapa 4 */}
           <div>
             <div className="flex justify-between items-center text-xs font-bold mb-1.5">
-              <span className="text-slate-900">4. Viram pelo menos 1 seção interativa</span>
-              <span className="font-mono text-slate-900">
-                74 (97%) <span className="text-slate-400 ml-1 font-semibold">-1 aqui</span>
+              <span className="text-white">4. Viram pelo menos 1 seção interativa</span>
+              <span className="font-mono text-white">
+                74 (97%) <span className="text-zinc-500 ml-1 font-semibold">-1 aqui</span>
               </span>
             </div>
-            <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden">
-              <div className="h-full bg-blue-400 rounded-full" style={{ width: '97%' }} />
+            <div className="w-full h-3 rounded-full bg-[#13131A] overflow-hidden">
+              <div className="h-full bg-emerald-400 rounded-full" style={{ width: '97%' }} />
             </div>
           </div>
 
           {/* Etapa 5 */}
           <div>
             <div className="flex justify-between items-center text-xs font-bold mb-1.5">
-              <span className="text-slate-900">5. Rolaram além das primeiras 4 seções (Gestão &amp; Anti-Furo)</span>
-              <span className="font-mono text-slate-900">
+              <span className="text-white">5. Rolaram além das primeiras 4 seções (Gestão &amp; Anti-Furo)</span>
+              <span className="font-mono text-white">
                 34 (45%) <span className="text-red-500 ml-1 font-semibold">-40 aqui</span>
               </span>
             </div>
-            <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden">
+            <div className="w-full h-3 rounded-full bg-[#13131A] overflow-hidden">
               <div className="h-full bg-amber-500 rounded-full" style={{ width: '45%' }} />
             </div>
           </div>
@@ -663,12 +663,12 @@ export default function AdminAnalytics() {
           {/* Etapa 6 */}
           <div>
             <div className="flex justify-between items-center text-xs font-bold mb-1.5">
-              <span className="text-slate-900">6. Chegaram à Tabela de Planos e Preços</span>
-              <span className="font-mono text-slate-900">
-                28 (36%) <span className="text-slate-400 ml-1 font-semibold">-6 aqui</span>
+              <span className="text-white">6. Chegaram à Tabela de Planos e Preços</span>
+              <span className="font-mono text-white">
+                28 (36%) <span className="text-zinc-500 ml-1 font-semibold">-6 aqui</span>
               </span>
             </div>
-            <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden">
+            <div className="w-full h-3 rounded-full bg-[#13131A] overflow-hidden">
               <div className="h-full bg-amber-500 rounded-full" style={{ width: '36%' }} />
             </div>
           </div>
@@ -676,13 +676,13 @@ export default function AdminAnalytics() {
           {/* Etapa 7 */}
           <div>
             <div className="flex justify-between items-center text-xs font-bold mb-1.5">
-              <span className="text-slate-900">7. Clicaram em Começar Grátis / Assinar</span>
-              <span className="font-mono text-slate-900">
+              <span className="text-white">7. Clicaram em Começar Grátis / Assinar</span>
+              <span className="font-mono text-white">
                 1 (1.3%) <span className="text-red-500 ml-1 font-semibold">-27 aqui</span>
               </span>
             </div>
-            <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden">
-              <div className="h-full bg-blue-600 rounded-full" style={{ width: '1.3%' }} />
+            <div className="w-full h-3 rounded-full bg-[#13131A] overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full" style={{ width: '1.3%' }} />
             </div>
           </div>
         </div>
@@ -692,13 +692,13 @@ export default function AdminAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Card Esquerda: Onde estavam quando desistiram */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-6 shadow-xs space-y-4">
           <div>
-            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+            <h3 className="text-base font-extrabold text-white flex items-center gap-2">
               <ArrowUpRight className="w-4 h-4 text-red-500" />
               <span>Onde estavam quando desistiram</span>
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-zinc-400 mt-0.5">
               Só quem saiu sem clicar em começar grátis (76 sessões).
             </p>
           </div>
@@ -707,15 +707,15 @@ export default function AdminAnalytics() {
             {exitPoints.map((item) => (
               <div key={item.name} className="space-y-1.5">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-semibold text-slate-800 flex items-center gap-2">
+                  <span className="font-semibold text-zinc-100 flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${item.color}`} />
                     {item.name}
                   </span>
-                  <span className="font-mono text-slate-900 font-bold">
-                    {item.pct}% <span className="text-slate-400 font-normal">· {item.count}</span>
+                  <span className="font-mono text-white font-bold">
+                    {item.pct}% <span className="text-zinc-500 font-normal">· {item.count}</span>
                   </span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div className="w-full h-2 rounded-full bg-[#13131A] overflow-hidden">
                   <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.pct}%` }} />
                 </div>
               </div>
@@ -724,13 +724,13 @@ export default function AdminAnalytics() {
         </div>
 
         {/* Card Direita: Ponto focal — onde passam mais tempo */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-6 shadow-xs space-y-4">
           <div>
-            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <Flame className="w-4 h-4 text-blue-600" />
+            <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+              <Flame className="w-4 h-4 text-emerald-400" />
               <span>Ponto focal — onde passam mais tempo</span>
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-zinc-400 mt-0.5">
               Divisão do tempo ativo total. Valor à direita = média por sessão.
             </p>
           </div>
@@ -739,15 +739,15 @@ export default function AdminAnalytics() {
             {focalPoints.map((item) => (
               <div key={item.name} className="space-y-1.5">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-semibold text-slate-800 flex items-center gap-2">
+                  <span className="font-semibold text-zinc-100 flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${item.color}`} />
                     {item.name}
                   </span>
-                  <span className="font-mono text-slate-900 font-bold">
-                    {item.pct}% <span className="text-slate-400 font-normal">· {item.avg}</span>
+                  <span className="font-mono text-white font-bold">
+                    {item.pct}% <span className="text-zinc-500 font-normal">· {item.avg}</span>
                   </span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div className="w-full h-2 rounded-full bg-[#13131A] overflow-hidden">
                   <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.pct}%` }} />
                 </div>
               </div>
@@ -761,22 +761,22 @@ export default function AdminAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Card Esquerda: Até qual seção as pessoas chegam (Colunas Verticais) */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5">
+        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-6 shadow-xs space-y-5">
           <div>
-            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+            <h3 className="text-base font-extrabold text-white flex items-center gap-2">
               <Smartphone className="w-4 h-4 text-emerald-600" />
               <span>Até qual seção as pessoas chegam</span>
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-zinc-400 mt-0.5">
               % das sessões que viram a seção na posição N. Onde a barra despenca é onde o interesse morre.
             </p>
           </div>
 
           {/* Gráfico de Colunas */}
-          <div className="h-44 flex items-end justify-between gap-2.5 pt-4 pb-2 border-b border-slate-200">
+          <div className="h-44 flex items-end justify-between gap-2.5 pt-4 pb-2 border-b border-white/10">
             {sectionDepthData.map((sec) => (
               <div key={sec.pos} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                <span className="text-[10px] font-mono font-bold text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-[10px] font-mono font-bold text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity">
                   {sec.pct}%
                 </span>
                 <div
@@ -784,7 +784,7 @@ export default function AdminAnalytics() {
                   style={{ height: `${Math.max(12, sec.pct)}%` }}
                   title={`${sec.name}: ${sec.pct}%`}
                 />
-                <span className="text-[11px] font-mono text-slate-500 font-bold">
+                <span className="text-[11px] font-mono text-zinc-400 font-bold">
                   {sec.pos}
                 </span>
               </div>
@@ -793,15 +793,15 @@ export default function AdminAnalytics() {
 
           {/* Legenda colorida */}
           <div className="flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1.5 text-slate-700 font-medium">
+            <span className="flex items-center gap-1.5 text-zinc-300 font-medium">
               <span className="w-3 h-3 rounded-xs bg-emerald-500" />
               50%+ chegam
             </span>
-            <span className="flex items-center gap-1.5 text-slate-700 font-medium">
+            <span className="flex items-center gap-1.5 text-zinc-300 font-medium">
               <span className="w-3 h-3 rounded-xs bg-amber-500" />
               20–50%
             </span>
-            <span className="flex items-center gap-1.5 text-slate-700 font-medium">
+            <span className="flex items-center gap-1.5 text-zinc-300 font-medium">
               <span className="w-3 h-3 rounded-xs bg-red-500" />
               menos de 20%
             </span>
@@ -809,51 +809,51 @@ export default function AdminAnalytics() {
         </div>
 
         {/* Card Direita: Quanto tempo ficam na página (Histograma de Tempo) */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5">
+        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-6 shadow-xs space-y-5">
           <div>
-            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+            <h3 className="text-base font-extrabold text-white flex items-center gap-2">
               <Clock className="w-4 h-4 text-amber-500" />
               <span>Quanto tempo ficam na página</span>
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-zinc-400 mt-0.5">
               Tempo ativo (só conta com a aba aberta na tela).
             </p>
           </div>
 
           {/* Histograma de Barras */}
-          <div className="h-44 flex items-end justify-between gap-3 pt-4 pb-2 border-b border-slate-200">
+          <div className="h-44 flex items-end justify-between gap-3 pt-4 pb-2 border-b border-white/10">
             {dwellDistribution.map((dw) => (
               <div key={dw.label} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                <span className={`text-[11px] font-mono font-extrabold ${dw.isDrop ? 'text-red-500' : 'text-slate-700'}`}>
+                <span className={`text-[11px] font-mono font-extrabold ${dw.isDrop ? 'text-red-500' : 'text-zinc-300'}`}>
                   {dw.pct}%
                 </span>
                 <div
                   className={`w-full rounded-t-lg transition-all ${dw.color}`}
                   style={{ height: `${Math.max(8, dw.pct)}%` }}
                 />
-                <span className="text-[10px] font-mono text-slate-500 whitespace-nowrap">
+                <span className="text-[10px] font-mono text-zinc-400 whitespace-nowrap">
                   {dw.label}
                 </span>
               </div>
             ))}
           </div>
 
-          <div className="flex items-center justify-between text-xs text-slate-500">
+          <div className="flex items-center justify-between text-xs text-zinc-400">
             <span>Taxa de rejeição imediata (&lt; 5s): <strong className="text-red-500 font-mono">88%</strong></span>
-            <span>Média geral: <strong className="text-slate-900 font-mono">42 segundos</strong></span>
+            <span>Média geral: <strong className="text-white font-mono">42 segundos</strong></span>
           </div>
         </div>
 
       </div>
 
       {/* ── 6. SEÇÕES & ELEMENTOS QUE MAIS PRENDEM O OLHAR ── */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+      <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-6 shadow-xs space-y-4">
         <div>
-          <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-blue-600" />
+          <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-emerald-400" />
             <span>Elementos que mais prendem o olhar</span>
           </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-zinc-400 mt-0.5">
             Visto = card/seção ficou 0.8s+ na tela. Elemento com muita atenção e zero clique é sinal de preço/foto que não convence.
           </p>
         </div>
@@ -861,7 +861,7 @@ export default function AdminAnalytics() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase tracking-wider font-mono">
+              <tr className="border-b border-white/10 bg-[#13131A] text-zinc-400 uppercase tracking-wider font-mono">
                 <th className="py-3 px-4">Posição</th>
                 <th className="py-3 px-4">Elemento / Seção</th>
                 <th className="py-3 px-4 text-center">Visualizações</th>
@@ -873,12 +873,12 @@ export default function AdminAnalytics() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {attentionElements.map((item) => (
-                <tr key={item.pos} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3.5 px-4 font-mono font-bold text-blue-600">{item.pos}</td>
-                  <td className="py-3.5 px-4 font-semibold text-slate-900">{item.name}</td>
-                  <td className="py-3.5 px-4 text-center font-mono text-slate-700">{item.views}</td>
-                  <td className="py-3.5 px-4 text-center font-mono text-blue-600 font-bold">{item.time}</td>
-                  <td className="py-3.5 px-4 text-center font-mono text-slate-900 font-bold">{item.clicks}</td>
+                <tr key={item.pos} className="hover:bg-[#13131A]/70 transition-colors">
+                  <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">{item.pos}</td>
+                  <td className="py-3.5 px-4 font-semibold text-white">{item.name}</td>
+                  <td className="py-3.5 px-4 text-center font-mono text-zinc-300">{item.views}</td>
+                  <td className="py-3.5 px-4 text-center font-mono text-emerald-400 font-bold">{item.time}</td>
+                  <td className="py-3.5 px-4 text-center font-mono text-white font-bold">{item.clicks}</td>
                   <td className="py-3.5 px-4 text-center font-mono font-bold text-emerald-600">{item.conv}</td>
                   <td className="py-3.5 px-4">
                     <span
@@ -888,8 +888,8 @@ export default function AdminAnalytics() {
                           : item.status.includes('não clicam')
                           ? 'bg-amber-50 text-amber-700 border border-amber-200'
                           : item.status.includes('Principal')
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                          : 'bg-slate-100 text-slate-700'
+                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                          : 'bg-[#13131A] text-zinc-300'
                       }`}
                     >
                       {item.status}
@@ -906,23 +906,23 @@ export default function AdminAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Card Esquerda: Gráfico de Visitas */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-blue-600" />
+              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-emerald-400" />
                 <span>Gráfico de Visitas</span>
               </h3>
             </div>
             
             {/* Toggles: Por Hora | Por Dia | Por Mês */}
-            <div className="flex bg-slate-100 p-1 rounded-xl">
+            <div className="flex bg-[#13131A] p-1 rounded-xl">
               {(['hora', 'dia', 'mes'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveVisitTab(tab)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize transition-all ${
-                    activeVisitTab === tab ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                    activeVisitTab === tab ? 'bg-[#0B0B0E] text-white shadow-xs' : 'text-zinc-400 hover:text-white'
                   }`}
                 >
                   Por {tab}
@@ -939,8 +939,8 @@ export default function AdminAnalytics() {
                 onClick={() => setSelectedDayOfWeek(idx)}
                 className={`w-7 h-7 rounded-full text-xs font-bold transition-all ${
                   selectedDayOfWeek === idx
-                    ? 'bg-blue-600 text-white font-black shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-emerald-500 text-black font-bold font-black shadow-xs'
+                    : 'bg-[#13131A] text-zinc-400 hover:bg-zinc-800'
                 }`}
               >
                 {dia}
@@ -949,7 +949,7 @@ export default function AdminAnalytics() {
           </div>
 
           {/* Gráfico de Barras com Pico */}
-          <div className="h-40 flex items-end justify-between gap-3 pt-4 border-b border-slate-200">
+          <div className="h-40 flex items-end justify-between gap-3 pt-4 border-b border-white/10">
             {[
               { label: '0h', val: 0 },
               { label: '3h', val: 345, isPeak: true },
@@ -962,25 +962,25 @@ export default function AdminAnalytics() {
             ].map((col) => (
               <div key={col.label} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
                 <div
-                  className={`w-full rounded-t-md transition-all ${col.isPeak ? 'bg-blue-600' : 'bg-slate-200'}`}
+                  className={`w-full rounded-t-md transition-all ${col.isPeak ? 'bg-emerald-500' : 'bg-zinc-800'}`}
                   style={{ height: col.val > 0 ? `${Math.min(100, Math.max(8, (col.val / 350) * 100))}%` : '2px' }}
                 />
-                <span className="text-[10px] font-mono text-slate-500 font-medium">{col.label}</span>
+                <span className="text-[10px] font-mono text-zinc-400 font-medium">{col.label}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Card Direita: Evolução do Funil (7 Dias) */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+            <h3 className="text-base font-extrabold text-white flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-emerald-600" />
               <span>Evolução do Funil (7 Dias)</span>
             </h3>
             <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5 text-slate-900 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-xs bg-blue-600" />
+              <span className="flex items-center gap-1.5 text-white font-semibold">
+                <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500" />
                 Visitas
               </span>
               <span className="flex items-center gap-1.5 text-emerald-600 font-semibold">
@@ -990,7 +990,7 @@ export default function AdminAnalytics() {
             </div>
           </div>
 
-          <div className="h-48 flex items-end justify-between gap-4 pt-6 border-b border-slate-200">
+          <div className="h-48 flex items-end justify-between gap-4 pt-6 border-b border-white/10">
             {[
               { dia: 'DOM.', visitas: 1, cliques: 0 },
               { dia: 'SEG.', visitas: 2, cliques: 0 },
@@ -1003,7 +1003,7 @@ export default function AdminAnalytics() {
               <div key={col.dia} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
                 <div className="w-full flex items-end justify-center gap-1 h-full">
                   <div
-                    className="w-3 rounded-t-xs bg-blue-600"
+                    className="w-3 rounded-t-xs bg-emerald-500"
                     style={{ height: `${Math.min(100, Math.max(4, (col.visitas / 345) * 100))}%` }}
                     title={`Visitas: ${col.visitas}`}
                   />
@@ -1015,7 +1015,7 @@ export default function AdminAnalytics() {
                     />
                   )}
                 </div>
-                <span className="text-[10px] font-mono font-bold text-slate-500">{col.dia}</span>
+                <span className="text-[10px] font-mono font-bold text-zinc-400">{col.dia}</span>
               </div>
             ))}
           </div>
@@ -1027,9 +1027,9 @@ export default function AdminAnalytics() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
         {/* 1. Canais & Origens */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-          <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-            <Globe className="w-4 h-4 text-blue-600" />
+        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-6 shadow-xs space-y-4">
+          <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+            <Globe className="w-4 h-4 text-emerald-400" />
             <span>Canais &amp; Origens</span>
           </h3>
 
@@ -1039,11 +1039,11 @@ export default function AdminAnalytics() {
               return (
                 <div key={src} className="space-y-1">
                   <div className="flex justify-between text-xs font-semibold">
-                    <span className="text-slate-800">{src}</span>
-                    <span className="font-mono text-slate-500">{count} ({pct}%)</span>
+                    <span className="text-zinc-100">{src}</span>
+                    <span className="font-mono text-zinc-400">{count} ({pct}%)</span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                    <div className="h-full bg-blue-600 rounded-full" style={{ width: `${Math.max(2, pct)}%` }} />
+                  <div className="w-full h-2 rounded-full bg-[#13131A] overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.max(2, pct)}%` }} />
                   </div>
                 </div>
               );
@@ -1052,58 +1052,58 @@ export default function AdminAnalytics() {
         </div>
 
         {/* 2. Top Elementos Mais Clicados */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-          <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-            <MousePointerClick className="w-4 h-4 text-blue-600" />
+        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-6 shadow-xs space-y-4">
+          <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+            <MousePointerClick className="w-4 h-4 text-emerald-400" />
             <span>Top Elementos Mais Clicados</span>
           </h3>
 
           <div className="space-y-3 pt-1">
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-[#13131A] border border-white/10">
               <div className="flex items-center gap-2.5 min-w-0">
-                <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                <span className="w-5 h-5 rounded-full bg-emerald-500 text-black font-bold font-bold text-xs flex items-center justify-center shrink-0">
                   1
                 </span>
-                <span className="text-xs font-semibold text-slate-800 truncate">
+                <span className="text-xs font-semibold text-zinc-100 truncate">
                   Plano Growth (R$ 77 / R$ 89)
                 </span>
               </div>
               <span className="font-mono font-bold text-emerald-600 text-xs shrink-0 ml-2">1 clique</span>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-[#13131A] border border-white/10">
               <div className="flex items-center gap-2.5 min-w-0">
-                <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0">
+                <span className="w-5 h-5 rounded-full bg-zinc-800 text-zinc-300 font-bold text-xs flex items-center justify-center shrink-0">
                   2
                 </span>
-                <span className="text-xs font-semibold text-slate-800 truncate">
+                <span className="text-xs font-semibold text-zinc-100 truncate">
                   CTA Hero "Começar 7 dias grátis"
                 </span>
               </div>
-              <span className="font-mono font-bold text-slate-900 text-xs shrink-0 ml-2">14 cliques</span>
+              <span className="font-mono font-bold text-white text-xs shrink-0 ml-2">14 cliques</span>
             </div>
           </div>
         </div>
 
         {/* 3. Dispositivos */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-          <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-            <Smartphone className="w-4 h-4 text-blue-600" />
+        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-6 shadow-xs space-y-4">
+          <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+            <Smartphone className="w-4 h-4 text-emerald-400" />
             <span>Dispositivos</span>
           </h3>
 
           <div className="grid grid-cols-2 gap-3 pt-1">
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center">
-              <Smartphone className="w-5 h-5 text-blue-600 mx-auto mb-1.5" />
-              <p className="text-2xl font-black text-slate-900 font-mono">{deviceCounts.mobile}</p>
-              <p className="text-xs text-slate-500 mt-0.5">Celular</p>
-              <p className="text-xs text-blue-600 font-bold font-mono mt-1">{mobilePct}%</p>
+            <div className="p-4 rounded-xl bg-[#13131A] border border-white/10 text-center">
+              <Smartphone className="w-5 h-5 text-emerald-400 mx-auto mb-1.5" />
+              <p className="text-2xl font-black text-white font-mono">{deviceCounts.mobile}</p>
+              <p className="text-xs text-zinc-400 mt-0.5">Celular</p>
+              <p className="text-xs text-emerald-400 font-bold font-mono mt-1">{mobilePct}%</p>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center">
+            <div className="p-4 rounded-xl bg-[#13131A] border border-white/10 text-center">
               <Monitor className="w-5 h-5 text-indigo-600 mx-auto mb-1.5" />
-              <p className="text-2xl font-black text-slate-900 font-mono">{deviceCounts.desktop}</p>
-              <p className="text-xs text-slate-500 mt-0.5">PC / Desk</p>
+              <p className="text-2xl font-black text-white font-mono">{deviceCounts.desktop}</p>
+              <p className="text-xs text-zinc-400 mt-0.5">PC / Desk</p>
               <p className="text-xs text-indigo-600 font-bold font-mono mt-1">{desktopPct}%</p>
             </div>
           </div>
@@ -1112,31 +1112,31 @@ export default function AdminAnalytics() {
       </div>
 
       {/* ── 9. FEED DE AUDITORIA & REGISTROS AO VIVO ── */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl shadow-xs overflow-hidden">
+        <div className="p-4 sm:p-6 border-b border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="font-extrabold text-base sm:text-lg text-slate-900 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-blue-600" />
+            <h2 className="font-extrabold text-base sm:text-lg text-white flex items-center gap-2">
+              <Clock className="w-4 h-4 text-emerald-400" />
               <span>Registro de Eventos &amp; Telemetria</span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-zinc-400 mt-0.5">
               Eventos disparados por visitantes, cliques, rolagem e marcos de permanência.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
               <input
                 type="text"
                 placeholder="Buscar evento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white w-full sm:w-[200px]"
+                className="bg-[#13131A] border border-white/10 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-[#0B0B0E] w-full sm:w-[200px]"
               />
             </div>
 
-            <div className="flex bg-slate-100 rounded-xl p-1 gap-1">
+            <div className="flex bg-[#13131A] rounded-xl p-1 gap-1">
               {[
                 { key: 'all', label: 'Todos' },
                 { key: 'page_view', label: 'Visitas' },
@@ -1147,7 +1147,7 @@ export default function AdminAnalytics() {
                   key={c.key}
                   onClick={() => setSelectedCategory(c.key as any)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                    selectedCategory === c.key ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                    selectedCategory === c.key ? 'bg-emerald-500 text-black font-bold shadow-xs' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
                   }`}
                 >
                   {c.label}
@@ -1161,7 +1161,7 @@ export default function AdminAnalytics() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-mono uppercase tracking-wider">
+              <tr className="border-b border-white/10 bg-[#13131A] text-zinc-400 font-mono uppercase tracking-wider">
                 <th className="py-3 px-5">Data / Hora</th>
                 <th className="py-3 px-5">Tipo</th>
                 <th className="py-3 px-5">Evento</th>
@@ -1173,14 +1173,14 @@ export default function AdminAnalytics() {
             <tbody className="divide-y divide-slate-100">
               {loading && events.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-slate-400">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto text-blue-600 mb-2" />
+                  <td colSpan={6} className="py-10 text-center text-zinc-500">
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto text-emerald-400 mb-2" />
                     Carregando atividades...
                   </td>
                 </tr>
               ) : filteredEvents.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-slate-400 italic">
+                  <td colSpan={6} className="py-10 text-center text-zinc-500 italic">
                     Nenhum evento registrado no período.
                   </td>
                 </tr>
@@ -1191,32 +1191,32 @@ export default function AdminAnalytics() {
                   const dateFormatted = date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
 
                   return (
-                    <tr key={evt.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-3 px-5 font-mono text-slate-500 whitespace-nowrap">
-                        <span className="text-slate-900 font-semibold">{timeFormatted}</span>
-                        <span className="text-[10px] text-slate-400 block">{dateFormatted}</span>
+                    <tr key={evt.id} className="hover:bg-[#13131A]/70 transition-colors">
+                      <td className="py-3 px-5 font-mono text-zinc-400 whitespace-nowrap">
+                        <span className="text-white font-semibold">{timeFormatted}</span>
+                        <span className="text-[10px] text-zinc-500 block">{dateFormatted}</span>
                       </td>
                       <td className="py-3 px-5 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                           {evt.event_type}
                         </span>
                       </td>
-                      <td className="py-3 px-5 font-semibold text-slate-900 max-w-[260px] truncate">
+                      <td className="py-3 px-5 font-semibold text-white max-w-[260px] truncate">
                         {evt.event_name}
                         {evt.metadata && Object.keys(evt.metadata).length > 0 && (
-                          <span className="text-[10px] text-slate-400 block truncate font-mono mt-0.5">
+                          <span className="text-[10px] text-zinc-500 block truncate font-mono mt-0.5">
                             {JSON.stringify(evt.metadata)}
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-5 font-mono text-slate-600">{evt.page_path}</td>
+                      <td className="py-3 px-5 font-mono text-zinc-400">{evt.page_path}</td>
                       <td className="py-3 px-5 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5 text-slate-700">
+                        <div className="flex items-center gap-1.5 text-zinc-300">
                           {getDeviceIcon(evt.device_type)}
                           <span>{evt.device_type || 'desktop'}</span>
                         </div>
                       </td>
-                      <td className="py-3 px-5 text-slate-500 whitespace-nowrap">
+                      <td className="py-3 px-5 text-zinc-400 whitespace-nowrap">
                         {evt.utm_source ? `UTM: ${evt.utm_source}` : evt.referrer || 'Direto'}
                       </td>
                     </tr>
@@ -1228,23 +1228,23 @@ export default function AdminAnalytics() {
         </div>
 
         {/* Paginação */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+        <div className="p-4 bg-[#13131A] border-t border-white/10 flex items-center justify-between text-xs text-zinc-400">
           <span>{filteredEvents.length} eventos monitorados</span>
           <div className="flex items-center gap-2">
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 font-medium hover:bg-slate-100 disabled:opacity-30 shadow-xs"
+              className="px-2.5 py-1 rounded-lg bg-[#0B0B0E] border border-white/10 text-zinc-300 font-medium hover:bg-[#13131A] disabled:opacity-30 shadow-xs"
             >
               Anterior
             </button>
-            <span className="font-mono text-slate-700 font-semibold">
+            <span className="font-mono text-zinc-300 font-semibold">
               {currentPage} de {Math.max(1, Math.ceil(filteredEvents.length / itemsPerPage))}
             </span>
             <button
               disabled={currentPage >= Math.ceil(filteredEvents.length / itemsPerPage)}
               onClick={() => setCurrentPage((p) => p + 1)}
-              className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 font-medium hover:bg-slate-100 disabled:opacity-30 shadow-xs"
+              className="px-2.5 py-1 rounded-lg bg-[#0B0B0E] border border-white/10 text-zinc-300 font-medium hover:bg-[#13131A] disabled:opacity-30 shadow-xs"
             >
               Próximo
             </button>

@@ -24,6 +24,7 @@ import AdminLayout from '../pages/admin/AdminLayout';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import AdminTenants from '../pages/admin/AdminTenants';
 import AdminDemoPortals from '../pages/admin/AdminDemoPortals';
+import AdminCaptacao from '../pages/admin/AdminCaptacao';
 import AdminSettings from '../pages/admin/AdminSettings';
 import AdminPlans from '../pages/admin/AdminPlans';
 import AdminCustomPricing from '../pages/admin/AdminCustomPricing';
@@ -114,8 +115,10 @@ function AppRouteTree() {
           <Financeiro />
         </RequirePermission>
       } />
+      {/* Configurações é sempre acessível (dados do salão, horários, pagamentos).
+          A personalização visual é protegida internamente por 'configuracoes.editar_layout'. */}
       <Route path="configuracoes" element={
-        <RequirePermission modulePrefix="configuracoes">
+        <RequirePermission>
           <Configuracoes />
         </RequirePermission>
       } />
@@ -144,6 +147,7 @@ function AdminRouteTree() {
       <Route path="analytics" element={<AdminAnalytics />} />
       <Route path="tenants" element={<AdminTenants />} />
       <Route path="demos" element={<AdminDemoPortals />} />
+      <Route path="captacao" element={<AdminCaptacao />} />
       <Route path="plans" element={<AdminPlans />} />
       <Route path="custom-pricing" element={<AdminCustomPricing />} />
       <Route path="financeiro" element={<AdminFinanceiro />} />

@@ -5,12 +5,12 @@ interface AdminSkeletonProps {
 }
 
 function SkeletonBlock({ className = '' }: { className?: string }) {
-  return <div className={`bg-slate-200 rounded animate-pulse ${className}`} />;
+  return <div className={`bg-zinc-800/80 rounded animate-pulse ${className}`} />;
 }
 
 export function AdminStatSkeleton() {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs">
+    <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-6 shadow-xl">
       <SkeletonBlock className="h-3 w-24 mb-4" />
       <SkeletonBlock className="h-8 w-32 mb-2" />
       <SkeletonBlock className="h-3 w-16" />
@@ -20,16 +20,16 @@ export function AdminStatSkeleton() {
 
 export function AdminTableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="space-y-0 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+    <div className="space-y-0 bg-[#0B0B0E] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
       {/* Header */}
-      <div className="flex gap-4 px-6 py-3 border-b border-slate-100 bg-slate-50/50">
+      <div className="flex gap-4 px-6 py-3 border-b border-white/5 bg-white/[0.02]">
         {[40, 25, 20, 15].map((w, i) => (
           <SkeletonBlock key={i} className={`h-3 w-${w === 40 ? '2/5' : w === 25 ? '1/4' : w === 20 ? '1/5' : '1/6'}`} />
         ))}
       </div>
       {/* Rows */}
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4 px-6 py-4 border-b border-slate-100">
+        <div key={i} className="flex items-center gap-4 px-6 py-4 border-b border-white/5">
           <SkeletonBlock className="h-8 w-8 rounded-full flex-shrink-0" />
           <SkeletonBlock className="h-4 flex-1" />
           <SkeletonBlock className="h-4 w-1/4" />

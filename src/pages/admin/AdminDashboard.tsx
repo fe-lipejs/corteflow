@@ -121,25 +121,25 @@ interface StatCardProps {
   delay?: number;
 }
 
-function StatCard({ icon: Icon, label, value, sub, accent = '#2563eb', delay = 0 }: StatCardProps) {
+function StatCard({ icon: Icon, label, value, sub, accent = '#10b981', delay = 0 }: StatCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay }}
-      className="bg-white border border-slate-200/90 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all group shadow-xs"
+      className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-5 hover:border-emerald-500/30 hover:shadow-2xl hover:shadow-emerald-500/5 transition-all group shadow-lg"
     >
       <div className="flex items-start justify-between mb-4">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
+        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{label}</p>
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
-          style={{ background: `${accent}15` }}
+          className="w-8 h-8 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
+          style={{ background: `${accent}20` }}
         >
           <Icon className="w-4 h-4" style={{ color: accent }} />
         </div>
       </div>
-      <p className="text-2xl font-bold text-slate-900 mb-1 tracking-tight">{value}</p>
-      {sub && <p className="text-xs text-slate-400">{sub}</p>}
+      <p className="text-2xl font-bold text-white mb-1 tracking-tight">{value}</p>
+      {sub && <p className="text-xs text-zinc-500">{sub}</p>}
     </motion.div>
   );
 }
@@ -202,25 +202,25 @@ export default function AdminDashboard() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-blue-50/80 via-white to-blue-50/30 border border-blue-200/80 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs"
+        className="bg-gradient-to-r from-emerald-950/30 via-[#0B0B0E] to-[#0B0B0E] border border-emerald-500/30 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl relative overflow-hidden group"
       >
         <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 shadow-lg shadow-emerald-500/10">
             <Activity className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-semibold text-base text-slate-900 flex items-center gap-2">
+            <h3 className="font-semibold text-base text-white flex items-center gap-2">
               Motor de Visitas, Cliques &amp; Tráfego Ativo
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981] animate-pulse" />
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-zinc-400">
               Acompanhe em tempo real os acessos à Landing Page, tráfego do Instagram e engajamento com a Playlist &amp; Mensagens de Fé.
             </p>
           </div>
         </div>
         <Link
           to="/platform/analytics"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition-all shadow-sm shadow-blue-500/20 shrink-0"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition-all shadow-lg shadow-emerald-500/20 shrink-0 cursor-pointer active:scale-95"
         >
           <span>Ver Motor de Visitas</span>
           <ArrowUpRight className="w-4 h-4" />
@@ -229,33 +229,33 @@ export default function AdminDashboard() {
 
       {/* ── Empresas ── */}
       <section>
-        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Empresas</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">Empresas</p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          <StatCard icon={Building2}   label="Total"      value={tenants.total}    accent="#2563eb" delay={0}    />
+          <StatCard icon={Building2}   label="Total"      value={tenants.total}    accent="#10b981" delay={0}    />
           <StatCard icon={CheckCircle} label="Ativas"     value={tenants.active}   accent="#10b981" delay={0.05} sub={`${tenants.total > 0 ? Math.round(tenants.active / tenants.total * 100) : 0}% do total`} />
           <StatCard icon={Clock}       label="Em Trial"   value={tenants.trial}    accent="#f59e0b" delay={0.1}  />
           <StatCard icon={Ban}         label="Bloqueadas" value={tenants.blocked}  accent="#ef4444" delay={0.15} />
-          <StatCard icon={XCircle}     label="Canceladas" value={tenants.canceled} accent="#64748b" delay={0.2}  />
+          <StatCard icon={XCircle}     label="Canceladas" value={tenants.canceled} accent="#71717a" delay={0.2}  />
         </div>
       </section>
 
       {/* ── Usuários ── */}
       <section>
-        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Usuários</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">Usuários</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <StatCard icon={Users}      label="Total de Usuários"  value={users.total}         accent="#2563eb" delay={0.25} />
-          <StatCard icon={UserCheck}  label="Clientes"           value={users.clients}       accent="#0284c7" delay={0.3}  />
-          <StatCard icon={Briefcase}  label="Profissionais"      value={users.professionals} accent="#6366f1" delay={0.35} />
+          <StatCard icon={Users}      label="Total de Usuários"  value={users.total}         accent="#10b981" delay={0.25} />
+          <StatCard icon={UserCheck}  label="Clientes"           value={users.clients}       accent="#34d399" delay={0.3}  />
+          <StatCard icon={Briefcase}  label="Profissionais"      value={users.professionals} accent="#10b981" delay={0.35} />
         </div>
       </section>
 
       {/* ── Agendamentos + Receita ── */}
       <section>
-        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Agendamentos &amp; Receita</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">Agendamentos &amp; Receita</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard icon={Calendar}    label="Agendamentos"   value={bookings.total}         accent="#2563eb"  delay={0.4}  />
+          <StatCard icon={Calendar}    label="Agendamentos"   value={bookings.total}         accent="#10b981"  delay={0.4}  />
           <StatCard icon={DollarSign}  label="MRR"            value={fmt(revenue.monthly)}   accent="#10b981"  delay={0.45} sub="Receita mensal recorrente" />
-          <StatCard icon={TrendingUp}  label="ARR"            value={fmt(revenue.annual)}    accent="#0284c7"  delay={0.5}  sub="Receita anual projetada" />
+          <StatCard icon={TrendingUp}  label="ARR"            value={fmt(revenue.annual)}    accent="#34d399"  delay={0.5}  sub="Receita anual projetada" />
           <StatCard icon={CreditCard}  label="Ticket Médio"   value={fmt(revenue.avgTicket)} accent="#f59e0b"  delay={0.55} sub="Por assinatura ativa" />
         </div>
       </section>
@@ -263,9 +263,9 @@ export default function AdminDashboard() {
       {/* ── Últimas Empresas ── */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Empresas Recentes</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Empresas Recentes</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
           {recentTenants.length === 0 ? (
             <AdminEmptyState
               title="Nenhuma empresa cadastrada"
@@ -273,27 +273,27 @@ export default function AdminDashboard() {
               icon={<Building2 className="w-6 h-6" />}
             />
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-white/5">
               {recentTenants.map((tenant, i) => (
                 <motion.div
                   key={tenant.id}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.6 + i * 0.05 }}
-                  className="flex items-center justify-between px-5 py-3.5 hover:bg-slate-50/80 transition-colors"
+                  className="flex items-center justify-between px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-9 h-9 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-blue-700 font-bold text-xs shadow-xs">
+                    <div className="w-9 h-9 bg-emerald-500/15 border border-emerald-500/30 rounded-xl flex items-center justify-center text-emerald-400 font-bold text-xs shadow-xs">
                       {tenant.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">{tenant.name}</p>
-                      <p className="text-xs text-slate-400">{getTenantPublicUrl(tenant.slug).replace(/^https?:\/\//, '')} · {BusinessTypeLabel(tenant.business_type)}</p>
+                      <p className="text-sm font-semibold text-zinc-100">{tenant.name}</p>
+                      <p className="text-xs text-zinc-400">{getTenantPublicUrl(tenant.slug).replace(/^https?:\/\//, '')} · {BusinessTypeLabel(tenant.business_type)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <AdminBadge value={tenant.status} dot />
-                    <p className="text-xs text-slate-400 hidden md:block">
+                    <p className="text-xs text-zinc-500 hidden md:block">
                       {new Date(tenant.created_at).toLocaleDateString('pt-BR')}
                     </p>
                   </div>

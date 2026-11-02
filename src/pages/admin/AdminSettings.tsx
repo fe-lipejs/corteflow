@@ -1,97 +1,532 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminPageHeader from './components/AdminPageHeader';
-import { Settings } from 'lucide-react';
+import { supabase } from '../../integrations/supabase/client';
+import toast from 'react-hot-toast';
+import {
+  Settings,
+  CreditCard,
+  ShieldCheck,
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  Bell,
+  RefreshCw,
+  Zap,
+  Info,
+  DollarSign,
+  Building
+} from 'lucide-react';
+
+interface PlatformSettingsData {
+  id: string;
+  stripe_mode: 'test' | 'live';
+  stripe_test_public_key: string;
+  stripe_test_secret_key: string;
+  stripe_live_public_key: string;
+  stripe_live_secret_key: string;
+  stripe_application_fee_percent: number;
+  stripe_test_account_id: string;
+  stripe_live_account_id: string;
+  stripe_notes: string;
+  whatsapp_enabled: boolean;
+  email_enabled: boolean;
+  sms_enabled: boolean;
+  updated_at?: string;
+}
 
 export default function AdminSettings() {
-  const [activeTab, setActiveTab] = useState('finance');
+  const [activeTab, setActiveTab] = useState<'finance' | 'notifications'>('finance');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [settings, setSettings] = useState<PlatformSettingsData>({
+    id: 'singleton',
+    stripe_mode: 'test',
+    stripe_test_public_key: '',
+    stripe_test_secret_key: '',
+    stripe_live_public_key: '',
+    stripe_live_secret_key: '',
+    stripe_application_fee_percent: 2,
+    stripe_test_account_id: '',
+    stripe_live_account_id: '',
+    stripe_notes: '',
+    whatsapp_enabled: true,
+    email_enabled: true,
+    sms_enabled: false
+  });
+
+  const [showTestSecret, setShowTestSecret] = useState(false);
+  const [showLiveSecret, setShowLiveSecret] = useState(false);
+
+  // Fetch settings from database
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('platform_settings')
+        .select('*')
+        .eq('id', 'singleton')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setSettings({
+          id: data.id || 'singleton',
+          stripe_mode: data.stripe_mode || 'test',
+          stripe_test_public_key: data.stripe_test_public_key || '',
+          stripe_test_secret_key: data.stripe_test_secret_key || '',
+          stripe_live_public_key: data.stripe_live_public_key || '',
+          stripe_live_secret_key: data.stripe_live_secret_key || '',
+          stripe_application_fee_percent: Number(data.stripe_application_fee_percent) || 2,
+          stripe_test_account_id: data.stripe_test_account_id || '',
+          stripe_live_account_id: data.stripe_live_account_id || '',
+          stripe_notes: data.stripe_notes || '',
+          whatsapp_enabled: data.whatsapp_enabled ?? true,
+          email_enabled: data.email_enabled ?? true,
+          sms_enabled: data.sms_enabled ?? false,
+          updated_at: data.updated_at
+        });
+      }
+    } catch (err: any) {
+      console.error('Erro ao buscar configurações globais:', err);
+      toast.error('Erro ao carregar configurações: ' + (err.message || ''));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  // Save settings
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const payload = {
+        id: 'singleton',
+        stripe_mode: settings.stripe_mode,
+        stripe_test_public_key: settings.stripe_test_public_key.trim(),
+        stripe_test_secret_key: settings.stripe_test_secret_key.trim(),
+        stripe_live_public_key: settings.stripe_live_public_key.trim(),
+        stripe_live_secret_key: settings.stripe_live_secret_key.trim(),
+        stripe_application_fee_percent: Number(settings.stripe_application_fee_percent) || 2,
+        stripe_test_account_id: settings.stripe_test_account_id.trim(),
+        stripe_live_account_id: settings.stripe_live_account_id.trim(),
+        stripe_notes: settings.stripe_notes.trim(),
+        whatsapp_enabled: settings.whatsapp_enabled,
+        email_enabled: settings.email_enabled,
+        sms_enabled: settings.sms_enabled,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('platform_settings')
+        .upsert(payload, { onConflict: 'id' });
+
+      if (error) throw error;
+
+      toast.success(
+        settings.stripe_mode === 'live'
+          ? 'Configurações salvas! Modo PRODUÇÃO (LIVE) ativo na plataforma.'
+          : 'Configurações salvas! Modo TESTE (SANDBOX) ativo na plataforma.'
+      );
+      fetchSettings();
+    } catch (err: any) {
+      console.error('Erro ao salvar configurações:', err);
+      toast.error('Erro ao salvar: ' + (err.message || ''));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20 font-sans text-zinc-100">
       <AdminPageHeader
-        title="Configurações"
-        subtitle="Configurações globais da plataforma"
+        title="Configurações Globais"
+        subtitle="Gerenciamento da conta mestre do Stripe, alternância entre Modo Teste e Modo Live, e notificações da plataforma."
         icon={<Settings className="w-5 h-5" />}
-      />
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-        <div className="flex border-b border-slate-200 bg-slate-50/50">
-          <button 
-            onClick={() => setActiveTab('finance')}
-            className={`px-6 py-4 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'finance' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
+        actions={
+          <button
+            onClick={handleSave}
+            disabled={saving || loading}
+            className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50 flex items-center gap-2"
           >
-            Financeiro
+            {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            {saving ? 'Salvando...' : 'Salvar Alterações'}
           </button>
-          <button 
-            onClick={() => setActiveTab('notifications')}
-            className={`px-6 py-4 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'notifications' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
+        }
+      />
+
+      <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
+        {/* Tabs Bar */}
+        <div className="flex border-b border-white/10 bg-[#0E0E14]">
+          <button
+            onClick={() => setActiveTab('finance')}
+            className={`px-6 py-4 text-xs font-bold border-b-2 transition-colors cursor-pointer flex items-center gap-2 ${
+              activeTab === 'finance'
+                ? 'border-emerald-400 text-emerald-400 bg-white/[0.02]'
+                : 'border-transparent text-zinc-400 hover:text-white'
+            }`}
           >
-            Notificações
+            <CreditCard className="w-4 h-4" />
+            Stripe & Meios de Pagamento
+          </button>
+          <button
+            onClick={() => setActiveTab('notifications')}
+            className={`px-6 py-4 text-xs font-bold border-b-2 transition-colors cursor-pointer flex items-center gap-2 ${
+              activeTab === 'notifications'
+                ? 'border-emerald-400 text-emerald-400 bg-white/[0.02]'
+                : 'border-transparent text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Bell className="w-4 h-4" />
+            Notificações & Canais
           </button>
         </div>
 
         <div className="p-6">
-          {activeTab === 'finance' && (
-            <div className="max-w-2xl space-y-6">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Configurações do Stripe</h3>
-                <p className="text-slate-500 text-sm">Configure as chaves da conta mestre do Stripe que receberá as assinaturas e taxas de aplicação.</p>
+          {loading ? (
+            <div className="py-16 text-center text-zinc-500 flex flex-col items-center justify-center">
+              <RefreshCw className="w-8 h-8 animate-spin text-emerald-400 mb-3" />
+              <p className="text-sm font-semibold">Carregando configurações globais...</p>
+            </div>
+          ) : activeTab === 'finance' ? (
+            <div className="max-w-4xl space-y-8">
+              {/* Mode Selector Card */}
+              <div className="p-5 rounded-2xl bg-[#13131A] border border-white/10 space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-emerald-400" />
+                      <h4 className="text-base font-bold text-white">Ambiente do Stripe em Operação</h4>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      Alterne entre o ambiente de testes (simulado com cartões fictícios) e o ambiente oficial de cobranças reais.
+                    </p>
+                  </div>
+
+                  {/* Mode Toggle Pills */}
+                  <div className="flex items-center p-1 bg-[#090C0A] border border-white/10 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => setSettings({ ...settings, stripe_mode: 'test' })}
+                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        settings.stripe_mode === 'test'
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                      Modo Teste (Sandbox)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSettings({ ...settings, stripe_mode: 'live' })}
+                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        settings.stripe_mode === 'live'
+                          ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20 font-black'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Modo Produção (Live)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Status Notice Banner */}
+                {settings.stripe_mode === 'test' ? (
+                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-bold text-amber-300">Modo de Homologação / Testes ATIVO</div>
+                      <p className="text-[11px] text-amber-200/80 mt-0.5">
+                        Toda a plataforma operará com chaves de teste (<code>pk_test_...</code> / <code>sk_test_...</code>).
+                        Na tela de <b>Assinaturas</b> do salão, será exibido aos clientes um aviso informando que o sistema está em modo de testes para que saibam que nenhuma cobrança real será feita.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-xs flex items-start gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-bold text-emerald-300">Modo de Produção Oficial (LIVE) ATIVO</div>
+                      <p className="text-[11px] text-emerald-200/80 mt-0.5">
+                        Todas as transações e assinaturas serão cobradas <b>em cartões reais</b> via Stripe Billing e Stripe Connect.
+                        O aviso de modo teste na tela de assinaturas dos salões ficará oculto automaticamente.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Stripe Public Key (Live)</label>
-                  <input type="text" className="w-full px-4 py-2 border border-slate-200 bg-slate-50 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm transition-all shadow-xs" />
+
+              {/* Stripe Test Keys Section */}
+              <div className="space-y-4 pt-2">
+                <div className="border-b border-white/10 pb-2">
+                  <h4 className="text-sm font-bold text-amber-400 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    1. Chaves de Acesso — Modo Teste (Sandbox)
+                  </h4>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    Utilizadas quando o modo de testes estiver selecionado acima.
+                  </p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Stripe Secret Key (Live)</label>
-                  <input type="password" className="w-full px-4 py-2 border border-slate-200 bg-slate-50 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm transition-all shadow-xs" />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Stripe Public Key (Test)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="pk_test_..."
+                      value={settings.stripe_test_public_key}
+                      onChange={e => setSettings({ ...settings, stripe_test_public_key: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Stripe Secret Key (Test)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showTestSecret ? 'text' : 'password'}
+                        placeholder="sk_test_..."
+                        value={settings.stripe_test_secret_key}
+                        onChange={e => setSettings({ ...settings, stripe_test_secret_key: e.target.value })}
+                        className="w-full px-3.5 py-2.5 pr-10 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowTestSecret(!showTestSecret)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                      >
+                        {showTestSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Taxa de Aplicação Padrão (%)</label>
-                  <input type="number" defaultValue="2" className="w-full px-4 py-2 border border-slate-200 bg-slate-50 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm transition-all shadow-xs" />
-                  <p className="text-xs text-slate-400 mt-1">Taxa cobrada sobre as transações via Stripe Connect.</p>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                    Stripe Connect Master Account ID / Client ID (Test)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="ca_... ou acct_..."
+                    value={settings.stripe_test_account_id}
+                    onChange={e => setSettings({ ...settings, stripe_test_account_id: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                  />
                 </div>
-                <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow-xs transition-colors">Salvar Configurações</button>
+              </div>
+
+              {/* Stripe Live Keys Section */}
+              <div className="space-y-4 pt-4">
+                <div className="border-b border-white/10 pb-2">
+                  <h4 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" />
+                    2. Chaves de Acesso — Modo Produção (Live)
+                  </h4>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    Utilizadas quando o modo de produção oficial estiver selecionado acima.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Stripe Public Key (Live)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="pk_live_..."
+                      value={settings.stripe_live_public_key}
+                      onChange={e => setSettings({ ...settings, stripe_live_public_key: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Stripe Secret Key (Live)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showLiveSecret ? 'text' : 'password'}
+                        placeholder="sk_live_..."
+                        value={settings.stripe_live_secret_key}
+                        onChange={e => setSettings({ ...settings, stripe_live_secret_key: e.target.value })}
+                        className="w-full px-3.5 py-2.5 pr-10 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLiveSecret(!showLiveSecret)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                      >
+                        {showLiveSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                    Stripe Connect Master Account ID / Client ID (Live)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="ca_... ou acct_..."
+                    value={settings.stripe_live_account_id}
+                    onChange={e => setSettings({ ...settings, stripe_live_account_id: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                  />
+                </div>
+              </div>
+
+              {/* Application Fee & Notes */}
+              <div className="space-y-4 pt-4 border-t border-white/10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Taxa de Aplicação Padrão da Plataforma (%)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={settings.stripe_application_fee_percent}
+                        onChange={e => setSettings({ ...settings, stripe_application_fee_percent: Number(e.target.value) })}
+                        className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-xs transition-all font-mono"
+                      />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs font-bold">%</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-500 mt-1">
+                      Taxa cobrada pela Navalha SaaS sobre cada agendamento/venda dos salões via Stripe Connect.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Anotações Internas das Contas Stripe (Livre)
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="Ex: Conta jurídica Banco Inter, agência 0001, CNPJ xx.xxx.xxx/0001-xx, responsável financeiro..."
+                      value={settings.stripe_notes}
+                      onChange={e => setSettings({ ...settings, stripe_notes: e.target.value })}
+                      className="w-full px-3.5 py-2 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 outline-none text-xs placeholder-zinc-600"
+                    />
+                    <p className="text-[11px] text-zinc-500 mt-1">
+                      Lembrete: os saques para a conta corrente são gerenciados diretamente pelo painel do Stripe.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Bar */}
+              <div className="pt-4 flex items-center justify-between border-t border-white/10">
+                <div className="text-xs text-zinc-400 flex items-center gap-1.5">
+                  <Info className="w-4 h-4 text-emerald-400" />
+                  <span>
+                    Ambiente ativo atualmente:{' '}
+                    <b className={settings.stripe_mode === 'live' ? 'text-emerald-400' : 'text-amber-400'}>
+                      {settings.stripe_mode === 'live' ? 'PRODUÇÃO OFICIAL (LIVE)' : 'TESTES (SANDBOX)'}
+                    </b>
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  {saving ? 'Salvando...' : 'Salvar Configurações do Stripe'}
+                </button>
               </div>
             </div>
-          )}
-
-          {activeTab === 'notifications' && (
+          ) : (
             <div className="max-w-2xl space-y-6">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Notificações Globais</h3>
-                <p className="text-slate-500 text-sm">Controle as regras de notificação por país e plataforma.</p>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Bell className="w-5 h-5 text-emerald-400" />
+                  Notificações & Canais de Envio Globais
+                </h3>
+                <p className="text-zinc-400 text-xs mt-0.5">
+                  Controle as políticas de notificação transacionais por WhatsApp e E-mail.
+                </p>
               </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-slate-200 rounded-xl bg-slate-50/50">
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-4 border border-white/10 rounded-2xl bg-[#13131A]">
                   <div>
-                    <h4 className="font-semibold text-slate-900 text-sm">WhatsApp</h4>
-                    <p className="text-xs text-slate-500">Ativar envios via WhatsApp (API Oficial)</p>
+                    <h4 className="font-semibold text-white text-xs">WhatsApp Transacional</h4>
+                    <p className="text-[11px] text-zinc-400">Ativar envios de agendamentos e lembretes via WhatsApp</p>
                   </div>
-                  <div className="w-11 h-6 bg-blue-600 rounded-full relative cursor-pointer shadow-inner">
-                    <div className="w-4 h-4 bg-white rounded-full absolute right-1 top-1 shadow-xs"></div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, whatsapp_enabled: !settings.whatsapp_enabled })}
+                    className={`w-11 h-6 rounded-full relative transition-colors cursor-pointer ${
+                      settings.whatsapp_enabled ? 'bg-emerald-500' : 'bg-zinc-800'
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full absolute top-1 transition-transform ${
+                        settings.whatsapp_enabled ? 'right-1 bg-black' : 'left-1 bg-zinc-400'
+                      }`}
+                    />
+                  </button>
                 </div>
 
-                <div className="flex items-center justify-between p-4 border border-slate-200 rounded-xl bg-slate-50/50">
+                <div className="flex items-center justify-between p-4 border border-white/10 rounded-2xl bg-[#13131A]">
                   <div>
-                    <h4 className="font-semibold text-slate-900 text-sm">E-mail</h4>
-                    <p className="text-xs text-slate-500">Notificações transacionais via e-mail</p>
+                    <h4 className="font-semibold text-white text-xs">E-mail Transacional</h4>
+                    <p className="text-[11px] text-zinc-400">Confirmação de agendamentos e faturas de planos por e-mail</p>
                   </div>
-                  <div className="w-11 h-6 bg-blue-600 rounded-full relative cursor-pointer shadow-inner">
-                    <div className="w-4 h-4 bg-white rounded-full absolute right-1 top-1 shadow-xs"></div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, email_enabled: !settings.email_enabled })}
+                    className={`w-11 h-6 rounded-full relative transition-colors cursor-pointer ${
+                      settings.email_enabled ? 'bg-emerald-500' : 'bg-zinc-800'
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full absolute top-1 transition-transform ${
+                        settings.email_enabled ? 'right-1 bg-black' : 'left-1 bg-zinc-400'
+                      }`}
+                    />
+                  </button>
                 </div>
 
-                <div className="flex items-center justify-between p-4 border border-slate-200 rounded-xl bg-slate-50/30 opacity-60">
+                <div className="flex items-center justify-between p-4 border border-white/10 rounded-2xl bg-[#13131A] opacity-60">
                   <div>
-                    <h4 className="font-semibold text-slate-900 text-sm">SMS</h4>
-                    <p className="text-xs text-slate-400">Em breve</p>
+                    <h4 className="font-semibold text-zinc-400 text-xs">SMS Transacional</h4>
+                    <p className="text-[11px] text-zinc-500">Módulo em desenvolvimento (integração futura com Twilio/Zenvia)</p>
                   </div>
-                  <div className="w-11 h-6 bg-slate-200 rounded-full relative shadow-inner">
-                    <div className="w-4 h-4 bg-white rounded-full absolute left-1 top-1 shadow-xs"></div>
+                  <div className="w-11 h-6 bg-zinc-800 rounded-full relative">
+                    <div className="w-4 h-4 bg-zinc-500 rounded-full absolute left-1 top-1" />
                   </div>
                 </div>
+              </div>
+
+              <div className="pt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                >
+                  {saving ? 'Salvando...' : 'Salvar Notificações'}
+                </button>
               </div>
             </div>
           )}

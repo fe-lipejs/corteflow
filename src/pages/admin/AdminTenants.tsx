@@ -180,13 +180,13 @@ export default function AdminTenants() {
       <div className="flex flex-col md:flex-row gap-3">
         {/* Search */}
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <input
             type="text"
             placeholder="Buscar empresa ou slug..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(0); }}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors shadow-xs"
+            className="w-full pl-9 pr-4 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-white placeholder-zinc-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors shadow-sm"
           />
         </div>
 
@@ -194,7 +194,7 @@ export default function AdminTenants() {
         <select
           value={statusFilter}
           onChange={e => { setStatusFilter(e.target.value as StatusFilter); setPage(0); }}
-          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 outline-none focus:border-blue-500 transition-colors shadow-xs"
+          className="px-3 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-zinc-200 outline-none focus:border-emerald-500 transition-colors shadow-sm cursor-pointer"
         >
           <option value="all">Todos os status</option>
           <option value="active">Ativo</option>
@@ -209,7 +209,7 @@ export default function AdminTenants() {
         <select
           value={typeFilter}
           onChange={e => { setTypeFilter(e.target.value as TypeFilter); setPage(0); }}
-          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 outline-none focus:border-blue-500 transition-colors shadow-xs"
+          className="px-3 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-zinc-200 outline-none focus:border-emerald-500 transition-colors shadow-sm cursor-pointer"
         >
           <option value="all">Todos os tipos</option>
           <option value="barbearia">Barbearia</option>
@@ -219,23 +219,23 @@ export default function AdminTenants() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-visible shadow-xs">
+      <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl overflow-visible shadow-xl">
         {/* Table header */}
-        <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-3 grid grid-cols-12 gap-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        <div className="border-b border-white/5 bg-white/[0.02] px-5 py-3 grid grid-cols-12 gap-4 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
           <div className="col-span-4">
-            <button onClick={() => toggleSort('name')} className="flex items-center gap-1 hover:text-slate-600 transition-colors">
+            <button onClick={() => toggleSort('name')} className="flex items-center gap-1 hover:text-zinc-300 transition-colors cursor-pointer">
               Empresa <ArrowUpDown className="w-3 h-3" />
             </button>
           </div>
           <div className="col-span-2 hidden lg:block">Tipo</div>
           <div className="col-span-2 hidden md:block">
-            <button onClick={() => toggleSort('status')} className="flex items-center gap-1 hover:text-slate-600 transition-colors">
+            <button onClick={() => toggleSort('status')} className="flex items-center gap-1 hover:text-zinc-300 transition-colors cursor-pointer">
               Status <ArrowUpDown className="w-3 h-3" />
             </button>
           </div>
           <div className="col-span-2 hidden lg:block">Plano</div>
           <div className="col-span-2 hidden lg:block">
-            <button onClick={() => toggleSort('created_at')} className="flex items-center gap-1 hover:text-slate-600 transition-colors">
+            <button onClick={() => toggleSort('created_at')} className="flex items-center gap-1 hover:text-zinc-300 transition-colors cursor-pointer">
               Cadastro <ArrowUpDown className="w-3 h-3" />
             </button>
           </div>
@@ -252,11 +252,10 @@ export default function AdminTenants() {
             icon={<Building2 className="w-6 h-6" />}
           />
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-white/5">
             {paginated.map((tenant, i) => {
               const activeSub = tenant.subscriptions?.find(s => s.status === 'active' || s.status === 'trial');
               const settings = tenant.tenant_settings;
-              const computedStatus = tenant.deleted_at ? 'deleted' : tenant.status;
 
               return (
                 <motion.div
@@ -264,25 +263,25 @@ export default function AdminTenants() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.03 }}
-                  className={`group grid grid-cols-12 gap-4 items-center px-5 py-3.5 hover:bg-slate-50/80 transition-colors relative ${openMenuId === tenant.id ? 'z-40' : 'z-0'} ${tenant.deleted_at ? 'opacity-50 grayscale hover:grayscale-0' : ''}`}
+                  className={`group grid grid-cols-12 gap-4 items-center px-5 py-3.5 hover:bg-white/[0.03] transition-colors relative ${openMenuId === tenant.id ? 'z-40' : 'z-0'} ${tenant.deleted_at ? 'opacity-50 grayscale hover:grayscale-0' : ''}`}
                 >
                   {/* Name + slug */}
                   <div className="col-span-4 flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden shadow-xs">
+                    <div className="w-9 h-9 bg-emerald-500/15 border border-emerald-500/30 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden shadow-xs">
                       {settings?.logo_url ? (
                         <img src={settings.logo_url} alt={tenant.name} className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-sm font-bold text-blue-700">{tenant.name.charAt(0).toUpperCase()}</span>
+                        <span className="text-sm font-bold text-emerald-400">{tenant.name.charAt(0).toUpperCase()}</span>
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className={`text-sm font-semibold truncate ${tenant.deleted_at ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{tenant.name}</p>
-                      <p className="text-xs text-slate-400 truncate">/{tenant.slug}{settings?.city ? ` · ${settings.city}` : ''}</p>
+                      <p className={`text-sm font-semibold truncate ${tenant.deleted_at ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}>{tenant.name}</p>
+                      <p className="text-xs text-zinc-400 truncate">/{tenant.slug}{settings?.city ? ` · ${settings.city}` : ''}</p>
                     </div>
                   </div>
 
                   {/* Type */}
-                  <div className="col-span-2 hidden lg:block text-xs text-slate-500">
+                  <div className="col-span-2 hidden lg:block text-xs text-zinc-400">
                     {businessTypeLabel[tenant.business_type] ?? tenant.business_type}
                   </div>
 
@@ -316,7 +315,7 @@ export default function AdminTenants() {
                           return (
                             <div className="flex flex-col items-start gap-1">
                               <AdminBadge value="past_due" dot />
-                              {daysLeftText && <span className="text-[10px] text-amber-600 font-semibold">{daysLeftText}</span>}
+                              {daysLeftText && <span className="text-[10px] text-amber-400 font-semibold">{daysLeftText}</span>}
                             </div>
                           );
                         }
@@ -325,7 +324,7 @@ export default function AdminTenants() {
                           return (
                             <div className="flex flex-col items-start gap-1">
                               <AdminBadge value="canceled" dot />
-                              {latestSub.canceled_at && <span className="text-[10px] text-slate-500 font-semibold">{new Date(latestSub.canceled_at).toLocaleDateString('pt-BR')}</span>}
+                              {latestSub.canceled_at && <span className="text-[10px] text-zinc-500 font-semibold">{new Date(latestSub.canceled_at).toLocaleDateString('pt-BR')}</span>}
                             </div>
                           );
                         }
@@ -339,12 +338,12 @@ export default function AdminTenants() {
                   </div>
 
                   {/* Plan */}
-                  <div className="col-span-2 hidden lg:block text-xs text-slate-600">
+                  <div className="col-span-2 hidden lg:block text-xs text-zinc-400">
                     {activeSub?.plans?.name ?? '—'}
                   </div>
 
                   {/* Date */}
-                  <div className="col-span-2 hidden lg:block text-xs text-slate-400">
+                  <div className="col-span-2 hidden lg:block text-xs text-zinc-500">
                     {new Date(tenant.created_at).toLocaleDateString('pt-BR')}
                   </div>
 
@@ -353,7 +352,7 @@ export default function AdminTenants() {
                     {!tenant.deleted_at && (
                       <button
                         onClick={() => window.open(getTenantPublicUrl(tenant.slug), '_blank')}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-1.5 text-zinc-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors cursor-pointer"
                         title="Ver página pública"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -362,67 +361,69 @@ export default function AdminTenants() {
                     <div className="relative">
                       <button
                         onClick={() => setOpenMenuId(openMenuId === tenant.id ? null : tenant.id)}
-                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                        className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
                       >
                         <MoreVertical className="w-3.5 h-3.5" />
                       </button>
                       {openMenuId === tenant.id && (
-                        <div className="absolute right-0 top-8 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-[999] overflow-hidden py-1">
+                        <div className="absolute right-0 top-8 w-48 bg-[#0E0E14] border border-white/10 rounded-xl shadow-2xl z-[999] overflow-hidden py-1 divide-y divide-white/5">
                           {tenant.deleted_at ? (
                             <button
                               onClick={() => restoreTenant.mutate(tenant.id)}
-                              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-bold transition-colors"
+                              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 font-bold transition-colors cursor-pointer"
                             >
                               <RotateCcw className="w-3.5 h-3.5" /> Restaurar Empresa
                             </button>
                           ) : (
-                            <>
+                            <div>
                               <button
                                 onClick={() => updateStatus.mutate({ id: tenant.id, status: 'active' })}
-                                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors font-medium"
+                                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-zinc-200 hover:bg-white/5 hover:text-emerald-400 transition-colors font-medium cursor-pointer"
                               >
-                                <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Ativar
+                                <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Ativar
                               </button>
                               <button
                                 onClick={() => updateStatus.mutate({ id: tenant.id, status: 'trial' })}
-                                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-amber-600 transition-colors font-medium"
+                                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-zinc-200 hover:bg-white/5 hover:text-amber-400 transition-colors font-medium cursor-pointer"
                               >
-                                <PlayCircle className="w-3.5 h-3.5 text-amber-500" /> Colocar em Trial
+                                <PlayCircle className="w-3.5 h-3.5 text-amber-400" /> Colocar em Trial
                               </button>
                               <button
                                 onClick={() => updateStatus.mutate({ id: tenant.id, status: 'suspended' })}
-                                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition-colors border-t border-slate-100 font-medium"
+                                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-zinc-200 hover:bg-white/5 hover:text-orange-400 transition-colors font-medium cursor-pointer"
                               >
-                                <ShieldAlert className="w-3.5 h-3.5 text-orange-500" /> Suspender
+                                <ShieldAlert className="w-3.5 h-3.5 text-orange-400" /> Suspender
                               </button>
                               <button
                                 onClick={() => updateStatus.mutate({ id: tenant.id, status: 'blocked' })}
-                                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors font-medium"
+                                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-zinc-200 hover:bg-white/5 hover:text-rose-400 transition-colors font-medium cursor-pointer"
                               >
-                                <Ban className="w-3.5 h-3.5 text-red-500" /> Bloquear
+                                <Ban className="w-3.5 h-3.5 text-rose-400" /> Bloquear
                               </button>
-                            </>
+                            </div>
                           )}
-                          <button
-                            onClick={() => {
-                              setStripeInfoModalOpen(tenant);
-                              setOpenMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors border-t border-slate-100 font-medium"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5 text-blue-500" /> Detalhes Stripe
-                          </button>
-                          {!tenant.deleted_at && (
+                          <div>
                             <button
                               onClick={() => {
-                                setDeleteModalOpen(tenant);
+                                setStripeInfoModalOpen(tenant);
                                 setOpenMenuId(null);
                               }}
-                              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors border-t border-slate-100 font-medium"
+                              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-zinc-300 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors font-medium cursor-pointer"
                             >
-                              <Trash2 className="w-3.5 h-3.5" /> Apagar Empresa
+                              <ExternalLink className="w-3.5 h-3.5 text-emerald-400" /> Detalhes Stripe
                             </button>
-                          )}
+                            {!tenant.deleted_at && (
+                              <button
+                                onClick={() => {
+                                  setDeleteModalOpen(tenant);
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-rose-400 hover:bg-rose-500/10 transition-colors font-medium cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" /> Apagar Empresa
+                              </button>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -435,8 +436,8 @@ export default function AdminTenants() {
 
         {/* ── Pagination ── */}
         {totalPages > 1 && (
-          <div className="border-t border-slate-100 px-5 py-3 flex items-center justify-between bg-slate-50/50">
-            <p className="text-xs text-slate-500">
+          <div className="border-t border-white/5 px-5 py-3 flex items-center justify-between bg-white/[0.01]">
+            <p className="text-xs text-zinc-500">
               {filtered.length} empresa{filtered.length !== 1 ? 's' : ''}
               {' · '}Página {page + 1} de {totalPages}
             </p>
@@ -444,14 +445,14 @@ export default function AdminTenants() {
               <button
                 onClick={() => setPage(Math.max(0, page - 1))}
                 disabled={page === 0}
-                className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
+                className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
                 disabled={page >= totalPages - 1}
-                className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
+                className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -462,40 +463,40 @@ export default function AdminTenants() {
 
       {/* Delete Confirmation Modal */}
       {deleteModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#0E0E14] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl text-zinc-100">
             <div className="p-6 space-y-4">
-              <div className="flex items-center gap-3 text-red-600 mb-2">
+              <div className="flex items-center gap-3 text-rose-400 mb-2">
                 <ShieldAlert className="w-6 h-6" />
-                <h3 className="font-bold text-lg text-slate-900">Apagar Empresa</h3>
+                <h3 className="font-bold text-lg text-white">Apagar Empresa</h3>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Esta ação é <strong className="text-slate-900">irreversível</strong>. Todos os dados da empresa 
-                <strong className="text-slate-900"> {deleteModalOpen.name}</strong>, incluindo clientes, agendamentos, financeiros e profissionais serão apagados permanentemente.
+              <p className="text-sm text-zinc-300 leading-relaxed">
+                Esta ação é <strong className="text-white">irreversível</strong>. Todos os dados da empresa 
+                <strong className="text-white"> {deleteModalOpen.name}</strong>, incluindo clientes, agendamentos, financeiros e profissionais serão apagados permanentemente.
               </p>
               
               <div className="pt-2">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                  Para confirmar, digite: <span className="text-slate-900 select-none font-bold">{deleteModalOpen.slug}</span>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+                  Para confirmar, digite: <span className="text-white select-none font-bold font-mono">{deleteModalOpen.slug}</span>
                 </label>
                 <input
                   type="text"
                   value={deleteConfirmText}
                   onChange={e => setDeleteConfirmText(e.target.value)}
                   placeholder={deleteModalOpen.slug}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+                  className="w-full px-4 py-2.5 bg-[#13131A] border border-white/10 rounded-xl text-sm text-white placeholder-zinc-500 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-colors"
                   onPaste={e => e.preventDefault()}
                 />
               </div>
             </div>
             
-            <div className="border-t border-slate-100 p-4 flex justify-end gap-3 bg-slate-50/70">
+            <div className="border-t border-white/10 p-4 flex justify-end gap-3 bg-black/20">
               <button
                 onClick={() => {
                   setDeleteModalOpen(null);
                   setDeleteConfirmText('');
                 }}
-                className="px-4 py-2 text-sm text-slate-600 hover:text-slate-900 transition-colors font-medium"
+                className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors font-medium cursor-pointer"
                 disabled={deleteTenant.isPending}
               >
                 Cancelar
@@ -503,7 +504,7 @@ export default function AdminTenants() {
               <button
                 onClick={() => deleteTenant.mutate(deleteModalOpen)}
                 disabled={deleteConfirmText !== deleteModalOpen.slug || deleteTenant.isPending}
-                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-xs"
+                className="px-6 py-2 bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-rose-600/20 cursor-pointer active:scale-95"
               >
                 {deleteTenant.isPending ? 'Apagando...' : 'Apagar Permanentemente'}
               </button>
@@ -514,57 +515,57 @@ export default function AdminTenants() {
 
       {/* Stripe Info Modal */}
       {stripeInfoModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-            <div className="p-6 border-b border-slate-100">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center mb-4">
-                <ShieldAlert className="w-6 h-6 text-blue-600" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#0E0E14] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl text-zinc-100">
+            <div className="p-6 border-b border-white/10">
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mb-4 text-emerald-400">
+                <ShieldAlert className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900">Detalhes do Stripe</h3>
-              <p className="text-sm text-slate-500 mt-1">Informações de assinatura para {stripeInfoModalOpen.name}</p>
+              <h3 className="text-lg font-bold text-white">Detalhes do Stripe</h3>
+              <p className="text-sm text-zinc-400 mt-1">Informações de assinatura para {stripeInfoModalOpen.name}</p>
             </div>
             
             <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
               {stripeInfoModalOpen.subscriptions && stripeInfoModalOpen.subscriptions.length > 0 ? (
                 <>
                   {stripeInfoModalOpen.subscriptions.map((sub, idx) => (
-                    <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-sm">
+                    <div key={idx} className="bg-white/[0.02] p-4 rounded-xl border border-white/10 text-sm">
                       <div className="grid grid-cols-2 gap-y-3">
-                        <div className="text-slate-500">Status:</div>
-                        <div className="text-slate-900 font-semibold capitalize">{sub.status}</div>
+                        <div className="text-zinc-400">Status:</div>
+                        <div className="text-white font-semibold capitalize">{sub.status}</div>
                         
-                        <div className="text-slate-500">Plano:</div>
-                        <div className="text-slate-900 font-medium">{sub.plans?.name || 'Desconhecido'}</div>
+                        <div className="text-zinc-400">Plano:</div>
+                        <div className="text-white font-medium">{sub.plans?.name || 'Desconhecido'}</div>
                         
-                        <div className="text-slate-500">Customer ID:</div>
-                        <div className="text-slate-700 font-mono text-xs">{sub.stripe_customer_id || '—'}</div>
+                        <div className="text-zinc-400">Customer ID:</div>
+                        <div className="text-zinc-300 font-mono text-xs">{sub.stripe_customer_id || '—'}</div>
                         
-                        <div className="text-slate-500">Subscription ID:</div>
-                        <div className="text-slate-700 font-mono text-xs">{sub.stripe_subscription_id || '—'}</div>
+                        <div className="text-zinc-400">Subscription ID:</div>
+                        <div className="text-zinc-300 font-mono text-xs">{sub.stripe_subscription_id || '—'}</div>
                         
                         {sub.current_period_end && (
                           <>
-                            <div className="text-slate-500">Período expira:</div>
-                            <div className="text-slate-900">{new Date(sub.current_period_end).toLocaleDateString('pt-BR')}</div>
+                            <div className="text-zinc-400">Período expira:</div>
+                            <div className="text-white">{new Date(sub.current_period_end).toLocaleDateString('pt-BR')}</div>
                           </>
                         )}
 
                         {sub.grace_period_ends_at && (
                           <>
-                            <div className="text-red-600 font-medium">Carência até:</div>
-                            <div className="text-red-600 font-bold">{new Date(sub.grace_period_ends_at).toLocaleDateString('pt-BR')}</div>
+                            <div className="text-rose-400 font-medium">Carência até:</div>
+                            <div className="text-rose-400 font-bold">{new Date(sub.grace_period_ends_at).toLocaleDateString('pt-BR')}</div>
                           </>
                         )}
                         
                         {sub.canceled_at && (
                           <>
-                            <div className="text-slate-500">Cancelado em:</div>
-                            <div className="text-slate-900">{new Date(sub.canceled_at).toLocaleDateString('pt-BR')}</div>
+                            <div className="text-zinc-400">Cancelado em:</div>
+                            <div className="text-white">{new Date(sub.canceled_at).toLocaleDateString('pt-BR')}</div>
                           </>
                         )}
                       </div>
                       {sub.suspension_reason && (
-                        <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs">
+                        <div className="mt-4 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-lg text-xs">
                           <strong>Motivo da suspensão:</strong> {sub.suspension_reason}
                         </div>
                       )}
@@ -572,16 +573,16 @@ export default function AdminTenants() {
                   ))}
                 </>
               ) : (
-                <div className="text-center py-6 text-slate-500">
+                <div className="text-center py-6 text-zinc-500">
                   <p>Nenhuma assinatura registrada no Stripe.</p>
                 </div>
               )}
             </div>
             
-            <div className="border-t border-slate-100 p-4 flex justify-end bg-slate-50/70">
+            <div className="border-t border-white/10 p-4 flex justify-end bg-black/20">
               <button
                 onClick={() => setStripeInfoModalOpen(null)}
-                className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 text-sm shadow-xs transition-colors"
+                className="px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl text-sm shadow-lg shadow-emerald-500/20 transition-all cursor-pointer active:scale-95"
               >
                 Fechar
               </button>

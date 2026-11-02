@@ -5,12 +5,14 @@ import { X, User, Scissors, Clock, CreditCard, MessageSquare, Phone, Mail, Loade
 import { BOOKING_STATUS_CONFIG, type Booking, type BookingStatus } from '../../../hooks/useBookings';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../integrations/supabase/client';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface Props {
   booking: Booking;
   onClose: () => void;
   onStatusChange: (id: string, status: BookingStatus) => void;
   onDelete?: (id: string) => void;
+  onEdit?: (booking: Booking) => void;
   isUpdating?: boolean;
 }
 
@@ -25,9 +27,7 @@ const SEGMENT_STYLES: Record<string, { bg: string; color: string }> = {
   inativo: { bg: 'rgba(239,68,68,0.15)', color: '#ef4444' },
 };
 
-import { useAuth } from '../../../contexts/AuthContext';
-
-export default function BookingDetailSheet({ booking, onClose, onStatusChange, onDelete, isUpdating }: Props) {
+export default function BookingDetailSheet({ booking, onClose, onStatusChange, onDelete, onEdit, isUpdating }: Props) {
   const { profile } = useAuth();
   // BUG-04: Inline confirm state — evita window.confirm nativo que quebra no iOS
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -35,9 +35,7 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
   const scheduledAt = new Date(booking.scheduled_at);
   const endTime = new Date(scheduledAt.getTime() + (booking.duration_minutes * 60 * 1000));
 
-  const nextStatus = STATUS_FLOW[STATUS_FLOW.indexOf(booking.status) + 1];
   const isFinished = booking.status === 'completed' || booking.status === 'canceled' || booking.status === 'no_show';
-
 
   // Fix #4: Fetch ALL completed bookings for this customer to calculate real history
   const { data: allPastBookings, isLoading: loadingHistory } = useQuery({
@@ -176,7 +174,6 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                 label: 'Profissional',
                 value: booking.professional?.name ?? 'Não atribuído',
                 sub: null,
-                // Fix #4: Use the professional's photo_url from the joined data
                 photo: booking.professional?.photo_url ?? null,
                 color: booking.pro_color,
               },
@@ -198,7 +195,6 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
               }] : []),
             ].map((item, idx) => (
               <div key={idx} className="flex items-start gap-4 p-4 rounded-2xl border" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
-                {/* Fix #4: Show professional photo if available, else colored icon */}
                 {item.photo ? (
                   <img
                     src={item.photo}
@@ -233,7 +229,7 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
             )}
           </div>
 
-          {/* Customer CRM History — Fix #4: computed from real bookings */}
+          {/* Customer CRM History */}
           <div className="space-y-4 pt-6 border-t" style={{ borderColor: 'var(--theme-border)' }}>
              <div className="flex items-center gap-2">
                <CalendarClock className="w-4 h-4 opacity-70" style={{ color: 'var(--theme-accent)' }} />
@@ -305,6 +301,25 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                </>
              ) : null}
           </div>
+
+          {/* Action: Reagendar / Editar (Guardado por agenda.editar) */}
+          {!isFinished && onEdit && (
+            <div className="pt-6 border-t" style={{ borderColor: 'var(--theme-border)' }}>
+              <button
+                type="button"
+                onClick={() => onEdit(booking)}
+                className="w-full py-3.5 px-4 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 hover:brightness-105 active:scale-[0.99] cursor-pointer"
+                style={{
+                  backgroundColor: 'var(--theme-card-bg)',
+                  borderColor: 'var(--theme-border)',
+                  color: 'var(--theme-text-primary)'
+                }}
+              >
+                <CalendarClock className="w-4 h-4" style={{ color: 'var(--theme-accent)' }} />
+                Reagendar / Alterar Serviço ou Profissional
+              </button>
+            </div>
+          )}
 
           {/* Status actions */}
           {!isFinished ? (
@@ -393,7 +408,6 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                 )}
              </div>
           )}
-
 
           {/* Contact Actions */}
           <div className="pt-6 pb-4 border-t" style={{ borderColor: 'var(--theme-border)' }}>

@@ -107,7 +107,6 @@ export default function AppLayout() {
 
   if (role === 'professional') {
     navItems = [];
-    // Always show Visão geral and Minha Área for professionals
     navItems.push({ to: '/admin', icon: LayoutDashboard, label: 'Visão geral', end: true, permission: null } as any);
     navItems.push({ to: '/admin/minha-area', icon: UserCircle, label: 'Minha Área', end: false, permission: null } as any);
     if (professionalPermissions?.view_own_schedule) {
@@ -126,7 +125,7 @@ export default function AppLayout() {
     return <TenantSelectorModal options={pendingTenantSelection} />;
   }
 
-  // Super Admin não tem tenant (não criou salão e não está impersonando) -> deve ir para /platform
+  // Super Admin não tem tenant -> deve ir para /platform
   if (role === 'super_admin' && !tenant) {
     return <Navigate to="/platform" replace />;
   }
@@ -151,13 +150,10 @@ export default function AppLayout() {
   const isPublicAppPath = publicAppPaths.some(p => location.pathname.startsWith(p));
   const tenantStatus = (tenant as any).status as string | undefined;
 
-  // Calculate dynamic suspension if grace period expired
-  const isGracePeriodExpired = false; // Grace period removido
   const isEffectivelySuspended = tenantStatus === 'blocked' || tenantStatus === 'suspended';
-  
   const displaySuspensionReason = features.suspension_reason || 'Sua conta foi suspensa. Entre em contato com o suporte.';
 
-  // Blocked or suspended by admin (or by grace period expiration): hard block
+  // Blocked or suspended by admin: hard block
   if (isEffectivelySuspended && !isPublicAppPath) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: theme.bg }}>
@@ -169,11 +165,11 @@ export default function AppLayout() {
           <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>{displaySuspensionReason}</p>
           <div className="flex flex-col gap-3">
             {features.subscription_status === 'past_due' && (
-              <button onClick={() => navigate('/admin/assinatura')} className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl w-full" style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}>
+              <button onClick={() => navigate('/admin/assinatura')} className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl w-full cursor-pointer" style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}>
                 <CreditCard className="w-4 h-4" /> Regularizar Assinatura
               </button>
             )}
-            <button onClick={handleSignOut} className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl w-full border" style={{ borderColor: theme.border, color: theme.textPrimary }}>
+            <button onClick={handleSignOut} className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl w-full border cursor-pointer" style={{ borderColor: theme.border, color: theme.textPrimary }}>
               <LogOut className="w-4 h-4" /> Sair
             </button>
           </div>
@@ -212,7 +208,7 @@ export default function AppLayout() {
         </div>
         <div className="flex items-center gap-3">
           <NotificationBell align="right" />
-          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} style={{ color: theme.textPrimary }} className="p-2 -mr-2">
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} style={{ color: theme.textPrimary }} className="p-2 -mr-2 cursor-pointer">
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
@@ -269,7 +265,7 @@ export default function AppLayout() {
           {/* Close button for mobile inside drawer */}
           <button 
             onClick={() => setIsMobileMenuOpen(false)} 
-            className="md:hidden p-1 rounded-lg hover:opacity-80 transition-opacity"
+            className="md:hidden p-1 rounded-lg hover:opacity-80 transition-opacity cursor-pointer"
             style={{ color: theme.textMuted }}
           >
             <X className="w-5 h-5" />
@@ -284,7 +280,7 @@ export default function AppLayout() {
           <div className="px-4 py-3 border-b" style={{ borderColor: theme.sidebarBorder }}>
             <button 
               onClick={() => navigate('/select-tenant')}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-colors cursor-pointer"
               style={{ background: 'rgba(255,255,255,0.05)', color: theme.textSecondary, border: `1px solid ${theme.border}` }}
             >
               <RefreshCw className="w-4 h-4" />
@@ -344,7 +340,7 @@ export default function AppLayout() {
             </div>
             <button 
               onClick={handleSignOut} 
-              className="ml-2 transition-opacity hover:opacity-80"
+              className="ml-2 transition-opacity hover:opacity-80 cursor-pointer"
               style={{ color: theme.textMuted }}
             >
               {isSigningOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
@@ -360,26 +356,70 @@ export default function AppLayout() {
                background: `color-mix(in srgb, ${theme.cardBg} 40%, transparent)`, 
                boxShadow: `0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.05)`
              }}>
-          {features.subscription_status === 'past_due' && features.grace_period_ends_at && !isGracePeriodExpired && (
-            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 rounded-xl p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+
+          {/* Banner de Status: Assinatura Cancelada */}
+          {engine.subscriptionStatus === 'canceled' && location.pathname !== '/admin/assinatura' && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-500 rounded-2xl p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 backdrop-blur-md">
               <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-500" />
                 <div>
-                  <h3 className="font-bold text-sm">Problema com o pagamento</h3>
-                  <p className="text-sm opacity-90">
-                    Identificamos uma pendência no pagamento da sua assinatura. 
-                    Você possui acesso até {new Date(features.grace_period_ends_at).toLocaleDateString('pt-BR')} para regularizar a situação antes da suspensão da conta.
+                  <h3 className="font-bold text-sm text-red-500">Assinatura Cancelada</h3>
+                  <p className="text-xs opacity-90 text-red-400">
+                    Sua assinatura foi cancelada e o acesso operacional ao seu salão está pausado. Escolha um plano para reativar seu negócio imediatamente.
                   </p>
                 </div>
               </div>
               <button 
                 onClick={() => navigate('/admin/assinatura')}
-                className="whitespace-nowrap px-4 py-2 bg-yellow-500 text-yellow-950 font-bold rounded-lg text-sm transition-opacity hover:opacity-90 w-full md:w-auto text-center"
+                className="whitespace-nowrap px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-opacity hover:opacity-95 w-full md:w-auto text-center shrink-0 cursor-pointer shadow-sm"
               >
-                Regularizar Agora
+                Reativar Assinatura
               </button>
             </div>
           )}
+
+          {/* Banner de Status: Teste Expirado */}
+          {engine.subscriptionStatus === 'trial_expired' && location.pathname !== '/admin/assinatura' && (
+            <div className="bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-2xl p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 backdrop-blur-md">
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-500" />
+                <div>
+                  <h3 className="font-bold text-sm text-amber-500">Período de Teste Finalizado</h3>
+                  <p className="text-xs opacity-90 text-amber-400">
+                    Seus 7 dias gratuitos chegaram ao fim. Escolha o melhor plano para continuar gerenciando sua agenda, clientes e equipe sem interrupções.
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => navigate('/admin/assinatura')}
+                className="whitespace-nowrap px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition-opacity hover:opacity-95 w-full md:w-auto text-center shrink-0 cursor-pointer shadow-sm"
+              >
+                Escolher um Plano
+              </button>
+            </div>
+          )}
+
+          {/* Banner de Status: Fatura Pendente */}
+          {(engine.subscriptionStatus === 'past_due' || engine.subscriptionStatus === 'unpaid') && location.pathname !== '/admin/assinatura' && (
+            <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 rounded-2xl p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 backdrop-blur-md">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-yellow-500" />
+                <div>
+                  <h3 className="font-bold text-sm text-yellow-500">Problema no Pagamento da Assinatura</h3>
+                  <p className="text-xs opacity-90 text-yellow-400">
+                    Identificamos uma pendência no processamento da fatura da sua assinatura. Regularize a situação para evitar o bloqueio dos seus recursos.
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => navigate('/admin/assinatura')}
+                className="whitespace-nowrap px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold rounded-xl text-xs transition-opacity hover:opacity-95 w-full md:w-auto text-center shrink-0 cursor-pointer shadow-sm"
+              >
+                Regularizar Fatura
+              </button>
+            </div>
+          )}
+
           <Outlet />
         </div>
       </main>

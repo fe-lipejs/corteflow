@@ -37,12 +37,12 @@ interface Message {
 }
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; icon: React.ElementType }> = {
-  open: { label: 'Aberto', color: '#2563EB', icon: AlertCircle },
+  open: { label: 'Aberto', color: '#10B981', icon: AlertCircle },
   in_progress: { label: 'Em andamento', color: '#F59E0B', icon: Clock },
-  waiting_user: { label: 'Aguardando Cliente', color: '#6366F1', icon: Clock },
+  waiting_user: { label: 'Aguardando Cliente', color: '#34D399', icon: Clock },
   waiting_support: { label: 'Aguardando Suporte', color: '#EF4444', icon: AlertCircle },
   resolved: { label: 'Resolvido', color: '#10B981', icon: CheckCircle2 },
-  closed: { label: 'Fechado', color: '#64748B', icon: XCircle },
+  closed: { label: 'Fechado', color: '#71717A', icon: XCircle },
 };
 
 const CATEGORY_LABELS: Record<TicketCategory, string> = {
@@ -53,7 +53,7 @@ const CATEGORY_LABELS: Record<TicketCategory, string> = {
 };
 
 const PRIORITY_CONFIG: Record<TicketPriority, { label: string; color: string }> = {
-  low: { label: 'Baixa', color: '#64748B' },
+  low: { label: 'Baixa', color: '#71717A' },
   medium: { label: 'Média', color: '#F59E0B' },
   high: { label: 'Alta', color: '#EF4444' },
 };
@@ -174,26 +174,26 @@ export default function AdminSuporte() {
     const StatusIcon = statusCfg.icon;
 
     return (
-      <div className="space-y-4 h-full flex flex-col max-h-[calc(100vh-8rem)]">
+      <div className="space-y-4 h-full flex flex-col max-h-[calc(100vh-8rem)] text-zinc-100">
         {/* Header */}
-        <div className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <button onClick={() => { setView('list'); fetchTickets(); }} className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+        <div className="flex items-start gap-3 bg-[#0B0B0E] p-4 rounded-2xl border border-white/10 shadow-xl">
+          <button onClick={() => { setView('list'); fetchTickets(); }} className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer">
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <Building2 className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-semibold text-slate-700">{selectedTicket.tenants?.name}</span>
+              <Building2 className="w-4 h-4 text-emerald-400" />
+              <span className="text-sm font-semibold text-zinc-300">{selectedTicket.tenants?.name}</span>
             </div>
-            <h1 className="text-xl font-bold text-slate-900 truncate">{selectedTicket.subject}</h1>
+            <h1 className="text-xl font-bold text-white truncate">{selectedTicket.subject}</h1>
             <div className="flex items-center flex-wrap gap-2 mt-1">
-              <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: `${statusCfg.color}15`, color: statusCfg.color }}>
+              <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-white/10" style={{ background: `${statusCfg.color}15`, color: statusCfg.color }}>
                 <StatusIcon className="w-3 h-3" />{statusCfg.label}
               </span>
-              <span className="text-xs px-2.5 py-0.5 rounded border border-slate-200 text-slate-600 bg-slate-50">
+              <span className="text-xs px-2.5 py-0.5 rounded-lg border border-white/10 text-zinc-300 bg-white/[0.03]">
                 {CATEGORY_LABELS[selectedTicket.category]}
               </span>
-              <span className="text-xs text-slate-400">Aberto em {formatDate(selectedTicket.created_at)}</span>
+              <span className="text-xs text-zinc-500">Aberto em {formatDate(selectedTicket.created_at)}</span>
             </div>
           </div>
 
@@ -202,14 +202,14 @@ export default function AdminSuporte() {
             {selectedTicket.status !== 'closed' && (
               <button
                 onClick={() => updateStatus(selectedTicket.id, 'closed')}
-                className="text-xs px-3.5 py-2 rounded-xl border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-bold transition-colors shadow-xs"
+                className="text-xs px-3.5 py-2 rounded-xl border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 font-bold transition-all shadow-sm cursor-pointer"
               >
                 ✓ Concluir Chamado
               </button>
             )}
             <button
               onClick={() => deleteTicket(selectedTicket.id)}
-              className="text-xs px-3.5 py-2 rounded-xl border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 font-bold transition-colors shadow-xs"
+              className="text-xs px-3.5 py-2 rounded-xl border border-rose-500/30 text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 font-bold transition-all shadow-sm cursor-pointer"
             >
               Apagar
             </button>
@@ -217,28 +217,28 @@ export default function AdminSuporte() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-4 p-5 rounded-2xl border border-slate-200 bg-slate-50/60 shadow-xs" style={{ minHeight: '400px', maxHeight: '55vh' }}>
+        <div className="flex-1 overflow-y-auto space-y-4 p-5 rounded-2xl border border-white/10 bg-[#0E0E14] shadow-xl" style={{ minHeight: '400px', maxHeight: '55vh' }}>
           {loadingMessages ? (
             <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+              <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
             </div>
           ) : messages.length === 0 ? (
-            <div className="text-center py-8 text-sm text-slate-400">Nenhuma mensagem ainda.</div>
+            <div className="text-center py-8 text-sm text-zinc-500">Nenhuma mensagem ainda.</div>
           ) : (
             messages.map(msg => {
               const isAdmin = msg.sender_role === 'super_admin';
               return (
                 <div key={msg.id} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 space-y-1 shadow-xs ${
+                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 space-y-1 shadow-md ${
                     isAdmin 
-                      ? 'bg-blue-600 text-white rounded-tr-xs' 
-                      : 'bg-white border border-slate-200 text-slate-900 rounded-tl-xs'
+                      ? 'bg-emerald-500 text-black font-medium rounded-tr-xs shadow-emerald-500/10' 
+                      : 'bg-[#13131A] border border-white/10 text-white rounded-tl-xs'
                   }`}>
-                    <p className={`text-xs font-semibold ${isAdmin ? 'text-blue-100' : 'text-slate-500'}`}>
+                    <p className={`text-xs font-bold ${isAdmin ? 'text-black/70' : 'text-zinc-400'}`}>
                       {isAdmin ? '🛡️ Você (Suporte)' : msg.profiles?.full_name ?? 'Cliente'}
                     </p>
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                    <p className={`text-[10px] text-right ${isAdmin ? 'text-blue-200' : 'text-slate-400'}`}>
+                    <p className={`text-[10px] text-right ${isAdmin ? 'text-black/60' : 'text-zinc-500'}`}>
                       {formatDate(msg.created_at)}
                     </p>
                   </div>
@@ -258,18 +258,18 @@ export default function AdminSuporte() {
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               placeholder="Digite sua resposta... (Enter para enviar)"
               rows={2}
-              className="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm outline-none resize-none focus:border-blue-500 shadow-xs transition-colors"
+              className="flex-1 px-4 py-3 rounded-xl border border-white/10 bg-[#13131A] text-white text-sm outline-none resize-none focus:border-emerald-500 shadow-sm transition-colors placeholder-zinc-500"
             />
             <button
               onClick={sendMessage}
               disabled={sending || !messageText.trim()}
-              className="px-5 py-3 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-xs disabled:opacity-50 flex items-center justify-center"
+              className="px-5 py-3 rounded-xl font-bold bg-emerald-500 hover:bg-emerald-400 text-black transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-40 flex items-center justify-center cursor-pointer active:scale-95"
             >
               {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
             </button>
           </div>
         ) : (
-          <div className="text-center p-4 rounded-xl border border-slate-200 bg-white text-sm text-slate-500 font-medium">
+          <div className="text-center p-4 rounded-xl border border-white/10 bg-[#0B0B0E] text-sm text-zinc-500 font-medium">
             Chamado fechado.
           </div>
         )}
@@ -279,7 +279,7 @@ export default function AdminSuporte() {
 
   // ── List view ─────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-zinc-100">
       <AdminPageHeader
         title={`Suporte ${unreadTotal > 0 ? `(${unreadTotal} abertos)` : ''}`}
         subtitle="Gerencie os chamados dos salões cadastrados"
@@ -289,12 +289,12 @@ export default function AdminSuporte() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar por assunto ou salão..."
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-blue-500 shadow-xs transition-colors"
+            className="w-full pl-9 pr-4 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-white placeholder-zinc-500 outline-none focus:border-emerald-500 shadow-sm transition-colors"
           />
         </div>
         <div className="flex gap-1 overflow-x-auto pb-1 sm:pb-0">
@@ -302,10 +302,10 @@ export default function AdminSuporte() {
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors whitespace-nowrap ${
+              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
                 statusFilter === s 
-                  ? 'bg-blue-600 text-white shadow-xs' 
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  ? 'bg-emerald-500 text-black font-bold shadow-lg shadow-emerald-500/20' 
+                  : 'bg-white/5 border border-white/10 text-zinc-300 hover:bg-white/10'
               }`}
             >
               {s === 'all' ? 'Todos' : STATUS_CONFIG[s].label}
@@ -321,13 +321,13 @@ export default function AdminSuporte() {
           const cfg = STATUS_CONFIG[s];
           const Icon = cfg.icon;
           return (
-            <div key={s} className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-3 shadow-xs">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${cfg.color}15` }}>
+            <div key={s} className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-4 flex items-center gap-3 shadow-xl">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${cfg.color}20` }}>
                 <Icon className="w-4 h-4" style={{ color: cfg.color }} />
               </div>
               <div>
-                <p className="text-xl font-black text-slate-900">{count}</p>
-                <p className="text-xs text-slate-500 font-medium">{cfg.label}</p>
+                <p className="text-xl font-black text-white">{count}</p>
+                <p className="text-xs text-zinc-400 font-medium">{cfg.label}</p>
               </div>
             </div>
           );
@@ -337,12 +337,12 @@ export default function AdminSuporte() {
       {/* Ticket list */}
       {loadingTickets ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+          <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 border border-slate-200 rounded-2xl bg-white shadow-xs">
-          <MessageCircle className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-          <p className="text-sm text-slate-500">Nenhum chamado encontrado.</p>
+        <div className="text-center py-16 border border-white/10 rounded-2xl bg-[#0B0B0E] shadow-xl">
+          <MessageCircle className="w-10 h-10 mx-auto mb-3 text-zinc-600" />
+          <p className="text-sm text-zinc-400">Nenhum chamado encontrado.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -358,27 +358,27 @@ export default function AdminSuporte() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
                 onClick={() => openTicket(ticket)}
-                className="bg-white border border-slate-200 rounded-xl p-4 cursor-pointer transition-all hover:border-blue-300 hover:shadow-xs shadow-xs"
+                className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-4 cursor-pointer transition-all hover:border-emerald-500/30 hover:shadow-xl shadow-lg"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <Building2 className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
-                      <span className="text-xs text-slate-500 font-medium truncate">{ticket.tenants?.name ?? 'Salão desconhecido'}</span>
+                      <Building2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                      <span className="text-xs text-zinc-400 font-medium truncate">{ticket.tenants?.name ?? 'Salão desconhecido'}</span>
                     </div>
-                    <h3 className="font-semibold text-slate-900 truncate">{ticket.subject}</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">{CATEGORY_LABELS[ticket.category]}</p>
+                    <h3 className="font-semibold text-white truncate">{ticket.subject}</h3>
+                    <p className="text-xs text-zinc-400 mt-0.5">{CATEGORY_LABELS[ticket.category]}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ color: priorityCfg.color, background: `${priorityCfg.color}15` }}>
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full border border-white/10" style={{ color: priorityCfg.color, background: `${priorityCfg.color}15` }}>
                       {priorityCfg.label}
                     </span>
-                    <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: `${statusCfg.color}15`, color: statusCfg.color }}>
+                    <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-white/10" style={{ background: `${statusCfg.color}15`, color: statusCfg.color }}>
                       <StatusIcon className="w-3 h-3" />{statusCfg.label}
                     </span>
                   </div>
                 </div>
-                <p className="text-xs text-slate-400 mt-2 font-medium">Atualizado: {formatDate(ticket.updated_at)}</p>
+                <p className="text-xs text-zinc-500 mt-2 font-medium">Atualizado: {formatDate(ticket.updated_at)}</p>
               </motion.div>
             );
           })}

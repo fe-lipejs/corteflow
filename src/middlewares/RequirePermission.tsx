@@ -43,10 +43,10 @@ export default function RequirePermission({
   }
 
   if (!hasAccess) {
-    // Render the FeatureGate so it shows the blurred children and the upgrade card
-    const deniedMessage = "Você não tem permissão para acessar ou alterar este recurso. Conheça nossos planos e desbloqueie o acesso.";
+    // Render FeatureGate sem forçar mensagem genérica, permitindo que o modal resolva
+    // contextualmente se o salão está cancelado, teste expirado, fatura pendente ou limite
     return (
-      <FeatureGate permission={permission} modulePrefix={modulePrefix} message={deniedMessage}>
+      <FeatureGate permission={permission} modulePrefix={modulePrefix}>
         {children}
       </FeatureGate>
     );
@@ -54,4 +54,3 @@ export default function RequirePermission({
 
   return <>{children}</>;
 }
-

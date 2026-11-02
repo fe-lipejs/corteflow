@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { UpgradeModal } from './UpgradeModal';
 import { usePermissionEngine } from '../hooks/usePermissionEngine';
@@ -32,7 +32,6 @@ function InlineLock({ message }: { message?: string }) {
 export default function FeatureGate({ feature, permission, modulePrefix, children, message, inline = false }: FeatureGateProps) {
   const { theme } = useTheme();
   const engine = usePermissionEngine();
-  const navigate = useNavigate();
 
   if (engine.isLoading) return <>{children}</>;
 
@@ -46,19 +45,22 @@ export default function FeatureGate({ feature, permission, modulePrefix, childre
   }
 
   if (!hasAccess) {
-    const subStatus = engine.subscription?.status;
-    const isTrialExpired = subStatus === 'trial' && engine.subscription?.trial_ends_at && new Date(engine.subscription.trial_ends_at) < new Date();
-    const noSub = !engine.subscription && !engine.defaultPlan;
-
-    let defaultMessage = 'Esta funcionalidade é exclusiva de planos superiores. Faça o upgrade para desbloquear o acesso total.';
-    if (isTrialExpired || noSub) {
-      defaultMessage = 'Seu período de teste terminou. Escolha um plano para continuar aproveitando todos os recursos.';
-    }
-
-    const displayMessage = message ?? defaultMessage;
-
     if (inline) {
-      return <InlineLock message={displayMessage} />;
+      let inlineMsg = message;
+      if (!inlineMsg) {
+        if (engine.subscriptionStatus === 'canceled') {
+          inlineMsg = 'Sua assinatura está cancelada. Reative para acessar.';
+        } else if (engine.subscriptionStatus === 'trial_expired') {
+          inlineMsg = 'Seu período de teste encerrou. Escolha um plano para continuar.';
+        } else if (engine.subscriptionStatus === 'past_due') {
+          inlineMsg = 'Fatura pendente. Regularize sua assinatura.';
+        } else if (engine.subscriptionStatus === 'no_subscription') {
+          inlineMsg = 'Nenhum plano ativo. Assine para liberar este recurso.';
+        } else {
+          inlineMsg = 'Disponível em um plano superior.';
+        }
+      }
+      return <InlineLock message={inlineMsg} />;
     }
 
     return (
@@ -68,13 +70,11 @@ export default function FeatureGate({ feature, permission, modulePrefix, childre
           {children}
         </div>
 
-        {/* Modal Overlay */}
-        <UpgradeModal message={displayMessage} />
+        {/* Modal Overlay contextual */}
+        <UpgradeModal feature={permission || modulePrefix || feature} message={message} />
       </div>
     );
   }
 
   return <>{children}</>;
 }
-
-

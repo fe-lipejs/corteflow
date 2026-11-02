@@ -125,16 +125,16 @@ function StatCard({ label, value, sub, icon: Icon, color, delay = 0 }: {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className="bg-white border border-slate-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all shadow-xs group"
+      className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-5 hover:border-emerald-500/30 hover:shadow-2xl hover:shadow-emerald-500/5 transition-all shadow-xl group"
     >
       <div className="flex items-start justify-between mb-3">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105" style={{ background: `${color}15` }}>
+        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{label}</p>
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110" style={{ background: `${color}20` }}>
           <Icon className="w-4 h-4" style={{ color }} />
         </div>
       </div>
-      <p className="text-2xl font-bold text-slate-900 mb-1 tracking-tight">{value}</p>
-      {sub && <p className="text-xs text-slate-400">{sub}</p>}
+      <p className="text-2xl font-bold text-white mb-1 tracking-tight">{value}</p>
+      {sub && <p className="text-xs text-zinc-500">{sub}</p>}
     </motion.div>
   );
 }
@@ -145,14 +145,14 @@ function ListSection({ title, icon: Icon, children, empty }: {
   children: React.ReactNode; empty: boolean;
 }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-slate-100 bg-slate-50/70">
-        <Icon className="w-4 h-4 text-blue-600" />
-        <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+    <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
+      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/5 bg-white/[0.02]">
+        <Icon className="w-4 h-4 text-emerald-400" />
+        <h3 className="text-sm font-semibold text-zinc-100">{title}</h3>
       </div>
       {empty ? (
         <div className="py-8 text-center">
-          <p className="text-xs text-slate-400">Nenhum registro encontrado</p>
+          <p className="text-xs text-zinc-500">Nenhum registro encontrado</p>
         </div>
       ) : children}
     </div>
@@ -195,7 +195,7 @@ export default function AdminFinanceiro() {
             <select
               value={month}
               onChange={e => setMonth(Number(e.target.value))}
-              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 outline-none focus:border-blue-500 shadow-xs"
+              className="px-3 py-1.5 bg-[#13131A] border border-white/10 rounded-xl text-xs text-zinc-200 outline-none focus:border-emerald-500 shadow-sm cursor-pointer"
             >
               {Array.from({ length: 12 }, (_, i) => (
                 <option key={i + 1} value={i + 1}>
@@ -206,7 +206,7 @@ export default function AdminFinanceiro() {
             <select
               value={year}
               onChange={e => setYear(Number(e.target.value))}
-              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 outline-none focus:border-blue-500 shadow-xs"
+              className="px-3 py-1.5 bg-[#13131A] border border-white/10 rounded-xl text-xs text-zinc-200 outline-none focus:border-emerald-500 shadow-sm cursor-pointer"
             >
               {[2024, 2025, 2026].map(y => (
                 <option key={y} value={y}>{y}</option>
@@ -224,11 +224,11 @@ export default function AdminFinanceiro() {
         <>
           {/* Revenue Cards */}
           <section>
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Receita</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">Receita</p>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <StatCard label="MRR" value={fmt(stats.monthly)} icon={DollarSign} color="#10b981" delay={0} sub={`${stats.activeCount} assinaturas ativas`} />
-              <StatCard label="ARR" value={fmt(stats.annual)} icon={TrendingUp} color="#2563eb" delay={0.05} sub="Projeção anual" />
-              <StatCard label="Receita Total" value={fmt(stats.total)} icon={DollarSign} color="#0284c7" delay={0.1} sub="Acumulado estimado" />
+              <StatCard label="ARR" value={fmt(stats.annual)} icon={TrendingUp} color="#34d399" delay={0.05} sub="Projeção anual" />
+              <StatCard label="Receita Total" value={fmt(stats.total)} icon={DollarSign} color="#10b981" delay={0.1} sub="Acumulado estimado" />
               <StatCard label="Ticket Médio" value={fmt(stats.avgTicket)} icon={TrendingUp} color="#f59e0b" delay={0.15} sub="Por assinatura" />
             </div>
           </section>
@@ -237,16 +237,16 @@ export default function AdminFinanceiro() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Upcoming Renewals */}
             <ListSection title={`Renovações Próximas (${stats.upcoming.length})`} icon={Calendar} empty={stats.upcoming.length === 0}>
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-white/5">
                 {stats.upcoming.map(item => (
-                  <div key={item.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50/80 transition-colors">
+                  <div key={item.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-white/[0.03] transition-colors">
                     <div>
-                      <p className="text-sm text-slate-900 font-semibold">{item.name}</p>
-                      <p className="text-xs text-slate-400">{item.plan}</p>
+                      <p className="text-sm text-zinc-100 font-semibold">{item.name}</p>
+                      <p className="text-xs text-zinc-400">{item.plan}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-amber-600 font-bold">{daysUntil(item.renewsAt)}</p>
-                      <p className="text-[10px] text-slate-400">{fmtDate(item.renewsAt)}</p>
+                      <p className="text-xs text-amber-400 font-bold">{daysUntil(item.renewsAt)}</p>
+                      <p className="text-[10px] text-zinc-500">{fmtDate(item.renewsAt)}</p>
                     </div>
                   </div>
                 ))}
@@ -255,16 +255,16 @@ export default function AdminFinanceiro() {
 
             {/* Trials */}
             <ListSection title={`Em Trial (${stats.trials.length})`} icon={Clock} empty={stats.trials.length === 0}>
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-white/5">
                 {stats.trials.map(item => (
-                  <div key={item.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50/80 transition-colors">
+                  <div key={item.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-white/[0.03] transition-colors">
                     <div>
-                      <p className="text-sm text-slate-900 font-semibold">{item.name}</p>
-                      <p className="text-xs text-slate-400">/{item.slug}</p>
+                      <p className="text-sm text-zinc-100 font-semibold">{item.name}</p>
+                      <p className="text-xs text-zinc-400">/{item.slug}</p>
                     </div>
                     <div className="text-right">
                       <AdminBadge variant="trial" label="Trial" dot />
-                      <p className="text-[10px] text-slate-400 mt-1">Expira {fmtDate(item.trialEnds)}</p>
+                      <p className="text-[10px] text-zinc-500 mt-1">Expira {fmtDate(item.trialEnds)}</p>
                     </div>
                   </div>
                 ))}
@@ -273,12 +273,12 @@ export default function AdminFinanceiro() {
 
             {/* Delinquent */}
             <ListSection title={`Inadimplentes (${stats.delinquent.length})`} icon={AlertCircle} empty={stats.delinquent.length === 0}>
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-white/5">
                 {stats.delinquent.map(item => (
-                  <div key={item.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50/80 transition-colors">
+                  <div key={item.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-white/[0.03] transition-colors">
                     <div>
-                      <p className="text-sm text-slate-900 font-semibold">{item.name}</p>
-                      <p className="text-xs text-slate-400">{item.plan}</p>
+                      <p className="text-sm text-zinc-100 font-semibold">{item.name}</p>
+                      <p className="text-xs text-zinc-400">{item.plan}</p>
                     </div>
                     <AdminBadge variant="suspended" label="Inadimplente" dot />
                   </div>
@@ -288,12 +288,12 @@ export default function AdminFinanceiro() {
 
             {/* Canceled */}
             <ListSection title={`Canceladas (${stats.canceled.length})`} icon={XCircle} empty={stats.canceled.length === 0}>
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-white/5">
                 {stats.canceled.map(item => (
-                  <div key={item.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50/80 transition-colors">
+                  <div key={item.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-white/[0.03] transition-colors">
                     <div>
-                      <p className="text-sm text-slate-900 font-semibold">{item.name}</p>
-                      <p className="text-xs text-slate-400">/{item.slug}</p>
+                      <p className="text-sm text-zinc-100 font-semibold">{item.name}</p>
+                      <p className="text-xs text-zinc-400">/{item.slug}</p>
                     </div>
                     <AdminBadge variant="canceled" label="Cancelada" dot />
                   </div>

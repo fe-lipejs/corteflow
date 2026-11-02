@@ -74,7 +74,7 @@ export default function AdminSeguranca() {
     },
   ]);
 
-  const { isLoading } = useQuery({
+  useQuery({
     queryKey: ['security_checks'],
     queryFn: async () => {
       const rlsChecks = await Promise.allSettled([
@@ -112,13 +112,13 @@ export default function AdminSeguranca() {
   const statusIcon = (status: SecurityCheck['status']) => {
     switch (status) {
       case 'ok':
-        return <CheckCircle className="w-4 h-4 text-emerald-600" />;
+        return <CheckCircle className="w-4 h-4 text-emerald-400" />;
       case 'warning':
-        return <AlertCircle className="w-4 h-4 text-amber-600" />;
+        return <AlertCircle className="w-4 h-4 text-amber-400" />;
       case 'error':
-        return <XCircle className="w-4 h-4 text-red-600" />;
+        return <XCircle className="w-4 h-4 text-rose-400" />;
       default:
-        return <div className="w-4 h-4 border-2 border-slate-300 border-t-blue-600 rounded-full animate-spin" />;
+        return <div className="w-4 h-4 border-2 border-zinc-700 border-t-emerald-400 rounded-full animate-spin" />;
     }
   };
 
@@ -134,24 +134,24 @@ export default function AdminSeguranca() {
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`flex items-center gap-4 p-5 rounded-xl border ${
+        className={`flex items-center gap-4 p-5 rounded-2xl border shadow-xl ${
           overallStatus === 'ok'
-            ? 'bg-emerald-50 border-emerald-200'
+            ? 'bg-emerald-500/10 border-emerald-500/30'
             : overallStatus === 'warning'
-            ? 'bg-amber-50 border-amber-200'
-            : 'bg-red-50 border-red-200'
+            ? 'bg-amber-500/10 border-amber-500/30'
+            : 'bg-rose-500/10 border-rose-500/30'
         }`}
       >
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-          overallStatus === 'ok' ? 'bg-emerald-100' : overallStatus === 'warning' ? 'bg-amber-100' : 'bg-red-100'
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${
+          overallStatus === 'ok' ? 'bg-emerald-500/20 text-emerald-400' : overallStatus === 'warning' ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
         }`}>
-          <Shield className={`w-5 h-5 ${overallStatus === 'ok' ? 'text-emerald-700' : overallStatus === 'warning' ? 'text-amber-700' : 'text-red-700'}`} />
+          <Shield className="w-5 h-5" />
         </div>
         <div>
-          <p className="font-bold text-slate-900">
+          <p className="font-bold text-white">
             {overallStatus === 'ok' ? 'Sistema seguro' : overallStatus === 'warning' ? 'Atenção necessária' : 'Problemas críticos detectados'}
           </p>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-zinc-400">
             {statusCounts.ok} verificações aprovadas
             {statusCounts.warning > 0 && `, ${statusCounts.warning} avisos`}
             {statusCounts.error > 0 && `, ${statusCounts.error} erros`}
@@ -167,14 +167,14 @@ export default function AdminSeguranca() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="bg-white border border-slate-200 rounded-xl p-4 flex items-start gap-4 hover:border-blue-300 hover:shadow-xs transition-colors shadow-xs"
+            className="bg-[#0B0B0E] border border-white/10 rounded-2xl p-4 flex items-start gap-4 hover:border-emerald-500/30 hover:shadow-xl transition-all shadow-lg"
           >
-            <div className="w-8 h-8 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 text-blue-600">
+            <div className="w-8 h-8 bg-emerald-500/15 border border-emerald-500/30 rounded-xl flex items-center justify-center flex-shrink-0 text-emerald-400 shadow-xs">
               <check.icon className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-800 mb-0.5">{check.label}</p>
-              <p className="text-xs text-slate-500 leading-relaxed">{check.description}</p>
+              <p className="text-sm font-semibold text-zinc-100 mb-0.5">{check.label}</p>
+              <p className="text-xs text-zinc-400 leading-relaxed">{check.description}</p>
             </div>
             <div className="flex-shrink-0 mt-0.5">
               {statusIcon(check.status)}
@@ -185,13 +185,13 @@ export default function AdminSeguranca() {
 
       {/* Security Notes */}
       <AdminCard padding="md">
-        <h3 className="text-sm font-bold text-slate-900 mb-4">Notas de Segurança</h3>
-        <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
-          <p>🔒 <strong className="text-slate-800">RLS (Row Level Security):</strong> Todas as tabelas com dados sensíveis possuem políticas RLS ativas no Supabase. Cada tenant enxerga apenas seus próprios dados via <code className="text-blue-700 bg-blue-50 px-1 py-0.5 rounded border border-blue-200 font-mono">auth.uid()</code>.</p>
-          <p>🛡️ <strong className="text-slate-800">Autenticação:</strong> Gerenciada 100% pelo Supabase Auth. Sessões renovadas automaticamente. Nunca armazenamos senhas.</p>
-          <p>🔑 <strong className="text-slate-800">Roles:</strong> Verificação dupla — frontend (RequireRole) e backend (RLS policies). Um usuário não pode escalar privilégios via API.</p>
-          <p>📋 <strong className="text-slate-800">Auditoria:</strong> Execute a migration <code className="text-blue-700 bg-blue-50 px-1 py-0.5 rounded border border-blue-200 font-mono">0013_audit_log.sql</code> para ativar o log completo de ações administrativas.</p>
-          <p>🔔 <strong className="text-slate-800">Chaves:</strong> <code className="text-blue-700 bg-blue-50 px-1 py-0.5 rounded border border-blue-200 font-mono">STRIPE_SECRET_KEY</code> e <code className="text-blue-700 bg-blue-50 px-1 py-0.5 rounded border border-blue-200 font-mono">SUPABASE_SERVICE_ROLE_KEY</code> nunca são expostas no frontend. Use sempre Edge Functions ou variáveis server-side.</p>
+        <h3 className="text-sm font-bold text-white mb-4">Notas de Segurança</h3>
+        <div className="space-y-3 text-xs text-zinc-300 leading-relaxed">
+          <p>🔒 <strong className="text-white">RLS (Row Level Security):</strong> Todas as tabelas com dados sensíveis possuem políticas RLS ativas no Supabase. Cada tenant enxerga apenas seus próprios dados via <code className="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-mono">auth.uid()</code>.</p>
+          <p>🛡️ <strong className="text-white">Autenticação:</strong> Gerenciada 100% pelo Supabase Auth. Sessões renovadas automaticamente. Nunca armazenamos senhas.</p>
+          <p>🔑 <strong className="text-white">Roles:</strong> Verificação dupla — frontend (RequireRole) e backend (RLS policies). Um usuário não pode escalar privilégios via API.</p>
+          <p>📋 <strong className="text-white">Auditoria:</strong> Execute a migration <code className="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-mono">0013_audit_log.sql</code> para ativar o log completo de ações administrativas.</p>
+          <p>🔔 <strong className="text-white">Chaves:</strong> <code className="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-mono">STRIPE_SECRET_KEY</code> e <code className="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-mono">SUPABASE_SERVICE_ROLE_KEY</code> nunca são expostas no frontend. Use sempre Edge Functions ou variáveis server-side.</p>
         </div>
       </AdminCard>
     </div>

@@ -10,12 +10,12 @@ interface AdminCardProps {
 }
 
 const accentMap = {
-  violet: 'hover:border-indigo-400 hover:shadow-[0_4px_20px_rgba(99,102,241,0.1)]',
-  blue:   'hover:border-blue-500 hover:shadow-[0_4px_20px_rgba(59,130,246,0.12)]',
-  emerald:'hover:border-emerald-400 hover:shadow-[0_4px_20px_rgba(16,185,129,0.1)]',
-  amber:  'hover:border-amber-400 hover:shadow-[0_4px_20px_rgba(245,158,11,0.1)]',
-  red:    'hover:border-red-400 hover:shadow-[0_4px_20px_rgba(239,68,68,0.1)]',
-  none:   '',
+  violet:  'hover:border-indigo-500/50 hover:shadow-[0_4px_24px_rgba(99,102,241,0.15)]',
+  blue:    'hover:border-sky-500/50 hover:shadow-[0_4px_24px_rgba(14,165,233,0.15)]',
+  emerald: 'hover:border-emerald-500/50 hover:shadow-[0_4px_24px_rgba(16,185,129,0.2)]',
+  amber:   'hover:border-amber-500/50 hover:shadow-[0_4px_24px_rgba(245,158,11,0.15)]',
+  red:     'hover:border-red-500/50 hover:shadow-[0_4px_24px_rgba(239,68,68,0.15)]',
+  none:    '',
 };
 
 const paddingMap = {
@@ -38,9 +38,9 @@ export default function AdminCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className={`
-        bg-white border border-slate-200/90 rounded-xl shadow-xs
+        bg-[#0B0B0E] border border-white/[0.08] rounded-2xl shadow-xl text-zinc-100
         transition-all duration-200
-        ${hover ? `cursor-pointer ${accentMap[accent]} hover:border-slate-300 hover:shadow-md` : ''}
+        ${hover ? `cursor-pointer ${accentMap[accent]} hover:border-white/20 hover:shadow-2xl` : ''}
         ${paddingMap[padding]}
         ${className}
       `}

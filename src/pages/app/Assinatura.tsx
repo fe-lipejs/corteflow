@@ -87,6 +87,8 @@ export default function Assinatura() {
   const [syncSuccessMessage, setSyncSuccessMessage] =
     useState<string | null>(null);
 
+  const [stripeMode, setStripeMode] = useState<'test' | 'live' | null>(null);
+
   const fetchData = useCallback(async () => {
     if (!tenant) return;
 
@@ -95,6 +97,7 @@ export default function Assinatura() {
         { data: subsData },
         { data: planData },
         { data: customPricingData },
+        { data: publicConfigData },
       ] = await Promise.all([
         supabase
           .from('subscriptions')
@@ -116,7 +119,13 @@ export default function Assinatura() {
           .from('custom_pricing')
           .select('*')
           .eq('tenant_id', tenant.id),
+
+        supabase.rpc('get_platform_public_config'),
       ]);
+
+      if (publicConfigData && typeof publicConfigData === 'object' && 'stripe_mode' in publicConfigData) {
+        setStripeMode((publicConfigData as any).stripe_mode);
+      }
 
       let activeSub =
         subsData?.find(
@@ -791,6 +800,43 @@ export default function Assinatura() {
             )}
         </div>
       </header>
+
+      {/* ======================================================
+          AVISO DE MODO DE TESTES / SANDBOX ATIVO NA PLATAFORMA
+      ====================================================== */}
+      {stripeMode === 'test' && (
+        <div
+          className="mb-8 p-4 rounded-2xl border flex items-start gap-3.5 shadow-lg transition-all animate-fade-in"
+          style={{
+            backgroundColor: 'rgba(245, 158, 11, 0.08)',
+            borderColor: 'rgba(245, 158, 11, 0.3)',
+          }}
+        >
+          <div
+            className="p-2 rounded-xl shrink-0 mt-0.5"
+            style={{
+              backgroundColor: 'rgba(245, 158, 11, 0.15)',
+              color: '#f59e0b',
+            }}
+          >
+            <AlertTriangle className="w-5 h-5 text-amber-400" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-bold text-amber-300">
+                Ambiente de Demonstração / Testes (Sandbox) Ativo
+              </h4>
+              <span className="text-[10px] font-mono uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                Modo Teste
+              </span>
+            </div>
+            <p className="text-xs text-amber-200/90 mt-1 leading-relaxed">
+              O sistema de pagamentos da plataforma está operando em <b>modo de testes</b>. Nenhuma cobrança real será debitada no seu cartão.
+              Você pode simular e testar contratações ou trocas de plano livremente.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ======================================================
           SUCCESS

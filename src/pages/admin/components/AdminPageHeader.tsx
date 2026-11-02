@@ -37,16 +37,16 @@ export default function AdminPageHeader({
     <div className="mb-8">
       {/* Breadcrumb */}
       {autoCrumbs.length > 0 && (
-        <nav className="flex items-center gap-1 text-xs text-slate-400 mb-3">
+        <nav className="flex items-center gap-1 text-xs text-zinc-500 mb-3">
           {autoCrumbs.map((crumb, i) => (
             <span key={i} className="flex items-center gap-1">
-              {i > 0 && <ChevronRight className="w-3 h-3 text-slate-300" />}
+              {i > 0 && <ChevronRight className="w-3 h-3 text-zinc-700" />}
               {crumb.to && i < autoCrumbs.length - 1 ? (
-                <Link to={crumb.to} className="hover:text-blue-600 transition-colors">
+                <Link to={crumb.to} className="hover:text-emerald-400 transition-colors">
                   {crumb.label}
                 </Link>
               ) : (
-                <span className="text-slate-600 font-medium">{crumb.label}</span>
+                <span className="text-zinc-300 font-medium">{crumb.label}</span>
               )}
             </span>
           ))}
@@ -57,13 +57,13 @@ export default function AdminPageHeader({
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           {icon && (
-            <div className="w-10 h-10 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-blue-600 shadow-xs">
+            <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 shadow-sm shadow-emerald-500/10 flex-shrink-0">
               {icon}
             </div>
           )}
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{title}</h1>
-            {subtitle && <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>}
+            <h1 className="text-2xl font-bold text-white tracking-tight">{title}</h1>
+            {subtitle && <p className="text-sm text-zinc-400 mt-0.5">{subtitle}</p>}
           </div>
         </div>
         {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}

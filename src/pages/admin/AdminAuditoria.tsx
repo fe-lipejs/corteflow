@@ -35,16 +35,16 @@ const ACTION_ICONS: Record<string, React.ElementType> = {
 };
 
 const ACTION_COLORS: Record<string, string> = {
-  login: 'text-emerald-600',
-  logout: 'text-slate-400',
-  tenant_created: 'text-blue-600',
-  tenant_edited: 'text-amber-600',
-  tenant_deleted: 'text-red-600',
-  tenant_status_changed: 'text-orange-600',
-  plan_changed: 'text-indigo-600',
-  user_created: 'text-blue-600',
-  user_role_changed: 'text-indigo-600',
-  default: 'text-slate-400',
+  login: 'text-emerald-400',
+  logout: 'text-zinc-500',
+  tenant_created: 'text-emerald-400',
+  tenant_edited: 'text-amber-400',
+  tenant_deleted: 'text-rose-400',
+  tenant_status_changed: 'text-orange-400',
+  plan_changed: 'text-emerald-400',
+  user_created: 'text-emerald-400',
+  user_role_changed: 'text-emerald-400',
+  default: 'text-zinc-400',
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -109,19 +109,19 @@ export default function AdminAuditoria() {
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-3">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <input
             type="text"
             placeholder="Buscar ação, usuário ou alvo..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(0); }}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-blue-500 shadow-xs transition-colors"
+            className="w-full pl-9 pr-4 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-white placeholder-zinc-500 outline-none focus:border-emerald-500 shadow-sm transition-colors"
           />
         </div>
         <select
           value={actionFilter}
           onChange={e => { setActionFilter(e.target.value); setPage(0); }}
-          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 outline-none focus:border-blue-500 shadow-xs"
+          className="px-3 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-zinc-200 outline-none focus:border-emerald-500 shadow-sm cursor-pointer"
         >
           <option value="all">Todas as ações</option>
           {uniqueActions.map(a => (
@@ -131,8 +131,8 @@ export default function AdminAuditoria() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-        <div className="grid grid-cols-12 gap-4 px-5 py-3 border-b border-slate-100 bg-slate-50/70 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+      <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
+        <div className="grid grid-cols-12 gap-4 px-5 py-3 border-b border-white/5 bg-white/[0.02] text-[10px] font-bold uppercase tracking-wider text-zinc-500">
           <div className="col-span-3">Ação</div>
           <div className="col-span-2 hidden md:block">Usuário</div>
           <div className="col-span-3 hidden lg:block">Alvo</div>
@@ -151,7 +151,7 @@ export default function AdminAuditoria() {
             icon={<ScrollText className="w-6 h-6" />}
           />
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-white/5">
             {paginated.map((entry, i) => {
               const Icon = ACTION_ICONS[entry.action] ?? ACTION_ICONS.default;
               const color = ACTION_COLORS[entry.action] ?? ACTION_COLORS.default;
@@ -161,27 +161,27 @@ export default function AdminAuditoria() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.02 }}
-                  className="grid grid-cols-12 gap-4 items-center px-5 py-3.5 hover:bg-slate-50/80 transition-colors"
+                  className="grid grid-cols-12 gap-4 items-center px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
                 >
                   <div className="col-span-3 flex items-center gap-2.5">
                     <Icon className={`w-4 h-4 flex-shrink-0 ${color}`} />
-                    <span className="text-xs font-semibold text-slate-800 truncate">
+                    <span className="text-xs font-semibold text-zinc-200 truncate">
                       {ACTION_LABELS[entry.action] ?? entry.action}
                     </span>
                   </div>
                   <div className="col-span-2 hidden md:block">
-                    <p className="text-xs text-slate-600 truncate">{entry.actor_name ?? '—'}</p>
+                    <p className="text-xs text-zinc-300 truncate">{entry.actor_name ?? '—'}</p>
                   </div>
                   <div className="col-span-3 hidden lg:block">
                     {entry.target_name && (
-                      <p className="text-xs text-slate-500 truncate">{entry.target_name}</p>
+                      <p className="text-xs text-zinc-400 truncate">{entry.target_name}</p>
                     )}
                   </div>
                   <div className="col-span-2 hidden lg:block">
-                    <p className="text-xs text-slate-400 font-mono">{entry.ip_address ?? '—'}</p>
+                    <p className="text-xs text-zinc-500 font-mono">{entry.ip_address ?? '—'}</p>
                   </div>
                   <div className="col-span-4 md:col-span-2 lg:col-span-2 text-right">
-                    <p className="text-[10px] text-slate-400">{fmtDate(entry.created_at)}</p>
+                    <p className="text-[10px] text-zinc-500">{fmtDate(entry.created_at)}</p>
                   </div>
                 </motion.div>
               );
@@ -190,15 +190,15 @@ export default function AdminAuditoria() {
         )}
 
         {totalPages > 1 && (
-          <div className="border-t border-slate-100 px-5 py-3 flex items-center justify-between bg-slate-50/50">
-            <p className="text-xs text-slate-500">Página {page + 1} de {totalPages}</p>
+          <div className="border-t border-white/5 px-5 py-3 flex items-center justify-between bg-white/[0.01]">
+            <p className="text-xs text-zinc-500">Página {page + 1} de {totalPages}</p>
             <div className="flex items-center gap-2">
               <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}
-                className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 rounded-lg transition-colors">
+                className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 rounded-lg transition-colors cursor-pointer">
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}
-                className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 rounded-lg transition-colors">
+                className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 rounded-lg transition-colors cursor-pointer">
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
