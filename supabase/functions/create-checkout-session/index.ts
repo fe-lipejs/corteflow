@@ -71,10 +71,10 @@ serve(async (req) => {
       .eq('plan_id', plan.id)
       .maybeSingle();
 
-    // 2. Buscar preço do plano para a moeda do tenant
+    // 2. Buscar preço do plano para a moeda do tenant (com suporte a IDs de Teste e Live)
     let { data: planPrice } = await supabase
       .from('plan_prices')
-      .select('amount, currency, stripe_price_id')
+      .select('amount, currency, stripe_price_id, stripe_price_id_test, stripe_price_id_live')
       .eq('plan_id', plan.id)
       .eq('currency', targetCurrency)
       .maybeSingle();
@@ -83,7 +83,7 @@ serve(async (req) => {
     if (!planPrice) {
       const { data: fallbackPrice } = await supabase
         .from('plan_prices')
-        .select('amount, currency, stripe_price_id')
+        .select('amount, currency, stripe_price_id, stripe_price_id_test, stripe_price_id_live')
         .eq('plan_id', plan.id)
         .limit(1)
         .maybeSingle();
@@ -105,41 +105,41 @@ serve(async (req) => {
         unit_amount: customUnitAmount,
         recurring: { interval: 'month' },
       };
-    } else if (planPrice?.stripe_price_id) {
-      // Se houver um stripe_price_id, valida se ele existe no ambiente ativo do Stripe (Test ou Live)
-      try {
-        const retrievedPrice = await stripe.prices.retrieve(planPrice.stripe_price_id);
-        if (retrievedPrice && retrievedPrice.active) {
-          lineItem.price = planPrice.stripe_price_id;
-        } else {
-          throw new Error("Preço inativo");
+    } else {
+      // Determinar o stripe_price_id correto para o modo ativo (Live ou Test)
+      const targetPriceId = mode === 'live'
+        ? (planPrice?.stripe_price_id_live?.trim() || (!planPrice?.stripe_price_id_test ? planPrice?.stripe_price_id?.trim() : null))
+        : (planPrice?.stripe_price_id_test?.trim() || planPrice?.stripe_price_id?.trim());
+
+      let priceResolved = false;
+
+      if (targetPriceId) {
+        try {
+          const retrievedPrice = await stripe.prices.retrieve(targetPriceId);
+          if (retrievedPrice && retrievedPrice.active) {
+            lineItem.price = targetPriceId;
+            priceResolved = true;
+          }
+        } catch (priceErr: any) {
+          console.warn(`[Stripe] stripe_price_id '${targetPriceId}' não pôde ser recuperado no ambiente ${mode.toUpperCase()}:`, priceErr?.message);
         }
-      } catch (priceErr: any) {
-        console.warn(`[Stripe] stripe_price_id '${planPrice.stripe_price_id}' não existe no ambiente ${mode.toUpperCase()}. Usando price_data dinâmico:`, priceErr?.message);
+      }
+
+      // Se não havia ID configurado ou o ID do Stripe não existia no ambiente atual, gera price_data dinamicamente
+      if (!priceResolved) {
         lineItem.price_data = {
           currency: currency,
           product_data: {
             name: `Plano ${plan.name}`,
             description: plan.description || `Assinatura ${plan.name} no Raffros`,
           },
-          unit_amount: Math.round(Number(planPrice.amount || plan.price || 0) * 100),
+          unit_amount: Math.round(Number(planPrice?.amount || plan.price || 0) * 100),
           recurring: { interval: 'month' },
         };
       }
-    } else {
-      // Se não houver stripe_price_id cadastrado, gera a cobrança recorrente automaticamente via price_data
-      lineItem.price_data = {
-        currency: currency,
-        product_data: {
-          name: `Plano ${plan.name}`,
-          description: plan.description || `Assinatura ${plan.name} no Raffros`,
-        },
-        unit_amount: Math.round(Number(planPrice?.amount || plan.price || 0) * 100),
-        recurring: { interval: 'month' },
-      };
     }
 
-    // 4. Verificar se já existe assinatura ou se já utilizou o benefício do teste grátis (Single-use trial rule)
+    // 4. Verificar assinatura existente e validar customer_id no ambiente ativo
     const { data: existingSub } = await supabase
       .from('subscriptions')
       .select('stripe_customer_id, stripe_subscription_id, status')
@@ -148,7 +148,7 @@ serve(async (req) => {
 
     const isPaidSub = existingSub && (existingSub.status === 'active' || existingSub.status === 'past_due' || existingSub.status === 'canceled');
 
-    // Regra Antifraude (Local + Histórico): Se já usou trial (tenant atual ou email), ou já teve assinatura, trial é estritamente 0 (cobrança imediata)
+    // Regra Antifraude: Se já usou trial (tenant atual ou histórico do email), ou já teve assinatura paga, trial é 0
     const trialDays = (!isAntiFraudTriggered && !isPaidSub && plan.trial_days && plan.trial_days > 0) ? plan.trial_days : 0;
 
     const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
@@ -164,22 +164,31 @@ serve(async (req) => {
 
     let customerId = existingSub?.stripe_customer_id;
 
-    // NOVO: Recuperar conta órfã do Stripe pelo e-mail se não estiver vinculada
+    // Blindagem de Ambiente: Valida se o customerId realmente existe no Stripe atual (Test ou Live)
+    if (customerId) {
+      try {
+        const cust = await stripe.customers.retrieve(customerId);
+        if (!cust || ('deleted' in cust && cust.deleted)) {
+          customerId = null;
+        }
+      } catch (_custErr) {
+        console.warn(`[create-checkout-session] Customer '${customerId}' não existe no ambiente ${mode.toUpperCase()}. Buscando por e-mail...`);
+        customerId = null;
+      }
+    }
+
+    // Se o customerId não existe no ambiente ativo, busca pelo e-mail
     if (!customerId && user.email) {
       const customers = await stripe.customers.list({ email: user.email, limit: 1 });
       if (customers.data.length > 0) {
         customerId = customers.data[0].id;
-        const supabaseAdmin = createClient(
-          Deno.env.get('SUPABASE_URL') ?? '',
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-        );
         await supabaseAdmin.from('subscriptions').update({ stripe_customer_id: customerId }).eq('tenant_id', tenantId);
       }
     }
 
-    // Prevenir duplicação de assinatura no upgrade
-    if (existingSub?.stripe_subscription_id && (existingSub.status === 'active' || existingSub.status === 'trialing')) {
-      if (customerId) {
+    // Se já tiver assinatura ativa no Stripe, tenta redirecionar para o portal do cliente
+    if (existingSub?.stripe_subscription_id && (existingSub.status === 'active' || existingSub.status === 'trialing') && customerId) {
+      try {
         const portalSession = await stripe.billingPortal.sessions.create({
           customer: customerId,
           return_url: returnUrl,
@@ -187,6 +196,8 @@ serve(async (req) => {
         return new Response(JSON.stringify({ url: portalSession.url }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      } catch (portalErr: any) {
+        console.warn("[create-checkout-session] Billing portal não disponível ou falhou, prosseguindo com Checkout normal:", portalErr?.message);
       }
     }
 
@@ -224,7 +235,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
-    console.error(error);
+    console.error("create-checkout-session error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,

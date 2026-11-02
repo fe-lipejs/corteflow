@@ -1178,9 +1178,14 @@ export default function PublicStore() {
             body: { bookingId: newBooking.id, returnUrl: getTenantPortalUrl(slug ?? "") },
           }
         );
-        if (!cErr2 && checkoutData?.url) {
+        if (cErr2) {
+          throw new Error(cErr2.message || "Não foi possível iniciar o pagamento online. Por favor, tente novamente ou escolha 'Pagar no local'.");
+        }
+        if (checkoutData?.url) {
           window.location.href = checkoutData.url;
           return;
+        } else {
+          throw new Error("Sessão de pagamento indisponível no momento. Por favor, escolha 'Pagar no local'.");
         }
       }
 

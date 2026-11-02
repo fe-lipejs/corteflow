@@ -609,12 +609,13 @@ export default function Assinatura() {
       );
 
       if (!res.ok) {
-        const errorText =
-          await res.text();
-
-        throw new Error(
-          `Erro na API: ${res.status} ${errorText}`
-        );
+        const errorText = await res.text();
+        let errorMsg = errorText;
+        try {
+          const parsed = JSON.parse(errorText);
+          if (parsed.error) errorMsg = parsed.error;
+        } catch (_jsonErr) {}
+        throw new Error(errorMsg);
       }
 
       const { url } =

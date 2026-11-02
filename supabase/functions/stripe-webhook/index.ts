@@ -78,14 +78,21 @@ serve(async (req) => {
   try {
     console.log(`[stripe-webhook] Processing webhook event: ${event.type} in mode ${mode.toUpperCase()}`);
 
-    // Helper: Find tenant_id from subscription
-    const getTenantFromSub = async (subId: string) => {
-      const { data } = await supabase
-        .from('subscriptions')
-        .select('tenant_id')
-        .eq('stripe_subscription_id', subId)
-        .maybeSingle();
-      return data?.tenant_id || null;
+    // Helper: Find tenant_id from subscription with metadata fallback
+    const getTenantFromSub = async (sub: any) => {
+      const subId = typeof sub === 'string' ? sub : sub?.id;
+      if (subId) {
+        const { data } = await supabase
+          .from('subscriptions')
+          .select('tenant_id')
+          .eq('stripe_subscription_id', subId)
+          .maybeSingle();
+        if (data?.tenant_id) return data.tenant_id;
+      }
+      if (typeof sub === 'object' && sub?.metadata?.tenant_id) {
+        return sub.metadata.tenant_id;
+      }
+      return null;
     };
 
     switch (event.type) {
@@ -139,7 +146,7 @@ serve(async (req) => {
 
       case 'customer.subscription.trial_will_end': {
         const sub = event.data.object as Stripe.Subscription;
-        eventTenantId = await getTenantFromSub(sub.id);
+        eventTenantId = await getTenantFromSub(sub);
         if (eventTenantId) {
           console.log(`Trial ending soon for tenant: ${eventTenantId}`);
         }
@@ -148,7 +155,7 @@ serve(async (req) => {
 
       case 'customer.subscription.updated': {
         const sub = event.data.object as Stripe.Subscription;
-        eventTenantId = await getTenantFromSub(sub.id);
+        eventTenantId = await getTenantFromSub(sub);
         
         if (eventTenantId) {
           const trialEndsAt = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null;
@@ -176,7 +183,7 @@ serve(async (req) => {
 
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
-        eventTenantId = await getTenantFromSub(sub.id);
+        eventTenantId = await getTenantFromSub(sub);
 
         if (eventTenantId) {
           await supabase.from('subscriptions').update({

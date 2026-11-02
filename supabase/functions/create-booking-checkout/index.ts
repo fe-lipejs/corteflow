@@ -14,7 +14,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { stripe, applicationFeePercent } = await getStripeContext(supabase);
+    const { stripe, mode, applicationFeePercent } = await getStripeContext(supabase);
 
     const { bookingId, returnUrl } = await req.json();
 
@@ -30,42 +30,60 @@ serve(async (req) => {
     // Buscar tenant Stripe Connect Account
     const { data: stripeAccount } = await supabase
       .from('stripe_connect_accounts')
-      .select('stripe_account_id')
+      .select('stripe_account_id, charges_enabled')
       .eq('tenant_id', booking.tenant_id)
       .single();
 
     if (!stripeAccount?.stripe_account_id) {
-      throw new Error("Salão não possui conta Stripe conectada");
+      throw new Error("O salão ainda não conectou sua conta de pagamentos online. Por favor, escolha a opção de pagamento no local.");
     }
 
-    const amountTotal = booking.amount_total;
-    const amountToCharge = booking.payment_mode === 'deposit' ? booking.amount_paid : amountTotal;
+    // Validar se a conta Connect existe e está ativa no ambiente do Stripe atual (Test ou Live)
+    try {
+      const acc = await stripe.accounts.retrieve(stripeAccount.stripe_account_id);
+      if (!acc.charges_enabled) {
+        throw new Error("A conta de recebimento do salão ainda está em processo de verificação no Stripe. Por favor, pague no local.");
+      }
+    } catch (accErr: any) {
+      console.warn(`[create-booking-checkout] Conta Connect '${stripeAccount.stripe_account_id}' inválida no ambiente ${mode.toUpperCase()}:`, accErr?.message);
+      throw new Error("Os pagamentos online deste salão ainda não foram ativados no ambiente de cobrança atual. Por favor, escolha 'Pagar no local'.");
+    }
+
+    const amountTotal = Number(booking.amount_total);
+    const amountToCharge = booking.payment_mode === 'deposit' ? Number(booking.amount_paid) : amountTotal;
     
     if (amountToCharge <= 0) {
       throw new Error("Valor a cobrar inválido");
     }
 
     const price = Math.round(amountToCharge * 100); // centavos
-    const platformFeePercentage = (applicationFeePercent || 2) / 100;
-    const applicationFee = Math.round(price * platformFeePercentage); // fee da plataforma configurada no Super Admin
+    if (price < 50) {
+      throw new Error("O valor mínimo para pagamento com cartão é de R$ 0,50.");
+    }
 
-    // Criar a sessão no Stripe (Connect - Destination Charge)
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'pix'],
+    const platformFeePercentage = (applicationFeePercent || 2) / 100;
+    const applicationFee = Math.round(price * platformFeePercentage);
+
+    const serviceName = (booking.services as any)?.name || 'Serviço';
+    const salonName = (booking.tenants as any)?.name || 'Salão';
+    const description = booking.payment_mode === 'deposit' ? 'Pagamento de Sinal (Reserva)' : 'Pagamento Integral';
+
+    const buildSessionParams = (paymentMethods: string[]) => ({
+      payment_method_types: paymentMethods as any,
       line_items: [
         {
           price_data: {
             currency: 'brl',
             product_data: {
-              name: `${(booking.services as any).name} - ${(booking.tenants as any).name}`,
-              description: booking.payment_mode === 'deposit' ? 'Pagamento de Sinal (Reserva)' : 'Pagamento Integral',
+              name: `${serviceName} - ${salonName}`,
+              description: description,
             },
             unit_amount: price,
           },
           quantity: 1,
         },
       ],
-      mode: 'payment',
+      mode: 'payment' as const,
       payment_intent_data: {
         application_fee_amount: applicationFee,
         transfer_data: {
@@ -84,11 +102,21 @@ serve(async (req) => {
       },
     });
 
-    // Save pending payment record in DB
-    // We don't have the payment_intent id yet if it's a checkout session before completion in some cases,
-    // but checkout.sessions.create in payment mode creates the PaymentIntent immediately.
+    // Tentar criar com Pix + Cartão; se o Stripe retornar que Pix não está ativo na conta, tenta apenas com Cartão
+    let session: any;
+    try {
+      session = await stripe.checkout.sessions.create(buildSessionParams(['card', 'pix']));
+    } catch (pixErr: any) {
+      if (pixErr?.message?.toLowerCase().includes('pix')) {
+        console.warn("[create-booking-checkout] Pix não habilitado na conta Stripe, usando apenas Cartão:", pixErr.message);
+        session = await stripe.checkout.sessions.create(buildSessionParams(['card']));
+      } else {
+        throw pixErr;
+      }
+    }
+
+    // Salvar registro de pagamento pendente no banco
     const piId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
-    
     if (piId) {
        await supabase.from('payments').insert({
          tenant_id: booking.tenant_id,
@@ -105,7 +133,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
-    console.error(error);
+    console.error("create-booking-checkout error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
