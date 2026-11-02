@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
+import { getStripeContext } from '../_shared/stripe.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -9,20 +9,12 @@ serve(async (req) => {
   }
 
   try {
-    const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!stripeSecret) {
-      throw new Error("STRIPE_SECRET_KEY não configurada no backend.");
-    }
-
-    const stripe = new Stripe(stripeSecret, {
-      apiVersion: '2024-06-20',
-      httpClient: Stripe.createFetchHttpClient(),
-    });
-
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    const { stripe, mode } = await getStripeContext(supabaseAdmin);
 
     const supabaseAuth = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -66,12 +58,26 @@ serve(async (req) => {
 
     let customerId = sub?.stripe_customer_id;
 
-    // 3. Se não tiver no banco, busca no Stripe pelo email do usuário
+    // 3. Se tiver customerId gravado, valida se ele existe no ambiente atual do Stripe
+    let customerValid = false;
+    if (customerId) {
+      try {
+        const c = await stripe.customers.retrieve(customerId);
+        if (c && !('deleted' in c && c.deleted)) {
+          customerValid = true;
+        }
+      } catch (err: any) {
+        console.warn(`[create-portal-session] Customer '${customerId}' não existe no ambiente ${mode.toUpperCase()}:`, err.message);
+        customerId = null;
+      }
+    }
+
+    // 4. Se não for válido ou não tiver no banco, busca no Stripe pelo email do usuário no ambiente ativo
     if (!customerId && user.email) {
       const customers = await stripe.customers.list({ email: user.email, limit: 1 });
       if (customers.data.length > 0) {
         customerId = customers.data[0].id;
-        // Atualiza no banco para próximas requisições
+        customerValid = true;
         await supabaseAdmin
           .from('subscriptions')
           .update({ stripe_customer_id: customerId })
@@ -80,10 +86,12 @@ serve(async (req) => {
     }
 
     if (!customerId) {
-      throw new Error("Nenhum histórico de cliente Stripe encontrado. Você precisa ter uma assinatura ou transação anterior.");
+      throw new Error(
+        `Nenhum histórico de cliente Stripe encontrado no ambiente ${mode.toUpperCase()}. Para gerenciar pagamentos, realize uma assinatura no plano desejado.`
+      );
     }
 
-    // 4. Criar sessão no Stripe Customer Portal
+    // 5. Criar sessão no Stripe Customer Portal
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: returnUrl,
@@ -102,5 +110,3 @@ serve(async (req) => {
     });
   }
 });
-
-

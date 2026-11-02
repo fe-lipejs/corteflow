@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
+import { getStripeContext } from '../_shared/stripe.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -9,20 +10,12 @@ serve(async (req) => {
   }
 
   try {
-    const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!stripeSecret) {
-      throw new Error("STRIPE_SECRET_KEY não configurada no backend.");
-    }
-
-    const stripe = new Stripe(stripeSecret, {
-      apiVersion: '2024-06-20',
-      httpClient: Stripe.createFetchHttpClient(),
-    });
-
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    const { stripe } = await getStripeContext(supabaseAdmin);
 
     const supabaseAuth = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -115,7 +108,6 @@ serve(async (req) => {
     const isTrialing = stripeSub && typeof stripeSub !== 'string' && stripeSub.status === 'trialing' && !!stripeSub.trial_end;
     const correctTenantStatus = isTrialing ? 'trial' : 'active';
     await supabaseAdmin.from('tenants').update({ status: correctTenantStatus }).eq('id', tenantId);
-
 
     return new Response(JSON.stringify({ 
       success: true, 

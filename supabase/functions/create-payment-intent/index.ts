@@ -1,12 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
-
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
-  apiVersion: '2024-06-20',
-  httpClient: Stripe.createFetchHttpClient(),
-});
+import { getStripeContext } from '../_shared/stripe.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -20,6 +15,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    const { stripe, applicationFeePercent } = await getStripeContext(supabase);
 
     // Buscar o salão
     const { data: tenant } = await supabase.from('tenants').select('*').eq('id', tenantId).single();
@@ -40,14 +37,12 @@ serve(async (req) => {
     const { data: service } = await supabase.from('services').select('*').eq('id', serviceId).single();
     if (!service) throw new Error("Serviço não encontrado");
 
-    // Calculate Application Fee (e.g., 5% platform fee)
-    // Em produção, isso pode vir de uma tabela de configurações globais
     const amount = Math.round(service.price * 100);
-    const platformFeePercentage = parseFloat(Deno.env.get('PLATFORM_FEE_PERCENTAGE') || '0.05');
+    const platformFeePercentage = (applicationFeePercent || 2) / 100;
     const applicationFeeAmount = Math.round(amount * platformFeePercentage);
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount, // Stripe usa centavos
+      amount: amount,
       currency: 'brl',
       metadata: {
         tenant_id: tenantId,

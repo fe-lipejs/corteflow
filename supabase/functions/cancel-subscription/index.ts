@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.14.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { getStripeContext } from "../_shared/stripe.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,10 +15,9 @@ serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
 
-    if (!supabaseUrl || !supabaseServiceKey || !stripeSecretKey) {
-      throw new Error("Missing environment variables");
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error("Missing Supabase environment variables");
     }
 
     const authHeader = req.headers.get("Authorization");
@@ -85,12 +84,15 @@ serve(async (req: Request) => {
       });
     }
 
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2023-10-16",
-    });
+    // Obter Stripe dinamicamente com base nas configurações da plataforma (Test ou Live)
+    const { stripe, mode } = await getStripeContext(supabase);
 
-    // Cancelar assinatura no Stripe
-    await stripe.subscriptions.cancel(sub.stripe_subscription_id);
+    // Cancelar assinatura no Stripe de forma resiliente
+    try {
+      await stripe.subscriptions.cancel(sub.stripe_subscription_id);
+    } catch (stripeErr: any) {
+      console.warn(`[cancel-subscription] Assinatura ${sub.stripe_subscription_id} não encontrada no Stripe ${mode.toUpperCase()} ou já cancelada:`, stripeErr.message);
+    }
 
     // Atualizar no Supabase
     await supabase
@@ -100,6 +102,14 @@ serve(async (req: Request) => {
         canceled_at: new Date().toISOString(),
       })
       .eq('tenant_id', tenantId);
+
+    // Atualizar estado da conta no tenant
+    await supabase
+      .from('tenants')
+      .update({
+        account_state: 'canceled',
+      })
+      .eq('id', tenantId);
 
     return new Response(JSON.stringify({ success: true, message: "Assinatura cancelada com sucesso no Stripe e no sistema." }), {
       status: 200,

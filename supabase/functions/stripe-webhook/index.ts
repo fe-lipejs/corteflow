@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
+import { getStripeContext } from '../_shared/stripe.ts';
 
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
@@ -10,18 +11,20 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY');
-  const endpointSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 
-  if (!stripeSecret || !endpointSecret) {
-    console.error('Missing STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET');
-    return new Response('Server misconfiguration', { status: 500 });
+  let stripeContext;
+  try {
+    stripeContext = await getStripeContext(supabase);
+  } catch (ctxErr: any) {
+    console.error('[stripe-webhook] Erro ao obter contexto Stripe:', ctxErr.message);
+    return new Response('Stripe configuration missing', { status: 500 });
   }
 
-  const stripe = new Stripe(stripeSecret, {
-    apiVersion: '2024-06-20',
-    httpClient: Stripe.createFetchHttpClient(),
-  });
+  const { stripe, mode, webhookSecret } = stripeContext;
 
   const signature = req.headers.get('stripe-signature');
   if (!signature) {
@@ -30,18 +33,32 @@ serve(async (req) => {
 
   const body = await req.text();
 
-  let event: Stripe.Event;
-  try {
-    event = await stripe.webhooks.constructEventAsync(body, signature, endpointSecret, undefined, cryptoProvider);
-  } catch (err: any) {
-    console.error(`Webhook signature verification failed: ${err.message}`);
-    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+  if (!webhookSecret) {
+    console.error(`[stripe-webhook] STRIPE_WEBHOOK_SECRET não configurado para o ambiente ${mode.toUpperCase()}`);
+    return new Response('Webhook secret not configured', { status: 500 });
   }
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  );
+  let event: Stripe.Event;
+  try {
+    event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret, undefined, cryptoProvider);
+  } catch (err: any) {
+    console.warn(`[stripe-webhook] Falha na assinatura com o secret principal (${mode}): ${err.message}`);
+    
+    // Tenta fallback com env padrão se diferente
+    const fallbackSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+    if (fallbackSecret && fallbackSecret !== webhookSecret) {
+      try {
+        event = await stripe.webhooks.constructEventAsync(body, signature, fallbackSecret, undefined, cryptoProvider);
+        console.log('[stripe-webhook] Assinatura validada com sucesso usando secret de fallback.');
+      } catch (fallbackErr: any) {
+        console.error(`Webhook signature verification failed: ${fallbackErr.message}`);
+        return new Response(`Webhook Error: ${fallbackErr.message}`, { status: 400 });
+      }
+    } else {
+      console.error(`Webhook signature verification failed: ${err.message}`);
+      return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+    }
+  }
 
   // 1. Idempotency Check (V3 uses billing_events)
   const { data: existingEvent } = await supabase
@@ -59,7 +76,7 @@ serve(async (req) => {
   let processingError: string | null = null;
 
   try {
-    console.log(`Processing webhook event: ${event.type}`);
+    console.log(`[stripe-webhook] Processing webhook event: ${event.type} in mode ${mode.toUpperCase()}`);
 
     // Helper: Find tenant_id from subscription
     const getTenantFromSub = async (subId: string) => {
@@ -79,11 +96,18 @@ serve(async (req) => {
         eventTenantId = tenantId || null;
 
         if (tenantId && session.subscription) {
-          const stripeSub = await stripe.subscriptions.retrieve(session.subscription as string);
-          const isTrialing = stripeSub.status === 'trialing' && stripeSub.trial_end;
+          let stripeSub: any = null;
+          try {
+            stripeSub = await stripe.subscriptions.retrieve(session.subscription as string);
+          } catch (retrieveErr: any) {
+            console.warn(`[stripe-webhook] Não foi possível recuperar subscription ${session.subscription}:`, retrieveErr.message);
+          }
+
+          const isTrialing = stripeSub && stripeSub.status === 'trialing' && stripeSub.trial_end;
           const trialEndsAt = isTrialing ? new Date(stripeSub.trial_end! * 1000).toISOString() : null;
           const initialStatus = isTrialing ? 'trialing' : 'active';
           const initialAccountState = isTrialing ? 'trialing_with_card' : 'active';
+          const periodEnd = stripeSub?.current_period_end ? new Date(stripeSub.current_period_end * 1000).toISOString() : null;
 
           // Update subscriptions table
           const { error: subErr } = await supabase.from('subscriptions').upsert({
@@ -93,7 +117,10 @@ serve(async (req) => {
             plan_id: planId,
             status: initialStatus,
             trial_ends_at: trialEndsAt,
-            current_period_end: stripeSub.current_period_end ? new Date(stripeSub.current_period_end * 1000).toISOString() : null
+            current_period_end: periodEnd,
+            canceled_at: null,
+            latest_invoice_status: 'paid',
+            updated_at: new Date().toISOString()
           }, { onConflict: 'tenant_id' });
 
           if (subErr) console.error(subErr);
@@ -114,7 +141,6 @@ serve(async (req) => {
         const sub = event.data.object as Stripe.Subscription;
         eventTenantId = await getTenantFromSub(sub.id);
         if (eventTenantId) {
-          // Log explicitly for trial ending
           console.log(`Trial ending soon for tenant: ${eventTenantId}`);
         }
         break;
@@ -125,13 +151,13 @@ serve(async (req) => {
         eventTenantId = await getTenantFromSub(sub.id);
         
         if (eventTenantId) {
-          // Keep legacy subscriptions table updated
           const trialEndsAt = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null;
           await supabase.from('subscriptions').update({
             status: sub.status,
             trial_ends_at: trialEndsAt,
             current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
             cancel_at_period_end: sub.cancel_at_period_end,
+            updated_at: new Date().toISOString()
           }).eq('stripe_subscription_id', sub.id);
 
           // V3 State Machine Update
@@ -153,8 +179,12 @@ serve(async (req) => {
         eventTenantId = await getTenantFromSub(sub.id);
 
         if (eventTenantId) {
-          await supabase.from('subscriptions').update({ status: 'canceled' }).eq('stripe_subscription_id', sub.id);
-          // V3 State Machine Update
+          await supabase.from('subscriptions').update({
+            status: 'canceled',
+            canceled_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }).eq('stripe_subscription_id', sub.id);
+
           await supabase.from('tenants').update({ account_state: 'canceled' }).eq('id', eventTenantId);
         }
         break;
@@ -167,14 +197,11 @@ serve(async (req) => {
         eventTenantId = tenantId || null;
 
         if (bookingId) {
-          // Atualiza status do pagamento
           await supabase.from('payments').update({ status: 'succeeded' }).eq('stripe_payment_intent_id', pi.id);
           
-          // Busca o agendamento para saber se foi sinal ou integral
           const { data: booking } = await supabase.from('bookings').select('payment_mode').eq('id', bookingId).maybeSingle();
           if (booking) {
             const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid';
-            // HIGH-02: também atualizar amount_paid com o valor real recebido do Stripe
             const amountReceivedBRL = pi.amount_received / 100;
             await supabase.from('bookings').update({
               payment_status: newPaymentStatus,
@@ -182,7 +209,6 @@ serve(async (req) => {
             }).eq('id', bookingId);
           }
         }
-
         break;
       }
 
@@ -193,8 +219,12 @@ serve(async (req) => {
         if (stripeSubId) {
           eventTenantId = await getTenantFromSub(stripeSubId);
           if (eventTenantId) {
-            await supabase.from('subscriptions').update({ status: 'past_due' }).eq('stripe_subscription_id', stripeSubId);
-            // V3 State Machine Update
+            await supabase.from('subscriptions').update({
+              status: 'past_due',
+              latest_invoice_status: 'failed',
+              updated_at: new Date().toISOString()
+            }).eq('stripe_subscription_id', stripeSubId);
+
             await supabase.from('tenants').update({ 
               account_state: 'past_due',
               past_due_since: new Date().toISOString()
@@ -211,8 +241,12 @@ serve(async (req) => {
         if (stripeSubId) {
           eventTenantId = await getTenantFromSub(stripeSubId);
           if (eventTenantId) {
-            await supabase.from('subscriptions').update({ status: 'active' }).eq('stripe_subscription_id', stripeSubId);
-            // V3 State Machine Update
+            await supabase.from('subscriptions').update({
+              status: 'active',
+              latest_invoice_status: 'paid',
+              updated_at: new Date().toISOString()
+            }).eq('stripe_subscription_id', stripeSubId);
+
             await supabase.from('tenants').update({ 
               account_state: 'active',
               past_due_since: null
@@ -232,8 +266,7 @@ serve(async (req) => {
     return new Response(`Error: ${processingError}`, { status: 500 });
   }
 
-  // 2. Audit Log (Idempotency Save V3)
-  // ONLY save if processing was successful, otherwise let Stripe retry it.
+  // Audit Log (Idempotency Save V3)
   await supabase.from('billing_events').insert({
     stripe_event_id: event.id,
     type: event.type,

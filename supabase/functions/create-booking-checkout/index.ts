@@ -1,12 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
-
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
-  apiVersion: '2024-06-20',
-  httpClient: Stripe.createFetchHttpClient(),
-});
+import { getStripeContext } from '../_shared/stripe.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,6 +13,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    const { stripe, applicationFeePercent } = await getStripeContext(supabase);
 
     const { bookingId, returnUrl } = await req.json();
 
@@ -49,8 +46,8 @@ serve(async (req) => {
     }
 
     const price = Math.round(amountToCharge * 100); // centavos
-    const platformFeePercentage = parseFloat(Deno.env.get('PLATFORM_FEE_PERCENTAGE') || '0.05');
-    const applicationFee = Math.round(price * platformFeePercentage); // fee da plataforma
+    const platformFeePercentage = (applicationFeePercent || 2) / 100;
+    const applicationFee = Math.round(price * platformFeePercentage); // fee da plataforma configurada no Super Admin
 
     // Criar a sessão no Stripe (Connect - Destination Charge)
     const session = await stripe.checkout.sessions.create({

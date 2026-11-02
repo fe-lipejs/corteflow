@@ -14,8 +14,10 @@ import {
   RefreshCw,
   Zap,
   Info,
-  DollarSign,
-  Building
+  Copy,
+  ExternalLink,
+  Check,
+  Webhook
 } from 'lucide-react';
 
 interface PlatformSettingsData {
@@ -23,8 +25,10 @@ interface PlatformSettingsData {
   stripe_mode: 'test' | 'live';
   stripe_test_public_key: string;
   stripe_test_secret_key: string;
+  stripe_test_webhook_secret: string;
   stripe_live_public_key: string;
   stripe_live_secret_key: string;
+  stripe_live_webhook_secret: string;
   stripe_application_fee_percent: number;
   stripe_test_account_id: string;
   stripe_live_account_id: string;
@@ -35,18 +39,23 @@ interface PlatformSettingsData {
   updated_at?: string;
 }
 
+const WEBHOOK_URL = 'https://paefckmkawocjxzuoclq.supabase.co/functions/v1/stripe-webhook';
+
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState<'finance' | 'notifications'>('finance');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [copiedWebhook, setCopiedWebhook] = useState(false);
 
   const [settings, setSettings] = useState<PlatformSettingsData>({
     id: 'singleton',
     stripe_mode: 'test',
     stripe_test_public_key: '',
     stripe_test_secret_key: '',
+    stripe_test_webhook_secret: '',
     stripe_live_public_key: '',
     stripe_live_secret_key: '',
+    stripe_live_webhook_secret: '',
     stripe_application_fee_percent: 2,
     stripe_test_account_id: '',
     stripe_live_account_id: '',
@@ -58,6 +67,8 @@ export default function AdminSettings() {
 
   const [showTestSecret, setShowTestSecret] = useState(false);
   const [showLiveSecret, setShowLiveSecret] = useState(false);
+  const [showTestWebhook, setShowTestWebhook] = useState(false);
+  const [showLiveWebhook, setShowLiveWebhook] = useState(false);
 
   // Fetch settings from database
   const fetchSettings = async () => {
@@ -77,8 +88,10 @@ export default function AdminSettings() {
           stripe_mode: data.stripe_mode || 'test',
           stripe_test_public_key: data.stripe_test_public_key || '',
           stripe_test_secret_key: data.stripe_test_secret_key || '',
+          stripe_test_webhook_secret: data.stripe_test_webhook_secret || '',
           stripe_live_public_key: data.stripe_live_public_key || '',
           stripe_live_secret_key: data.stripe_live_secret_key || '',
+          stripe_live_webhook_secret: data.stripe_live_webhook_secret || '',
           stripe_application_fee_percent: Number(data.stripe_application_fee_percent) || 2,
           stripe_test_account_id: data.stripe_test_account_id || '',
           stripe_live_account_id: data.stripe_live_account_id || '',
@@ -110,8 +123,10 @@ export default function AdminSettings() {
         stripe_mode: settings.stripe_mode,
         stripe_test_public_key: settings.stripe_test_public_key.trim(),
         stripe_test_secret_key: settings.stripe_test_secret_key.trim(),
+        stripe_test_webhook_secret: settings.stripe_test_webhook_secret.trim(),
         stripe_live_public_key: settings.stripe_live_public_key.trim(),
         stripe_live_secret_key: settings.stripe_live_secret_key.trim(),
+        stripe_live_webhook_secret: settings.stripe_live_webhook_secret.trim(),
         stripe_application_fee_percent: Number(settings.stripe_application_fee_percent) || 2,
         stripe_test_account_id: settings.stripe_test_account_id.trim(),
         stripe_live_account_id: settings.stripe_live_account_id.trim(),
@@ -142,12 +157,25 @@ export default function AdminSettings() {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedWebhook(true);
+    toast.success('URL copiada para a área de transferência!');
+    setTimeout(() => setCopiedWebhook(false), 2500);
+  };
+
+  // Readiness validation
+  const hasLivePublic = settings.stripe_live_public_key.startsWith('pk_live_');
+  const hasLiveSecret = settings.stripe_live_secret_key.startsWith('sk_live_') || settings.stripe_live_secret_key.startsWith('rk_live_');
+  const hasLiveWebhook = settings.stripe_live_webhook_secret.startsWith('whsec_');
+  const isLiveReady = hasLivePublic && hasLiveSecret;
+
   return (
     <div className="space-y-6 pb-20 font-sans text-zinc-100">
       <AdminPageHeader
         title="Configurações Globais"
         subtitle="Gerenciamento da conta mestre do Stripe, alternância entre Modo Teste e Modo Live, e notificações da plataforma."
-        icon={<Settings className="w-5 h-5" />}
+        icon={<Settings className="w-5 h-5 text-emerald-400" />}
         actions={
           <button
             onClick={handleSave}
@@ -204,7 +232,7 @@ export default function AdminSettings() {
                       <h4 className="text-base font-bold text-white">Ambiente do Stripe em Operação</h4>
                     </div>
                     <p className="text-xs text-zinc-400 mt-1">
-                      Alterne entre o ambiente de testes (simulado com cartões fictícios) e o ambiente oficial de cobranças reais.
+                      Alterne entre o ambiente de testes (cartões fictícios) e o ambiente oficial de cobranças reais.
                     </p>
                   </div>
 
@@ -250,17 +278,74 @@ export default function AdminSettings() {
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-xs flex items-start gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-bold text-emerald-300">Modo de Produção Oficial (LIVE) ATIVO</div>
-                      <p className="text-[11px] text-emerald-200/80 mt-0.5">
-                        Todas as transações e assinaturas serão cobradas <b>em cartões reais</b> via Stripe Billing e Stripe Connect.
-                        O aviso de modo teste na tela de assinaturas dos salões ficará oculto automaticamente.
-                      </p>
+                  <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-xs space-y-2">
+                    <div className="flex items-start gap-2.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-emerald-300">Modo de Produção Oficial (LIVE) SELECIONADO</div>
+                        <p className="text-[11px] text-emerald-200/80 mt-0.5">
+                          Todas as transações e assinaturas serão cobradas <b>em cartões reais</b> via Stripe Billing e Stripe Connect.
+                          O aviso de modo teste na tela de assinaturas dos salões ficará oculto automaticamente.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Readiness checklist */}
+                    <div className="pt-2 border-t border-emerald-500/20 grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${hasLivePublic ? 'bg-emerald-400' : 'bg-rose-500'}`} />
+                        <span>Public Key: {hasLivePublic ? 'Configurada' : 'Pendente (pk_live_...)'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${hasLiveSecret ? 'bg-emerald-400' : 'bg-rose-500'}`} />
+                        <span>Secret Key: {hasLiveSecret ? 'Configurada' : 'Pendente (sk_live_...)'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${hasLiveWebhook ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                        <span>Webhook: {hasLiveWebhook ? 'Configurado' : 'Opcional (whsec_...)'}</span>
+                      </div>
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Webhook Configuration Guide Card */}
+              <div className="p-4 rounded-2xl bg-[#13131A] border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Webhook className="w-4 h-4 text-emerald-400" />
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                      Webhook Oficial do Stripe
+                    </h4>
+                  </div>
+                  <a
+                    href="https://dashboard.stripe.com/webhooks"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold"
+                  >
+                    Abrir Stripe Webhooks <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+                <p className="text-[11px] text-zinc-400">
+                  Cadastre esta URL no seu painel Stripe (tanto em Modo Teste quanto em Modo Live) para sincronização automática de faturas, assinaturas e status de pagamentos:
+                </p>
+                <div className="flex items-center gap-2 bg-[#090C0A] border border-white/10 rounded-xl p-2.5">
+                  <code className="text-xs text-emerald-400 font-mono flex-1 break-all select-all">
+                    {WEBHOOK_URL}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(WEBHOOK_URL)}
+                    className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                  >
+                    {copiedWebhook ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedWebhook ? 'Copiado!' : 'Copiar URL'}
+                  </button>
+                </div>
+                <div className="text-[11px] text-zinc-500">
+                  Eventos recomendados para selecionar: <code className="text-zinc-300">checkout.session.completed</code>, <code className="text-zinc-300">customer.subscription.*</code>, <code className="text-zinc-300">invoice.payment_*</code>, <code className="text-zinc-300">payment_intent.succeeded</code>.
+                </div>
               </div>
 
               {/* Stripe Test Keys Section */}
@@ -304,7 +389,7 @@ export default function AdminSettings() {
                       <button
                         type="button"
                         onClick={() => setShowTestSecret(!showTestSecret)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer"
                       >
                         {showTestSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -312,17 +397,41 @@ export default function AdminSettings() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                    Stripe Connect Master Account ID / Client ID (Test)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="ca_... ou acct_..."
-                    value={settings.stripe_test_account_id}
-                    onChange={e => setSettings({ ...settings, stripe_test_account_id: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Stripe Webhook Secret (Test)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showTestWebhook ? 'text' : 'password'}
+                        placeholder="whsec_..."
+                        value={settings.stripe_test_webhook_secret}
+                        onChange={e => setSettings({ ...settings, stripe_test_webhook_secret: e.target.value })}
+                        className="w-full px-3.5 py-2.5 pr-10 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowTestWebhook(!showTestWebhook)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer"
+                      >
+                        {showTestWebhook ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Stripe Connect Master Account ID / Client ID (Test)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="ca_... ou acct_..."
+                      value={settings.stripe_test_account_id}
+                      onChange={e => setSettings({ ...settings, stripe_test_account_id: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -340,8 +449,9 @@ export default function AdminSettings() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                      Stripe Public Key (Live)
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5 flex items-center justify-between">
+                      <span>Stripe Public Key (Live)</span>
+                      {hasLivePublic && <span className="text-[10px] text-emerald-400 font-bold">Válida</span>}
                     </label>
                     <input
                       type="text"
@@ -353,8 +463,9 @@ export default function AdminSettings() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                      Stripe Secret Key (Live)
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5 flex items-center justify-between">
+                      <span>Stripe Secret Key (Live)</span>
+                      {hasLiveSecret && <span className="text-[10px] text-emerald-400 font-bold">Válida</span>}
                     </label>
                     <div className="relative">
                       <input
@@ -367,7 +478,7 @@ export default function AdminSettings() {
                       <button
                         type="button"
                         onClick={() => setShowLiveSecret(!showLiveSecret)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer"
                       >
                         {showLiveSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -375,17 +486,42 @@ export default function AdminSettings() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                    Stripe Connect Master Account ID / Client ID (Live)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="ca_... ou acct_..."
-                    value={settings.stripe_live_account_id}
-                    onChange={e => setSettings({ ...settings, stripe_live_account_id: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5 flex items-center justify-between">
+                      <span>Stripe Webhook Secret (Live)</span>
+                      {hasLiveWebhook && <span className="text-[10px] text-emerald-400 font-bold">Válido</span>}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showLiveWebhook ? 'text' : 'password'}
+                        placeholder="whsec_..."
+                        value={settings.stripe_live_webhook_secret}
+                        onChange={e => setSettings({ ...settings, stripe_live_webhook_secret: e.target.value })}
+                        className="w-full px-3.5 py-2.5 pr-10 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLiveWebhook(!showLiveWebhook)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer"
+                      >
+                        {showLiveWebhook ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Stripe Connect Master Account ID / Client ID (Live)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="ca_... ou acct_..."
+                      value={settings.stripe_live_account_id}
+                      onChange={e => setSettings({ ...settings, stripe_live_account_id: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -409,7 +545,7 @@ export default function AdminSettings() {
                       <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs font-bold">%</span>
                     </div>
                     <p className="text-[11px] text-zinc-500 mt-1">
-                      Taxa cobrada pela Navalha SaaS sobre cada agendamento/venda dos salões via Stripe Connect.
+                      Taxa cobrada pela Raffros sobre cada agendamento/venda dos salões via Stripe Connect.
                     </p>
                   </div>
 
@@ -432,9 +568,9 @@ export default function AdminSettings() {
               </div>
 
               {/* Save Bar */}
-              <div className="pt-4 flex items-center justify-between border-t border-white/10">
+              <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/10">
                 <div className="text-xs text-zinc-400 flex items-center gap-1.5">
-                  <Info className="w-4 h-4 text-emerald-400" />
+                  <Info className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>
                     Ambiente ativo atualmente:{' '}
                     <b className={settings.stripe_mode === 'live' ? 'text-emerald-400' : 'text-amber-400'}>
@@ -447,7 +583,7 @@ export default function AdminSettings() {
                   type="button"
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   {saving ? 'Salvando...' : 'Salvar Configurações do Stripe'}

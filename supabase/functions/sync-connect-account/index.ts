@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { getStripeContext } from '../_shared/stripe.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,15 +14,12 @@ serve(async (req) => {
   }
 
   try {
-    const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!stripeSecret) {
-      throw new Error("STRIPE_SECRET_KEY não configurada.");
-    }
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    const stripe = new Stripe(stripeSecret, {
-      apiVersion: '2024-06-20',
-      httpClient: Stripe.createFetchHttpClient(),
-    });
+    const { stripe, mode } = await getStripeContext(supabaseAdmin);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -39,7 +36,7 @@ serve(async (req) => {
     const tenantId = profile.tenant_id;
 
     // Buscar registro connect
-    const { data: connectAcc } = await supabase
+    const { data: connectAcc } = await supabaseAdmin
       .from('stripe_connect_accounts')
       .select('*')
       .eq('tenant_id', tenantId)
@@ -53,14 +50,33 @@ serve(async (req) => {
       }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
     }
 
-    // Consultar estado real no Stripe
-    const account = await stripe.accounts.retrieve(connectAcc.stripe_account_id);
+    // Consultar estado real no Stripe (com proteção caso a conta seja do outro modo Test/Live)
+    let account: any = null;
+    try {
+      account = await stripe.accounts.retrieve(connectAcc.stripe_account_id);
+    } catch (err: any) {
+      console.warn(`[sync-connect-account] Conta Connect '${connectAcc.stripe_account_id}' não existe no Stripe ${mode.toUpperCase()}:`, err.message);
+      
+      // Se a conta não existe neste ambiente, reseta no banco para permitir conectar no novo ambiente
+      await supabaseAdmin
+        .from('stripe_connect_accounts')
+        .delete()
+        .eq('tenant_id', tenantId);
+
+      return new Response(JSON.stringify({
+        has_account: false,
+        charges_enabled: false,
+        payouts_enabled: false,
+        mode_mismatch: true,
+      }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
+
     const wasAlreadyEnabled = connectAcc.charges_enabled === true;
     const nowEnabled = account.charges_enabled === true;
     const payoutsEnabled = account.payouts_enabled === true;
 
     // Atualizar no banco
-    await supabase.from('stripe_connect_accounts').update({
+    await supabaseAdmin.from('stripe_connect_accounts').update({
       charges_enabled: nowEnabled,
       payouts_enabled: payoutsEnabled,
     }).eq('tenant_id', tenantId);
@@ -72,7 +88,7 @@ serve(async (req) => {
       justActivated = true;
 
       // Auto-ativar métodos online no tenant_settings mantendo local ativo
-      const { data: currentSettings } = await supabase
+      const { data: currentSettings } = await supabaseAdmin
         .from('tenant_settings')
         .select('payment_methods')
         .eq('tenant_id', tenantId)
@@ -80,7 +96,7 @@ serve(async (req) => {
 
       const currentPm = (currentSettings?.payment_methods as any) || {};
 
-      await supabase.from('tenant_settings').update({
+      await supabaseAdmin.from('tenant_settings').update({
         payment_methods: {
           pay_local: currentPm.pay_local !== false,
           partial_50: true,

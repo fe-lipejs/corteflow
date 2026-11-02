@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { getStripeContext } from '../_shared/stripe.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,15 +14,12 @@ serve(async (req) => {
   }
 
   try {
-    const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!stripeSecret) {
-      throw new Error("STRIPE_SECRET_KEY não configurada.");
-    }
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    const stripe = new Stripe(stripeSecret, {
-      apiVersion: '2024-06-20',
-      httpClient: Stripe.createFetchHttpClient(),
-    });
+    const { stripe } = await getStripeContext(supabaseAdmin);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -39,7 +36,7 @@ serve(async (req) => {
     const tenantId = profile.tenant_id;
 
     // Buscar registro connect da conta
-    const { data: connectAcc } = await supabase
+    const { data: connectAcc } = await supabaseAdmin
       .from('stripe_connect_accounts')
       .select('*')
       .eq('tenant_id', tenantId)
@@ -52,7 +49,7 @@ serve(async (req) => {
         // Excluir / desvincular conta Express diretamente na API do Stripe
         await stripe.accounts.del(accountId);
       } catch (stripeErr: any) {
-        console.warn("Aviso ao desvincular no Stripe (tentando deauthorize):", stripeErr);
+        console.warn("Aviso ao desvincular no Stripe (tentando deauthorize):", stripeErr.message);
         try {
           const clientId = Deno.env.get('STRIPE_CONNECT_CLIENT_ID');
           if (clientId) {
@@ -61,20 +58,20 @@ serve(async (req) => {
               stripe_user_id: accountId,
             });
           }
-        } catch (deauthErr) {
-          console.warn("Deauthorize error (ignorado se já excluída):", deauthErr);
+        } catch (deauthErr: any) {
+          console.warn("Deauthorize error (ignorado se já excluída):", deauthErr.message);
         }
       }
     }
 
     // 1. Remover vínculo no Supabase
-    await supabase
+    await supabaseAdmin
       .from('stripe_connect_accounts')
       .delete()
       .eq('tenant_id', tenantId);
 
     // 2. Desativar modos de pagamento online no tenant_settings e garantir Pagar no Local ativo
-    await supabase
+    await supabaseAdmin
       .from('tenant_settings')
       .update({
         online_payment_enabled: false,

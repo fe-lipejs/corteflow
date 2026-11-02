@@ -1,8 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
-
+import { getStripeContext } from '../_shared/stripe.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -10,25 +9,17 @@ serve(async (req) => {
   }
 
   try {
-    const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!stripeSecret) {
-      throw new Error("STRIPE_SECRET_KEY não configurada no backend. Você fez o deploy das secrets no Supabase?");
-    }
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    const stripe = new Stripe(stripeSecret, {
-      apiVersion: '2024-06-20',
-      httpClient: Stripe.createFetchHttpClient(),
-    });
+    const { stripe, mode } = await getStripeContext(supabaseAdmin);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
-    );
-
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -109,16 +100,43 @@ serve(async (req) => {
         currency: currency,
         product_data: {
           name: `Plano ${plan.name} - Customizado`,
-          description: plan.description,
+          description: plan.description || `Assinatura ${plan.name}`,
         },
         unit_amount: customUnitAmount,
         recurring: { interval: 'month' },
       };
-    } else {
-      if (!planPrice?.stripe_price_id) {
-        throw new Error(`ERRO: O plano selecionado não possui um 'stripe_price_id' configurado para a moeda ${currency.toUpperCase()}. O Administrador precisa cadastrar o ID do preço no painel Admin (/platform/plans).`);
+    } else if (planPrice?.stripe_price_id) {
+      // Se houver um stripe_price_id, valida se ele existe no ambiente ativo do Stripe (Test ou Live)
+      try {
+        const retrievedPrice = await stripe.prices.retrieve(planPrice.stripe_price_id);
+        if (retrievedPrice && retrievedPrice.active) {
+          lineItem.price = planPrice.stripe_price_id;
+        } else {
+          throw new Error("Preço inativo");
+        }
+      } catch (priceErr: any) {
+        console.warn(`[Stripe] stripe_price_id '${planPrice.stripe_price_id}' não existe no ambiente ${mode.toUpperCase()}. Usando price_data dinâmico:`, priceErr?.message);
+        lineItem.price_data = {
+          currency: currency,
+          product_data: {
+            name: `Plano ${plan.name}`,
+            description: plan.description || `Assinatura ${plan.name} no Raffros`,
+          },
+          unit_amount: Math.round(Number(planPrice.amount || plan.price || 0) * 100),
+          recurring: { interval: 'month' },
+        };
       }
-      lineItem.price = planPrice.stripe_price_id;
+    } else {
+      // Se não houver stripe_price_id cadastrado, gera a cobrança recorrente automaticamente via price_data
+      lineItem.price_data = {
+        currency: currency,
+        product_data: {
+          name: `Plano ${plan.name}`,
+          description: plan.description || `Assinatura ${plan.name} no Raffros`,
+        },
+        unit_amount: Math.round(Number(planPrice?.amount || plan.price || 0) * 100),
+        recurring: { interval: 'month' },
+      };
     }
 
     // 4. Verificar se já existe assinatura ou se já utilizou o benefício do teste grátis (Single-use trial rule)

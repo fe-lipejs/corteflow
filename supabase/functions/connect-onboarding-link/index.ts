@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { getStripeContext } from '../_shared/stripe.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,15 +14,12 @@ serve(async (req) => {
   }
   
   try {
-    const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!stripeSecret) {
-      throw new Error("STRIPE_SECRET_KEY não configurada no backend.");
-    }
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    const stripe = new Stripe(stripeSecret, {
-      apiVersion: '2024-06-20',
-      httpClient: Stripe.createFetchHttpClient(),
-    });
+    const { stripe } = await getStripeContext(supabaseAdmin);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -58,7 +55,8 @@ serve(async (req) => {
           );
         }
       } catch (err) {
-        console.warn("Could not create login link, generating onboarding link:", err);
+        console.warn("Could not retrieve account (likely environment switch from test to live), resetting accountId:", err);
+        accountId = null;
       }
     }
 
