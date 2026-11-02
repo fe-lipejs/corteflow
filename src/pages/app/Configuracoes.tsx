@@ -15,6 +15,7 @@ import { generateSmartPaletteFromLogo, generatePaletteFromAccent } from '../../l
 import { geocodeAddress } from '../../lib/geocoding';
 import { useQueryClient } from '@tanstack/react-query';
 import { PUBLIC_STORE_QUERY_KEY } from '../../hooks/usePublicStore';
+import { saveCachedPortalTheme } from '../../hooks/useTenantPortalTheme';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import FeatureGate from '../../components/FeatureGate';
 import { UpgradeModal } from '../../components/UpgradeModal';
@@ -1060,9 +1061,13 @@ export default function Configuracoes() {
       // Invalidate public page query cache so changes reflect immediately
       if (tenant?.slug) {
         queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(tenant.slug) });
+        queryClient.invalidateQueries({ queryKey: ['tenant-fast-theme', tenant.slug] });
+        saveCachedPortalTheme(tenant.slug, selectedTheme, customPalette, logoUrl, fantasyName || tenantName);
       }
       if (cleanSlug) {
         queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(cleanSlug) });
+        queryClient.invalidateQueries({ queryKey: ['tenant-fast-theme', cleanSlug] });
+        saveCachedPortalTheme(cleanSlug, selectedTheme, customPalette, logoUrl, fantasyName || tenantName);
       }
       queryClient.invalidateQueries({ queryKey: ['tenant_settings', tenant?.id] });
       queryClient.invalidateQueries({ queryKey: ['tenant_settings'] });

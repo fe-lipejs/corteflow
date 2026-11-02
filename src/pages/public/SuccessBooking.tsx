@@ -5,6 +5,8 @@ import { getTenantPublicUrl, getTenantPortalUrl } from '../../lib/tenantUrl';
 import { supabase } from '../../integrations/supabase/client';
 import { motion } from 'framer-motion';
 import { Check, Calendar, Clock, User, Scissors, MessageCircle } from 'lucide-react';
+import { useTenantPortalTheme } from '../../hooks/useTenantPortalTheme';
+import { PortalLoadingScreen } from '../../components/public/PortalLoadingScreen';
 
 export default function SuccessBooking() {
   const slugFromHook = useTenantSlug();
@@ -109,13 +111,16 @@ export default function SuccessBooking() {
     loadData();
   }, [slug, orderNumber, sessionId]);
 
-  const accentColor = settings?.custom_palette?.primary || '#10b981';
+  const portalTheme = useTenantPortalTheme(slug, settings, null);
+  const accentColor = portalTheme.accent;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#090C0A] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <PortalLoadingScreen
+        portalTheme={portalTheme}
+        message="Localizando confirmação de agendamento…"
+        badgeText="Agendamento Confirmado"
+      />
     );
   }
 

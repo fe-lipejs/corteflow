@@ -35,6 +35,8 @@ import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { demoPortalsService } from '../../services/demoPortalsService';
 import type { DemoPortal, DemoService, DemoProfessional } from '../../types/demoPortal';
+import { useTenantPortalTheme } from '../../hooks/useTenantPortalTheme';
+import { PortalLoadingScreen } from '../../components/public/PortalLoadingScreen';
 
 // ── Ícones SVG Customizados ──────────────────────────────────────────────────
 const InstagramIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
@@ -127,6 +129,18 @@ export default function PublicDemoStore() {
   const [demo, setDemo] = useState<DemoPortal | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFoundOrExpired, setNotFoundOrExpired] = useState(false);
+  const portalTheme = useTenantPortalTheme(
+    slug,
+    demo
+      ? {
+          theme_preset: 'elegant',
+          custom_palette: { primary: demo.primary_color },
+          logo_url: demo.logo_url,
+          fantasy_name: demo.business_name,
+        }
+      : null,
+    null
+  );
 
   // Visão atual da aplicação ('store' | 'success' | 'portal')
   const [currentView, setCurrentView] = useState<'store' | 'success' | 'portal'>(() => {
@@ -418,12 +432,11 @@ export default function PublicDemoStore() {
   // ── Tela de Carregando ──
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#070707] text-white flex flex-col items-center justify-center p-4">
-        <div className="w-12 h-12 rounded-2xl bg-[#141414] border border-[#222] flex items-center justify-center mb-4">
-          <Sparkles className="w-6 h-6 text-[#D4AF37] animate-pulse" />
-        </div>
-        <p className="text-sm text-[#777] font-medium">Carregando portal...</p>
-      </div>
+      <PortalLoadingScreen
+        portalTheme={portalTheme}
+        message="Carregando portal de demonstração…"
+        badgeText="Demonstração Interativa"
+      />
     );
   }
 

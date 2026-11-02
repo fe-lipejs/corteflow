@@ -42,6 +42,8 @@ import { usePublicStore, PUBLIC_STORE_QUERY_KEY } from "../../hooks/usePublicSto
 import { useQueryClient } from "@tanstack/react-query";
 import { getThemeContrastEngine } from "../../lib/themeEngine";
 import { HomeLocationWizard, type LocationWizardResult } from "../../components/public/HomeLocationWizard";
+import { useTenantPortalTheme } from "../../hooks/useTenantPortalTheme";
+import { PortalLoadingScreen } from "../../components/public/PortalLoadingScreen";
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const InstagramIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
@@ -297,6 +299,7 @@ export default function PublicStore() {
 
   const tenant: any = storeData?.tenant;
   const settings: any = storeData?.settings;
+  const portalTheme = useTenantPortalTheme(slug, settings, tenant);
   const rawServicesList: any[] = storeData?.services || [];
   const professionalsList: any[] = storeData?.professionals || [];
   const businessHoursList: any[] = storeData?.businessHours || [];
@@ -1238,26 +1241,14 @@ export default function PublicStore() {
     setCardExp(d);
   };
 
-  // ── Loading (Minimalist) ──────────────────────────────────────
+  // ── Loading (Dynamic Salon Accent) ──────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-6 font-sans">
-        <Loader2 className="w-8 h-8 animate-spin text-[#F59E0B] mb-6" />
-        {/* 
-        <img src="/logo.svg" alt="Raffros" className="h-12 w-auto object-contain mb-5 opacity-90" />
-
-        <h3 className="font-display font-bold text-xl text-white tracking-tight">
-          Carregando experiência
-        </h3> */}
-        <p className="text-xs text-[#A1A1A6] mt-2 font-mono leading-relaxed text-center max-w-xs">
-          Preparando serviços, equipe e horários disponíveis…
-        </p>
-
-        <div className="flex items-center gap-2 mt-12 text-[10px] font-mono text-[#71717A]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
-          Agendamento Inteligente
-        </div>
-      </div>
+      <PortalLoadingScreen
+        portalTheme={portalTheme}
+        message="Preparando serviços, equipe e horários disponíveis…"
+        badgeText="Agendamento Inteligente"
+      />
     );
   }
 
@@ -1269,29 +1260,46 @@ export default function PublicStore() {
 
   if (isTenantInactive) {
     return (
-      <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-6 text-center font-sans">
-        <AlertTriangle className="w-8 h-8 text-[#F59E0B] mb-6 opacity-80" />
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-6 text-center font-sans transition-colors duration-300"
+        style={{
+          backgroundColor: portalTheme.bg || "#000000",
+          color: portalTheme.textPrimary || "#FFFFFF",
+        }}
+      >
+        <AlertTriangle
+          className="w-8 h-8 mb-6 opacity-85"
+          style={{ color: portalTheme.accent }}
+        />
 
-        {/* <img src="/logo.svg" alt="Raffros" className="h-12 w-auto object-contain mb-5 opacity-90" /> */}
-
-        {/* <h2 className="font-display text-2xl font-bold text-white tracking-tight mb-3">
-          Estabelecimento Indisponível
-        </h2> */}
-        <p className="text-sm text-[#A1A1A6] leading-relaxed mb-8 max-w-xs mx-auto">
+        <p
+          className="text-sm leading-relaxed mb-8 max-w-xs mx-auto"
+          style={{ color: portalTheme.textMuted || "#A1A1A6" }}
+        >
           Esta página de agendamento não está acessível no momento. O estabelecimento pode estar em manutenção ou temporariamente desativado.
         </p>
 
         <button
           type="button"
           onClick={() => window.history.back()}
-          className="px-8 py-3 rounded-full font-medium text-sm text-[#A1A1A6] border border-white/[0.08] hover:bg-white/[0.04] hover:text-white transition-colors"
+          className="px-8 py-3 rounded-full font-medium text-sm border hover:opacity-80 transition-opacity"
+          style={{
+            borderColor: portalTheme.cardBorder,
+            color: portalTheme.textPrimary,
+          }}
         >
           Voltar
         </button>
 
-        <div className="flex items-center gap-2 mt-12 text-[10px] font-mono text-[#71717A]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
-          Raffros · Gestão &amp; Agendamento
+        <div
+          className="flex items-center gap-2 mt-12 text-[10px] font-mono"
+          style={{ color: portalTheme.textMuted || "#71717A" }}
+        >
+          <span
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: portalTheme.accent }}
+          />
+          Agendamento Seguro
         </div>
       </div>
     );

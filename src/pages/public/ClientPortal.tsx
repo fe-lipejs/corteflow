@@ -16,6 +16,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getThemeContrastEngine } from '../../lib/themeEngine';
 import toast from 'react-hot-toast';
 import { getTenantPublicUrl } from '../../lib/tenantUrl';
+import { useTenantPortalTheme } from '../../hooks/useTenantPortalTheme';
+import { PortalLoadingScreen } from '../../components/public/PortalLoadingScreen';
 
 export default function ClientPortal() {
   const slugFromHook = useTenantSlug();
@@ -32,6 +34,7 @@ export default function ClientPortal() {
 
   const { data: storeData, isLoading: loadingStore } = usePublicStore(slug || '');
   const tenant = storeData?.tenant;
+  const portalTheme = useTenantPortalTheme(slug, storeData?.settings, tenant);
   
   // Habilitar atualizações em tempo real para o portal do cliente
   useBookingsRealtime(tenant?.id || null);
@@ -430,17 +433,11 @@ export default function ClientPortal() {
 
   if (loadingStore) {
     return (
-      <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-6 font-sans">
-        <Loader2 className="w-8 h-8 animate-spin text-[#F59E0B] mb-6" />
-        <p className="text-xs text-[#A1A1A6] mt-2 font-mono leading-relaxed text-center max-w-xs">
-          Buscando histórico e reservas ativas…
-        </p>
-
-        <div className="flex items-center gap-2 mt-12 text-[10px] font-mono text-[#71717A]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
-          Portal do Cliente
-        </div>
-      </div>
+      <PortalLoadingScreen
+        portalTheme={portalTheme}
+        message="Buscando histórico e reservas ativas…"
+        badgeText="Portal do Cliente"
+      />
     );
   }
 
@@ -448,21 +445,43 @@ export default function ClientPortal() {
 
   if (isTenantInactive) {
     return (
-      <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-6 text-center font-sans">
-        <AlertTriangle className="w-8 h-8 text-[#F59E0B] mb-6 opacity-80" />
-        <p className="text-sm text-[#A1A1A6] leading-relaxed mb-8 max-w-xs mx-auto">
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-6 text-center font-sans transition-colors duration-300"
+        style={{
+          backgroundColor: portalTheme.bg || "#000000",
+          color: portalTheme.textPrimary || "#FFFFFF",
+        }}
+      >
+        <AlertTriangle
+          className="w-8 h-8 mb-6 opacity-85"
+          style={{ color: portalTheme.accent }}
+        />
+        <p
+          className="text-sm leading-relaxed mb-8 max-w-xs mx-auto"
+          style={{ color: portalTheme.textMuted || "#A1A1A6" }}
+        >
           O portal do cliente para este estabelecimento não está acessível no momento pois a conta foi desativada ou está temporariamente suspensa.
         </p>
         <button
           type="button"
           onClick={() => window.history.back()}
-          className="px-8 py-3 rounded-full font-medium text-sm text-[#A1A1A6] border border-white/[0.08] hover:bg-white/[0.04] hover:text-white transition-colors"
+          className="px-8 py-3 rounded-full font-medium text-sm border hover:opacity-80 transition-opacity"
+          style={{
+            borderColor: portalTheme.cardBorder,
+            color: portalTheme.textPrimary,
+          }}
         >
           Voltar
         </button>
-        <div className="flex items-center gap-2 mt-12 text-[10px] font-mono text-[#71717A]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
-          Raffros · Gestão &amp; Agendamento
+        <div
+          className="flex items-center gap-2 mt-12 text-[10px] font-mono"
+          style={{ color: portalTheme.textMuted || "#71717A" }}
+        >
+          <span
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: portalTheme.accent }}
+          />
+          Portal do Cliente
         </div>
       </div>
     );
