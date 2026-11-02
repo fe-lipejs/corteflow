@@ -40,6 +40,7 @@ async function fetchPublicStore(slug: string) {
         banner_url: demoPortal.banner_url || null,
         phone: demoPortal.owner_whatsapp,
         whatsapp_number: demoPortal.owner_whatsapp,
+        instagram: demoPortal.instagram || null,
         theme_preset: 'elegant',
         custom_palette: {
           primary: demoPortal.primary_color || '#FF5C95',
@@ -49,7 +50,7 @@ async function fetchPublicStore(slug: string) {
           fontStyle: 'sans',
           btnTextColor: '#FFFFFF',
           slogan: '',
-          description: '',
+          description: demoPortal.description || 'Agende seu horário online em menos de 1 minuto.',
         },
         booking_payment_mode: 'local',
         accept_local_payment: true,
@@ -57,7 +58,9 @@ async function fetchPublicStore(slug: string) {
         allow_cancel: true,
         allow_reschedule: true,
         deposit_percentage: 50,
-        slogan: 'Agende seu horário online em menos de 1 minuto.',
+        slogan: '',
+        description: demoPortal.description || null,
+        short_description: demoPortal.description || null,
         full_address: 'Atendimento com horário marcado',
       };
 

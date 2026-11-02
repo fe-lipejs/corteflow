@@ -1196,16 +1196,22 @@ export default function PublicDemoStore() {
 
             {/* Rating Pill */}
             <div className="inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-full border border-[#222] bg-[#141414] text-xs font-semibold">
-              <span className="flex items-center gap-1 font-bold text-amber-400">
+              <span className="flex items-center gap-1 font-bold" style={{ color: demo.primary_color || '#fbbf24' }}>
                 <Star className="w-3.5 h-3.5 fill-current" /> 5.0
               </span>
               <span className="opacity-40">•</span>
-              <span className="text-[#888]">Barbearia &amp; Salão</span>
+              <span className="text-[#888] capitalize">
+                {demo.business_type === 'barbearia'
+                  ? 'Barbearia'
+                  : demo.business_type === 'esmalteria'
+                  ? 'Esmalteria'
+                  : 'Salão de Beleza'}
+              </span>
             </div>
 
-            {/* Slogan & Descrição */}
-            <p className="mt-3.5 text-xs sm:text-sm text-[#888] leading-relaxed max-w-[320px]">
-              Agende seu horário online em menos de 1 minuto com os melhores profissionais.
+            {/* Slogan & Descrição / Observação */}
+            <p className="mt-3 text-xs sm:text-sm text-zinc-300 leading-relaxed max-w-[320px]">
+              {demo.description?.trim() || "Agende seu horário online em menos de 1 minuto com os melhores profissionais."}
             </p>
 
             {/* Ações Mobile e Desktop */}
@@ -1229,18 +1235,39 @@ export default function PublicDemoStore() {
               </button>
             </div>
 
-            {/* WhatsApp Link Direto */}
-            <div className="mt-3 w-full max-w-[320px]">
-              <a
-                href={`https://wa.me/${demo.owner_whatsapp.replace(/\D/g, '')}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-[#262626] bg-[#121212] hover:bg-[#1a1a1a] text-xs font-bold text-[#aaa] hover:text-white transition-colors"
-              >
-                <WhatsAppIcon className="w-4 h-4 text-emerald-400" />
-                <span>Falar no WhatsApp</span>
-              </a>
-            </div>
+            {/* Social Links (Instagram e WhatsApp) */}
+            {(() => {
+              let demoInsta = demo?.instagram ? demo.instagram.replace(/^@/, '').trim() : null;
+              if (demoInsta?.includes('instagram.com/')) {
+                demoInsta = demoInsta.split('instagram.com/')[1].replace('/', '');
+              }
+              return (
+                <div className="mt-3 w-full max-w-[320px] flex items-center gap-2">
+                  {demoInsta && (
+                    <a
+                      href={`https://instagram.com/${demoInsta}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-[#262626] bg-[#121212] hover:bg-[#1a1a1a] text-xs font-bold text-[#aaa] hover:text-white transition-colors"
+                    >
+                      <InstagramIcon className="w-4 h-4 text-pink-400" />
+                      <span>Instagram</span>
+                    </a>
+                  )}
+                  {demo.owner_whatsapp && (
+                    <a
+                      href={`https://wa.me/${demo.owner_whatsapp.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-[#262626] bg-[#121212] hover:bg-[#1a1a1a] text-xs font-bold text-[#aaa] hover:text-white transition-colors"
+                    >
+                      <WhatsAppIcon className="w-4 h-4 text-emerald-400" />
+                      <span>WhatsApp</span>
+                    </a>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </aside>
 

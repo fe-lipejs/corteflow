@@ -1824,25 +1824,32 @@ export default function PublicStore() {
                 </span>
               </div>
 
-              {/* Slogan */}
-              {(settings?.custom_palette?.slogan ?? settings?.slogan) && (
-                <p
-                  className="mt-3.5 text-sm sm:text-base font-semibold max-w-[320px]"
-                  style={{ color: theme.textPrimary }}
-                >
-                  {settings?.custom_palette?.slogan ?? settings?.slogan}
-                </p>
-              )}
+              {/* Slogan & Descrição/Observação */}
+              {(() => {
+                const sloganText = (settings?.custom_palette?.slogan?.trim()) || (settings?.slogan?.trim()) || '';
+                const descText = (settings?.custom_palette?.description?.trim()) || (settings?.description?.trim()) || (settings?.short_description?.trim()) || '';
 
-              {/* Bio / Description */}
-              {(settings?.custom_palette?.description ?? settings?.description ?? settings?.short_description) !== '' && (
-                <p
-                  className={`${(settings?.custom_palette?.slogan ?? settings?.slogan) ? 'mt-1.5' : 'mt-3.5'} text-xs sm:text-sm leading-relaxed max-w-[320px] font-medium`}
-                  style={{ color: theme.textSecondary }}
-                >
-                  {settings?.custom_palette?.description ?? settings?.description ?? settings?.short_description ?? "Agende seu horário com os melhores profissionais."}
-                </p>
-              )}
+                return (
+                  <>
+                    {sloganText && (
+                      <p
+                        className="mt-3.5 text-sm sm:text-base font-semibold max-w-[320px]"
+                        style={{ color: theme.textPrimary }}
+                      >
+                        {sloganText}
+                      </p>
+                    )}
+                    {descText && (
+                      <p
+                        className={`${sloganText ? 'mt-1.5' : 'mt-3.5'} text-xs sm:text-sm leading-relaxed max-w-[320px] font-medium`}
+                        style={{ color: theme.textSecondary }}
+                      >
+                        {descText}
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
 
               {/* ───────────────── MOBILE ONLY: TOP ACTIONS (PREMIUM) ───────────────── */}
               <div className="lg:hidden mt-5 w-full flex items-center justify-center gap-3">
@@ -1875,45 +1882,47 @@ export default function PublicStore() {
                 </button>
               </div>
 
-              {/* Social Pill Buttons */}
-              <div className="hidden lg:flex items-center justify-center gap-2.5 mt-5 w-full max-w-[320px]">
-                {storeInsta && (
-                  <motion.a
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    href={`https://instagram.com/${storeInsta}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border transition-all cursor-pointer font-bold text-xs shadow-sm"
-                    style={{
-                      background: isDark ? "rgba(255,255,255,0.04)" : "#FFFFFF",
-                      borderColor: cardBorderColor,
-                      color: theme.textPrimary,
-                    }}
-                  >
-                    <InstagramIcon style={{ color: accent }} />
-                    <span>Instagram</span>
-                  </motion.a>
-                )}
-                {storePhone && (
-                  <motion.a
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    href={`https://wa.me/${onlyDigits(storePhone)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border transition-all cursor-pointer font-bold text-xs shadow-sm"
-                    style={{
-                      background: isDark ? "rgba(255,255,255,0.04)" : "#FFFFFF",
-                      borderColor: cardBorderColor,
-                      color: theme.textPrimary,
-                    }}
-                  >
-                    <WhatsAppIcon style={{ color: accent }} />
-                    <span>WhatsApp</span>
-                  </motion.a>
-                )}
-              </div>
+              {/* Social Pill Buttons (Visible on Mobile & Desktop) */}
+              {(storeInsta || storePhone) && (
+                <div className="flex items-center justify-center gap-2.5 mt-4 sm:mt-5 w-full max-w-[320px]">
+                  {storeInsta && (
+                    <motion.a
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      href={`https://instagram.com/${storeInsta}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border transition-all cursor-pointer font-bold text-xs shadow-sm"
+                      style={{
+                        background: isDark ? "rgba(255,255,255,0.04)" : "#FFFFFF",
+                        borderColor: cardBorderColor,
+                        color: theme.textPrimary,
+                      }}
+                    >
+                      <InstagramIcon style={{ color: accent }} />
+                      <span>Instagram</span>
+                    </motion.a>
+                  )}
+                  {storePhone && (
+                    <motion.a
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      href={`https://wa.me/${onlyDigits(storePhone)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border transition-all cursor-pointer font-bold text-xs shadow-sm"
+                      style={{
+                        background: isDark ? "rgba(255,255,255,0.04)" : "#FFFFFF",
+                        borderColor: cardBorderColor,
+                        color: theme.textPrimary,
+                      }}
+                    >
+                      <WhatsAppIcon style={{ color: accent }} />
+                      <span>WhatsApp</span>
+                    </motion.a>
+                  )}
+                </div>
+              )}
 
               {/* Info Group */}
               <div

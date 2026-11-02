@@ -6,6 +6,7 @@ import {
   Sparkles,
   Plus,
   Copy,
+  CopyPlus,
   ExternalLink,
   Eye,
   Trash2,
@@ -28,6 +29,26 @@ import {
   Image as ImageIcon,
   Camera,
 } from 'lucide-react';
+
+const InstagramIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    style={style}
+  >
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+  </svg>
+);
 import toast from 'react-hot-toast';
 import AdminPageHeader from './components/AdminPageHeader';
 import AdminBadge from './components/AdminBadge';
@@ -68,6 +89,7 @@ export default function AdminDemoPortals() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'expired'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDemo, setEditingDemo] = useState<DemoPortal | null>(null);
+  const [duplicateSource, setDuplicateSource] = useState<DemoPortal | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [createdDemo, setCreatedDemo] = useState<DemoPortal | null>(null);
@@ -76,6 +98,8 @@ export default function AdminDemoPortals() {
   const [businessName, setBusinessName] = useState('');
   const [businessType, setBusinessType] = useState<'barbearia' | 'salao' | 'esmalteria'>('barbearia');
   const [ownerWhatsapp, setOwnerWhatsapp] = useState('');
+  const [instagram, setInstagram] = useState('');
+  const [description, setDescription] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#FF5C95');
   const [expiresInDays, setExpiresInDays] = useState(7);
   const [logoUrl, setLogoUrl] = useState('');
@@ -164,9 +188,12 @@ export default function AdminDemoPortals() {
 
   function resetForm() {
     setEditingDemo(null);
+    setDuplicateSource(null);
     setBusinessName('');
     setBusinessType('barbearia');
     setOwnerWhatsapp('');
+    setInstagram('');
+    setDescription('');
     setPrimaryColor('#FF5C95');
     setExpiresInDays(7);
     setLogoUrl('');
@@ -191,10 +218,14 @@ export default function AdminDemoPortals() {
   }
 
   function handleOpenEdit(demo: DemoPortal) {
+    resetForm();
     setEditingDemo(demo);
+    setDuplicateSource(null);
     setBusinessName(demo.business_name);
     setBusinessType((demo.business_type as any) || 'barbearia');
     setOwnerWhatsapp(demo.owner_whatsapp);
+    setInstagram(demo.instagram || '');
+    setDescription(demo.description || '');
     setPrimaryColor(demo.primary_color || '#FF5C95');
     setLogoUrl(demo.logo_url || '');
     setBannerUrl(demo.banner_url || '');
@@ -228,6 +259,47 @@ export default function AdminDemoPortals() {
     );
 
     setIsModalOpen(true);
+  }
+
+  function handleDuplicate(demo: DemoPortal) {
+    resetForm();
+    setCreatedDemo(null);
+    setEditingDemo(null);
+    setDuplicateSource(demo);
+
+    const newSlug = demoPortalsService.generateDemoSlug(demo.business_name || demo.slug);
+
+    setBusinessName(`${demo.business_name} (Cópia)`);
+    setBusinessType((demo.business_type as any) || 'barbearia');
+    setOwnerWhatsapp(demo.owner_whatsapp);
+    setInstagram(demo.instagram || '');
+    setDescription(demo.description || '');
+    setPrimaryColor(demo.primary_color || '#FF5C95');
+    setLogoUrl(demo.logo_url || '');
+    setBannerUrl(demo.banner_url || '');
+    setCustomSlug(newSlug);
+    setIsCustomSlugEdited(true);
+    setExpiresInDays(7);
+
+    setServices(
+      (demo.services || []).map((s) => ({
+        name: s.name,
+        price: s.price,
+        duration_minutes: s.duration_minutes,
+        photo_url: s.photo_url || null,
+      }))
+    );
+
+    setProfessionals(
+      (demo.professionals || []).map((p) => ({
+        name: p.name,
+        photo_url: p.photo_url || null,
+        role_title: p.role_title || '',
+      }))
+    );
+
+    setIsModalOpen(true);
+    toast.success('Perfil copiado para o formulário com novo link exclusivo gerado!');
   }
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -364,6 +436,8 @@ export default function AdminDemoPortals() {
           banner_url: bannerUrl || null,
           primary_color: primaryColor,
           owner_whatsapp: ownerWhatsapp.trim(),
+          instagram: instagram.trim() ? instagram.trim().replace(/^@/, '') : null,
+          description: description.trim() || null,
           expires_at: expiresAt.toISOString(),
           services: validServices.map((s) => ({
             id: s.id || 'srv_' + Math.random().toString(36).substring(2, 9),
@@ -390,6 +464,8 @@ export default function AdminDemoPortals() {
         banner_url: bannerUrl || null,
         primary_color: primaryColor,
         owner_whatsapp: ownerWhatsapp,
+        instagram: instagram.trim() ? instagram.trim().replace(/^@/, '') : null,
+        description: description.trim() || null,
         expires_in_days: expiresInDays,
         services: validServices,
         professionals: validPros,
@@ -620,6 +696,16 @@ export default function AdminDemoPortals() {
                     </div>
                   </div>
 
+                  {/* Observação / Descrição do Perfil */}
+                  {demo.description && (
+                    <div className="mb-3 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/5 text-xs text-zinc-300 flex items-start gap-2">
+                      <span className="text-emerald-400 font-bold shrink-0">💬</span>
+                      <p className="italic text-zinc-300 leading-snug line-clamp-2">
+                        "{demo.description}"
+                      </p>
+                    </div>
+                  )}
+
                   {/* Info stats */}
                   <div className="grid grid-cols-2 gap-2 bg-white/[0.02] p-3 rounded-xl border border-white/5 mb-4 text-xs">
                     <div className="flex items-center gap-2 text-zinc-400">
@@ -646,11 +732,24 @@ export default function AdminDemoPortals() {
                         href={`https://wa.me/${demo.owner_whatsapp.replace(/\D/g, '')}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-zinc-400 hover:text-emerald-600 transition-colors truncate"
+                        className="text-zinc-400 hover:text-emerald-500 transition-colors truncate"
                       >
                         WhatsApp: {demo.owner_whatsapp}
                       </a>
                     </div>
+                    {demo.instagram && (
+                      <div className="flex items-center gap-2 text-zinc-400 col-span-2">
+                        <InstagramIcon className="w-3.5 h-3.5 text-pink-400" />
+                        <a
+                          href={`https://instagram.com/${demo.instagram.replace(/^@/, '')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-zinc-400 hover:text-pink-400 transition-colors truncate"
+                        >
+                          Instagram: @{demo.instagram.replace(/^@/, '')}
+                        </a>
+                      </div>
+                    )}
                   </div>
 
                   {/* Summary of services & pros com badges de fotos */}
@@ -668,29 +767,38 @@ export default function AdminDemoPortals() {
 
                 {/* Actions Bottom Bar */}
                 <div className="pt-3 border-t border-white/5 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <button
                       onClick={() => copyDemoLink(demo.slug)}
-                      title="Copiar Link Demo"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-zinc-300 font-medium transition-colors"
+                      title="Copiar Link para Compartilhar"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-zinc-300 font-medium transition-colors"
                     >
                       {copiedSlug === demo.slug ? (
                         <>
-                          <Check className="w-3.5 h-3.5 text-emerald-600" />
-                          <span className="text-emerald-600 font-medium">Copiado</span>
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-emerald-400 font-medium">Link Copiado</span>
                         </>
                       ) : (
                         <>
                           <Copy className="w-3.5 h-3.5" />
-                          <span>Copiar</span>
+                          <span>Copiar Link</span>
                         </>
                       )}
                     </button>
 
                     <button
+                      onClick={() => handleDuplicate(demo)}
+                      title="Replicar este perfil para criar um novo salão com novo link/ID"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-xs text-emerald-300 border border-emerald-500/20 font-semibold transition-all hover:scale-[1.02] active:scale-95"
+                    >
+                      <CopyPlus className="w-3.5 h-3.5" />
+                      <span>Replicar</span>
+                    </button>
+
+                    <button
                       onClick={() => handleOpenEdit(demo)}
                       title="Editar Serviços e Profissionais deste Demo"
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-zinc-300 hover:text-emerald-400 font-medium transition-colors"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-zinc-300 hover:text-white font-medium transition-colors"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                       <span>Editar</span>
@@ -701,7 +809,7 @@ export default function AdminDemoPortals() {
                       target="_blank"
                       rel="noreferrer"
                       title="Abrir Demonstração"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all shadow-xs"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all shadow-xs"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                       <span>Abrir Demo</span>
@@ -751,15 +859,27 @@ export default function AdminDemoPortals() {
               <div className="flex items-center justify-between pb-5 border-b border-white/5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                    {editingDemo ? <Pencil className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
+                    {editingDemo ? (
+                      <Pencil className="w-5 h-5" />
+                    ) : duplicateSource ? (
+                      <CopyPlus className="w-5 h-5" />
+                    ) : (
+                      <Sparkles className="w-5 h-5" />
+                    )}
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-white">
-                      {editingDemo ? 'Editar Portal Demo' : 'Criar Portal Demo'}
+                      {editingDemo
+                        ? 'Editar Portal Demo'
+                        : duplicateSource
+                        ? 'Replicar Portal Demo'
+                        : 'Criar Portal Demo'}
                     </h2>
                     <p className="text-xs text-zinc-400">
                       {editingDemo
                         ? `Atualize os dados, serviços e profissionais de ${editingDemo.business_name}`
+                        : duplicateSource
+                        ? `Novo perfil exclusivo baseado em "${duplicateSource.business_name}"`
                         : 'Gere uma página de agendamento personalizada para seu prospect'}
                     </p>
                   </div>
@@ -773,6 +893,21 @@ export default function AdminDemoPortals() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6 pt-6">
+                {duplicateSource && (
+                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+                      <CopyPlus className="w-4 h-4" />
+                    </div>
+                    <div className="text-xs">
+                      <p className="text-emerald-300 font-bold text-sm">
+                        Replicando perfil de "{duplicateSource.business_name}"
+                      </p>
+                      <p className="text-zinc-300 mt-1 leading-relaxed">
+                        Todos os serviços, fotos e configurações foram copiados. Um novo link exclusivo (<span className="text-emerald-400 font-mono font-bold">/paginas/{customSlug}</span>) foi gerado automaticamente. Você pode alterar o nome e o WhatsApp do novo dono ou clicar em <strong>Criar Perfil Replicado</strong> abaixo.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {/* Dados Gerais */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
@@ -825,6 +960,26 @@ export default function AdminDemoPortals() {
                     </p>
                   </div>
 
+                  {/* Texto de Observação / Bio / Destaque */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2 flex items-center justify-between">
+                      <span>Texto de Observação / Bio do Perfil (opcional)</span>
+                      <span className="text-[10px] text-zinc-500 font-normal">
+                        exibido abaixo da foto e nome
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: O melhor salão da região 5 ⭐ • Atendimento premium com hora marcada"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="w-full bg-[#13131A] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-[#13131A] transition-all"
+                    />
+                    <p className="text-[11px] text-zinc-400 mt-1">
+                      Aparece logo abaixo da foto de perfil e da nota 5.0, destacando diferenciais do estabelecimento para encantar o cliente.
+                    </p>
+                  </div>
+
                   {/* Tipo de Negócio */}
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
@@ -865,21 +1020,44 @@ export default function AdminDemoPortals() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
-                      WhatsApp do Dono (com DDD) *
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ex: (11) 98888-7777"
-                      value={ownerWhatsapp}
-                      onChange={(e) => setOwnerWhatsapp(e.target.value)}
-                      className="w-full bg-[#13131A] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-[#13131A] transition-all"
-                      required
-                    />
-                    <p className="text-[11px] text-zinc-400 mt-1">
-                      Receberá a notificação de teste quando o cliente agendar.
-                    </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+                        WhatsApp do Dono (com DDD) *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ex: (11) 98888-7777"
+                        value={ownerWhatsapp}
+                        onChange={(e) => setOwnerWhatsapp(e.target.value)}
+                        className="w-full bg-[#13131A] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-[#13131A] transition-all"
+                        required
+                      />
+                      <p className="text-[11px] text-zinc-400 mt-1">
+                        Receberá a notificação de teste quando o cliente agendar.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+                        Instagram do Estabelecimento (opcional)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-sm font-semibold select-none">
+                          @
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="barbeariavintage"
+                          value={instagram}
+                          onChange={(e) => setInstagram(e.target.value.replace(/^@/, ''))}
+                          className="w-full bg-[#13131A] border border-white/10 rounded-xl pl-8 pr-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-[#13131A] transition-all"
+                        />
+                      </div>
+                      <p className="text-[11px] text-zinc-400 mt-1">
+                        Exibe o botão do Instagram na visualização do cliente.
+                      </p>
+                    </div>
                   </div>
 
                   <div>
@@ -1277,8 +1455,14 @@ export default function AdminDemoPortals() {
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-4 h-4" />
-                        <span>{editingDemo ? 'Salvar Alterações' : 'Criar e Gerar Link'}</span>
+                        {duplicateSource ? <CopyPlus className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                        <span>
+                          {editingDemo
+                            ? 'Salvar Alterações'
+                            : duplicateSource
+                            ? 'Criar Perfil Replicado'
+                            : 'Criar e Gerar Link'}
+                        </span>
                       </>
                     )}
                   </button>

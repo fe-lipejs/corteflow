@@ -24,6 +24,8 @@ export interface DemoPortal {
   services: DemoService[];
   professionals: DemoProfessional[];
   owner_whatsapp: string;
+  instagram?: string | null;
+  description?: string | null;
   active: boolean;
   expires_at: string;
   views: number;
@@ -40,7 +42,7 @@ export interface CreateDemoPortalInput {
   services: (Omit<DemoService, 'id'> & { id?: string })[];
   professionals: (Omit<DemoProfessional, 'id'> & { id?: string })[];
   owner_whatsapp: string;
+  instagram?: string | null;
+  description?: string | null;
   expires_in_days?: number;
 }
-
-

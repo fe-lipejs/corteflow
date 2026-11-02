@@ -26,6 +26,7 @@ export function generateDemoSlug(businessName: string): string {
 
 export const demoPortalsService = {
   sanitizeSlug,
+  generateDemoSlug,
 
   async listAll(): Promise<DemoPortal[]> {
     const { data, error } = await supabase
@@ -99,6 +100,8 @@ export const demoPortalsService = {
         services: servicesWithIds,
         professionals: professionalsWithIds,
         owner_whatsapp: input.owner_whatsapp.trim(),
+        instagram: input.instagram ? input.instagram.trim().replace(/^@/, '') : null,
+        description: input.description ? input.description.trim() : null,
         active: true,
         expires_at: expiresAt.toISOString(),
         views: 0,
@@ -112,6 +115,14 @@ export const demoPortalsService = {
 
   async update(id: string, updates: Partial<DemoPortal>): Promise<DemoPortal> {
     const payload: Record<string, any> = { ...updates };
+
+    if (payload.instagram !== undefined) {
+      payload.instagram = payload.instagram ? payload.instagram.trim().replace(/^@/, '') : null;
+    }
+
+    if (payload.description !== undefined) {
+      payload.description = payload.description ? payload.description.trim() : null;
+    }
 
     if (payload.slug !== undefined) {
       const cleanSlug = sanitizeSlug(payload.slug);
