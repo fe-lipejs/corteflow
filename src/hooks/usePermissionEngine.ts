@@ -72,6 +72,10 @@ function isTrialExpired(sub: any): boolean {
 /** Assinatura concede o plano contratado? */
 function subscriptionGrantsPlan(sub: any): boolean {
   if (!sub) return false;
+  // Se a assinatura foi cancelada, mas o ciclo já pago ainda está no futuro, o salão continua com acesso total ao plano contratado!
+  if (sub.status === 'canceled' && sub.current_period_end && new Date(sub.current_period_end) > new Date()) {
+    return true;
+  }
   if (INACTIVE_STATUSES.includes(sub.status)) return false;
   if (isTrialExpired(sub)) return false;
   return true;
@@ -180,7 +184,8 @@ export function usePermissionEngine(): PermissionEngine {
   // Status contextual
   const subStatus = sub?.status;
   const trialExpired = isTrialExpired(sub);
-  const isCanceled = subStatus === 'canceled' || subStatus === 'incomplete_expired';
+  const periodStillValid = sub?.current_period_end && new Date(sub.current_period_end) > new Date();
+  const isCanceled = (subStatus === 'canceled' || subStatus === 'incomplete_expired') && !periodStillValid;
   const isPastDue = subStatus === 'past_due' || subStatus === 'unpaid';
   const isSubscriptionActive = isSuperAdmin ? true : subscriptionGrantsPlan(sub);
 
@@ -207,7 +212,9 @@ export function usePermissionEngine(): PermissionEngine {
     subscriptionMessage = 'Você está utilizando o período de teste gratuito.';
   } else {
     subscriptionStatus = 'active';
-    subscriptionMessage = 'Assinatura ativa.';
+    subscriptionMessage = periodStillValid && subStatus === 'canceled'
+      ? 'Sua assinatura foi cancelada, mas seu acesso continua ativo até o final do período contratado.'
+      : 'Assinatura ativa.';
   }
 
   // Fonte única de verdade para permissões/limites/features
@@ -235,6 +242,11 @@ export function usePermissionEngine(): PermissionEngine {
 
   const hasPermission = (key: string) => {
     if (isSuperAdmin) return true;
+
+    // Configurações gerais e personalização visual são funcionalidades básicas do salão para owner/admin
+    if (key.startsWith('configuracoes') && (role === 'owner' || role === 'admin')) {
+      return true;
+    }
 
     if (role === 'professional') {
       if (key.startsWith('agenda')) return !!professionalPermissions?.view_own_schedule;

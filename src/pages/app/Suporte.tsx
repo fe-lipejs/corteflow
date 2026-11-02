@@ -8,6 +8,12 @@ import {
   Send, ChevronLeft, AlertCircle, Tag, Loader2
 } from 'lucide-react';
 
+const WhatsAppIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.4-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.03-1.24-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.44.13-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.77 2.7 4.29 3.79.6.26 1.07.41 1.44.53.61.19 1.16.17 1.6.1.49-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.17-.48-.3" />
+  </svg>
+);
+
 type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed' | 'waiting_user' | 'waiting_support';
 type TicketCategory = 'billing' | 'technical' | 'feature' | 'other';
 type TicketPriority = 'low' | 'medium' | 'high';
@@ -398,11 +404,46 @@ export default function Suporte() {
         </button>
       </div>
 
+      {/* WhatsApp Direct Support Card */}
+      <div
+        className="p-4 sm:p-5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md transition-all"
+        style={{ borderColor: 'rgba(37, 211, 102, 0.35)', background: 'rgba(37, 211, 102, 0.08)' }}
+      >
+        <div className="flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-[#25D366]/20 text-[#25D366] shadow-sm">
+            <WhatsAppIcon className="w-5 h-5 fill-[#25D366]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Suporte Imediato via WhatsApp</h4>
+              <span className="text-[10px] bg-[#25D366]/20 text-[#25D366] font-bold px-2 py-0.5 rounded-full border border-[#25D366]/30">
+                Online
+              </span>
+            </div>
+            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: theme.textSecondary }}>
+              Precisa de ajuda urgente? Fale diretamente com o Super Admin no número <strong>(27) 99730-3135</strong>.
+            </p>
+          </div>
+        </div>
+
+        <a
+          href={`https://wa.me/5527997303135?text=${encodeURIComponent(
+            `Olá! Sou ${profile?.full_name || 'cliente'} do salão "${tenant?.name || 'meu salão'}" na plataforma Navalha e preciso de suporte com a minha conta.`
+          )}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md hover:scale-[1.02] active:scale-[0.98] shrink-0 cursor-pointer"
+        >
+          <WhatsAppIcon className="w-4 h-4 fill-white" />
+          <span>Falar no WhatsApp</span>
+        </a>
+      </div>
+
       {/* Info card */}
       <div className="p-4 rounded-2xl border flex items-start gap-3" style={{ borderColor: theme.border, background: theme.cardBg }}>
         <MessageCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: theme.accent }} />
         <p className="text-sm" style={{ color: theme.textSecondary }}>
-          Nossa equipe responde em até <strong>24h úteis</strong>. Abra um chamado descrevendo seu problema e acompanhe a conversa aqui.
+          Nossa equipe responde os chamados internos em até <strong>24h úteis</strong>. Abra um chamado descrevendo seu problema e acompanhe a conversa aqui.
         </p>
       </div>
 
@@ -457,6 +498,23 @@ export default function Suporte() {
           })}
         </div>
       )}
+
+      {/* Floating WhatsApp Support Button */}
+      <a
+        href={`https://wa.me/5527997303135?text=${encodeURIComponent(
+          `Olá! Sou ${profile?.full_name || 'cliente'} do salão "${tenant?.name || 'meu salão'}" na plataforma Navalha e preciso de suporte com a minha conta.`
+        )}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Falar no WhatsApp do Suporte: (27) 99730-3135"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs shadow-2xl shadow-[#25D366]/40 transition-all hover:scale-105 active:scale-95 group cursor-pointer"
+      >
+        <WhatsAppIcon className="w-5 h-5 fill-white" />
+        <span className="hidden sm:inline">Suporte WhatsApp</span>
+        <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded-full font-mono">
+          (27) 99730-3135
+        </span>
+      </a>
     </div>
   );
 }

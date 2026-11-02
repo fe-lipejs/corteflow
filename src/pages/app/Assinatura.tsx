@@ -223,6 +223,10 @@ export default function Assinatura() {
           (p: any) =>
             p.name !== 'Trial (Período de Teste)' &&
             p.key !== 'expired_tier' &&
+            p.key !== 'fallback_tier' &&
+            !p.key?.includes('fallback') &&
+            !p.name?.toLowerCase().includes('fallback') &&
+            !p.name?.toLowerCase().includes('cancelado') &&
             !p.is_trial_plan
         );
 
@@ -266,9 +270,6 @@ export default function Assinatura() {
         const sortedPlans =
           plansWithCustomPrices.sort(
             (a: any, b: any) => {
-              if (a.is_default) return -1;
-              if (b.is_default) return 1;
-
               const aPrice =
                 a.plan_prices?.find(
                   (p: any) =>
@@ -1169,9 +1170,18 @@ export default function Assinatura() {
               )}
           </div>
         ) : (
-          <div className="flex flex-col lg:flex-row justify-center items-stretch gap-5 max-w-4xl mx-auto">
+          <div className="flex flex-col lg:flex-row justify-center items-stretch gap-6 max-w-5xl mx-auto">
             {plans
               .filter((plan) => {
+                if (
+                  plan.key === 'fallback_tier' ||
+                  plan.key?.includes('fallback') ||
+                  plan.name?.toLowerCase().includes('fallback') ||
+                  plan.name?.toLowerCase().includes('cancelado')
+                ) {
+                  return false;
+                }
+
                 const hasActivePaidPlan =
                   subscription &&
                   (

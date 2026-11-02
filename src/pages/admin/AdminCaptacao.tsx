@@ -17,7 +17,6 @@ import {
   Copy,
   ExternalLink,
   Phone,
-  Instagram,
   Trash2,
   Calendar,
   CheckCircle2,
@@ -35,6 +34,25 @@ import {
   ChevronRight,
   DollarSign
 } from 'lucide-react';
+
+const InstagramIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width="24"
+    height="24"
+    stroke="currentColor"
+    strokeWidth="2"
+    fill="none"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    style={style}
+  >
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+);
 
 interface ProspectLead {
   id: string;
@@ -890,7 +908,7 @@ export default function AdminCaptacao() {
                                   title="Ver Instagram"
                                   className="p-1.5 rounded-lg bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 border border-pink-500/30 transition-all"
                                 >
-                                  <Instagram className="w-3.5 h-3.5" />
+                                  <InstagramIcon className="w-3.5 h-3.5" />
                                 </a>
                               )}
                               {!lead.whatsapp && !lead.instagram && (

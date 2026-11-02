@@ -272,7 +272,6 @@ export default function Configuracoes() {
       const url = await logoUpload.upload(croppedFile, `${tenant.id}/logo`);
       if (url) {
         setLogoUrl(url);
-        handleMagicExtract(url, bgMode);
       }
     } else {
       const url = await bannerUpload.upload(croppedFile, `${tenant.id}/banner`);
@@ -1421,6 +1420,20 @@ export default function Configuracoes() {
           >
             <ExternalLink className="w-4 h-4" />
           </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50"
+            style={{
+              background: saved ? theme.success : theme.btnPrimaryBg || theme.accent,
+              color: saved ? '#fff' : theme.btnPrimaryText,
+            }}
+            title="Salvar Configurações"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : saved ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{saved ? 'Salvo' : 'Salvar'}</span>
+          </button>
         </div>
       </div>
 
@@ -1659,7 +1672,7 @@ export default function Configuracoes() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (!engine.hasPermission('configuracoes.editar_layout')) {
+                      if (profile?.role !== 'owner' && profile?.role !== 'admin' && !engine.hasPermission('configuracoes.editar_layout')) {
                         setShowUpgradeModal('configuracoes.editar_layout');
                         return;
                       }
@@ -3603,29 +3616,56 @@ export default function Configuracoes() {
         )}
       </AnimatePresence>
 
-      {/* Save Button */}
-      <div className="flex justify-end pt-2">
+      {/* ── Barra de Ação de Salvamento Integrada ao Container ── */}
+      <div
+        className="p-5 rounded-3xl border flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl mt-6 transition-all"
+        style={{
+          background: theme.cardBg,
+          borderColor: theme.border,
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+            style={{
+              background: `${theme.accent}15`,
+              color: theme.accent,
+            }}
+          >
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold" style={{ color: theme.textPrimary }}>
+              Salvar Alterações das Configurações
+            </h4>
+            <p className="text-xs" style={{ color: theme.textSecondary }}>
+              Todas as modificações de horário, dados do salão e visual só entram em vigor após salvar.
+            </p>
+          </div>
+        </div>
+
         <button
+          type="button"
           onClick={handleSave}
           disabled={loading}
-          className="flex items-center justify-center gap-2 px-8 py-3 rounded-xl font-bold transition-all disabled:opacity-50"
+          className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 disabled:opacity-50"
           style={{
-            background: saved ? theme.success : theme.accentGradient,
+            background: saved ? theme.success : theme.btnPrimaryBg || theme.accent,
             color: saved ? '#fff' : theme.btnPrimaryText,
             boxShadow: saved ? 'none' : theme.shadowAccent,
           }}
         >
           {loading ? (
             <>
-              <Loader2 className="w-5 h-5 animate-spin" /> Salvando...
+              <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
             </>
           ) : saved ? (
             <>
-              <CheckCircle2 className="w-5 h-5" /> Salvo com sucesso!
+              <CheckCircle2 className="w-4 h-4" /> Salvo com sucesso!
             </>
           ) : (
             <>
-              <Save className="w-5 h-5" /> Salvar Configurações
+              <Save className="w-4 h-4" /> Salvar Configurações
             </>
           )}
         </button>
