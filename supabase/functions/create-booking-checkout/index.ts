@@ -66,7 +66,12 @@ serve(async (req) => {
 
     const serviceName = (booking.services as any)?.name || 'Serviço';
     const salonName = (booking.tenants as any)?.name || 'Salão';
-    const description = booking.payment_mode === 'deposit' ? 'Pagamento de Sinal (Reserva)' : 'Pagamento Integral';
+    let safeReturnUrl = returnUrl || '';
+    if (!safeReturnUrl.startsWith('http://') && !safeReturnUrl.startsWith('https://')) {
+      const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://navalha.app';
+      const cleanOrigin = origin.replace(/\/$/, '');
+      safeReturnUrl = `${cleanOrigin}${safeReturnUrl.startsWith('/') ? '' : '/'}${safeReturnUrl}`;
+    }
 
     const buildSessionParams = (paymentMethods: string[]) => ({
       payment_method_types: paymentMethods as any,
@@ -94,8 +99,8 @@ serve(async (req) => {
           tenant_id: booking.tenant_id,
         }
       },
-      success_url: `${returnUrl}?order=${booking.order_number}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${returnUrl}?cancel=true`,
+      success_url: `${safeReturnUrl}?order=${booking.order_number}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${safeReturnUrl}?cancel=true`,
       metadata: {
         booking_id: booking.id,
         tenant_id: booking.tenant_id,

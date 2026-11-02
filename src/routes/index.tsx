@@ -175,6 +175,17 @@ export default function AppRoutes() {
         {/* Tenant Admin (Barbearia/Salão) */}
         {AppRouteTree()}
 
+        {/* Alias retrocompatíveis /app -> /admin */}
+        <Route path="/app" element={<Navigate to="/admin" replace />} />
+        <Route path="/app/assinatura" element={<Navigate to="/admin/assinatura" replace />} />
+        <Route path="/app/agenda" element={<Navigate to="/admin/agenda" replace />} />
+        <Route path="/app/configuracoes" element={<Navigate to="/admin/configuracoes" replace />} />
+        <Route path="/app/financeiro" element={<Navigate to="/admin/financeiro" replace />} />
+        <Route path="/app/clientes" element={<Navigate to="/admin/clientes" replace />} />
+        <Route path="/app/equipe" element={<Navigate to="/admin/equipe" replace />} />
+        <Route path="/app/servicos" element={<Navigate to="/admin/servicos" replace />} />
+        <Route path="/app/*" element={<Navigate to="/admin" replace />} />
+
         {/* Super Admin (Dono da Plataforma) */}
         {AdminRouteTree()}
 

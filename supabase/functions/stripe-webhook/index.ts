@@ -140,6 +140,27 @@ serve(async (req) => {
             trial_ends_at: trialEndsAt,
             has_used_trial: true
           }).eq('id', tenantId);
+        } else if (session.metadata?.booking_id) {
+          // Booking Payment Completed via Stripe Checkout (Cartão ou Pix)
+          const bookingId = session.metadata.booking_id;
+          const { data: booking } = await supabase.from('bookings').select('payment_mode, amount_total').eq('id', bookingId).maybeSingle();
+          if (booking) {
+            const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid';
+            const amountTotal = (session.amount_total || 0) / 100;
+            await supabase.from('bookings').update({
+              status: 'confirmed',
+              payment_status: newPaymentStatus,
+              amount_paid: amountTotal,
+            }).eq('id', bookingId);
+
+            if (session.payment_intent) {
+              const piId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent.id;
+              await supabase.from('payments').update({
+                status: 'succeeded',
+                stripe_payment_intent_id: piId,
+              }).eq('booking_id', bookingId);
+            }
+          }
         }
         break;
       }
@@ -211,6 +232,7 @@ serve(async (req) => {
             const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid';
             const amountReceivedBRL = pi.amount_received / 100;
             await supabase.from('bookings').update({
+              status: 'confirmed',
               payment_status: newPaymentStatus,
               amount_paid: amountReceivedBRL,
             }).eq('id', bookingId);

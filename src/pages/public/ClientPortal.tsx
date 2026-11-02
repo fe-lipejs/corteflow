@@ -55,7 +55,49 @@ export default function ClientPortal() {
         setIsLogged(true);
       }
     }
-  }, [tenant]);
+  }, [tenant?.isDemo, tenant?.slug]);
+
+  // Auto-login por order ou telefone nos parâmetros da URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const orderParam = params.get('order');
+    const phoneParam = params.get('phone');
+
+    if (orderParam && tenant?.id && !isLogged) {
+      supabase
+        .from('bookings')
+        .select('customer_id, customers(phone)')
+        .eq('tenant_id', tenant.id)
+        .eq('order_number', orderParam)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.customer_id) {
+            setCustomerId(data.customer_id);
+            setIsLogged(true);
+            const customerPhone = (data.customers as any)?.phone;
+            if (customerPhone) {
+              setPhone(phoneFormat.format(customerPhone));
+            }
+          }
+        });
+    } else if (phoneParam && tenant?.id && !isLogged) {
+      const cleanPhone = phoneParam.replace(/\D/g, '');
+      supabase
+        .from('customers')
+        .select('id, phone')
+        .eq('tenant_id', tenant.id)
+        .eq('phone', cleanPhone)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.id) {
+            setCustomerId(data.id);
+            setIsLogged(true);
+            setPhone(phoneFormat.format(data.phone));
+          }
+        });
+    }
+  }, [tenant?.id, isLogged]);
+
 
   // Tenant Info
 

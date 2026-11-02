@@ -107,7 +107,12 @@ serve(async (req) => {
     // Ensure tenant is in correct state (trial or active) based on Stripe subscription
     const isTrialing = stripeSub && typeof stripeSub !== 'string' && stripeSub.status === 'trialing' && !!stripeSub.trial_end;
     const correctTenantStatus = isTrialing ? 'trial' : 'active';
-    await supabaseAdmin.from('tenants').update({ status: correctTenantStatus }).eq('id', tenantId);
+    const correctAccountState = isTrialing ? 'trialing_with_card' : 'active';
+    await supabaseAdmin.from('tenants').update({
+      status: correctTenantStatus,
+      account_state: correctAccountState,
+      past_due_since: null,
+    }).eq('id', tenantId);
 
     return new Response(JSON.stringify({ 
       success: true, 

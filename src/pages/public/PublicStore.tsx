@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useTenantSlug } from "../../hooks/useTenantSlug";
-import { getTenantPortalUrl, getTenantPublicUrl } from "../../lib/tenantUrl";
+import { getTenantPortalUrl, getTenantPublicUrl, getTenantSuccessUrl } from "../../lib/tenantUrl";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Calendar,
@@ -1172,14 +1172,25 @@ export default function PublicStore() {
       if (!newBooking) throw new Error("Erro desconhecido ao criar agendamento.");
 
       if (paymentScope !== "local" && paymentMethod !== "cash") {
+        const returnSuccessUrl = getTenantSuccessUrl(slug ?? "", tenant?.isDemo, true);
         const { data: checkoutData, error: cErr2 } = await supabase.functions.invoke(
           "create-booking-checkout",
           {
-            body: { bookingId: newBooking.id, returnUrl: getTenantPortalUrl(slug ?? "") },
+            body: { bookingId: newBooking.id, returnUrl: returnSuccessUrl },
           }
         );
         if (cErr2) {
-          throw new Error(cErr2.message || "Não foi possível iniciar o pagamento online. Por favor, tente novamente ou escolha 'Pagar no local'.");
+          let errDetail = cErr2.message;
+          try {
+            if ((cErr2 as any).context && typeof (cErr2 as any).context.json === "function") {
+              const body = await (cErr2 as any).context.json();
+              if (body?.error) errDetail = body.error;
+            }
+          } catch (_) {}
+          throw new Error(errDetail || "Não foi possível iniciar o pagamento online. Por favor, tente novamente ou escolha 'Pagar no local'.");
+        }
+        if (checkoutData?.error) {
+          throw new Error(checkoutData.error);
         }
         if (checkoutData?.url) {
           window.location.href = checkoutData.url;

@@ -19,28 +19,32 @@ export function getTenantPublicUrl(slug: string, isDemo?: boolean): string {
 }
 
 /** Portal URL used in booking confirmations (POST-payment redirect). */
-export function getTenantPortalUrl(slug: string, isDemo?: boolean): string {
+export function getTenantPortalUrl(slug: string, isDemo?: boolean, absolute = false): string {
   if (!slug) return '/';
-  if (
+  const path = (
     isDemo ||
     (typeof window !== 'undefined' &&
       (window.location.pathname.startsWith('/paginas') || window.location.pathname.startsWith('/testepaginas')))
-  ) {
-    return `/paginas/${slug}/portal`;
+  ) ? `/paginas/${slug}/portal` : `/${slug}/portal`;
+
+  if (absolute && typeof window !== 'undefined') {
+    return `${window.location.origin}${path}`;
   }
-  return `/${slug}/portal`;
+  return path;
 }
 
 /** Success page URL (POST-payment redirect). */
-export function getTenantSuccessUrl(slug: string, isDemo?: boolean): string {
+export function getTenantSuccessUrl(slug: string, isDemo?: boolean, absolute = false): string {
   if (!slug) return '/';
-  if (
+  const path = (
     isDemo ||
     (typeof window !== 'undefined' &&
       (window.location.pathname.startsWith('/paginas') || window.location.pathname.startsWith('/testepaginas')))
-  ) {
-    return `/paginas/${slug}/sucesso`;
+  ) ? `/paginas/${slug}/sucesso` : `/${slug}/sucesso`;
+
+  if (absolute && typeof window !== 'undefined') {
+    return `${window.location.origin}${path}`;
   }
-  return `/${slug}/sucesso`;
+  return path;
 }
 

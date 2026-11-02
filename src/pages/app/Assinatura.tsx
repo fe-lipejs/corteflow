@@ -365,6 +365,14 @@ export default function Assinatura() {
             queryKey: ['plan_features'],
           });
 
+          queryClient.invalidateQueries({
+            queryKey: ['tenant-account-state'],
+          });
+
+          queryClient.invalidateQueries({
+            queryKey: ['tenants'],
+          });
+
           await fetchData();
         }
       } catch (e) {
