@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import {
   Search, ExternalLink, MoreVertical, CheckCircle,
   ShieldAlert, Ban, PlayCircle, Building2, ChevronLeft, ChevronRight,
-  ArrowUpDown, Trash2, RotateCcw, Sliders, Loader2, Sparkles, X, Save
+  ArrowUpDown, Trash2, RotateCcw, Sliders, Loader2, Sparkles, X, Save, DollarSign
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminPageHeader from './components/AdminPageHeader';
@@ -65,6 +65,7 @@ export default function AdminTenants() {
   const [contractAllowProdutos, setContractAllowProdutos] = useState<boolean>(false);
   const [contractAllowRelatorios, setContractAllowRelatorios] = useState<boolean>(false);
   const [contractAllowAllPermissions, setContractAllowAllPermissions] = useState<boolean>(false);
+  const [contractCustomPrice, setContractCustomPrice] = useState<string>('');
   const [isSavingContract, setIsSavingContract] = useState<boolean>(false);
   const [isLoadingContract, setIsLoadingContract] = useState<boolean>(false);
 
@@ -114,6 +115,19 @@ export default function AdminTenants() {
         setContractAllowRelatorios(plan?.features?.relatorios ?? false);
         setContractAllowAllPermissions((plan?.permissions || []).includes('*'));
       }
+
+      // Buscar preço promocional personalizado na tabela custom_pricing
+      const { data: cpData } = await supabase
+        .from('custom_pricing')
+        .select('amount_override')
+        .eq('tenant_id', tenant.id)
+        .maybeSingle();
+
+      if (cpData && cpData.amount_override != null) {
+        setContractCustomPrice(String(cpData.amount_override));
+      } else {
+        setContractCustomPrice('');
+      }
     } catch (err: any) {
       console.error('Erro ao carregar contrato:', err);
       toast.error('Erro ao carregar permissões do salão: ' + (err.message || ''));
@@ -124,7 +138,7 @@ export default function AdminTenants() {
   }
 
   async function handleSaveContract() {
-    if (!contractSubId || !contractPlanId) return;
+    if (!contractSubId || !contractPlanId || !contractModalTenant) return;
     try {
       setIsSavingContract(true);
       const { error } = await supabase
@@ -163,12 +177,38 @@ export default function AdminTenants() {
 
       if (error) throw error;
 
-      toast.success('Permissões e limites personalizados salvos para ' + contractModalTenant?.name + '!');
+      // Salvar ou remover preço promocional personalizado na tabela custom_pricing
+      if (contractCustomPrice && Number(contractCustomPrice) > 0) {
+        const { data: existingCp } = await supabase
+          .from('custom_pricing')
+          .select('id')
+          .eq('tenant_id', contractModalTenant.id)
+          .maybeSingle();
+
+        if (existingCp) {
+          await supabase.from('custom_pricing').update({
+            amount_override: Number(contractCustomPrice),
+            plan_id: contractPlanId,
+            note: 'Preço promocional personalizado',
+          }).eq('id', existingCp.id);
+        } else {
+          await supabase.from('custom_pricing').insert({
+            tenant_id: contractModalTenant.id,
+            plan_id: contractPlanId,
+            amount_override: Number(contractCustomPrice),
+            note: 'Preço promocional personalizado',
+          });
+        }
+      } else if (contractCustomPrice === '') {
+        await supabase.from('custom_pricing').delete().eq('tenant_id', contractModalTenant.id);
+      }
+
+      toast.success('Permissões, limites e preço promocional salvos para ' + contractModalTenant?.name + '!');
       setContractModalTenant(null);
       queryClient.invalidateQueries({ queryKey: ['admin_tenants_v2'] });
     } catch (err: any) {
       console.error('Erro ao salvar contrato:', err);
-      toast.error('Erro ao salvar limites: ' + (err.message || ''));
+      toast.error('Erro ao salvar alterações: ' + (err.message || ''));
     } finally {
       setIsSavingContract(false);
     }
@@ -342,14 +382,14 @@ export default function AdminTenants() {
       {/* ── Table ── */}
       <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl overflow-visible shadow-xl">
         {/* Table header */}
-        <div className="border-b border-white/5 bg-white/[0.02] px-5 py-3 grid grid-cols-12 gap-4 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-          <div className="col-span-4">
+        <div className="border-b border-white/5 bg-white/[0.02] px-5 py-3 grid grid-cols-12 gap-3 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+          <div className="col-span-6 md:col-span-4 lg:col-span-3">
             <button onClick={() => toggleSort('name')} className="flex items-center gap-1 hover:text-zinc-300 transition-colors cursor-pointer">
               Empresa <ArrowUpDown className="w-3 h-3" />
             </button>
           </div>
-          <div className="col-span-2 hidden lg:block">Tipo</div>
-          <div className="col-span-2 hidden md:block">
+          <div className="col-span-1 hidden lg:block">Tipo</div>
+          <div className="col-span-3 lg:col-span-2 hidden md:block">
             <button onClick={() => toggleSort('status')} className="flex items-center gap-1 hover:text-zinc-300 transition-colors cursor-pointer">
               Status <ArrowUpDown className="w-3 h-3" />
             </button>
@@ -360,7 +400,7 @@ export default function AdminTenants() {
               Cadastro <ArrowUpDown className="w-3 h-3" />
             </button>
           </div>
-          <div className="col-span-2 md:col-span-2 text-right">Ações</div>
+          <div className="col-span-6 md:col-span-5 lg:col-span-2 text-right">Ações</div>
         </div>
 
         {/* Rows */}
@@ -384,10 +424,10 @@ export default function AdminTenants() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.03 }}
-                  className={`group grid grid-cols-12 gap-4 items-center px-5 py-3.5 hover:bg-white/[0.03] transition-colors relative ${openMenuId === tenant.id ? 'z-40' : 'z-0'} ${tenant.deleted_at ? 'opacity-50 grayscale hover:grayscale-0' : ''}`}
+                  className={`group grid grid-cols-12 gap-3 items-center px-5 py-3.5 hover:bg-white/[0.03] transition-colors relative ${openMenuId === tenant.id ? 'z-40' : 'z-0'} ${tenant.deleted_at ? 'opacity-50 grayscale hover:grayscale-0' : ''}`}
                 >
                   {/* Name + slug */}
-                  <div className="col-span-4 flex items-center gap-3 min-w-0">
+                  <div className="col-span-6 md:col-span-4 lg:col-span-3 flex items-center gap-3 min-w-0">
                     <div className="w-9 h-9 bg-emerald-500/15 border border-emerald-500/30 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden shadow-xs">
                       {settings?.logo_url ? (
                         <img src={settings.logo_url} alt={tenant.name} className="w-full h-full object-cover" />
@@ -402,12 +442,12 @@ export default function AdminTenants() {
                   </div>
 
                   {/* Type */}
-                  <div className="col-span-2 hidden lg:block text-xs text-zinc-400">
+                  <div className="col-span-1 hidden lg:block text-xs text-zinc-400 truncate">
                     {businessTypeLabel[tenant.business_type] ?? tenant.business_type}
                   </div>
 
                   {/* Status */}
-                  <div className="col-span-2 hidden md:block">
+                  <div className="col-span-3 lg:col-span-2 hidden md:block">
                     {(() => {
                       if (tenant.deleted_at) {
                         return <AdminBadge value="deleted" dot />;
@@ -459,7 +499,7 @@ export default function AdminTenants() {
                   </div>
 
                   {/* Plan */}
-                  <div className="col-span-2 hidden lg:block text-xs text-zinc-400">
+                  <div className="col-span-2 hidden lg:block text-xs text-zinc-400 truncate">
                     {activeSub?.plans?.name ?? '—'}
                   </div>
 
@@ -469,7 +509,15 @@ export default function AdminTenants() {
                   </div>
 
                   {/* Actions */}
-                  <div className="col-span-2 md:col-span-2 flex items-center justify-end gap-1.5">
+                  <div className="col-span-6 md:col-span-5 lg:col-span-2 flex items-center justify-end gap-1.5">
+                    <button
+                      onClick={() => handleOpenContractModal(tenant)}
+                      className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-lg transition-all cursor-pointer shadow-xs"
+                      title="Editar Limites, Telas e Preço Promocional"
+                    >
+                      <Sliders className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Limites</span>
+                    </button>
                     {!tenant.deleted_at && (
                       <button
                         onClick={() => window.open(getTenantPublicUrl(tenant.slug), '_blank')}
@@ -872,6 +920,39 @@ export default function AdminTenants() {
                         className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 cursor-pointer accent-emerald-500"
                       />
                     </label>
+                  </div>
+                </div>
+
+                {/* Preço Promocional / Desconto */}
+                <div className="border-t border-white/5 pt-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2 flex items-center gap-1.5">
+                    <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                    Preço Promocional da Mensalidade (R$)
+                  </h4>
+                  <p className="text-[11px] text-zinc-400 mb-2.5">
+                    Defina um valor personalizado de mensalidade para este salão (ex: 17.90). O sistema aplicará esse desconto no checkout e na renovação mensal.
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-2.5 text-xs text-zinc-500 font-bold">R$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="Ex: 17.90 (vazio = preço padrão)"
+                        value={contractCustomPrice}
+                        onChange={e => setContractCustomPrice(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-white outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    {contractCustomPrice && Number(contractCustomPrice) > 0 ? (
+                      <span className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
+                        Promoção R$ {Number(contractCustomPrice).toFixed(2).replace('.', ',')}/mês
+                      </span>
+                    ) : (
+                      <span className="text-xs text-zinc-500 whitespace-nowrap">
+                        Preço padrão do plano
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
