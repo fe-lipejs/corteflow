@@ -438,13 +438,15 @@ export default function Configuracoes() {
         .select('*')
         .eq('tenant_id', tenant.id)
         .maybeSingle();
-      if (connectData) {
+      if (connectData && connectData.charges_enabled === true) {
         setStripeConnectInfo({
           has_account: true,
-          charges_enabled: connectData.charges_enabled,
+          charges_enabled: true,
           payouts_enabled: connectData.payouts_enabled,
           stripe_account_id: connectData.stripe_account_id,
         });
+      } else {
+        setStripeConnectInfo(null);
       }
     } catch (err) {
       console.error('Error fetching settings:', err);
@@ -1174,15 +1176,15 @@ export default function Configuracoes() {
         return;
       }
 
-      if (data) {
+      if (data && data.charges_enabled === true) {
         setStripeConnectInfo(data);
-        if (data.charges_enabled) {
-          setAllowDeposit(true);
-          setAllowFull(true);
-          if (data.just_activated && showModalIfActivated) {
-            setShowStripeActivatedModal(true);
-          }
+        setAllowDeposit(true);
+        setAllowFull(true);
+        if (data.just_activated && showModalIfActivated) {
+          setShowStripeActivatedModal(true);
         }
+      } else {
+        setStripeConnectInfo(null);
       }
     } catch (err) {
       console.warn('Sync connect error:', err);
@@ -2164,67 +2166,57 @@ export default function Configuracoes() {
           {activeTab === 'stripe' && (
             <div className="space-y-6">
               {/* 1. Card Principal: Stripe Connect com Selo Verde de Segurança */}
+              {/* 1. Card Principal: Stripe Connect (Padrão Stripe Oficial) */}
               {(() => {
-                const hasStripeAccount = Boolean(stripeConnectInfo?.stripe_account_id);
-                const isFullyActive = stripeConnectInfo?.charges_enabled === true;
+                const isConnected = stripeConnectInfo?.charges_enabled === true;
 
                 return (
                   <div
-                    className="rounded-2xl p-5 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all"
+                    className="rounded-2xl p-5 sm:p-6 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 transition-all"
                     style={{
-                      background: hasStripeAccount ? `${theme.accent}08` : theme.inputBg,
-                      borderColor: hasStripeAccount ? `${theme.accent}30` : theme.inputBorder,
+                      background: isConnected ? `${theme.accent}08` : theme.inputBg,
+                      borderColor: isConnected ? `${theme.accent}30` : theme.inputBorder,
                     }}
                   >
-                    <div className="flex items-start gap-3.5">
+                    <div className="flex items-start gap-4">
                       {/* Logo Oficial do Stripe */}
                       <div
-                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                        className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
                         style={{
-                          background: '#635BFF18',
+                          background: '#635BFF16',
                           color: '#635BFF',
                         }}
                       >
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z" />
                         </svg>
                       </div>
 
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-bold" style={{ color: theme.textPrimary }}>
-                            Conta Stripe Connect
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <h4 className="text-base font-bold" style={{ color: theme.textPrimary }}>
+                            Recebimentos Online
                           </h4>
-                          {/* Selo Verde de Segurança e Confiabilidade */}
-                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                            <ShieldCheck className="w-3 h-3 text-emerald-500" /> 100% Seguro & Confiável
-                          </span>
-                          {isFullyActive ? (
-                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-                              ✓ Conectada & Pronta para Receber
-                            </span>
-                          ) : hasStripeAccount ? (
-                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-500 border border-amber-500/30 flex items-center gap-1">
-                              ⚠️ Cadastro Incompleto (Sem Dados de Repasse)
+                          {isConnected ? (
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Conectado
                             </span>
                           ) : (
-                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-zinc-500/15 text-zinc-400 border border-zinc-500/30">
-                              Não Conectada
+                            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-zinc-500/10 text-zinc-500 border border-zinc-500/20">
+                              Não Conectado
                             </span>
                           )}
                         </div>
-                        <p className="text-xs mt-1 leading-relaxed font-medium" style={{ color: theme.textSecondary }}>
-                          {isFullyActive
-                            ? `Recebimentos online ativos com proteção antifraude e repasse direto na sua conta bancária via Stripe (${stripeConnectInfo?.stripe_account_id || ''}).`
-                            : hasStripeAccount
-                            ? `A conta foi criada (${stripeConnectInfo?.stripe_account_id || ''}), mas os dados de repasse bancário ainda não foram finalizados. Clique em "Completar Cadastro" para começar a receber.`
-                            : 'Conecte sua conta para receber pagamentos online (Pix e cartão) direto dos clientes com total segurança.'}
+                        <p className="text-xs leading-relaxed max-w-xl font-medium" style={{ color: theme.textSecondary }}>
+                          {isConnected
+                            ? 'Sua conta bancária está vinculada e pronta para receber repasses automáticos via Cartão e Pix.'
+                            : 'Receba pagamentos online direto na sua conta bancária com total segurança via Stripe Connect.'}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 flex-wrap">
-                      {hasStripeAccount ? (
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 flex-wrap">
+                      {isConnected ? (
                         <>
                           <button
                             type="button"
@@ -2232,7 +2224,7 @@ export default function Configuracoes() {
                             disabled={syncingConnect}
                             className="p-2.5 rounded-xl border hover:opacity-80 transition-opacity cursor-pointer"
                             style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textSecondary }}
-                            title="Verificar status atualizado"
+                            title="Atualizar status"
                           >
                             <RefreshCw className={`w-4 h-4 ${syncingConnect ? 'animate-spin' : ''}`} />
                           </button>
@@ -2240,26 +2232,25 @@ export default function Configuracoes() {
                             type="button"
                             onClick={handleConnectStripe}
                             disabled={isConnectingStripe}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer hover:opacity-90 flex items-center gap-1.5 ${
-                              !isFullyActive ? 'bg-amber-500 text-white border-amber-600' : ''
-                            }`}
-                            style={isFullyActive ? { borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary } : undefined}
+                            className="px-4 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer hover:opacity-90 flex items-center gap-1.5"
+                            style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }}
                           >
                             {isConnectingStripe ? (
                               <>
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                 <span>Abrindo...</span>
                               </>
-                            ) : !isFullyActive ? (
-                              <span>Completar Cadastro</span>
                             ) : (
-                              <span>Painel Stripe</span>
+                              <>
+                                <span>Painel Stripe</span>
+                                <ExternalLink className="w-3 h-3 opacity-60" />
+                              </>
                             )}
                           </button>
                           <button
                             type="button"
                             onClick={() => setDisconnectStripeModalOpen(true)}
-                            className="px-3 py-2 rounded-xl text-xs font-bold text-red-500 hover:bg-red-500/10 border border-red-500/20 transition-all cursor-pointer"
+                            className="px-3 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
                             title="Desconectar conta Stripe"
                           >
                             Desconectar
@@ -2270,18 +2261,18 @@ export default function Configuracoes() {
                           type="button"
                           onClick={handleConnectStripe}
                           disabled={isConnectingStripe}
-                          className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 text-white shadow-md hover:opacity-95 transition-all cursor-pointer disabled:opacity-80"
+                          className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 text-white shadow-sm hover:opacity-95 transition-all cursor-pointer disabled:opacity-80"
                           style={{ background: '#635BFF' }}
                         >
                           {isConnectingStripe ? (
                             <>
                               <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>Conectando ao Stripe...</span>
+                              <span>Abrindo Stripe...</span>
                             </>
                           ) : (
                             <>
-                              <CreditCard className="w-4 h-4" />
                               <span>Conectar com Stripe</span>
+                              <ExternalLink className="w-3.5 h-3.5 opacity-80" />
                             </>
                           )}
                         </button>
