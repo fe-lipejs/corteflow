@@ -30,15 +30,18 @@ function getStripePromise(publishableKey: string): Promise<Stripe | null> {
 const money = (val: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
 
-const PixDiamondIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+const PixOfficialIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <svg
-    viewBox="0 0 24 24"
+    viewBox="0 0 512 512"
     fill="currentColor"
     className={className}
     style={style}
     xmlns="http://www.w3.org/2000/svg"
   >
-    <path d="M16.59 8.59L12 4 7.41 8.59 4 12l3.41 3.41L12 20l4.59-4.59L20 12l-3.41-3.41zM12 6.83l2.59 2.58c-.39.39-1.02.39-1.41 0L12 8.24l-1.18 1.17c-.39.39-1.02.39-1.41 0L12 6.83zm-5.17 5.17l2.58-2.59c.39.39.39 1.02 0 1.41L8.24 12l1.17 1.18c.39.39.39 1.02 0 1.41L6.83 12zm5.17 5.17l-2.59-2.58c.39-.39 1.02-.39 1.41 0L12 15.76l1.18-1.17c.39-.39 1.02-.39 1.41 0L12 17.17zm5.17-5.17l-2.58 2.59c-.39-.39-.39-1.02 0-1.41L15.76 12l-1.17-1.18c-.39-.39-.39-1.02 0-1.41L17.17 12z" />
+    <g fillRule="evenodd">
+      <path d="M112.57 391.19c20.056 0 38.928-7.808 53.12-22l76.693-76.692c5.385-5.404 14.765-5.384 20.15 0l76.989 76.989c14.191 14.172 33.045 21.98 53.12 21.98h15.098l-97.138 97.139c-30.326 30.344-79.505 30.344-109.85 0l-97.415-97.416h9.232zm280.068-271.294c-20.056 0-38.929 7.809-53.12 22l-76.97 76.99c-5.551 5.53-14.6 5.568-20.15-.02l-76.711-76.693c-14.192-14.191-33.046-21.999-53.12-21.999h-9.234l97.416-97.416c30.344-30.344 79.523-30.344 109.867 0l97.138 97.138h-15.116z" />
+      <path d="M22.758 200.753l58.024-58.024h31.787c13.84 0 27.384 5.605 37.172 15.394l76.694 76.693c7.178 7.179 16.596 10.768 26.033 10.768 9.417 0 18.854-3.59 26.014-10.75l76.989-76.99c9.787-9.787 23.331-15.393 37.171-15.393h37.654l58.3 58.302c30.343 30.344 30.343 79.523 0 109.867l-58.3 58.303H392.64c-13.84 0-27.384-5.605-37.171-15.394l-76.97-76.99c-13.914-13.894-38.172-13.894-52.066.02l-76.694 76.674c-9.788 9.788-23.332 15.413-37.172 15.413H80.782L22.758 310.62c-30.344-30.345-30.344-79.524 0-109.868" />
+    </g>
   </svg>
 );
 
@@ -260,7 +263,7 @@ export const StripeLivePaymentSection = forwardRef<
           if (cancelled) return;
           setMountError(
             event.error?.message ||
-              "Não foi possível carregar o formulário de cartão deste estabelecimento."
+            "Não foi possível carregar o formulário de cartão deste estabelecimento."
           );
         });
 
@@ -281,7 +284,7 @@ export const StripeLivePaymentSection = forwardRef<
       cancelled = true;
       try {
         paymentElementRef.current?.destroy();
-      } catch (_) {}
+      } catch (_) { }
       paymentElementRef.current = null;
       elementsRef.current = null;
     };
@@ -302,7 +305,7 @@ export const StripeLivePaymentSection = forwardRef<
     if (elementsRef.current && amountCents >= 50) {
       try {
         elementsRef.current.update({ amount: amountCents });
-      } catch (_) {}
+      } catch (_) { }
     }
   }, [amountCents]);
 
@@ -334,7 +337,7 @@ export const StripeLivePaymentSection = forwardRef<
             orderNumber: data.order_number || orderNumber,
           });
         }
-      } catch (_) {}
+      } catch (_) { }
     };
 
     const intervalId = window.setInterval(checkStatus, 2500);
@@ -390,7 +393,7 @@ export const StripeLivePaymentSection = forwardRef<
       .invoke("create-payment-intent", {
         body: { action: "abort_booking", bookingId, paymentIntentId },
       })
-      .catch(() => {});
+      .catch(() => { });
 
     reject(
       new Error(
@@ -478,11 +481,11 @@ export const StripeLivePaymentSection = forwardRef<
             .invoke("create-payment-intent", {
               body: { action: "abort_booking", bookingId, paymentIntentId },
             })
-            .catch(() => {});
+            .catch(() => { });
 
           throw new Error(
             pixErr?.message ||
-              "O pagamento via PIX não foi concluído. Tente novamente para confirmar seu horário."
+            "O pagamento via PIX não foi concluído. Tente novamente para confirmar seu horário."
           );
         }
 
@@ -555,11 +558,11 @@ export const StripeLivePaymentSection = forwardRef<
           .invoke("create-payment-intent", {
             body: { action: "abort_booking", bookingId, paymentIntentId },
           })
-          .catch(() => {});
+          .catch(() => { });
 
         throw new Error(
           confirmError.message ||
-            "Pagamento recusado pelo emissor do cartão. Verifique os dados ou pague via PIX."
+          "Pagamento recusado pelo emissor do cartão. Verifique os dados ou pague via PIX."
         );
       }
 
@@ -571,7 +574,7 @@ export const StripeLivePaymentSection = forwardRef<
           .invoke("create-payment-intent", {
             body: { action: "abort_booking", bookingId, paymentIntentId },
           })
-          .catch(() => {});
+          .catch(() => { });
 
         throw new Error(
           "O pagamento com cartão não foi concluído. Tente novamente ou escolha PIX."
@@ -614,11 +617,11 @@ export const StripeLivePaymentSection = forwardRef<
             color: selectedTab === "pix" ? accent : textPrimary,
           }}
         >
-          <PixDiamondIcon
-            className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 transition-transform"
+          <PixOfficialIcon
+            className="w-5 h-5 shrink-0 transition-transform"
             style={{ color: selectedTab === "pix" ? accent : "#00BDAE" }}
           />
-          <span>PIX Instantâneo</span>
+          <span>PIX</span>
           {selectedTab === "pix" && (
             <CheckCircle2
               className="w-3.5 h-3.5 absolute top-2 right-2"
@@ -702,7 +705,7 @@ export const StripeLivePaymentSection = forwardRef<
         <span>Pagamento seguro via Stripe</span>
       </div>
 
-      {/* ── MODAL PIX PERSONALIZADO COM PERFIL DO SALÃO, SERVIÇO E VALOR EXATO ── */}
+      {/* ── MODAL PIX ULTRA-MINIMALISTA (SEM SCROLL) ── */}
       {activePixModal && (
         <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4">
           {/* Backdrop */}
@@ -713,47 +716,43 @@ export const StripeLivePaymentSection = forwardRef<
 
           {/* Card do Modal */}
           <div
-            className="relative w-full max-w-md rounded-t-[28px] sm:rounded-3xl overflow-hidden shadow-2xl border flex flex-col max-h-[92vh]"
+            className="relative w-full max-w-md rounded-t-[28px] sm:rounded-3xl overflow-hidden shadow-2xl border flex flex-col"
             style={{
               background: cardBackground,
               borderColor: cardBorderColor,
               color: textPrimary,
             }}
           >
-            {/* Cabeçalho com Perfil do Salão (Logo + Nome + Selo PIX Seguro) */}
+            {/* Cabeçalho Limpo: Logo + Nome do Salão + Pedido */}
             <div
-              className="px-5 py-4 border-b flex items-center justify-between gap-3"
+              className="px-5 py-3.5 border-b flex items-center justify-between gap-3"
               style={{
                 borderColor: cardBorderColor,
-                background: isDark ? `${accent}12` : `${accent}0a`,
+                background: isDark ? "rgba(255,255,255,0.02)" : "#FAFAFA",
               }}
             >
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0">
                 {storeLogoUrl ? (
                   <img
                     src={storeLogoUrl}
                     alt={storeName || "Salão"}
-                    className="w-11 h-11 rounded-2xl object-cover border shrink-0 shadow-sm"
-                    style={{ borderColor: `${accent}40` }}
+                    className="w-9 h-9 rounded-xl object-cover border shrink-0"
+                    style={{ borderColor: cardBorderColor }}
                   />
                 ) : (
                   <div
-                    className="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-base shrink-0"
+                    className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0"
                     style={{ background: accent, color: btnPrimaryText }}
                   >
                     {(storeName || "S").charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="text-sm font-extrabold truncate" style={{ color: textPrimary }}>
-                    {storeName || "Pagamento do Agendamento"}
+                  <p className="text-sm font-bold truncate leading-tight" style={{ color: textPrimary }}>
+                    {storeName || "Pagamento via PIX"}
                   </p>
-                  <p
-                    className="text-[11px] font-semibold flex items-center gap-1"
-                    style={{ color: accent }}
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                    <span>PIX Oficial • Pedido #{activePixModal.orderNumber}</span>
+                  <p className="text-[11px] font-medium opacity-65 flex items-center gap-1" style={{ color: textSecondary }}>
+                    <span>Pedido #{activePixModal.orderNumber}</span>
                   </p>
                 </div>
               </div>
@@ -762,178 +761,115 @@ export const StripeLivePaymentSection = forwardRef<
                 type="button"
                 onClick={handleCancelPixModal}
                 aria-label="Fechar"
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-80 cursor-pointer shrink-0"
+                className="w-7 h-7 rounded-full flex items-center justify-center transition-opacity hover:opacity-80 cursor-pointer shrink-0"
                 style={{
                   background: isDark ? "rgba(255,255,255,0.08)" : "#F1F5F9",
                   color: textPrimary,
                 }}
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {/* Conteúdo Rolável */}
-            <div className="p-5 overflow-y-auto space-y-4">
-              {/* Resumo do Serviço Escolhido + Valor em Destaque */}
+            {/* Conteúdo sem scroll */}
+            <div className="p-5 space-y-4">
+              {/* Resumo do Serviço Escolhido + Valor */}
               <div
-                className="rounded-2xl border p-3.5 space-y-2.5"
-                style={{
-                  borderColor: cardBorderColor,
-                  background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
-                }}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <span
-                      className="text-[10px] font-bold uppercase tracking-wider block"
-                      style={{ color: textSecondary }}
-                    >
-                      Serviço escolhido
-                    </span>
-                    <p className="text-sm font-extrabold leading-snug" style={{ color: textPrimary }}>
-                      {serviceName || "Serviço agendado"}
-                    </p>
-                    <div
-                      className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] font-medium"
-                      style={{ color: textSecondary }}
-                    >
-                      {proName && (
-                        <span className="flex items-center gap-1">
-                          <User className="w-3 h-3" style={{ color: accent }} />
-                          {proName}
-                        </span>
-                      )}
-                      {dateLabel && (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" style={{ color: accent }} />
-                          {dateLabel} {timeLabel ? `às ${timeLabel}` : ""}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Valor do PIX em destaque */}
-                  <div
-                    className="text-right px-3 py-1.5 rounded-xl shrink-0"
-                    style={{ background: `${accent}18`, border: `1px solid ${accent}40` }}
-                  >
-                    <span
-                      className="text-[9px] font-bold uppercase tracking-wider block"
-                      style={{ color: accent }}
-                    >
-                      {paymentScopeLabel || "Pagar Agora"}
-                    </span>
-                    <span className="text-base sm:text-lg font-black" style={{ color: accent }}>
-                      {money(amountBRL)}
-                    </span>
-                  </div>
-                </div>
-
-                {typeof amountDueBRL === "number" && amountDueBRL > 0 && (
-                  <div
-                    className="flex items-center justify-between pt-2 border-t text-[11px]"
-                    style={{ borderColor: cardBorderColor, color: textSecondary }}
-                  >
-                    <span>Valor total: {money(totalBRL || amountBRL + amountDueBRL)}</span>
-                    <span>
-                      Restante no salão: <strong style={{ color: textPrimary }}>{money(amountDueBRL)}</strong>
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* QR Code PIX Oficial do Stripe Live */}
-              <div className="flex flex-col items-center text-center">
-                {activePixModal.qrData.image_url_png ? (
-                  <div className="bg-white p-3.5 rounded-2xl shadow-md border border-slate-200 inline-flex flex-col items-center">
-                    <img
-                      src={activePixModal.qrData.image_url_png}
-                      alt="QR Code PIX"
-                      className="w-44 h-44 sm:w-48 sm:h-48 object-contain"
-                    />
-                    <div className="flex items-center gap-1.5 mt-2 text-[11px] font-bold text-slate-600">
-                      <PixDiamondIcon className="w-3.5 h-3.5 text-[#00BDAE]" />
-                      <span>Escaneie com o app do seu banco</span>
-                    </div>
-                  </div>
-                ) : null}
-
-                <p className="text-xs font-medium mt-3" style={{ color: textSecondary }}>
-                  Ou copie o código <strong>PIX Copia e Cola</strong> abaixo e cole no seu banco:
-                </p>
-              </div>
-
-              {/* Campo + Botão de Copiar PIX Copia e Cola */}
-              <div className="space-y-2.5">
-                <div
-                  className="rounded-xl border px-3 py-2.5 text-[11px] font-mono break-all select-all max-h-16 overflow-y-auto"
-                  style={{
-                    borderColor: cardBorderColor,
-                    background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
-                    color: textSecondary,
-                  }}
-                >
-                  {activePixModal.qrData.data}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleCopyPixCode(activePixModal.qrData.data)}
-                  className="w-full py-3.5 px-4 rounded-2xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg"
-                  style={{
-                    background: copiedPix ? "#16A34A" : accent,
-                    color: copiedPix ? "#FFFFFF" : btnPrimaryText,
-                  }}
-                >
-                  {copiedPix ? (
-                    <>
-                      <Check className="w-4 h-4 stroke-[2.5]" />
-                      <span>Código PIX Copiado! Agora cole no app do banco</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      <span>Copiar Código PIX • {money(amountBRL)}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Status em tempo real de confirmação automática */}
-              <div
-                className="rounded-2xl border p-3 flex flex-col gap-2"
+                className="rounded-xl border p-3 flex items-center justify-between gap-3"
                 style={{
                   borderColor: cardBorderColor,
                   background: isDark ? "rgba(255,255,255,0.02)" : "#F8FAFC",
                 }}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: textPrimary }}>
-                    <Loader2 className="w-4 h-4 animate-spin shrink-0" style={{ color: accent }} />
-                    <span>Aguardando confirmação automática do pagamento…</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleManualPixCheck}
-                    disabled={checkingPixNow}
-                    className="text-[11px] font-bold px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer shrink-0 flex items-center gap-1 disabled:opacity-50"
-                    style={{
-                      borderColor: `${accent}50`,
-                      color: accent,
-                      background: `${accent}10`,
-                    }}
-                  >
-                    <RefreshCw className={`w-3 h-3 ${checkingPixNow ? "animate-spin" : ""}`} />
-                    <span>Já paguei</span>
-                  </button>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold truncate leading-tight" style={{ color: textPrimary }}>
+                    {serviceName || "Serviço agendado"}
+                  </p>
+                  <p className="text-[11px] font-medium truncate mt-0.5" style={{ color: textSecondary }}>
+                    {[proName, dateLabel && timeLabel ? `${dateLabel} às ${timeLabel}` : dateLabel].filter(Boolean).join(" • ")}
+                  </p>
+                  {typeof amountDueBRL === "number" && amountDueBRL > 0 && (
+                    <p className="text-[10px] mt-0.5" style={{ color: textSecondary }}>
+                      Restante no salão: <strong style={{ color: textPrimary }}>{money(amountDueBRL)}</strong>
+                    </p>
+                  )}
                 </div>
 
-                {pixCheckFeedback && (
-                  <p className="text-[11px] leading-relaxed" style={{ color: textSecondary }}>
-                    {pixCheckFeedback}
-                  </p>
+                <div
+                  className="text-right px-2.5 py-1 rounded-lg shrink-0"
+                  style={{ background: `${accent}15`, border: `1px solid ${accent}30` }}
+                >
+                  <span className="text-[9px] font-bold uppercase tracking-wider block" style={{ color: accent }}>
+                    {paymentScopeLabel || "Pagar Agora"}
+                  </span>
+                  <span className="text-base font-black leading-tight" style={{ color: accent }}>
+                    {money(amountBRL)}
+                  </span>
+                </div>
+              </div>
+
+              {/* QR Code Compacto e Nítido */}
+              <div className="flex flex-col items-center text-center">
+                {activePixModal.qrData.image_url_png && (
+                  <div className="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 inline-flex flex-col items-center">
+                    <img
+                      src={activePixModal.qrData.image_url_png}
+                      alt="QR Code PIX"
+                      className="w-36 h-36 object-contain"
+                    />
+                    <div className="flex items-center gap-1.5 mt-1.5 text-[10px] font-bold text-slate-600">
+                      <PixOfficialIcon className="w-3.5 h-3.5 text-[#00BDAE]" />
+                      <span>Aponte a câmera do seu banco</span>
+                    </div>
+                  </div>
                 )}
               </div>
+
+              {/* Botão de Destaque: Copiar Código PIX */}
+              <button
+                type="button"
+                onClick={() => handleCopyPixCode(activePixModal.qrData.data)}
+                className="w-full h-12 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                style={{
+                  background: copiedPix ? "#16A34A" : accent,
+                  color: copiedPix ? "#FFFFFF" : btnPrimaryText,
+                }}
+              >
+                {copiedPix ? (
+                  <>
+                    <Check className="w-4 h-4 stroke-[2.5]" />
+                    <span>Código PIX Copiado! Cole no seu banco</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    <span>Copiar Código PIX • {money(amountBRL)}</span>
+                  </>
+                )}
+              </button>
+
+              {/* Confirmação Automática Sutil com botão Já Paguei */}
+              <div className="flex items-center justify-between gap-2 pt-1 text-[11px]" style={{ color: textSecondary }}>
+                <span className="flex items-center gap-1.5 min-w-0 truncate">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" style={{ color: accent }} />
+                  <span>Aguardando confirmação do banco…</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleManualPixCheck}
+                  disabled={checkingPixNow}
+                  className="font-bold underline cursor-pointer shrink-0 hover:opacity-80 disabled:opacity-50"
+                  style={{ color: accent }}
+                >
+                  {checkingPixNow ? "Verificando..." : "Já realizei o pagamento"}
+                </button>
+              </div>
+
+              {pixCheckFeedback && (
+                <p className="text-[11px] text-center leading-relaxed" style={{ color: textSecondary }}>
+                  {pixCheckFeedback}
+                </p>
+              )}
             </div>
           </div>
         </div>
