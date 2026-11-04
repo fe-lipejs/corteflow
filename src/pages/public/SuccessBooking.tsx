@@ -17,6 +17,7 @@ export default function SuccessBooking() {
   
   const orderNumber = searchParams.get('order') || searchParams.get('order_number');
   const sessionId = searchParams.get('session_id');
+  const paymentIntentId = searchParams.get('payment_intent');
 
   const [booking, setBooking] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
@@ -55,12 +56,13 @@ export default function SuccessBooking() {
             bookingData = bData;
           }
 
-          // Se não encontrou por order_number mas tem session_id
-          if (!bookingData && sessionId) {
+          // Se não encontrou por order_number mas tem payment_intent ou session_id
+          if (!bookingData && (paymentIntentId || sessionId)) {
+            const targetPi = paymentIntentId || sessionId;
             const { data: pData } = await supabase
               .from('payments')
               .select('booking_id')
-              .eq('stripe_payment_intent_id', sessionId)
+              .eq('stripe_payment_intent_id', targetPi)
               .maybeSingle();
 
             if (pData?.booking_id) {
@@ -74,13 +76,20 @@ export default function SuccessBooking() {
           }
 
           if (bookingData) {
-            // Se o agendamento ainda estiver pendente e voltou do Stripe com sucesso, confirma
-            if (bookingData.status === 'pending') {
-              const paymentStatus = bookingData.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid';
-              await supabase
-                .from('bookings')
-                .update({ status: 'confirmed', payment_status: paymentStatus })
-                .eq('id', bookingData.id);
+            // Se o agendamento ainda estiver pendente e retornou do Stripe, confirma de forma segura via Edge Function
+            if (bookingData.status === 'pending' && (paymentIntentId || sessionId)) {
+              try {
+                await supabase.functions.invoke('create-payment-intent', {
+                  body: {
+                    action: 'confirm_booking',
+                    bookingId: bookingData.id,
+                    paymentIntentId: paymentIntentId || undefined,
+                    sessionId: sessionId || undefined,
+                  },
+                });
+              } catch (confirmErr) {
+                console.warn('Erro ao confirmar booking via Edge Function:', confirmErr);
+              }
             }
 
             const scheduledDate = new Date(bookingData.scheduled_at);
@@ -109,7 +118,7 @@ export default function SuccessBooking() {
       }
     }
     loadData();
-  }, [slug, orderNumber, sessionId]);
+  }, [slug, orderNumber, sessionId, paymentIntentId]);
 
   const portalTheme = useTenantPortalTheme(slug, settings, null);
   const accentColor = portalTheme.accent;

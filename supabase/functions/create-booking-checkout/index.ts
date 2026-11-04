@@ -44,6 +44,11 @@ serve(async (req) => {
       if (!acc.charges_enabled) {
         throw new Error("A conta de recebimento do salão ainda está em processo de verificação no Stripe. Por favor, pague no local.");
       }
+      if ((acc.capabilities as any)?.pix_payments === 'unrequested') {
+        try {
+          await stripe.accounts.updateCapability(stripeAccount.stripe_account_id, 'pix_payments' as any, { requested: true });
+        } catch (_) {}
+      }
     } catch (accErr: any) {
       console.warn(`[create-booking-checkout] Conta Connect '${stripeAccount.stripe_account_id}' inválida no ambiente ${mode.toUpperCase()}:`, accErr?.message);
       throw new Error("Os pagamentos online deste salão ainda não foram ativados no ambiente de cobrança atual. Por favor, escolha 'Pagar no local'.");
@@ -58,7 +63,7 @@ serve(async (req) => {
 
     const price = Math.round(amountToCharge * 100); // centavos
     if (price < 50) {
-      throw new Error("O valor mínimo para pagamento com cartão é de R$ 0,50.");
+      throw new Error("O valor mínimo para pagamento online é de R$ 0,50.");
     }
 
     const platformFeePercentage = (typeof applicationFeePercent === 'number' && !isNaN(applicationFeePercent) ? applicationFeePercent : 0) / 100;
@@ -93,6 +98,7 @@ serve(async (req) => {
       ],
       mode: 'payment' as const,
       payment_intent_data: {
+        on_behalf_of: stripeAccount.stripe_account_id,
         ...(applicationFee > 0 ? { application_fee_amount: applicationFee } : {}),
         transfer_data: {
           destination: stripeAccount.stripe_account_id,
@@ -100,6 +106,7 @@ serve(async (req) => {
         metadata: {
           booking_id: booking.id,
           tenant_id: booking.tenant_id,
+          order_number: booking.order_number,
         }
       },
       success_url: `${safeReturnUrl}?order=${booking.order_number}&session_id={CHECKOUT_SESSION_ID}`,
@@ -107,6 +114,7 @@ serve(async (req) => {
       metadata: {
         booking_id: booking.id,
         tenant_id: booking.tenant_id,
+        order_number: booking.order_number,
       },
     });
 

@@ -54,6 +54,13 @@ serve(async (req) => {
     let account: any = null;
     try {
       account = await stripe.accounts.retrieve(connectAcc.stripe_account_id);
+      if ((account.capabilities as any)?.pix_payments === 'unrequested') {
+        try {
+          await stripe.accounts.updateCapability(connectAcc.stripe_account_id, 'pix_payments' as any, { requested: true });
+        } catch (pixCapErr) {
+          console.warn('[sync-connect-account] Aviso ao solicitar pix_payments:', pixCapErr);
+        }
+      }
     } catch (err: any) {
       console.warn(`[sync-connect-account] Conta Connect '${connectAcc.stripe_account_id}' não existe no Stripe ${mode.toUpperCase()}:`, err.message);
       

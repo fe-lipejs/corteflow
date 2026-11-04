@@ -36,7 +36,7 @@ serve(async (req) => {
     const tenantId = profile.tenant_id;
 
     // Verificar se já existe uma conta Stripe Connect
-    let { data: connectAccount } = await supabase
+    const { data: connectAccount } = await supabase
       .from('stripe_connect_accounts')
       .select('*')
       .eq('tenant_id', tenantId)
@@ -47,6 +47,14 @@ serve(async (req) => {
     if (accountId) {
       try {
         const existingAccount = await stripe.accounts.retrieve(accountId);
+        // Garantir que pix_payments esteja solicitado na conta conectada
+        if ((existingAccount.capabilities as any)?.pix_payments === 'unrequested') {
+          try {
+            await stripe.accounts.updateCapability(accountId, 'pix_payments' as any, { requested: true });
+          } catch (pixCapErr) {
+            console.warn("Could not request pix_payments on existing account:", pixCapErr);
+          }
+        }
         if (existingAccount.details_submitted) {
           const loginLink = await stripe.accounts.createLoginLink(accountId);
           return new Response(
@@ -61,14 +69,26 @@ serve(async (req) => {
     }
 
     if (!accountId) {
-      // Criar nova conta Express no Stripe
-      const account = await stripe.accounts.create({
-        type: 'express',
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
-        },
-      });
+      // Criar nova conta Express no Stripe com Cartão + PIX + Transferências
+      let account: any;
+      try {
+        account = await stripe.accounts.create({
+          type: 'express',
+          capabilities: {
+            card_payments: { requested: true },
+            pix_payments: { requested: true } as any,
+            transfers: { requested: true },
+          },
+        });
+      } catch (_capErr) {
+        account = await stripe.accounts.create({
+          type: 'express',
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+          },
+        });
+      }
       accountId = account.id;
 
       // Salvar no Supabase
