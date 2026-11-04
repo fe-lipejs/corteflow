@@ -102,7 +102,9 @@ serve(async (req) => {
           partial_50: true,
           full_100: true,
         },
-        online_payment_enabled: true,
+        accept_online_payment: true,
+        accept_local_payment: currentPm.pay_local !== false,
+        booking_payment_mode: currentPm.pay_local === false ? 'deposit' : 'client_choice',
       }).eq('tenant_id', tenantId);
     }
 

@@ -948,14 +948,23 @@ export default function Configuracoes() {
         }).eq('id', profile.id);
       }
 
-      // Fix #2: Serialize individual payment toggles as JSON and validate
-      const activeOptions = [allowLocal, allowDeposit, allowFull].filter(Boolean).length;
+      // Valida se a conta Stripe está 100% pronta para receber
+      const isStripeFullyActive = stripeConnectInfo?.charges_enabled === true;
+      const effectiveAllowLocal = !isStripeFullyActive ? true : allowLocal;
+      const effectiveAllowDeposit = isStripeFullyActive ? allowDeposit : false;
+      const effectiveAllowFull = isStripeFullyActive ? allowFull : false;
+
+      if (!isStripeFullyActive && (!allowLocal || allowDeposit || allowFull)) {
+        toast('Sua conta Stripe ainda não foi finalizada. O pagamento no local foi mantido como padrão para você não perder agendamentos.', { icon: 'ℹ️', duration: 6000 });
+      }
+
+      const activeOptions = [effectiveAllowLocal, effectiveAllowDeposit, effectiveAllowFull].filter(Boolean).length;
       if (activeOptions === 0) {
         toast.error('Pelo menos uma forma de pagamento deve estar ativa.');
         setLoading(false);
         return;
       }
-      const paymentModeJson = { pay_local: allowLocal, partial_50: allowDeposit, full_100: allowFull };
+      const paymentModeJson = { pay_local: effectiveAllowLocal, partial_50: effectiveAllowDeposit, full_100: effectiveAllowFull };
 
       const finalPalette = {
         ...(customPalette || {}),
@@ -970,7 +979,10 @@ export default function Configuracoes() {
         theme_preset: selectedTheme,
         custom_palette: { ...finalPalette, slogan, description },
         payment_methods: paymentModeJson,
-        deposit_percentage: allowDeposit ? depositPercentage : null,
+        accept_online_payment: effectiveAllowDeposit || effectiveAllowFull,
+        accept_local_payment: effectiveAllowLocal,
+        booking_payment_mode: effectiveAllowDeposit ? 'deposit' : effectiveAllowFull ? 'full' : 'local',
+        deposit_percentage: effectiveAllowDeposit ? depositPercentage : null,
         fantasy_name: cleanName,
         short_description: slogan || description || '',
         logo_url: logoUrl,
@@ -1130,7 +1142,9 @@ export default function Configuracoes() {
       await supabase
         .from('tenant_settings')
         .update({
-          online_payment_enabled: false,
+          accept_online_payment: false,
+          accept_local_payment: true,
+          booking_payment_mode: 'local',
           payment_methods: defaultMethods,
         } as any)
         .eq('tenant_id', tenant.id);
@@ -2290,31 +2304,36 @@ export default function Configuracoes() {
 
                 <div className="space-y-2.5">
                   {(() => {
-                    const hasStripeAccount = Boolean(stripeConnectInfo?.stripe_account_id);
+                    const isStripeFullyActive = stripeConnectInfo?.charges_enabled === true;
 
                     return [
                       {
                         key: 'local' as const,
                         label: 'Pagar no Local',
-                        desc: 'Pagamento presencial no salão após o atendimento',
-                        state: allowLocal,
-                        isLocked: false,
+                        desc: !isStripeFullyActive
+                          ? 'Obrigatório enquanto sua conta Stripe não estiver com cadastro 100% finalizado'
+                          : 'Pagamento presencial no salão após o atendimento',
+                        state: !isStripeFullyActive ? true : allowLocal,
+                        isLocked: !isStripeFullyActive,
+                        lockLabel: 'Obrigatório',
                         set: setAllowLocal,
                       },
                       {
                         key: 'deposit' as const,
                         label: 'Sinal / Entrada Online',
                         desc: 'Exige percentual antecipado para garantir o horário',
-                        state: allowDeposit,
-                        isLocked: !hasStripeAccount,
+                        state: isStripeFullyActive ? allowDeposit : false,
+                        isLocked: !isStripeFullyActive,
+                        lockLabel: 'Requer Stripe Ativo',
                         set: setAllowDeposit,
                       },
                       {
                         key: 'full' as const,
                         label: '100% Antecipado Online',
                         desc: 'Valor integral pago online na hora do agendamento',
-                        state: allowFull,
-                        isLocked: !hasStripeAccount,
+                        state: isStripeFullyActive ? allowFull : false,
+                        isLocked: !isStripeFullyActive,
+                        lockLabel: 'Requer Stripe Ativo',
                         set: setAllowFull,
                       },
                     ].map(m => {
@@ -2325,14 +2344,14 @@ export default function Configuracoes() {
                         <div
                           key={m.key}
                           onClick={() => {
-                            if (m.isLocked) {
+                            if (m.isLocked && m.key !== 'local') {
                               setStripeRequiredModalOpen(true);
                             }
                           }}
-                          className={`p-4 rounded-xl border transition-all ${m.isLocked ? 'opacity-70 cursor-pointer hover:border-amber-500/40' : ''}`}
+                          className={`p-4 rounded-xl border transition-all ${m.isLocked ? 'opacity-85' : ''}`}
                           style={{
-                            background: m.state && !m.isLocked ? `${theme.accent}0d` : theme.inputBg,
-                            borderColor: m.state && !m.isLocked ? theme.accent : theme.inputBorder,
+                            background: m.state && (!m.isLocked || m.key === 'local') ? `${theme.accent}0d` : theme.inputBg,
+                            borderColor: m.state && (!m.isLocked || m.key === 'local') ? theme.accent : theme.inputBorder,
                           }}
                         >
                           <div className="flex items-center justify-between">
@@ -2343,7 +2362,7 @@ export default function Configuracoes() {
                                 </span>
                                 {m.isLocked && (
                                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
-                                    <Lock className="w-2.5 h-2.5" /> Requer Stripe
+                                    <Lock className="w-2.5 h-2.5" /> {m.lockLabel}
                                   </span>
                                 )}
                               </div>
@@ -2354,20 +2373,25 @@ export default function Configuracoes() {
 
                             <button
                               type="button"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 if (m.isLocked) {
-                                  setStripeRequiredModalOpen(true);
+                                  if (m.key !== 'local') {
+                                    setStripeRequiredModalOpen(true);
+                                  } else {
+                                    toast('O pagamento no local não pode ser desativado até que sua conta Stripe esteja 100% pronta com dados bancários.', { icon: 'ℹ️' });
+                                  }
                                   return;
                                 }
                                 if (isLastActive) return;
                                 m.set(!m.state);
                               }}
                               className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ml-4 cursor-pointer"
-                              style={{ background: m.state && !m.isLocked ? theme.accent : theme.border }}
+                              style={{ background: m.state && (!m.isLocked || m.key === 'local') ? theme.accent : theme.border }}
                             >
                               <span
                                 className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-                                style={{ transform: m.state && !m.isLocked ? 'translateX(22px)' : 'translateX(4px)' }}
+                                style={{ transform: m.state && (!m.isLocked || m.key === 'local') ? 'translateX(22px)' : 'translateX(4px)' }}
                               />
                             </button>
                           </div>

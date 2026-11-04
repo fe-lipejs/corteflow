@@ -74,7 +74,9 @@ serve(async (req) => {
     await supabaseAdmin
       .from('tenant_settings')
       .update({
-        online_payment_enabled: false,
+        accept_online_payment: false,
+        accept_local_payment: true,
+        booking_payment_mode: 'local',
         payment_methods: {
           pay_local: true,
           partial_50: false,
