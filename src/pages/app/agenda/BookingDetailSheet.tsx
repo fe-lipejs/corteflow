@@ -16,9 +16,7 @@ interface Props {
   isUpdating?: boolean;
 }
 
-const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
-
-const STATUS_FLOW: BookingStatus[] = ['pending', 'confirmed', 'arrived', 'in_progress', 'completed'];
+const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
 
 const SEGMENT_STYLES: Record<string, { bg: string; color: string }> = {
   vip: { bg: 'rgba(201,150,59,0.15)', color: '#c9963b' },
@@ -27,27 +25,35 @@ const SEGMENT_STYLES: Record<string, { bg: string; color: string }> = {
   inativo: { bg: 'rgba(239,68,68,0.15)', color: '#ef4444' },
 };
 
+function formatWhatsAppNumber(rawPhone: string): string {
+  const digits = (rawPhone || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if ((digits.length === 10 || digits.length === 11) && !digits.startsWith('55')) {
+    return `55${digits}`;
+  }
+  return digits;
+}
+
 export default function BookingDetailSheet({ booking, onClose, onStatusChange, onDelete, onEdit, isUpdating }: Props) {
   const { profile } = useAuth();
-  // BUG-04: Inline confirm state — evita window.confirm nativo que quebra no iOS
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const statusCfg = BOOKING_STATUS_CONFIG[booking.status];
+  const statusCfg = BOOKING_STATUS_CONFIG[booking.status] || BOOKING_STATUS_CONFIG.confirmed;
   const scheduledAt = new Date(booking.scheduled_at);
-  const endTime = new Date(scheduledAt.getTime() + (booking.duration_minutes * 60 * 1000));
+  const durationMins = booking.duration_minutes || booking.service?.duration_minutes || 30;
+  const endTime = new Date(scheduledAt.getTime() + (durationMins * 60 * 1000));
 
   const isFinished = booking.status === 'completed' || booking.status === 'canceled' || booking.status === 'no_show';
 
-  // Fix #4: Fetch ALL completed bookings for this customer to calculate real history
   const { data: allPastBookings, isLoading: loadingHistory } = useQuery({
     queryKey: ['customer_history_bookings', booking.customer_id],
     queryFn: async () => {
       if (!booking.customer_id) return [];
       const { data, error } = await supabase
         .from('bookings')
-        .select('id, scheduled_at, amount_total, status, services(id, name), professionals(id, name, photo_url)')
+        .select('id, scheduled_at, amount_total, amount_paid, status, payment_mode, payment_status, services(id, name), professionals(id, name, photo_url)')
         .eq('customer_id', booking.customer_id)
-        .neq('id', booking.id) // exclude current booking
-        .not('status', 'in', '("canceled","no_show")')
+        .neq('id', booking.id)
+        .not('status', 'in', '("canceled","no_show","pending")')
         .order('scheduled_at', { ascending: false })
         .limit(20);
       if (error) throw error;
@@ -56,20 +62,23 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
     enabled: !!booking.customer_id
   });
 
-  // Fix #4: Compute real history metrics from actual bookings
   const customerHistory = useMemo(() => {
     if (!allPastBookings) return null;
 
-    const completedBookings = allPastBookings.filter((b: any) => b.status === 'completed');
+    const completedOrPaidBookings = allPastBookings.filter(
+      (b: any) => b.status === 'completed' || (b.status === 'confirmed' && Number(b.amount_paid || 0) > 0)
+    );
     
-    const totalSpent = completedBookings.reduce((sum: number, b: any) => sum + (b.amount_total || 0), 0);
-    const visitCount = completedBookings.length;
+    const totalSpent = completedOrPaidBookings.reduce(
+      (sum: number, b: any) => sum + (b.status === 'completed' ? Number(b.amount_total || 0) : Number(b.amount_paid || 0)),
+      0
+    );
+    const visitCount = completedOrPaidBookings.length;
     
-    const lastVisit = completedBookings.length > 0
-      ? new Date(completedBookings[0].scheduled_at)
+    const lastVisit = completedOrPaidBookings.length > 0
+      ? new Date(completedOrPaidBookings[0].scheduled_at)
       : null;
 
-    // Count service frequency
     const serviceCounts: Record<string, number> = {};
     allPastBookings.forEach((b: any) => {
       const svcName = b.services?.name;
@@ -80,18 +89,19 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
       .slice(0, 5)
       .map(([name]) => name);
 
-    // Last 3 past bookings for the list
     const recentList = allPastBookings.slice(0, 3);
 
     return { totalSpent, visitCount, lastVisit, frequentServices, recentList };
   }, [allPastBookings]);
+
+  const waDigits = booking.customer?.phone ? formatWhatsAppNumber(booking.customer.phone) : '';
 
   return (
     <>
       {/* Backdrop */}
       <div className="fixed inset-0 z-40 bg-[var(--theme-bg-overlay)] backdrop-blur-sm" onClick={onClose} />
 
-      {/* Sheet — slides up from bottom on mobile, right panel on desktop */}
+      {/* Sheet */}
       <div className="fixed bottom-0 left-0 right-0 md:top-0 md:right-0 md:left-auto md:bottom-0 z-50 flex flex-col w-full md:w-[480px] h-[92vh] md:h-full"
         style={{ background: 'var(--theme-bg)', borderTop: '1px solid var(--theme-border)', borderLeft: '1px solid var(--theme-border)', borderRadius: '28px 28px 0 0' }}>
 
@@ -119,7 +129,6 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
             </div>
             <h3 className="font-serif text-2xl font-bold mb-3 truncate" style={{ color: 'var(--theme-text-primary)' }}>{booking.customer?.name ?? 'Cliente'}</h3>
             
-            {/* Contatos Reais */}
             <div className="flex flex-col gap-1.5">
               {booking.customer?.phone && (
                 <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--theme-text-secondary)' }}>
@@ -142,11 +151,19 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
         <div className="overflow-y-auto flex-1 px-6 py-6 space-y-7">
 
           {/* Status badge */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold" style={{ background: statusCfg.bg, color: statusCfg.color }}>
               <div className="w-1.5 h-1.5 rounded-full" style={{ background: statusCfg.color }} />
               {statusCfg.label}
             </span>
+
+            {booking.payment_mode && booking.payment_mode !== 'local' && Number(booking.amount_paid || 0) > 0 && (
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+                {booking.payment_mode === 'deposit'
+                  ? `Sinal Online Pago (${fmt.format(booking.amount_paid)})`
+                  : `100% Pago Online (${fmt.format(booking.amount_paid)})`}
+              </span>
+            )}
           </div>
 
           {/* Info cards (Booking context) */}
@@ -165,7 +182,7 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                 icon: Scissors,
                 label: 'Serviço',
                 value: booking.service?.name ?? '—',
-                sub: `${booking.duration_minutes} min ${booking.buffer_minutes > 0 ? `+ ${booking.buffer_minutes} min buffer` : ''}`,
+                sub: `${durationMins} min ${booking.buffer_minutes > 0 ? `+ ${booking.buffer_minutes} min buffer` : ''}`,
                 photo: null,
                 color: null,
               },
@@ -179,10 +196,13 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
               },
               {
                 icon: CreditCard,
-                label: 'Valor',
+                label: 'Valor e Pagamento',
                 value: fmt.format(booking.amount_total),
                 sub: (() => {
                   const mode = (booking.payment_mode as string) || 'local';
+                  if (booking.status === 'completed') {
+                    return `Pagamento concluído integralmente (${fmt.format(booking.amount_total)})`;
+                  }
                   if (mode === 'local' || mode === 'pay_local') {
                     return `Pagamento no local: ${fmt.format(booking.amount_total)}`;
                   }
@@ -254,11 +274,11 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                <>
                  <div className="grid grid-cols-2 gap-2.5">
                    <div className="p-4 rounded-2xl border" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
-                     <p className="text-[10px] uppercase tracking-wider mb-1.5 opacity-60" style={{ color: 'var(--theme-text-secondary)' }}>Total gasto</p>
+                     <p className="text-[10px] uppercase tracking-wider mb-1.5 opacity-60" style={{ color: 'var(--theme-text-secondary)' }}>Total gasto (anteriores)</p>
                      <p className="text-base font-bold" style={{ color: 'var(--theme-text-primary)' }}>{fmt.format(customerHistory.totalSpent)}</p>
                    </div>
                    <div className="p-4 rounded-2xl border" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
-                     <p className="text-[10px] uppercase tracking-wider mb-1.5 opacity-60" style={{ color: 'var(--theme-text-secondary)' }}>Visitas concluídas</p>
+                     <p className="text-[10px] uppercase tracking-wider mb-1.5 opacity-60" style={{ color: 'var(--theme-text-secondary)' }}>Visitas anteriores</p>
                      <p className="text-base font-bold" style={{ color: 'var(--theme-text-primary)' }}>{customerHistory.visitCount} {customerHistory.visitCount === 1 ? 'vez' : 'vezes'}</p>
                    </div>
                    <div className="col-span-2 p-4 rounded-2xl border" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
@@ -270,7 +290,6 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                      </p>
                    </div>
                    
-                   {/* Frequent Services */}
                    {customerHistory.frequentServices.length > 0 && (
                      <div className="col-span-2 p-4 rounded-2xl border" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
                        <p className="text-[10px] uppercase tracking-wider mb-3 opacity-60" style={{ color: 'var(--theme-text-secondary)' }}>Serviços frequentes</p>
@@ -283,7 +302,6 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                    )}
                  </div>
                  
-                 {/* Recent Bookings List */}
                  {profile?.role !== 'professional' && (
                    <div className="pt-2">
                       <p className="text-[10px] font-bold uppercase tracking-wider mb-3 opacity-60" style={{ color: 'var(--theme-text-secondary)' }}>Últimos atendimentos</p>
@@ -293,7 +311,7 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                             <div key={pb.id} className="flex items-center justify-between p-3.5 rounded-xl border" style={{ background: 'var(--theme-card-bg)', borderColor: 'var(--theme-border)' }}>
                               <div className="min-w-0">
                                 <p className="text-sm font-bold truncate" style={{ color: 'var(--theme-text-primary)' }}>{pb.services?.name}</p>
-                                <p className="text-[11px] mt-0.5 opacity-75" style={{ color: 'var(--theme-text-secondary)' }}>com {pb.professionals?.name}</p>
+                                <p className="text-[11px] mt-0.5 opacity-75" style={{ color: 'var(--theme-text-secondary)' }}>com {pb.professionals?.name || 'Profissional'}</p>
                               </div>
                               <span className="text-xs font-mono font-medium px-2 py-1 rounded-md shrink-0" style={{ background: 'var(--theme-bg-hover)', color: 'var(--theme-text-secondary)' }}>
                                 {format(new Date(pb.scheduled_at), "dd/MM/yy")}
@@ -312,7 +330,7 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
              ) : null}
           </div>
 
-          {/* Action: Reagendar / Editar (Guardado por agenda.editar) */}
+          {/* Action: Reagendar / Editar */}
           {!isFinished && onEdit && (
             <div className="pt-6 border-t" style={{ borderColor: 'var(--theme-border)' }}>
               <button
@@ -336,12 +354,21 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
             <div className="space-y-4 pt-6 border-t" style={{ borderColor: 'var(--theme-border)' }}>
               <p className="text-xs font-bold uppercase tracking-wider opacity-60" style={{ color: 'var(--theme-text-secondary)' }}>Mudar status</p>
               
-              {/* Opções principais (em atendimento e finalizado) */}
+              {booking.status === 'pending' && (
+                <button
+                  onClick={() => onStatusChange(booking.id, 'confirmed')}
+                  disabled={isUpdating}
+                  className="w-full py-3 rounded-xl text-xs font-bold border border-emerald-500/40 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors cursor-pointer"
+                >
+                  Confirmar Reserva
+                </button>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => onStatusChange(booking.id, 'in_progress')}
                   disabled={isUpdating || booking.status === 'in_progress'}
-                  className="py-3 rounded-xl text-xs font-bold border transition-colors"
+                  className="py-3 rounded-xl text-xs font-bold border transition-colors cursor-pointer"
                   style={{
                     backgroundColor: booking.status === 'in_progress' ? 'var(--theme-accent)' : 'transparent',
                     borderColor: 'var(--theme-accent)',
@@ -353,9 +380,10 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                 <button
                   onClick={() => onStatusChange(booking.id, 'completed')}
                   disabled={isUpdating}
-                  className="py-3 rounded-xl text-xs font-bold transition-opacity text-white hover:opacity-90"
-                  style={{ backgroundColor: '#10b981' }} // Verde esmeralda para concluído
+                  className="py-3 rounded-xl text-xs font-bold transition-opacity text-white hover:opacity-90 cursor-pointer flex items-center justify-center gap-1.5"
+                  style={{ backgroundColor: '#10b981' }}
                 >
+                  {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                   Finalizado
                 </button>
               </div>
@@ -365,14 +393,14 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                 <button
                   onClick={() => onStatusChange(booking.id, 'no_show')}
                   disabled={isUpdating}
-                  className="text-xs font-bold text-orange-500/80 hover:text-orange-500 transition-colors py-1"
+                  className="text-xs font-bold text-orange-500/80 hover:text-orange-500 transition-colors py-1 cursor-pointer"
                 >
                   Não compareceu
                 </button>
                 <button
                   onClick={() => onStatusChange(booking.id, 'canceled')}
                   disabled={isUpdating}
-                  className="text-xs font-bold text-red-500/80 hover:text-red-500 transition-colors py-1"
+                  className="text-xs font-bold text-red-500/80 hover:text-red-500 transition-colors py-1 cursor-pointer"
                 >
                   Cancelar reserva
                 </button>
@@ -421,9 +449,9 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
 
           {/* Contact Actions */}
           <div className="pt-6 pb-4 border-t" style={{ borderColor: 'var(--theme-border)' }}>
-            {booking.customer?.phone ? (
+            {waDigits ? (
               <a
-                href={`https://wa.me/${booking.customer.phone.replace(/\D/g, '')}`}
+                href={`https://wa.me/${waDigits}`}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center justify-center gap-2.5 w-full py-4 rounded-xl border text-sm font-bold transition-colors"

@@ -145,15 +145,24 @@ serve(async (req) => {
           const bookingId = session.metadata.booking_id;
           const { data: booking } = await supabase.from('bookings').select('payment_mode, amount_total').eq('id', bookingId).maybeSingle();
           if (booking) {
-            const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid';
+            const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'paid';
             const amountPaidBRL = (session.amount_total || 0) / 100;
             const amountDueBRL = Math.max(0, Number(booking.amount_total || 0) - amountPaidBRL);
-            await supabase.from('bookings').update({
+            const { error: upErr } = await supabase.from('bookings').update({
               status: 'confirmed',
               payment_status: newPaymentStatus,
               amount_paid: amountPaidBRL,
               amount_due: amountDueBRL,
             }).eq('id', bookingId);
+
+            if (upErr) {
+              await supabase.from('bookings').update({
+                status: 'confirmed',
+                payment_status: booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid',
+                amount_paid: amountPaidBRL,
+                amount_due: amountDueBRL,
+              }).eq('id', bookingId);
+            }
 
             if (session.payment_intent) {
               const piId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent.id;
@@ -227,19 +236,61 @@ serve(async (req) => {
         eventTenantId = tenantId || null;
 
         if (bookingId) {
-          await supabase.from('payments').update({ status: 'succeeded' }).eq('stripe_payment_intent_id', pi.id);
-          
+          const methodTypes: string[] = Array.isArray(pi.payment_method_types) ? pi.payment_method_types : [];
+          const detectedMethod =
+            pi.metadata?.payment_method_type ||
+            (methodTypes.includes('pix') && !methodTypes.includes('card') ? 'pix' : methodTypes[0] || 'pix');
+
+          const amountReceivedBRL = (pi.amount_received || pi.amount || 0) / 100;
+
+          const { data: existingPayment } = await supabase
+            .from('payments')
+            .select('id')
+            .eq('stripe_payment_intent_id', pi.id)
+            .maybeSingle();
+
+          if (existingPayment?.id) {
+            await supabase
+              .from('payments')
+              .update({
+                status: 'succeeded',
+                payment_method: detectedMethod,
+                amount: amountReceivedBRL,
+              })
+              .eq('id', existingPayment.id);
+          } else if (tenantId) {
+            const feeBRL = (pi.application_fee_amount || 0) / 100;
+            await supabase.from('payments').insert({
+              tenant_id: tenantId,
+              booking_id: bookingId,
+              stripe_payment_intent_id: pi.id,
+              amount: amountReceivedBRL,
+              platform_fee: feeBRL,
+              net_amount: Math.max(0, amountReceivedBRL - feeBRL),
+              payment_method: detectedMethod,
+              status: 'succeeded',
+            });
+          }
+
           const { data: booking } = await supabase.from('bookings').select('payment_mode, amount_total').eq('id', bookingId).maybeSingle();
           if (booking) {
-            const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid';
-            const amountReceivedBRL = pi.amount_received / 100;
+            const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'paid';
             const amountDueBRL = Math.max(0, Number(booking.amount_total || 0) - amountReceivedBRL);
-            await supabase.from('bookings').update({
+            const { error: upErr } = await supabase.from('bookings').update({
               status: 'confirmed',
               payment_status: newPaymentStatus,
               amount_paid: amountReceivedBRL,
               amount_due: amountDueBRL,
             }).eq('id', bookingId);
+
+            if (upErr) {
+              await supabase.from('bookings').update({
+                status: 'confirmed',
+                payment_status: booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid',
+                amount_paid: amountReceivedBRL,
+                amount_due: amountDueBRL,
+              }).eq('id', bookingId);
+            }
           }
         }
         break;

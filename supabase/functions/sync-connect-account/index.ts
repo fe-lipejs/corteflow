@@ -82,6 +82,13 @@ serve(async (req) => {
     const nowEnabled = account.charges_enabled === true;
     const payoutsEnabled = account.payouts_enabled === true;
 
+    // Garantir que pix_payments seja solicitado na conta Connect do salão se ainda não estiver
+    if ((account.capabilities as any)?.pix_payments === 'unrequested') {
+      try {
+        await stripe.accounts.updateCapability(connectAcc.stripe_account_id, 'pix_payments' as any, { requested: true });
+      } catch (_) {}
+    }
+
     // Atualizar no banco
     await supabaseAdmin.from('stripe_connect_accounts').update({
       charges_enabled: nowEnabled,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { X, Loader2, Check, Search, Calendar, Clock } from 'lucide-react';
-import { format, addDays, isBefore, startOfDay, addMinutes } from 'date-fns';
+import { X, Loader2, Check, Search, Clock } from 'lucide-react';
+import { format, addDays, isBefore, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { supabase } from '../../../integrations/supabase/client';
 import { useBookingsByDay, generateTimeSlots, type CreateBookingInput } from '../../../hooks/useBookings';
@@ -31,7 +31,6 @@ export default function BookingModal({
   const [customerResults, setCustomerResults] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
   const [notes, setNotes] = useState('');
-  const [paymentMode, setPaymentMode] = useState('local');
   const [searchingCustomers, setSearchingCustomers] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,7 +79,6 @@ export default function BookingModal({
   // Available time slots
   const availableSlots = useMemo(() => {
     if (!selectedService || !todayHours?.is_open) return [];
-    // Filter bookings for selected professional
     const proBookings = selectedPro
       ? dayBookings.filter(b => b.professional_id === selectedPro.id)
       : dayBookings;
@@ -94,9 +92,26 @@ export default function BookingModal({
       proBookings as any,
       todayHours.lunch_start,
       todayHours.lunch_end,
-      false // Não permitir agendamentos no passado, conforme pedido
+      false
     );
-  }, [selectedService, selectedPro, todayHours, dayBookings]);
+  }, [selectedService, selectedPro, todayHours, dayBookings, selectedDate]);
+
+  // Se o dono clicou num horário específico da grade (initialDate), pré-seleciona o slot daquela hora
+  useEffect(() => {
+    if (!initialDate || selectedTime || availableSlots.length === 0) return;
+    const sameDay = format(initialDate, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+    if (!sameDay) return;
+    const targetPrefix = `${String(initialDate.getHours()).padStart(2, '0')}:`;
+    const match = availableSlots.find(s => s.startsWith(targetPrefix));
+    if (match) {
+      setSelectedTime(match);
+    }
+  }, [initialDate, selectedDate, availableSlots, selectedTime]);
+
+  const activeProfessionals = useMemo(
+    () => professionals.filter(p => p.active !== false && (!p.status || p.status === 'active')),
+    [professionals]
+  );
 
   const handleCreateCustomer = async () => {
     if (!newCustomerName.trim() || !newCustomerPhone.trim()) {
@@ -151,10 +166,8 @@ export default function BookingModal({
         pro_color: selectedPro?.agenda_color ?? 'var(--theme-accent)',
         notes: notes.trim() || undefined,
       });
-      // onCreate closes the modal on success — no need to do anything here
     } catch (err: any) {
       console.error('Erro ao criar agendamento:', err);
-      // Show the real Supabase error message to help debug
       const msg = err?.message || err?.error_description || 'Erro ao criar agendamento. Tente novamente.';
       setError(msg);
     }
@@ -243,7 +256,7 @@ export default function BookingModal({
                 </div>
                 {selectedPro === null && <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--theme-accent)' }} />}
               </div>
-              {professionals.filter(p => p.status === 'active').map(pro => {
+              {activeProfessionals.map(pro => {
                 const isSelected = selectedPro?.id === pro.id;
                 return (
                 <div key={pro.id} onClick={() => setSelectedPro(pro)} className="flex items-center gap-4 p-4 rounded-2xl border cursor-pointer transition-colors" style={{

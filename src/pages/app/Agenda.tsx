@@ -1,12 +1,11 @@
-import PaywallGate from '../../components/PaywallGate';
 import { useState, useMemo, useEffect } from 'react';
-import { format, startOfWeek, addWeeks, subWeeks, addDays, isToday, startOfDay } from 'date-fns';
+import { format, addWeeks, subWeeks, addDays, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import {
   ChevronLeft, ChevronRight, Plus, Calendar, RefreshCw,
-  Users, CheckCircle, Clock, DollarSign, Loader2, Bell, Crown, Lock
+  Users, CheckCircle, Clock, DollarSign, Loader2, Bell
 } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 import { useAuth } from '../../hooks/useAuth';
 import { useBarberSound } from '../../hooks/useBarberSound';
@@ -37,7 +36,6 @@ const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL',
 export default function Agenda() {
   const { tenant, role, professionalProfile } = useAuth();
   const { theme } = useTheme();
-  const navigate = useNavigate();
   const engine = usePermissionEngine();
   const tenantId = tenant?.id ?? '';
   const { play: playChime } = useBarberSound();
@@ -54,6 +52,7 @@ export default function Agenda() {
   const [businessHours, setBusinessHours] = useState<any[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [hasScrolledCards, setHasScrolledCards] = useState(false);
+  const [todayAnchor] = useState<Date>(() => new Date());
 
   // Detect mobile
   useEffect(() => {
@@ -71,23 +70,34 @@ export default function Agenda() {
     });
   }, [tenantId]);
 
+  const proScopeId = role === 'professional' ? professionalProfile?.id : undefined;
+
   // Data fetching
-  const { data: weekBookings = [], isLoading: loadingWeek, refetch: refetchWeek } = useBookingsByWeek(
+  const { data: weekBookings = [], isLoading: loadingWeek, refetch: refetchWeek, isFetching: fetchingWeek } = useBookingsByWeek(
     tenantId || null,
     weekStart,
-    role === 'professional' ? professionalProfile?.id : undefined
+    proScopeId
   );
-  const { data: dayBookings = [], isLoading: loadingDay } = useBookingsByDay(
+  const { data: dayBookings = [], isLoading: loadingDay, refetch: refetchDay, isFetching: fetchingDay } = useBookingsByDay(
     tenantId || null,
     currentDay,
-    role === 'professional' ? professionalProfile?.id : undefined
+    proScopeId
+  );
+  const { data: rawTodayBookings = [], refetch: refetchToday } = useBookingsByDay(
+    tenantId || null,
+    todayAnchor,
+    proScopeId
   );
 
   // Se for profissional, filtra a lista de profissionais apenas para ele mesmo para que o seletor da UI exiba apenas ele.
   const { data: allProfessionals = [] } = useProfessionals(tenantId || null);
-  const professionals = role === 'professional' && professionalProfile
-    ? allProfessionals.filter(p => p.id === professionalProfile.id)
-    : allProfessionals;
+  const professionals = useMemo(() => {
+    const activeList = allProfessionals.filter(p => p.active !== false && (!p.status || p.status === 'active'));
+    if (role === 'professional' && professionalProfile) {
+      return activeList.filter(p => p.id === professionalProfile.id);
+    }
+    return activeList;
+  }, [allProfessionals, role, professionalProfile]);
 
   const { data: services = [] } = useServices(tenantId || null);
 
@@ -102,12 +112,46 @@ export default function Agenda() {
 
   // Active bookings for current context
   const isLoading = isMobile || view === 'day' ? loadingDay : loadingWeek;
+  const isRefreshing = fetchingWeek || fetchingDay;
 
-  // Today's stats
-  const todayBookings = useMemo(() =>
-    weekBookings.filter(b => isToday(new Date(b.scheduled_at))),
-    [weekBookings]
+  const [searchParams] = useSearchParams();
+  // Initialize from URL ?professional= query param (set when navigating from Equipe.tsx)
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(
+    () => searchParams.get('professional')
   );
+
+  // Sync weekStart with currentDay to ensure weekBookings always contains the currentDay
+  useEffect(() => {
+    const expectedWeekStart = startOfDay(currentDay);
+    if (expectedWeekStart.getTime() !== weekStart.getTime()) {
+      setWeekStart(expectedWeekStart);
+    }
+  }, [currentDay, weekStart]);
+
+  // Se o usuário NÃO tiver permissão para visualizar todos, filtra a agenda automaticamente para ele mesmo
+  useEffect(() => {
+    if (!engine.isLoading && !engine.hasPermission('agenda.visualizar_todos')) {
+      if (professionalProfile?.id && selectedProfessionalId !== professionalProfile.id) {
+        setSelectedProfessionalId(professionalProfile.id);
+      }
+    }
+  }, [engine.isLoading, engine.hasPermission, professionalProfile?.id, selectedProfessionalId]);
+
+  const filteredWeekBookings = useMemo(() => {
+    if (!selectedProfessionalId) return weekBookings;
+    return weekBookings.filter(b => b.professional_id === selectedProfessionalId);
+  }, [weekBookings, selectedProfessionalId]);
+
+  const filteredDayBookings = useMemo(() => {
+    if (!selectedProfessionalId) return dayBookings;
+    return dayBookings.filter(b => b.professional_id === selectedProfessionalId);
+  }, [dayBookings, selectedProfessionalId]);
+
+  // Today's stats (sempre preserva os dados reais de hoje mesmo quando o usuário navega para outras semanas)
+  const todayBookings = useMemo(() => {
+    if (!selectedProfessionalId) return rawTodayBookings;
+    return rawTodayBookings.filter(b => b.professional_id === selectedProfessionalId);
+  }, [rawTodayBookings, selectedProfessionalId]);
 
   const stats = useMemo(() => {
     const revenue = todayBookings.reduce((s, b) => s + (b.amount_total || 0), 0);
@@ -153,7 +197,15 @@ export default function Agenda() {
     }
     await updateStatus.mutateAsync({ id, status });
     if (selectedBooking?.id === id) {
-      setSelectedBooking(prev => prev ? { ...prev, status } : null);
+      if (status === 'canceled' || status === 'no_show') {
+        setSelectedBooking(null);
+      } else {
+        setSelectedBooking(prev => prev ? {
+          ...prev,
+          status,
+          ...(status === 'completed' ? { amount_paid: prev.amount_total, payment_status: 'paid' } : {})
+        } : null);
+      }
     }
   };
 
@@ -164,44 +216,15 @@ export default function Agenda() {
     }
     await deleteBooking.mutateAsync(id);
     if (selectedBooking?.id === id) {
-      setSelectedBooking(null); // Fecha a sheet
+      setSelectedBooking(null);
     }
   };
 
-  const [searchParams] = useSearchParams();
-  // Initialize from URL ?professional= query param (set when navigating from Equipe.tsx)
-  const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(
-    () => searchParams.get('professional')
-  );
-
-  // Sync weekStart with currentDay to ensure weekBookings always contains the currentDay
-  // This is critical for MobileTimeline which relies on weekBookings but can swipe to any day
-  useEffect(() => {
-    // We now use a rolling 7-day window starting exactly on currentDay
-    const expectedWeekStart = startOfDay(currentDay);
-    if (expectedWeekStart.getTime() !== weekStart.getTime()) {
-      setWeekStart(expectedWeekStart);
-    }
-  }, [currentDay, weekStart]);
-
-  // Se o usuário NÃO tiver permissão para visualizar todos, filtra a agenda automaticamente para ele mesmo
-  useEffect(() => {
-    if (!engine.isLoading && !engine.hasPermission('agenda.visualizar_todos')) {
-      if (professionalProfile?.id && selectedProfessionalId !== professionalProfile.id) {
-        setSelectedProfessionalId(professionalProfile.id);
-      }
-    }
-  }, [engine.isLoading, engine.hasPermission, professionalProfile?.id]);
-
-  const filteredWeekBookings = useMemo(() => {
-    if (!selectedProfessionalId) return weekBookings;
-    return weekBookings.filter(b => b.professional_id === selectedProfessionalId);
-  }, [weekBookings, selectedProfessionalId]);
-
-  const filteredDayBookings = useMemo(() => {
-    if (!selectedProfessionalId) return dayBookings;
-    return dayBookings.filter(b => b.professional_id === selectedProfessionalId);
-  }, [dayBookings, selectedProfessionalId]);
+  const handleRefreshAll = () => {
+    refetchWeek();
+    refetchDay();
+    refetchToday();
+  };
 
   if (!engine.isLoading && !engine.hasPermission('agenda.visualizar_todos') && !engine.hasPermission('agenda.visualizar_minha')) {
     return (
@@ -245,9 +268,9 @@ export default function Agenda() {
                 <button onClick={() => { setCurrentDay(new Date()); }} className="px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer" style={{ color: theme.textPrimary }}>
                   Hoje
                 </button>
-                <span className="px-2 text-sm font-semibold min-w-[130px] text-center" style={{ color: theme.textPrimary }}>
+                <span className="px-2 text-sm font-semibold min-w-[145px] text-center capitalize" style={{ color: theme.textPrimary }}>
                   {view === 'week'
-                    ? format(weekStart, "MMMM yyyy", { locale: ptBR })
+                    ? `${format(weekStart, "dd MMM", { locale: ptBR })} – ${format(addDays(weekStart, 6), "dd MMM", { locale: ptBR })}`
                     : format(currentDay, "dd 'de' MMMM", { locale: ptBR })
                   }
                 </span>
@@ -278,8 +301,8 @@ export default function Agenda() {
                 ))}
               </div>
 
-              <button onClick={() => refetchWeek()} className="p-2 rounded-xl border transition-all glass-card" style={{ color: theme.textSecondary, borderColor: theme.cardBorder }} title="Atualizar">
-                <RefreshCw className="w-4 h-4" />
+              <button onClick={handleRefreshAll} className="p-2 rounded-xl border transition-all glass-card" style={{ color: theme.textSecondary, borderColor: theme.cardBorder }} title="Atualizar">
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
 
               {/* Sound test button */}
@@ -311,36 +334,36 @@ export default function Agenda() {
 
           {/* Professional Filters & Stats row */}
           <div className="flex flex-col gap-3">
-            {/* Stats cards */}
+            {/* Stats cards — 7 cols on lg so all 7 KPI cards sit cleanly on 1 row */}
             <div className="relative">
               <div
                 onScroll={() => setHasScrolledCards(true)}
-                className="flex overflow-x-auto md:grid md:grid-cols-5 gap-3 pb-2 md:pb-0 scrollbar-none snap-x relative z-10"
+                className="flex overflow-x-auto md:grid md:grid-cols-4 lg:grid-cols-7 gap-2.5 pb-2 md:pb-0 scrollbar-none snap-x relative z-10"
               >
                 {[
                   { label: 'Hoje', value: stats.total, icon: Calendar, color: theme.accent },
-                  { label: 'Confirmados (Hoje)', value: stats.pending, icon: Clock, color: '#f59e0b' },
-                  { label: 'Esquecidos / Pendentes', value: 'Ver Lista', icon: Bell, color: '#ef4444', isButton: true },
+                  { label: 'Confirmados', value: stats.pending, icon: Clock, color: '#f59e0b' },
+                  { label: 'Esquecidos', value: 'Ver Lista', icon: Bell, color: '#ef4444', isButton: true },
                   { label: 'Finalizados', value: stats.completed, icon: CheckCircle, color: theme.success },
                   { label: 'Em atendimento', value: stats.inProgress, icon: Users, color: '#a78bfa' },
                   { label: 'Próximo', value: nextBooking ? format(new Date(nextBooking.scheduled_at), 'HH:mm') : '—', icon: Clock, color: theme.info },
-                  { label: 'Receita prevista', value: fmt.format(stats.revenue), icon: DollarSign, color: theme.warning },
+                  { label: 'Receita hoje', value: fmt.format(stats.revenue), icon: DollarSign, color: theme.warning },
                 ].map((s, i) => (
                   <div
                     key={i}
                     onClick={() => s.isButton ? setShowPendingModal(true) : undefined}
-                    className={`flex flex-col flex-shrink-0 min-w-[140px] p-3 rounded-2xl border glass-card ${s.isButton ? 'cursor-pointer hover:scale-105 transition-transform bg-red-500/5 border-red-500/20' : ''}`}
+                    className={`flex flex-col flex-shrink-0 min-w-[135px] md:min-w-0 p-2.5 rounded-2xl border glass-card ${s.isButton ? 'cursor-pointer hover:scale-[1.02] transition-transform bg-red-500/5 border-red-500/20' : ''}`}
                     style={{ borderColor: s.isButton ? undefined : theme.border }}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl" style={{ backgroundColor: `${s.color}15`, color: s.color }}>
-                        <s.icon className="w-5 h-5" />
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="p-2 rounded-xl shrink-0" style={{ backgroundColor: `${s.color}15`, color: s.color }}>
+                        <s.icon className="w-4 h-4" />
                       </div>
-                      <div>
-                        <p className={`text-xl font-bold font-display ${s.isButton ? 'text-sm mt-1' : ''}`} style={{ color: s.isButton ? s.color : theme.textPrimary }}>
+                      <div className="min-w-0 truncate">
+                        <p className={`text-lg font-bold font-display truncate ${s.isButton ? 'text-xs mt-0.5' : ''}`} style={{ color: s.isButton ? s.color : theme.textPrimary }}>
                           {isLoading && !s.isButton ? '—' : s.value}
                         </p>
-                        <p className="text-[10px] font-bold uppercase tracking-wider opacity-80" style={{ color: theme.textSecondary }}>{s.label}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider opacity-80 truncate" style={{ color: theme.textSecondary }}>{s.label}</p>
                       </div>
                     </div>
                   </div>
@@ -371,7 +394,7 @@ export default function Agenda() {
                     }
                     setSelectedProfessionalId(null);
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border`}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border"
                   style={{
                     color: selectedProfessionalId === null ? theme.btnPrimaryText : theme.textSecondary,
                     background: selectedProfessionalId === null ? theme.accentGradient : theme.cardBg,
@@ -443,6 +466,7 @@ export default function Agenda() {
                     day={currentDay}
                     bookings={filteredDayBookings}
                     businessHours={businessHours}
+                    selectedProfessionalId={selectedProfessionalId}
                     onBookingClick={setSelectedBooking}
                     onSlotClick={handleSlotClick}
                   />
@@ -518,7 +542,10 @@ export default function Agenda() {
           <PendingBookingsModal
             tenantId={tenantId}
             onClose={() => setShowPendingModal(false)}
-            onBookingClick={(b) => setSelectedBooking(b)}
+            onBookingClick={(b) => {
+              setShowPendingModal(false);
+              setSelectedBooking(b);
+            }}
           />
         )}
       </div>

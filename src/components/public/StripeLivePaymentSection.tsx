@@ -309,15 +309,17 @@ export const StripeLivePaymentSection = forwardRef<
     }
   }, [amountCents]);
 
-  // Polling automático a cada 2.5 segundos enquanto o Modal PIX estiver aberto
+  // Polling automático a cada 2.5 segundos + detecção instantânea ao voltar do app do banco (focus/visibilitychange)
   useEffect(() => {
     if (!activePixModal) return;
 
     let stopped = false;
+    let inFlight = false;
     const { bookingId, paymentIntentId, orderNumber, resolve } = activePixModal;
 
     const checkStatus = async () => {
-      if (stopped) return;
+      if (stopped || inFlight) return;
+      inFlight = true;
       try {
         const { data } = await supabase.functions.invoke("create-payment-intent", {
           body: {
@@ -337,13 +339,32 @@ export const StripeLivePaymentSection = forwardRef<
             orderNumber: data.order_number || orderNumber,
           });
         }
-      } catch (_) { }
+      } catch (_) {
+        // Silencioso durante polling automático
+      } finally {
+        inFlight = false;
+      }
     };
 
+    // Checagem imediata e a cada 2.5s
+    checkStatus();
     const intervalId = window.setInterval(checkStatus, 2500);
+
+    // Disparar checagem imediata no milissegundo em que o cliente volta do app do banco para o navegador
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible") {
+        checkStatus();
+      }
+    };
+
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+
     return () => {
       stopped = true;
       window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
     };
   }, [activePixModal]);
 
@@ -384,16 +405,27 @@ export const StripeLivePaymentSection = forwardRef<
 
   const handleCancelPixModal = async () => {
     if (!activePixModal) return;
-    const { bookingId, paymentIntentId, reject } = activePixModal;
+    const { bookingId, orderNumber, paymentIntentId, resolve, reject } = activePixModal;
     setActivePixModal(null);
     setCopiedPix(false);
     setPixCheckFeedback(null);
 
-    await supabase.functions
-      .invoke("create-payment-intent", {
+    try {
+      const { data } = await supabase.functions.invoke("create-payment-intent", {
         body: { action: "abort_booking", bookingId, paymentIntentId },
-      })
-      .catch(() => { });
+      });
+
+      // Se o cliente já havia pago no banco antes de clicar no X, honramos o pagamento!
+      if (data?.confirmed) {
+        resolve({
+          status: "succeeded",
+          paymentIntentId,
+          bookingId,
+          orderNumber: data.order_number || orderNumber,
+        });
+        return;
+      }
+    } catch (_) { }
 
     reject(
       new Error(

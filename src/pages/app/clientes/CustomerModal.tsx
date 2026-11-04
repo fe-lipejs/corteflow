@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { X, Calendar, DollarSign, Clock, Phone, Mail, Award, Scissors, Star } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { format } from 'date-fns';
@@ -19,13 +19,13 @@ export function CustomerModal({ customer, onClose, tenantId }: CustomerModalProp
     theme.id === 'elegant' ||
     (theme.bg && (theme.bg.toLowerCase().startsWith('#f') || theme.bg.toLowerCase().startsWith('#fff')));
   
-  const { data: bookings = [], isLoading } = useQuery({
+  const { data: rawBookings = [], isLoading } = useQuery({
     queryKey: ['customer_history', tenantId, customer.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('bookings')
         .select(`
-          id, scheduled_at, status, amount_total, payment_mode, notes,
+          id, scheduled_at, status, amount_total, amount_paid, payment_mode, payment_status, notes,
           services (name),
           professionals (name)
         `)
@@ -39,7 +39,40 @@ export function CustomerModal({ customer, onClose, tenantId }: CustomerModalProp
     enabled: !!tenantId && !!customer.id
   });
 
-  const money = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+  // Filtrar rascunhos online pendentes não pagos
+  const bookings = useMemo(
+    () =>
+      rawBookings.filter(
+        (b: any) =>
+          !(
+            b.status === 'pending' &&
+            (b.payment_mode === 'deposit' || b.payment_mode === 'full') &&
+            (!b.payment_status || b.payment_status === 'pending')
+          )
+      ),
+    [rawBookings]
+  );
+
+  // Cálculo em tempo real para refletir agendamentos concluídos e pagamentos PIX/Cartão já realizados
+  const liveMetrics = useMemo(() => {
+    let spent = 0;
+    let visits = 0;
+    for (const b of bookings as any[]) {
+      if (b.status === 'completed') {
+        spent += Number(b.amount_total || 0);
+        visits += 1;
+      } else if (b.status === 'confirmed' && Number(b.amount_paid || 0) > 0) {
+        spent += Number(b.amount_paid || 0);
+        visits += 1;
+      }
+    }
+    return {
+      totalSpent: Math.max(Number(customer.total_spent || 0), spent),
+      visitCount: Math.max(Number(customer.visit_count || 0), visits),
+    };
+  }, [bookings, customer.total_spent, customer.visit_count]);
+
+  const money = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
   
   const getStatusColor = (status: string) => {
     switch(status) {
@@ -176,10 +209,10 @@ export function CustomerModal({ customer, onClose, tenantId }: CustomerModalProp
                 <span className="text-sm font-semibold">Total Gasto</span>
               </div>
               <p className="text-2xl font-bold tracking-tight" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>
-                {money(customer.total_spent || 0)}
+                {money(liveMetrics.totalSpent)}
               </p>
               <p className="text-xs mt-2 font-medium" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>
-                Em {customer.visit_count || 0} visitas concluídas
+                Em {liveMetrics.visitCount} {liveMetrics.visitCount === 1 ? 'atendimento' : 'atendimentos'}
               </p>
             </div>
             
@@ -283,6 +316,7 @@ export function CustomerModal({ customer, onClose, tenantId }: CustomerModalProp
                         <th className="py-3 px-4 font-semibold">Serviço</th>
                         <th className="py-3 px-4 font-semibold">Profissional</th>
                         <th className="py-3 px-4 font-semibold">Status</th>
+                        <th className="py-3 px-4 font-semibold">Pagamento</th>
                         <th className="py-3 px-4 font-semibold text-right">Valor</th>
                       </tr>
                     </thead>
@@ -313,6 +347,13 @@ export function CustomerModal({ customer, onClose, tenantId }: CustomerModalProp
                             >
                               {getStatusLabel(b.status)}
                             </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-xs font-semibold" style={{ color: isLight ? '#475569' : theme.textSecondary }}>
+                            {b.payment_mode === 'deposit' && Number(b.amount_paid || 0) > 0
+                              ? `Sinal Pago (${money(b.amount_paid)})`
+                              : b.payment_mode === 'full' && Number(b.amount_paid || 0) > 0
+                                ? '100% Online'
+                                : 'No Local'}
                           </td>
                           <td className="py-3.5 px-4 text-right font-bold" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>
                             {money(b.amount_total || 0)}

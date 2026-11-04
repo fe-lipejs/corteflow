@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, addMinutes, isBefore, addDays } from 'date-fns';
+import { format, startOfDay, endOfDay, addMinutes, isBefore, addDays } from 'date-fns';
 import { supabase } from '../integrations/supabase/client';
 import { useBarberSound } from './useBarberSound';
 
@@ -24,7 +24,7 @@ export interface Booking {
   scheduled_at: string;
   status: BookingStatus;
   payment_mode?: 'local' | 'deposit' | 'full';
-  payment_status?: 'pending' | 'partial_paid' | 'full_paid' | 'refunded' | 'failed';
+  payment_status?: 'pending' | 'partial_paid' | 'paid' | 'full_paid' | 'refunded' | 'failed';
 
   amount_paid: number;
   amount_total: number;
@@ -117,7 +117,16 @@ async function fetchBookings(tenantId: string, from: Date, to: Date, professiona
   const { data, error } = await query;
 
   if (error) throw error;
-  return (data ?? []) as unknown as Booking[];
+  const rows = (data ?? []) as unknown as Booking[];
+  // Filtrar rascunhos de checkout online (PIX/Cartão) que ainda não foram pagos pelo cliente
+  return rows.filter(
+    (b) =>
+      !(
+        b.status === 'pending' &&
+        (b.payment_mode === 'deposit' || b.payment_mode === 'full') &&
+        (!b.payment_status || b.payment_status === 'pending')
+      )
+  );
 }
 
 // ─── Fetch ALL bookings for a date (for conflict check) ───────────────────────
@@ -129,7 +138,7 @@ async function fetchBookingsForConflict(
 ): Promise<Booking[]> {
   let query = supabase
     .from('bookings')
-    .select('id, scheduled_at, duration_minutes, buffer_minutes, professional_id')
+    .select('id, scheduled_at, duration_minutes, buffer_minutes, professional_id, status, payment_mode, payment_status')
     .eq('tenant_id', tenantId)
     .gte('scheduled_at', startOfDay(date).toISOString())
     .lte('scheduled_at', endOfDay(date).toISOString())
@@ -139,7 +148,15 @@ async function fetchBookingsForConflict(
   if (excludeBookingId) query = query.neq('id', excludeBookingId);
 
   const { data } = await query;
-  return (data ?? []) as unknown as Booking[];
+  const rows = (data ?? []) as unknown as Booking[];
+  return rows.filter(
+    (b) =>
+      !(
+        b.status === 'pending' &&
+        (b.payment_mode === 'deposit' || b.payment_mode === 'full') &&
+        (!b.payment_status || b.payment_status === 'pending')
+      )
+  );
 }
 
 // ─── Check time slot availability ────────────────────────────────────────────
@@ -225,7 +242,9 @@ export function useCreateBooking(tenantId: string) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
       qc.invalidateQueries({ queryKey: ['financials_full', tenantId] });
+      qc.invalidateQueries({ queryKey: ['commissions', tenantId] });
       qc.invalidateQueries({ queryKey: ['clientes', tenantId] });
       qc.invalidateQueries({ queryKey: ['customer_history', tenantId] });
       qc.invalidateQueries({ queryKey: ['customer_history_bookings'] });
@@ -251,14 +270,27 @@ export function useUpdateBookingStatus(tenantId: string) {
       const updateFields: any = { status };
       if (status === 'completed') {
         updateFields.amount_paid = current?.amount_total || 0;
-        updateFields.payment_status = 'full_paid';
+        updateFields.amount_due = 0;
+        updateFields.payment_status = 'paid';
       }
 
       const { error } = await supabase
         .from('bookings')
         .update(updateFields as any)
         .eq('id', id);
-      if (error) throw error;
+
+      if (error) {
+        if (status === 'completed') {
+          const fallbackFields = { ...updateFields, payment_status: 'full_paid' };
+          const { error: retryErr } = await supabase
+            .from('bookings')
+            .update(fallbackFields as any)
+            .eq('id', id);
+          if (retryErr) throw retryErr;
+        } else {
+          throw error;
+        }
+      }
 
       // Log history
       await supabase.from('booking_history').insert({
@@ -272,7 +304,9 @@ export function useUpdateBookingStatus(tenantId: string) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
       qc.invalidateQueries({ queryKey: ['financials_full', tenantId] });
+      qc.invalidateQueries({ queryKey: ['commissions', tenantId] });
       qc.invalidateQueries({ queryKey: ['clientes', tenantId] });
       qc.invalidateQueries({ queryKey: ['customer_history', tenantId] });
       qc.invalidateQueries({ queryKey: ['customer_history_bookings'] });
@@ -293,7 +327,9 @@ export function useUpdateBooking(tenantId: string) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
       qc.invalidateQueries({ queryKey: ['financials_full', tenantId] });
+      qc.invalidateQueries({ queryKey: ['commissions', tenantId] });
       qc.invalidateQueries({ queryKey: ['clientes', tenantId] });
       qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_today'] });
       qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_recent'] });
@@ -312,7 +348,9 @@ export function useDeleteBooking(tenantId: string) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
       qc.invalidateQueries({ queryKey: ['financials_full', tenantId] });
+      qc.invalidateQueries({ queryKey: ['commissions', tenantId] });
       qc.invalidateQueries({ queryKey: ['clientes', tenantId] });
       qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_today'] });
       qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_recent'] });
@@ -334,8 +372,12 @@ export function useCancelBooking(tenantId?: string) {
       return data;
     },
     onSuccess: () => {
-      if (tenantId) qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
-      // We should also probably invalidate by access_code if the client is using it
+      if (tenantId) {
+        qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+        qc.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
+        qc.invalidateQueries({ queryKey: ['financials_full', tenantId] });
+        qc.invalidateQueries({ queryKey: ['commissions', tenantId] });
+      }
       qc.invalidateQueries({ queryKey: ['booking'] });
     },
   });
@@ -354,7 +396,10 @@ export function useRescheduleBooking(tenantId?: string) {
       return data;
     },
     onSuccess: () => {
-      if (tenantId) qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      if (tenantId) {
+        qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+        qc.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
+      }
       qc.invalidateQueries({ queryKey: ['booking'] });
       qc.invalidateQueries({ queryKey: ['customer-bookings'] });
     },
@@ -374,16 +419,14 @@ export function generateTimeSlots(
   allowPast: boolean = false
 ): string[] {
   const slots: string[] = [];
-  const [oh, om] = openTime.split(':').map(Number);
-  const [ch, cm] = closeTime.split(':').map(Number);
   const now = new Date();
 
   // If the targetDate is in the past (yesterday or earlier), we shouldn't show slots unless allowPast is true
   if (!allowPast && isBefore(startOfDay(targetDate), startOfDay(now))) return [];
 
   const targetDayStr = format(targetDate, 'yyyy-MM-dd');
-  let current = new Date(`${targetDayStr}T${openTime.padStart(5, '0')}:00`);
-  const closeDate = new Date(`${targetDayStr}T${closeTime.padStart(5, '0')}:00`);
+  let current = new Date(`${targetDayStr}T${openTime.slice(0, 5).padStart(5, '0')}:00`);
+  const closeDate = new Date(`${targetDayStr}T${closeTime.slice(0, 5).padStart(5, '0')}:00`);
 
   const serviceTotal = durationMinutes + bufferMinutes;
 
@@ -440,17 +483,30 @@ export function useBookingsRealtime(tenantId: string | null) {
           filter: `tenant_id=eq.${tenantId}`,
         },
         (payload) => {
-          // 🔔 Play distinct chime on new booking
-          if (payload.eventType === 'INSERT') {
+          const newRow = payload.new as any;
+          const oldRow = payload.old as any;
+          // 🔔 Tocar campainha quando um novo agendamento já entra confirmado (local)
+          // ou quando um agendamento online (PIX/Cartão) muda de 'pending' para 'confirmed'
+          if (payload.eventType === 'INSERT' && newRow?.status === 'confirmed') {
+            play('booking');
+          } else if (
+            payload.eventType === 'UPDATE' &&
+            newRow?.status === 'confirmed' &&
+            oldRow?.status &&
+            oldRow.status !== 'confirmed'
+          ) {
             play('booking');
           }
           // 🔕 Play cancel alert when a booking is marked canceled
-          if (payload.eventType === 'UPDATE' && (payload.new as any)?.status === 'canceled') {
+          if (payload.eventType === 'UPDATE' && newRow?.status === 'canceled') {
             play('cancel');
           }
-          // Invalidate bookings for this tenant (will match ['bookings', tenantId, ...])
+          // Invalidate bookings and related financial/customer queries for this tenant
           queryClient.invalidateQueries({ queryKey: ['bookings', tenantId] });
-          // Invalidate customer portal bookings as well so it updates in real time for the client
+          queryClient.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
+          queryClient.invalidateQueries({ queryKey: ['financials_full', tenantId] });
+          queryClient.invalidateQueries({ queryKey: ['commissions', tenantId] });
+          queryClient.invalidateQueries({ queryKey: ['clientes', tenantId] });
           queryClient.invalidateQueries({ queryKey: ['customer-bookings'] });
         }
       )
@@ -461,5 +517,3 @@ export function useBookingsRealtime(tenantId: string | null) {
     };
   }, [tenantId, queryClient, play]);
 }
-
-

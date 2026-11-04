@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getTenantPublicUrl } from '../../lib/tenantUrl';
@@ -11,9 +11,22 @@ import { ptBR } from 'date-fns/locale';
 
 import { useProfessionals } from '../../hooks/useProfessionals';
 import { useServices } from '../../hooks/useServices';
-import { useCreateBooking, useBookingsRealtime, useUpdateBookingStatus } from '../../hooks/useBookings';
+import { useCreateBooking, useBookingsRealtime, useUpdateBookingStatus, useDeleteBooking } from '../../hooks/useBookings';
 import BookingModal from './agenda/BookingModal';
 import BookingDetailSheet from './agenda/BookingDetailSheet';
+
+function isValidConfirmedOrLocalBooking(b: any): boolean {
+  if (!b) return false;
+  if (b.status === 'canceled' || b.status === 'no_show') return false;
+  if (
+    b.status === 'pending' &&
+    (b.payment_mode === 'deposit' || b.payment_mode === 'full') &&
+    (!b.payment_status || b.payment_status === 'pending')
+  ) {
+    return false;
+  }
+  return true;
+}
 
 export default function Dashboard() {
   const { profile, tenant, professionalProfile } = useAuth();
@@ -25,6 +38,7 @@ export default function Dashboard() {
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const updateStatus = useUpdateBookingStatus(tenantId);
+  const deleteBooking = useDeleteBooking(tenantId);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -35,21 +49,19 @@ export default function Dashboard() {
 
   const todayStart = startOfDay(new Date()).toISOString();
   const todayEnd = endOfDay(new Date()).toISOString();
-  // Para previsão futura da semana (hoje + 6 dias)
-  const futureWeekStart = todayStart;
   const futureWeekEnd = endOfDay(addDays(new Date(), 6)).toISOString();
 
-  // 1. Fetch Today's Bookings
-  const { data: todayBookings = [], isLoading: isLoadingToday } = useQuery({
+  // 1. Fetch Today's Bookings (with both singular aliases for BookingDetailSheet and plural fallbacks)
+  const { data: rawTodayBookings = [], isLoading: isLoadingToday } = useQuery({
     queryKey: ['bookings', tenantId, 'dashboard_today'],
     queryFn: async () => {
       let query = supabase
         .from('bookings')
         .select(`
           *,
-          customers ( name ),
-          professionals ( name ),
-          services ( name, duration_minutes )
+          customer:customers ( id, name, phone, email, segment ),
+          professional:professionals ( id, name, agenda_color, photo_url ),
+          service:services ( id, name, duration_minutes, buffer_minutes, color, price )
         `)
         .eq('tenant_id', tenantId)
         .gte('scheduled_at', todayStart)
@@ -62,22 +74,22 @@ export default function Dashboard() {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      return (data || []).filter(isValidConfirmedOrLocalBooking);
     },
     enabled: !!tenantId,
   });
 
   // 1.5 Fetch Upcoming Bookings (for the next 7 days list)
-  const { data: upcomingBookings = [], isLoading: isLoadingUpcoming } = useQuery({
+  const { data: rawUpcomingBookings = [], isLoading: isLoadingUpcoming } = useQuery({
     queryKey: ['bookings', tenantId, 'dashboard_upcoming'],
     queryFn: async () => {
       let query = supabase
         .from('bookings')
         .select(`
           *,
-          customers ( name ),
-          professionals ( name ),
-          services ( name, duration_minutes )
+          customer:customers ( id, name, phone, email, segment ),
+          professional:professionals ( id, name, agenda_color, photo_url ),
+          service:services ( id, name, duration_minutes, buffer_minutes, color, price )
         `)
         .eq('tenant_id', tenantId)
         .gte('scheduled_at', todayStart)
@@ -90,13 +102,12 @@ export default function Dashboard() {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      return (data || []).filter(isValidConfirmedOrLocalBooking);
     },
     enabled: !!tenantId,
   });
 
   // 2. Fetch Recent & Future Bookings (for charts and top services)
-  // Fetch from 30 days ago to 7 days ahead
   const past30DaysStart = startOfDay(addDays(new Date(), -30)).toISOString();
   const { data: recentBookings = [], isLoading: isLoadingFuture } = useQuery({
     queryKey: ['bookings', tenantId, 'dashboard_recent'],
@@ -104,7 +115,7 @@ export default function Dashboard() {
       let query = supabase
         .from('bookings')
         .select(`
-          id, scheduled_at, amount_total, status,
+          id, scheduled_at, amount_total, status, payment_mode, payment_status,
           service:services ( name )
         `)
         .eq('tenant_id', tenantId)
@@ -117,7 +128,7 @@ export default function Dashboard() {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      return (data || []).filter(isValidConfirmedOrLocalBooking);
     },
     enabled: !!tenantId,
   });
@@ -153,7 +164,7 @@ export default function Dashboard() {
     enabled: !!tenantId,
   });
 
-  // 5. Fetch tenant settings (logo_url) para o ícone de foto da tela inicial
+  // 5. Fetch tenant settings (logo_url)
   const { data: tenantSettings } = useQuery({
     queryKey: ['dashboard_tenant_settings', tenantId],
     queryFn: async () => {
@@ -176,33 +187,36 @@ export default function Dashboard() {
 
   const loading = isLoadingToday || isLoadingFuture || isLoadingCustomers || isLoadingUpcoming;
 
-  // Total revenue today - count only confirmed/completed
-  const validTodayBookings = todayBookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
+  const todayBookings = rawTodayBookings;
+  const upcomingBookings = rawUpcomingBookings;
+
+  // Total revenue today - count confirmed/in_progress/arrived/completed
+  const validTodayBookings = todayBookings.filter(
+    b => b.status === 'confirmed' || b.status === 'completed' || b.status === 'in_progress' || b.status === 'arrived'
+  );
   const totalRevenueToday = validTodayBookings.reduce((sum, b) => sum + (b.amount_total || 0), 0);
   
   let occupancy = '0%';
   const todayWeekday = new Date().getDay(); // 0-6
   const todayHours = businessHours.find(h => h.weekday === todayWeekday);
+  const activeProsCount = Math.max(1, professionals.filter(p => p.active !== false && (!p.status || p.status === 'active')).length);
   
   if (todayBookings.length === 0) {
     occupancy = '0%';
   } else if (todayHours && todayHours.is_open && todayHours.open_time && todayHours.close_time) {
-    const startHour = parseInt(todayHours.open_time.split(':')[0]);
-    const endHour = parseInt(todayHours.close_time.split(':')[0]);
-    const totalMinutesOpen = (endHour - startHour) * 60;
+    const startHour = parseInt(todayHours.open_time.split(':')[0], 10);
+    const endHour = parseInt(todayHours.close_time.split(':')[0], 10);
+    const totalMinutesOpen = Math.max(60, (endHour - startHour) * 60);
     
-    // Sum duration of all today's bookings
     const totalBookedMinutes = todayBookings.reduce((sum, b) => {
-      return sum + (b.services?.duration_minutes || 30);
+      return sum + (b.duration_minutes || b.service?.duration_minutes || 30);
     }, 0);
     
-    // Total available minutes depends on number of professionals (naive calc for now)
-    const availableMinutes = totalMinutesOpen * (professionals.length || 1);
+    const availableMinutes = totalMinutesOpen * activeProsCount;
     const occ = Math.round((totalBookedMinutes / availableMinutes) * 100);
     occupancy = `${Math.min(occ, 100)}%`;
   }
 
-  // Helper to format currency
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   };
@@ -216,14 +230,14 @@ export default function Dashboard() {
     {
       label: 'Agendamentos hoje',
       value: todayBookings.length.toString(),
-      sub: 'agora',
+      sub: 'hoje',
       icon: Calendar,
       dark: true,
     },
     {
       label: 'Faturamento do dia',
       value: formatCurrency(totalRevenueToday),
-      sub: 'hoje',
+      sub: 'previsto hoje',
       icon: DollarSign,
       dark: false,
     },
@@ -244,12 +258,13 @@ export default function Dashboard() {
   ];
 
   // Gráfico da semana (Previsão)
-  const confirmedRecentBookings = recentBookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
+  const confirmedRecentBookings = recentBookings.filter(
+    b => b.status === 'confirmed' || b.status === 'completed' || b.status === 'in_progress' || b.status === 'arrived'
+  );
   const futureRevenue = confirmedRecentBookings
-    .filter(b => new Date(b.scheduled_at) >= new Date())
+    .filter(b => new Date(b.scheduled_at) >= startOfDay(new Date()))
     .reduce((sum, b) => sum + (b.amount_total || 0), 0);
   
-  // Calculate heights per day (Next 7 days including today)
   const next7Days = Array.from({ length: 7 }).map((_, i) => addDays(new Date(), i));
   const weekDays = next7Days.map(d => format(d, 'E', { locale: ptBR }).charAt(0).toUpperCase());
   
@@ -267,8 +282,8 @@ export default function Dashboard() {
   const maxFutureRevenue = Math.max(...dailyFutureRevenues, 1);
   const futureWeekHeights = dailyFutureRevenues.map(r => (r / maxFutureRevenue) * 100);
 
-  // Top Serviços (Based on recent 30 days + future confirmed bookings)
-  const servicesStats: Record<string, { count: number, revenue: number }> = {};
+  // Top Serviços
+  const servicesStats: Record<string, { count: number; revenue: number }> = {};
   confirmedRecentBookings.forEach(b => {
     const serviceData = b.service as any;
     const serviceName = Array.isArray(serviceData) ? serviceData[0]?.name : serviceData?.name;
@@ -291,11 +306,6 @@ export default function Dashboard() {
       revenue: stats.revenue
     }));
 
-  const handleCreateBooking = async (input: any) => {
-    await createBooking.mutateAsync(input);
-    setBookingModalOpen(false);
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full min-h-[400px]">
@@ -313,9 +323,9 @@ export default function Dashboard() {
         <div className="flex items-center gap-4">
           <button 
             type="button"
-            onClick={() => navigate('/admin')}
+            onClick={() => navigate('/app/configuracoes')}
             className="cursor-pointer group flex-shrink-0 relative focus:outline-none transition-transform hover:scale-105 active:scale-95"
-            title="Voltar para a tela inicial do Admin (Visão Geral)"
+            title="Configurações do Salão"
           >
             {tenantSettings?.logo_url ? (
               <img 
@@ -340,7 +350,7 @@ export default function Dashboard() {
             </h1>
             <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
               {todayBookings.length > 0 
-                ? `Você tem ${todayBookings.length} agendamentos hoje.` 
+                ? `Você tem ${todayBookings.length} agendamento${todayBookings.length > 1 ? 's' : ''} hoje.` 
                 : 'Nenhum agendamento para hoje.'}
             </p>
           </div>
@@ -371,14 +381,14 @@ export default function Dashboard() {
                 <span className="text-2xl">👋</span> Bem-vindo ao seu novo sistema!
               </h2>
               <p className="text-sm max-w-2xl leading-relaxed" style={{ color: theme.textMuted }}>
-                Sua barbearia está quase pronta. Para começar a receber agendamentos e ver os gráficos ganharem vida, você precisa configurar os pilares do seu negócio.
+                Seu estabelecimento está quase pronto. Para começar a receber agendamentos e ver os gráficos ganharem vida, configure os pilares do seu negócio.
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 relative z-10">
             <button 
-              onClick={() => navigate('/admin/servicos')}
+              onClick={() => navigate('/app/servicos')}
               className="flex items-center gap-4 p-4 rounded-xl text-left transition-all hover:scale-[1.02]" 
               style={{ background: theme.bgHover, border: `1px solid ${theme.border}` }}
             >
@@ -387,12 +397,12 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="font-bold text-sm" style={{ color: theme.textPrimary }}>Cadastrar Serviços</h3>
-                <p className="text-xs" style={{ color: theme.textMuted }}>O que você vai oferecer? (Ex: Corte, Barba)</p>
+                <p className="text-xs" style={{ color: theme.textMuted }}>O que você vai oferecer? (Ex: Corte, Barba, Manicure)</p>
               </div>
             </button>
 
             <button 
-              onClick={() => navigate('/admin/equipe')}
+              onClick={() => navigate('/app/equipe')}
               className="flex items-center gap-4 p-4 rounded-xl text-left transition-all hover:scale-[1.02]" 
               style={{ background: theme.bgHover, border: `1px solid ${theme.border}` }}
             >
@@ -441,7 +451,7 @@ export default function Dashboard() {
               <h3 className="font-bold text-lg" style={{ color: theme.textPrimary }}>Próximos agendamentos</h3>
               <p className="text-xs" style={{ color: theme.textMuted }}>Os seus próximos horários</p>
             </div>
-            <button onClick={() => navigate('/admin/agenda')} className="flex items-center gap-1 text-xs font-semibold" style={{ color: theme.accent }}>
+            <button onClick={() => navigate('/app/agenda')} className="flex items-center gap-1 text-xs font-semibold cursor-pointer" style={{ color: theme.accent }}>
               Ver semana <ArrowRight className="w-3 h-3" />
             </button>
           </div>
@@ -468,11 +478,18 @@ export default function Dashboard() {
               }
 
               return proximosAgendamentos.map((item) => {
-                // Warning se o horário já passou e continua pendente ou confirmado
                 const isLate = new Date(item.scheduled_at) < new Date() && (item.status === 'pending' || item.status === 'confirmed');
+                const customerName = item.customer?.name || item.customers?.name || 'Cliente';
+                const serviceName = item.service?.name || item.services?.name || 'Serviço';
+                const proName = item.professional?.name || item.professionals?.name || 'Equipe';
 
                 return (
-                  <div key={item.id} onClick={() => setSelectedBooking(item)} className={`agenda-item flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg border cursor-pointer transition-colors hover:bg-[var(--theme-bg-hover)] ${isLate ? 'border-red-300 bg-red-50 hover:bg-red-100' : ''}`} style={{ borderColor: isLate ? '#FCA5A5' : theme.border }}>
+                  <div
+                    key={item.id}
+                    onClick={() => setSelectedBooking(item)}
+                    className={`agenda-item flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg border cursor-pointer transition-colors hover:bg-[var(--theme-bg-hover)] ${isLate ? 'border-red-300 bg-red-50 hover:bg-red-100' : ''}`}
+                    style={{ borderColor: isLate ? '#FCA5A5' : theme.border }}
+                  >
                     <div className="flex flex-col items-center flex-shrink-0 w-12 md:w-14">
                       <span className={`font-bold text-xs md:text-sm ${isLate ? 'text-red-600' : ''}`} style={{ color: isLate ? '#DC2626' : theme.accent }}>{formatTime(item.scheduled_at)}</span>
                       <span className="text-[9px] md:text-[10px] font-medium" style={{ color: theme.textMuted }}>{format(new Date(item.scheduled_at), 'dd/MM')}</span>
@@ -481,16 +498,21 @@ export default function Dashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 w-full mb-0.5">
                         <span className={`font-semibold text-[13px] md:text-sm truncate ${isLate ? 'text-red-900' : ''}`} style={{ color: isLate ? '#7F1D1D' : theme.textPrimary }}>
-                          {item.customers?.name || 'Cliente anônimo'}
+                          {customerName}
                         </span>
                         {item.order_number && (
                           <span className={`text-[9px] md:text-[10px] font-mono px-1 py-0.5 rounded-md border flex-shrink-0 ${isLate ? 'border-red-200 bg-red-100 text-red-700' : ''}`} style={!isLate ? { color: theme.textMuted, borderColor: theme.border, background: theme.bg } : {}}>
-                            {item.order_number}
+                            #{item.order_number}
+                          </span>
+                        )}
+                        {item.payment_mode && item.payment_mode !== 'local' && Number(item.amount_paid || 0) > 0 && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-500 shrink-0">
+                            {item.payment_mode === 'deposit' ? 'Sinal Pago' : 'Pago Online'}
                           </span>
                         )}
                       </div>
                       <p className={`text-[11px] md:text-xs truncate ${isLate ? 'text-red-700/80' : ''}`} style={{ color: isLate ? 'rgb(185 28 28 / 0.8)' : theme.textMuted }}>
-                        {item.services?.name || 'Serviço'} · {item.professionals?.name || 'Equipe'}
+                        {serviceName} · {proName}
                       </p>
                     </div>
                     <span className={`text-[13px] md:text-sm font-semibold flex-shrink-0 ${isLate ? 'text-red-700' : ''}`} style={{ color: isLate ? '#B91C1C' : theme.textSecondary }}>
@@ -568,7 +590,7 @@ export default function Dashboard() {
         <BookingModal
           tenantId={tenantId}
           services={services.filter(s => s.active)}
-          professionals={professionals.filter(p => p.active)}
+          professionals={professionals.filter(p => p.active !== false && (!p.status || p.status === 'active'))}
           businessHours={businessHours}
           onClose={() => setBookingModalOpen(false)}
           onCreate={async (input) => {
@@ -583,10 +605,23 @@ export default function Dashboard() {
         <BookingDetailSheet
           booking={selectedBooking}
           onClose={() => setSelectedBooking(null)}
-          onStatusChange={(id, status) => {
-            updateStatus.mutate({ id, status });
+          onStatusChange={async (id, status) => {
+            await updateStatus.mutateAsync({ id, status });
+            if (status === 'canceled' || status === 'no_show') {
+              setSelectedBooking(null);
+            } else {
+              setSelectedBooking((prev: any) => prev ? {
+                ...prev,
+                status,
+                ...(status === 'completed' ? { amount_paid: prev.amount_total, payment_status: 'paid' } : {})
+              } : null);
+            }
           }}
-          isUpdating={updateStatus.isPending}
+          onDelete={async (id) => {
+            await deleteBooking.mutateAsync(id);
+            setSelectedBooking(null);
+          }}
+          isUpdating={updateStatus.isPending || deleteBooking.isPending}
         />
       )}
     </div>

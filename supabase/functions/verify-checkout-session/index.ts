@@ -86,13 +86,18 @@ serve(async (req) => {
       }
     }
 
+    const isTrialing = stripeSub && typeof stripeSub !== 'string' && stripeSub.status === 'trialing' && !!stripeSub.trial_end;
+    const correctSubStatus = isTrialing ? 'trialing' : 'active';
+    const correctTenantStatus = isTrialing ? 'trial' : 'active';
+    const correctAccountState = isTrialing ? 'trialing_with_card' : 'active';
+
     // Upsert subscription directly with service role
     const { error: upsertError } = await supabaseAdmin.from('subscriptions').upsert({
       tenant_id: tenantId,
       plan_id: planId,
       stripe_subscription_id: subId,
       stripe_customer_id: customerId,
-      status: 'active',
+      status: correctSubStatus,
       trial_ends_at: trialEndsAt,
       current_period_end: currentPeriodEnd,
       grace_period_ends_at: null,
@@ -105,20 +110,19 @@ serve(async (req) => {
     if (upsertError) throw upsertError;
 
     // Ensure tenant is in correct state (trial or active) based on Stripe subscription
-    const isTrialing = stripeSub && typeof stripeSub !== 'string' && stripeSub.status === 'trialing' && !!stripeSub.trial_end;
-    const correctTenantStatus = isTrialing ? 'trial' : 'active';
-    const correctAccountState = isTrialing ? 'trialing_with_card' : 'active';
     await supabaseAdmin.from('tenants').update({
       status: correctTenantStatus,
       account_state: correctAccountState,
+      trial_ends_at: trialEndsAt,
       past_due_since: null,
+      has_used_trial: true,
     }).eq('id', tenantId);
 
     return new Response(JSON.stringify({ 
       success: true, 
       tenantId, 
       planId,
-      status: 'active' 
+      status: correctSubStatus 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -126,7 +130,7 @@ serve(async (req) => {
     console.error('verify-checkout-session error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
+      status: 200,
     });
   }
 });

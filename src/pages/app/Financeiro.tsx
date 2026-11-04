@@ -1,8 +1,7 @@
-import PaywallGate from '../../components/PaywallGate';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
   DollarSign, ArrowUpRight, ArrowDownRight, Download, Plus, Edit2, Trash2,
-  Lock, Crown, Filter, Users, TrendingUp, AlertCircle, ChevronLeft, ChevronRight, Loader2
+  Lock, AlertCircle, ChevronLeft, ChevronRight, Loader2
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { TableRowSkeleton } from '../../components/ui/Skeleton';
@@ -12,7 +11,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { format, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { ManualTransactionModal, type FinancialTransaction } from './financeiro/ManualTransactionModal';
 import { UpgradeModal } from '../../components/UpgradeModal';
@@ -21,10 +19,9 @@ import { RecurringExpensesTab } from './financeiro/RecurringExpensesTab';
 
 export default function Financeiro() {
   const { theme } = useTheme();
-  const { tenant, user, role, professionalProfile } = useAuth();
+  const { tenant, role, professionalProfile } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const engine = usePermissionEngine();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const isLight =
@@ -49,16 +46,15 @@ export default function Financeiro() {
     queryFn: async () => {
       const { data } = await supabase
         .from('professionals')
-        .select('id, name')
-        .eq('tenant_id', tenantId!)
-        .eq('status', 'active');
-      return data || [];
+        .select('id, name, active, status')
+        .eq('tenant_id', tenantId!);
+      return (data || []).filter((p: any) => p.active !== false && (!p.status || p.status === 'active'));
     },
     enabled: !!tenantId
   });
 
   const professionals = role === 'professional' && professionalProfile
-    ? allProfessionals.filter(p => p.id === professionalProfile.id)
+    ? allProfessionals.filter((p: any) => p.id === professionalProfile.id)
     : allProfessionals;
 
   // 2. Fetch Combined Financials (Payments, Refunds, Completed Bookings, and Manual Financial Transactions)
@@ -70,8 +66,6 @@ export default function Financeiro() {
       const start = startOfMonth(currentMonth).toISOString();
       const end = endOfMonth(currentMonth).toISOString();
 
-      // ── C1 FIX: For professionals, pre-fetch their booking IDs so payments/refunds
-      // are filtered at the DATABASE level (not just hidden in the UI).
       let professionalBookingIds: string[] | null = null;
       if (role === 'professional' && selectedProfessionalId) {
         const { data: myBookings } = await supabase
@@ -181,20 +175,31 @@ export default function Financeiro() {
       let saidas = 0;
       const transactions: any[] = [];
 
-      // Process Online Payments
+      // Process Online Payments (Ignorar 'pending' / 'failed' / 'canceled')
       payments?.forEach((p: any) => {
         if (selectedProfessionalId && p.bookings?.professional_id !== selectedProfessionalId) {
           return;
         }
-        if (p.status === 'succeeded' || p.status === 'refunded') {
-          entradas += Number(p.net_amount || p.amount);
+        if (p.status !== 'succeeded' && p.status !== 'refunded') {
+          return;
         }
+        const netVal = Number(p.net_amount || p.amount || 0);
+        entradas += netVal;
+
+        const rawMethod = String(p.payment_method || '').toLowerCase();
+        const methodLabel =
+          rawMethod === 'pix'
+            ? 'PIX (Online)'
+            : rawMethod === 'card'
+              ? 'Cartão (Online)'
+              : p.payment_method || 'PIX / Cartão (Online)';
+
         transactions.push({
           id: p.id,
           type: 'income',
-          amount: Number(p.net_amount || p.amount),
+          amount: netVal,
           status: p.status,
-          method: p.payment_method || 'Cartão (Online)',
+          method: methodLabel,
           date: p.created_at,
           customer_name: p.bookings?.customers?.name || 'Cliente',
           description: p.bookings?.services?.name || 'Serviço Online',
@@ -230,18 +235,18 @@ export default function Financeiro() {
         let method = 'Local (Balcão)';
 
         if (mode === 'local' || mode === 'pay_local') {
-          // 100% recebido presencialmente
           localVal = Number(b.amount_total || b.amount_paid || 0);
           method = 'Local (Balcão)';
         } else if (mode === 'deposit' || mode === 'partial') {
-          // Sinal de entrada recebido online, restante cobrado no balcão
           const total = Number(b.amount_total || 0);
-          const onlinePaid = payments?.find((p: any) => p.booking_id === b.id)?.amount || (total * 0.5);
-          localVal = Math.max(0, total - Number(onlinePaid));
+          const succeededOnline = payments?.find((p: any) => p.booking_id === b.id && (p.status === 'succeeded' || p.status === 'refunded'));
+          const onlinePaid = succeededOnline ? Number(succeededOnline.amount || 0) : (total * 0.5);
+          localVal = Math.max(0, total - onlinePaid);
           method = 'Saldo Restante (Balcão)';
         } else if (mode === 'full') {
-          // 100% pago online, já computado em payments
-          localVal = 0;
+          const hasOnlineRecord = payments?.some((p: any) => p.booking_id === b.id && (p.status === 'succeeded' || p.status === 'refunded'));
+          localVal = hasOnlineRecord ? 0 : Number(b.amount_total || 0);
+          method = hasOnlineRecord ? 'Online' : 'Pago Integral';
         } else {
           localVal = Number(b.amount_total || b.amount_paid || 0);
         }
@@ -268,7 +273,6 @@ export default function Financeiro() {
       const endDate = new Date(end);
 
       manualTransactions?.forEach((m: any) => {
-        // Prevent double counting if an income transaction is tied to a booking
         if (m.booking_id && m.type === 'income') return;
 
         const txDate = new Date(m.date || m.created_at);
@@ -448,7 +452,7 @@ export default function Financeiro() {
       `"${t.type === 'income' ? '' : '-'}${t.amount}"`
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e: any) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
@@ -613,7 +617,7 @@ export default function Financeiro() {
                       Caixa Geral (Todos)
                     </button>
                   )}
-                  {professionals.map(p => {
+                  {professionals.map((p: any) => {
                     const isSelected = selectedProfessionalId === p.id;
                     return (
                       <button
@@ -767,7 +771,7 @@ export default function Financeiro() {
                       }}
                     >
                       <p className="font-bold text-base mb-1" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>Nenhum lançamento encontrado neste período.</p>
-                      <p className="text-xs font-medium">Os agendamentos concluídos e transações manuais deste mês aparecerão aqui automaticamente.</p>
+                      <p className="text-xs font-medium">Os pagamentos online confirmados, agendamentos concluídos e transações manuais aparecerão aqui automaticamente.</p>
                     </div>
                   ) : (
                     <table className="w-full text-left text-sm border-collapse">

@@ -1,253 +1,389 @@
-import { useMemo, useRef, useEffect } from 'react';
-import { format, isToday, addMinutes } from 'date-fns';
+import { useMemo, useRef, useEffect, useState } from 'react';
+import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
-import { BOOKING_STATUS_CONFIG, type Booking } from '../../../hooks/useBookings';
-import { Clock, User, Scissors, Home, MapPin } from 'lucide-react';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { type Booking, BOOKING_STATUS_CONFIG } from '../../../hooks/useBookings';
+import { supabase } from '../../../integrations/supabase/client';
 
-const HOUR_HEIGHT = 96;
-const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
+interface BusinessHour {
+  weekday: number;
+  is_open: boolean;
+  open_time: string;
+  close_time: string;
+  lunch_start?: string | null;
+  lunch_end?: string | null;
+}
 
-interface Props {
+interface DayViewProps {
   day: Date;
   bookings: Booking[];
-  businessHours: any[];
-  onBookingClick: (b: Booking) => void;
+  businessHours: BusinessHour[];
+  selectedProfessionalId?: string | null;
+  onBookingClick: (booking: Booking) => void;
   onSlotClick: (date: Date, hour: number) => void;
 }
 
-export default function DayView({ day, bookings, businessHours, onBookingClick, onSlotClick }: Props) {
-  const { theme } = useTheme();
+const HOUR_HEIGHT = 88; // px per hour
 
-  const { START_HOUR, END_HOUR, HOURS } = useMemo(() => {
-    let minH = 24;
-    let maxH = 0;
-    let hasOpen = false;
+export default function DayView({
+  day,
+  bookings,
+  businessHours,
+  selectedProfessionalId,
+  onBookingClick,
+  onSlotClick,
+}: DayViewProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [proWorkingHours, setProWorkingHours] = useState<any[]>([]);
 
-    // 1. Verificamos os horários de funcionamento
-    if (businessHours && businessHours.length > 0) {
-      for (const h of businessHours) {
-        if (h.is_open && h.open_time && h.close_time) {
-          hasOpen = true;
-          const openH = parseInt(h.open_time.split(':')[0], 10);
-          const closeH = parseInt(h.close_time.split(':')[0], 10);
-          if (openH < minH) minH = openH;
-          if (closeH > maxH) maxH = closeH;
-        }
-      }
-    }
-
-    // 2. Verificamos se há algum agendamento fora do horário de funcionamento
-    if (bookings && bookings.length > 0) {
-      for (const b of bookings) {
-        if (b.status !== 'canceled') {
-          hasOpen = true;
-          const start = new Date(b.scheduled_at);
-          const end = new Date(start.getTime() + (b.duration_minutes + (b.buffer_minutes || 0)) * 60000);
-          const startH = start.getHours();
-          const endH = end.getHours() + (end.getMinutes() > 0 ? 1 : 0);
-          if (startH < minH) minH = startH;
-          if (endH > maxH) maxH = endH;
-        }
-      }
-    }
-
-    if (!hasOpen) return { START_HOUR: 7, END_HOUR: 21, HOURS: Array.from({ length: 15 }, (_, i) => 7 + i) };
-
-    const start = Math.max(0, minH - 1);
-    const end = Math.min(23, maxH + 1);
-    return {
-      START_HOUR: start,
-      END_HOUR: end,
-      HOURS: Array.from({ length: end - start + 1 }, (_, i) => start + i)
-    };
-  }, [businessHours, bookings]);
-
-  const now = new Date();
-  const nowTop = ((now.getHours() - START_HOUR) * 60 + now.getMinutes()) / 60 * HOUR_HEIGHT;
-  const showNowLine = isToday(day) && now.getHours() >= START_HOUR && now.getHours() <= END_HOUR;
-
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      const containerHeight = scrollContainerRef.current.clientHeight;
-      scrollContainerRef.current.scrollTo({
-        top: Math.max(0, nowTop - (containerHeight / 2)),
-        behavior: 'smooth'
-      });
+    if (!selectedProfessionalId) {
+      setProWorkingHours([]);
+      return;
     }
-  }, [nowTop]);
+    supabase
+      .from('professional_working_hours')
+      .select('*')
+      .eq('professional_id', selectedProfessionalId)
+      .then(({ data }) => setProWorkingHours(data ?? []));
+  }, [selectedProfessionalId]);
 
-  const sortedBookings = useMemo(() =>
-    [...bookings].sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()),
-    [bookings]
+  const effectiveHours = useMemo(() => {
+    if (selectedProfessionalId && proWorkingHours.length > 0) {
+      return proWorkingHours.map((ph) => ({
+        weekday: ph.weekday,
+        is_open: ph.is_working,
+        open_time: ph.open_time,
+        close_time: ph.close_time,
+        lunch_start: ph.lunch_start,
+        lunch_end: ph.lunch_end,
+      }));
+    }
+    return businessHours;
+  }, [businessHours, selectedProfessionalId, proWorkingHours]);
+
+  const weekday = day.getDay();
+  const bh = effectiveHours.find((b) => b.weekday === weekday);
+
+  const { startHour, endHour } = useMemo(() => {
+    if (!bh || !bh.is_open) return { startHour: 7, endHour: 21 };
+    const openH = parseInt(bh.open_time.split(':')[0], 10);
+    const [ch, cm] = bh.close_time.split(':').map(Number);
+    const closeH = cm > 0 ? ch + 1 : ch;
+    return {
+      startHour: Math.max(0, openH - 1),
+      endHour: Math.min(23, closeH + 1),
+    };
+  }, [bh]);
+
+  const hours = useMemo(
+    () => Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i),
+    [startHour, endHour]
   );
 
-  const dayHours = businessHours.find((h: any) => h.weekday === day.getDay());
-  const isClosed = dayHours && !dayHours.is_open;
+  const now = new Date();
+  const today = isToday(day);
+  const currentMinutes = (now.getHours() - startHour) * 60 + now.getMinutes();
+  const nowOffset = (currentMinutes / 60) * HOUR_HEIGHT;
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = Math.max(0, nowOffset - 200);
+    }
+  }, [nowOffset]);
+
+  // Posicionamento em colunas lado a lado quando 2+ profissionais têm agendamento no mesmo horário
+  const positionedBookings = useMemo(() => {
+    const sorted = [...bookings].sort(
+      (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
+    );
+
+    const items = sorted.map((b) => {
+      const dt = new Date(b.scheduled_at);
+      const mins = (dt.getHours() - startHour) * 60 + dt.getMinutes();
+      const top = (mins / 60) * HOUR_HEIGHT;
+      const duration = b.duration_minutes || b.service?.duration_minutes || 30;
+      const height = Math.max((duration / 60) * HOUR_HEIGHT - 3, 44);
+      return {
+        booking: b,
+        top,
+        height,
+        bottom: top + height,
+        colIndex: 0,
+        totalCols: 1,
+      };
+    });
+
+    let cluster: typeof items = [];
+    let clusterMaxBottom = -1;
+
+    const finalizeCluster = (group: typeof items) => {
+      if (group.length === 0) return;
+      const colEnds: number[] = [];
+      for (const item of group) {
+        let placedCol = -1;
+        for (let c = 0; c < colEnds.length; c++) {
+          if (colEnds[c] <= item.top + 1) {
+            placedCol = c;
+            colEnds[c] = item.bottom;
+            break;
+          }
+        }
+        if (placedCol === -1) {
+          placedCol = colEnds.length;
+          colEnds.push(item.bottom);
+        }
+        item.colIndex = placedCol;
+      }
+      const totalCols = Math.max(1, colEnds.length);
+      for (const item of group) {
+        item.totalCols = totalCols;
+      }
+    };
+
+    for (const item of items) {
+      if (cluster.length === 0) {
+        cluster.push(item);
+        clusterMaxBottom = item.bottom;
+      } else if (item.top < clusterMaxBottom - 1) {
+        cluster.push(item);
+        clusterMaxBottom = Math.max(clusterMaxBottom, item.bottom);
+      } else {
+        finalizeCluster(cluster);
+        cluster = [item];
+        clusterMaxBottom = item.bottom;
+      }
+    }
+    finalizeCluster(cluster);
+
+    return items.map((item) => {
+      const widthPercent = 100 / item.totalCols;
+      const leftPercent = item.colIndex * widthPercent;
+      return {
+        ...item,
+        widthPercent,
+        leftPercent,
+      };
+    });
+  }, [bookings, startHour]);
+
+  const lunchBand = useMemo(() => {
+    if (!bh?.lunch_start || !bh?.lunch_end) return null;
+    const [lsh, lsm] = bh.lunch_start.split(':').map(Number);
+    const [leh, lem] = bh.lunch_end.split(':').map(Number);
+    const startMins = (lsh - startHour) * 60 + lsm;
+    const endMins = (leh - startHour) * 60 + lem;
+    return {
+      top: (startMins / 60) * HOUR_HEIGHT,
+      height: ((endMins - startMins) / 60) * HOUR_HEIGHT,
+    };
+  }, [bh, startHour]);
+
+  const isInBusinessHours = (hour: number) => {
+    if (!bh || !bh.is_open) return false;
+    const openH = parseInt(bh.open_time.split(':')[0], 10);
+    const closeH = parseInt(bh.close_time.split(':')[0], 10);
+    return hour >= openH && hour < closeH;
+  };
 
   return (
-    <div className="flex flex-col h-full min-h-0 w-full rounded-2xl border overflow-hidden shadow-sm" style={{ background: theme.bg, borderColor: theme.border }}>
-      {/* ── Day Header ── */}
-      <div className="shrink-0 px-6 py-5 border-b flex items-center justify-between" style={{ borderColor: theme.border, background: theme.cardBg }}>
-        <div className="flex items-center gap-4">
-          <div
-            className="w-14 h-14 flex flex-col items-center justify-center rounded-2xl font-bold"
-            style={{
-              background: isToday(day) ? theme.accentGradient : theme.inputBg,
-              color: isToday(day) ? theme.btnPrimaryText : theme.textPrimary,
-              border: isToday(day) ? 'none' : `1px solid ${theme.border}`,
-              boxShadow: isToday(day) ? theme.shadowAccent : 'none',
-            }}
-          >
-            <span className="text-[10px] uppercase tracking-wider opacity-80">{format(day, 'EEE', { locale: ptBR })}</span>
-            <span className="text-xl leading-none mt-0.5">{format(day, 'd')}</span>
-          </div>
-
-          <div>
-            <h2 className="text-lg font-bold leading-tight" style={{ color: theme.textPrimary }}>
-              {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-            </h2>
-            <p className="text-xs font-medium mt-1" style={{ color: theme.textSecondary }}>
-              {isClosed ? 'Salão fechado neste dia' : `${bookings.length} agendamento${bookings.length !== 1 ? 's' : ''} registrado${bookings.length !== 1 ? 's' : ''}`}
-            </p>
-          </div>
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden select-none">
+      {/* Header */}
+      <div
+        className="flex items-center gap-4 px-6 py-3.5 border-b shrink-0"
+        style={{ borderColor: 'var(--theme-border)', backgroundColor: 'var(--theme-bg)' }}
+      >
+        <div
+          className="w-11 h-11 rounded-2xl flex flex-col items-center justify-center font-bold transition-all"
+          style={{
+            backgroundColor: today ? 'var(--theme-accent)' : 'var(--theme-card-bg)',
+            color: today ? '#090A0B' : 'var(--theme-text-primary)',
+            boxShadow: today ? '0 0 16px rgba(201,150,59,0.4)' : undefined,
+          }}
+        >
+          <span className="text-[9px] uppercase tracking-wider font-black">
+            {format(day, 'EEE', { locale: ptBR })}
+          </span>
+          <span className="text-base font-black leading-none">{format(day, 'd')}</span>
         </div>
-
-        {bookings.length > 0 && (
-          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textPrimary }}>
-            <Clock className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-            <span>{isToday(day) ? 'Hoje' : format(day, 'dd/MM')}</span>
-          </div>
-        )}
+        <div>
+          <p className="font-bold text-sm capitalize" style={{ color: 'var(--theme-text-primary)' }}>
+            {format(day, "EEEE, d 'de' MMMM", { locale: ptBR })}
+          </p>
+          <p className="text-xs" style={{ color: 'var(--theme-text-secondary)' }}>
+            {bh && bh.is_open
+              ? `Aberto das ${bh.open_time.slice(0, 5)} às ${bh.close_time.slice(0, 5)} · ${bookings.length} agendamento${bookings.length !== 1 ? 's' : ''}`
+              : 'Estabelecimento fechado neste dia'}
+          </p>
+        </div>
       </div>
 
-      {/* ── Time Grid ── */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto relative scroll-smooth">
-        <div className="flex min-h-full">
-          {/* Left Hour labels */}
-          <div className="w-16 shrink-0 border-r sticky left-0 z-30 select-none" style={{ borderColor: theme.border, background: theme.cardBg }}>
-            {HOURS.map(h => (
+      {/* Scrollable time grid */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        <div className="grid relative" style={{ gridTemplateColumns: '64px 1fr' }}>
+          {/* Hour labels */}
+          <div className="border-r" style={{ borderColor: 'var(--theme-border)' }}>
+            {hours.map((h) => (
               <div
                 key={h}
-                className="relative border-b text-xs font-semibold flex items-start pt-2.5 pr-3 justify-end"
-                style={{ height: `${HOUR_HEIGHT}px`, borderColor: `${theme.border}30`, color: theme.textSecondary }}
+                style={{ height: HOUR_HEIGHT, borderColor: 'rgba(255,255,255,0.03)' }}
+                className="border-b pr-3 pt-2 text-right"
               >
-                <span className="text-[11px] font-mono tracking-tight font-medium opacity-70">{String(h).padStart(2, '0')}:00</span>
+                <span className="text-xs font-medium" style={{ color: 'var(--theme-text-secondary)' }}>
+                  {String(h).padStart(2, '0')}:00
+                </span>
               </div>
             ))}
           </div>
 
-          {/* Slots & Bookings Area */}
-          <div className="flex-1 relative">
-            {/* Live Now Line */}
-            {showNowLine && (
-              <div className="absolute left-0 right-0 z-40 pointer-events-none flex items-center" style={{ top: `${nowTop}px` }}>
-                <div className="w-full h-px" style={{ background: theme.accent }} />
-                <div className="w-2 h-2 rounded-full -ml-1 shrink-0" style={{ background: theme.accent }} />
-                <span className="absolute left-3 -top-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: theme.accent }}>
-                  {format(now, 'HH:mm')}
-                </span>
-              </div>
-            )}
-
-            {/* Hour Rows */}
-            {HOURS.map(h => {
-              const slotTime = new Date(day);
-              slotTime.setHours(h, 0, 0, 0);
-              const isPast = slotTime.getTime() < now.getTime();
-              const isUnavailable = isClosed || isPast;
+          {/* Main column */}
+          <div className="relative">
+            {hours.map((h) => {
+              const inHours = isInBusinessHours(h);
+              const slotEnd = new Date(day);
+              slotEnd.setHours(h + 1, 0, 0, 0);
+              const isPast = slotEnd.getTime() <= now.getTime();
+              const canSchedule = inHours && !isPast;
 
               return (
                 <div
                   key={h}
-                  onClick={() => { if (!isUnavailable) onSlotClick(day, h); }}
-                  className={`border-b transition-colors group relative flex flex-col justify-between ${!isUnavailable ? 'cursor-pointer hover:bg-white/5' : ''}`}
-                  style={{ borderColor: `${theme.border}30`, height: `${HOUR_HEIGHT}px` }}
+                  style={{ height: HOUR_HEIGHT, borderColor: 'var(--theme-border)' }}
+                  onClick={() => canSchedule && onSlotClick(day, h)}
+                  className={`border-b relative transition-colors group ${
+                    canSchedule
+                      ? 'cursor-pointer hover:bg-[rgba(201,150,59,0.05)]'
+                      : 'opacity-40 cursor-not-allowed'
+                  }`}
                 >
-                  {!isUnavailable && (
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none" style={{ background: `${theme.accent}0d` }}>
-                      <span className="text-xs font-bold px-4 py-2 rounded-full" style={{ background: theme.accent, color: theme.btnPrimaryText }}>
-                        + Agendar às {h.toString().padStart(2, '0')}:00
-                      </span>
-                    </div>
+                  {/* 15-min lines */}
+                  {[0.25, 0.5, 0.75].map((f, fi) => (
+                    <div
+                      key={fi}
+                      style={{
+                        top: `${f * 100}%`,
+                        borderColor: f === 0.5 ? 'var(--theme-border)' : 'rgba(255,255,255,0.02)',
+                      }}
+                      className="absolute inset-x-0 border-b border-dashed pointer-events-none"
+                    />
+                  ))}
+                  {canSchedule && (
+                    <span
+                      className="absolute top-1.5 right-3 text-xs font-bold opacity-0 group-hover:opacity-50 transition-opacity pointer-events-none"
+                      style={{ color: 'var(--theme-accent)' }}
+                    >
+                      + Agendar às {String(h).padStart(2, '0')}:00
+                    </span>
                   )}
-
-                  {/* Subtle 30-min divider */}
-                  <div className="w-full h-px mt-auto mb-auto" style={{ background: `${theme.border}20` }} />
                 </div>
               );
             })}
 
-            {/* Render Day Bookings */}
-            {sortedBookings.map(b => {
-              const start = new Date(b.scheduled_at);
-              const startMinutes = (start.getHours() - START_HOUR) * 60 + start.getMinutes();
-              const topOffset = (startMinutes / 60) * HOUR_HEIGHT;
-              const duration = b.duration_minutes || 30;
-              const height = Math.max((duration / 60) * HOUR_HEIGHT - 6, 60);
-              const end = addMinutes(start, duration);
-              const statusCfg = BOOKING_STATUS_CONFIG[b.status] || { label: 'Agendado', bg: `${theme.accent}15`, color: theme.accent };
-              const accentColor = theme.accent;
+            {/* Lunch break */}
+            {lunchBand && lunchBand.top >= 0 && (
+              <div
+                style={{ top: lunchBand.top, height: lunchBand.height }}
+                className="absolute inset-x-0 pointer-events-none z-5 flex items-center justify-center"
+              >
+                <div
+                  className="w-full h-full flex items-center justify-center"
+                  style={{
+                    background:
+                      'repeating-linear-gradient(45deg, rgba(0,0,0,0.08), rgba(0,0,0,0.08) 6px, transparent 6px, transparent 12px)',
+                    borderTop: '1px dashed rgba(255,255,255,0.1)',
+                    borderBottom: '1px dashed rgba(255,255,255,0.1)',
+                  }}
+                >
+                  <span
+                    className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded"
+                    style={{ color: 'var(--theme-text-secondary)', backgroundColor: 'var(--theme-bg)' }}
+                  >
+                    Intervalo de Almoço
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Current time line */}
+            {today && nowOffset >= 0 && nowOffset <= hours.length * HOUR_HEIGHT && (
+              <div
+                style={{ top: nowOffset }}
+                className="absolute inset-x-0 z-20 pointer-events-none flex items-center"
+              >
+                <div className="w-3 h-3 rounded-full bg-rose-500 -ml-1.5 shrink-0 shadow-[0_0_8px_#f43f5e]" />
+                <div className="flex-1 h-[2px] bg-rose-500" />
+              </div>
+            )}
+
+            {/* Bookings */}
+            {positionedBookings.map(({ booking, top, height, widthPercent, leftPercent }) => {
+              const statusCfg = BOOKING_STATUS_CONFIG[booking.status] || BOOKING_STATUS_CONFIG.confirmed;
+              const accentColor =
+                booking.professional?.agenda_color ||
+                booking.pro_color ||
+                booking.service?.color ||
+                '#C9963B';
+              const isCompact = height < 58;
 
               return (
                 <div
-                  key={b.id}
-                  onClick={e => { e.stopPropagation(); onBookingClick(b); }}
-                  className="absolute left-3 right-3 rounded-2xl cursor-pointer transition-all duration-300 group overflow-hidden border flex flex-col justify-between p-4 hover:-translate-y-0.5"
+                  key={booking.id}
                   style={{
-                    top: `${topOffset}px`,
+                    top: `${top + 1}px`,
                     height: `${height}px`,
-                    background: theme.cardBg,
-                    borderColor: `${theme.border}`,
-                    boxShadow: `0 4px 15px -3px rgba(0,0,0,0.05)`,
+                    left: `calc(${leftPercent}% + 8px)`,
+                    width: `calc(${widthPercent}% - 16px)`,
+                    borderLeftColor: accentColor,
+                    backgroundColor: 'var(--theme-card-bg)',
                   }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onBookingClick(booking);
+                  }}
+                  className={`absolute rounded-xl border-l-4 cursor-pointer z-10 overflow-hidden
+                    hover:z-30 hover:scale-[1.005] transition-all shadow-lg flex items-center justify-between gap-3 ${
+                      isCompact ? 'px-3 py-1.5' : 'px-4 py-2.5'
+                    }`}
                 >
-                  {/* Premium left bar using the store's exact accent */}
-                  <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ background: accentColor }} />
-                  
-                  {/* Subtle background glow */}
-                  <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ background: accentColor }} />
-
-                  <div className="flex items-start justify-between gap-3 relative z-10">
-                    <div className="min-w-0">
-                      <p className="text-[15px] font-bold truncate" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>
-                        {b.customer?.name ?? 'Cliente'}
-                      </p>
-
-                      <p className="text-xs font-semibold mt-1 flex items-center gap-1.5 truncate" style={{ color: theme.textSecondary }}>
-                        <Scissors className="w-3.5 h-3.5 shrink-0 opacity-80" style={{ color: accentColor }} />
-                        <span className="truncate">{b.service?.name || 'Serviço'}</span>
-                        {b.service_location === 'home' ? (
-                          <Home className="w-3.5 h-3.5 shrink-0 opacity-50" />
-                        ) : (
-                          <MapPin className="w-3.5 h-3.5 shrink-0 opacity-50" />
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide shadow-sm" style={{ background: statusCfg.bg, color: statusCfg.color }}>
+                  <div
+                    className="absolute inset-0 pointer-events-none rounded-xl"
+                    style={{ backgroundColor: `${accentColor}15` }}
+                  />
+                  <div className="relative z-10 min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                      <span className="text-xs font-black" style={{ color: accentColor }}>
+                        {format(new Date(booking.scheduled_at), 'HH:mm')}
+                      </span>
+                      <span
+                        className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                        style={{ backgroundColor: statusCfg.bg, color: statusCfg.color }}
+                      >
                         {statusCfg.label}
                       </span>
-                      <span className="text-[14px] font-black tracking-tight" style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}>
-                        {fmt.format(b.amount_total || 0)}
-                      </span>
+                      {booking.professional?.name && (
+                        <span
+                          className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                          style={{ backgroundColor: `${accentColor}22`, color: accentColor }}
+                        >
+                          {booking.professional.name}
+                        </span>
+                      )}
                     </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs pt-3 border-t mt-3 relative z-10" style={{ borderColor: `${theme.border}60` }}>
-                    <span className="font-semibold flex items-center gap-1.5" style={{ color: theme.textSecondary }}>
-                      <Clock className="w-3.5 h-3.5 opacity-70" />
-                      {format(start, 'HH:mm')} – {format(end, 'HH:mm')}
-                    </span>
-
-                    {b.professional?.name && (
-                      <span className="font-semibold flex items-center gap-1.5 truncate" style={{ color: theme.textSecondary }}>
-                        <User className="w-3.5 h-3.5 opacity-70 shrink-0" />
-                        <span className="truncate">{b.professional.name}</span>
+                    <p className="font-bold text-sm truncate" style={{ color: 'var(--theme-text-primary)' }}>
+                      {booking.customer?.name ?? 'Cliente'}{' '}
+                      <span className="font-normal text-xs opacity-75">
+                        — {booking.service?.name ?? 'Serviço'}
                       </span>
-                    )}
+                    </p>
+                  </div>
+                  <div className="relative z-10 text-right shrink-0">
+                    <p className="text-sm font-bold" style={{ color: accentColor }}>
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                        booking.amount_total || 0
+                      )}
+                    </p>
+                    <p className="text-[10px]" style={{ color: 'var(--theme-text-secondary)' }}>
+                      {booking.duration_minutes || booking.service?.duration_minutes || 30}min
+                    </p>
                   </div>
                 </div>
               );

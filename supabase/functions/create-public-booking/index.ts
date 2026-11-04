@@ -141,16 +141,15 @@ serve(async (req) => {
       .maybeSingle();
     const depositPct = (tenantSettingsDeposit?.deposit_percentage ?? 50) / 100;
 
-
     let amount_paid = 0;
     if (payment_scope === "full" && payment_method !== "cash") {
       amount_paid = amount_total;
     } else if (payment_scope === "partial" && payment_method !== "cash") {
-      amount_paid = amount_total * depositPct; // Uses configured percentage, e.g. 30%, 50%, 70%
+      amount_paid = amount_total * depositPct;
     }
 
     let customerId = null;
-    let cleanPhone = customer.phone.replace(/\D/g, "");
+    const cleanPhone = customer.phone.replace(/\D/g, "");
     
     const { data: existingCustomer } = await supabase
       .from("customers")
@@ -161,8 +160,11 @@ serve(async (req) => {
 
     if (existingCustomer) {
       customerId = existingCustomer.id;
-      if (customer.email) {
-        await supabase.from("customers").update({ email: customer.email }).eq("id", customerId);
+      const updateCustomerFields: Record<string, any> = {};
+      if (customer.name?.trim()) updateCustomerFields.name = customer.name.trim();
+      if (customer.email) updateCustomerFields.email = customer.email;
+      if (Object.keys(updateCustomerFields).length > 0) {
+        await supabase.from("customers").update(updateCustomerFields).eq("id", customerId);
       }
     } else {
       const { data: newCustomer, error: cErr } = await supabase
@@ -179,8 +181,29 @@ serve(async (req) => {
       customerId = newCustomer.id;
     }
 
+    // Limpar rascunhos pendentes abandonados (mesmo cliente no mesmo horário ou rascunhos online > 15 min sem pagamento)
+    try {
+      const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      const { data: staleBookings } = await supabase
+        .from("bookings")
+        .select("id")
+        .eq("tenant_id", tenant_id)
+        .eq("status", "pending")
+        .in("payment_mode", ["deposit", "full"])
+        .or(`created_at.lt.${fifteenMinAgo},customer_id.eq.${customerId}`);
+
+      if (staleBookings && staleBookings.length > 0) {
+        const staleIds = staleBookings.map((b: any) => b.id);
+        await supabase.from("payments").delete().in("booking_id", staleIds).eq("status", "pending");
+        await supabase.from("bookings").delete().in("id", staleIds).eq("status", "pending");
+      }
+    } catch (_) {
+      // Non-blocking cleanup
+    }
+
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     const accessCode = Math.random().toString(36).substring(2, 12);
+    const isOnlinePending = payment_scope !== "local" && payment_method !== "cash";
 
     const { data: newBooking, error: bErr } = await supabase
       .from("bookings")
@@ -192,7 +215,8 @@ serve(async (req) => {
           service_id: service_id,
           order_number: code,
           scheduled_at: scheduled_at,
-          status: (payment_scope !== "local" && payment_method !== "cash") ? "pending" : "confirmed",
+          status: isOnlinePending ? "pending" : "confirmed",
+          payment_status: "pending",
           payment_mode:
             payment_scope === "full"
               ? "full"
@@ -201,6 +225,7 @@ serve(async (req) => {
                 : "local",
           amount_paid: amount_paid,
           amount_total: amount_total,
+          amount_due: isOnlinePending ? amount_total : amount_total,
           notes: customer_notes,
           access_code: accessCode,
           service_location: booking_mode,

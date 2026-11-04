@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, Loader2, Check, Calendar, Clock, Scissors, User } from 'lucide-react';
-import { format, addDays, isBefore, startOfDay, addMinutes } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { useBookingsByDay, generateTimeSlots, type Booking, type CreateBookingInput } from '../../../hooks/useBookings';
 import type { Service } from '../../../hooks/useServices';
@@ -82,6 +82,14 @@ export default function EditBookingModal({
       false
     );
   }, [businessHours, selectedDate, dayBookings, selectedService, selectedPro, booking.id]);
+
+  const activeOrCurrentProfessionals = useMemo(
+    () =>
+      professionals.filter(
+        p => (p.active !== false && (!p.status || p.status === 'active')) || p.id === booking.professional_id
+      ),
+    [professionals, booking.professional_id]
+  );
 
   const handleSave = async () => {
     if (!selectedService || !selectedTime) {
@@ -223,7 +231,7 @@ export default function EditBookingModal({
                 </div>
               </div>
 
-              {professionals.filter(p => p.status === 'active' || p.id === booking.professional_id).map(pro => {
+              {activeOrCurrentProfessionals.map(pro => {
                 const isSelected = selectedPro?.id === pro.id;
                 return (
                   <div

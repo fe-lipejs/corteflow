@@ -3,6 +3,82 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getStripeContext } from '../_shared/stripe.ts';
 
+async function finalizeConfirmedBooking(
+  supabase: any,
+  booking: any,
+  resolvedPi: any,
+  applicationFeePercent: number
+) {
+  const paidAmountBRL = ((resolvedPi?.amount_received || resolvedPi?.amount || 0) / 100);
+  const finalPaid = paidAmountBRL > 0 ? paidAmountBRL : Number(booking.amount_paid || 0);
+  const finalDue = Math.max(0, Number(booking.amount_total || 0) - finalPaid);
+  const primaryPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'paid';
+
+  const { error: upErr } = await supabase
+    .from('bookings')
+    .update({
+      status: 'confirmed',
+      payment_status: primaryPaymentStatus,
+      amount_paid: finalPaid,
+      amount_due: finalDue,
+    })
+    .eq('id', booking.id);
+
+  if (upErr) {
+    // Fallback caso o banco tenha constraint apenas para 'full_paid'
+    await supabase
+      .from('bookings')
+      .update({
+        status: 'confirmed',
+        payment_status: booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid',
+        amount_paid: finalPaid,
+        amount_due: finalDue,
+      })
+      .eq('id', booking.id);
+  }
+
+  if (resolvedPi?.id) {
+    const methodTypes: string[] = Array.isArray(resolvedPi.payment_method_types)
+      ? resolvedPi.payment_method_types
+      : [];
+    const detectedMethod =
+      resolvedPi?.metadata?.payment_method_type ||
+      (methodTypes.includes('pix') && !methodTypes.includes('card') ? 'pix' : methodTypes[0] || 'pix');
+
+    const { data: existingPayment } = await supabase
+      .from('payments')
+      .select('id')
+      .eq('stripe_payment_intent_id', resolvedPi.id)
+      .maybeSingle();
+
+    const paymentStatus = resolvedPi.status === 'succeeded' ? 'succeeded' : 'pending';
+
+    if (existingPayment?.id) {
+      await supabase
+        .from('payments')
+        .update({
+          status: paymentStatus,
+          payment_method: detectedMethod,
+          amount: finalPaid,
+        })
+        .eq('id', existingPayment.id);
+    } else {
+      const feePct = (typeof applicationFeePercent === 'number' && !isNaN(applicationFeePercent) ? applicationFeePercent : 0) / 100;
+      const feeBRL = Number((finalPaid * feePct).toFixed(2));
+      await supabase.from('payments').insert({
+        tenant_id: booking.tenant_id,
+        booking_id: booking.id,
+        stripe_payment_intent_id: resolvedPi.id,
+        amount: finalPaid,
+        platform_fee: feeBRL,
+        net_amount: Math.max(0, finalPaid - feeBRL),
+        payment_method: detectedMethod,
+        status: paymentStatus,
+      });
+    }
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -38,27 +114,7 @@ serve(async (req) => {
             .maybeSingle();
 
           if (booking) {
-            const paidAmountBRL = ((resolvedPi.amount_received || resolvedPi.amount || 0) / 100);
-            const finalPaid = paidAmountBRL > 0 ? paidAmountBRL : Number(booking.amount_paid || 0);
-            const finalDue = Math.max(0, Number(booking.amount_total || 0) - finalPaid);
-            const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid';
-
-            await supabase
-              .from('bookings')
-              .update({
-                status: 'confirmed',
-                payment_status: newPaymentStatus,
-                amount_paid: finalPaid,
-                amount_due: finalDue,
-              })
-              .eq('id', booking.id);
-
-            await supabase
-              .from('payments')
-              .update({
-                status: resolvedPi.status === 'succeeded' ? 'succeeded' : 'pending',
-              })
-              .eq('stripe_payment_intent_id', resolvedPi.id);
+            await finalizeConfirmedBooking(supabase, booking, resolvedPi, applicationFeePercent);
 
             return new Response(
               JSON.stringify({
@@ -132,27 +188,7 @@ serve(async (req) => {
           throw new Error(`O pagamento no Stripe ainda não foi concluído (status: ${resolvedPi.status}).`);
         }
 
-        const paidAmountBRL = ((resolvedPi.amount_received || resolvedPi.amount || 0) / 100);
-        const finalPaid = paidAmountBRL > 0 ? paidAmountBRL : Number(booking.amount_paid || 0);
-        const finalDue = Math.max(0, Number(booking.amount_total || 0) - finalPaid);
-        const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid';
-
-        await supabase
-          .from('bookings')
-          .update({
-            status: 'confirmed',
-            payment_status: newPaymentStatus,
-            amount_paid: finalPaid,
-            amount_due: finalDue,
-          })
-          .eq('id', booking.id);
-
-        await supabase
-          .from('payments')
-          .update({
-            status: resolvedPi.status === 'succeeded' ? 'succeeded' : 'pending',
-          })
-          .eq('stripe_payment_intent_id', resolvedPi.id);
+        await finalizeConfirmedBooking(supabase, booking, resolvedPi, applicationFeePercent);
       }
 
       return new Response(
@@ -170,11 +206,35 @@ serve(async (req) => {
     if (action === 'abort_booking') {
       const { bookingId, paymentIntentId } = body;
 
+      // Proteção: se o cliente já tiver pago o PIX no banco antes de fechar o modal, confirma em vez de abortar!
       if (paymentIntentId) {
         try {
+          const checkPi = await stripe.paymentIntents.retrieve(paymentIntentId);
+          if (checkPi.status === 'succeeded' || checkPi.status === 'processing') {
+            const targetBookingId = bookingId || checkPi?.metadata?.booking_id;
+            if (targetBookingId) {
+              const { data: paidBk } = await supabase
+                .from('bookings')
+                .select('id, tenant_id, order_number, status, payment_mode, amount_total, amount_paid')
+                .eq('id', targetBookingId)
+                .maybeSingle();
+              if (paidBk) {
+                await finalizeConfirmedBooking(supabase, paidBk, checkPi, applicationFeePercent);
+                return new Response(
+                  JSON.stringify({
+                    aborted: false,
+                    confirmed: true,
+                    bookingId: paidBk.id,
+                    order_number: paidBk.order_number,
+                  }),
+                  { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                );
+              }
+            }
+          }
           await stripe.paymentIntents.cancel(paymentIntentId);
         } catch (_) {}
-        await supabase.from('payments').delete().eq('stripe_payment_intent_id', paymentIntentId);
+        await supabase.from('payments').delete().eq('stripe_payment_intent_id', paymentIntentId).eq('status', 'pending');
       }
 
       if (bookingId) {
@@ -185,7 +245,7 @@ serve(async (req) => {
           .maybeSingle();
 
         if (bk && bk.status === 'pending') {
-          await supabase.from('payments').delete().eq('booking_id', bookingId);
+          await supabase.from('payments').delete().eq('booking_id', bookingId).eq('status', 'pending');
           await supabase.from('bookings').delete().eq('id', bookingId).eq('status', 'pending');
         }
       }
@@ -266,6 +326,8 @@ serve(async (req) => {
         : `cliente.${cleanDigits}@navalha.app`;
     const safeName = String(customerName || 'Cliente Navalha').trim() || 'Cliente Navalha';
 
+    const resolvedMethodLabel = paymentMethodType === 'card' ? 'card' : 'pix';
+
     const buildPiParams = (paymentMethods: string[], confirmPixNow = false) => ({
       amount: amountCents,
       currency: 'brl',
@@ -280,6 +342,7 @@ serve(async (req) => {
         booking_id: booking.id,
         tenant_id: booking.tenant_id,
         order_number: booking.order_number,
+        payment_method_type: resolvedMethodLabel,
       },
       ...(confirmPixNow
         ? {
@@ -316,7 +379,7 @@ serve(async (req) => {
       }
     }
 
-    // Registrar pagamento pendente na tabela payments
+    // Registrar pagamento pendente na tabela payments com payment_method preenchido
     await supabase.from('payments').insert({
       tenant_id: booking.tenant_id,
       booking_id: booking.id,
@@ -324,6 +387,7 @@ serve(async (req) => {
       amount: amountToCharge,
       platform_fee: applicationFeeAmount / 100,
       net_amount: amountToCharge - (applicationFeeAmount / 100),
+      payment_method: resolvedMethodLabel,
       status: 'pending',
     });
 
