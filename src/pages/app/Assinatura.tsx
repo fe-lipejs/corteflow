@@ -1372,19 +1372,28 @@ export default function Assinatura() {
                           </h3>
                         </div>
 
-                        {isCurrent && (
-                          <span
-                            className="text-[9px] font-bold px-2 py-1 rounded-full"
-                            style={{
-                              background:
-                                `${theme.accent}12`,
-                              color:
-                                theme.accent,
-                            }}
-                          >
-                            Atual
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                          {isCurrent && (
+                            <span
+                              className="text-[9px] font-bold px-2 py-1 rounded-full"
+                              style={{
+                                background:
+                                  `${theme.accent}12`,
+                                color:
+                                  theme.accent,
+                              }}
+                            >
+                              Atual
+                            </span>
+                          )}
+                          {plan.is_custom_price && (
+                            <span
+                              className="text-[9px] font-bold px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-xs"
+                            >
+                              Promoção Ativa
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Description */}

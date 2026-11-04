@@ -6,8 +6,9 @@ import { motion } from 'framer-motion';
 import {
   Search, ExternalLink, MoreVertical, CheckCircle,
   ShieldAlert, Ban, PlayCircle, Building2, ChevronLeft, ChevronRight,
-  ArrowUpDown, Trash2, RotateCcw
+  ArrowUpDown, Trash2, RotateCcw, Sliders, Loader2, Sparkles, X, Save
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import AdminPageHeader from './components/AdminPageHeader';
 import AdminEmptyState from './components/AdminEmptyState';
 import AdminBadge from './components/AdminBadge';
@@ -51,7 +52,127 @@ export default function AdminTenants() {
   const [deleteModalOpen, setDeleteModalOpen] = useState<Tenant | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [stripeInfoModalOpen, setStripeInfoModalOpen] = useState<Tenant | null>(null);
+  
+  // Customização de Limites & Recursos do Salão
+  const [contractModalTenant, setContractModalTenant] = useState<Tenant | null>(null);
+  const [contractSubId, setContractSubId] = useState<string | null>(null);
+  const [contractPlanId, setContractPlanId] = useState<string | null>(null);
+  const [contractPlanName, setContractPlanName] = useState<string>('');
+  const [contractMaxPros, setContractMaxPros] = useState<number>(1);
+  const [contractMaxServices, setContractMaxServices] = useState<number>(3);
+  const [contractMaxProducts, setContractMaxProducts] = useState<number>(0);
+  const [contractAllowFinanceiro, setContractAllowFinanceiro] = useState<boolean>(false);
+  const [contractAllowProdutos, setContractAllowProdutos] = useState<boolean>(false);
+  const [contractAllowRelatorios, setContractAllowRelatorios] = useState<boolean>(false);
+  const [contractAllowAllPermissions, setContractAllowAllPermissions] = useState<boolean>(false);
+  const [isSavingContract, setIsSavingContract] = useState<boolean>(false);
+  const [isLoadingContract, setIsLoadingContract] = useState<boolean>(false);
+
   const queryClient = useQueryClient();
+
+  async function handleOpenContractModal(tenant: Tenant) {
+    setContractModalTenant(tenant);
+    setIsLoadingContract(true);
+    try {
+      const { data: sub, error } = await supabase
+        .from('subscriptions')
+        .select('id, plan_id, status, plans(*), subscription_contracts(*)')
+        .eq('tenant_id', tenant.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!sub) {
+        toast.error('Nenhuma assinatura encontrada para este salão.');
+        setContractModalTenant(null);
+        return;
+      }
+
+      setContractSubId(sub.id);
+      setContractPlanId(sub.plan_id);
+      const plan = Array.isArray(sub.plans) ? sub.plans[0] : sub.plans;
+      const contract = Array.isArray(sub.subscription_contracts) ? sub.subscription_contracts[0] : sub.subscription_contracts;
+
+      setContractPlanName(plan?.name || 'Plano Padrão');
+
+      if (contract) {
+        setContractMaxPros(contract.max_professionals ?? plan?.max_professionals ?? 1);
+        setContractMaxServices(contract.limits?.servicos ?? plan?.limits?.servicos ?? 3);
+        setContractMaxProducts(contract.limits?.produtos ?? plan?.limits?.produtos ?? 0);
+        setContractAllowFinanceiro(contract.features?.financeiro ?? plan?.features?.financeiro ?? false);
+        setContractAllowProdutos(contract.allow_products ?? contract.features?.produtos ?? plan?.allow_products ?? false);
+        setContractAllowRelatorios(contract.features?.relatorios ?? plan?.features?.relatorios ?? false);
+        setContractAllowAllPermissions((contract.permissions || []).includes('*'));
+      } else {
+        setContractMaxPros(plan?.max_professionals ?? 1);
+        setContractMaxServices(plan?.limits?.servicos ?? 3);
+        setContractMaxProducts(plan?.limits?.produtos ?? 0);
+        setContractAllowFinanceiro(plan?.features?.financeiro ?? false);
+        setContractAllowProdutos(plan?.allow_products ?? plan?.features?.produtos ?? false);
+        setContractAllowRelatorios(plan?.features?.relatorios ?? false);
+        setContractAllowAllPermissions((plan?.permissions || []).includes('*'));
+      }
+    } catch (err: any) {
+      console.error('Erro ao carregar contrato:', err);
+      toast.error('Erro ao carregar permissões do salão: ' + (err.message || ''));
+      setContractModalTenant(null);
+    } finally {
+      setIsLoadingContract(false);
+    }
+  }
+
+  async function handleSaveContract() {
+    if (!contractSubId || !contractPlanId) return;
+    try {
+      setIsSavingContract(true);
+      const { error } = await supabase
+        .from('subscription_contracts')
+        .upsert({
+          subscription_id: contractSubId,
+          plan_id: contractPlanId,
+          max_professionals: Number(contractMaxPros),
+          allow_products: contractAllowProdutos,
+          features: {
+            agenda: true,
+            servicos: true,
+            clientes: true,
+            equipe: true,
+            financeiro: contractAllowFinanceiro,
+            produtos: contractAllowProdutos,
+            relatorios: contractAllowRelatorios,
+          },
+          limits: {
+            profissionais: Number(contractMaxPros),
+            servicos: Number(contractMaxServices),
+            produtos: Number(contractMaxProducts),
+          },
+          permissions: contractAllowAllPermissions ? ['*'] : [
+            'agenda.visualizar_todos', 'agenda.criar', 'agenda.editar', 'agenda.cancelar', 'agenda.mudar_status', 'agenda.bloquear_horario',
+            'equipe.visualizar', 'equipe.criar', 'equipe.editar_perfil', 'equipe.editar_horarios',
+            'catalogo.visualizar', 'catalogo.criar', 'catalogo.editar', 'catalogo.excluir',
+            'clientes.visualizar', 'clientes.exportar',
+            ...(contractAllowFinanceiro ? ['financeiro.visualizar_caixa_geral', 'financeiro.visualizar_meu_caixa', 'financeiro.criar_lancamento', 'financeiro.editar_lancamento', 'financeiro.excluir_lancamento', 'financeiro.exportar'] : []),
+            ...(contractAllowProdutos ? ['produtos.visualizar', 'produtos.criar', 'produtos.editar', 'produtos.excluir'] : []),
+            'configuracoes.editar_layout'
+          ],
+          status: 'active',
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'subscription_id' });
+
+      if (error) throw error;
+
+      toast.success('Permissões e limites personalizados salvos para ' + contractModalTenant?.name + '!');
+      setContractModalTenant(null);
+      queryClient.invalidateQueries({ queryKey: ['admin_tenants_v2'] });
+    } catch (err: any) {
+      console.error('Erro ao salvar contrato:', err);
+      toast.error('Erro ao salvar limites: ' + (err.message || ''));
+    } finally {
+      setIsSavingContract(false);
+    }
+  }
 
   const { data: tenants = [], isLoading } = useQuery({
     queryKey: ['admin_tenants_v2'],
@@ -405,6 +526,15 @@ export default function AdminTenants() {
                           <div>
                             <button
                               onClick={() => {
+                                handleOpenContractModal(tenant);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-zinc-300 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors font-medium cursor-pointer"
+                            >
+                              <Sliders className="w-3.5 h-3.5 text-emerald-400" /> Limites & Recursos
+                            </button>
+                            <button
+                              onClick={() => {
                                 setStripeInfoModalOpen(tenant);
                                 setOpenMenuId(null);
                               }}
@@ -585,6 +715,192 @@ export default function AdminTenants() {
                 className="px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl text-sm shadow-lg shadow-emerald-500/20 transition-all cursor-pointer active:scale-95"
               >
                 Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contract & Permissions Customization Modal */}
+      {contractModalTenant && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#0E0E14] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl text-zinc-100 flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-white/10 flex items-center justify-between bg-[#13131A]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <Sliders className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Limites &amp; Recursos Personalizados</h3>
+                  <p className="text-xs text-zinc-400">{contractModalTenant.name} ({contractPlanName})</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setContractModalTenant(null)}
+                className="p-1.5 text-zinc-400 hover:text-white rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {isLoadingContract ? (
+              <div className="p-12 text-center text-zinc-400 flex flex-col items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-400 mb-2" />
+                <p className="text-sm">Carregando permissões do salão...</p>
+              </div>
+            ) : (
+              <div className="p-6 space-y-5 overflow-y-auto">
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-300 leading-relaxed">
+                  💡 Os limites e módulos configurados aqui sobrescrevem as restrições padrão do plano <strong>exclusivamente para este salão</strong>, sem alterar os outros clientes.
+                </div>
+
+                {/* Limites Operacionais */}
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">Limites de Uso</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
+                        Máx. Serviços
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={999}
+                        value={contractMaxServices}
+                        onChange={e => setContractMaxServices(Number(e.target.value))}
+                        className="w-full px-3 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-white outline-none focus:border-emerald-500"
+                      />
+                      <span className="text-[10px] text-zinc-500">Padrão Solo: 3</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
+                        Máx. Profissionais
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={999}
+                        value={contractMaxPros}
+                        onChange={e => setContractMaxPros(Number(e.target.value))}
+                        className="w-full px-3 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-white outline-none focus:border-emerald-500"
+                      />
+                      <span className="text-[10px] text-zinc-500">Padrão Solo: 1</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
+                        Máx. Produtos
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={999}
+                        value={contractMaxProducts}
+                        onChange={e => setContractMaxProducts(Number(e.target.value))}
+                        className="w-full px-3 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-white outline-none focus:border-emerald-500"
+                      />
+                      <span className="text-[10px] text-zinc-500">0 se desativado</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Módulos do Sistema */}
+                <div className="border-t border-white/5 pt-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">Módulos Desbloqueados</h4>
+                  <div className="space-y-2.5">
+                    <label className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-xl cursor-pointer transition-colors">
+                      <div>
+                        <p className="text-sm font-semibold text-white">Módulo Financeiro Completo</p>
+                        <p className="text-xs text-zinc-400">Fluxo de caixa, entradas, saídas e controle de lançamentos</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={contractAllowFinanceiro}
+                        onChange={e => setContractAllowFinanceiro(e.target.checked)}
+                        className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 cursor-pointer accent-emerald-500"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-xl cursor-pointer transition-colors">
+                      <div>
+                        <p className="text-sm font-semibold text-white">Módulo de Produtos &amp; Estoque</p>
+                        <p className="text-xs text-zinc-400">Permite cadastrar e controlar estoque de cosméticos/produtos</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={contractAllowProdutos}
+                        onChange={e => {
+                          const val = e.target.checked;
+                          setContractAllowProdutos(val);
+                          if (val && contractMaxProducts === 0) setContractMaxProducts(10);
+                        }}
+                        className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 cursor-pointer accent-emerald-500"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-xl cursor-pointer transition-colors">
+                      <div>
+                        <p className="text-sm font-semibold text-white">Relatórios &amp; Exportações</p>
+                        <p className="text-xs text-zinc-400">Exportação de dados para Excel e gráficos avançados</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={contractAllowRelatorios}
+                        onChange={e => setContractAllowRelatorios(e.target.checked)}
+                        className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 cursor-pointer accent-emerald-500"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/30 rounded-xl cursor-pointer transition-colors">
+                      <div>
+                        <p className="text-sm font-bold text-emerald-300">Liberar Todas as Permissões (*)</p>
+                        <p className="text-xs text-emerald-400/80">Acesso irrestrito a todos os recursos da plataforma</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={contractAllowAllPermissions}
+                        onChange={e => {
+                          const val = e.target.checked;
+                          setContractAllowAllPermissions(val);
+                          if (val) {
+                            setContractAllowFinanceiro(true);
+                            setContractAllowProdutos(true);
+                            setContractAllowRelatorios(true);
+                          }
+                        }}
+                        className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 cursor-pointer accent-emerald-500"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t border-white/10 p-4 flex justify-end gap-3 bg-[#13131A]">
+              <button
+                onClick={() => setContractModalTenant(null)}
+                className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                disabled={isSavingContract}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveContract}
+                disabled={isSavingContract || isLoadingContract}
+                className="flex items-center gap-2 px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl text-sm shadow-lg shadow-emerald-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-40"
+              >
+                {isSavingContract ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Salvando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>Salvar Ajustes do Salão</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

@@ -308,6 +308,7 @@ export default function PublicStore() {
   const [isHomeLocationValidated, setIsHomeLocationValidated] = useState(false);
   const [homeLocationData, setHomeLocationData] = useState<LocationWizardResult | null>(null);
   const [showModeSelectionFor, setShowModeSelectionFor] = useState<any | null>(null);
+  const [inspectingService, setInspectingService] = useState<any | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -1402,6 +1403,254 @@ export default function PublicStore() {
           )}
         </AnimatePresence>
 
+        {/* SERVICE DETAILS MODAL (POPUP) */}
+        <AnimatePresence>
+          {inspectingService && (
+            <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4">
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+                onClick={() => setInspectingService(null)}
+              />
+
+              {/* Modal Window */}
+              <motion.div
+                initial={{ opacity: 0, y: "100%", scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: "100%", scale: 0.98 }}
+                transition={{ type: "spring", damping: 26, stiffness: 320 }}
+                className="relative w-full max-w-lg rounded-t-[32px] sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] sm:max-h-[85vh] border"
+                style={{
+                  background: cardBackground,
+                  borderColor: cardBorderColor,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Mobile drag handle */}
+                <div className="w-12 h-1.5 rounded-full mx-auto mt-3 mb-1 sm:hidden shrink-0" style={{ background: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.12)" }} />
+
+                {/* Top Image or Header */}
+                {inspectingService.photo_url ? (
+                  <div className="relative w-full h-52 sm:h-64 overflow-hidden shrink-0 bg-neutral-900">
+                    <img
+                      src={inspectingService.photo_url}
+                      alt={inspectingService.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)",
+                      }}
+                    />
+
+                    {/* Close Button X (floating on image) */}
+                    <button
+                      type="button"
+                      onClick={() => setInspectingService(null)}
+                      className="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-md cursor-pointer z-10"
+                      aria-label="Fechar"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+
+                    {/* Tags over image */}
+                    <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {inspectingService.category && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-white bg-black/60 backdrop-blur-md">
+                            {inspectingService.category}
+                          </span>
+                        )}
+                        {inspectingService.service_mode === 'home' && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white bg-black/60 backdrop-blur-md flex items-center gap-1">
+                            <Home className="w-2.5 h-2.5" /> Domicílio
+                          </span>
+                        )}
+                        {inspectingService.service_mode === 'both' && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white bg-black/60 backdrop-blur-md flex items-center gap-1">
+                            <MapPin className="w-2.5 h-2.5" /> Local ou Domicílio
+                          </span>
+                        )}
+                      </div>
+
+                      {inspectingService.original_price && inspectingService.original_price > inspectingService.price && (
+                        <span
+                          className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold shadow-md"
+                          style={{ background: accent, color: theme.btnPrimaryText }}
+                        >
+                          -{Math.round(((inspectingService.original_price - inspectingService.price) / inspectingService.original_price) * 100)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="relative p-5 pb-3 flex items-center justify-between border-b"
+                    style={{ borderColor: cardBorderColor, background: `${accent}0a` }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+                        style={{ background: `${accent}18`, color: accent }}
+                      >
+                        <Scissors className="w-5 h-5" />
+                      </div>
+                      <div>
+                        {inspectingService.category && (
+                          <span
+                            className="px-2 py-0.5 rounded-full text-[10px] font-bold inline-block mb-0.5"
+                            style={{ background: `${accent}15`, color: accent }}
+                          >
+                            {inspectingService.category}
+                          </span>
+                        )}
+                        <span className="text-[11px] font-medium block" style={{ color: theme.textSecondary }}>
+                          {inspectingService.service_mode === 'home'
+                            ? 'Atendimento a Domicílio'
+                            : inspectingService.service_mode === 'both'
+                              ? 'Atendimento no Local ou Domicílio'
+                              : 'Atendimento no Local'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Close Button X */}
+                    <button
+                      type="button"
+                      onClick={() => setInspectingService(null)}
+                      className="w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer"
+                      style={{ background: isDark ? "rgba(255,255,255,0.08)" : "#F1F5F9", color: theme.textPrimary }}
+                      aria-label="Fechar"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Content Body */}
+                <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4">
+                  {/* Title & Price Row */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3
+                        className="text-xl sm:text-2xl font-bold leading-tight"
+                        style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
+                      >
+                        {inspectingService.name}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1.5 text-xs font-semibold" style={{ color: theme.textMuted }}>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-amber-500" />
+                          {inspectingService.duration_minutes} min
+                        </span>
+                        <span>•</span>
+                        <span className="capitalize">
+                          {inspectingService.service_mode === 'home'
+                            ? 'À Domicílio'
+                            : inspectingService.service_mode === 'both'
+                              ? 'Local ou Domicílio'
+                              : 'No Estabelecimento'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Price */}
+                    <div className="text-right shrink-0">
+                      {inspectingService.original_price && inspectingService.original_price > inspectingService.price && (
+                        <span className="text-xs line-through block" style={{ color: theme.textMuted }}>
+                          {money(inspectingService.original_price)}
+                        </span>
+                      )}
+                      <span
+                        className="text-2xl font-black block tracking-tight"
+                        style={{ color: accent, fontFamily: theme.fontSerif }}
+                      >
+                        {money(inspectingService.price)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Description Card */}
+                  <div
+                    className="rounded-2xl p-4 border"
+                    style={{
+                      background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)",
+                      borderColor: cardBorderColor,
+                    }}
+                  >
+                    <h4
+                      className="text-[11px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5"
+                      style={{ color: theme.textMuted }}
+                    >
+                      <Sparkles className="w-3.5 h-3.5" style={{ color: accent }} />
+                      Descrição do Serviço
+                    </h4>
+
+                    <div
+                      className="text-xs sm:text-sm leading-relaxed max-h-48 overflow-y-auto pr-1 whitespace-pre-line"
+                      style={{ color: theme.textSecondary }}
+                    >
+                      {inspectingService.description && inspectingService.description.trim() ? (
+                        inspectingService.description.trim()
+                      ) : (
+                        <span className="italic opacity-60">Nenhuma descrição detalhada informada para este serviço.</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Buttons */}
+                <div
+                  className="p-4 sm:p-5 border-t flex items-center gap-3 shrink-0"
+                  style={{ borderColor: cardBorderColor, background: isDark ? "rgba(255,255,255,0.02)" : "#FFFFFF" }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setInspectingService(null)}
+                    className="px-4 py-3 rounded-2xl text-xs font-bold border transition-all hover:opacity-80 cursor-pointer"
+                    style={{ borderColor: cardBorderColor, color: theme.textSecondary }}
+                  >
+                    Fechar
+                  </button>
+
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      const s = inspectingService;
+                      setInspectingService(null);
+                      const mode = s.service_mode || 'instore';
+                      if (mode === 'both') {
+                        setShowModeSelectionFor(s);
+                      } else if (mode === 'home') {
+                        setBookingMode('home');
+                        setSelectedService(s);
+                      } else {
+                        setBookingMode('instore');
+                        setSelectedService(s);
+                        setStep(2);
+                      }
+                    }}
+                    className="flex-1 py-3.5 px-5 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+                    style={{
+                      background: theme.btnPrimaryBg || accent,
+                      color: theme.btnPrimaryText,
+                    }}
+                  >
+                    <span>Agendar este Serviço</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </motion.button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence>
           {showMapModal && (
             <motion.div
@@ -2230,18 +2479,8 @@ export default function PublicStore() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: i * 0.04 }}
                                     whileTap={{ scale: 0.97 }}
-                                    onClick={async () => {
-                                      const mode = s.service_mode || 'instore';
-                                      if (mode === 'both') {
-                                        setShowModeSelectionFor(s);
-                                      } else if (mode === 'home') {
-                                        setBookingMode('home');
-                                        setSelectedService(s);
-                                      } else {
-                                        setBookingMode('instore');
-                                        setSelectedService(s);
-                                        setStep(2);
-                                      }
+                                    onClick={() => {
+                                      setInspectingService(s);
                                     }}
                                     className="group relative text-left rounded-[22px] overflow-hidden flex flex-col cursor-pointer"
                                     style={{
@@ -2309,6 +2548,15 @@ export default function PublicStore() {
                                         {s.name}
                                       </h3>
 
+                                      {s.description && (
+                                        <p
+                                          className="text-[11px] leading-snug line-clamp-2"
+                                          style={{ color: theme.textSecondary }}
+                                        >
+                                          {s.description}
+                                        </p>
+                                      )}
+
                                       <div className="flex items-end justify-between gap-1 mt-auto pt-1">
                                         <div className="flex flex-col">
                                           <span
@@ -2359,18 +2607,8 @@ export default function PublicStore() {
                                     transition={{ delay: i * 0.04 }}
                                     whileHover={{ y: -3 }}
                                     whileTap={{ scale: 0.98 }}
-                                    onClick={async () => {
-                                      const mode = s.service_mode || 'instore';
-                                      if (mode === 'both') {
-                                        setShowModeSelectionFor(s);
-                                      } else if (mode === 'home') {
-                                        setBookingMode('home');
-                                        setSelectedService(s);
-                                      } else {
-                                        setBookingMode('instore');
-                                        setSelectedService(s);
-                                        setStep(2);
-                                      }
+                                    onClick={() => {
+                                      setInspectingService(s);
                                     }}
                                     className="group relative text-left rounded-3xl overflow-hidden border transition-all duration-200 flex flex-col cursor-pointer"
                                     style={{
@@ -2455,7 +2693,7 @@ export default function PublicStore() {
 
                                       {s.description && (
                                         <p
-                                          className="text-xs leading-relaxed mb-3"
+                                          className="text-xs leading-relaxed mb-3 line-clamp-2"
                                           style={{ color: theme.textSecondary }}
                                         >
                                           {s.description}

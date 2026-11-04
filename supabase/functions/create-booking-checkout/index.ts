@@ -66,6 +66,9 @@ serve(async (req) => {
 
     const serviceName = (booking.services as any)?.name || 'Serviço';
     const salonName = (booking.tenants as any)?.name || 'Salão';
+    const description = booking.payment_mode === 'deposit'
+      ? `Sinal/Entrada (${booking.amount_paid} de R$ ${amountTotal}) - ${serviceName}`
+      : `Agendamento de ${serviceName} no ${salonName}`;
     let safeReturnUrl = returnUrl || '';
     if (!safeReturnUrl.startsWith('http://') && !safeReturnUrl.startsWith('https://')) {
       const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://navalha.app';

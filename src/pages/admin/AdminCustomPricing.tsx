@@ -3,6 +3,7 @@ import { supabase } from '../../integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, DollarSign, Plus, Trash2, Edit2, Loader2, Save, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 export default function AdminCustomPricing() {
   const [search, setSearch] = useState('');
@@ -47,7 +48,11 @@ export default function AdminCustomPricing() {
   const { data: plans = [] } = useQuery({
     queryKey: ['admin_plans_lookup'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('plans').select('id, name').order('sort_order');
+      const { data, error } = await supabase
+        .from('plans')
+        .select('id, name, key')
+        .not('key', 'in', '(expired_tier,fallback_tier)')
+        .order('sort_order');
       if (error) throw error;
       return data;
     }
@@ -73,7 +78,12 @@ export default function AdminCustomPricing() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_custom_pricing'] });
+      toast.success(formId ? 'Preço personalizado atualizado!' : 'Preço personalizado criado com sucesso!');
       closeModal();
+    },
+    onError: (err: any) => {
+      console.error('Erro ao salvar custom pricing:', err);
+      toast.error('Erro ao salvar exceção: ' + (err.message || ''));
     }
   });
 
@@ -82,7 +92,14 @@ export default function AdminCustomPricing() {
       const { error } = await supabase.from('custom_pricing').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin_custom_pricing'] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin_custom_pricing'] });
+      toast.success('Exceção de preço removida com sucesso!');
+    },
+    onError: (err: any) => {
+      console.error('Erro ao remover custom pricing:', err);
+      toast.error('Erro ao remover exceção: ' + (err.message || ''));
+    }
   });
 
   // Actions

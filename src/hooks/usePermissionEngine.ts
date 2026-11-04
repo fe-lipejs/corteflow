@@ -221,7 +221,17 @@ export function usePermissionEngine(): PermissionEngine {
   let source: any = null;
   if (!isSuperAdmin) {
     if (subscriptionGrantsPlan(sub)) {
-      source = subPlan || contract || null;
+      source = contract ? {
+        ...subPlan,
+        ...contract,
+        max_professionals: contract.max_professionals ?? subPlan?.max_professionals,
+        allow_products: contract.allow_products ?? subPlan?.allow_products,
+        features: { ...(subPlan?.features || {}), ...(contract?.features || {}) },
+        limits: { ...(subPlan?.limits || {}), ...(contract?.limits || {}) },
+        permissions: contract?.permissions && Array.isArray(contract.permissions) && contract.permissions.length > 0
+          ? contract.permissions
+          : subPlan?.permissions,
+      } : (subPlan || null);
     } else {
       source = defaultPlan || null;
     }
