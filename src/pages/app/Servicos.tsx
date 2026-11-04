@@ -25,6 +25,10 @@ export default function Servicos() {
   const engine = usePermissionEngine();
   const tenantId = tenant?.id ?? '';
 
+  const isLight =
+    theme.id === 'elegant' ||
+    (theme.bg && (theme.bg.toLowerCase().startsWith('#f') || theme.bg.toLowerCase().startsWith('#fff')));
+
   const [activeTab, setActiveTab] = useState<'servicos' | 'produtos'>('servicos');
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -144,9 +148,9 @@ export default function Servicos() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>Catálogo</p>
-            <h1 className="font-serif text-3xl font-bold" style={{ color: theme.textPrimary }}>Serviços</h1>
-            <p className="text-sm mt-1" style={{ color: theme.textSecondary }}>Gerencie seu catálogo de serviços e produtos.</p>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: isLight ? '#475569' : theme.textSecondary }}>Catálogo</p>
+            <h1 className="font-serif text-3xl font-bold" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>Serviços</h1>
+            <p className="text-sm mt-1" style={{ color: isLight ? '#475569' : theme.textSecondary }}>Gerencie seu catálogo de serviços e produtos com clareza visual.</p>
           </div>
           <button
             onClick={() => {
@@ -175,7 +179,7 @@ export default function Servicos() {
               }
               setMutationError(null);
             }}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all hover:opacity-90 cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all hover:opacity-90 cursor-pointer shadow-md"
             style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
           >
             <Plus className="w-5 h-5" />
@@ -188,17 +192,25 @@ export default function Servicos() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: 'Total', value: serviceStats.total, icon: Scissors, color: theme.accent },
-              { label: 'Ativos', value: serviceStats.active, icon: Tag, color: theme.success },
-              { label: 'Categorias', value: serviceStats.categories, icon: SlidersHorizontal, color: theme.info },
-              { label: 'Duração Média', value: `${serviceStats.avgDuration}min`, icon: Loader2, color: '#a78bfa' },
+              { label: 'Ativos', value: serviceStats.active, icon: Tag, color: isLight ? '#15803D' : theme.success },
+              { label: 'Categorias', value: serviceStats.categories, icon: SlidersHorizontal, color: isLight ? '#2563EB' : theme.info },
+              { label: 'Duração Média', value: `${serviceStats.avgDuration}min`, icon: Loader2, color: isLight ? '#7C3AED' : '#a78bfa' },
             ].map(stat => (
-              <div key={stat.label} className="rounded-2xl p-4 border flex items-center gap-4 glass-card">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${stat.color}15` }}>
+              <div
+                key={stat.label}
+                className="rounded-2xl p-4 border flex items-center gap-4 transition-all"
+                style={{
+                  borderColor: isLight ? '#E2E8F0' : theme.border,
+                  background: isLight ? '#FFFFFF' : theme.cardBg,
+                  boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${stat.color}15` }}>
                   <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
                 </div>
                 <div>
-                  <p className="text-xl font-bold" style={{ color: theme.textPrimary }}>{loadingServices ? '—' : stat.value}</p>
-                  <p className="text-xs" style={{ color: theme.textSecondary }}>{stat.label}</p>
+                  <p className="text-xl font-bold tracking-tight" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>{loadingServices ? '—' : stat.value}</p>
+                  <p className="text-xs font-medium" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>{stat.label}</p>
                 </div>
               </div>
             ))}
@@ -214,7 +226,13 @@ export default function Servicos() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 rounded-xl border w-fit glass-card" style={{ borderColor: theme.border }}>
+        <div
+          className="flex gap-1 p-1 rounded-xl border w-fit"
+          style={{
+            borderColor: isLight ? '#E2E8F0' : theme.border,
+            background: isLight ? '#FFFFFF' : theme.cardBg,
+          }}
+        >
           {(['servicos', 'produtos'] as const).map(tab => (
             <button
               key={tab}
@@ -222,15 +240,21 @@ export default function Servicos() {
                 setActiveTab(tab);
                 setCategoryFilter('Todos');
               }}
-              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === tab ? 'shadow' : 'hover:opacity-80'}`}
+              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === tab ? 'shadow-sm' : 'hover:opacity-80'}`}
               style={{
-                color: activeTab === tab ? theme.btnPrimaryText : theme.textSecondary,
+                color: activeTab === tab ? theme.btnPrimaryText : (isLight ? '#475569' : theme.textSecondary),
                 background: activeTab === tab ? theme.accentGradient : 'transparent',
               }}
             >
               {tab === 'servicos' ? <Scissors className="w-4 h-4" /> : <Package className="w-4 h-4" />}
               {tab === 'servicos' ? 'Serviços' : 'Produtos'}
-              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ background: activeTab === tab ? 'rgba(0,0,0,0.2)' : theme.cardBg, color: activeTab === tab ? theme.btnPrimaryText : theme.textSecondary }}>
+              <span
+                className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                style={{
+                  background: activeTab === tab ? 'rgba(0,0,0,0.2)' : (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.08)'),
+                  color: activeTab === tab ? theme.btnPrimaryText : (isLight ? '#334155' : theme.textSecondary),
+                }}
+              >
                 {tab === 'servicos' ? activeServices.length : activeProducts.length}
               </span>
             </button>
@@ -244,13 +268,27 @@ export default function Servicos() {
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex gap-3 w-full sm:w-auto flex-1">
                 <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: theme.textSecondary }} />
-                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar serviço, categoria ou tag..." className="w-full rounded-xl text-sm focus:outline-none themed-input themed-input-search" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: isLight ? '#64748B' : theme.textSecondary }} />
+                  <input
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Buscar serviço, categoria ou tag..."
+                    className="w-full rounded-xl text-sm focus:outline-none themed-input themed-input-search"
+                    style={{
+                      borderColor: isLight ? '#CBD5E1' : theme.border,
+                      background: isLight ? '#FFFFFF' : theme.inputBg,
+                      color: isLight ? '#0F172A' : theme.textPrimary,
+                    }}
+                  />
                 </div>
                 <button
                   onClick={() => setCategoriesManagerOpen(true)}
-                  className="flex items-center justify-center gap-1.5 px-4 rounded-xl border border-dashed transition-all font-semibold text-xs shrink-0 cursor-pointer opacity-70 hover:opacity-100 hover:-translate-y-0.5"
-                  style={{ borderColor: theme.textSecondary, color: theme.textSecondary }}
+                  className="flex items-center justify-center gap-1.5 px-4 rounded-xl border border-dashed transition-all font-semibold text-xs shrink-0 cursor-pointer hover:opacity-100 hover:-translate-y-0.5"
+                  style={{
+                    borderColor: isLight ? '#94A3B8' : theme.textSecondary,
+                    color: isLight ? '#334155' : theme.textSecondary,
+                    background: isLight ? '#F8FAFC' : 'transparent',
+                  }}
                 >
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">Nova Categoria</span>
@@ -258,21 +296,30 @@ export default function Servicos() {
                 </button>
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none items-center">
-                <button onClick={() => setCategoryFilter('Todos')} className="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all"
+                <button
+                  onClick={() => setCategoryFilter('Todos')}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all cursor-pointer"
                   style={{
-                    color: categoryFilter === 'Todos' ? theme.btnPrimaryText : theme.textSecondary,
-                    background: categoryFilter === 'Todos' ? theme.accentGradient : theme.cardBg,
-                    borderColor: categoryFilter === 'Todos' ? theme.accent : theme.border,
-                  }}>
+                    color: categoryFilter === 'Todos' ? theme.btnPrimaryText : (isLight ? '#334155' : theme.textSecondary),
+                    background: categoryFilter === 'Todos' ? theme.accentGradient : (isLight ? '#FFFFFF' : theme.cardBg),
+                    borderColor: categoryFilter === 'Todos' ? theme.accent : (isLight ? '#E2E8F0' : theme.border),
+                    boxShadow: categoryFilter === 'Todos' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                  }}
+                >
                   Todos
                 </button>
                 {categories.filter(c => c.type === 'service' || c.type === 'both').map(cat => (
-                  <button key={cat.id} onClick={() => setCategoryFilter(cat.name)} className="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all"
+                  <button
+                    key={cat.id}
+                    onClick={() => setCategoryFilter(cat.name)}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all cursor-pointer"
                     style={{
-                      color: categoryFilter === cat.name ? theme.btnPrimaryText : theme.textSecondary,
-                      background: categoryFilter === cat.name ? theme.accentGradient : theme.cardBg,
-                      borderColor: categoryFilter === cat.name ? theme.accent : theme.border,
-                    }}>
+                      color: categoryFilter === cat.name ? theme.btnPrimaryText : (isLight ? '#334155' : theme.textSecondary),
+                      background: categoryFilter === cat.name ? theme.accentGradient : (isLight ? '#FFFFFF' : theme.cardBg),
+                      borderColor: categoryFilter === cat.name ? theme.accent : (isLight ? '#E2E8F0' : theme.border),
+                      boxShadow: categoryFilter === cat.name ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                    }}
+                  >
                     {cat.name}
                   </button>
                 ))}
@@ -290,7 +337,9 @@ export default function Servicos() {
             {!loadingServices && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {filteredServices.map(svc => (
-                  <ServiceCard key={svc.id} service={svc}
+                  <ServiceCard
+                    key={svc.id}
+                    service={svc}
                     onEdit={s => {
                       if (!engine.hasPermission('catalogo.editar')) {
                         setShowUpgradeModal('catalogo.editar');
@@ -313,25 +362,39 @@ export default function Servicos() {
                 {/* Empty state */}
                 {filteredServices.length === 0 && (
                   <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
-                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 border glass-card" style={{ borderColor: theme.border }}>
-                      <Scissors className="w-8 h-8 opacity-50" style={{ color: theme.textSecondary }} />
+                    <div
+                      className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 border shadow-sm"
+                      style={{
+                        borderColor: isLight ? '#E2E8F0' : theme.border,
+                        background: isLight ? '#FFFFFF' : theme.cardBg,
+                      }}
+                    >
+                      <Scissors className="w-8 h-8 opacity-60" style={{ color: isLight ? '#64748B' : theme.textSecondary }} />
                     </div>
                     {search || categoryFilter !== 'Todos' ? (
-                      <><p className="font-semibold mb-1" style={{ color: theme.textPrimary }}>Nenhum resultado</p><p className="text-sm" style={{ color: theme.textSecondary }}>Tente ajustar os filtros.</p></>
+                      <>
+                        <p className="font-bold text-base mb-1" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>Nenhum resultado encontrado</p>
+                        <p className="text-sm font-medium" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>Tente ajustar a busca ou os filtros de categoria.</p>
+                      </>
                     ) : (
-                      <><p className="font-semibold mb-2" style={{ color: theme.textPrimary }}>Nenhum serviço cadastrado</p>
-                        <p className="text-sm mb-5" style={{ color: theme.textSecondary }}>Crie o primeiro serviço do seu catálogo.</p>
-                        <button onClick={() => {
-                          if (!engine.hasPermission('catalogo.criar')) {
-                            setShowUpgradeModal('catalogo.criar');
-                            return;
-                          }
-                          if (!engine.checkLimit('servicos', activeServices.length)) {
-                            setShowUpgradeModal('limit.servicos');
-                            return;
-                          }
-                          setServiceModalOpen(true);
-                        }} className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold" style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}>
+                      <>
+                        <p className="font-bold text-base mb-2" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>Nenhum serviço cadastrado</p>
+                        <p className="text-sm mb-5 font-medium" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>Crie o primeiro serviço do seu catálogo para começar a agendar.</p>
+                        <button
+                          onClick={() => {
+                            if (!engine.hasPermission('catalogo.criar')) {
+                              setShowUpgradeModal('catalogo.criar');
+                              return;
+                            }
+                            if (!engine.checkLimit('servicos', activeServices.length)) {
+                              setShowUpgradeModal('limit.servicos');
+                              return;
+                            }
+                            setServiceModalOpen(true);
+                          }}
+                          className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold cursor-pointer shadow-md hover:opacity-90 transition-all"
+                          style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
+                        >
                           <Plus className="w-5 h-5" /> Criar Serviço
                         </button>
                       </>
@@ -341,21 +404,35 @@ export default function Servicos() {
 
                 {/* Add shortcut card */}
                 {filteredServices.length > 0 && (
-                  <div onClick={() => {
-                    if (!engine.hasPermission('catalogo.criar')) {
-                      setShowUpgradeModal('catalogo.criar');
-                      return;
-                    }
-                    if (!engine.checkLimit('servicos', activeServices.length)) {
-                      setShowUpgradeModal('limit.servicos');
-                      return;
-                    }
-                    setEditingService(null);
-                    setServiceModalOpen(true);
-                  }} className="rounded-2xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-all hover:-translate-y-1 group" style={{ minHeight: '260px', borderColor: theme.border, background: theme.inputBg }}>
+                  <div
+                    onClick={() => {
+                      if (!engine.hasPermission('catalogo.criar')) {
+                        setShowUpgradeModal('catalogo.criar');
+                        return;
+                      }
+                      if (!engine.checkLimit('servicos', activeServices.length)) {
+                        setShowUpgradeModal('limit.servicos');
+                        return;
+                      }
+                      setEditingService(null);
+                      setServiceModalOpen(true);
+                    }}
+                    className="rounded-2xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-all hover:-translate-y-1 group"
+                    style={{
+                      minHeight: '260px',
+                      borderColor: isLight ? '#CBD5E1' : theme.border,
+                      background: isLight ? '#F8FAFC' : (theme.inputBg || 'transparent'),
+                    }}
+                  >
                     <div className="text-center">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3 transition-all" style={{ background: theme.accentMuted, color: theme.accent }}><Plus className="w-5 h-5" /></div>
-                      <p className="text-sm font-semibold transition-colors" style={{ color: theme.accent }}>Novo serviço</p>
+                      <div
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-all shadow-sm"
+                        style={{ background: theme.accentMuted, color: theme.accent }}
+                      >
+                        <Plus className="w-6 h-6" />
+                      </div>
+                      <p className="text-sm font-bold tracking-tight" style={{ color: theme.accent }}>Novo serviço</p>
+                      <p className="text-xs mt-1 font-medium" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>Clique para adicionar</p>
                     </div>
                   </div>
                 )}
@@ -371,13 +448,27 @@ export default function Servicos() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex gap-3 w-full sm:w-auto flex-1">
                   <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: theme.textSecondary }} />
-                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar produto, categoria ou marca..." className="w-full rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none themed-input" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: isLight ? '#64748B' : theme.textSecondary }} />
+                    <input
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                      placeholder="Buscar produto, categoria ou marca..."
+                      className="w-full rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none themed-input"
+                      style={{
+                        borderColor: isLight ? '#CBD5E1' : theme.border,
+                        background: isLight ? '#FFFFFF' : theme.inputBg,
+                        color: isLight ? '#0F172A' : theme.textPrimary,
+                      }}
+                    />
                   </div>
                   <button
                     onClick={() => setCategoriesManagerOpen(true)}
-                    className="flex items-center justify-center gap-1.5 px-4 rounded-xl border border-dashed transition-all font-semibold text-xs shrink-0 cursor-pointer opacity-70 hover:opacity-100 hover:-translate-y-0.5"
-                    style={{ borderColor: theme.textSecondary, color: theme.textSecondary }}
+                    className="flex items-center justify-center gap-1.5 px-4 rounded-xl border border-dashed transition-all font-semibold text-xs shrink-0 cursor-pointer hover:opacity-100 hover:-translate-y-0.5"
+                    style={{
+                      borderColor: isLight ? '#94A3B8' : theme.textSecondary,
+                      color: isLight ? '#334155' : theme.textSecondary,
+                      background: isLight ? '#F8FAFC' : 'transparent',
+                    }}
                   >
                     <Plus className="w-4 h-4" />
                     <span className="hidden sm:inline">Nova Categoria</span>
@@ -385,31 +476,46 @@ export default function Servicos() {
                   </button>
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none items-center">
-                  <button onClick={() => setCategoryFilter('Todos')} className="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all"
+                  <button
+                    onClick={() => setCategoryFilter('Todos')}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all cursor-pointer"
                     style={{
-                      color: categoryFilter === 'Todos' ? theme.btnPrimaryText : theme.textSecondary,
-                      background: categoryFilter === 'Todos' ? theme.accentGradient : theme.cardBg,
-                      borderColor: categoryFilter === 'Todos' ? theme.accent : theme.border,
-                    }}>
+                      color: categoryFilter === 'Todos' ? theme.btnPrimaryText : (isLight ? '#334155' : theme.textSecondary),
+                      background: categoryFilter === 'Todos' ? theme.accentGradient : (isLight ? '#FFFFFF' : theme.cardBg),
+                      borderColor: categoryFilter === 'Todos' ? theme.accent : (isLight ? '#E2E8F0' : theme.border),
+                    }}
+                  >
                     Todos
                   </button>
                   {categories.filter(c => c.type === 'product' || c.type === 'both').map(cat => (
-                    <button key={cat.id} onClick={() => setCategoryFilter(cat.name)} className="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all"
+                    <button
+                      key={cat.id}
+                      onClick={() => setCategoryFilter(cat.name)}
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all cursor-pointer"
                       style={{
-                        color: categoryFilter === cat.name ? theme.btnPrimaryText : theme.textSecondary,
-                        background: categoryFilter === cat.name ? theme.accentGradient : theme.cardBg,
-                        borderColor: categoryFilter === cat.name ? theme.accent : theme.border,
-                      }}>
+                        color: categoryFilter === cat.name ? theme.btnPrimaryText : (isLight ? '#334155' : theme.textSecondary),
+                        background: categoryFilter === cat.name ? theme.accentGradient : (isLight ? '#FFFFFF' : theme.cardBg),
+                        borderColor: categoryFilter === cat.name ? theme.accent : (isLight ? '#E2E8F0' : theme.border),
+                      }}
+                    >
                       {cat.name}
                     </button>
                   ))}
                 </div>
               </div>
+
               {/* Products list */}
               <div className="space-y-3">
                 {loadingProducts && (
                   Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border glass-card" style={{ borderColor: theme.border, background: theme.cardBg }}>
+                    <div
+                      key={i}
+                      className="flex items-center gap-4 p-4 rounded-2xl border"
+                      style={{
+                        borderColor: isLight ? '#E2E8F0' : theme.border,
+                        background: isLight ? '#FFFFFF' : theme.cardBg,
+                      }}
+                    >
                       <Skeleton className="w-14 h-14 rounded-xl shrink-0" />
                       <div className="flex-1 space-y-2">
                         <Skeleton className="h-4 w-1/3" />
@@ -419,55 +525,99 @@ export default function Servicos() {
                   ))
                 )}
                 {!loadingProducts && filteredProducts.map(p => (
-                  <div key={p.id} className="flex items-center gap-4 p-4 rounded-2xl border transition-all hover:-translate-y-0.5 glass-card" style={{ borderColor: theme.border }}>
-                    <div className="w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center shrink-0" style={{ background: theme.inputBg }}>
-                      {p.photo_url ? <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover" /> : <Package className="w-6 h-6 opacity-40" style={{ color: theme.textSecondary }} />}
+                  <div
+                    key={p.id}
+                    className="flex items-center gap-4 p-4 rounded-2xl border transition-all hover:-translate-y-0.5"
+                    style={{
+                      borderColor: isLight ? '#E2E8F0' : theme.border,
+                      background: isLight ? '#FFFFFF' : theme.cardBg,
+                      boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                    }}
+                  >
+                    <div
+                      className="w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center shrink-0 border"
+                      style={{
+                        background: isLight ? '#F8FAFC' : (theme.inputBg || '#18181b'),
+                        borderColor: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.08)',
+                      }}
+                    >
+                      {p.photo_url ? (
+                        <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Package className="w-6 h-6 opacity-60" style={{ color: isLight ? '#64748B' : theme.textSecondary }} />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm" style={{ color: theme.textPrimary }}>{p.name}</p>
-                      <p className="text-xs" style={{ color: theme.textSecondary }}>{p.category} {p.brand && `· ${p.brand}`}</p>
-                      <p className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>Estoque: <span className={p.stock <= p.min_stock && p.min_stock > 0 ? 'font-bold' : ''} style={{ color: p.stock <= p.min_stock && p.min_stock > 0 ? theme.warning : theme.textPrimary }}>{p.stock} un</span></p>
+                      <p className="font-bold text-sm tracking-tight" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>{p.name}</p>
+                      <p className="text-xs font-medium" style={{ color: isLight ? '#475569' : theme.textSecondary }}>{p.category} {p.brand && `· ${p.brand}`}</p>
+                      <p className="text-xs mt-0.5 font-medium" style={{ color: isLight ? '#475569' : theme.textSecondary }}>
+                        Estoque: <span className={p.stock <= p.min_stock && p.min_stock > 0 ? 'font-bold' : 'font-semibold'} style={{ color: p.stock <= p.min_stock && p.min_stock > 0 ? (isLight ? '#D97706' : theme.warning) : (isLight ? '#0F172A' : theme.textPrimary) }}>{p.stock} un</span>
+                      </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="font-bold" style={{ color: theme.accent }}>{fmt.format(p.price)}</p>
-                      {p.promo_price && <p className="text-xs line-through" style={{ color: theme.textSecondary }}>{fmt.format(p.promo_price)}</p>}
+                      <p className="font-bold text-base" style={{ color: theme.accent }}>{fmt.format(p.price)}</p>
+                      {p.promo_price && <p className="text-xs line-through font-medium" style={{ color: isLight ? '#94A3B8' : theme.textMuted }}>{fmt.format(p.promo_price)}</p>}
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <button onClick={() => {
-                        if (!engine.hasPermission('produto.editar')) {
-                          setShowUpgradeModal('produto.editar');
-                          return;
-                        }
-                        setEditingProduct(p);
-                        setProductModalOpen(true);
-                      }} className="text-xs px-3 py-1.5 rounded-lg transition-all hover:bg-[var(--theme-bg-hover)] cursor-pointer" style={{ color: theme.textSecondary }}>Editar</button>
-                      <button onClick={() => {
-                        if (!engine.hasPermission('produto.excluir')) {
-                          setShowUpgradeModal('produto.excluir');
-                          return;
-                        }
-                        setDeletingProduct(p);
-                      }} className="text-xs px-3 py-1.5 rounded-lg transition-all cursor-pointer" style={{ color: theme.error, background: `${theme.error}10` }}>Excluir</button>
+                      <button
+                        onClick={() => {
+                          if (!engine.hasPermission('produto.editar')) {
+                            setShowUpgradeModal('produto.editar');
+                            return;
+                          }
+                          setEditingProduct(p);
+                          setProductModalOpen(true);
+                        }}
+                        className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer hover:opacity-90 border"
+                        style={{
+                          background: isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)',
+                          color: isLight ? '#1E293B' : theme.textPrimary,
+                          borderColor: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.08)',
+                        }}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (!engine.hasPermission('produto.excluir')) {
+                            setShowUpgradeModal('produto.excluir');
+                            return;
+                          }
+                          setDeletingProduct(p);
+                        }}
+                        className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer hover:opacity-90 border"
+                        style={{
+                          background: isLight ? '#FEF2F2' : `${theme.error}15`,
+                          color: isLight ? '#B91C1C' : theme.error,
+                          borderColor: isLight ? '#FECACA' : `${theme.error}30`,
+                        }}
+                      >
+                        Excluir
+                      </button>
                     </div>
                   </div>
                 ))}
                 {filteredProducts.length === 0 && !loadingProducts && (
                   <div className="text-center py-20">
-                    <Package className="w-12 h-12 mx-auto mb-4 opacity-30" style={{ color: theme.textSecondary }} />
-                    <p className="font-semibold mb-2" style={{ color: theme.textPrimary }}>Nenhum produto cadastrado</p>
-                    <p className="text-sm mb-5" style={{ color: theme.textSecondary }}>Controle seu estoque de produtos.</p>
-                    <button onClick={() => {
-                      if (!engine.hasPermission('produto.criar')) {
-                        setShowUpgradeModal('produto.criar');
-                        return;
-                      }
-                      if (!engine.checkLimit('produtos', activeProducts.length)) {
-                        setShowUpgradeModal('limit.produtos');
-                        return;
-                      }
-                      setEditingProduct(null);
-                      setProductModalOpen(true);
-                    }} className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold mx-auto cursor-pointer" style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}>
+                    <Package className="w-12 h-12 mx-auto mb-4 opacity-40" style={{ color: isLight ? '#64748B' : theme.textSecondary }} />
+                    <p className="font-bold text-base mb-2" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>Nenhum produto cadastrado</p>
+                    <p className="text-sm mb-5 font-medium" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>Controle seu estoque de produtos com facilidade.</p>
+                    <button
+                      onClick={() => {
+                        if (!engine.hasPermission('produto.criar')) {
+                          setShowUpgradeModal('produto.criar');
+                          return;
+                        }
+                        if (!engine.checkLimit('produtos', activeProducts.length)) {
+                          setShowUpgradeModal('limit.produtos');
+                          return;
+                        }
+                        setEditingProduct(null);
+                        setProductModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold mx-auto cursor-pointer shadow-md hover:opacity-90 transition-all"
+                      style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
+                    >
                       <Plus className="w-5 h-5" /> Criar Produto
                     </button>
                   </div>
@@ -509,13 +659,36 @@ export default function Servicos() {
         {/* ── Delete Service Confirm ── */}
         {deletingService && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-            <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl glass-card" style={{ borderColor: theme.border }}>
+            <div
+              className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl"
+              style={{
+                borderColor: isLight ? '#E2E8F0' : theme.border,
+                background: isLight ? '#FFFFFF' : theme.cardBg,
+              }}
+            >
               <AlertCircle className="w-10 h-10 mx-auto mb-4" style={{ color: theme.error }} />
-              <h3 className="font-serif text-xl font-bold mb-2" style={{ color: theme.textPrimary }}>Excluir Serviço?</h3>
-              <p className="text-sm mb-7" style={{ color: theme.textSecondary }}><strong style={{ color: theme.textPrimary }}>{deletingService.name}</strong> será removido permanentemente.</p>
+              <h3 className="font-serif text-xl font-bold mb-2" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>Excluir Serviço?</h3>
+              <p className="text-sm mb-7 font-medium" style={{ color: isLight ? '#475569' : theme.textSecondary }}>
+                <strong style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>{deletingService.name}</strong> será removido permanentemente.
+              </p>
               <div className="flex gap-3">
-                <button onClick={() => setDeletingService(null)} className="flex-1 py-3 rounded-xl border font-semibold text-sm transition-all hover:bg-[var(--theme-bg-hover)]" style={{ borderColor: theme.border, color: theme.textPrimary }}>Cancelar</button>
-                <button onClick={handleDeleteServiceConfirm} disabled={deleteService.isPending} className="flex-1 py-3 rounded-xl font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 text-white" style={{ background: theme.error }}>
+                <button
+                  onClick={() => setDeletingService(null)}
+                  className="flex-1 py-3 rounded-xl border font-semibold text-sm transition-all cursor-pointer hover:opacity-80"
+                  style={{
+                    borderColor: isLight ? '#CBD5E1' : theme.border,
+                    color: isLight ? '#0F172A' : theme.textPrimary,
+                    background: isLight ? '#F1F5F9' : 'transparent',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteServiceConfirm}
+                  disabled={deleteService.isPending}
+                  className="flex-1 py-3 rounded-xl font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 text-white cursor-pointer shadow-md hover:opacity-90"
+                  style={{ background: theme.error }}
+                >
                   {deleteService.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Excluindo...</> : 'Confirmar'}
                 </button>
               </div>
@@ -526,13 +699,38 @@ export default function Servicos() {
         {/* ── Delete Product Confirm ── */}
         {deletingProduct && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-            <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl glass-card" style={{ borderColor: theme.border }}>
+            <div
+              className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl"
+              style={{
+                borderColor: isLight ? '#E2E8F0' : theme.border,
+                background: isLight ? '#FFFFFF' : theme.cardBg,
+              }}
+            >
               <AlertCircle className="w-10 h-10 mx-auto mb-4" style={{ color: theme.error }} />
-              <h3 className="font-serif text-xl font-bold mb-2" style={{ color: theme.textPrimary }}>Excluir Produto?</h3>
-              <p className="text-sm mb-7" style={{ color: theme.textSecondary }}><strong style={{ color: theme.textPrimary }}>{deletingProduct.name}</strong> será removido permanentemente.</p>
+              <h3 className="font-serif text-xl font-bold mb-2" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>Excluir Produto?</h3>
+              <p className="text-sm mb-7 font-medium" style={{ color: isLight ? '#475569' : theme.textSecondary }}>
+                <strong style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>{deletingProduct.name}</strong> será removido permanentemente.
+              </p>
               <div className="flex gap-3">
-                <button onClick={() => setDeletingProduct(null)} className="flex-1 py-3 rounded-xl border font-semibold text-sm transition-all hover:bg-[var(--theme-bg-hover)]" style={{ borderColor: theme.border, color: theme.textPrimary }}>Cancelar</button>
-                <button onClick={handleDeleteProductConfirm} disabled={deleteProduct.isPending} className="flex-1 py-3 rounded-xl font-bold text-sm disabled:opacity-50 text-white" style={{ background: theme.error }}>Confirmar</button>
+                <button
+                  onClick={() => setDeletingProduct(null)}
+                  className="flex-1 py-3 rounded-xl border font-semibold text-sm transition-all cursor-pointer hover:opacity-80"
+                  style={{
+                    borderColor: isLight ? '#CBD5E1' : theme.border,
+                    color: isLight ? '#0F172A' : theme.textPrimary,
+                    background: isLight ? '#F1F5F9' : 'transparent',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteProductConfirm}
+                  disabled={deleteProduct.isPending}
+                  className="flex-1 py-3 rounded-xl font-bold text-sm disabled:opacity-50 text-white cursor-pointer shadow-md hover:opacity-90"
+                  style={{ background: theme.error }}
+                >
+                  Confirmar
+                </button>
               </div>
             </div>
           </div>
@@ -547,6 +745,4 @@ export default function Servicos() {
       </div>
     </>
   );
-
 }
-

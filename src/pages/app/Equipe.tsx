@@ -1,7 +1,7 @@
 import PaywallGate from '../../components/PaywallGate';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Crown, Users, CheckCircle, Palmtree, XCircle, SlidersHorizontal, Loader2, AlertCircle, Lock } from 'lucide-react';
+import { Plus, Search, Crown, Users, CheckCircle, Palmtree, XCircle, SlidersHorizontal, ChevronDown, Loader2, AlertCircle, Lock } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
@@ -250,10 +250,12 @@ export default function Equipe() {
 
           {/* Sort */}
           <div className="relative">
+            <SlidersHorizontal className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none z-10" style={{ color: theme.textSecondary }} />
             <select
               value={sortKey}
               onChange={e => setSortKey(e.target.value as SortKey)}
-              className="rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none appearance-none cursor-pointer themed-input min-w-[155px]"
+              style={{ paddingLeft: '2.5rem', paddingRight: '2rem' }}
+              className="rounded-xl py-2.5 text-sm focus:outline-none appearance-none cursor-pointer themed-input min-w-[160px]"
             >
               <option value="newest">Mais recente</option>
               <option value="oldest">Mais antigo</option>
@@ -261,7 +263,7 @@ export default function Equipe() {
               <option value="name_desc">Nome Z–A</option>
               <option value="status">Status</option>
             </select>
-            <SlidersHorizontal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: theme.textSecondary }} />
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none opacity-50" style={{ color: theme.textSecondary }} />
           </div>
         </div>
       </div>

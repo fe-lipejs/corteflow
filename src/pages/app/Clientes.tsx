@@ -17,6 +17,11 @@ export default function Clientes() {
   const { tenant } = useAuth();
   const engine = usePermissionEngine();
   const navigate = useNavigate();
+
+  const isLight =
+    theme.id === 'elegant' ||
+    (theme.bg && (theme.bg.toLowerCase().startsWith('#f') || theme.bg.toLowerCase().startsWith('#fff')));
+
   const [segment, setSegment] = useState('todos');
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -103,36 +108,52 @@ export default function Clientes() {
     <div className="h-full flex flex-col space-y-6 w-full min-w-0 animate-fade-in pb-12">
       <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>CRM</p>
-          <h1 className="font-serif text-3xl font-bold" style={{ color: theme.textPrimary }}>Clientes</h1>
-          <p className="mt-1 text-sm" style={{ color: theme.textSecondary }}>Gestão e histórico da sua base.</p>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: isLight ? '#475569' : theme.textSecondary }}>CRM</p>
+          <h1 className="font-serif text-3xl font-bold" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>Clientes</h1>
+          <p className="mt-1 text-sm" style={{ color: isLight ? '#475569' : theme.textSecondary }}>Gestão e histórico da sua base.</p>
         </div>
         <div className="flex space-x-3">
           <button
             onClick={handleExport}
-            className="flex items-center px-4 py-2 border rounded-xl font-medium transition-all shadow-sm hover:-translate-y-0.5 glass-card cursor-pointer"
-            style={{ borderColor: theme.border, color: theme.textPrimary }}
+            className="flex items-center px-4 py-2 border rounded-xl font-medium transition-all shadow-sm hover:-translate-y-0.5 cursor-pointer"
+            style={{
+              borderColor: isLight ? '#CBD5E1' : theme.border,
+              background: isLight ? '#FFFFFF' : theme.cardBg,
+              color: isLight ? '#0F172A' : theme.textPrimary,
+            }}
           >
             <Download className="w-4 h-4 mr-2" /> Exportar
           </button>
         </div>
       </header>
 
-      <div className="border rounded-2xl shadow-2xl flex-1 flex flex-col min-h-[500px] glass-card" style={{ borderColor: theme.border }}>
+      <div
+        className="border rounded-2xl flex-1 flex flex-col min-h-[500px] transition-all"
+        style={{
+          borderColor: isLight ? '#E2E8F0' : theme.border,
+          background: isLight ? '#FFFFFF' : theme.cardBg,
+          boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+        }}
+      >
         {/* Mobile Filter Toggle */}
-        <div className="md:hidden p-4 border-b" style={{ borderColor: theme.border }}>
+        <div className="md:hidden p-4 border-b" style={{ borderColor: isLight ? '#E2E8F0' : theme.border }}>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 transition-colors cursor-pointer"
-            style={{ color: theme.textSecondary }}
+            className="flex items-center gap-2 transition-colors cursor-pointer text-sm font-semibold"
+            style={{ color: isLight ? '#334155' : theme.textSecondary }}
           >
             <Filter className="w-4 h-4" /> Filtros e Busca
           </button>
         </div>
 
         {/* Filters and Search Bar */}
-        <div className={`p-4 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 ${showFilters ? 'block' : 'hidden md:flex'}`}
-          style={{ borderColor: theme.border, background: theme.inputBg }}>
+        <div
+          className={`p-4 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 ${showFilters ? 'block' : 'hidden md:flex'}`}
+          style={{
+            borderColor: isLight ? '#E2E8F0' : theme.border,
+            background: isLight ? '#F8FAFC' : theme.inputBg,
+          }}
+        >
           <div className="flex flex-wrap gap-2">
             {[
               { id: 'todos', label: 'Todos' },
@@ -143,11 +164,12 @@ export default function Clientes() {
               <button
                 key={tab.id}
                 onClick={() => setSegment(tab.id)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer ${segment === tab.id ? 'font-bold' : 'hover:opacity-80'}`}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${segment === tab.id ? 'shadow-sm' : 'hover:opacity-80'}`}
                 style={{
-                  background: segment === tab.id ? theme.accentGradient : 'transparent',
-                  color: segment === tab.id ? theme.btnPrimaryText : theme.textSecondary,
-                  boxShadow: segment === tab.id ? theme.shadowAccent : 'none'
+                  background: segment === tab.id ? theme.accentGradient : (isLight ? '#FFFFFF' : 'transparent'),
+                  color: segment === tab.id ? theme.btnPrimaryText : (isLight ? '#334155' : theme.textSecondary),
+                  border: segment === tab.id ? 'none' : `1px solid ${isLight ? '#CBD5E1' : theme.border}`,
+                  boxShadow: segment === tab.id ? theme.shadowAccent : 'none',
                 }}
               >
                 {tab.label}
@@ -155,13 +177,18 @@ export default function Clientes() {
             ))}
           </div>
           <div className="relative w-full md:w-auto">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: theme.textSecondary }} />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: isLight ? '#64748B' : theme.textSecondary }} />
             <input
               type="text"
               placeholder="Buscar cliente..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="py-2 rounded-xl text-sm outline-none w-full md:w-64 transition-all themed-input themed-input-search"
+              className="py-2 pl-10 pr-4 rounded-xl text-sm outline-none w-full md:w-64 transition-all themed-input"
+              style={{
+                borderColor: isLight ? '#CBD5E1' : theme.border,
+                background: isLight ? '#FFFFFF' : theme.inputBg,
+                color: isLight ? '#0F172A' : theme.textPrimary,
+              }}
             />
           </div>
         </div>
@@ -178,18 +205,24 @@ export default function Clientes() {
                 </tbody>
               </table>
             ) : filteredCustomers.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center py-20 space-y-2" style={{ color: theme.textSecondary }}>
-                <p className="font-semibold text-lg" style={{ color: theme.textPrimary }}>
-                  {customers.length === 0 ? "Sem informações suficientes" : "Nenhum cliente encontrado"}
+              <div
+                className="h-full flex flex-col items-center justify-center py-20 space-y-2"
+                style={{ color: isLight ? '#64748B' : theme.textSecondary }}
+              >
+                <p className="font-bold text-lg" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>
+                  {customers.length === 0 ? "Nenhum cliente cadastrado ainda" : "Nenhum cliente encontrado"}
                 </p>
-                <p className="text-sm">
-                  {customers.length === 0 ? "Sua lista de clientes aparecerá aqui assim que houver cadastros." : "Tente ajustar os filtros de busca."}
+                <p className="text-sm font-medium">
+                  {customers.length === 0 ? "Sua base de clientes será preenchida automaticamente com os agendamentos." : "Tente ajustar os filtros ou a busca acima."}
                 </p>
               </div>
             ) : (
               <table className="w-full text-left text-sm border-collapse">
                 <thead>
-                  <tr className="border-b" style={{ borderColor: theme.border, color: theme.textSecondary }}>
+                  <tr
+                    className="border-b"
+                    style={{ borderColor: isLight ? '#E2E8F0' : theme.border, color: isLight ? '#64748B' : theme.textSecondary }}
+                  >
                     <th className="py-3 px-4 font-semibold">Nome / Contato</th>
                     <th className="py-3 px-4 font-semibold">Segmento</th>
                     <th className="py-3 px-4 font-semibold">Cadastrado em</th>
@@ -201,28 +234,41 @@ export default function Clientes() {
                     <tr
                       key={cliente.id}
                       className="border-b last:border-b-0 hover:bg-black/5 transition-colors cursor-pointer"
-                      style={{ borderColor: theme.border }}
+                      style={{ borderColor: isLight ? '#F1F5F9' : theme.border }}
                       onClick={() => setSelectedCustomer(cliente)}
                     >
                       <td className="py-4 px-4">
-                        <p className="font-semibold" style={{ color: theme.textPrimary }}>{cliente.name}</p>
-                        <p className="text-xs" style={{ color: theme.textSecondary }}>{cliente.phone || cliente.email || 'Sem contato'}</p>
+                        <p className="font-bold text-sm" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>{cliente.name}</p>
+                        <p className="text-xs font-medium" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>{cliente.phone || cliente.email || 'Sem contato'}</p>
                       </td>
                       <td className="py-4 px-4">
                         <span
-                          className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider"
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider border shadow-sm"
                           style={{
-                            background: cliente.segment === 'vip' ? `${theme.accent}20` : cliente.segment === 'fiel' ? `${theme.success}20` : `${theme.info}20`,
-                            color: cliente.segment === 'vip' ? theme.accent : cliente.segment === 'fiel' ? theme.success : theme.info
+                            background: cliente.segment === 'vip'
+                              ? (isLight ? '#FEF3C7' : 'rgba(245, 158, 11, 0.2)')
+                              : cliente.segment === 'fiel'
+                                ? (isLight ? '#DCFCE7' : 'rgba(34, 197, 94, 0.2)')
+                                : (isLight ? '#DBEAFE' : 'rgba(59, 130, 246, 0.2)'),
+                            color: cliente.segment === 'vip'
+                              ? (isLight ? '#92400E' : '#FBBF24')
+                              : cliente.segment === 'fiel'
+                                ? (isLight ? '#166534' : '#4ADE80')
+                                : (isLight ? '#1E40AF' : '#60A5FA'),
+                            borderColor: cliente.segment === 'vip'
+                              ? (isLight ? '#FDE68A' : 'rgba(245, 158, 11, 0.3)')
+                              : cliente.segment === 'fiel'
+                                ? (isLight ? '#BBF7D0' : 'rgba(34, 197, 94, 0.3)')
+                                : (isLight ? '#BFDBFE' : 'rgba(59, 130, 246, 0.3)'),
                           }}
                         >
                           {cliente.segment || 'Novo'}
                         </span>
                       </td>
-                      <td className="py-4 px-4" style={{ color: theme.textSecondary }}>
+                      <td className="py-4 px-4 font-medium" style={{ color: isLight ? '#475569' : theme.textSecondary }}>
                         {format(new Date(cliente.created_at), "dd 'de' MMM, yyyy", { locale: ptBR })}
                       </td>
-                      <td className="py-4 px-4 text-right font-bold" style={{ color: theme.textPrimary }}>
+                      <td className="py-4 px-4 text-right font-bold text-sm" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>
                         {money(cliente.total_spent || 0)}
                       </td>
                     </tr>
@@ -233,17 +279,23 @@ export default function Clientes() {
 
             {/* Pagination Controls */}
             {filteredCustomers.length > 0 && (
-              <div className="pt-6 border-t mt-6 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: theme.border }}>
-                <p className="text-xs font-medium" style={{ color: theme.textSecondary }}>
-                  Mostrando <strong style={{ color: theme.textPrimary }}>{(currentPage - 1) * PAGE_SIZE + 1}</strong> a <strong style={{ color: theme.textPrimary }}>{Math.min(currentPage * PAGE_SIZE, filteredCustomers.length)}</strong> de <strong style={{ color: theme.textPrimary }}>{filteredCustomers.length}</strong> clientes
+              <div
+                className="pt-6 border-t mt-6 flex flex-col sm:flex-row items-center justify-between gap-4"
+                style={{ borderColor: isLight ? '#E2E8F0' : theme.border }}
+              >
+                <p className="text-xs font-medium" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>
+                  Mostrando <strong style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>{(currentPage - 1) * PAGE_SIZE + 1}</strong> a <strong style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>{Math.min(currentPage * PAGE_SIZE, filteredCustomers.length)}</strong> de <strong style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>{filteredCustomers.length}</strong> clientes
                 </p>
 
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
                     disabled={currentPage === 1}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5"
-                    style={{ borderColor: theme.border, color: theme.textPrimary }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5 cursor-pointer"
+                    style={{
+                      borderColor: isLight ? '#CBD5E1' : theme.border,
+                      color: isLight ? '#0F172A' : theme.textPrimary,
+                    }}
                   >
                     <ChevronLeft className="w-3.5 h-3.5" /> Anterior
                   </button>
@@ -260,11 +312,11 @@ export default function Clientes() {
                         <button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${isActive ? 'shadow-sm' : 'hover:bg-black/5'}`}
+                          className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${isActive ? 'shadow-sm' : 'hover:bg-black/5'}`}
                           style={{
                             background: isActive ? theme.accentGradient : 'transparent',
-                            color: isActive ? theme.btnPrimaryText : theme.textSecondary,
-                            border: `1px solid ${isActive ? theme.accent : theme.border}`
+                            color: isActive ? theme.btnPrimaryText : (isLight ? '#334155' : theme.textSecondary),
+                            border: `1px solid ${isActive ? theme.accent : (isLight ? '#CBD5E1' : theme.border)}`
                           }}
                         >
                           {pageNum}
@@ -279,8 +331,11 @@ export default function Clientes() {
                   <button
                     onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5"
-                    style={{ borderColor: theme.border, color: theme.textPrimary }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5 cursor-pointer"
+                    style={{
+                      borderColor: isLight ? '#CBD5E1' : theme.border,
+                      color: isLight ? '#0F172A' : theme.textPrimary,
+                    }}
                   >
                     Próximo <ChevronRight className="w-3.5 h-3.5" />
                   </button>

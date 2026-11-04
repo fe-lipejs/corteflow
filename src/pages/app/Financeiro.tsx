@@ -9,7 +9,7 @@ import { TableRowSkeleton } from '../../components/ui/Skeleton';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../integrations/supabase/client';
 import { useAuth } from '../../contexts/AuthContext';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 import { useNavigate } from 'react-router-dom';
@@ -22,10 +22,14 @@ import { RecurringExpensesTab } from './financeiro/RecurringExpensesTab';
 export default function Financeiro() {
   const { theme } = useTheme();
   const { tenant, user, role, professionalProfile } = useAuth();
-  const [currentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const engine = usePermissionEngine();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const isLight =
+    theme.id === 'elegant' ||
+    (theme.bg && (theme.bg.toLowerCase().startsWith('#f') || theme.bg.toLowerCase().startsWith('#fff')));
 
   const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -57,9 +61,9 @@ export default function Financeiro() {
     ? allProfessionals.filter(p => p.id === professionalProfile.id)
     : allProfessionals;
 
-  // 2. Fetch Combined Financials (Payments, Refunds, Local Bookings, and Manual Financial Transactions)
+  // 2. Fetch Combined Financials (Payments, Refunds, Completed Bookings, and Manual Financial Transactions)
   const { data, isLoading } = useQuery({
-    queryKey: ['financials_full', tenantId, currentMonth.getMonth(), selectedProfessionalId],
+    queryKey: ['financials_full', tenantId, currentMonth.getFullYear(), currentMonth.getMonth(), selectedProfessionalId],
     queryFn: async () => {
       if (!tenantId) return null;
 
@@ -67,8 +71,7 @@ export default function Financeiro() {
       const end = endOfMonth(currentMonth).toISOString();
 
       // ── C1 FIX: For professionals, pre-fetch their booking IDs so payments/refunds
-      // are filtered at the DATABASE level (not just hidden in the UI). This prevents
-      // raw data from appearing in the browser's DevTools Network tab.
+      // are filtered at the DATABASE level (not just hidden in the UI).
       let professionalBookingIds: string[] | null = null;
       if (role === 'professional' && selectedProfessionalId) {
         const { data: myBookings } = await supabase
@@ -100,10 +103,8 @@ export default function Financeiro() {
         .lte('created_at', end)
         .order('created_at', { ascending: false });
 
-      // Backend filter: only fetch payments linked to professional's own bookings
       if (professionalBookingIds !== null) {
         if (professionalBookingIds.length === 0) {
-          // No bookings → skip payments query entirely
           paymentsQuery = paymentsQuery.in('booking_id', ['00000000-0000-0000-0000-000000000000']);
         } else {
           paymentsQuery = paymentsQuery.in('booking_id', professionalBookingIds);
@@ -130,21 +131,22 @@ export default function Financeiro() {
         .lte('created_at', end)
         .order('created_at', { ascending: false });
 
-      // (C) Fetch Local Bookings
-      let localBookingsQuery = supabase
+      // (C) Fetch Completed Bookings (Presencial / Balcão)
+      let completedBookingsQuery = supabase
         .from('bookings')
         .select(`
           id,
           created_at,
           scheduled_at,
           amount_total,
+          amount_paid,
           status,
+          payment_mode,
           professional_id,
           customers (name),
           services (name)
         `)
         .eq('tenant_id', tenantId)
-        .eq('payment_mode', 'local')
         .eq('status', 'completed')
         .gte('scheduled_at', start)
         .lte('scheduled_at', end)
@@ -159,22 +161,21 @@ export default function Financeiro() {
         .order('created_at', { ascending: false });
 
       if (selectedProfessionalId) {
-        localBookingsQuery = localBookingsQuery.eq('professional_id', selectedProfessionalId);
+        completedBookingsQuery = completedBookingsQuery.eq('professional_id', selectedProfessionalId);
         manualTxQuery = manualTxQuery.eq('professional_id', selectedProfessionalId);
       }
 
       const [
         { data: payments },
         { data: refunds },
-        { data: localBookings },
+        { data: completedBookings },
         { data: manualTransactions }
       ] = await Promise.all([
         paymentsQuery,
         refundsQuery,
-        localBookingsQuery,
+        completedBookingsQuery,
         manualTxQuery,
       ]);
-
 
       let entradas = 0;
       let saidas = 0;
@@ -196,7 +197,7 @@ export default function Financeiro() {
           method: p.payment_method || 'Cartão (Online)',
           date: p.created_at,
           customer_name: p.bookings?.customers?.name || 'Cliente',
-          description: p.bookings?.services?.name || 'Serviço',
+          description: p.bookings?.services?.name || 'Serviço Online',
           isManual: false,
         });
       });
@@ -222,24 +223,42 @@ export default function Financeiro() {
         });
       });
 
-      // Process Local Bookings
-      localBookings?.forEach((b: any) => {
-        // BUG-02: Local bookings têm amount_paid=0 pois são pagos presencialmente.
-        // Usar amount_total que representa o valor real do serviço.
-        const val = Number(b.amount_total || b.amount_paid || 0);
+      // Process Completed Bookings (Balcão / Saldo Presencial)
+      completedBookings?.forEach((b: any) => {
+        const mode = b.payment_mode || 'local';
+        let localVal = 0;
+        let method = 'Local (Balcão)';
 
-        if (val > 0) {
-          entradas += val;
+        if (mode === 'local' || mode === 'pay_local') {
+          // 100% recebido presencialmente
+          localVal = Number(b.amount_total || b.amount_paid || 0);
+          method = 'Local (Balcão)';
+        } else if (mode === 'deposit' || mode === 'partial') {
+          // Sinal de entrada recebido online, restante cobrado no balcão
+          const total = Number(b.amount_total || 0);
+          const onlinePaid = payments?.find((p: any) => p.booking_id === b.id)?.amount || (total * 0.5);
+          localVal = Math.max(0, total - Number(onlinePaid));
+          method = 'Saldo Restante (Balcão)';
+        } else if (mode === 'full') {
+          // 100% pago online, já computado em payments
+          localVal = 0;
+        } else {
+          localVal = Number(b.amount_total || b.amount_paid || 0);
+        }
+
+        if (localVal > 0) {
+          entradas += localVal;
           transactions.push({
             id: b.id,
             type: 'income',
-            amount: val,
-          status: 'succeeded',
-          method: 'Local (Balcão)',
-          date: b.scheduled_at,
-          customer_name: b.customers?.name || 'Cliente',
-          description: b.services?.name || 'Serviço',
-          isManual: false,
+            amount: localVal,
+            status: 'succeeded',
+            method,
+            date: b.scheduled_at,
+            customer_name: b.customers?.name || 'Cliente',
+            description: b.services?.name || 'Atendimento Concluído',
+            professional_id: b.professional_id,
+            isManual: false,
           });
         }
       });
@@ -249,6 +268,9 @@ export default function Financeiro() {
       const endDate = new Date(end);
 
       manualTransactions?.forEach((m: any) => {
+        // Prevent double counting if an income transaction is tied to a booking
+        if (m.booking_id && m.type === 'income') return;
+
         const txDate = new Date(m.date || m.created_at);
         if (txDate < startDate || txDate > endDate) {
           return;
@@ -297,7 +319,6 @@ export default function Financeiro() {
     mutationFn: async (input: FinancialTransaction) => {
       if (!tenantId) return;
       if (input.id) {
-        // Update
         const { error } = await supabase
           .from('financial_transactions')
           .update({
@@ -313,7 +334,6 @@ export default function Financeiro() {
           .eq('tenant_id', tenantId);
         if (error) throw error;
       } else {
-        // Insert
         const { error } = await supabase
           .from('financial_transactions')
           .insert({
@@ -325,44 +345,51 @@ export default function Financeiro() {
             payment_method: input.payment_method,
             professional_id: input.professional_id,
             date: input.date,
+            status: 'succeeded',
           });
         if (error) throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['financials_full'] });
+      queryClient.invalidateQueries({ queryKey: ['financials_full', tenantId] });
+      setModalOpen(false);
+      setEditingTransaction(null);
+      toast.success('Transação salva com sucesso!');
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Erro ao salvar transação');
     }
   });
 
   const deleteTransactionMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!tenantId) return;
-      // BUG-14: Usar soft delete em vez de DELETE físico para preservar o audit trail
       const { error } = await supabase
         .from('financial_transactions')
-        .update({ deleted_at: new Date().toISOString() } as any)
+        .update({ deleted_at: new Date().toISOString() })
         .eq('id', id)
         .eq('tenant_id', tenantId);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['financials_full'] });
+      queryClient.invalidateQueries({ queryKey: ['financials_full', tenantId] });
+      setDeletingTransaction(null);
+      toast.success('Lançamento excluído com sucesso!');
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Erro ao excluir transação');
     }
   });
 
-  const money = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-
-  // Filtered transactions list
+  // Filters and Pagination
   const filteredTransactions = useMemo(() => {
     if (!data?.transactions) return [];
-    if (filterType === 'all') return data.transactions;
-    return data.transactions.filter(t => t.type === filterType);
+    let list = data.transactions;
+    if (filterType !== 'all') {
+      list = list.filter((t: any) => t.type === filterType);
+    }
+    return list;
   }, [data?.transactions, filterType]);
-
-  // Reset page when filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filterType, selectedProfessionalId]);
 
   const totalPages = Math.ceil(filteredTransactions.length / PAGE_SIZE) || 1;
   const paginatedTransactions = useMemo(() => {
@@ -370,18 +397,9 @@ export default function Financeiro() {
     return filteredTransactions.slice(start, start + PAGE_SIZE);
   }, [filteredTransactions, currentPage]);
 
-  // Handlers
-  const handleNewTransactionClick = () => {
-    if (!engine.hasPermission('financeiro.criar_lancamento')) {
-      setShowUpgradeModal('financeiro.criar_lancamento');
-      return;
-    }
-    setEditingTransaction(null);
-    setModalOpen(true);
-  };
+  const money = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
   const handleEditClick = (tx: any) => {
-    if (!tx.isManual) return;
     if (!engine.hasPermission('financeiro.editar_lancamento')) {
       setShowUpgradeModal('financeiro.editar_lancamento');
       return;
@@ -391,16 +409,15 @@ export default function Financeiro() {
       type: tx.type,
       amount: tx.amount,
       description: tx.description,
-      category: tx.category || 'Serviço Avulso',
+      category: tx.category || 'Geral',
       payment_method: tx.method,
-      professional_id: tx.professional_id,
-      date: tx.date,
+      professional_id: tx.professional_id || null,
+      date: tx.date.split('T')[0],
     });
     setModalOpen(true);
   };
 
   const handleDeleteClick = (tx: any) => {
-    if (!tx.isManual) return;
     if (!engine.hasPermission('financeiro.excluir_lancamento')) {
       setShowUpgradeModal('financeiro.excluir_lancamento');
       return;
@@ -409,13 +426,8 @@ export default function Financeiro() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!deletingTransaction) return;
-    try {
+    if (deletingTransaction) {
       await deleteTransactionMutation.mutateAsync(deletingTransaction.id);
-      toast.success('Lançamento excluído com sucesso');
-      setDeletingTransaction(null);
-    } catch (error: any) {
-      toast.error(error?.message || 'Erro ao excluir lançamento');
     }
   };
 
@@ -426,14 +438,14 @@ export default function Financeiro() {
     }
     if (!data?.transactions || data.transactions.length === 0) return;
 
-    const headers = ['Data', 'Tipo', 'Descrição', 'Origem/Cliente', 'Método', 'Valor (R$)'];
-    const rows = filteredTransactions.map(t => [
-      `"${format(new Date(t.date), 'dd/MM/yyyy HH:mm', { locale: ptBR })}"`,
+    const headers = ['Data', 'Tipo', 'Descrição', 'Categoria/Origem', 'Forma', 'Valor'];
+    const rows = filteredTransactions.map((t: any) => [
+      `"${format(new Date(t.date), 'dd/MM/yyyy HH:mm')}"`,
       `"${t.type === 'income' ? 'Receita' : 'Despesa'}"`,
       `"${t.description || ''}"`,
       `"${t.customer_name || ''}"`,
       `"${t.method || ''}"`,
-      `"${t.amount || 0}"`
+      `"${t.type === 'income' ? '' : '-'}${t.amount}"`
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
@@ -446,418 +458,510 @@ export default function Financeiro() {
     document.body.removeChild(link);
   };
 
-  // Check if user has ANY access to Financeiro
-  const canAccessFinanceiro = engine.hasAnyPermission('financeiro.') ||
-    engine.hasPermission('financeiro.visualizar_caixa_geral') ||
-    engine.hasPermission('financeiro.visualizar_meu_caixa') ||
-    engine.hasPermission('financeiro.criar_lancamento');
-
   return (
     <>
       <div className="relative min-h-[600px] w-full">
-      {/* ── Conteúdo da Página ── */}
-      <div className="space-y-6 h-full flex flex-col animate-fade-in">
-        {/* HEADER */}
-        {/* HEADER */}
-        <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>Gestão</p>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: theme.textPrimary }}>Financeiro & Fluxo de Caixa</h1>
-            <p className="text-sm mt-1" style={{ color: theme.textSecondary }}>Controle de receitas, despesas, comissões e gastos fixos.</p>
-          </div>
-          
-          <div className="flex space-x-3">
-            <button
-              onClick={handleExport}
-              className="flex items-center px-4 py-2 border rounded-xl font-medium transition-all shadow-sm hover:-translate-y-0.5 glass-card cursor-pointer"
-              style={{ borderColor: theme.border, color: theme.textPrimary }}
-            >
-              <Download className="w-4 h-4 mr-2" /> Exportar
-            </button>
+        <div className="space-y-6 h-full flex flex-col animate-fade-in pb-12">
 
-            {engine.hasPermission('financeiro.criar_lancamento') && (
-              <button
-                onClick={() => {
-                  setEditingTransaction(null);
-                  setModalOpen(true);
-                }}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 active:translate-y-0 w-full md:w-auto justify-center"
-                style={{ background: theme.accent, color: theme.bg }}
-              >
-                <Plus className="w-5 h-5" />
-                Nova Transação
-              </button>
-            )}
-          </div>
-        </header>
-
-        {/* TABS */}
-        <div className="flex gap-2 overflow-x-auto pb-2 border-b" style={{ borderColor: theme.border }}>
-          <button
-            onClick={() => setActiveTab('fluxo')}
-            className={`px-4 py-2 font-medium text-sm transition-all whitespace-nowrap rounded-t-lg ${activeTab === 'fluxo' ? 'border-b-2' : 'opacity-70 hover:opacity-100'}`}
-            style={{ 
-              color: activeTab === 'fluxo' ? theme.accent : theme.textSecondary,
-              borderColor: activeTab === 'fluxo' ? theme.accent : 'transparent'
-            }}
-          >
-            Fluxo de Caixa (DRE)
-          </button>
-          <button
-            onClick={() => setActiveTab('comissoes')}
-            className={`px-4 py-2 font-medium text-sm transition-all whitespace-nowrap rounded-t-lg ${activeTab === 'comissoes' ? 'border-b-2' : 'opacity-70 hover:opacity-100'}`}
-            style={{ 
-              color: activeTab === 'comissoes' ? theme.accent : theme.textSecondary,
-              borderColor: activeTab === 'comissoes' ? theme.accent : 'transparent'
-            }}
-          >
-            Comissões a Pagar
-          </button>
-          <button
-            onClick={() => setActiveTab('despesas_fixas')}
-            className={`px-4 py-2 font-medium text-sm transition-all whitespace-nowrap rounded-t-lg ${activeTab === 'despesas_fixas' ? 'border-b-2' : 'opacity-70 hover:opacity-100'}`}
-            style={{ 
-              color: activeTab === 'despesas_fixas' ? theme.accent : theme.textSecondary,
-              borderColor: activeTab === 'despesas_fixas' ? theme.accent : 'transparent'
-            }}
-          >
-            Gastos Fixos
-          </button>
-        </div>
-
-        {activeTab === 'comissoes' && tenantId && (
-          engine.hasPermission('equipe.ver_comissoes') ? (
-            <CommissionsTab tenantId={tenantId} role={role} professionalId={professionalProfile?.id || null} />
-          ) : (
-            <div className="flex flex-col items-center justify-center p-12 text-center h-64 border rounded-xl" style={{ borderColor: theme.border, background: theme.cardBg }}>
-              <Lock className="w-12 h-12 mb-4 opacity-50" style={{ color: theme.textSecondary }} />
-              <h3 className="text-lg font-bold mb-2" style={{ color: theme.textPrimary }}>Acesso Restrito</h3>
-              <p className="text-sm opacity-80 max-w-sm" style={{ color: theme.textSecondary }}>
-                Você não tem permissão para visualizar as comissões.
-              </p>
+          {/* HEADER */}
+          <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: isLight ? '#475569' : theme.textSecondary }}>Gestão</p>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>Financeiro & Fluxo de Caixa</h1>
+              <p className="text-sm mt-1" style={{ color: isLight ? '#475569' : theme.textSecondary }}>Controle de receitas, despesas, comissões e gastos fixos.</p>
             </div>
-          )
-        )}
+            
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Dynamic Month Selector */}
+              <div
+                className="flex items-center gap-1 p-1 rounded-xl border shadow-sm"
+                style={{
+                  borderColor: isLight ? '#E2E8F0' : theme.border,
+                  background: isLight ? '#FFFFFF' : theme.cardBg,
+                }}
+              >
+                <button
+                  onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}
+                  className="p-1.5 rounded-lg transition-colors cursor-pointer hover:bg-black/5"
+                  style={{ color: isLight ? '#0F172A' : theme.textPrimary }}
+                  title="Mês anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-xs font-bold capitalize px-3 min-w-[130px] text-center" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>
+                  {format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR })}
+                </span>
+                <button
+                  onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}
+                  className="p-1.5 rounded-lg transition-colors cursor-pointer hover:bg-black/5"
+                  style={{ color: isLight ? '#0F172A' : theme.textPrimary }}
+                  title="Próximo mês"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
 
-        {activeTab === 'despesas_fixas' && tenantId && (
-          <RecurringExpensesTab tenantId={tenantId} />
-        )}
+              <button
+                onClick={handleExport}
+                className="flex items-center px-4 py-2 border rounded-xl font-medium transition-all shadow-sm hover:-translate-y-0.5 cursor-pointer"
+                style={{
+                  borderColor: isLight ? '#CBD5E1' : theme.border,
+                  background: isLight ? '#FFFFFF' : theme.cardBg,
+                  color: isLight ? '#0F172A' : theme.textPrimary,
+                }}
+              >
+                <Download className="w-4 h-4 mr-2" /> Exportar
+              </button>
 
-        {activeTab === 'fluxo' && (
-          <div className="space-y-8">
-            {/* Professional Filter Bar */}
-            {professionals.length > 0 && (
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                <span className="text-xs font-bold shrink-0 mr-1" style={{ color: theme.textSecondary }}>Filtrar Caixa:</span>
-                {role !== 'professional' && (
-                  <button
-                    onClick={() => {
-                      if (!engine.hasPermission('financeiro.visualizar_caixa_geral')) {
-                        setShowUpgradeModal('financeiro.visualizar_caixa_geral');
-                        return;
-                      }
-                      setSelectedProfessionalId(null);
-                    }}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border cursor-pointer"
+              {engine.hasPermission('financeiro.criar_lancamento') && (
+                <button
+                  onClick={() => {
+                    setEditingTransaction(null);
+                    setModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all hover:opacity-90 active:scale-[0.98] w-full md:w-auto justify-center cursor-pointer"
+                  style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
+                >
+                  <Plus className="w-5 h-5" />
+                  Nova Transação
+                </button>
+              )}
+            </div>
+          </header>
+
+          {/* TABS */}
+          <div className="flex gap-2 overflow-x-auto pb-2 border-b" style={{ borderColor: isLight ? '#E2E8F0' : theme.border }}>
+            <button
+              onClick={() => setActiveTab('fluxo')}
+              className={`px-4 py-2 font-bold text-sm transition-all whitespace-nowrap rounded-t-lg cursor-pointer ${activeTab === 'fluxo' ? 'border-b-2' : 'opacity-70 hover:opacity-100'}`}
+              style={{ 
+                color: activeTab === 'fluxo' ? theme.accent : (isLight ? '#475569' : theme.textSecondary),
+                borderColor: activeTab === 'fluxo' ? theme.accent : 'transparent'
+              }}
+            >
+              Fluxo de Caixa (DRE)
+            </button>
+            <button
+              onClick={() => setActiveTab('comissoes')}
+              className={`px-4 py-2 font-bold text-sm transition-all whitespace-nowrap rounded-t-lg cursor-pointer ${activeTab === 'comissoes' ? 'border-b-2' : 'opacity-70 hover:opacity-100'}`}
+              style={{ 
+                color: activeTab === 'comissoes' ? theme.accent : (isLight ? '#475569' : theme.textSecondary),
+                borderColor: activeTab === 'comissoes' ? theme.accent : 'transparent'
+              }}
+            >
+              Comissões a Pagar
+            </button>
+            <button
+              onClick={() => setActiveTab('despesas_fixas')}
+              className={`px-4 py-2 font-bold text-sm transition-all whitespace-nowrap rounded-t-lg cursor-pointer ${activeTab === 'despesas_fixas' ? 'border-b-2' : 'opacity-70 hover:opacity-100'}`}
+              style={{ 
+                color: activeTab === 'despesas_fixas' ? theme.accent : (isLight ? '#475569' : theme.textSecondary),
+                borderColor: activeTab === 'despesas_fixas' ? theme.accent : 'transparent'
+              }}
+            >
+              Gastos Fixos
+            </button>
+          </div>
+
+          {activeTab === 'comissoes' && tenantId && (
+            engine.hasPermission('equipe.ver_comissoes') ? (
+              <CommissionsTab tenantId={tenantId} role={role} professionalId={professionalProfile?.id || null} />
+            ) : (
+              <div
+                className="flex flex-col items-center justify-center p-12 text-center h-64 border rounded-2xl"
+                style={{
+                  borderColor: isLight ? '#E2E8F0' : theme.border,
+                  background: isLight ? '#FFFFFF' : theme.cardBg,
+                }}
+              >
+                <Lock className="w-12 h-12 mb-4 opacity-50" style={{ color: isLight ? '#64748B' : theme.textSecondary }} />
+                <h3 className="text-lg font-bold mb-2" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>Acesso Restrito</h3>
+                <p className="text-sm opacity-80 max-w-sm" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>
+                  Você não tem permissão para visualizar as comissões.
+                </p>
+              </div>
+            )
+          )}
+
+          {activeTab === 'despesas_fixas' && tenantId && (
+            <RecurringExpensesTab tenantId={tenantId} />
+          )}
+
+          {activeTab === 'fluxo' && (
+            <div className="space-y-8">
+              {/* Professional Filter Bar */}
+              {professionals.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  <span className="text-xs font-bold shrink-0 mr-1" style={{ color: isLight ? '#475569' : theme.textSecondary }}>Filtrar Caixa:</span>
+                  {role !== 'professional' && (
+                    <button
+                      onClick={() => {
+                        if (!engine.hasPermission('financeiro.visualizar_caixa_geral')) {
+                          setShowUpgradeModal('financeiro.visualizar_caixa_geral');
+                          return;
+                        }
+                        setSelectedProfessionalId(null);
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border cursor-pointer"
+                      style={{
+                        color: selectedProfessionalId === null ? theme.btnPrimaryText : (isLight ? '#334155' : theme.textSecondary),
+                        background: selectedProfessionalId === null ? theme.accentGradient : (isLight ? '#FFFFFF' : theme.cardBg),
+                        borderColor: selectedProfessionalId === null ? theme.accent : (isLight ? '#E2E8F0' : theme.cardBorder),
+                        boxShadow: selectedProfessionalId === null ? theme.shadowAccent : 'none',
+                      }}
+                    >
+                      Caixa Geral (Todos)
+                    </button>
+                  )}
+                  {professionals.map(p => {
+                    const isSelected = selectedProfessionalId === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => setSelectedProfessionalId(isSelected ? null : p.id)}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border cursor-pointer"
+                        style={{
+                          color: isSelected ? theme.btnPrimaryText : (isLight ? '#334155' : theme.textSecondary),
+                          background: isSelected ? theme.accentGradient : (isLight ? '#FFFFFF' : theme.cardBg),
+                          borderColor: isSelected ? theme.accent : (isLight ? '#E2E8F0' : theme.border),
+                        }}
+                      >
+                        {p.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* KPIs */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div
+                  className="p-6 rounded-2xl border transition-all"
+                  style={{
+                    borderColor: isLight ? '#E2E8F0' : theme.border,
+                    background: isLight ? '#FFFFFF' : theme.cardBg,
+                    boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{ background: '#10b98115', color: '#10b981' }}>
+                      <ArrowUpRight className="w-6 h-6" />
+                    </div>
+                    <span
+                      className="text-xs font-bold px-2.5 py-1 border rounded-full"
+                      style={{
+                        background: isLight ? '#F1F5F9' : theme.inputBg,
+                        borderColor: isLight ? '#E2E8F0' : theme.border,
+                        color: isLight ? '#475569' : theme.textSecondary,
+                      }}
+                    >
+                      {format(currentMonth, "MMM 'yy", { locale: ptBR })}
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold mb-1" style={{ color: isLight ? '#475569' : theme.textSecondary }}>Entradas Totais (Receitas)</p>
+                  <h3 className="text-3xl font-bold tracking-tight" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>
+                    {isLoading ? <div className="h-9 w-32 skeleton skeleton-text mt-1" /> : money(data?.entradas || 0)}
+                  </h3>
+                </div>
+
+                <div
+                  className="p-6 rounded-2xl border transition-all"
+                  style={{
+                    borderColor: isLight ? '#E2E8F0' : theme.border,
+                    background: isLight ? '#FFFFFF' : theme.cardBg,
+                    boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{ background: '#ef444415', color: '#ef4444' }}>
+                      <ArrowDownRight className="w-6 h-6" />
+                    </div>
+                    <span
+                      className="text-xs font-bold px-2.5 py-1 border rounded-full"
+                      style={{
+                        background: isLight ? '#F1F5F9' : theme.inputBg,
+                        borderColor: isLight ? '#E2E8F0' : theme.border,
+                        color: isLight ? '#475569' : theme.textSecondary,
+                      }}
+                    >
+                      {format(currentMonth, "MMM 'yy", { locale: ptBR })}
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold mb-1" style={{ color: isLight ? '#475569' : theme.textSecondary }}>Saídas Totais (Despesas/Estornos)</p>
+                  <h3 className="text-3xl font-bold tracking-tight" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>
+                    {isLoading ? <div className="h-9 w-32 skeleton skeleton-text mt-1" /> : money(data?.saidas || 0)}
+                  </h3>
+                </div>
+
+                <div className="p-6 rounded-2xl border relative overflow-hidden shadow-md" style={{ background: theme.accentGradient, borderColor: theme.accent, color: theme.btnPrimaryText }}>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+                  <div className="flex justify-between items-start mb-4 relative z-10">
+                    <div className="w-12 h-12 rounded-2xl bg-black/10 flex items-center justify-center backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>
+                      <DollarSign className="w-6 h-6" />
+                    </div>
+                    <span className="text-xs font-bold px-2.5 py-1 bg-black/20 rounded-full backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>Resultado</span>
+                  </div>
+                  <p className="text-sm font-bold opacity-90 mb-1 relative z-10">Lucro Líquido</p>
+                  <h3 className="text-3xl font-black relative z-10 tracking-tight">
+                    {isLoading ? <div className="h-9 w-32 bg-white/20 rounded animate-pulse mt-1" /> : money(data?.liquido || 0)}
+                  </h3>
+                </div>
+              </div>
+
+              {/* LISTA DE TRANSAÇÕES */}
+              <div
+                className="border rounded-2xl flex-1 p-6 transition-all"
+                style={{
+                  borderColor: isLight ? '#E2E8F0' : theme.border,
+                  background: isLight ? '#FFFFFF' : theme.cardBg,
+                  boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                }}
+              >
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                  <h3 className="font-bold text-lg" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>Lançamentos & Transações</h3>
+
+                  {/* Type Filters */}
+                  <div
+                    className="flex gap-1 p-1 rounded-xl border text-xs"
                     style={{
-                      color: selectedProfessionalId === null ? theme.btnPrimaryText : theme.textSecondary,
-                      background: selectedProfessionalId === null ? theme.accentGradient : theme.cardBg,
-                      borderColor: selectedProfessionalId === null ? theme.accent : theme.cardBorder,
-                      boxShadow: selectedProfessionalId === null ? theme.shadowAccent : 'none',
+                      borderColor: isLight ? '#E2E8F0' : theme.border,
+                      background: isLight ? '#F8FAFC' : theme.inputBg,
                     }}
                   >
-                    Caixa Geral (Todos)
-                  </button>
-                )}
-                {professionals.map(p => {
-                  const isSelected = selectedProfessionalId === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => setSelectedProfessionalId(isSelected ? null : p.id)}
-                      className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border cursor-pointer"
+                    {[
+                      { id: 'all', label: 'Todas' },
+                      { id: 'income', label: 'Receitas' },
+                      { id: 'expense', label: 'Despesas' },
+                    ].map(tab => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setFilterType(tab.id as any)}
+                        className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${filterType === tab.id ? 'shadow-sm' : 'opacity-70 hover:opacity-100'}`}
+                        style={{
+                          background: filterType === tab.id ? theme.accentGradient : 'transparent',
+                          color: filterType === tab.id ? theme.btnPrimaryText : (isLight ? '#475569' : theme.textSecondary),
+                        }}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="w-full overflow-x-auto">
+                  {isLoading ? (
+                    <table className="w-full text-left">
+                      <tbody>
+                        {Array.from({ length: 4 }).map((_, i) => (
+                          <TableRowSkeleton key={i} cols={5} />
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : filteredTransactions.length === 0 ? (
+                    <div
+                      className="text-center py-14 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center"
                       style={{
-                        color: isSelected ? theme.btnPrimaryText : theme.textSecondary,
-                        background: isSelected ? theme.accentGradient : theme.cardBg,
-                        borderColor: isSelected ? theme.accent : theme.border,
+                        borderColor: isLight ? '#E2E8F0' : theme.border,
+                        color: isLight ? '#64748B' : theme.textSecondary,
+                        background: isLight ? '#F8FAFC' : 'transparent',
                       }}
                     >
-                      {p.name}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                      <p className="font-bold text-base mb-1" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>Nenhum lançamento encontrado neste período.</p>
+                      <p className="text-xs font-medium">Os agendamentos concluídos e transações manuais deste mês aparecerão aqui automaticamente.</p>
+                    </div>
+                  ) : (
+                    <table className="w-full text-left text-sm border-collapse">
+                      <thead>
+                        <tr className="border-b" style={{ borderColor: isLight ? '#E2E8F0' : theme.border, color: isLight ? '#64748B' : theme.textSecondary }}>
+                          <th className="py-3 px-4 font-semibold">Data</th>
+                          <th className="py-3 px-4 font-semibold">Descrição</th>
+                          <th className="py-3 px-4 font-semibold">Origem / Categoria</th>
+                          <th className="py-3 px-4 font-semibold">Forma / Status</th>
+                          <th className="py-3 px-4 font-semibold text-right">Valor</th>
+                          <th className="py-3 px-4 font-semibold text-center w-20">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedTransactions.map((tx: any) => (
+                          <tr
+                            key={tx.id}
+                            className="border-b last:border-b-0 hover:bg-black/5 transition-colors"
+                            style={{ borderColor: isLight ? '#F1F5F9' : theme.border }}
+                          >
+                            <td className="py-4 px-4 font-medium whitespace-nowrap" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>
+                              {format(new Date(tx.date), "dd 'de' MMM, HH:mm", { locale: ptBR })}
+                            </td>
+                            <td className="py-4 px-4 font-bold" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>
+                              {tx.description}
+                            </td>
+                            <td className="py-4 px-4 font-medium" style={{ color: isLight ? '#475569' : theme.textSecondary }}>
+                              {tx.customer_name}
+                            </td>
+                            <td className="py-4 px-4">
+                              <span
+                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                                style={{
+                                  background: tx.type === 'income' ? (isLight ? '#DCFCE7' : 'rgba(16, 185, 129, 0.15)') : (isLight ? '#FEE2E2' : 'rgba(239, 68, 68, 0.15)'),
+                                  color: tx.type === 'income' ? (isLight ? '#15803D' : '#10b981') : (isLight ? '#B91C1C' : '#ef4444'),
+                                  border: `1px solid ${tx.type === 'income' ? (isLight ? '#86EFAC' : 'rgba(16, 185, 129, 0.3)') : (isLight ? '#FCA5A5' : 'rgba(239, 68, 68, 0.3)')}`
+                                }}
+                              >
+                                {tx.method}
+                              </span>
+                            </td>
+                            <td className={`py-4 px-4 text-right font-bold whitespace-nowrap ${tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                              {tx.type === 'income' ? '+' : '-'}{money(tx.amount)}
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              {tx.isManual ? (
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    onClick={() => handleEditClick(tx)}
+                                    className="p-1.5 rounded-lg border hover:bg-black/5 transition-colors cursor-pointer"
+                                    style={{ borderColor: isLight ? '#CBD5E1' : theme.border, color: isLight ? '#334155' : theme.textSecondary }}
+                                    title="Editar Lançamento"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteClick(tx)}
+                                    className="p-1.5 rounded-lg border hover:bg-rose-500/10 transition-colors cursor-pointer"
+                                    style={{ borderColor: '#ef444440', color: '#ef4444' }}
+                                    title="Excluir Lançamento"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] uppercase font-bold tracking-wider opacity-50" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>Automático</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
 
-            {/* KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-6 rounded-2xl shadow-2xl border glass-card" style={{ borderColor: theme.border }}>
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: `${theme.success}15`, color: theme.success }}>
-                    <ArrowUpRight className="w-6 h-6" />
-                  </div>
-                  <span className="text-xs font-semibold px-2 py-1 border rounded-full" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textSecondary }}>Este Mês</span>
-                </div>
-                <p className="text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Entradas Totais (Receitas)</p>
-                <h3 className="text-3xl font-bold" style={{ color: theme.textPrimary }}>
-                  {isLoading ? <div className="h-9 w-32 skeleton skeleton-text mt-1" /> : money(data?.entradas || 0)}
-                </h3>
-              </div>
+                  {/* Pagination Controls */}
+                  {filteredTransactions.length > 0 && (
+                    <div className="pt-6 border-t mt-6 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: isLight ? '#E2E8F0' : theme.border }}>
+                      <p className="text-xs font-medium" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>
+                        Mostrando <strong style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>{(currentPage - 1) * PAGE_SIZE + 1}</strong> a <strong style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>{Math.min(currentPage * PAGE_SIZE, filteredTransactions.length)}</strong> de <strong style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>{filteredTransactions.length}</strong> transações
+                      </p>
 
-              <div className="p-6 rounded-2xl shadow-2xl border glass-card" style={{ borderColor: theme.border }}>
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: `${theme.error}15`, color: theme.error }}>
-                    <ArrowDownRight className="w-6 h-6" />
-                  </div>
-                  <span className="text-xs font-semibold px-2 py-1 border rounded-full" style={{ background: theme.inputBg, borderColor: theme.border, color: theme.textSecondary }}>Este Mês</span>
-                </div>
-                <p className="text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Saídas Totais (Despesas/Estornos)</p>
-                <h3 className="text-3xl font-bold" style={{ color: theme.textPrimary }}>
-                  {isLoading ? <div className="h-9 w-32 skeleton skeleton-text mt-1" /> : money(data?.saidas || 0)}
-                </h3>
-              </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                          disabled={currentPage === 1}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5 cursor-pointer"
+                          style={{ borderColor: isLight ? '#CBD5E1' : theme.border, color: isLight ? '#0F172A' : theme.textPrimary }}
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" /> Anterior
+                        </button>
 
-              <div className="p-6 rounded-2xl shadow-2xl border relative overflow-hidden" style={{ background: theme.accentGradient, borderColor: theme.accent, color: theme.btnPrimaryText }}>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-                <div className="flex justify-between items-start mb-4 relative z-10">
-                  <div className="w-12 h-12 rounded-full bg-black/10 flex items-center justify-center backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>
-                    <DollarSign className="w-6 h-6" />
-                  </div>
-                  <span className="text-xs font-bold px-2 py-1 bg-black/20 rounded-full backdrop-blur-sm" style={{ color: theme.btnPrimaryText }}>Resultado</span>
+                        {Array.from({ length: totalPages }).map((_, i) => {
+                          const pageNum = i + 1;
+                          if (
+                            pageNum === 1 ||
+                            pageNum === totalPages ||
+                            (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                          ) {
+                            const isActive = pageNum === currentPage;
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${isActive ? 'shadow-sm' : 'hover:bg-black/5'}`}
+                                style={{
+                                  background: isActive ? theme.accentGradient : 'transparent',
+                                  color: isActive ? theme.btnPrimaryText : (isLight ? '#334155' : theme.textSecondary),
+                                  border: `1px solid ${isActive ? theme.accent : (isLight ? '#CBD5E1' : theme.border)}`
+                                }}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                            return <span key={pageNum} className="px-1 text-xs opacity-50">...</span>;
+                          }
+                          return null;
+                        })}
+
+                        <button
+                          onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                          disabled={currentPage === totalPages}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5 cursor-pointer"
+                          style={{ borderColor: isLight ? '#CBD5E1' : theme.border, color: isLight ? '#0F172A' : theme.textPrimary }}
+                        >
+                          Próximo <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <p className="text-sm font-bold opacity-80 mb-1 relative z-10">Lucro Líquido</p>
-                <h3 className="text-3xl font-black relative z-10">
-                  {isLoading ? <div className="h-9 w-32 bg-white/20 rounded animate-pulse mt-1" /> : money(data?.liquido || 0)}
-                </h3>
               </div>
             </div>
+          )}
+        </div>
 
-            {/* LISTA DE TRANSAÇÕES */}
-            <div className="border rounded-2xl shadow-2xl flex-1 p-6 glass-card" style={{ borderColor: theme.border }}>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-                <h3 className="font-bold text-lg" style={{ color: theme.textPrimary }}>Lançamentos & Transações</h3>
+        {/* ── Modal de Lançamento Manual ── */}
+        <ManualTransactionModal
+          isOpen={modalOpen}
+          onClose={() => { setModalOpen(false); setEditingTransaction(null); }}
+          onSave={async tx => {
+            await saveTransactionMutation.mutateAsync(tx);
+          }}
+          transaction={editingTransaction}
+          tenantId={tenantId || ''}
+          isLoading={saveTransactionMutation.isPending}
+        />
 
-                {/* Type Filters */}
-                <div className="flex gap-1 p-1 rounded-xl border text-xs" style={{ borderColor: theme.border, background: theme.inputBg }}>
-                  {[
-                    { id: 'all', label: 'Todas' },
-                    { id: 'income', label: 'Receitas' },
-                    { id: 'expense', label: 'Despesas' },
-                  ].map(tab => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setFilterType(tab.id as any)}
-                      className={`px-3 py-1.5 rounded-lg font-bold transition-all ${filterType === tab.id ? 'shadow' : 'opacity-70 hover:opacity-100'}`}
-                      style={{
-                        background: filterType === tab.id ? theme.accentGradient : 'transparent',
-                        color: filterType === tab.id ? theme.btnPrimaryText : theme.textSecondary,
-                      }}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
+        {/* ── Modal: Delete Confirmation ── */}
+        {deletingTransaction && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <div
+              className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl"
+              style={{
+                borderColor: isLight ? '#E2E8F0' : theme.border,
+                background: isLight ? '#FFFFFF' : theme.cardBg,
+              }}
+            >
+              <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: `${theme.error}10`, color: theme.error }}>
+                <AlertCircle className="w-7 h-7" />
               </div>
-
-              <div className="w-full overflow-x-auto">
-                {isLoading ? (
-                  <table className="w-full text-left">
-                    <tbody>
-                      {Array.from({ length: 4 }).map((_, i) => (
-                        <TableRowSkeleton key={i} cols={5} />
-                      ))}
-                    </tbody>
-                  </table>
-                ) : filteredTransactions.length === 0 ? (
-                  <div className="text-center py-12 border-2 border-dashed rounded-xl flex flex-col items-center justify-center" style={{ borderColor: theme.border, color: theme.textSecondary }}>
-                    <p className="font-semibold mb-1">Nenhum lançamento encontrado neste período.</p>
-                    <p className="text-xs">Clique em "+ Novo Lançamento" para cadastrar uma entrada ou despesa manual.</p>
-                  </div>
-                ) : (
-                  <table className="w-full text-left text-sm border-collapse">
-                    <thead>
-                      <tr className="border-b" style={{ borderColor: theme.border, color: theme.textSecondary }}>
-                        <th className="py-3 px-4 font-semibold">Data</th>
-                        <th className="py-3 px-4 font-semibold">Descrição</th>
-                        <th className="py-3 px-4 font-semibold">Origem / Categoria</th>
-                        <th className="py-3 px-4 font-semibold">Forma / Status</th>
-                        <th className="py-3 px-4 font-semibold text-right">Valor</th>
-                        <th className="py-3 px-4 font-semibold text-center w-20">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedTransactions.map((tx: any) => (
-                        <tr key={tx.id} className="border-b last:border-b-0 hover:bg-black/5 transition-colors" style={{ borderColor: theme.border }}>
-                          <td className="py-4 px-4 font-medium whitespace-nowrap" style={{ color: theme.textPrimary }}>
-                            {format(new Date(tx.date), "dd 'de' MMM, HH:mm", { locale: ptBR })}
-                          </td>
-                          <td className="py-4 px-4 font-semibold" style={{ color: theme.textPrimary }}>
-                            {tx.description}
-                          </td>
-                          <td className="py-4 px-4" style={{ color: theme.textSecondary }}>
-                            {tx.customer_name}
-                          </td>
-                          <td className="py-4 px-4">
-                            <span
-                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                              style={{
-                                background: tx.type === 'income' ? '#10b98115' : '#ef444415',
-                                color: tx.type === 'income' ? '#10b981' : '#ef4444',
-                                border: `1px solid ${tx.type === 'income' ? '#10b98130' : '#ef444430'}`
-                              }}
-                            >
-                              {tx.method}
-                            </span>
-                          </td>
-                          <td className={`py-4 px-4 text-right font-bold whitespace-nowrap ${tx.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                            {tx.type === 'income' ? '+' : '-'}{money(tx.amount)}
-                          </td>
-                          <td className="py-4 px-4 text-center">
-                            {tx.isManual ? (
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  onClick={() => handleEditClick(tx)}
-                                  className="p-1.5 rounded-lg border hover:bg-[var(--theme-bg-hover)] transition-colors cursor-pointer"
-                                  style={{ borderColor: theme.border, color: theme.textSecondary }}
-                                  title="Editar Lançamento"
-                                >
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteClick(tx)}
-                                  className="p-1.5 rounded-lg border hover:bg-rose-500/10 transition-colors cursor-pointer"
-                                  style={{ borderColor: '#ef444430', color: '#ef4444' }}
-                                  title="Excluir Lançamento"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            ) : (
-                              <span className="text-[10px] uppercase font-bold tracking-wider opacity-40">Automático</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-
-                {/* Pagination Controls */}
-                {filteredTransactions.length > 0 && (
-                  <div className="pt-6 border-t mt-6 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: theme.border }}>
-                    <p className="text-xs font-medium" style={{ color: theme.textSecondary }}>
-                      Mostrando <strong style={{ color: theme.textPrimary }}>{(currentPage - 1) * PAGE_SIZE + 1}</strong> a <strong style={{ color: theme.textPrimary }}>{Math.min(currentPage * PAGE_SIZE, filteredTransactions.length)}</strong> de <strong style={{ color: theme.textPrimary }}>{filteredTransactions.length}</strong> transações
-                    </p>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5 cursor-pointer"
-                        style={{ borderColor: theme.border, color: theme.textPrimary }}
-                      >
-                        <ChevronLeft className="w-3.5 h-3.5" /> Anterior
-                      </button>
-
-                      {Array.from({ length: totalPages }).map((_, i) => {
-                        const pageNum = i + 1;
-                        if (
-                          pageNum === 1 ||
-                          pageNum === totalPages ||
-                          (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-                        ) {
-                          const isActive = pageNum === currentPage;
-                          return (
-                            <button
-                              key={pageNum}
-                              onClick={() => setCurrentPage(pageNum)}
-                              className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${isActive ? 'shadow-sm' : 'hover:bg-black/5'}`}
-                              style={{
-                                background: isActive ? theme.accentGradient : 'transparent',
-                                color: isActive ? theme.btnPrimaryText : theme.textSecondary,
-                                border: `1px solid ${isActive ? theme.accent : theme.border}`
-                              }}
-                            >
-                              {pageNum}
-                            </button>
-                          );
-                        } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
-                          return <span key={pageNum} className="px-1 text-xs opacity-50">...</span>;
-                        }
-                        return null;
-                      })}
-
-                      <button
-                        onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5 cursor-pointer"
-                        style={{ borderColor: theme.border, color: theme.textPrimary }}
-                      >
-                        Próximo <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                )}
+              <h3 className="font-serif text-xl font-bold mb-2" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>Excluir Lançamento?</h3>
+              <p className="text-sm mb-7 font-medium" style={{ color: isLight ? '#475569' : theme.textSecondary }}>
+                <strong style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>{deletingTransaction.description}</strong> será removido do fluxo de caixa. Esta ação não pode ser desfeita.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeletingTransaction(null)}
+                  className="flex-1 py-3 rounded-xl border font-semibold text-sm transition-all cursor-pointer hover:bg-black/5"
+                  style={{ borderColor: isLight ? '#CBD5E1' : theme.border, color: isLight ? '#0F172A' : theme.textPrimary }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  disabled={deleteTransactionMutation.isPending}
+                  className="flex-1 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-white cursor-pointer shadow-md hover:opacity-90"
+                  style={{ background: theme.error }}
+                >
+                  {deleteTransactionMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Excluindo...</> : 'Confirmar Exclusão'}
+                </button>
               </div>
             </div>
           </div>
         )}
+
+        {/* ── Modal: Upgrade Plan ── */}
+        {showUpgradeModal && (
+          <UpgradeModal 
+            feature={showUpgradeModal} 
+            onClose={() => setShowUpgradeModal(null)} 
+          />
+        )}
       </div>
-
-      {/* ── Modal de Lançamento Manual ── */}
-      <ManualTransactionModal
-        isOpen={modalOpen}
-        onClose={() => { setModalOpen(false); setEditingTransaction(null); }}
-        onSave={async tx => {
-          await saveTransactionMutation.mutateAsync(tx);
-        }}
-        transaction={editingTransaction}
-        tenantId={tenantId || ''}
-        isLoading={saveTransactionMutation.isPending}
-      />
-
-      {/* ── Modal: Delete Confirmation ── */}
-      {deletingTransaction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="border rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl glass-card" style={{ borderColor: theme.border }}>
-            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: `${theme.error}10`, color: theme.error }}>
-              <AlertCircle className="w-7 h-7" />
-            </div>
-            <h3 className="font-serif text-xl font-bold mb-2" style={{ color: theme.textPrimary }}>Excluir Lançamento?</h3>
-            <p className="text-sm mb-7" style={{ color: theme.textSecondary }}>
-              <strong style={{ color: theme.textPrimary }}>{deletingTransaction.description}</strong> será removido do fluxo de caixa. Esta ação não pode ser desfeita.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeletingTransaction(null)}
-                className="flex-1 py-3 rounded-xl border font-semibold text-sm transition-all hover:bg-[var(--theme-bg-hover)]"
-                style={{ borderColor: theme.border, color: theme.textPrimary }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                disabled={deleteTransactionMutation.isPending}
-                className="flex-1 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-white"
-                style={{ background: theme.error }}
-              >
-                {deleteTransactionMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Excluindo...</> : 'Confirmar Exclusão'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Modal: Upgrade Plan (Ações Individuais) ── */}
-      {showUpgradeModal && (
-        <UpgradeModal 
-          feature={showUpgradeModal} 
-          onClose={() => setShowUpgradeModal(null)} 
-        />
-      )}
-    </div>
     </>
   );
-
 }
-

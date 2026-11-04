@@ -223,7 +223,16 @@ export function useCreateBooking(tenantId: string) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['bookings', tenantId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['financials_full', tenantId] });
+      qc.invalidateQueries({ queryKey: ['clientes', tenantId] });
+      qc.invalidateQueries({ queryKey: ['customer_history', tenantId] });
+      qc.invalidateQueries({ queryKey: ['customer_history_bookings'] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_today'] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_recent'] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_upcoming'] });
+    },
   });
 }
 
@@ -232,16 +241,22 @@ export function useUpdateBookingStatus(tenantId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status, note }: { id: string; status: BookingStatus; note?: string }) => {
-      // Get current status for history
+      // Get current booking for history & amount calculation
       const { data: current } = await supabase
         .from('bookings')
-        .select('status')
+        .select('*')
         .eq('id', id)
         .single();
 
+      const updateFields: any = { status };
+      if (status === 'completed') {
+        updateFields.amount_paid = current?.amount_total || 0;
+        updateFields.payment_status = 'full_paid';
+      }
+
       const { error } = await supabase
         .from('bookings')
-        .update({ status } as any)
+        .update(updateFields as any)
         .eq('id', id);
       if (error) throw error;
 
@@ -255,7 +270,16 @@ export function useUpdateBookingStatus(tenantId: string) {
         actor_type: 'admin',
       });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['bookings', tenantId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['financials_full', tenantId] });
+      qc.invalidateQueries({ queryKey: ['clientes', tenantId] });
+      qc.invalidateQueries({ queryKey: ['customer_history', tenantId] });
+      qc.invalidateQueries({ queryKey: ['customer_history_bookings'] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_today'] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_recent'] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_upcoming'] });
+    },
   });
 }
 
@@ -267,7 +291,14 @@ export function useUpdateBooking(tenantId: string) {
       const { error } = await supabase.from('bookings').update(fields as any).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['bookings', tenantId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['financials_full', tenantId] });
+      qc.invalidateQueries({ queryKey: ['clientes', tenantId] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_today'] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_recent'] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_upcoming'] });
+    },
   });
 }
 
@@ -279,7 +310,14 @@ export function useDeleteBooking(tenantId: string) {
       const { error } = await supabase.from('bookings').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['bookings', tenantId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['financials_full', tenantId] });
+      qc.invalidateQueries({ queryKey: ['clientes', tenantId] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_today'] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_recent'] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_upcoming'] });
+    },
   });
 }
 
