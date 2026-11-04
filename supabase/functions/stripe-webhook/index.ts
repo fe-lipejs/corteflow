@@ -146,11 +146,13 @@ serve(async (req) => {
           const { data: booking } = await supabase.from('bookings').select('payment_mode, amount_total').eq('id', bookingId).maybeSingle();
           if (booking) {
             const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid';
-            const amountTotal = (session.amount_total || 0) / 100;
+            const amountPaidBRL = (session.amount_total || 0) / 100;
+            const amountDueBRL = Math.max(0, Number(booking.amount_total || 0) - amountPaidBRL);
             await supabase.from('bookings').update({
               status: 'confirmed',
               payment_status: newPaymentStatus,
-              amount_paid: amountTotal,
+              amount_paid: amountPaidBRL,
+              amount_due: amountDueBRL,
             }).eq('id', bookingId);
 
             if (session.payment_intent) {
@@ -227,14 +229,16 @@ serve(async (req) => {
         if (bookingId) {
           await supabase.from('payments').update({ status: 'succeeded' }).eq('stripe_payment_intent_id', pi.id);
           
-          const { data: booking } = await supabase.from('bookings').select('payment_mode').eq('id', bookingId).maybeSingle();
+          const { data: booking } = await supabase.from('bookings').select('payment_mode, amount_total').eq('id', bookingId).maybeSingle();
           if (booking) {
             const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid';
             const amountReceivedBRL = pi.amount_received / 100;
+            const amountDueBRL = Math.max(0, Number(booking.amount_total || 0) - amountReceivedBRL);
             await supabase.from('bookings').update({
               status: 'confirmed',
               payment_status: newPaymentStatus,
               amount_paid: amountReceivedBRL,
+              amount_due: amountDueBRL,
             }).eq('id', bookingId);
           }
         }

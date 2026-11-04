@@ -62,6 +62,8 @@ serve(async (req) => {
         }
 
         const paidAmountBRL = ((resolvedPi.amount_received || resolvedPi.amount || 0) / 100);
+        const finalPaid = paidAmountBRL > 0 ? paidAmountBRL : Number(booking.amount_paid || 0);
+        const finalDue = Math.max(0, Number(booking.amount_total || 0) - finalPaid);
         const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid';
 
         await supabase
@@ -69,7 +71,8 @@ serve(async (req) => {
           .update({
             status: 'confirmed',
             payment_status: newPaymentStatus,
-            amount_paid: paidAmountBRL > 0 ? paidAmountBRL : booking.amount_paid,
+            amount_paid: finalPaid,
+            amount_due: finalDue,
           })
           .eq('id', booking.id);
 
