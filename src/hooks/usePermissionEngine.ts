@@ -124,15 +124,14 @@ export function usePermissionEngine(): PermissionEngine {
         try {
           const { data: syncData } = await supabase.functions.invoke('sync-stripe-subscription');
           if (syncData?.synced) {
-              const { data: refreshedSubs } = await supabase
-                .from('subscriptions')
-                .select(SUBSCRIPTION_SELECT)
-                .eq('tenant_id', tenantId!)
-                .order('updated_at', { ascending: false });
+            const { data: refreshedSubs } = await supabase
+              .from('subscriptions')
+              .select(SUBSCRIPTION_SELECT)
+              .eq('tenant_id', tenantId!)
+              .order('updated_at', { ascending: false });
 
-              const newActiveSub = refreshedSubs?.find((s: any) => s.status === 'active' || s.status === 'trialing');
-              if (newActiveSub) sub = newActiveSub;
-            }
+            const newActiveSub = refreshedSubs?.find((s: any) => s.status === 'active' || s.status === 'trialing');
+            if (newActiveSub) sub = newActiveSub;
           }
         } catch (_) {}
       }

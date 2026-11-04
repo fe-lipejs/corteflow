@@ -156,40 +156,39 @@ export default function Assinatura() {
           if (syncData?.synced) {
             const {
               data: refreshedSubs,
-              } = await supabase
-                .from('subscriptions')
-                .select(
-                  '*, subscription_contracts(*), plans(*)'
-                )
-                .eq('tenant_id', tenant.id)
-                .order('updated_at', {
-                  ascending: false,
-                });
+            } = await supabase
+              .from('subscriptions')
+              .select(
+                '*, subscription_contracts(*), plans(*)'
+              )
+              .eq('tenant_id', tenant.id)
+              .order('updated_at', {
+                ascending: false,
+              });
 
-              const newActiveSub =
-                refreshedSubs?.find(
-                  (s: any) =>
-                    s.status === 'active' ||
-                    s.status === 'trialing'
-                );
+            const newActiveSub =
+              refreshedSubs?.find(
+                (s: any) =>
+                  s.status === 'active' ||
+                  s.status === 'trialing'
+              );
 
-              if (newActiveSub) {
-                activeSub = newActiveSub;
+            if (newActiveSub) {
+              activeSub = newActiveSub;
 
-                queryClient.invalidateQueries({
-                  queryKey: [
-                    'active_subscription_contract',
-                  ],
-                });
+              queryClient.invalidateQueries({
+                queryKey: [
+                  'active_subscription_contract',
+                ],
+              });
 
-                queryClient.invalidateQueries({
-                  queryKey: ['permission_engine'],
-                });
+              queryClient.invalidateQueries({
+                queryKey: ['permission_engine'],
+              });
 
-                queryClient.invalidateQueries({
-                  queryKey: ['plan_features'],
-                });
-              }
+              queryClient.invalidateQueries({
+                queryKey: ['plan_features'],
+              });
             }
           }
         } catch (_) {
