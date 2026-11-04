@@ -610,6 +610,8 @@ export default function PublicStore() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pix");
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [phoneFieldError, setPhoneFieldError] = useState("");
+  const [nameFieldError, setNameFieldError] = useState("");
   const [bookingCode, setBookingCode] = useState<string | null>(null);
   const [showInfoSheet, setShowInfoSheet] = useState(false);
   const [showMapModal, setShowMapModal] = useState(false);
@@ -620,6 +622,8 @@ export default function PublicStore() {
   const stripePaymentRef = useRef<StripeLivePaymentHandle | null>(null);
   const step4Ref = useRef<HTMLDivElement>(null);
   const inputsRef = useRef<HTMLDivElement>(null);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const timeSlotsRef = useRef<HTMLDivElement>(null);
   const confirmBtnRef = useRef<HTMLDivElement>(null);
 
@@ -1110,16 +1114,40 @@ export default function PublicStore() {
   const handleConfirm = async () => {
     if (!tenant || !selectedService || !selectedDate || !selectedTime) return;
 
-    if (!customerName || !customerPhone) {
-      setErrorMsg("Por favor, preencha seu nome e WhatsApp.");
+    const cleanName = customerName.trim();
+    const cleanPhone = customerPhone.trim();
+    let hasValidationError = false;
+
+    if (!cleanPhone) {
+      setPhoneFieldError("Digite seu WhatsApp com DDD para continuar");
+      hasValidationError = true;
+    } else if (!phoneFormat.validate(customerPhone)) {
+      setPhoneFieldError("Digite um WhatsApp válido com DDD");
+      hasValidationError = true;
+    } else {
+      setPhoneFieldError("");
+    }
+
+    if (!cleanName) {
+      setNameFieldError("Digite seu nome completo para continuar");
+      hasValidationError = true;
+    } else {
+      setNameFieldError("");
+    }
+
+    if (hasValidationError) {
+      setErrorMsg("Preencha os campos destacados em vermelho acima para continuar.");
       inputsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => {
+        if (!cleanPhone || !phoneFormat.validate(customerPhone)) {
+          phoneInputRef.current?.focus();
+        } else if (!cleanName) {
+          nameInputRef.current?.focus();
+        }
+      }, 320);
       return;
     }
-    if (!phoneFormat.validate(customerPhone)) {
-      setErrorMsg("Informe um WhatsApp válido com DDD.");
-      inputsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
+
     setIsProcessing(true);
     setErrorMsg("");
 
@@ -1211,9 +1239,12 @@ export default function PublicStore() {
           customerName,
           customerPhone,
           customerEmail,
-          createIntent: async () => {
+          createIntent: async (methodType) => {
             const { data: fnRes, error: fnErr } = await supabase.functions.invoke("create-public-booking", {
-              body: payload,
+              body: {
+                ...payload,
+                payment_method: methodType,
+              },
             });
             if (fnErr) {
               throw new Error(fnErr.message || "Erro ao registrar agendamento.");
@@ -1227,7 +1258,14 @@ export default function PublicStore() {
             }
 
             const { data: piData, error: piErr } = await supabase.functions.invoke("create-payment-intent", {
-              body: { action: "create", bookingId: createdBooking.id },
+              body: {
+                action: "create",
+                bookingId: createdBooking.id,
+                paymentMethodType: methodType,
+                customerName,
+                customerEmail,
+                customerPhone,
+              },
             });
 
             if (piErr || piData?.error || !piData?.clientSecret) {
@@ -1248,6 +1286,7 @@ export default function PublicStore() {
               paymentIntentId: piData.paymentIntentId,
               bookingId: createdBooking.id,
               orderNumber: createdBooking.order_number,
+              pixQrData: piData.pixQrData || null,
             };
           },
         });
@@ -1329,6 +1368,9 @@ export default function PublicStore() {
     setCustomerName("");
     setCustomerPhone("");
     setCustomerNotes("");
+    setPhoneFieldError("");
+    setNameFieldError("");
+    setErrorMsg("");
     setPaymentScope("partial");
     setPaymentMethod("pix");
   };
@@ -3367,43 +3409,104 @@ export default function PublicStore() {
                           </h3>
                           <div className="space-y-3.5">
                             <div>
-                              <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
+                              <label
+                                className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 transition-colors"
+                                style={{ color: phoneFieldError ? "#EF4444" : theme.textSecondary }}
+                              >
                                 WhatsApp com DDD *
                               </label>
                               <input
+                                ref={phoneInputRef}
                                 type="tel"
-                                placeholder={phoneFormat.placeholder}
+                                placeholder={
+                                  phoneFieldError
+                                    ? "Digite seu WhatsApp com DDD aqui..."
+                                    : phoneFormat.placeholder
+                                }
                                 value={customerPhone}
-                                onChange={(e) => setCustomerPhone(phoneFormat.format(e.target.value))}
+                                onChange={(e) => {
+                                  const formatted = phoneFormat.format(e.target.value);
+                                  setCustomerPhone(formatted);
+                                  if (phoneFieldError) setPhoneFieldError("");
+                                  if (errorMsg) setErrorMsg("");
+                                }}
                                 maxLength={phoneFormat.maxLength}
-                                className="w-full rounded-xl border px-3.5 py-3 text-sm font-medium focus:outline-none transition-all"
+                                className={`w-full rounded-xl border px-3.5 py-3 text-sm font-medium focus:outline-none transition-all ${
+                                  phoneFieldError ? "placeholder:text-red-500/80 placeholder:font-semibold" : ""
+                                }`}
                                 style={{
-                                  background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
-                                  borderColor: cardBorderColor,
+                                  background: phoneFieldError
+                                    ? "rgba(239, 68, 68, 0.06)"
+                                    : isDark
+                                      ? "rgba(255,255,255,0.03)"
+                                      : "#F8FAFC",
+                                  borderColor: phoneFieldError ? "#EF4444" : cardBorderColor,
+                                  boxShadow: phoneFieldError
+                                    ? "0 0 0 3px rgba(239, 68, 68, 0.14)"
+                                    : "none",
                                   color: theme.textPrimary,
                                 }}
-                                onFocus={(e) => (e.target.style.borderColor = accent)}
-                                onBlur={(e) => (e.target.style.borderColor = cardBorderColor)}
+                                onFocus={(e) => {
+                                  if (!phoneFieldError) e.target.style.borderColor = accent;
+                                }}
+                                onBlur={(e) => {
+                                  if (!phoneFieldError) e.target.style.borderColor = cardBorderColor;
+                                }}
                               />
+                              {phoneFieldError && (
+                                <p className="mt-1.5 text-xs font-bold flex items-center gap-1.5 text-[#EF4444]">
+                                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                  <span>{phoneFieldError}</span>
+                                </p>
+                              )}
                             </div>
                             <div>
-                              <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
+                              <label
+                                className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 transition-colors"
+                                style={{ color: nameFieldError ? "#EF4444" : theme.textSecondary }}
+                              >
                                 Nome Completo *
                               </label>
                               <input
+                                ref={nameInputRef}
                                 type="text"
-                                placeholder="Seu nome"
+                                placeholder={
+                                  nameFieldError ? "Digite seu nome completo aqui..." : "Seu nome"
+                                }
                                 value={customerName}
-                                onChange={(e) => setCustomerName(e.target.value)}
-                                className="w-full rounded-xl border px-3.5 py-3 text-sm font-medium focus:outline-none transition-all"
+                                onChange={(e) => {
+                                  setCustomerName(e.target.value);
+                                  if (nameFieldError) setNameFieldError("");
+                                  if (errorMsg) setErrorMsg("");
+                                }}
+                                className={`w-full rounded-xl border px-3.5 py-3 text-sm font-medium focus:outline-none transition-all ${
+                                  nameFieldError ? "placeholder:text-red-500/80 placeholder:font-semibold" : ""
+                                }`}
                                 style={{
-                                  background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
-                                  borderColor: cardBorderColor,
+                                  background: nameFieldError
+                                    ? "rgba(239, 68, 68, 0.06)"
+                                    : isDark
+                                      ? "rgba(255,255,255,0.03)"
+                                      : "#F8FAFC",
+                                  borderColor: nameFieldError ? "#EF4444" : cardBorderColor,
+                                  boxShadow: nameFieldError
+                                    ? "0 0 0 3px rgba(239, 68, 68, 0.14)"
+                                    : "none",
                                   color: theme.textPrimary,
                                 }}
-                                onFocus={(e) => (e.target.style.borderColor = accent)}
-                                onBlur={(e) => (e.target.style.borderColor = cardBorderColor)}
+                                onFocus={(e) => {
+                                  if (!nameFieldError) e.target.style.borderColor = accent;
+                                }}
+                                onBlur={(e) => {
+                                  if (!nameFieldError) e.target.style.borderColor = cardBorderColor;
+                                }}
                               />
+                              {nameFieldError && (
+                                <p className="mt-1.5 text-xs font-bold flex items-center gap-1.5 text-[#EF4444]">
+                                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                  <span>{nameFieldError}</span>
+                                </p>
+                              )}
                             </div>
                             <div>
                               <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
@@ -3485,7 +3588,26 @@ export default function PublicStore() {
                               publishableKey={(storeData as any)?.stripePublicKey}
                               stripeAccountId={(storeData as any)?.stripeAccountId}
                               amountBRL={amountPaid}
+                              totalBRL={total}
+                              amountDueBRL={amountDue}
+                              paymentScopeLabel={
+                                paymentScope === "partial"
+                                  ? `Entrada ${settings?.deposit_percentage || 50}%`
+                                  : "Pagamento Total"
+                              }
+                              storeName={storeName}
+                              storeLogoUrl={settings?.logo_url}
+                              serviceName={selectedService?.name}
+                              serviceDurationLabel={formatDuration(selectedService?.duration_minutes)}
+                              proName={proName}
+                              dateLabel={
+                                selectedDate
+                                  ? format(selectedDate, "dd 'de' MMMM", { locale: ptBR })
+                                  : ""
+                              }
+                              timeLabel={selectedTime || ""}
                               accent={accent}
+                              btnPrimaryText={theme.btnPrimaryText}
                               isDark={isDark}
                               cardBackground={cardBackground}
                               cardBorderColor={cardBorderColor}
@@ -3554,6 +3676,20 @@ export default function PublicStore() {
                             )}
                           </div>
 
+                          {errorMsg && (
+                            <div
+                              className="rounded-2xl border p-3 text-xs font-semibold flex items-start gap-2"
+                              style={{
+                                borderColor: "rgba(239, 68, 68, 0.35)",
+                                background: "rgba(239, 68, 68, 0.08)",
+                                color: "#EF4444",
+                              }}
+                            >
+                              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                              <span>{errorMsg}</span>
+                            </div>
+                          )}
+
                           <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -3570,9 +3706,17 @@ export default function PublicStore() {
                               <>
                                 <Loader2 className="w-4 h-4 animate-spin" /> Processando…
                               </>
-                            ) : (
+                            ) : paymentScope === "local" ? (
                               <>
                                 <ShieldCheck className="w-4 h-4" /> Confirmar Agendamento
+                              </>
+                            ) : paymentMethod === "pix" ? (
+                              <>
+                                <ShieldCheck className="w-4 h-4" /> Gerar QR Code PIX • {money(amountPaid)}
+                              </>
+                            ) : (
+                              <>
+                                <ShieldCheck className="w-4 h-4" /> Pagar com Cartão • {money(amountPaid)}
                               </>
                             )}
                           </motion.button>
@@ -3744,9 +3888,17 @@ export default function PublicStore() {
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" /> Processando…
                       </>
+                    ) : paymentScope === "local" ? (
+                      <>
+                        <ShieldCheck className="w-4 h-4" /> Confirmar Agendamento
+                      </>
+                    ) : paymentMethod === "pix" ? (
+                      <>
+                        <ShieldCheck className="w-4 h-4" /> Gerar QR Code PIX
+                      </>
                     ) : (
                       <>
-                        <ShieldCheck className="w-4 h-4" /> Confirmar
+                        <ShieldCheck className="w-4 h-4" /> Pagar com Cartão
                       </>
                     )}
                   </motion.button>

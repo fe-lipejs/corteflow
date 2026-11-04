@@ -19,6 +19,77 @@ serve(async (req) => {
 
     const { stripe, mode, publishableKey, applicationFeePercent } = await getStripeContext(supabase);
 
+    // ── AÇÃO 0: Consultar status do PIX em tempo real (polling sem erro quando ainda aguardando) ─
+    if (action === 'check_pix_status') {
+      const { bookingId, paymentIntentId } = body;
+      if (!paymentIntentId) {
+        throw new Error("paymentIntentId é obrigatório para consultar o status do PIX.");
+      }
+
+      const resolvedPi = await stripe.paymentIntents.retrieve(paymentIntentId);
+      const resolvedBookingId = bookingId || resolvedPi?.metadata?.booking_id;
+
+      if (resolvedPi.status === 'succeeded' || resolvedPi.status === 'processing') {
+        if (resolvedBookingId) {
+          const { data: booking } = await supabase
+            .from('bookings')
+            .select('id, tenant_id, order_number, status, payment_mode, amount_total, amount_paid')
+            .eq('id', resolvedBookingId)
+            .maybeSingle();
+
+          if (booking) {
+            const paidAmountBRL = ((resolvedPi.amount_received || resolvedPi.amount || 0) / 100);
+            const finalPaid = paidAmountBRL > 0 ? paidAmountBRL : Number(booking.amount_paid || 0);
+            const finalDue = Math.max(0, Number(booking.amount_total || 0) - finalPaid);
+            const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid';
+
+            await supabase
+              .from('bookings')
+              .update({
+                status: 'confirmed',
+                payment_status: newPaymentStatus,
+                amount_paid: finalPaid,
+                amount_due: finalDue,
+              })
+              .eq('id', booking.id);
+
+            await supabase
+              .from('payments')
+              .update({
+                status: resolvedPi.status === 'succeeded' ? 'succeeded' : 'pending',
+              })
+              .eq('stripe_payment_intent_id', resolvedPi.id);
+
+            return new Response(
+              JSON.stringify({
+                confirmed: true,
+                bookingId: booking.id,
+                order_number: booking.order_number,
+                status: resolvedPi.status,
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
+
+        return new Response(
+          JSON.stringify({
+            confirmed: true,
+            status: resolvedPi.status,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          confirmed: false,
+          status: resolvedPi.status,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // ── AÇÃO 1: Confirmar agendamento após pagamento aprovado no Stripe ──────────
     if (action === 'confirm_booking') {
       const { bookingId, paymentIntentId, sessionId } = body;
@@ -126,7 +197,7 @@ serve(async (req) => {
     }
 
     // ── AÇÃO 3 (Padrão): Criar PaymentIntent Real no Stripe Live/Test para o Booking ─
-    const { bookingId } = body;
+    const { bookingId, paymentMethodType, customerName, customerEmail, customerPhone } = body;
     if (!bookingId) {
       throw new Error("bookingId é obrigatório para iniciar o pagamento.");
     }
@@ -188,7 +259,14 @@ serve(async (req) => {
       ? `Sinal/Entrada (#${booking.order_number}) - ${serviceName} em ${salonName}`
       : `Agendamento (#${booking.order_number}) - ${serviceName} em ${salonName}`;
 
-    const buildPiParams = (paymentMethods: string[]) => ({
+    const cleanDigits = String(customerPhone || '').replace(/\D/g, '') || 'cliente';
+    const safeEmail =
+      customerEmail && String(customerEmail).trim().includes('@')
+        ? String(customerEmail).trim()
+        : `cliente.${cleanDigits}@navalha.app`;
+    const safeName = String(customerName || 'Cliente Navalha').trim() || 'Cliente Navalha';
+
+    const buildPiParams = (paymentMethods: string[], confirmPixNow = false) => ({
       amount: amountCents,
       currency: 'brl',
       payment_method_types: paymentMethods,
@@ -203,17 +281,38 @@ serve(async (req) => {
         tenant_id: booking.tenant_id,
         order_number: booking.order_number,
       },
+      ...(confirmPixNow
+        ? {
+            confirm: true,
+            payment_method_data: {
+              type: 'pix',
+              billing_details: {
+                name: safeName,
+                email: safeEmail,
+              },
+            },
+          }
+        : {}),
     });
 
     let paymentIntent: any;
-    try {
-      paymentIntent = await stripe.paymentIntents.create(buildPiParams(['card', 'pix']));
-    } catch (pixErr: any) {
-      if (pixErr?.message?.toLowerCase().includes('pix')) {
-        console.warn("[create-payment-intent] PIX não habilitado para esta conta Connect, usando Cartão:", pixErr.message);
-        paymentIntent = await stripe.paymentIntents.create(buildPiParams(['card']));
-      } else {
-        throw pixErr;
+    let pixQrData: any = null;
+
+    if (paymentMethodType === 'pix') {
+      paymentIntent = await stripe.paymentIntents.create(buildPiParams(['pix'], true));
+      pixQrData = paymentIntent?.next_action?.pix_display_qr_code || null;
+    } else if (paymentMethodType === 'card') {
+      paymentIntent = await stripe.paymentIntents.create(buildPiParams(['card'], false));
+    } else {
+      try {
+        paymentIntent = await stripe.paymentIntents.create(buildPiParams(['card', 'pix'], false));
+      } catch (pixErr: any) {
+        if (pixErr?.message?.toLowerCase().includes('pix')) {
+          console.warn("[create-payment-intent] PIX não habilitado para esta conta Connect, usando Cartão:", pixErr.message);
+          paymentIntent = await stripe.paymentIntents.create(buildPiParams(['card'], false));
+        } else {
+          throw pixErr;
+        }
       }
     }
 
@@ -233,6 +332,8 @@ serve(async (req) => {
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
         paymentMethodTypes: paymentIntent.payment_method_types,
+        pixQrData,
+        amountToCharge,
         publishableKey,
         mode,
       }),
