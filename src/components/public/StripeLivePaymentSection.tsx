@@ -597,21 +597,20 @@ export const StripeLivePaymentSection = forwardRef<
   }));
 
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-3 pt-2">
       {/* Seletor Minimalista: PIX vs Cartão */}
       <div className="grid grid-cols-2 gap-2.5">
         <button
           type="button"
           onClick={() => handleSelectTab("pix")}
-          className="relative flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl border-2 font-bold text-xs sm:text-sm transition-all cursor-pointer"
+          className="relative flex items-center justify-center gap-2 h-11 px-3 rounded-xl border text-xs sm:text-sm font-semibold transition-all cursor-pointer"
           style={{
             borderColor: selectedTab === "pix" ? accent : cardBorderColor,
             background:
               selectedTab === "pix"
-                ? `${accent}12`
-                : isDark
-                  ? "rgba(255,255,255,0.02)"
-                  : "#F8FAFC",
+                ? `${accent}0d`
+                : "transparent",
+            boxShadow: selectedTab === "pix" ? `0 0 0 1px ${accent}` : "none",
             color: selectedTab === "pix" ? accent : textPrimary,
           }}
         >
@@ -631,15 +630,14 @@ export const StripeLivePaymentSection = forwardRef<
         <button
           type="button"
           onClick={() => handleSelectTab("card")}
-          className="relative flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl border-2 font-bold text-xs sm:text-sm transition-all cursor-pointer"
+          className="relative flex items-center justify-center gap-2 h-11 px-3 rounded-xl border text-xs sm:text-sm font-semibold transition-all cursor-pointer"
           style={{
             borderColor: selectedTab === "card" ? accent : cardBorderColor,
             background:
               selectedTab === "card"
-                ? `${accent}12`
-                : isDark
-                  ? "rgba(255,255,255,0.02)"
-                  : "#F8FAFC",
+                ? `${accent}0d`
+                : "transparent",
+            boxShadow: selectedTab === "card" ? `0 0 0 1px ${accent}` : "none",
             color: selectedTab === "card" ? accent : textPrimary,
           }}
         >
@@ -657,39 +655,12 @@ export const StripeLivePaymentSection = forwardRef<
         </button>
       </div>
 
-      {/* ABA 1: PIX INSTANTÂNEO — Minimalista, sucinto e direto */}
-      {selectedTab === "pix" && (
-        <div
-          className="rounded-2xl border p-4 flex items-center gap-3.5 transition-all"
-          style={{
-            borderColor: cardBorderColor,
-            background: isDark ? "rgba(255,255,255,0.02)" : "#F8FAFC",
-          }}
-        >
-          <div
-            className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-            style={{ background: `${accent}18`, color: accent }}
-          >
-            <QrCode className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs sm:text-sm font-bold leading-snug" style={{ color: textPrimary }}>
-              QR Code e PIX Copia e Cola
-            </p>
-            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: textSecondary }}>
-              Clique em <strong style={{ color: accent }}>Gerar QR Code PIX</strong> abaixo para exibir seu código de{" "}
-              <strong style={{ color: textPrimary }}>{money(amountBRL)}</strong>.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* ABA 2: CARTÃO DE CRÉDITO — Formulário Oficial Stripe Live */}
       {selectedTab === "card" && (
-        <div>
+        <div className="pt-2">
           {mountError ? (
             <div
-              className="rounded-2xl border p-4 flex items-start gap-2.5 text-xs"
+              className="rounded-xl border p-3 flex items-start gap-2 text-xs"
               style={{
                 borderColor: "rgba(239, 68, 68, 0.35)",
                 background: "rgba(239, 68, 68, 0.08)",
@@ -700,10 +671,10 @@ export const StripeLivePaymentSection = forwardRef<
               <span>{mountError}</span>
             </div>
           ) : (
-            <div className="relative min-h-[140px]">
+            <div className="relative min-h-[120px]">
               {!elementReady && (
                 <div
-                  className="rounded-2xl border p-6 flex flex-col items-center justify-center gap-2 text-xs"
+                  className="rounded-xl border p-5 flex flex-col items-center justify-center gap-2 text-xs"
                   style={{
                     borderColor: cardBorderColor,
                     background: isDark ? "rgba(255,255,255,0.02)" : "#F8FAFC",
@@ -711,7 +682,7 @@ export const StripeLivePaymentSection = forwardRef<
                   }}
                 >
                   <Loader2 className="w-5 h-5 animate-spin" style={{ color: accent }} />
-                  <span>Carregando pagamento seguro com cartão…</span>
+                  <span>Carregando dados do cartão…</span>
                 </div>
               )}
               <div
@@ -724,13 +695,11 @@ export const StripeLivePaymentSection = forwardRef<
       )}
 
       <div
-        className="flex items-center justify-between pt-1 text-[11px]"
+        className="flex items-center justify-center gap-1.5 pt-1 text-[11px] opacity-70"
         style={{ color: textSecondary }}
       >
-        <span className="flex items-center gap-1.5">
-          <Lock className="w-3 h-3" style={{ color: accent }} />
-          Pagamento criptografado e processado pelo Stripe
-        </span>
+        <Lock className="w-3 h-3" />
+        <span>Pagamento seguro via Stripe</span>
       </div>
 
       {/* ── MODAL PIX PERSONALIZADO COM PERFIL DO SALÃO, SERVIÇO E VALOR EXATO ── */}

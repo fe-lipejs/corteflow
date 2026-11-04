@@ -3407,22 +3407,18 @@ export default function PublicStore() {
                           <h3 className="text-sm font-bold mb-4 flex items-center gap-2" style={{ color: theme.textPrimary }}>
                             <User className="w-4 h-4" style={{ color: accent }} /> Seus Dados
                           </h3>
-                          <div className="space-y-3.5">
+                          <div className="space-y-4">
                             <div>
                               <label
-                                className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 transition-colors"
-                                style={{ color: phoneFieldError ? "#EF4444" : theme.textSecondary }}
+                                className="block text-xs font-semibold mb-1.5 transition-colors"
+                                style={{ color: phoneFieldError ? "#EF4444" : theme.textPrimary }}
                               >
                                 WhatsApp com DDD *
                               </label>
                               <input
                                 ref={phoneInputRef}
                                 type="tel"
-                                placeholder={
-                                  phoneFieldError
-                                    ? "Digite seu WhatsApp com DDD aqui..."
-                                    : phoneFormat.placeholder
-                                }
+                                placeholder={phoneFormat.placeholder}
                                 value={customerPhone}
                                 onChange={(e) => {
                                   const formatted = phoneFormat.format(e.target.value);
@@ -3431,18 +3427,12 @@ export default function PublicStore() {
                                   if (errorMsg) setErrorMsg("");
                                 }}
                                 maxLength={phoneFormat.maxLength}
-                                className={`w-full rounded-xl border px-3.5 py-3 text-sm font-medium focus:outline-none transition-all ${
-                                  phoneFieldError ? "placeholder:text-red-500/80 placeholder:font-semibold" : ""
-                                }`}
+                                className="w-full h-11 rounded-xl border px-3.5 text-sm font-normal focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-zinc-500"
                                 style={{
-                                  background: phoneFieldError
-                                    ? "rgba(239, 68, 68, 0.06)"
-                                    : isDark
-                                      ? "rgba(255,255,255,0.03)"
-                                      : "#F8FAFC",
+                                  background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
                                   borderColor: phoneFieldError ? "#EF4444" : cardBorderColor,
                                   boxShadow: phoneFieldError
-                                    ? "0 0 0 3px rgba(239, 68, 68, 0.14)"
+                                    ? "0 0 0 2px rgba(239, 68, 68, 0.15)"
                                     : "none",
                                   color: theme.textPrimary,
                                 }}
@@ -3454,7 +3444,7 @@ export default function PublicStore() {
                                 }}
                               />
                               {phoneFieldError && (
-                                <p className="mt-1.5 text-xs font-bold flex items-center gap-1.5 text-[#EF4444]">
+                                <p className="mt-1.5 text-[11px] font-medium flex items-center gap-1 text-[#EF4444]">
                                   <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                                   <span>{phoneFieldError}</span>
                                 </p>
@@ -3462,35 +3452,27 @@ export default function PublicStore() {
                             </div>
                             <div>
                               <label
-                                className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 transition-colors"
-                                style={{ color: nameFieldError ? "#EF4444" : theme.textSecondary }}
+                                className="block text-xs font-semibold mb-1.5 transition-colors"
+                                style={{ color: nameFieldError ? "#EF4444" : theme.textPrimary }}
                               >
                                 Nome Completo *
                               </label>
                               <input
                                 ref={nameInputRef}
                                 type="text"
-                                placeholder={
-                                  nameFieldError ? "Digite seu nome completo aqui..." : "Seu nome"
-                                }
+                                placeholder="Seu nome completo"
                                 value={customerName}
                                 onChange={(e) => {
                                   setCustomerName(e.target.value);
                                   if (nameFieldError) setNameFieldError("");
                                   if (errorMsg) setErrorMsg("");
                                 }}
-                                className={`w-full rounded-xl border px-3.5 py-3 text-sm font-medium focus:outline-none transition-all ${
-                                  nameFieldError ? "placeholder:text-red-500/80 placeholder:font-semibold" : ""
-                                }`}
+                                className="w-full h-11 rounded-xl border px-3.5 text-sm font-normal focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-zinc-500"
                                 style={{
-                                  background: nameFieldError
-                                    ? "rgba(239, 68, 68, 0.06)"
-                                    : isDark
-                                      ? "rgba(255,255,255,0.03)"
-                                      : "#F8FAFC",
+                                  background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
                                   borderColor: nameFieldError ? "#EF4444" : cardBorderColor,
                                   boxShadow: nameFieldError
-                                    ? "0 0 0 3px rgba(239, 68, 68, 0.14)"
+                                    ? "0 0 0 2px rgba(239, 68, 68, 0.15)"
                                     : "none",
                                   color: theme.textPrimary,
                                 }}
@@ -3502,14 +3484,14 @@ export default function PublicStore() {
                                 }}
                               />
                               {nameFieldError && (
-                                <p className="mt-1.5 text-xs font-bold flex items-center gap-1.5 text-[#EF4444]">
+                                <p className="mt-1.5 text-[11px] font-medium flex items-center gap-1 text-[#EF4444]">
                                   <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                                   <span>{nameFieldError}</span>
                                 </p>
                               )}
                             </div>
                             <div>
-                              <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
+                              <label className="block text-xs font-semibold mb-1.5" style={{ color: theme.textSecondary }}>
                                 Observações (opcional)
                               </label>
                               <textarea
@@ -3517,7 +3499,7 @@ export default function PublicStore() {
                                 value={customerNotes}
                                 onChange={(e) => setCustomerNotes(e.target.value)}
                                 rows={2}
-                                className="w-full rounded-xl border px-3.5 py-3 text-sm focus:outline-none resize-none transition-all"
+                                className="w-full rounded-xl border p-3 text-sm font-normal focus:outline-none resize-none transition-all placeholder:text-slate-400 dark:placeholder:text-zinc-500"
                                 style={{
                                   background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
                                   borderColor: cardBorderColor,
@@ -3532,20 +3514,20 @@ export default function PublicStore() {
 
                         {/* Payment Scope & Method */}
                         <div
-                          className="p-5 sm:p-6 rounded-3xl border"
+                          className="p-5 sm:p-6 rounded-3xl border space-y-4"
                           style={{
                             background: cardBackground,
                             borderColor: cardBorderColor,
                             boxShadow: cardShadowStyle,
                           }}
                         >
-                          <h3 className="text-sm font-bold mb-4 flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                          <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: theme.textPrimary }}>
                             <CreditCard className="w-4 h-4" style={{ color: accent }} /> Condição de Pagamento
                           </h3>
 
                           {/* Scope Pills */}
                           <div
-                            className="grid gap-2 mb-5"
+                            className="grid gap-2.5"
                             style={{
                               gridTemplateColumns: `repeat(${allowedPaymentScopes.length}, 1fr)`,
                             }}
@@ -3554,10 +3536,11 @@ export default function PublicStore() {
                               <button
                                 key={key}
                                 onClick={() => setPaymentScope(key)}
-                                className="relative rounded-2xl p-3 text-center border-2 transition-all cursor-pointer"
+                                className="relative rounded-2xl p-3 text-center border transition-all cursor-pointer"
                                 style={{
                                   borderColor: paymentScope === key ? accent : cardBorderColor,
-                                  background: paymentScope === key ? `${accent}12` : "transparent",
+                                  background: paymentScope === key ? `${accent}0d` : "transparent",
+                                  boxShadow: paymentScope === key ? `0 0 0 1px ${accent}` : "none",
                                 }}
                               >
                                 {paymentScope === key && (
