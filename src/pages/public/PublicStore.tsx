@@ -316,6 +316,26 @@ export default function PublicStore() {
   const [servicePage, setServicePage] = useState(1);
   const mobileInfoRef = useRef<HTMLDivElement | null>(null);
 
+  // Affordance de rolagem horizontal das categorias
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkCategoryScroll = useCallback(() => {
+    const el = categoryScrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 8);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
+  }, []);
+
+  const scrollCategories = (dir: 'left' | 'right') => {
+    const el = categoryScrollRef.current;
+    if (!el) return;
+    const distance = 220;
+    el.scrollBy({ left: dir === 'left' ? -distance : distance, behavior: 'smooth' });
+    setTimeout(checkCategoryScroll, 250);
+  };
+
   const SERVICES_PER_PAGE_MOBILE = 5;
   const SERVICES_PER_PAGE_DESKTOP = 8;
 
@@ -335,6 +355,15 @@ export default function PublicStore() {
     const cats = new Set(rawServicesList.filter((s: any) => s.category).map((s: any) => s.category));
     return Array.from(cats) as string[];
   }, [rawServicesList]);
+
+  useEffect(() => {
+    const t = setTimeout(checkCategoryScroll, 120);
+    window.addEventListener('resize', checkCategoryScroll);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('resize', checkCategoryScroll);
+    };
+  }, [checkCategoryScroll, uniqueCategories]);
 
   const mobileServicePages = Math.max(1, Math.ceil(servicesList.length / SERVICES_PER_PAGE_MOBILE));
   const desktopServicePages = Math.max(1, Math.ceil(servicesList.length / SERVICES_PER_PAGE_DESKTOP));
@@ -362,15 +391,28 @@ export default function PublicStore() {
     mobileInfoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
+  // Formatação de duração: minutos -> horas e minutos (ex: 60 min -> 1h, 90 min -> 1h 30min)
+  const formatDuration = (minutes: number | null | undefined): string => {
+    if (!minutes || minutes <= 0) return '0 min';
+    const hrs = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hrs > 0 && mins > 0) return `${hrs}h ${mins}min`;
+    if (hrs > 0) return `${hrs}h`;
+    return `${mins} min`;
+  };
+
   const Pagination = ({ totalPages }: { totalPages: number }) => {
     if (totalPages <= 1) return null;
     return (
-      <div className="flex items-center justify-center gap-1.5 pt-2">
+      <div className="flex items-center justify-center gap-2 py-4">
         <button
           type="button"
-          onClick={() => setServicePage((p) => Math.max(1, p - 1))}
+          onClick={() => {
+            setServicePage((p) => Math.max(1, p - 1));
+            categoryScrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }}
           disabled={servicePage === 1}
-          className="w-9 h-9 rounded-xl border flex items-center justify-center disabled:opacity-30 transition-all"
+          className="w-10 h-10 rounded-2xl border flex items-center justify-center disabled:opacity-20 transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
           style={{ borderColor: cardBorderColor, background: cardBackground, color: theme.textPrimary }}
           aria-label="Página anterior"
         >
@@ -381,8 +423,11 @@ export default function PublicStore() {
           <button
             key={page}
             type="button"
-            onClick={() => setServicePage(page)}
-            className="w-9 h-9 rounded-xl text-xs font-bold transition-all"
+            onClick={() => {
+              setServicePage(page);
+              categoryScrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }}
+            className="w-10 h-10 rounded-2xl text-xs font-bold transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
             style={{
               background: page === servicePage ? accent : "transparent",
               color: page === servicePage ? theme.btnPrimaryText : theme.textSecondary,
@@ -397,9 +442,12 @@ export default function PublicStore() {
 
         <button
           type="button"
-          onClick={() => setServicePage((p) => Math.min(totalPages, p + 1))}
+          onClick={() => {
+            setServicePage((p) => Math.min(totalPages, p + 1));
+            categoryScrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }}
           disabled={servicePage === totalPages}
-          className="w-9 h-9 rounded-xl border flex items-center justify-center disabled:opacity-30 transition-all"
+          className="w-10 h-10 rounded-2xl border flex items-center justify-center disabled:opacity-20 transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
           style={{ borderColor: cardBorderColor, background: cardBackground, color: theme.textPrimary }}
           aria-label="Próxima página"
         >
@@ -1029,7 +1077,7 @@ export default function PublicStore() {
       "",
       `*Código:* #${bookingCode}`,
       `*Cliente:* ${customerName}`,
-      `*Serviço:* ${selectedService.name} (${selectedService.duration_minutes} min)`,
+      `*Serviço:* ${selectedService.name} (${formatDuration(selectedService.duration_minutes)})`,
       `*Profissional:* ${proName}`,
       `*Data/Hora:* ${format(selectedDate, "dd 'de' MMMM", { locale: ptBR })} às ${selectedTime}`,
       "",
@@ -1545,7 +1593,7 @@ export default function PublicStore() {
                       <div className="flex items-center gap-2 mt-1.5 text-xs font-semibold" style={{ color: theme.textMuted }}>
                         <span className="flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5 text-amber-500" />
-                          {inspectingService.duration_minutes} min
+                          {formatDuration(inspectingService.duration_minutes)}
                         </span>
                         <span>•</span>
                         <span className="capitalize">
@@ -2374,32 +2422,87 @@ export default function PublicStore() {
                         />
                       </div>
 
-                      {/* Category Filter */}
+                      {/* Category Filter with Drag / Scroll Affordance (img1) */}
                       {uniqueCategories.length > 0 && (
-                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none items-center">
-                          <button
-                            onClick={() => setCategoryFilter('Todos')}
-                            className="px-5 py-2.5 rounded-full text-[13px] font-bold whitespace-nowrap border transition-all"
-                            style={{
-                              color: categoryFilter === 'Todos' ? theme.btnPrimaryText : theme.textSecondary,
-                              background: categoryFilter === 'Todos' ? accent : "transparent",
-                              borderColor: categoryFilter === 'Todos' ? accent : cardBorderColor,
-                            }}>
-                            Todos
-                          </button>
-                          {uniqueCategories.map(cat => (
-                            <button
-                              key={cat}
-                              onClick={() => setCategoryFilter(cat)}
-                              className="px-5 py-2.5 rounded-full text-[13px] font-bold whitespace-nowrap border transition-all"
+                        <div className="relative group/cat w-full">
+                          {/* Left Fade Mask & Scroll Button */}
+                          {canScrollLeft && (
+                            <div
+                              className="absolute left-0 top-0 bottom-2 z-20 flex items-center pr-4 pointer-events-none"
                               style={{
-                                color: categoryFilter === cat ? theme.btnPrimaryText : theme.textSecondary,
-                                background: categoryFilter === cat ? accent : "transparent",
-                                borderColor: categoryFilter === cat ? accent : cardBorderColor,
+                                background: `linear-gradient(to right, ${theme.bg || '#0F0F11'} 65%, transparent)`,
+                              }}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => scrollCategories('left')}
+                                className="pointer-events-auto w-7 h-7 rounded-full shadow-lg flex items-center justify-center border transition-transform hover:scale-110 active:scale-95 cursor-pointer ml-0.5"
+                                style={{
+                                  background: cardBackground,
+                                  borderColor: cardBorderColor,
+                                  color: theme.textPrimary,
+                                }}
+                                aria-label="Rolar categorias para esquerda"
+                              >
+                                <ChevronLeft className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Scrollable Container */}
+                          <div
+                            ref={categoryScrollRef}
+                            onScroll={checkCategoryScroll}
+                            className="flex gap-2 overflow-x-auto pb-2 scrollbar-none items-center scroll-smooth cursor-grab active:cursor-grabbing select-none"
+                          >
+                            <button
+                              onClick={() => setCategoryFilter('Todos')}
+                              className="px-5 py-2.5 rounded-full text-[13px] font-bold whitespace-nowrap border transition-all cursor-pointer hover:opacity-90 active:scale-95 shrink-0"
+                              style={{
+                                color: categoryFilter === 'Todos' ? theme.btnPrimaryText : theme.textSecondary,
+                                background: categoryFilter === 'Todos' ? accent : "transparent",
+                                borderColor: categoryFilter === 'Todos' ? accent : cardBorderColor,
                               }}>
-                              {cat}
+                              Todos
                             </button>
-                          ))}
+                            {uniqueCategories.map(cat => (
+                              <button
+                                key={cat}
+                                onClick={() => setCategoryFilter(cat)}
+                                className="px-5 py-2.5 rounded-full text-[13px] font-bold whitespace-nowrap border transition-all cursor-pointer hover:opacity-90 active:scale-95 shrink-0"
+                                style={{
+                                  color: categoryFilter === cat ? theme.btnPrimaryText : theme.textSecondary,
+                                  background: categoryFilter === cat ? accent : "transparent",
+                                  borderColor: categoryFilter === cat ? accent : cardBorderColor,
+                                }}>
+                                {cat}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Right Fade Mask & Scroll Button (Visual affordance indicating more items) */}
+                          {canScrollRight && (
+                            <div
+                              className="absolute right-0 top-0 bottom-2 z-20 flex items-center pl-6 pointer-events-none"
+                              style={{
+                                background: `linear-gradient(to left, ${theme.bg || '#0F0F11'} 65%, transparent)`,
+                              }}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => scrollCategories('right')}
+                                className="pointer-events-auto w-7 h-7 rounded-full shadow-lg flex items-center justify-center border transition-transform hover:scale-110 active:scale-95 cursor-pointer mr-0.5 animate-pulse hover:animate-none"
+                                style={{
+                                  background: cardBackground,
+                                  borderColor: cardBorderColor,
+                                  color: theme.textPrimary,
+                                }}
+                                aria-label="Rolar categorias para direita"
+                              >
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -2580,7 +2683,7 @@ export default function PublicStore() {
                                           style={{ color: theme.textMuted }}
                                         >
                                           <Clock className="w-3 h-3 opacity-70" />
-                                          {s.duration_minutes}m
+                                          {formatDuration(s.duration_minutes)}
                                         </span>
                                       </div>
                                     </div>
@@ -2589,7 +2692,10 @@ export default function PublicStore() {
                               })}
                             </div>
 
-                            <Pagination totalPages={mobileServicePages} />
+                            {/* Mobile Pagination */}
+                            <div className="md:hidden mt-6 mb-2">
+                              <Pagination totalPages={mobileServicePages} />
+                            </div>
 
                             {/* ──────────────── DESKTOP LAYOUT (Original Grid) ──────────────── */}
                             <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
@@ -2708,7 +2814,7 @@ export default function PublicStore() {
                                           className="flex items-center gap-1.5 text-xs font-semibold"
                                           style={{ color: theme.textMuted }}
                                         >
-                                          <Clock className="w-3.5 h-3.5" /> {s.duration_minutes} min
+                                          <Clock className="w-3.5 h-3.5" /> {formatDuration(s.duration_minutes)}
                                         </span>
                                         <div className="text-right">
                                           {hasDiscount && (
@@ -2731,6 +2837,11 @@ export default function PublicStore() {
                                   </motion.button>
                                 );
                               })}
+                            </div>
+
+                            {/* Desktop Pagination */}
+                            <div className="hidden md:block mt-8 mb-4">
+                              <Pagination totalPages={desktopServicePages} />
                             </div>
                           </>
                         )}

@@ -19,6 +19,15 @@ import { getTenantPublicUrl } from '../../lib/tenantUrl';
 import { useTenantPortalTheme } from '../../hooks/useTenantPortalTheme';
 import { PortalLoadingScreen } from '../../components/public/PortalLoadingScreen';
 
+const formatDuration = (minutes: number | null | undefined): string => {
+  if (!minutes || minutes <= 0) return '';
+  const hrs = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hrs > 0 && mins > 0) return `${hrs}h ${mins}min`;
+  if (hrs > 0) return `${hrs}h`;
+  return `${mins} min`;
+};
+
 export default function ClientPortal() {
   const slugFromHook = useTenantSlug();
   const { slug: paramSlug } = useParams<{ slug?: string }>();
@@ -684,7 +693,10 @@ export default function ClientPortal() {
                         </span>
                       </div>
                       <h3 className="font-serif font-bold text-xl" style={{ color: theme.textPrimary }}>{b.services?.name}</h3>
-                      <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>com <strong>{b.professionals?.name || 'Profissional'}</strong></p>
+                      <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>
+                        com <strong>{b.professionals?.name || 'Profissional'}</strong>
+                        {b.services?.duration_minutes ? ` • ${formatDuration(b.services.duration_minutes)}` : ''}
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="font-serif font-extrabold text-2xl" style={{ color: theme.accent }}>
@@ -778,7 +790,10 @@ export default function ClientPortal() {
               <div key={b.id} className="rounded-2xl p-4 border opacity-75 flex items-center justify-between" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
                 <div>
                   <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>{b.services?.name}</h4>
-                  <p className="text-xs" style={{ color: theme.textSecondary }}>{format(new Date(b.scheduled_at), "dd/MM/yyyy 'às' HH:mm")} • com {b.professionals?.name}</p>
+                  <p className="text-xs" style={{ color: theme.textSecondary }}>
+                    {format(new Date(b.scheduled_at), "dd/MM/yyyy 'às' HH:mm")} • com {b.professionals?.name}
+                    {b.services?.duration_minutes ? ` • ${formatDuration(b.services.duration_minutes)}` : ''}
+                  </p>
                 </div>
                 <span className="text-xs font-bold uppercase px-2.5 py-1 rounded-full border" style={{ borderColor: theme.border, color: theme.textSecondary }}>
                   {b.status === 'canceled' ? 'Cancelado' : b.status === 'completed' ? 'Concluído' : b.status}
@@ -895,7 +910,10 @@ export default function ClientPortal() {
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-2xl font-serif font-bold" style={{ color: theme.textPrimary }}>Reagendar</h3>
-                <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>{rescheduleBooking.services?.name}</p>
+                <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>
+                  {rescheduleBooking.services?.name}
+                  {rescheduleBooking.services?.duration_minutes ? ` • ${formatDuration(rescheduleBooking.services.duration_minutes)}` : ''}
+                </p>
               </div>
               <button onClick={() => setRescheduleBooking(null)} className="p-2 rounded-full hover:bg-black/5" style={{ color: theme.textPrimary }}>
                 <X className="w-5 h-5" />

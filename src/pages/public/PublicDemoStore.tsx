@@ -38,6 +38,15 @@ import type { DemoPortal, DemoService, DemoProfessional } from '../../types/demo
 import { useTenantPortalTheme } from '../../hooks/useTenantPortalTheme';
 import { PortalLoadingScreen } from '../../components/public/PortalLoadingScreen';
 
+const formatDuration = (minutes: number | null | undefined): string => {
+  if (!minutes || minutes <= 0) return '0 min';
+  const hrs = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hrs > 0 && mins > 0) return `${hrs}h ${mins}min`;
+  if (hrs > 0) return `${hrs}h`;
+  return `${mins} min`;
+};
+
 // ── Ícones SVG Customizados ──────────────────────────────────────────────────
 const InstagramIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <svg
@@ -1421,7 +1430,7 @@ export default function PublicDemoStore() {
                               </h3>
                               <p className="text-xs text-[#777] mt-1 flex items-center gap-1.5 font-medium">
                                 <Clock className="w-3.5 h-3.5 text-[#555]" />
-                                {service.duration_minutes} min
+                                {formatDuration(service.duration_minutes)}
                               </p>
                               <p className="text-sm font-bold text-white font-mono mt-2" style={{ color: themeColor }}>
                                 {new Intl.NumberFormat('pt-BR', {
