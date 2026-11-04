@@ -1136,7 +1136,6 @@ export default function PublicStore() {
     }
 
     if (hasValidationError) {
-      setErrorMsg("Preencha os campos destacados em vermelho acima para continuar.");
       inputsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       setTimeout(() => {
         if (!cleanPhone || !phoneFormat.validate(customerPhone)) {
@@ -3564,40 +3563,51 @@ export default function PublicStore() {
                             ))}
                           </div>
 
-                          {/* Online Methods if deposit/full — Real Stripe Live Payment Element */}
+                          {/* Online Methods if deposit/full — Real Stripe Live Payment Element com Descanso Visual */}
                           {paymentScope !== "local" && (
-                            <StripeLivePaymentSection
-                              ref={stripePaymentRef}
-                              publishableKey={(storeData as any)?.stripePublicKey}
-                              stripeAccountId={(storeData as any)?.stripeAccountId}
-                              amountBRL={amountPaid}
-                              totalBRL={total}
-                              amountDueBRL={amountDue}
-                              paymentScopeLabel={
-                                paymentScope === "partial"
-                                  ? `Entrada ${settings?.deposit_percentage || 50}%`
-                                  : "Pagamento Total"
-                              }
-                              storeName={storeName}
-                              storeLogoUrl={settings?.logo_url}
-                              serviceName={selectedService?.name}
-                              serviceDurationLabel={formatDuration(selectedService?.duration_minutes)}
-                              proName={proName}
-                              dateLabel={
-                                selectedDate
-                                  ? format(selectedDate, "dd 'de' MMMM", { locale: ptBR })
-                                  : ""
-                              }
-                              timeLabel={selectedTime || ""}
-                              accent={accent}
-                              btnPrimaryText={theme.btnPrimaryText}
-                              isDark={isDark}
-                              cardBackground={cardBackground}
-                              cardBorderColor={cardBorderColor}
-                              textPrimary={theme.textPrimary}
-                              textSecondary={theme.textSecondary}
-                              onPaymentMethodChange={(m) => setPaymentMethod(m)}
-                            />
+                            <div
+                              className="pt-4 mt-2 border-t space-y-2.5"
+                              style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "#F1F5F9" }}
+                            >
+                              <p
+                                className="text-[11px] font-semibold tracking-wider uppercase opacity-75"
+                                style={{ color: theme.textSecondary }}
+                              >
+                                Forma de pagamento online
+                              </p>
+                              <StripeLivePaymentSection
+                                ref={stripePaymentRef}
+                                publishableKey={(storeData as any)?.stripePublicKey}
+                                stripeAccountId={(storeData as any)?.stripeAccountId}
+                                amountBRL={amountPaid}
+                                totalBRL={total}
+                                amountDueBRL={amountDue}
+                                paymentScopeLabel={
+                                  paymentScope === "partial"
+                                    ? `Entrada ${settings?.deposit_percentage || 50}%`
+                                    : "Pagamento Total"
+                                }
+                                storeName={storeName}
+                                storeLogoUrl={settings?.logo_url}
+                                serviceName={selectedService?.name}
+                                serviceDurationLabel={formatDuration(selectedService?.duration_minutes)}
+                                proName={proName}
+                                dateLabel={
+                                  selectedDate
+                                    ? format(selectedDate, "dd 'de' MMMM", { locale: ptBR })
+                                    : ""
+                                }
+                                timeLabel={selectedTime || ""}
+                                accent={accent}
+                                btnPrimaryText={theme.btnPrimaryText}
+                                isDark={isDark}
+                                cardBackground={cardBackground}
+                                cardBorderColor={cardBorderColor}
+                                textPrimary={theme.textPrimary}
+                                textSecondary={theme.textSecondary}
+                                onPaymentMethodChange={(m) => setPaymentMethod(m)}
+                              />
+                            </div>
                           )}
                         </div>
                       </div>

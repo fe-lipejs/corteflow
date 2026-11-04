@@ -597,13 +597,13 @@ export const StripeLivePaymentSection = forwardRef<
   }));
 
   return (
-    <div className="space-y-3 pt-2">
+    <div className="space-y-3">
       {/* Seletor Minimalista: PIX vs Cartão */}
       <div className="grid grid-cols-2 gap-2.5">
         <button
           type="button"
           onClick={() => handleSelectTab("pix")}
-          className="relative flex items-center justify-center gap-2 h-11 px-3 rounded-xl border text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+          className="relative flex items-center justify-center gap-2.5 h-12 px-3.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all cursor-pointer"
           style={{
             borderColor: selectedTab === "pix" ? accent : cardBorderColor,
             background:
@@ -615,7 +615,7 @@ export const StripeLivePaymentSection = forwardRef<
           }}
         >
           <PixDiamondIcon
-            className="w-4 h-4 shrink-0"
+            className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 transition-transform"
             style={{ color: selectedTab === "pix" ? accent : "#00BDAE" }}
           />
           <span>PIX Instantâneo</span>
@@ -630,7 +630,7 @@ export const StripeLivePaymentSection = forwardRef<
         <button
           type="button"
           onClick={() => handleSelectTab("card")}
-          className="relative flex items-center justify-center gap-2 h-11 px-3 rounded-xl border text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+          className="relative flex items-center justify-center gap-2.5 h-12 px-3.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all cursor-pointer"
           style={{
             borderColor: selectedTab === "card" ? accent : cardBorderColor,
             background:
@@ -642,7 +642,7 @@ export const StripeLivePaymentSection = forwardRef<
           }}
         >
           <CreditCard
-            className="w-4 h-4 shrink-0"
+            className="w-5 h-5 shrink-0"
             style={{ color: selectedTab === "card" ? accent : textSecondary }}
           />
           <span>Cartão de Crédito</span>
