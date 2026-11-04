@@ -1434,11 +1434,11 @@ export default function PublicStore() {
 
                 {/* Top Image or Header */}
                 {inspectingService.photo_url ? (
-                  <div className="relative w-full h-52 sm:h-64 overflow-hidden shrink-0 bg-neutral-900">
+                  <div className="relative w-full h-64 sm:h-80 overflow-hidden shrink-0 bg-neutral-900">
                     <img
                       src={inspectingService.photo_url}
                       alt={inspectingService.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-center"
                     />
                     <div
                       className="absolute inset-0"

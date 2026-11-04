@@ -62,10 +62,11 @@ interface Props {
   onCreate?: (input: CreateProfessionalInput) => Promise<void>;
   onUpdate?: (input: UpdateProfessionalInput) => Promise<void>;
   isLoading?: boolean;
+  error?: string | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function ProfessionalModal({ professional, services, onClose, onCreate, onUpdate, isLoading }: Props) {
+export default function ProfessionalModal({ professional, services, onClose, onCreate, onUpdate, isLoading, error }: Props) {
   const { theme } = useTheme();
   const engine = usePermissionEngine();
   const navigate = useNavigate();
@@ -385,6 +386,13 @@ export default function ProfessionalModal({ professional, services, onClose, onC
       footer={footerContent}
     >
       <div className="flex flex-col space-y-5">
+        {error && (
+          <div className="flex items-center gap-3 p-4 rounded-xl text-sm" style={{ background: `${theme.error}15`, border: `1px solid ${theme.error}40`, color: theme.error }}>
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <span className="font-medium">{error}</span>
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="flex gap-1 p-1 rounded-xl shrink-0 overflow-x-auto no-scrollbar scroll-smooth" style={{ background: theme.inputBg }}>
           {tabs.map(t => (

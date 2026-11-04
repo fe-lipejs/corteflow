@@ -20,6 +20,7 @@ import ProfessionalModal from './equipe/ProfessionalModal';
 import { UpgradeModal } from '../../components/UpgradeModal';
 import { CardSkeleton } from '../../components/ui/Skeleton';
 import type { Professional } from '../../types/database';
+import toast from 'react-hot-toast';
 
 // ─── Sort options ─────────────────────────────────────────────────────────────
 type SortKey = 'name_asc' | 'name_desc' | 'newest' | 'oldest' | 'status';
@@ -120,9 +121,12 @@ export default function Equipe() {
     try {
       setMutationError(null);
       await createMutation.mutateAsync(input);
+      toast.success('Profissional cadastrado com sucesso!');
       setModalOpen(false);
     } catch (e: any) {
-      setMutationError(e?.message ?? 'Erro ao criar profissional.');
+      const msg = e?.message ?? 'Erro ao criar profissional.';
+      setMutationError(msg);
+      toast.error(msg);
     }
   };
 
@@ -130,10 +134,13 @@ export default function Equipe() {
     try {
       setMutationError(null);
       await updateMutation.mutateAsync(input);
+      toast.success('Profissional atualizado com sucesso!');
       setModalOpen(false);
       setEditingPro(null);
     } catch (e: any) {
-      setMutationError(e?.message ?? 'Erro ao atualizar profissional.');
+      const msg = e?.message ?? 'Erro ao atualizar profissional.';
+      setMutationError(msg);
+      toast.error(msg);
     }
   };
 
@@ -349,6 +356,7 @@ export default function Equipe() {
             onCreate={handleCreate}
             onUpdate={handleUpdate}
             isLoading={createMutation.isPending || updateMutation.isPending}
+            error={mutationError}
           />
         </PermissionGate>
       )}

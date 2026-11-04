@@ -240,11 +240,20 @@ export function usePermissionEngine(): PermissionEngine {
   const featuresObj: Record<string, any> = source?.features || {};
   const permissionsArr: string[] = normalizePermissions(source?.permissions);
   const limitsObj: Record<string, any> = { ...(source?.limits || {}) };
-  if ((limitsObj.profissionais === undefined || limitsObj.profissionais === null) && source?.max_professionals !== undefined && source?.max_professionals !== null) {
+  if (source?.max_professionals !== undefined && source?.max_professionals !== null) {
     limitsObj.profissionais = source.max_professionals;
   }
 
-  const planHas = (key: string) => permissionsArr.includes('*') || permissionsArr.includes(key);
+  const planHas = (key: string) => {
+    if (permissionsArr.includes('*') || permissionsArr.includes(key)) return true;
+    if (key === 'produto.criar' && permissionsArr.includes('produtos.criar')) return true;
+    if (key === 'produto.editar' && permissionsArr.includes('produtos.editar')) return true;
+    if (key === 'produto.excluir' && permissionsArr.includes('produtos.excluir')) return true;
+    if (key === 'produtos.criar' && permissionsArr.includes('produto.criar')) return true;
+    if (key === 'produtos.editar' && permissionsArr.includes('produto.editar')) return true;
+    if (key === 'produtos.excluir' && permissionsArr.includes('produto.excluir')) return true;
+    return false;
+  };
 
   /** Papel (owner/admin/manager...) tem a permissão? Owner/Admin sempre têm tudo que o plano permitir. */
   const roleHas = (key: string) =>

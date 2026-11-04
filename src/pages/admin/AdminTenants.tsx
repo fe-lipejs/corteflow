@@ -168,7 +168,7 @@ export default function AdminTenants() {
             'catalogo.visualizar', 'catalogo.criar', 'catalogo.editar', 'catalogo.excluir',
             'clientes.visualizar', 'clientes.exportar',
             ...(contractAllowFinanceiro ? ['financeiro.visualizar_caixa_geral', 'financeiro.visualizar_meu_caixa', 'financeiro.criar_lancamento', 'financeiro.editar_lancamento', 'financeiro.excluir_lancamento', 'financeiro.exportar'] : []),
-            ...(contractAllowProdutos ? ['produtos.visualizar', 'produtos.criar', 'produtos.editar', 'produtos.excluir'] : []),
+            ...(contractAllowProdutos ? ['produtos.visualizar', 'produtos.criar', 'produtos.editar', 'produtos.excluir', 'produto.criar', 'produto.editar', 'produto.excluir'] : []),
             'configuracoes.editar_layout'
           ],
           status: 'active',
