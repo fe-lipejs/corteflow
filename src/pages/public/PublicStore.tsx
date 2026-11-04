@@ -9,7 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  Copy,
   CreditCard,
   Loader2,
   MapPin,
@@ -19,8 +18,6 @@ import {
   User,
   X,
   Zap,
-  QrCode,
-  Lock,
   ShieldCheck,
   Sparkles,
   ArrowRight,
@@ -45,6 +42,7 @@ import { getThemeContrastEngine } from "../../lib/themeEngine";
 import { HomeLocationWizard, type LocationWizardResult } from "../../components/public/HomeLocationWizard";
 import { useTenantPortalTheme } from "../../hooks/useTenantPortalTheme";
 import { PortalLoadingScreen } from "../../components/public/PortalLoadingScreen";
+import { StripeLivePaymentSection, type StripeLivePaymentHandle } from "../../components/public/StripeLivePaymentSection";
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const InstagramIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
@@ -610,10 +608,6 @@ export default function PublicStore() {
   const [customerNotes, setCustomerNotes] = useState("");
   const [paymentScope, setPaymentScope] = useState<PaymentScope>("partial");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pix");
-  const [pixCopied, setPixCopied] = useState(false);
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExp, setCardExp] = useState("");
-  const [cardCvc, setCardCvc] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [bookingCode, setBookingCode] = useState<string | null>(null);
@@ -623,6 +617,7 @@ export default function PublicStore() {
   const [hasScrolledDates, setHasScrolledDates] = useState(false);
   const [hasOpenedSheet, setHasOpenedSheet] = useState(false);
 
+  const stripePaymentRef = useRef<StripeLivePaymentHandle | null>(null);
   const step4Ref = useRef<HTMLDivElement>(null);
   const inputsRef = useRef<HTMLDivElement>(null);
   const timeSlotsRef = useRef<HTMLDivElement>(null);
@@ -1202,12 +1197,69 @@ export default function PublicStore() {
         scheduled_at: scheduledAt,
         booking_mode: bookingMode,
         payment_scope: paymentScope,
-        payment_method: paymentMethod,
+        payment_method: paymentScope === "local" ? "cash" : paymentMethod,
         client_address: bookingMode === 'home' ? (homeLocationData?.address ?? "") : null,
         client_lat: bookingMode === 'home' && homeLocationData ? homeLocationData?.lat : null,
         client_lng: bookingMode === 'home' && homeLocationData ? homeLocationData?.lng : null,
         customer_notes: customerNotes
       };
+
+      if (paymentScope !== "local" && stripePaymentRef.current) {
+        const returnSuccessUrl = getTenantSuccessUrl(slug ?? "", tenant?.isDemo, true);
+        const paymentResult = await stripePaymentRef.current.submitAndConfirm({
+          returnUrl: returnSuccessUrl,
+          customerName,
+          customerPhone,
+          customerEmail,
+          createIntent: async () => {
+            const { data: fnRes, error: fnErr } = await supabase.functions.invoke("create-public-booking", {
+              body: payload,
+            });
+            if (fnErr) {
+              throw new Error(fnErr.message || "Erro ao registrar agendamento.");
+            }
+            if (fnRes?.error) {
+              throw new Error(fnRes.error);
+            }
+            const createdBooking = fnRes?.booking;
+            if (!createdBooking) {
+              throw new Error("Erro ao criar reserva para pagamento.");
+            }
+
+            const { data: piData, error: piErr } = await supabase.functions.invoke("create-payment-intent", {
+              body: { action: "create", bookingId: createdBooking.id },
+            });
+
+            if (piErr || piData?.error || !piData?.clientSecret) {
+              await supabase.functions
+                .invoke("create-payment-intent", {
+                  body: { action: "abort_booking", bookingId: createdBooking.id },
+                })
+                .catch(() => {});
+              throw new Error(
+                piData?.error ||
+                  piErr?.message ||
+                  "Não foi possível iniciar o pagamento online no Stripe. Tente novamente ou escolha 'No local'."
+              );
+            }
+
+            return {
+              clientSecret: piData.clientSecret,
+              paymentIntentId: piData.paymentIntentId,
+              bookingId: createdBooking.id,
+              orderNumber: createdBooking.order_number,
+            };
+          },
+        });
+
+        if (slug) {
+          queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(slug) });
+        }
+
+        setBookingCode(paymentResult.orderNumber);
+        setStep(5);
+        return;
+      }
 
       const { data: functionResponse, error: functionError } = await supabase.functions.invoke("create-public-booking", {
         body: payload
@@ -1224,7 +1276,7 @@ export default function PublicStore() {
       const newBooking = functionResponse?.booking;
       if (!newBooking) throw new Error("Erro desconhecido ao criar agendamento.");
 
-      if (paymentScope !== "local" && paymentMethod !== "cash") {
+      if (paymentScope !== "local") {
         const returnSuccessUrl = getTenantSuccessUrl(slug ?? "", tenant?.isDemo, true);
         const { data: checkoutData, error: cErr2 } = await supabase.functions.invoke(
           "create-booking-checkout",
@@ -1279,16 +1331,6 @@ export default function PublicStore() {
     setCustomerNotes("");
     setPaymentScope("partial");
     setPaymentMethod("pix");
-  };
-
-  const handleCardNumberChange = (v: string) => {
-    const c = v.replace(/\D/g, "").slice(0, 16);
-    setCardNumber(c.match(/.{1,4}/g)?.join(" ") || c);
-  };
-  const handleCardExpChange = (v: string) => {
-    let d = v.replace(/\D/g, "");
-    if (d.length >= 2) d = d.substring(0, 2) + "/" + d.substring(2, 4);
-    setCardExp(d);
   };
 
   // ── Loading (Dynamic Salon Accent) ──────────────────────────
@@ -3436,166 +3478,21 @@ export default function PublicStore() {
                             ))}
                           </div>
 
-                          {/* Online Methods if deposit/full */}
+                          {/* Online Methods if deposit/full — Real Stripe Live Payment Element */}
                           {paymentScope !== "local" && (
-                            <>
-                              <div
-                                className="flex items-center gap-1 border rounded-xl p-1 mb-4"
-                                style={{ borderColor: cardBorderColor }}
-                              >
-                                {(
-                                  [
-                                    { key: "pix", label: "PIX Instantâneo", icon: QrCode },
-                                    { key: "card", label: "Cartão de Crédito", icon: CreditCard },
-                                  ] as { key: PaymentMethod; label: string; icon: any }[]
-                                ).map(({ key, label, icon: Icon }) => (
-                                  <button
-                                    key={key}
-                                    onClick={() => setPaymentMethod(key)}
-                                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                                    style={{
-                                      background: paymentMethod === key ? theme.btnPrimaryBg || accent : "transparent",
-                                      color: paymentMethod === key ? theme.btnPrimaryText : theme.textSecondary,
-                                    }}
-                                  >
-                                    <Icon className="w-3.5 h-3.5" /> {label}
-                                  </button>
-                                ))}
-                              </div>
-
-                              {paymentMethod === "pix" && (
-                                <div
-                                  className="rounded-2xl border p-5 text-center space-y-3"
-                                  style={{
-                                    borderColor: cardBorderColor,
-                                    background: isDark ? "rgba(0,0,0,0.2)" : "#F8FAFC",
-                                  }}
-                                >
-                                  <div className="mx-auto w-32 h-32 bg-white rounded-2xl flex items-center justify-center p-2 shadow-md">
-                                    <img
-                                      src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=pix-navalha-${slug}-${amountPaid}`}
-                                      alt="QR PIX"
-                                      className="w-full h-full object-contain"
-                                    />
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <input
-                                      readOnly
-                                      value={`pix.navalha.${slug}.${amountPaid}`}
-                                      className="flex-1 rounded-xl px-3 py-2 text-[11px] font-mono border truncate"
-                                      style={{
-                                        background: isDark ? "#0A0A0C" : "#FFFFFF",
-                                        borderColor: cardBorderColor,
-                                        color: theme.textSecondary,
-                                      }}
-                                    />
-                                    <button
-                                      onClick={() => {
-                                        navigator.clipboard.writeText(`pix.navalha.${slug}.${amountPaid}`);
-                                        setPixCopied(true);
-                                        setTimeout(() => setPixCopied(false), 2500);
-                                      }}
-                                      className="px-3 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
-                                      style={{
-                                        borderColor: pixCopied ? "#10b981" : cardBorderColor,
-                                        color: pixCopied ? "#10b981" : theme.textPrimary,
-                                      }}
-                                    >
-                                      {pixCopied ? (
-                                        <>
-                                          <Check className="w-3.5 h-3.5" /> Copiado
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Copy className="w-3.5 h-3.5" /> Copiar
-                                        </>
-                                      )}
-                                    </button>
-                                  </div>
-                                  <p className="text-[11px] font-medium" style={{ color: theme.textSecondary }}>
-                                    Pague {money(amountPaid)} via PIX e confirme o agendamento abaixo.
-                                  </p>
-                                </div>
-                              )}
-
-                              {paymentMethod === "card" && (
-                                <div className="space-y-3">
-                                  {import.meta.env.MODE === 'development' && (
-                                    <button
-                                      onClick={() => {
-                                        setCardNumber("4242 4242 4242 4242");
-                                        setCardExp("12/30");
-                                        setCardCvc("123");
-                                      }}
-                                      className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
-                                      style={{ color: accent }}
-                                    >
-                                      <Sparkles className="w-3.5 h-3.5" /> Preencher cartão de teste Stripe
-                                    </button>
-                                  )}
-                                  <div>
-                                    <label className="block text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: theme.textSecondary }}>
-                                      Número do Cartão
-                                    </label>
-                                    <input
-                                      type="text"
-                                      placeholder="4242 4242 4242 4242"
-                                      value={cardNumber}
-                                      onChange={(e) => handleCardNumberChange(e.target.value)}
-                                      className="w-full rounded-xl border px-3.5 py-2.5 text-sm font-mono focus:outline-none transition-all"
-                                      style={{
-                                        background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
-                                        borderColor: cardBorderColor,
-                                        color: theme.textPrimary,
-                                      }}
-                                      onFocus={(e) => (e.target.style.borderColor = accent)}
-                                      onBlur={(e) => (e.target.style.borderColor = cardBorderColor)}
-                                    />
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                      <label className="block text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: theme.textSecondary }}>
-                                        Validade
-                                      </label>
-                                      <input
-                                        type="text"
-                                        placeholder="MM/AA"
-                                        value={cardExp}
-                                        onChange={(e) => handleCardExpChange(e.target.value)}
-                                        className="w-full rounded-xl border px-3.5 py-2.5 text-sm font-mono text-center focus:outline-none transition-all"
-                                        style={{
-                                          background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
-                                          borderColor: cardBorderColor,
-                                          color: theme.textPrimary,
-                                        }}
-                                        onFocus={(e) => (e.target.style.borderColor = accent)}
-                                        onBlur={(e) => (e.target.style.borderColor = cardBorderColor)}
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: theme.textSecondary }}>
-                                        CVC
-                                      </label>
-                                      <input
-                                        type="text"
-                                        maxLength={4}
-                                        placeholder="123"
-                                        value={cardCvc}
-                                        onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, ""))}
-                                        className="w-full rounded-xl border px-3.5 py-2.5 text-sm font-mono text-center focus:outline-none transition-all"
-                                        style={{
-                                          background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
-                                          borderColor: cardBorderColor,
-                                          color: theme.textPrimary,
-                                        }}
-                                        onFocus={(e) => (e.target.style.borderColor = accent)}
-                                        onBlur={(e) => (e.target.style.borderColor = cardBorderColor)}
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </>
+                            <StripeLivePaymentSection
+                              ref={stripePaymentRef}
+                              publishableKey={(storeData as any)?.stripePublicKey}
+                              stripeAccountId={(storeData as any)?.stripeAccountId}
+                              amountBRL={amountPaid}
+                              accent={accent}
+                              isDark={isDark}
+                              cardBackground={cardBackground}
+                              cardBorderColor={cardBorderColor}
+                              textPrimary={theme.textPrimary}
+                              textSecondary={theme.textSecondary}
+                              onPaymentMethodChange={(m) => setPaymentMethod(m)}
+                            />
                           )}
                         </div>
                       </div>
