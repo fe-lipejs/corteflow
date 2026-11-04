@@ -825,6 +825,25 @@ export const StripeLivePaymentSection = forwardRef<
                 )}
               </div>
 
+              {/* Trecho Sutil do Código PIX com Reticências */}
+              <div
+                onClick={() => handleCopyPixCode(activePixModal.qrData.data)}
+                title="Clique para copiar o código PIX"
+                className="w-full px-3 py-1.5 rounded-xl border flex items-center justify-between gap-2 text-[11px] font-mono cursor-pointer transition-colors"
+                style={{
+                  borderColor: cardBorderColor,
+                  background: isDark ? "rgba(255,255,255,0.02)" : "#F8FAFC",
+                  color: textSecondary,
+                }}
+              >
+                <span className="truncate select-all opacity-75">
+                  {activePixModal.qrData.data.slice(0, 34)}...
+                </span>
+                <span className="text-[10px] font-sans font-bold shrink-0" style={{ color: copiedPix ? "#16A34A" : accent }}>
+                  {copiedPix ? "Copiado!" : "Copiar"}
+                </span>
+              </div>
+
               {/* Botão de Destaque: Copiar Código PIX */}
               <button
                 type="button"
