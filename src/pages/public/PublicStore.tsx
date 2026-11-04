@@ -20,6 +20,7 @@ import {
   X,
   Zap,
   QrCode,
+  Lock,
   ShieldCheck,
   Sparkles,
   ArrowRight,

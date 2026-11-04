@@ -67,7 +67,7 @@ export default function Login() {
     if (!isEmail) {
       const phoneValidation = normalizeBrazilianPhone(input);
       if (!phoneValidation.isValid || !phoneValidation.normalized) {
-        setForgotError(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (11) 98888-7777.');
+        setForgotError(phoneValidation.error || 'Informe um telefone celular válido com DDD. Ex.: (27) 99730-3135.');
         return;
       }
       searchIdentifier = phoneValidation.normalized;
@@ -231,13 +231,13 @@ export default function Login() {
           ? undefined
           : {
             background:
-              '#1C89C0',
+              'radial-gradient(circle at 85% 12%, rgba(244, 114, 182, 0.14), transparent 38%), radial-gradient(circle at 12% 85%, rgba(37, 99, 235, 0.38), transparent 52%), linear-gradient(165deg, #0B2958 0%, #0F3775 40%, #164894 75%, #1A3E78 100%)',
           }
       }
     >
       <style>{`
         .rf-auth-noise {
-          position: absolute;
+          position: absolute;b
           inset: 0;
           pointer-events: none;
           opacity: 0.035;
@@ -255,7 +255,7 @@ export default function Login() {
             90deg,
             transparent 0%,
             rgba(255, 255, 255, 0.03) 30%,
-            rgba(255, 255, 255, 0.12) 50%,
+            rgba(173, 205, 255, 0.12) 50%,
             rgba(255, 255, 255, 0.03) 70%,
             transparent 100%
           );
@@ -363,7 +363,7 @@ export default function Login() {
                         type="button"
                         onClick={handleResendConfirmation}
                         disabled={resendingEmail}
-                        className="text-xs font-bold text-[#1C89C0] hover:underline flex items-center gap-1 cursor-pointer"
+                        className="text-xs font-bold text-[#FC761D] hover:underline flex items-center gap-1 cursor-pointer"
                       >
                         {resendingEmail ? 'Reenviando...' : 'Reenviar e-mail de ativação →'}
                       </button>
@@ -379,7 +379,7 @@ export default function Login() {
                     <input
                       type="email"
                       required
-                      className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FF95BA] focus:ring-4 focus:ring-[#FF95BA]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                      className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FC761D] focus:ring-4 focus:ring-[#FC761D]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="seuemail@exemplo.com"
@@ -394,7 +394,7 @@ export default function Login() {
                       <input
                         type={showPassword ? 'text' : 'password'}
                         required
-                        className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FF95BA] focus:ring-4 focus:ring-[#FF95BA]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                        className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FC761D] focus:ring-4 focus:ring-[#FC761D]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
@@ -418,7 +418,7 @@ export default function Login() {
                         setForgotSubmitted(false);
                         setForgotPasswordOpen(true);
                       }}
-                      className="text-xs text-[#5B6478] hover:text-[#1C89C0] font-semibold hover:underline cursor-pointer transition-colors"
+                      className="text-xs text-[#5B6478] hover:text-[#FC761D] font-semibold hover:underline cursor-pointer transition-colors"
                     >
                       Esqueci minha senha
                     </button>
@@ -428,8 +428,8 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-[52px] rounded-full font-extrabold text-sm text-black flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-105 active:scale-[0.98] mt-2"
-                    style={{ background: '#FF95BA' }}
+                    className="w-full h-[52px] rounded-full font-extrabold text-sm text-white flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_14px_30px_rgba(255,135,56,0.35)] hover:brightness-105 active:scale-[0.98] mt-2"
+                    style={{ background: '#FC761D' }}
                   >
                     {loading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -444,7 +444,7 @@ export default function Login() {
 
                 <div className="mt-6 text-center text-xs sm:text-sm text-[#5B6478]">
                   Não tem uma conta?{' '}
-                  <Link to="/cadastro" className="text-[#0F172A] font-bold hover:text-[#1C89C0] underline decoration-[#1C89C0]/50 hover:decoration-[#1C89C0] transition-colors">
+                  <Link to="/cadastro" className="text-[#0F172A] font-bold hover:text-[#FC761D] underline decoration-[#FC761D]/50 hover:decoration-[#FC761D] transition-colors">
                     Criar conta grátis
                   </Link>
                 </div>
@@ -612,8 +612,8 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => setForgotPasswordOpen(false)}
-                    className="w-full h-[48px] rounded-full font-extrabold text-sm text-black hover:brightness-105 active:scale-[0.98] cursor-pointer transition-all"
-                    style={{ background: '#FF95BA' }}
+                    className="w-full h-[48px] rounded-full font-extrabold text-sm text-white shadow-[0_12px_24px_rgba(255,135,56,0.3)] hover:brightness-105 active:scale-[0.98] cursor-pointer transition-all"
+                    style={{ background: '#FC761D' }}
                   >
                     Entendido
                   </button>
@@ -622,7 +622,7 @@ export default function Login() {
                 /* Estado: Formulário de solicitação */
                 <div>
                   <div className="flex items-center gap-3 mb-5">
-                    <div className="w-11 h-11 rounded-2xl bg-[#FF95BA]/10 text-[#1C89C0] flex items-center justify-center shrink-0">
+                    <div className="w-11 h-11 rounded-2xl bg-[#FC761D]/10 text-[#FC761D] flex items-center justify-center shrink-0">
                       <KeyRound className="w-5 h-5" />
                     </div>
                     <div>
@@ -649,8 +649,8 @@ export default function Login() {
                         required
                         value={forgotIdentifier}
                         onChange={(e) => setForgotIdentifier(e.target.value)}
-                        placeholder="seuemail@exemplo.com ou 11988887777"
-                        className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FF95BA] focus:ring-4 focus:ring-[#FF95BA]/15 focus:bg-white transition-all font-medium text-sm"
+                        placeholder="seuemail@exemplo.com ou 27999999999"
+                        className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FC761D] focus:ring-4 focus:ring-[#FC761D]/15 focus:bg-white transition-all font-medium text-sm"
                       />
                     </div>
 
@@ -669,8 +669,8 @@ export default function Login() {
                       <button
                         type="submit"
                         disabled={forgotLoading}
-                        className="w-2/3 h-[48px] font-extrabold text-xs text-black rounded-full hover:brightness-105 active:scale-[0.98] cursor-pointer transition-all disabled:opacity-60 flex items-center justify-center gap-1.5"
-                        style={{ background: '#FF95BA' }}
+                        className="w-2/3 h-[48px] font-extrabold text-xs text-white rounded-full shadow-[0_12px_24px_rgba(255,135,56,0.3)] hover:brightness-105 active:scale-[0.98] cursor-pointer transition-all disabled:opacity-60 flex items-center justify-center gap-1.5"
+                        style={{ background: '#FC761D' }}
                       >
                         {forgotLoading ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
