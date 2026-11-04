@@ -260,25 +260,14 @@ export default function ProfessionalModal({ professional, services, onClose, onC
     setAccessError(null);
     setEmailSentFeedback(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setAccessError('Sessão expirada. Recarregue a página.');
-        return;
-      }
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-professional-access`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({
+      const { data, error: invokeErr } = await supabase.functions.invoke('create-professional-access', {
+        body: {
           professional_id: professional.id,
           email: email,
           permissions: accessPermissions
-        })
+        }
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Erro ao criar acesso');
+      if (invokeErr || data?.error) throw new Error(invokeErr?.message || data?.error || 'Erro ao criar acesso');
       if (data.tempPassword) {
         setTempPassword(data.tempPassword);
         if (data.resendError) {
@@ -308,19 +297,12 @@ export default function ProfessionalModal({ professional, services, onClose, onC
     setIsManagingAccess(true);
     setAccessError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-professional-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({
+      const { data, error: invokeErr } = await supabase.functions.invoke('reset-professional-password', {
+        body: {
           professional_id: professional.id
-        })
+        }
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Erro ao resetar senha');
+      if (invokeErr || data?.error) throw new Error(invokeErr?.message || data?.error || 'Erro ao resetar senha');
       setTempPassword(data.tempPassword);
     } catch (err: any) {
       setAccessError(err.message);
@@ -334,20 +316,13 @@ export default function ProfessionalModal({ professional, services, onClose, onC
     setIsManagingAccess(true);
     setAccessError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toggle-professional-access`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({
+      const { data, error: invokeErr } = await supabase.functions.invoke('toggle-professional-access', {
+        body: {
           professional_id: professional.id,
           action: enable ? 'enable' : 'disable'
-        })
+        }
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Erro ao alterar acesso');
+      if (invokeErr || data?.error) throw new Error(invokeErr?.message || data?.error || 'Erro ao alterar acesso');
       
       toast.success('Acesso atualizado com sucesso!');
     } catch (err: any) {

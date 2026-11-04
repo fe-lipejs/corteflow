@@ -122,17 +122,8 @@ export function usePermissionEngine(): PermissionEngine {
 
       if ((!sub || sub.status !== 'active') && (role === 'owner' || role === 'admin') && tenantId) {
         try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            const syncRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-stripe-subscription`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`
-              }
-            });
-            const syncData = await syncRes.json();
-            if (syncData.synced) {
+          const { data: syncData } = await supabase.functions.invoke('sync-stripe-subscription');
+          if (syncData?.synced) {
               const { data: refreshedSubs } = await supabase
                 .from('subscriptions')
                 .select(SUBSCRIPTION_SELECT)

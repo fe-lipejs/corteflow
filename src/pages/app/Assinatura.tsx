@@ -151,28 +151,11 @@ export default function Assinatura() {
         tenant
       ) {
         try {
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
+          const { data: syncData } = await supabase.functions.invoke('sync-stripe-subscription');
 
-          if (session) {
-            const syncRes = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-stripe-subscription`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type':
-                    'application/json',
-                  Authorization: `Bearer ${session.access_token}`,
-                },
-              }
-            );
-
-            const syncData = await syncRes.json();
-
-            if (syncData.synced) {
-              const {
-                data: refreshedSubs,
+          if (syncData?.synced) {
+            const {
+              data: refreshedSubs,
               } = await supabase
                 .from('subscriptions')
                 .select(
@@ -319,28 +302,11 @@ export default function Assinatura() {
       try {
         setSyncing(true);
 
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        const { error: verifyErr } = await supabase.functions.invoke('verify-checkout-session', {
+          body: { sessionId },
+        });
 
-        if (!session) return;
-
-        const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-checkout-session`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type':
-                'application/json',
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              sessionId,
-            }),
-          }
-        );
-
-        if (res.ok) {
+        if (!verifyErr) {
           setSyncSuccessMessage(
             'Pagamento confirmado. Seu plano já está ativo.'
           );
@@ -394,31 +360,11 @@ export default function Assinatura() {
     try {
       setSyncing(true);
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data, error: invokeErr } = await supabase.functions.invoke('sync-stripe-subscription');
 
-      if (!session) {
-        throw new Error('Não autenticado');
-      }
-
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-stripe-subscription`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type':
-              'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
+      if (invokeErr) {
         throw new Error(
-          data.error ||
+          invokeErr.message ||
           'Erro ao sincronizar com Stripe'
         );
       }
@@ -461,39 +407,19 @@ export default function Assinatura() {
     try {
       setPortalLoading(true);
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data, error: invokeErr } = await supabase.functions.invoke('create-portal-session', {
+        body: { returnUrl: window.location.href },
+      });
 
-      if (!session) {
-        throw new Error('Não autenticado');
-      }
-
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type':
-              'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            returnUrl: window.location.href,
-          }),
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
+      if (invokeErr || data?.error) {
         throw new Error(
-          data.error ||
+          invokeErr?.message ||
+          data?.error ||
           'Erro ao abrir portal do cliente'
         );
       }
 
-      if (data.url) {
+      if (data?.url) {
         window.location.href = data.url;
       }
     } catch (err: any) {
@@ -517,32 +443,12 @@ export default function Assinatura() {
     setCancelLoading(true);
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: cancelData, error: invokeErr } = await supabase.functions.invoke('cancel-subscription');
 
-      if (!session) {
-        throw new Error('Não autenticado');
-      }
-
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-subscription`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type':
-              'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
-
-      if (!res.ok) {
-        const errData =
-          await res.json().catch(() => ({}));
-
+      if (invokeErr || cancelData?.error) {
         throw new Error(
-          errData.error ||
+          invokeErr?.message ||
+          cancelData?.error ||
           'Erro ao cancelar assinatura'
         );
       }
@@ -591,43 +497,18 @@ export default function Assinatura() {
     try {
       setCheckoutLoading(planId);
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data, error: invokeErr } = await supabase.functions.invoke('create-checkout-session', {
+        body: {
+          planId,
+          returnUrl: window.location.href,
+        },
+      });
 
-      if (!session) {
-        throw new Error('Não autenticado');
+      if (invokeErr || data?.error) {
+        throw new Error(invokeErr?.message || data?.error || 'Erro ao criar sessão de checkout');
       }
 
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type':
-              'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            planId,
-            returnUrl:
-              window.location.href,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        let errorMsg = errorText;
-        try {
-          const parsed = JSON.parse(errorText);
-          if (parsed.error) errorMsg = parsed.error;
-        } catch (_jsonErr) {}
-        throw new Error(errorMsg);
-      }
-
-      const { url } =
-        await res.json();
+      const url = data?.url;
 
       if (url) {
         window.location.href = url;

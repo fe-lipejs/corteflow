@@ -61,7 +61,9 @@ export async function getStripeContext(supabaseAdmin: SupabaseClient): Promise<S
     );
   }
 
-  const applicationFeePercent = Number(settings?.stripe_application_fee_percent) || 2;
+  const applicationFeePercent = settings?.stripe_application_fee_percent != null && !isNaN(Number(settings.stripe_application_fee_percent))
+    ? Number(settings.stripe_application_fee_percent)
+    : 0;
 
   const webhookSecret = mode === 'live'
     ? (settings?.stripe_live_webhook_secret?.trim() || Deno.env.get('STRIPE_WEBHOOK_SECRET_LIVE') || Deno.env.get('STRIPE_WEBHOOK_SECRET'))

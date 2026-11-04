@@ -34,20 +34,11 @@ export default function ChangePassword() {
       if (updateError) throw updateError;
 
       if (professionalProfile) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/clear-professional-password-flag`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`
-            },
-            body: JSON.stringify({ professional_id: professionalProfile.id })
-          });
-          if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            throw new Error(data.error || 'Erro ao sincronizar com o servidor');
-          }
+        const { error: invokeErr } = await supabase.functions.invoke('clear-professional-password-flag', {
+          body: { professional_id: professionalProfile.id }
+        });
+        if (invokeErr) {
+          throw new Error(invokeErr.message || 'Erro ao sincronizar com o servidor');
         }
       }
 

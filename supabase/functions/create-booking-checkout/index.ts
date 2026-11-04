@@ -61,7 +61,7 @@ serve(async (req) => {
       throw new Error("O valor mínimo para pagamento com cartão é de R$ 0,50.");
     }
 
-    const platformFeePercentage = (applicationFeePercent || 2) / 100;
+    const platformFeePercentage = (typeof applicationFeePercent === 'number' && !isNaN(applicationFeePercent) ? applicationFeePercent : 0) / 100;
     const applicationFee = Math.round(price * platformFeePercentage);
 
     const serviceName = (booking.services as any)?.name || 'Serviço';
@@ -93,7 +93,7 @@ serve(async (req) => {
       ],
       mode: 'payment' as const,
       payment_intent_data: {
-        application_fee_amount: applicationFee,
+        ...(applicationFee > 0 ? { application_fee_amount: applicationFee } : {}),
         transfer_data: {
           destination: stripeAccount.stripe_account_id,
         },

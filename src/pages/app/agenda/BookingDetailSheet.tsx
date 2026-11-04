@@ -181,7 +181,17 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                 icon: CreditCard,
                 label: 'Valor',
                 value: fmt.format(booking.amount_total),
-                sub: `Pago: ${fmt.format(booking.amount_paid)} (${(booking.payment_mode as string) === 'local' || (booking.payment_mode as string) === 'pay_local' ? 'No local' : (booking.payment_mode as string) === 'full' || (booking.payment_mode as string) === 'full_100' ? 'Integral' : 'Sinal'})`,
+                sub: (() => {
+                  const mode = (booking.payment_mode as string) || 'local';
+                  if (mode === 'local' || mode === 'pay_local') {
+                    return `Pagamento no local: ${fmt.format(booking.amount_total)}`;
+                  }
+                  if (mode === 'deposit' || mode === 'partial') {
+                    const remaining = Math.max(0, Number(booking.amount_total) - Number(booking.amount_paid));
+                    return `Sinal pago online: ${fmt.format(booking.amount_paid)} • Saldo restante no local: ${fmt.format(remaining)}`;
+                  }
+                  return `Pago integral online: ${fmt.format(booking.amount_paid || booking.amount_total)}`;
+                })(),
                 photo: null,
                 color: null,
               },

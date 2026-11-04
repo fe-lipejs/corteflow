@@ -38,7 +38,7 @@ serve(async (req) => {
     if (!service) throw new Error("Serviço não encontrado");
 
     const amount = Math.round(service.price * 100);
-    const platformFeePercentage = (applicationFeePercent || 2) / 100;
+    const platformFeePercentage = (typeof applicationFeePercent === 'number' && !isNaN(applicationFeePercent) ? applicationFeePercent : 0) / 100;
     const applicationFeeAmount = Math.round(amount * platformFeePercentage);
 
     const paymentIntent = await stripe.paymentIntents.create({
@@ -49,7 +49,7 @@ serve(async (req) => {
         service_id: serviceId,
         customer_id: customerId,
       },
-      application_fee_amount: applicationFeeAmount,
+      ...(applicationFeeAmount > 0 ? { application_fee_amount: applicationFeeAmount } : {}),
       transfer_data: { 
         destination: connectAccount.stripe_account_id 
       },

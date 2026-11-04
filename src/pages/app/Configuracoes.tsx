@@ -1088,25 +1088,14 @@ export default function Configuracoes() {
     if (!tenant) return;
     setIsConnectingStripe(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Não autenticado');
-
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-onboarding-link`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Erro na API: ${res.status} ${errorText}`);
+      const { data, error } = await supabase.functions.invoke('connect-onboarding-link');
+      if (error) {
+        throw new Error(error.message || 'Erro ao gerar link de conexão');
       }
-
-      const { url } = await res.json();
-      if (url) {
-        window.location.href = url;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else if (data?.error) {
+        throw new Error(data.error);
       }
     } catch (err: any) {
       console.error('Stripe Connect error:', err);
@@ -1124,13 +1113,7 @@ export default function Configuracoes() {
       // 1. Tenta acionar a Edge Function para desvinculação na API do Stripe
       if (session) {
         try {
-          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/disconnect-connect-account`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`
-            }
-          });
+          await supabase.functions.invoke('disconnect-connect-account');
         } catch (edgeErr) {
           console.warn('Edge Function disconnect-connect-account aviso:', edgeErr);
         }
@@ -1171,19 +1154,13 @@ export default function Configuracoes() {
     if (!tenant?.id) return;
     setSyncingConnect(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const { data, error } = await supabase.functions.invoke('sync-connect-account');
+      if (error) {
+        console.warn('Sync connect error:', error.message);
+        return;
+      }
 
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-connect-account`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-
-      if (res.ok) {
-        const data = await res.json();
+      if (data) {
         setStripeConnectInfo(data);
         if (data.charges_enabled) {
           setAllowDeposit(true);
@@ -1228,21 +1205,12 @@ export default function Configuracoes() {
   const handleOpenCustomerPortal = async () => {
     try {
       setPortalLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Não autenticado');
-
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ returnUrl: window.location.href })
+      const { data, error } = await supabase.functions.invoke('create-portal-session', {
+        body: { returnUrl: window.location.href }
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Erro ao abrir portal do cliente');
-      if (data.url) {
+      if (error) throw new Error(error.message || 'Erro ao abrir portal de faturamento');
+      if (data?.url) {
         window.location.href = data.url;
       }
     } catch (err: any) {
@@ -1257,20 +1225,10 @@ export default function Configuracoes() {
     if (cancelConfirmationText !== 'CANCELAR' || !tenant?.id) return;
     setCancelSubLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Não autenticado');
+      const { error: invokeErr } = await supabase.functions.invoke('cancel-subscription');
 
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-subscription`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Erro ao cancelar assinatura');
+      if (invokeErr) {
+        throw new Error(invokeErr.message || 'Erro ao cancelar assinatura');
       }
 
       setSubInfo((prev: any) => prev ? { ...prev, status: 'canceled' } : null);
@@ -1301,13 +1259,8 @@ export default function Configuracoes() {
 
       // 1. Aciona a Edge Function para cancelamento seguro no Stripe
       try {
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
-          },
-          body: JSON.stringify({ target_tenant_id: tenantId }),
+        await supabase.functions.invoke('delete-account', {
+          body: { target_tenant_id: tenantId },
         });
       } catch (edgeErr) {
         console.warn('Aviso Edge Function delete-account:', edgeErr);
@@ -2234,21 +2187,23 @@ export default function Configuracoes() {
                           </span>
                           {isFullyActive ? (
                             <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-                              ✓ Conectada & Ativa
+                              ✓ Conectada & Pronta para Receber
                             </span>
                           ) : hasStripeAccount ? (
-                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-                              ✓ Conectada
+                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-500 border border-amber-500/30 flex items-center gap-1">
+                              ⚠️ Cadastro Incompleto (Sem Dados de Repasse)
                             </span>
                           ) : (
-                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-zinc-500/15 text-zinc-400 border border-zinc-500/30">
                               Não Conectada
                             </span>
                           )}
                         </div>
                         <p className="text-xs mt-1 leading-relaxed font-medium" style={{ color: theme.textSecondary }}>
-                          {hasStripeAccount
-                            ? `Recebimentos online com proteção antifraude e repasse direto na sua conta Stripe (${stripeConnectInfo?.stripe_account_id || ''})`
+                          {isFullyActive
+                            ? `Recebimentos online ativos com proteção antifraude e repasse direto na sua conta bancária via Stripe (${stripeConnectInfo?.stripe_account_id || ''}).`
+                            : hasStripeAccount
+                            ? `A conta foi criada (${stripeConnectInfo?.stripe_account_id || ''}), mas os dados de repasse bancário ainda não foram finalizados. Clique em "Completar Cadastro" para começar a receber.`
                             : 'Conecte sua conta para receber pagamentos online (Pix e cartão) direto dos clientes com total segurança.'}
                         </p>
                       </div>
@@ -2271,14 +2226,18 @@ export default function Configuracoes() {
                             type="button"
                             onClick={handleConnectStripe}
                             disabled={isConnectingStripe}
-                            className="px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer hover:opacity-90 flex items-center gap-1.5"
-                            style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer hover:opacity-90 flex items-center gap-1.5 ${
+                              !isFullyActive ? 'bg-amber-500 text-white border-amber-600' : ''
+                            }`}
+                            style={isFullyActive ? { borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary } : undefined}
                           >
                             {isConnectingStripe ? (
                               <>
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                 <span>Abrindo...</span>
                               </>
+                            ) : !isFullyActive ? (
+                              <span>Completar Cadastro</span>
                             ) : (
                               <span>Painel Stripe</span>
                             )}
