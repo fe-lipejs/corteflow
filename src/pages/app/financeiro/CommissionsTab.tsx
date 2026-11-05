@@ -1,38 +1,48 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../../integrations/supabase/client';
-import { useTheme } from '../../../contexts/ThemeContext';
-import { CheckCircle, DollarSign, User, Calendar, Loader2 } from 'lucide-react';
+import { CheckCircle, Calendar, Loader2, User } from 'lucide-react';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'react-hot-toast';
+import { supabase } from '../../../integrations/supabase/client';
+import { useTheme } from '../../../contexts/ThemeContext';
+import { formatCurrencyBRL } from '../../../services/financialService';
 
 interface Props {
   tenantId: string;
+  currentMonth?: Date;
   role?: string | null;
   professionalId?: string | null;
 }
 
-export function CommissionsTab({ tenantId, role, professionalId }: Props) {
+export function CommissionsTab({
+  tenantId,
+  currentMonth = new Date(),
+  role,
+  professionalId,
+}: Props) {
   const { theme } = useTheme();
   const queryClient = useQueryClient();
   const [payingId, setPayingId] = useState<string | null>(null);
 
-  // BUG-03: Filter commissions by current month
-  const now = new Date();
-  const monthStart = startOfMonth(now).toISOString();
-  const monthEnd = endOfMonth(now).toISOString();
-  const monthLabel = format(now, 'MMMM yyyy', { locale: ptBR });
+  const isLight =
+    theme.id === 'elegant' ||
+    Boolean(theme.bg && (theme.bg.toLowerCase().startsWith('#f') || theme.bg.toLowerCase().startsWith('#fff')));
 
-  const { data: commissions, isLoading } = useQuery({
+  const monthStart = startOfMonth(currentMonth).toISOString();
+  const monthEnd = endOfMonth(currentMonth).toISOString();
+  const monthLabel = format(currentMonth, 'MMMM yyyy', { locale: ptBR });
+
+  const { data: commissions = [], isLoading } = useQuery({
     queryKey: ['commissions', tenantId, professionalId, monthStart],
     queryFn: async () => {
-      // C3 FIX: Build query conditionally — professionals only see their own commissions
       let query = supabase
         .from('financial_transactions')
         .select(`
           id,
           amount,
           created_at,
+          date,
           status,
           professional_id,
           professionals(name),
@@ -41,11 +51,11 @@ export function CommissionsTab({ tenantId, role, professionalId }: Props) {
         .eq('tenant_id', tenantId)
         .eq('type', 'expense')
         .eq('category', 'Comissão')
+        .neq('status', 'rejected')
         .is('deleted_at', null)
         .gte('created_at', monthStart)
         .lte('created_at', monthEnd);
 
-      // Backend filter: if a professional, restrict to their own records only
       if (role === 'professional' && professionalId) {
         query = query.eq('professional_id', professionalId);
       }
@@ -61,7 +71,10 @@ export function CommissionsTab({ tenantId, role, professionalId }: Props) {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('financial_transactions')
-        .update({ status: 'approved' })
+        .update({
+          status: 'approved',
+          date: new Date().toISOString(),
+        })
         .eq('id', id)
         .eq('tenant_id', tenantId);
       if (error) throw error;
@@ -69,97 +82,253 @@ export function CommissionsTab({ tenantId, role, professionalId }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['commissions'] });
       queryClient.invalidateQueries({ queryKey: ['financials_full'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ['financial_evolution'] });
+      toast.success('Repasse de comissão confirmado e registrado no caixa!');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Erro ao baixar comissão.');
+    },
   });
 
   if (isLoading) {
-    return <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-gray-400" /></div>;
+    return (
+      <div className="p-10 text-center">
+        <Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: theme.accent }} />
+      </div>
+    );
   }
 
-  const pending = commissions?.filter(c => c.status === 'pending') || [];
-  const paid = commissions?.filter(c => c.status === 'approved') || [];
+  const pending = commissions.filter((c: any) => c.status === 'pending');
+  const paid = commissions.filter((c: any) => c.status === 'approved');
+  const pendingTotal = pending.reduce((acc: number, curr: any) => acc + Number(curr.amount || 0), 0);
+  const paidTotal = paid.reduce((acc: number, curr: any) => acc + Number(curr.amount || 0), 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-        <div className="flex-1 p-5 sm:p-6 border rounded-2xl shadow-sm" style={{ borderColor: theme.border, background: theme.cardBg }}>
-          <h3 className="text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>A Pagar</h3>
-          <p className="text-xl sm:text-2xl font-bold text-red-500">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-              pending.reduce((acc, curr) => acc + Number(curr.amount), 0)
-            )}
+    <div className="space-y-5">
+      {/* KPIs Compactos Mobile-First (2 colunas no celular) */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div
+          className="p-4 sm:p-6 border rounded-2xl shadow-sm"
+          style={{
+            borderColor: pendingTotal > 0 ? `${theme.warning}40` : isLight ? '#E2E8F0' : theme.border,
+            background: isLight ? '#FFFFFF' : theme.cardBg,
+          }}
+        >
+          <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>
+            Comissões a Pagar
+          </p>
+          <p className="text-xl sm:text-2xl font-extrabold" style={{ color: pendingTotal > 0 ? theme.warning : isLight ? '#0F172A' : theme.textPrimary }}>
+            {formatCurrencyBRL(pendingTotal)}
+          </p>
+          <p className="text-[11px] mt-1" style={{ color: isLight ? '#64748B' : theme.textMuted }}>
+            {pending.length} {pending.length === 1 ? 'repasse pendente' : 'repasses pendentes'}
           </p>
         </div>
-        <div className="flex-1 p-5 sm:p-6 border rounded-2xl shadow-sm" style={{ borderColor: theme.border, background: theme.cardBg }}>
-          <h3 className="text-sm font-medium mb-1.5 capitalize" style={{ color: theme.textSecondary }}>Pago em {monthLabel}</h3>
-          <p className="text-xl sm:text-2xl font-bold text-green-500">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-              paid.reduce((acc, curr) => acc + Number(curr.amount), 0)
-            )}
+
+        <div
+          className="p-4 sm:p-6 border rounded-2xl shadow-sm"
+          style={{
+            borderColor: isLight ? '#E2E8F0' : theme.border,
+            background: isLight ? '#FFFFFF' : theme.cardBg,
+          }}
+        >
+          <p className="text-xs font-bold uppercase tracking-wider mb-1 capitalize" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>
+            Pagas ({monthLabel})
+          </p>
+          <p className="text-xl sm:text-2xl font-extrabold" style={{ color: theme.success }}>
+            {formatCurrencyBRL(paidTotal)}
+          </p>
+          <p className="text-[11px] mt-1" style={{ color: isLight ? '#64748B' : theme.textMuted }}>
+            {paid.length} {paid.length === 1 ? 'repasse quitado' : 'repasses quitados'}
           </p>
         </div>
       </div>
 
-      <div className="border rounded-2xl overflow-hidden shadow-sm" style={{ borderColor: theme.border, background: theme.cardBg }}>
-        <div className="w-full overflow-x-auto scrollbar-thin">
-          <table className="w-full min-w-[600px] text-left">
-            <thead style={{ background: theme.bg }}>
-              <tr>
-                <th className="p-4 text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: theme.textSecondary }}>Data</th>
-                <th className="p-4 text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: theme.textSecondary }}>Profissional</th>
-                <th className="p-4 text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: theme.textSecondary }}>Serviço</th>
-                <th className="p-4 text-xs font-semibold uppercase tracking-wider text-right whitespace-nowrap" style={{ color: theme.textSecondary }}>Valor</th>
-                <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center whitespace-nowrap" style={{ color: theme.textSecondary }}>Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y" style={{ borderColor: theme.border }}>
-              {commissions?.length === 0 ? (
+      {commissions.length === 0 ? (
+        <div
+          className="p-10 text-center border border-dashed rounded-2xl"
+          style={{
+            borderColor: isLight ? '#E2E8F0' : theme.border,
+            background: isLight ? '#F8FAFC' : 'transparent',
+            color: isLight ? '#64748B' : theme.textSecondary,
+          }}
+        >
+          <p className="text-sm font-bold" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>
+            Nenhuma comissão registrada em {monthLabel}.
+          </p>
+          <p className="text-xs mt-1">
+            As comissões aparecem automaticamente aqui quando um atendimento é concluído.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* MOBILE (< md): Lista de Cards Compactos sem rolagem horizontal */}
+          <div className="md:hidden space-y-2.5">
+            {commissions.map((c: any) => {
+              const isPending = c.status === 'pending';
+              return (
+                <div
+                  key={c.id}
+                  className="p-4 rounded-2xl border space-y-3"
+                  style={{
+                    background: isLight ? '#FFFFFF' : theme.cardBg,
+                    borderColor: isLight ? '#E2E8F0' : theme.border,
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold flex items-center gap-1.5" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>
+                        <User className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accent }} />
+                        <span className="truncate">{c.professionals?.name || 'Profissional'}</span>
+                      </p>
+                      <p className="text-xs mt-0.5 truncate" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>
+                        {c.bookings?.services?.name || 'Atendimento'}
+                      </p>
+                    </div>
+
+                    <p className="text-base font-extrabold shrink-0" style={{ color: theme.error }}>
+                      -{formatCurrencyBRL(Number(c.amount || 0))}
+                    </p>
+                  </div>
+
+                  <div
+                    className="pt-2.5 border-t flex items-center justify-between gap-2"
+                    style={{ borderColor: isLight ? '#F1F5F9' : theme.border }}
+                  >
+                    <span className="text-xs inline-flex items-center gap-1" style={{ color: isLight ? '#64748B' : theme.textMuted }}>
+                      <Calendar className="w-3.5 h-3.5" />
+                      {new Date(c.created_at).toLocaleDateString('pt-BR')}
+                    </span>
+
+                    {isPending ? (
+                      role !== 'professional' ? (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setPayingId(c.id);
+                            try {
+                              await payMutation.mutateAsync(c.id);
+                            } finally {
+                              setPayingId(null);
+                            }
+                          }}
+                          disabled={payingId === c.id}
+                          className="px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                          style={{
+                            background: theme.accentGradient,
+                            color: theme.btnPrimaryText,
+                          }}
+                        >
+                          {payingId === c.id ? 'Confirmando...' : 'Pagar Agora'}
+                        </button>
+                      ) : (
+                        <span
+                          className="px-2.5 py-1 rounded-full text-xs font-bold"
+                          style={{ background: `${theme.warning}18`, color: theme.warning }}
+                        >
+                          A Receber
+                        </span>
+                      )
+                    ) : (
+                      <span
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
+                        style={{ background: `${theme.success}18`, color: theme.success }}
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" /> Pago
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* DESKTOP (>= md): Tabela Limpa */}
+          <div
+            className="hidden md:block border rounded-2xl overflow-hidden shadow-sm"
+            style={{ borderColor: isLight ? '#E2E8F0' : theme.border, background: isLight ? '#FFFFFF' : theme.cardBg }}
+          >
+            <table className="w-full text-left">
+              <thead style={{ background: isLight ? '#F8FAFC' : theme.bg }}>
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-sm" style={{ color: theme.textSecondary }}>
-                    Nenhuma comissão registrada. Elas aparecerão aqui automaticamente quando um agendamento for concluído.
-                  </td>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>
+                    Data
+                  </th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>
+                    Profissional
+                  </th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>
+                    Serviço
+                  </th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-right" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>
+                    Valor
+                  </th>
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center" style={{ color: isLight ? '#64748B' : theme.textSecondary }}>
+                    Status / Ação
+                  </th>
                 </tr>
-              ) : (
-                commissions?.map((c: any) => (
+              </thead>
+              <tbody className="divide-y" style={{ borderColor: isLight ? '#F1F5F9' : theme.border }}>
+                {commissions.map((c: any) => (
                   <tr key={c.id}>
-                    <td className="p-4 text-sm whitespace-nowrap" style={{ color: theme.textPrimary }}>
+                    <td className="p-4 text-sm whitespace-nowrap" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>
                       {new Date(c.created_at).toLocaleDateString('pt-BR')}
                     </td>
-                    <td className="p-4 text-sm font-medium whitespace-nowrap" style={{ color: theme.textPrimary }}>
-                      {c.professionals?.name || 'Desconhecido'}
+                    <td className="p-4 text-sm font-bold whitespace-nowrap" style={{ color: isLight ? '#0F172A' : theme.textPrimary }}>
+                      {c.professionals?.name || 'Profissional'}
                     </td>
-                    <td className="p-4 text-sm whitespace-nowrap" style={{ color: theme.textSecondary }}>
-                      {c.bookings?.services?.name || 'Venda'}
+                    <td className="p-4 text-sm" style={{ color: isLight ? '#475569' : theme.textSecondary }}>
+                      {c.bookings?.services?.name || 'Atendimento'}
                     </td>
-                    <td className="p-4 text-sm text-right font-medium text-red-500 whitespace-nowrap">
-                      -{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(c.amount))}
+                    <td className="p-4 text-sm text-right font-bold whitespace-nowrap" style={{ color: theme.error }}>
+                      -{formatCurrencyBRL(Number(c.amount || 0))}
                     </td>
                     <td className="p-4 text-sm text-center whitespace-nowrap">
                       {c.status === 'pending' ? (
-                        <button
-                          onClick={async () => {
-                            setPayingId(c.id);
-                            await payMutation.mutateAsync(c.id);
-                            setPayingId(null);
-                          }}
-                          disabled={payingId === c.id}
-                          className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
-                        >
-                          {payingId === c.id ? 'Baixando...' : 'Pagar Agora'}
-                        </button>
+                        role !== 'professional' ? (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              setPayingId(c.id);
+                              try {
+                                await payMutation.mutateAsync(c.id);
+                              } finally {
+                                setPayingId(null);
+                              }
+                            }}
+                            disabled={payingId === c.id}
+                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                            style={{
+                              background: theme.accentGradient,
+                              color: theme.btnPrimaryText,
+                            }}
+                          >
+                            {payingId === c.id ? 'Baixando...' : 'Pagar Agora'}
+                          </button>
+                        ) : (
+                          <span
+                            className="px-2.5 py-1 rounded-full text-xs font-bold"
+                            style={{ background: `${theme.warning}18`, color: theme.warning }}
+                          >
+                            A Receber
+                          </span>
+                        )
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                          <CheckCircle className="w-3 h-3" /> Pago
+                        <span
+                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold"
+                          style={{ background: `${theme.success}18`, color: theme.success }}
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" /> Pago
                         </span>
                       )}
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 }

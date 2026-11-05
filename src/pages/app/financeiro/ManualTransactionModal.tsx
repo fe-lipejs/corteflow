@@ -1,12 +1,23 @@
 import { useState, useEffect } from 'react';
-import { X, DollarSign, Calendar, Tag, FileText, User, CreditCard, Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle2, Clock } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { Modal } from '../../../components/ui/Modal';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../integrations/supabase/client';
+import {
+  getTodayLocalISO,
+  parseCurrencyInput,
+  toDateOnlyISO,
+} from '../../../services/financialService';
+import {
+  INCOME_CATEGORIES,
+  PAYMENT_METHODS,
+  VARIABLE_EXPENSE_CATEGORIES,
+} from '../../../types/financial';
 
 export interface FinancialTransaction {
   id?: string;
+  payable_id?: string | null;
   type: 'income' | 'expense';
   amount: number;
   description: string;
@@ -14,6 +25,9 @@ export interface FinancialTransaction {
   payment_method: string;
   professional_id?: string | null;
   date?: string;
+  due_date?: string;
+  expense_status?: 'paid' | 'pending';
+  notes?: string | null;
 }
 
 interface Props {
@@ -26,34 +40,6 @@ interface Props {
   isRecurringMode?: boolean;
 }
 
-const INCOME_CATEGORIES = [
-  'Serviço Avulso',
-  'Venda de Produto',
-  'Comissão Extra',
-  'Gorjeta',
-  'Outras Receitas'
-];
-
-const EXPENSE_CATEGORIES = [
-  'Aluguel / Condomínio',
-  'Água, Luz e Internet',
-  'Produtos e Insumos',
-  'Pagamento de Equipe',
-  'Equipamentos e Manutenção',
-  'Marketing e Anúncios',
-  'Impostos e Taxas',
-  'Outras Despesas'
-];
-
-const PAYMENT_METHODS = [
-  'Dinheiro',
-  'PIX',
-  'Cartão de Crédito',
-  'Cartão de Débito',
-  'Transferência Bancária',
-  'Outro'
-];
-
 export function ManualTransactionModal({
   isOpen,
   onClose,
@@ -61,21 +47,23 @@ export function ManualTransactionModal({
   transaction,
   tenantId,
   isLoading,
-  isRecurringMode = false
+  isRecurringMode = false,
 }: Props) {
   const { theme } = useTheme();
   const isEditing = !!transaction?.id;
 
   const [type, setType] = useState<'income' | 'expense'>('income');
+  const [expenseStatus, setExpenseStatus] = useState<'paid' | 'pending'>('paid');
   const [amount, setAmount] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [category, setCategory] = useState<string>('Serviço Avulso');
-  const [paymentMethod, setPaymentMethod] = useState<string>('Dinheiro');
+  const [category, setCategory] = useState<string>(INCOME_CATEGORIES[0]);
+  const [paymentMethod, setPaymentMethod] = useState<string>('PIX');
   const [professionalId, setProfessionalId] = useState<string>('');
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState<string>(getTodayLocalISO());
+  const [dueDate, setDueDate] = useState<string>(getTodayLocalISO());
+  const [notes, setNotes] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch professionals for linking
   const { data: professionals = [] } = useQuery({
     queryKey: ['professionals_select', tenantId],
     queryFn: async () => {
@@ -86,50 +74,56 @@ export function ManualTransactionModal({
         .eq('status', 'active');
       return data || [];
     },
-    enabled: !!tenantId
+    enabled: !!tenantId && isOpen,
   });
 
   useEffect(() => {
-      if (transaction) {
+    const today = getTodayLocalISO();
+    if (transaction) {
       setType(transaction.type);
-      setAmount(transaction.amount.toString());
+      setExpenseStatus('paid');
+      setAmount(Number(transaction.amount || 0).toFixed(2).replace('.', ','));
       setDescription(transaction.description || '');
-      setCategory(transaction.category || (transaction.type === 'income' ? 'Serviço Avulso' : 'Aluguel / Condomínio'));
-      setPaymentMethod(transaction.payment_method || 'Dinheiro');
+      setCategory(
+        transaction.category ||
+          (transaction.type === 'income' ? INCOME_CATEGORIES[0] : VARIABLE_EXPENSE_CATEGORIES[0])
+      );
+      setPaymentMethod(transaction.payment_method || 'PIX');
       setProfessionalId(transaction.professional_id || '');
-      if (transaction.date) {
-        setDate(transaction.date.split('T')[0]);
-      }
+      setDate(transaction.date ? toDateOnlyISO(transaction.date) : today);
+      setDueDate(transaction.due_date ? toDateOnlyISO(transaction.due_date) : today);
+      setNotes(transaction.notes || '');
     } else if (isRecurringMode) {
       setType('expense');
+      setExpenseStatus('paid');
       setCategory('Aluguel / Condomínio');
-    } else {
-      setType('income');
       setAmount('');
       setDescription('');
-      setCategory('Serviço Avulso');
-      setPaymentMethod('Dinheiro');
+      setNotes('');
+    } else {
+      setType('income');
+      setExpenseStatus('paid');
+      setAmount('');
+      setDescription('');
+      setCategory(INCOME_CATEGORIES[0]);
+      setPaymentMethod('PIX');
       setProfessionalId('');
-      setDate(new Date().toISOString().split('T')[0]);
+      setDate(today);
+      setDueDate(today);
+      setNotes('');
     }
     setError(null);
-  }, [transaction, isOpen]);
+  }, [transaction, isOpen, isRecurringMode]);
 
   const handleTypeChange = (newType: 'income' | 'expense') => {
     setType(newType);
-    setCategory(newType === 'income' ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0]);
+    setCategory(newType === 'income' ? INCOME_CATEGORIES[0] : VARIABLE_EXPENSE_CATEGORIES[0]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    let cleanVal = amount.trim();
-    if (cleanVal.includes(',') && cleanVal.includes('.')) {
-      cleanVal = cleanVal.replace(/\./g, '').replace(',', '.');
-    } else if (cleanVal.includes(',')) {
-      cleanVal = cleanVal.replace(',', '.');
-    }
-    const parsedAmount = parseFloat(cleanVal);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+    const parsedAmount = parseCurrencyInput(amount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
       setError('Informe um valor válido maior que zero.');
       return;
     }
@@ -142,13 +136,17 @@ export function ManualTransactionModal({
       setError(null);
       await onSave({
         id: transaction?.id,
+        payable_id: transaction?.payable_id || null,
         type,
         amount: parsedAmount,
         description: description.trim(),
         category,
         payment_method: paymentMethod,
         professional_id: professionalId || null,
-        date: new Date(date + 'T12:00:00Z').toISOString(),
+        date: `${toDateOnlyISO(date)}T12:00:00Z`,
+        due_date: type === 'expense' && expenseStatus === 'pending' ? toDateOnlyISO(dueDate) : toDateOnlyISO(date),
+        expense_status: type === 'expense' ? expenseStatus : 'paid',
+        notes: notes.trim() || null,
       });
       onClose();
     } catch (err: any) {
@@ -156,29 +154,32 @@ export function ManualTransactionModal({
     }
   };
 
-  const categories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  const baseCategories = type === 'income' ? INCOME_CATEGORIES : VARIABLE_EXPENSE_CATEGORIES;
+  const categories = baseCategories.includes(category) ? baseCategories : [category, ...baseCategories];
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar Lançamento' : 'Novo Lançamento Financeiro'}
-      subtitle={isEditing ? 'Altere os dados da transação manual' : 'Registre uma receita ou despesa manual no caixa'}
+      title={isEditing ? 'Editar Lançamento' : 'Novo Lançamento'}
+      subtitle={
+        isEditing
+          ? 'Atualize os dados da movimentação'
+          : 'Registre uma entrada avulsa ou uma despesa operacional'
+      }
       maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Type Selector (Receita / Despesa) */}
-        <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ background: theme.inputBg }}>
+        {/* Seletor Receita / Despesa */}
+        <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl border" style={{ background: theme.inputBg, borderColor: theme.border }}>
           <button
             type="button"
             onClick={() => handleTypeChange('income')}
-            disabled={isRecurringMode}
-            className={`py-2.5 rounded-lg text-sm font-bold transition-all ${
-              type === 'income' ? 'shadow-md text-white' : 'opacity-70 hover:opacity-100'
-            }`}
+            disabled={isRecurringMode || isEditing}
+            className="py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer disabled:opacity-60"
             style={{
-              background: type === 'income' ? '#10b981' : 'transparent',
-              color: type === 'income' ? '#fff' : theme.textSecondary
+              background: type === 'income' ? theme.success : 'transparent',
+              color: type === 'income' ? '#FFFFFF' : theme.textSecondary,
             }}
           >
             + Receita (Entrada)
@@ -186,21 +187,58 @@ export function ManualTransactionModal({
           <button
             type="button"
             onClick={() => handleTypeChange('expense')}
-            disabled={isRecurringMode}
-            className={`py-2.5 rounded-lg text-sm font-bold transition-all ${
-              type === 'expense' ? 'shadow-md text-white' : 'opacity-70 hover:opacity-100'
-            }`}
+            disabled={isRecurringMode || isEditing}
+            className="py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer disabled:opacity-60"
             style={{
-              background: type === 'expense' ? '#ef4444' : 'transparent',
-              color: type === 'expense' ? '#fff' : theme.textSecondary
+              background: type === 'expense' ? theme.error : 'transparent',
+              color: type === 'expense' ? '#FFFFFF' : theme.textSecondary,
             }}
           >
             - Despesa (Saída)
           </button>
         </div>
 
+        {/* Quando for nova despesa, permite escolher se já foi paga ou se é conta a pagar */}
+        {type === 'expense' && !isEditing && !isRecurringMode && (
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setExpenseStatus('paid')}
+              className="py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              style={{
+                borderColor: expenseStatus === 'paid' ? theme.accent : theme.border,
+                background: expenseStatus === 'paid' ? theme.accentMuted : theme.inputBg,
+                color: expenseStatus === 'paid' ? theme.accent : theme.textSecondary,
+              }}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Já foi paga</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setExpenseStatus('pending')}
+              className="py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              style={{
+                borderColor: expenseStatus === 'pending' ? theme.accent : theme.border,
+                background: expenseStatus === 'pending' ? theme.accentMuted : theme.inputBg,
+                color: expenseStatus === 'pending' ? theme.accent : theme.textSecondary,
+              }}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Pendente (A Pagar)</span>
+            </button>
+          </div>
+        )}
+
         {error && (
-          <div className="p-3 rounded-xl text-xs font-semibold" style={{ background: `${theme.error}15`, color: theme.error, border: `1px solid ${theme.error}30` }}>
+          <div
+            className="p-3 rounded-xl text-xs font-semibold border"
+            style={{
+              background: `${theme.error}15`,
+              color: theme.error,
+              borderColor: `${theme.error}35`,
+            }}
+          >
             {error}
           </div>
         )}
@@ -211,24 +249,25 @@ export function ManualTransactionModal({
             <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
               Valor (R$) *
             </label>
-            <div className="flex items-center rounded-xl border overflow-hidden transition-all focus-within:ring-1 focus-within:ring-[#10b981]"
-              style={{ borderColor: theme.border, background: theme.inputBg }}>
-              <span className="px-3.5 py-2.5 text-sm font-bold select-none border-r shrink-0"
-                style={{ 
-                  color: type === 'income' ? '#10b981' : '#ef4444',
+            <div
+              className="flex items-center rounded-xl border overflow-hidden"
+              style={{ borderColor: theme.border, background: theme.inputBg }}
+            >
+              <span
+                className="px-3.5 py-2.5 text-sm font-bold select-none border-r shrink-0"
+                style={{
+                  color: type === 'income' ? theme.success : theme.error,
                   borderColor: theme.border,
-                  background: type === 'income' ? '#10b98115' : '#ef444415'
-                }}>
+                  background: type === 'income' ? `${theme.success}15` : `${theme.error}15`,
+                }}
+              >
                 R$
               </span>
               <input
                 type="text"
                 inputMode="decimal"
                 value={amount}
-                onChange={e => {
-                  const val = e.target.value.replace(/[^0-9.,]/g, '');
-                  setAmount(val);
-                }}
+                onChange={(e) => setAmount(e.target.value.replace(/[^0-9.,]/g, ''))}
                 placeholder="0,00"
                 className="w-full px-3.5 py-2.5 bg-transparent border-0 text-sm font-bold focus:outline-none"
                 style={{ color: theme.textPrimary }}
@@ -240,13 +279,19 @@ export function ManualTransactionModal({
           {!isRecurringMode && (
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
-                Data *
+                {type === 'expense' && expenseStatus === 'pending' ? 'Data de Vencimento *' : 'Data *'}
               </label>
               <input
                 type="date"
-                value={date}
-                onChange={e => setDate(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none themed-input"
+                value={type === 'expense' && expenseStatus === 'pending' ? dueDate : date}
+                onChange={(e) => {
+                  if (type === 'expense' && expenseStatus === 'pending') {
+                    setDueDate(e.target.value);
+                  } else {
+                    setDate(e.target.value);
+                  }
+                }}
+                className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
                 style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
                 required
               />
@@ -257,14 +302,18 @@ export function ManualTransactionModal({
         {/* Descrição */}
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
-            Descrição / Motivo *
+            Descrição *
           </label>
           <input
             type="text"
             value={description}
-            onChange={e => setDescription(e.target.value)}
-            placeholder="Ex: Compra de pomadas para revenda, Conta de Luz..."
-            className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none themed-input"
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={
+              type === 'income'
+                ? 'Ex: Venda de shampoo, gorjeta, atendimento avulso...'
+                : 'Ex: Compra de esmaltes, produtos de limpeza...'
+            }
+            className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
             style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
             required
           />
@@ -278,12 +327,14 @@ export function ManualTransactionModal({
             </label>
             <select
               value={category}
-              onChange={e => setCategory(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none themed-input cursor-pointer"
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none cursor-pointer"
               style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
             >
-              {categories.map(c => (
-                <option key={c} value={c}>{c}</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
             </select>
           </div>
@@ -294,43 +345,47 @@ export function ManualTransactionModal({
             </label>
             <select
               value={paymentMethod}
-              onChange={e => setPaymentMethod(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none themed-input cursor-pointer"
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none cursor-pointer"
               style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
             >
-              {PAYMENT_METHODS.map(m => (
-                <option key={m} value={m}>{m}</option>
+              {PAYMENT_METHODS.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
               ))}
             </select>
           </div>
         </div>
 
         {/* Profissional Vinculado (Opcional) */}
-        {!isRecurringMode && (
+        {!isRecurringMode && professionals.length > 0 && (
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
               Profissional Vinculado (Opcional)
             </label>
             <select
               value={professionalId}
-              onChange={e => setProfessionalId(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none themed-input cursor-pointer"
+              onChange={(e) => setProfessionalId(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none cursor-pointer"
               style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
             >
-              <option value="">Geral (Salão todo)</option>
+              <option value="">Geral (Estabelecimento todo)</option>
               {professionals.map((p: any) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
               ))}
             </select>
           </div>
         )}
 
-        {/* Botões de Ação */}
+        {/* Botões */}
         <div className="flex gap-3 pt-3 border-t" style={{ borderColor: theme.border }}>
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 px-4 rounded-xl border text-sm font-semibold transition-all hover:bg-[var(--theme-bg-hover)]"
+            className="flex-1 py-3 px-4 rounded-xl border text-sm font-semibold transition-all cursor-pointer"
             style={{ borderColor: theme.border, color: theme.textSecondary }}
           >
             Cancelar
@@ -338,17 +393,24 @@ export function ManualTransactionModal({
           <button
             type="submit"
             disabled={isLoading}
-            className="flex-1 py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg transition-all hover:opacity-90 disabled:opacity-50"
+            className="flex-1 py-3 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md transition-all hover:opacity-95 disabled:opacity-50 cursor-pointer"
             style={{
-              background: type === 'income' ? '#10b981' : '#ef4444',
-              color: '#fff'
+              background: theme.accentGradient,
+              color: theme.btnPrimaryText,
             }}
           >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : isEditing ? 'Salvar Alterações' : 'Confirmar Lançamento'}
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : isEditing ? (
+              'Salvar Alterações'
+            ) : type === 'expense' && expenseStatus === 'pending' ? (
+              'Salvar em Contas a Pagar'
+            ) : (
+              'Confirmar Lançamento'
+            )}
           </button>
         </div>
       </form>
     </Modal>
   );
 }
-
