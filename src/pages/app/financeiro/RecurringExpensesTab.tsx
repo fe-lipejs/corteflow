@@ -51,77 +51,81 @@ export function RecurringExpensesTab({ tenantId }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* Header com botão responsivo sem amassar no mobile */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h3 className="text-lg font-semibold" style={{ color: theme.textPrimary }}>Gastos Fixos</h3>
-          <p className="text-sm" style={{ color: theme.textSecondary }}>Gerencie despesas como Aluguel, Luz e Internet que se repetem automaticamente.</p>
+          <h3 className="text-lg font-bold" style={{ color: theme.textPrimary }}>Gastos Fixos</h3>
+          <p className="text-sm mt-0.5" style={{ color: theme.textSecondary }}>Gerencie despesas como Aluguel, Luz e Internet que se repetem automaticamente.</p>
         </div>
         <button
           onClick={() => setModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105 active:scale-95 shrink-0 whitespace-nowrap self-start sm:self-auto shadow-sm"
           style={{ background: theme.accent, color: theme.bg }}
         >
-          <Plus className="w-4 h-4" />
-          Novo Gasto Fixo
+          <Plus className="w-4 h-4 shrink-0" />
+          <span>Novo Gasto Fixo</span>
         </button>
       </div>
 
-      <div className="border rounded-2xl overflow-hidden" style={{ borderColor: theme.border, background: theme.cardBg }}>
-        <table className="w-full text-left">
-          <thead style={{ background: theme.bg }}>
-            <tr>
-              <th className="p-4 text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Categoria</th>
-              <th className="p-4 text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Descrição</th>
-              <th className="p-4 text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textSecondary }}>Frequência</th>
-              <th className="p-4 text-xs font-semibold uppercase tracking-wider text-right" style={{ color: theme.textSecondary }}>Valor</th>
-              <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center" style={{ color: theme.textSecondary }}>Próximo Venc.</th>
-              <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center" style={{ color: theme.textSecondary }}>Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y" style={{ borderColor: theme.border }}>
-            {expenses?.length === 0 ? (
+      {/* Tabela com suporte a scroll horizontal no mobile */}
+      <div className="border rounded-2xl overflow-hidden shadow-sm" style={{ borderColor: theme.border, background: theme.cardBg }}>
+        <div className="w-full overflow-x-auto scrollbar-thin">
+          <table className="w-full min-w-[650px] text-left">
+            <thead style={{ background: theme.bg }}>
               <tr>
-                <td colSpan={6} className="p-8 text-center text-sm" style={{ color: theme.textSecondary }}>
-                  Nenhum gasto fixo cadastrado. Clique no botão acima para adicionar.
-                </td>
+                <th className="p-4 text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: theme.textSecondary }}>Categoria</th>
+                <th className="p-4 text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: theme.textSecondary }}>Descrição</th>
+                <th className="p-4 text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: theme.textSecondary }}>Frequência</th>
+                <th className="p-4 text-xs font-semibold uppercase tracking-wider text-right whitespace-nowrap" style={{ color: theme.textSecondary }}>Valor</th>
+                <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center whitespace-nowrap" style={{ color: theme.textSecondary }}>Próximo Venc.</th>
+                <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center whitespace-nowrap" style={{ color: theme.textSecondary }}>Ações</th>
               </tr>
-            ) : (
-              expenses?.map((e: any) => (
-                <tr key={e.id}>
-                  <td className="p-4 text-sm font-medium" style={{ color: theme.textPrimary }}>
-                    {e.category}
-                  </td>
-                  <td className="p-4 text-sm" style={{ color: theme.textSecondary }}>
-                    {e.description}
-                  </td>
-                  <td className="p-4 text-sm" style={{ color: theme.textSecondary }}>
-                    {e.frequency === 'monthly' ? 'Mensal' : e.frequency === 'weekly' ? 'Semanal' : 'Anual'}
-                  </td>
-                  <td className="p-4 text-sm text-right font-medium text-red-500">
-                    -{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(e.amount))}
-                  </td>
-                  <td className="p-4 text-sm text-center" style={{ color: theme.textPrimary }}>
-                    {new Date(e.next_due_date).toLocaleDateString('pt-BR')}
-                  </td>
-                  <td className="p-4 flex justify-center">
-                    <button
-                      onClick={async () => {
-                        setDeletingId(e.id);
-                        await deleteMutation.mutateAsync(e.id);
-                        setDeletingId(null);
-                      }}
-                      disabled={deletingId === e.id}
-                      className="p-2 rounded-lg hover:bg-red-100 text-red-500 transition-colors"
-                      title="Excluir"
-                    >
-                      {deletingId === e.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                    </button>
+            </thead>
+            <tbody className="divide-y" style={{ borderColor: theme.border }}>
+              {expenses?.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-sm" style={{ color: theme.textSecondary }}>
+                    Nenhum gasto fixo cadastrado. Clique no botão acima para adicionar.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                expenses?.map((e: any) => (
+                  <tr key={e.id}>
+                    <td className="p-4 text-sm font-medium whitespace-nowrap" style={{ color: theme.textPrimary }}>
+                      {e.category}
+                    </td>
+                    <td className="p-4 text-sm whitespace-nowrap" style={{ color: theme.textSecondary }}>
+                      {e.description}
+                    </td>
+                    <td className="p-4 text-sm whitespace-nowrap" style={{ color: theme.textSecondary }}>
+                      {e.frequency === 'monthly' ? 'Mensal' : e.frequency === 'weekly' ? 'Semanal' : 'Anual'}
+                    </td>
+                    <td className="p-4 text-sm text-right font-medium text-red-500 whitespace-nowrap">
+                      -{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(e.amount))}
+                    </td>
+                    <td className="p-4 text-sm text-center whitespace-nowrap" style={{ color: theme.textPrimary }}>
+                      {new Date(e.next_due_date).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="p-4 flex justify-center whitespace-nowrap">
+                      <button
+                        onClick={async () => {
+                          setDeletingId(e.id);
+                          await deleteMutation.mutateAsync(e.id);
+                          setDeletingId(null);
+                        }}
+                        disabled={deletingId === e.id}
+                        className="p-2 rounded-lg hover:bg-red-100 text-red-500 transition-colors"
+                        title="Excluir"
+                      >
+                        {deletingId === e.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {modalOpen && (

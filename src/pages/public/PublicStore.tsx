@@ -2207,8 +2207,9 @@ export default function PublicStore() {
 
               {/* Slogan & Descrição/Observação */}
               {(() => {
-                const sloganText = (settings?.custom_palette?.slogan?.trim()) || (settings?.slogan?.trim()) || '';
-                const descText = (settings?.custom_palette?.description?.trim()) || (settings?.description?.trim()) || (settings?.short_description?.trim()) || '';
+                const sloganText = (settings?.slogan?.trim()) || (settings?.custom_palette?.slogan?.trim()) || '';
+                const rawShort = settings?.short_description?.trim() || '';
+                const descText = (settings?.description?.trim()) || (settings?.custom_palette?.description?.trim()) || (rawShort !== sloganText ? rawShort : '');
 
                 return (
                   <>

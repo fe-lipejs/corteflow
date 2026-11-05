@@ -350,8 +350,12 @@ export default function Configuracoes() {
         setFantasyName(data.fantasy_name || tenant.name || '');
         setTenantName(tenant.name || data.fantasy_name || '');
         setSlug(tenant.slug || '');
-        setSlogan(data.slogan ?? data.custom_palette?.slogan ?? data.short_description ?? '');
-        setDescription(data.description ?? data.custom_palette?.description ?? data.short_description ?? '');
+        const loadedSlogan = (data.slogan && data.slogan.trim()) || (data.custom_palette?.slogan && data.custom_palette.slogan.trim()) || '';
+        const rawShort = data.short_description && data.short_description.trim();
+        const loadedDesc = (data.description && data.description.trim()) || (data.custom_palette?.description && data.custom_palette.description.trim()) || (rawShort && rawShort !== loadedSlogan ? rawShort : '');
+        setSlogan(loadedSlogan);
+        setDescription(loadedDesc);
+
         setLogoUrl(data.logo_url || '');
         setBannerUrl(data.banner_url || '');
         if (data.logo_url) logoUpload.setPreview(data.logo_url);
@@ -979,14 +983,16 @@ export default function Configuracoes() {
       const payload: Record<string, any> = {
         tenant_id: tenant.id,
         theme_preset: selectedTheme,
-        custom_palette: { ...finalPalette, slogan, description },
+        custom_palette: { ...finalPalette, slogan: slogan.trim(), description: description.trim() },
         payment_methods: paymentModeJson,
         accept_online_payment: effectiveAllowDeposit || effectiveAllowFull,
         accept_local_payment: effectiveAllowLocal,
         booking_payment_mode: effectiveAllowDeposit ? 'deposit' : effectiveAllowFull ? 'full' : 'local',
         deposit_percentage: effectiveAllowDeposit ? depositPercentage : null,
         fantasy_name: cleanName,
-        short_description: slogan || description || '',
+        slogan: slogan.trim(),
+        description: description.trim(),
+        short_description: description.trim(),
         logo_url: logoUrl,
         banner_url: bannerUrl,
         whatsapp_number: whatsapp,
@@ -3548,6 +3554,14 @@ export default function Configuracoes() {
                                   <p className="text-[11px] truncate mt-0.5" style={{ color: prevTextSecondary }}>
                                     {slogan || 'O melhor atendimento da cidade'}
                                   </p>
+
+                                  {description && (
+                                    <p className="text-[10px] line-clamp-1 mt-0.5" style={{ color: prevTextMuted }}>
+                                      {description}
+                                    </p>
+  
+                                  )}
+
                                 </div>
                               </div>
                               <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border shrink-0"
