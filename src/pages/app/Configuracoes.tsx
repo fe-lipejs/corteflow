@@ -16,6 +16,13 @@ import { geocodeAddress } from '../../lib/geocoding';
 import { useQueryClient } from '@tanstack/react-query';
 import { PUBLIC_STORE_QUERY_KEY } from '../../hooks/usePublicStore';
 import { saveCachedPortalTheme } from '../../hooks/useTenantPortalTheme';
+import {
+  BOOKING_HORIZON_OPTIONS,
+  formatBookingHorizonSummary,
+  maxAdvanceDaysToFormState,
+  type BookingHorizonSelectValue,
+} from '../../lib/bookingHorizon';
+import { TENANT_BOOKING_HORIZON_KEY } from '../../hooks/useBookingHorizon';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import FeatureGate from '../../components/FeatureGate';
 import { UpgradeModal } from '../../components/UpgradeModal';
@@ -65,7 +72,7 @@ const TABS = [
   { id: 'local', label: 'Localização', icon: MapPin },
   { id: 'stripe', label: 'Recebimentos & Pagamentos', icon: CreditCard },
   { id: 'contato', label: 'Contato', icon: Phone },
-  { id: 'horarios', label: 'Horários', icon: Clock },
+  { id: 'horarios', label: 'Horários & Agenda', icon: Clock },
   { id: 'notificacoes', label: 'Notificações', icon: Bell },
   { id: 'conta', label: 'Status da Conta', icon: ShieldCheck },
 ] as const;
@@ -197,6 +204,10 @@ export default function Configuracoes() {
 
   // Notifications
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Antecedência Máxima de Agendamento (Global Rule)
+  const [bookingHorizonSelect, setBookingHorizonSelect] = useState<BookingHorizonSelectValue>('30');
+  const [customAdvanceDays, setCustomAdvanceDays] = useState<string>('30');
 
   // Business Hours
   const [businessHours, setBusinessHours] = useState<Array<{
@@ -391,10 +402,16 @@ export default function Configuracoes() {
         setNoshowFeePercent(data.noshow_fee_percent ?? 0);
         setDelayToleranceMinutes(data.delay_tolerance_minutes ?? 15);
 
+        // Antecedência Máxima de Agendamento
+        const horizonState = maxAdvanceDaysToFormState((data as any).max_advance_days, true);
+        setBookingHorizonSelect(horizonState.selectValue);
+        setCustomAdvanceDays(horizonState.customDays);
 
       } else {
         setTenantName(tenant.name || '');
         setSlug(tenant.slug || '');
+        setBookingHorizonSelect('30');
+        setCustomAdvanceDays('30');
       }
 
       // Load notification settings
@@ -979,6 +996,24 @@ export default function Configuracoes() {
 
       const computedFullAddress = [streetAddress, streetNumber ? `nº ${streetNumber}` : '', neighborhood, city, state, zipCode, 'Brasil'].filter(Boolean).join(', ') || fullAddress;
 
+      // Validação da Antecedência Máxima de Agendamento
+      let resolvedMaxAdvanceDays: number | null = 30;
+      if (bookingHorizonSelect === 'unlimited') {
+        resolvedMaxAdvanceDays = null;
+      } else if (bookingHorizonSelect === 'custom') {
+        const cleanCustom = customAdvanceDays.trim();
+        const parsedCustom = Number(cleanCustom);
+        if (!/^\d+$/.test(cleanCustom) || !Number.isInteger(parsedCustom) || parsedCustom < 1 || parsedCustom > 3650) {
+          toast.error('Em "Personalizado", informe somente um número inteiro positivo de dias (de 1 a 3650).');
+          setActiveTab('horarios');
+          setLoading(false);
+          return;
+        }
+        resolvedMaxAdvanceDays = parsedCustom;
+      } else {
+        resolvedMaxAdvanceDays = Number(bookingHorizonSelect);
+      }
+
       // Build payload (Note: business_type is strictly in 'tenants' table, not in 'tenant_settings')
       const payload: Record<string, any> = {
         tenant_id: tenant.id,
@@ -1022,6 +1057,7 @@ export default function Configuracoes() {
         cancel_fee_percent: cancelFeePercent,
         noshow_fee_percent: noshowFeePercent,
         delay_tolerance_minutes: delayToleranceMinutes,
+        max_advance_days: resolvedMaxAdvanceDays,
       };
 
       if (settingsId) {
@@ -1091,14 +1127,17 @@ export default function Configuracoes() {
       }
       queryClient.invalidateQueries({ queryKey: ['tenant_settings', tenant?.id] });
       queryClient.invalidateQueries({ queryKey: ['tenant_settings'] });
+      queryClient.invalidateQueries({ queryKey: TENANT_BOOKING_HORIZON_KEY(tenant?.id) });
+      queryClient.invalidateQueries({ queryKey: ['tenant_booking_horizon'] });
 
       // Refresh auth tenant data
       await refreshProfile?.();
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving:', err);
+      toast.error(err?.message || 'Erro ao salvar as configurações.');
     } finally {
       setLoading(false);
     }
@@ -2433,9 +2472,109 @@ export default function Configuracoes() {
             </div>
           )}
 
-          {/* ═══════════════════════════ TAB 6: HORÁRIOS ════════════════════════════════ */}
+          {/* ═══════════════════════════ TAB 6: HORÁRIOS & AGENDA ═══════════════════════ */}
           {activeTab === 'horarios' && (
             <div className="space-y-6">
+              {/* ─── Antecedência Máxima de Agendamento ───────────────────────────── */}
+              <div
+                className="rounded-2xl p-5 transition-all"
+                style={{
+                  background: theme.inputBg,
+                  border: `1px solid ${theme.id === 'elegant' ? '#E2E8F0' : theme.inputBorder}`,
+                }}
+              >
+                <div className="mb-4">
+                  <h3 className="font-bold text-base mb-1 flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                    <CalendarCheck className="w-4 h-4 shrink-0" style={{ color: customPalette?.primary || theme.accent }} />
+                    Antecedência Máxima de Agendamento
+                  </h3>
+                  <p className="text-sm" style={{ color: theme.textSecondary }}>
+                    Defina até quando seus clientes poderão visualizar horários disponíveis e realizar novos agendamentos.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
+                      Janela de Agendamento
+                    </label>
+                    <select
+                      value={bookingHorizonSelect}
+                      onChange={(e) => {
+                        const nextVal = e.target.value as BookingHorizonSelectValue;
+                        setBookingHorizonSelect(nextVal);
+                        if (nextVal !== 'custom' && nextVal !== 'unlimited') {
+                          setCustomAdvanceDays(nextVal);
+                        } else if (nextVal === 'custom' && (!customAdvanceDays || Number(customAdvanceDays) < 1)) {
+                          setCustomAdvanceDays('30');
+                        }
+                      }}
+                      className="themed-input w-full text-sm font-semibold py-2.5 px-3.5 cursor-pointer"
+                    >
+                      {BOOKING_HORIZON_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {bookingHorizonSelect === 'custom' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
+                        Quantidade de dias (contando com hoje)
+                      </label>
+                      <div className="relative flex items-center">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={customAdvanceDays}
+                          onChange={(e) => {
+                            const digitsOnly = e.target.value.replace(/\D/g, '').replace(/^0+/, '');
+                            setCustomAdvanceDays(digitsOnly);
+                          }}
+                          placeholder="Ex: 20"
+                          className="themed-input w-full text-sm font-bold py-2.5 pl-3.5 pr-16"
+                        />
+                        <span
+                          className="absolute right-3.5 text-xs font-bold pointer-events-none"
+                          style={{ color: theme.textMuted }}
+                        >
+                          {Number(customAdvanceDays) === 1 ? 'dia' : 'dias'}
+                        </span>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                <div
+                  className="mt-4 pt-3.5 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                  style={{ borderColor: theme.border }}
+                >
+                  <span className="font-semibold" style={{ color: customPalette?.primary || theme.accent }}>
+                    {(() => {
+                      const previewDays =
+                        bookingHorizonSelect === 'unlimited'
+                          ? null
+                          : bookingHorizonSelect === 'custom'
+                            ? (Number(customAdvanceDays) >= 1 ? Math.floor(Number(customAdvanceDays)) : null)
+                            : Number(bookingHorizonSelect);
+                      if (bookingHorizonSelect === 'custom' && (!customAdvanceDays || Number(customAdvanceDays) < 1)) {
+                        return 'Informe um número inteiro positivo de dias (mínimo 1).';
+                      }
+                      return `Regra ativa: ${formatBookingHorizonSummary(previewDays)}`;
+                    })()}
+                  </span>
+                  <span style={{ color: theme.textMuted }}>
+                    Reservas já confirmadas são preservadas ao alterar este limite.
+                  </span>
+                </div>
+              </div>
+
               <FeatureGate permission="agenda.bloquear_horario" inline>
               <div>
                 <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>

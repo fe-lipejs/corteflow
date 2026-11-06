@@ -1,9 +1,24 @@
 import { useState, useEffect, useMemo } from 'react';
-import { X, Loader2, Check, Calendar, Clock, Scissors, User } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { X, Loader2, Check, Calendar, Clock, Scissors, User, Plus } from 'lucide-react';
+import { format, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
-import { useBookingsByDay, generateTimeSlots, type Booking, type CreateBookingInput } from '../../../hooks/useBookings';
+import { useBookingsByDay, type Booking, type CreateBookingInput } from '../../../hooks/useBookings';
 import type { Service } from '../../../hooks/useServices';
+import { useTheme } from '../../../contexts/ThemeContext';
+import { generateAvailableSlots } from '../../../lib/availability';
+import {
+  buildHorizonDateList,
+  CAROUSEL_LOAD_MORE_STEP,
+  INITIAL_CAROUSEL_DAYS_CAP,
+  isDateWithinBookingHorizon,
+  isSameCalendarDate,
+  sanitizeHexColor,
+} from '../../../lib/bookingHorizon';
+import {
+  useTenantAvailabilityMeta,
+  useTenantBookingHorizon,
+  useTenantDayBlocks,
+} from '../../../hooks/useBookingHorizon';
 
 interface Props {
   tenantId: string;
@@ -26,26 +41,33 @@ export default function EditBookingModal({
   businessHours,
   onClose,
   onSave,
-  isLoading
+  isLoading,
 }: Props) {
-  const initialDate = new Date(booking.scheduled_at);
-  const initialTimeStr = format(initialDate, 'HH:mm');
+  const { theme } = useTheme();
+  const { maxAdvanceDays } = useTenantBookingHorizon(tenantId);
+  const { data: availabilityMeta } = useTenantAvailabilityMeta(tenantId);
+
+  const initialDate = useMemo(() => new Date(booking.scheduled_at), [booking.scheduled_at]);
+  const initialCalendarDay = useMemo(() => startOfDay(initialDate), [initialDate]);
+  const initialTimeStr = useMemo(() => format(initialDate, 'HH:mm'), [initialDate]);
 
   const [selectedService, setSelectedService] = useState<Service | null>(() => {
-    return services.find(s => s.id === booking.service_id) || (booking.service as any) || null;
+    return services.find((s) => s.id === booking.service_id) || (booking.service as any) || null;
   });
 
   const [selectedPro, setSelectedPro] = useState<any | null>(() => {
     if (!booking.professional_id) return null;
-    return professionals.find(p => p.id === booking.professional_id) || (booking.professional as any) || null;
+    return professionals.find((p) => p.id === booking.professional_id) || (booking.professional as any) || null;
   });
 
-  const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
+  const [selectedDate, setSelectedDate] = useState<Date>(initialCalendarDay);
   const [selectedTime, setSelectedTime] = useState<string | null>(initialTimeStr);
+  const [visibleDaysLimit, setVisibleDaysLimit] = useState(INITIAL_CAROUSEL_DAYS_CAP);
   const [notes, setNotes] = useState(booking.notes || '');
   const [error, setError] = useState<string | null>(null);
 
   const { data: dayBookings = [] } = useBookingsByDay(tenantId, selectedDate);
+  const { data: dayBlocks = [] } = useTenantDayBlocks(tenantId, selectedDate);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -55,45 +77,92 @@ export default function EditBookingModal({
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  const availableDays = useMemo(() => {
-    return Array.from({ length: 14 }, (_, i) => addDays(new Date(), i));
-  }, []);
+  const horizonData = useMemo(
+    () =>
+      buildHorizonDateList({
+        maxAdvanceDays,
+        visibleCount: visibleDaysLimit,
+        selectedDate,
+        preserveExtraDate: initialCalendarDay,
+      }),
+    [maxAdvanceDays, visibleDaysLimit, selectedDate, initialCalendarDay]
+  );
+
+  const availableDays = horizonData.dates;
+
+  const activeOrCurrentProfessionals = useMemo(() => {
+    let list = professionals.filter(
+      (p) => (p.active !== false && (!p.status || p.status === 'active')) || p.id === booking.professional_id
+    );
+    const proServices = availabilityMeta?.professionalServices ?? [];
+    if (selectedService && proServices.length > 0) {
+      const allowedProIds = proServices
+        .filter((ps: any) => ps.service_id === selectedService.id)
+        .map((ps: any) => ps.professional_id);
+      const proIdsWithAnyMapping = [...new Set(proServices.map((ps: any) => ps.professional_id))];
+      list = list.filter((p: any) => {
+        if (p.id === booking.professional_id) return true;
+        if (!proIdsWithAnyMapping.includes(p.id)) return true;
+        return allowedProIds.includes(p.id);
+      });
+    }
+    return list;
+  }, [professionals, booking.professional_id, selectedService, availabilityMeta?.professionalServices]);
+
+  const isDateAllowedForEdit = (d: Date) =>
+    isSameCalendarDate(d, initialCalendarDay) || isDateWithinBookingHorizon(d, maxAdvanceDays);
+
+  const rawSlots = useMemo(() => {
+    if (!selectedService) return [];
+    if (!isDateAllowedForEdit(selectedDate)) return [];
+
+    const otherBookings = dayBookings.filter((b) => b.id !== booking.id);
+
+    return generateAvailableSlots(
+      selectedDate,
+      selectedService,
+      selectedPro ? selectedPro.id : 'any',
+      activeOrCurrentProfessionals,
+      services,
+      businessHours,
+      availabilityMeta?.professionalWorkingHours ?? [],
+      dayBlocks,
+      otherBookings,
+      availabilityMeta?.professionalServices ?? [],
+      [selectedService],
+      'instore'
+    );
+  }, [
+    selectedService,
+    selectedDate,
+    selectedPro,
+    activeOrCurrentProfessionals,
+    services,
+    businessHours,
+    availabilityMeta,
+    dayBlocks,
+    dayBookings,
+    booking.id,
+    maxAdvanceDays,
+    initialCalendarDay,
+  ]);
 
   const timeSlots = useMemo(() => {
-    if (!selectedService) return [];
-    const dow = selectedDate.getDay();
-    const dayHours = businessHours.find((h: any) => h.weekday === dow);
-    if (!dayHours || !dayHours.is_open) return [];
-
-    const otherBookings = dayBookings.filter(b => b.id !== booking.id);
-    const proBookings = selectedPro
-      ? otherBookings.filter(b => b.professional_id === selectedPro.id)
-      : otherBookings;
-
-    return generateTimeSlots(
-      selectedDate,
-      (typeof dayHours.open_time === 'string' ? dayHours.open_time : '08:00').slice(0, 5),
-      (typeof dayHours.close_time === 'string' ? dayHours.close_time : '20:00').slice(0, 5),
-      selectedService.duration_minutes,
-      selectedService.buffer_minutes || 0,
-      proBookings as any,
-      dayHours.lunch_start,
-      dayHours.lunch_end,
-      false
-    );
-  }, [businessHours, selectedDate, dayBookings, selectedService, selectedPro, booking.id]);
-
-  const activeOrCurrentProfessionals = useMemo(
-    () =>
-      professionals.filter(
-        p => (p.active !== false && (!p.status || p.status === 'active')) || p.id === booking.professional_id
-      ),
-    [professionals, booking.professional_id]
-  );
+    const free = rawSlots.filter((s) => s.available).map((s) => s.time);
+    // Se o usuário estiver na data original do agendamento, garante que o horário original permaneça selecionável
+    if (isSameCalendarDate(selectedDate, initialCalendarDay) && !free.includes(initialTimeStr)) {
+      return [...free, initialTimeStr].sort();
+    }
+    return free;
+  }, [rawSlots, selectedDate, initialCalendarDay, initialTimeStr]);
 
   const handleSave = async () => {
     if (!selectedService || !selectedTime) {
       setError('Selecione o serviço e o horário.');
+      return;
+    }
+    if (!isDateAllowedForEdit(selectedDate)) {
+      setError('A nova data selecionada está fora da antecedência máxima configurada.');
       return;
     }
     setError(null);
@@ -102,15 +171,28 @@ export default function EditBookingModal({
       const scheduledAt = new Date(selectedDate);
       scheduledAt.setHours(h, m, 0, 0);
 
+      let resolvedPro = selectedPro;
+      if (!resolvedPro) {
+        const chosenSlot = rawSlots.find((s) => s.time === selectedTime && s.available);
+        if (chosenSlot?.availableProIds?.length) {
+          const pickedId = chosenSlot.availableProIds[0];
+          resolvedPro = activeOrCurrentProfessionals.find((p) => p.id === pickedId) ?? null;
+        } else if (activeOrCurrentProfessionals.length > 0) {
+          resolvedPro = activeOrCurrentProfessionals[0];
+        }
+      }
+
+      const safeProColor = sanitizeHexColor(resolvedPro?.agenda_color, theme.accent);
+
       await onSave({
         id: booking.id,
         service_id: selectedService.id,
-        professional_id: selectedPro?.id ?? null,
+        professional_id: resolvedPro?.id ?? null,
         scheduled_at: scheduledAt.toISOString(),
         duration_minutes: selectedService.duration_minutes,
         buffer_minutes: selectedService.buffer_minutes,
         amount_total: selectedService.price,
-        pro_color: selectedPro?.agenda_color ?? 'var(--theme-accent)',
+        pro_color: safeProColor,
         notes: notes.trim() || undefined,
       });
 
@@ -143,7 +225,10 @@ export default function EditBookingModal({
                 Editar Agendamento
               </h2>
               <p className="text-xs mt-1 font-medium opacity-75" style={{ color: 'var(--theme-text-secondary)' }}>
-                Cliente: <span className="font-bold" style={{ color: 'var(--theme-text-primary)' }}>{booking.customer?.name}</span>
+                Cliente:{' '}
+                <span className="font-bold" style={{ color: 'var(--theme-text-primary)' }}>
+                  {booking.customer?.name}
+                </span>
               </p>
             </div>
             <button
@@ -170,42 +255,48 @@ export default function EditBookingModal({
               <Scissors className="w-3.5 h-3.5" /> Serviço Selecionado
             </label>
             <div className="space-y-2">
-              {services.filter(s => s.active || s.id === booking.service_id).map(svc => {
-                const isSelected = selectedService?.id === svc.id;
-                return (
-                  <div
-                    key={svc.id}
-                    onClick={() => {
-                      setSelectedService(svc);
-                      setSelectedTime(null);
-                    }}
-                    className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all"
-                    style={{
-                      borderColor: isSelected ? 'var(--theme-accent)' : 'var(--theme-border)',
-                      background: isSelected ? 'var(--theme-calendar-available-bg)' : 'var(--theme-bg-hover)',
-                    }}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-xs truncate" style={{ color: 'var(--theme-text-primary)' }}>{svc.name}</p>
-                      <p className="text-[11px] opacity-70" style={{ color: 'var(--theme-text-secondary)' }}>
-                        {svc.duration_minutes} min {svc.buffer_minutes > 0 ? `+ ${svc.buffer_minutes}m buffer` : ''}
-                      </p>
-                    </div>
-                    <span className="font-bold text-xs shrink-0" style={{ color: 'var(--theme-accent)' }}>
-                      {fmt.format(svc.price)}
-                    </span>
+              {services
+                .filter((s) => s.active || s.id === booking.service_id)
+                .map((svc) => {
+                  const isSelected = selectedService?.id === svc.id;
+                  return (
                     <div
-                      className="w-4 h-4 rounded-full border flex items-center justify-center shrink-0"
+                      key={svc.id}
+                      onClick={() => {
+                        setSelectedService(svc);
+                        if (!isSameCalendarDate(selectedDate, initialCalendarDay)) {
+                          setSelectedTime(null);
+                        }
+                      }}
+                      className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all"
                       style={{
-                        borderColor: isSelected ? 'transparent' : 'var(--theme-border)',
-                        background: isSelected ? 'var(--theme-accent)' : 'transparent',
+                        borderColor: isSelected ? 'var(--theme-accent)' : 'var(--theme-border)',
+                        background: isSelected ? 'var(--theme-calendar-available-bg)' : 'var(--theme-bg-hover)',
                       }}
                     >
-                      {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-xs truncate" style={{ color: 'var(--theme-text-primary)' }}>
+                          {svc.name}
+                        </p>
+                        <p className="text-[11px] opacity-70" style={{ color: 'var(--theme-text-secondary)' }}>
+                          {svc.duration_minutes} min {svc.buffer_minutes > 0 ? `+ ${svc.buffer_minutes}m buffer` : ''}
+                        </p>
+                      </div>
+                      <span className="font-bold text-xs shrink-0" style={{ color: 'var(--theme-accent)' }}>
+                        {fmt.format(svc.price)}
+                      </span>
+                      <div
+                        className="w-4 h-4 rounded-full border flex items-center justify-center shrink-0"
+                        style={{
+                          borderColor: isSelected ? 'transparent' : 'var(--theme-border)',
+                          background: isSelected ? 'var(--theme-accent)' : 'transparent',
+                        }}
+                      >
+                        {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </div>
 
@@ -223,16 +314,22 @@ export default function EditBookingModal({
                   background: selectedPro === null ? 'var(--theme-calendar-available-bg)' : 'var(--theme-bg-hover)',
                 }}
               >
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'var(--theme-border)', color: 'var(--theme-text-secondary)' }}>
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                  style={{ background: 'var(--theme-border)', color: 'var(--theme-text-secondary)' }}
+                >
                   ?
                 </div>
                 <div className="truncate flex-1">
-                  <p className="text-xs font-semibold truncate" style={{ color: 'var(--theme-text-primary)' }}>Qualquer um</p>
+                  <p className="text-xs font-semibold truncate" style={{ color: 'var(--theme-text-primary)' }}>
+                    Qualquer um
+                  </p>
                 </div>
               </div>
 
-              {activeOrCurrentProfessionals.map(pro => {
+              {activeOrCurrentProfessionals.map((pro) => {
                 const isSelected = selectedPro?.id === pro.id;
+                const proHex = sanitizeHexColor(pro.agenda_color, theme.accent);
                 return (
                   <div
                     key={pro.id}
@@ -245,7 +342,7 @@ export default function EditBookingModal({
                   >
                     <div
                       className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center font-bold text-[10px] shrink-0"
-                      style={{ background: `${pro.agenda_color}25`, color: pro.agenda_color }}
+                      style={{ background: `${proHex}25`, color: proHex }}
                     >
                       {pro.photo_url ? (
                         <img src={pro.photo_url} alt={pro.name} className="w-full h-full object-cover" />
@@ -254,7 +351,9 @@ export default function EditBookingModal({
                       )}
                     </div>
                     <div className="truncate flex-1">
-                      <p className="text-xs font-semibold truncate" style={{ color: 'var(--theme-text-primary)' }}>{pro.name}</p>
+                      <p className="text-xs font-semibold truncate" style={{ color: 'var(--theme-text-primary)' }}>
+                        {pro.name}
+                      </p>
                     </div>
                   </div>
                 );
@@ -264,14 +363,46 @@ export default function EditBookingModal({
 
           {/* 3. Data & Horário */}
           <div>
-            <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2.5 opacity-80" style={{ color: 'var(--theme-text-secondary)' }}>
-              <Calendar className="w-3.5 h-3.5" /> Escolha o Novo Dia
-            </label>
+            <div className="flex items-center justify-between gap-2 mb-2.5">
+              <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider opacity-80" style={{ color: 'var(--theme-text-secondary)' }}>
+                <Calendar className="w-3.5 h-3.5" /> Escolha o Novo Dia
+              </label>
+              {(maxAdvanceDays === null || maxAdvanceDays > 15) && (
+                <label
+                  className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-bold cursor-pointer"
+                  style={{
+                    borderColor: 'var(--theme-border)',
+                    background: 'var(--theme-bg-hover)',
+                    color: 'var(--theme-accent)',
+                  }}
+                >
+                  <Calendar className="w-3.5 h-3.5 shrink-0" />
+                  <span>Escolher data</span>
+                  <input
+                    type="date"
+                    min={horizonData.minDateISO}
+                    max={horizonData.maxDateISO}
+                    value={format(selectedDate, 'yyyy-MM-dd')}
+                    onChange={(e) => {
+                      if (!e.target.value) return;
+                      const [yy, mm, dd] = e.target.value.split('-').map(Number);
+                      const picked = startOfDay(new Date(yy, mm - 1, dd));
+                      if (!isDateWithinBookingHorizon(picked, maxAdvanceDays)) return;
+                      setSelectedDate(picked);
+                      setSelectedTime(null);
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  />
+                </label>
+              )}
+            </div>
+
             <div className="flex gap-2 overflow-x-auto pb-2">
-              {availableDays.map(day => {
+              {availableDays.map((day) => {
                 const dow = day.getDay();
                 const dayHours = businessHours.find((h: any) => h.weekday === dow);
-                const isOpen = dayHours?.is_open;
+                const isOriginalDay = isSameCalendarDate(day, initialCalendarDay);
+                const isOpen = (dayHours?.is_open || isOriginalDay) && isDateAllowedForEdit(day);
                 const isSelected = format(day, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
                 return (
                   <button
@@ -280,22 +411,42 @@ export default function EditBookingModal({
                     onClick={() => {
                       if (isOpen) {
                         setSelectedDate(day);
-                        setSelectedTime(null);
+                        setSelectedTime(isOriginalDay ? initialTimeStr : null);
                       }
                     }}
                     disabled={!isOpen}
-                    className="flex flex-col items-center gap-0.5 px-3 py-2.5 rounded-xl border text-xs font-bold shrink-0 min-w-[50px] transition-all cursor-pointer disabled:opacity-40"
+                    className="flex flex-col items-center gap-0.5 px-3 py-2.5 rounded-xl border text-xs font-bold shrink-0 min-w-[52px] transition-all cursor-pointer disabled:opacity-40"
                     style={{
                       borderColor: isSelected ? 'var(--theme-accent)' : 'var(--theme-border)',
-                      background: isSelected ? 'var(--theme-accent)' : (isOpen ? 'var(--theme-bg-hover)' : 'transparent'),
-                      color: isSelected ? 'var(--theme-btn-primary-text)' : (isOpen ? 'var(--theme-text-primary)' : 'var(--theme-text-secondary)'),
+                      background: isSelected ? 'var(--theme-accent)' : isOpen ? 'var(--theme-bg-hover)' : 'transparent',
+                      color: isSelected
+                        ? 'var(--theme-btn-primary-text)'
+                        : isOpen
+                          ? 'var(--theme-text-primary)'
+                          : 'var(--theme-text-secondary)',
                     }}
                   >
                     <span className="text-[10px] opacity-70 font-semibold">{format(day, 'EEE', { locale: ptBR })}</span>
                     <span className="text-sm font-bold leading-tight">{format(day, 'd')}</span>
+                    <span className="text-[9px] uppercase opacity-70">{format(day, 'MMM', { locale: ptBR })}</span>
                   </button>
                 );
               })}
+              {horizonData.hasMore && (
+                <button
+                  type="button"
+                  onClick={() => setVisibleDaysLimit((prev) => prev + CAROUSEL_LOAD_MORE_STEP)}
+                  className="flex flex-col items-center justify-center gap-1 px-3 py-2.5 rounded-xl border text-xs font-bold shrink-0 transition-all cursor-pointer"
+                  style={{
+                    borderColor: 'var(--theme-border)',
+                    background: 'var(--theme-bg-hover)',
+                    color: 'var(--theme-accent)',
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span className="text-[9px] uppercase whitespace-nowrap">Mais datas</span>
+                </button>
+              )}
             </div>
 
             <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mt-4 mb-2.5 opacity-80" style={{ color: 'var(--theme-text-secondary)' }}>
@@ -307,7 +458,7 @@ export default function EditBookingModal({
               </p>
             ) : (
               <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto pr-1">
-                {timeSlots.map(time => {
+                {timeSlots.map((time) => {
                   const isSelected = selectedTime === time;
                   return (
                     <button
@@ -336,7 +487,7 @@ export default function EditBookingModal({
             </label>
             <textarea
               value={notes}
-              onChange={e => setNotes(e.target.value)}
+              onChange={(e) => setNotes(e.target.value)}
               rows={2}
               placeholder="Ex: Cliente prefere tesoura, corte rápido..."
               className="w-full px-3 py-2 rounded-xl text-xs border outline-none resize-none transition-colors"

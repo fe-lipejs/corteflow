@@ -2,6 +2,25 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
 
+function getSaoPauloDateKey(date: Date): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const year = parts.find((p) => p.type === 'year')?.value ?? '1970';
+  const month = parts.find((p) => p.type === 'month')?.value ?? '01';
+  const day = parts.find((p) => p.type === 'day')?.value ?? '01';
+  return `${year}-${month}-${day}`;
+}
+
+function computeMaxDateKey(todayKey: string, maxAdvanceDays: number): string {
+  const anchor = new Date(`${todayKey}T12:00:00Z`);
+  anchor.setUTCDate(anchor.getUTCDate() + (maxAdvanceDays - 1));
+  return anchor.toISOString().slice(0, 10);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -18,6 +37,11 @@ serve(async (req) => {
 
     if (!bookingId || !newTime) {
       throw new Error('Missing required fields: bookingId, newTime');
+    }
+
+    const newAppointment = new Date(newTime);
+    if (Number.isNaN(newAppointment.getTime())) {
+      throw new Error('Nova data ou horário inválido.');
     }
 
     // 1. Fetch the current booking
@@ -37,14 +61,35 @@ serve(async (req) => {
       throw new Error('Este agendamento não pode ser reagendado no status atual.');
     }
 
-    // 3. Fetch settings (for client-side policy validation at server level too)
-    if (actorType === 'client') {
-      const { data: settings } = await supabase
-        .from('tenant_settings')
-        .select('allow_reschedule, reschedule_deadline_hours, max_reschedules')
-        .eq('tenant_id', booking.tenant_id)
-        .maybeSingle();
+    // 3. Fetch tenant_settings for global horizon + client-side policy validation
+    const { data: settings } = await supabase
+      .from('tenant_settings')
+      .select('allow_reschedule, reschedule_deadline_hours, max_reschedules, max_advance_days')
+      .eq('tenant_id', booking.tenant_id)
+      .maybeSingle();
 
+    // Global Rule: Antecedência Máxima de Agendamento (aplica para cliente e proprietário ao mudar de dia)
+    const effectiveMaxAdvanceDays: number | null = settings
+      ? settings.max_advance_days
+      : 30;
+
+    const oldDateKey = getSaoPauloDateKey(new Date(booking.scheduled_at));
+    const targetDateKey = getSaoPauloDateKey(newAppointment);
+
+    if (targetDateKey !== oldDateKey && effectiveMaxAdvanceDays !== null && effectiveMaxAdvanceDays >= 1) {
+      const todayKey = getSaoPauloDateKey(new Date());
+      const maxDateKey = computeMaxDateKey(todayKey, effectiveMaxAdvanceDays);
+      if (targetDateKey > maxDateKey) {
+        const maxDateBR = maxDateKey.split('-').reverse().join('/');
+        throw new Error(
+          `Data fora da antecedência máxima permitida (${effectiveMaxAdvanceDays} ${
+            effectiveMaxAdvanceDays === 1 ? 'dia' : 'dias'
+          }, disponível até ${maxDateBR}).`
+        );
+      }
+    }
+
+    if (actorType === 'client') {
       // allow_reschedule check (null = allow by default)
       if (settings?.allow_reschedule === false) {
         throw new Error('O salão não permite reagendamentos pelo portal.');

@@ -29,15 +29,22 @@ import {
   Plus,
   Search,
 } from "lucide-react";
-import { format, addDays, startOfDay } from "date-fns";
+import { format, addDays, startOfDay, endOfDay, differenceInCalendarDays } from "date-fns";
 import { ptBR } from "date-fns/locale/pt-BR";
 import { generateAvailableSlots } from "../../lib/availability";
 import type { Slot } from "../../lib/availability";
+import {
+  buildHorizonDateList,
+  CAROUSEL_LOAD_MORE_STEP,
+  INITIAL_CAROUSEL_DAYS_CAP,
+  isDateWithinBookingHorizon,
+  resolveMaxAdvanceDays,
+} from "../../lib/bookingHorizon";
 import { supabase } from "../../integrations/supabase/client";
 import { usePhoneFormat } from "../../hooks/usePhoneFormat";
 import { useTheme, getThemeById, adjustColorBrightness, normalizeAccentColor } from "../../contexts/ThemeContext";
 import { usePublicStore, PUBLIC_STORE_QUERY_KEY } from "../../hooks/usePublicStore";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getThemeContrastEngine } from "../../lib/themeEngine";
 import { HomeLocationWizard, type LocationWizardResult } from "../../components/public/HomeLocationWizard";
 import { useTenantPortalTheme } from "../../hooks/useTenantPortalTheme";
@@ -617,6 +624,7 @@ export default function PublicStore() {
   const [showMapModal, setShowMapModal] = useState(false);
   const [mapZoom, setMapZoom] = useState(16);
   const [hasScrolledDates, setHasScrolledDates] = useState(false);
+  const [visibleDaysLimit, setVisibleDaysLimit] = useState(INITIAL_CAROUSEL_DAYS_CAP);
   const [hasOpenedSheet, setHasOpenedSheet] = useState(false);
 
   const stripePaymentRef = useRef<StripeLivePaymentHandle | null>(null);
@@ -913,16 +921,74 @@ export default function PublicStore() {
     [userPos, storeCoords]
   );
 
-  const availableDays = useMemo(() => {
-    const days: { date: Date; isOpen: boolean }[] = [];
-    const today = startOfDay(new Date());
-    for (let i = 0; i < 30; i++) {
-      const d = addDays(today, i);
-      const h = businessHoursList.find((x: any) => x.weekday === d.getDay());
-      days.push({ date: d, isOpen: h?.is_open === true });
+  const maxAdvanceDays = useMemo(
+    () => resolveMaxAdvanceDays((settings as any)?.max_advance_days, !!settings),
+    [settings]
+  );
+
+  // Caso o limite de antecedência mude em tempo real enquanto a tela está aberta,
+  // garante que nenhuma data fora da janela continue selecionada.
+  useEffect(() => {
+    if (selectedDate && !isDateWithinBookingHorizon(selectedDate, maxAdvanceDays)) {
+      setSelectedDate(null);
+      setSelectedTime(null);
     }
-    return days;
-  }, [businessHoursList]);
+  }, [selectedDate, maxAdvanceDays]);
+
+  const horizonData = useMemo(
+    () =>
+      buildHorizonDateList({
+        maxAdvanceDays,
+        visibleCount: visibleDaysLimit,
+        selectedDate,
+      }),
+    [maxAdvanceDays, visibleDaysLimit, selectedDate]
+  );
+
+  const availableDays = useMemo(() => {
+    return horizonData.dates.map((d) => {
+      const h = businessHoursList.find((x: any) => x.weekday === d.getDay());
+      return { date: d, isOpen: h?.is_open === true };
+    });
+  }, [horizonData.dates, businessHoursList]);
+
+  // Se o salão estiver em "Sem limite" ou personalizado > 365 dias e o cliente escolher uma data além de 360 dias,
+  // busca sob demanda agendamentos e bloqueios daquele dia para evitar conflitos.
+  const isFarFutureSelection = useMemo(() => {
+    if (!selectedDate || tenant?.isDemo) return false;
+    return differenceInCalendarDays(startOfDay(selectedDate), startOfDay(new Date())) >= 360;
+  }, [selectedDate, tenant?.isDemo]);
+
+  const { data: farFutureDayData } = useQuery({
+    queryKey: [
+      "publicStoreFarDay",
+      tenant?.id ?? "",
+      selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+    ],
+    enabled: !!tenant?.id && isFarFutureSelection && !!selectedDate,
+    staleTime: 0,
+    queryFn: async () => {
+      const dayStartIso = startOfDay(selectedDate!).toISOString();
+      const dayEndIso = endOfDay(selectedDate!).toISOString();
+      const [{ data: extraBlocks }, { data: extraSlots }] = await Promise.all([
+        supabase
+          .from("professional_blocked_times")
+          .select("*")
+          .eq("tenant_id", tenant!.id)
+          .gte("ends_at", dayStartIso)
+          .lte("starts_at", dayEndIso),
+        supabase.rpc("get_public_booking_slots", {
+          p_tenant_id: tenant!.id,
+          p_start: dayStartIso,
+          p_end: dayEndIso,
+        }),
+      ]);
+      return {
+        blockedTimes: extraBlocks ?? [],
+        bookings: extraSlots ?? [],
+      };
+    },
+  });
 
   const availableProfessionals = useMemo(() => {
     let list = professionalsList.filter((p: any) => p.status === 'active' || !p.status);
@@ -955,6 +1021,16 @@ export default function PublicStore() {
 
   const availableSlots: Slot[] = useMemo(() => {
     if (!selectedDate || !selectedService) return [];
+    if (!isDateWithinBookingHorizon(selectedDate, maxAdvanceDays)) return [];
+
+    const mergedBlocked = farFutureDayData?.blockedTimes?.length
+      ? [...(storeData?.professionalBlockedTimes || []), ...farFutureDayData.blockedTimes]
+      : storeData?.professionalBlockedTimes || [];
+
+    const mergedBookings = farFutureDayData?.bookings?.length
+      ? [...(storeData?.bookings || []), ...farFutureDayData.bookings]
+      : storeData?.bookings || [];
+
     return generateAvailableSlots(
       selectedDate,
       selectedService,
@@ -963,8 +1039,8 @@ export default function PublicStore() {
       servicesList,
       businessHoursList,
       storeData?.professionalWorkingHours || [],
-      storeData?.professionalBlockedTimes || [],
-      storeData?.bookings || [],
+      mergedBlocked,
+      mergedBookings,
       storeData?.professionalServices || [],
       [selectedService],
       bookingMode,
@@ -981,7 +1057,9 @@ export default function PublicStore() {
     storeData,
     bookingMode,
     (homeLocationData?.distanceKm ?? null),
-    settings?.home_service_radius_km
+    settings?.home_service_radius_km,
+    maxAdvanceDays,
+    farFutureDayData,
   ]);
 
   const isAppleDevice = useMemo(() => {
@@ -1113,6 +1191,11 @@ export default function PublicStore() {
 
   const handleConfirm = async () => {
     if (!tenant || !selectedService || !selectedDate || !selectedTime) return;
+
+    if (!isDateWithinBookingHorizon(selectedDate, maxAdvanceDays)) {
+      setErrorMsg("A data selecionada está fora da antecedência máxima permitida pelo estabelecimento.");
+      return;
+    }
 
     const cleanName = customerName.trim();
     const cleanPhone = customerPhone.trim();
@@ -3199,16 +3282,47 @@ export default function PublicStore() {
 
                     {/* Horizontal Date Carousel */}
                     <div>
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
                         <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: theme.textSecondary }}>
                           Selecione o Dia
                         </p>
-                        {!hasScrolledDates && (
-                          <div className="flex items-center gap-1 text-[11px] font-medium" style={{ color: theme.textMuted }}>
-                            <span>Deslize para ver mais</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2.5">
+                          {(maxAdvanceDays === null || maxAdvanceDays > 15) && (
+                            <label
+                              className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-bold cursor-pointer transition-opacity hover:opacity-85"
+                              style={{
+                                borderColor: cardBorderColor,
+                                background: cardBackground,
+                                color: accent,
+                              }}
+                            >
+                              <Calendar className="w-3.5 h-3.5 shrink-0" />
+                              <span>Escolher data</span>
+                              <input
+                                type="date"
+                                min={horizonData.minDateISO}
+                                max={horizonData.maxDateISO}
+                                value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
+                                onChange={(e) => {
+                                  if (!e.target.value) return;
+                                  const [yy, mm, dd] = e.target.value.split("-").map(Number);
+                                  const picked = startOfDay(new Date(yy, mm - 1, dd));
+                                  if (!isDateWithinBookingHorizon(picked, maxAdvanceDays)) return;
+                                  setHasScrolledDates(true);
+                                  setSelectedDate(picked);
+                                  setSelectedTime(null);
+                                }}
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              />
+                            </label>
+                          )}
+                          {!hasScrolledDates && availableDays.length > 4 && (
+                            <div className="flex items-center gap-1 text-[11px] font-medium" style={{ color: theme.textMuted }}>
+                              <span>Deslize para ver mais</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div
@@ -3220,18 +3334,17 @@ export default function PublicStore() {
                           const isToday = d.getTime() === startOfDay(new Date()).getTime();
 
                           return (
-                            <motion.button
+                            <button
                               key={d.getTime()}
+                              type="button"
                               disabled={!isOpen}
-                              whileHover={isOpen ? { scale: 1.04 } : undefined}
-                              whileTap={isOpen ? { scale: 0.96 } : undefined}
                               onClick={() => {
                                 if (!isOpen) return;
                                 setHasScrolledDates(true);
                                 setSelectedDate(d);
                                 setSelectedTime(null);
                               }}
-                              className="shrink-0 w-[68px] sm:w-[76px] py-3.5 rounded-2xl text-center border transition-all disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
+                              className="shrink-0 w-[68px] sm:w-[76px] py-3.5 rounded-2xl text-center border transition-all active:scale-95 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
                               style={{
                                 borderColor: isSel ? accent : cardBorderColor,
                                 background: isSel
@@ -3270,9 +3383,28 @@ export default function PublicStore() {
                               >
                                 {format(d, "MMM", { locale: ptBR })}
                               </p>
-                            </motion.button>
+                            </button>
                           );
                         })}
+
+                        {horizonData.hasMore && (
+                          <button
+                            type="button"
+                            onClick={() => setVisibleDaysLimit((prev) => prev + CAROUSEL_LOAD_MORE_STEP)}
+                            className="shrink-0 px-4 py-3.5 rounded-2xl text-center border transition-all active:scale-95 cursor-pointer flex flex-col items-center justify-center gap-1"
+                            style={{
+                              borderColor: cardBorderColor,
+                              background: cardBackground,
+                              color: accent,
+                              boxShadow: cardShadowStyle,
+                            }}
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                              Mais datas
+                            </span>
+                          </button>
+                        )}
                       </div>
                     </div>
 
