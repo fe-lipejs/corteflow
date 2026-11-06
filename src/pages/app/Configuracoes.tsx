@@ -2477,26 +2477,44 @@ export default function Configuracoes() {
             <div className="space-y-6">
               {/* ─── Antecedência Máxima de Agendamento ───────────────────────────── */}
               <div
-                className="rounded-2xl p-5 transition-all"
+                className="rounded-2xl p-4 sm:p-5 transition-all"
                 style={{
                   background: theme.inputBg,
                   border: `1px solid ${theme.id === 'elegant' ? '#E2E8F0' : theme.inputBorder}`,
                 }}
               >
-                <div className="mb-4">
-                  <h3 className="font-bold text-base mb-1 flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-2.5">
+                  <h3 className="font-bold text-sm sm:text-base flex items-center gap-2" style={{ color: theme.textPrimary }}>
                     <CalendarCheck className="w-4 h-4 shrink-0" style={{ color: customPalette?.primary || theme.accent }} />
-                    Antecedência Máxima de Agendamento
+                    Antecedência de Agendamento
                   </h3>
-                  <p className="text-sm" style={{ color: theme.textSecondary }}>
-                    Defina até quando seus clientes poderão visualizar horários disponíveis e realizar novos agendamentos.
-                  </p>
+                  <span
+                    className="inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-md w-fit"
+                    style={{
+                      background: `${customPalette?.primary || theme.accent}15`,
+                      color: customPalette?.primary || theme.accent,
+                    }}
+                  >
+                    {(() => {
+                      const previewDays =
+                        bookingHorizonSelect === 'unlimited'
+                          ? null
+                          : bookingHorizonSelect === 'custom'
+                            ? (Number(customAdvanceDays) >= 1 ? Math.floor(Number(customAdvanceDays)) : null)
+                            : Number(bookingHorizonSelect);
+                      return formatBookingHorizonSummary(previewDays);
+                    })()}
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
-                      Janela de Agendamento
+                <p className="text-xs sm:text-sm mb-3.5" style={{ color: theme.textSecondary }}>
+                  Até quando seus clientes podem visualizar e agendar horários futuros.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                  <div className="min-w-0">
+                    <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: theme.textSecondary }}>
+                      Período liberado
                     </label>
                     <select
                       value={bookingHorizonSelect}
@@ -2509,7 +2527,7 @@ export default function Configuracoes() {
                           setCustomAdvanceDays('30');
                         }
                       }}
-                      className="themed-input w-full text-sm font-semibold py-2.5 px-3.5 cursor-pointer"
+                      className="themed-input w-full min-w-0 box-border text-xs sm:text-sm font-semibold py-2 sm:py-2.5 px-3 cursor-pointer"
                     >
                       {BOOKING_HORIZON_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -2523,11 +2541,12 @@ export default function Configuracoes() {
                     <motion.div
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
+                      className="min-w-0"
                     >
-                      <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: theme.textSecondary }}>
-                        Quantidade de dias (contando com hoje)
+                      <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: theme.textSecondary }}>
+                        Quantidade de dias
                       </label>
-                      <div className="relative flex items-center">
+                      <div className="relative flex items-center min-w-0">
                         <input
                           type="text"
                           inputMode="numeric"
@@ -2538,10 +2557,10 @@ export default function Configuracoes() {
                             setCustomAdvanceDays(digitsOnly);
                           }}
                           placeholder="Ex: 20"
-                          className="themed-input w-full text-sm font-bold py-2.5 pl-3.5 pr-16"
+                          className="themed-input w-full min-w-0 box-border text-xs sm:text-sm font-bold py-2 sm:py-2.5 pl-3 pr-14"
                         />
                         <span
-                          className="absolute right-3.5 text-xs font-bold pointer-events-none"
+                          className="absolute right-3 text-xs font-bold pointer-events-none"
                           style={{ color: theme.textMuted }}
                         >
                           {Number(customAdvanceDays) === 1 ? 'dia' : 'dias'}
@@ -2551,28 +2570,9 @@ export default function Configuracoes() {
                   )}
                 </div>
 
-                <div
-                  className="mt-4 pt-3.5 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-                  style={{ borderColor: theme.border }}
-                >
-                  <span className="font-semibold" style={{ color: customPalette?.primary || theme.accent }}>
-                    {(() => {
-                      const previewDays =
-                        bookingHorizonSelect === 'unlimited'
-                          ? null
-                          : bookingHorizonSelect === 'custom'
-                            ? (Number(customAdvanceDays) >= 1 ? Math.floor(Number(customAdvanceDays)) : null)
-                            : Number(bookingHorizonSelect);
-                      if (bookingHorizonSelect === 'custom' && (!customAdvanceDays || Number(customAdvanceDays) < 1)) {
-                        return 'Informe um número inteiro positivo de dias (mínimo 1).';
-                      }
-                      return `Regra ativa: ${formatBookingHorizonSummary(previewDays)}`;
-                    })()}
-                  </span>
-                  <span style={{ color: theme.textMuted }}>
-                    Reservas já confirmadas são preservadas ao alterar este limite.
-                  </span>
-                </div>
+                <p className="mt-2.5 text-[11px]" style={{ color: theme.textMuted }}>
+                  * Reservas existentes são mantidas intactas ao alterar esta regra.
+                </p>
               </div>
 
               <FeatureGate permission="agenda.bloquear_horario" inline>
@@ -2590,7 +2590,7 @@ export default function Configuracoes() {
                 {businessHours.map((bh, idx) => (
                   <div
                     key={bh.weekday}
-                    className="rounded-2xl p-4 transition-all"
+                    className="rounded-2xl p-3.5 sm:p-4 transition-all"
                     style={{
                       background: bh.is_open ? theme.inputBg : `${theme.inputBg}60`,
                       border: `1px solid ${bh.is_open ? (theme.id === 'elegant' ? '#E2E8F0' : theme.inputBorder) : theme.border}`,
@@ -2638,11 +2638,11 @@ export default function Configuracoes() {
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
-                        className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t"
+                        className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-3.5 pt-3 border-t"
                         style={{ borderColor: theme.border }}
                       >
-                        <div>
-                          <label className="block text-[10px] font-bold uppercase mb-1.5" style={{ color: theme.textSecondary }}>Abre</label>
+                        <div className="min-w-0">
+                          <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textSecondary }}>Abre</label>
                           <input
                             type="time"
                             value={bh.open_time}
@@ -2651,11 +2651,11 @@ export default function Configuracoes() {
                               updated[idx].open_time = e.target.value;
                               setBusinessHours(updated);
                             }}
-                            className="themed-input text-sm py-2 px-3 font-semibold"
+                            className="themed-input w-full min-w-0 max-w-full box-border text-center text-xs sm:text-sm py-2 px-1 font-semibold"
                           />
                         </div>
-                        <div>
-                          <label className="block text-[10px] font-bold uppercase mb-1.5" style={{ color: theme.textSecondary }}>Fecha</label>
+                        <div className="min-w-0">
+                          <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textSecondary }}>Fecha</label>
                           <input
                             type="time"
                             value={bh.close_time}
@@ -2664,11 +2664,11 @@ export default function Configuracoes() {
                               updated[idx].close_time = e.target.value;
                               setBusinessHours(updated);
                             }}
-                            className="themed-input text-sm py-2 px-3 font-semibold"
+                            className="themed-input w-full min-w-0 max-w-full box-border text-center text-xs sm:text-sm py-2 px-1 font-semibold"
                           />
                         </div>
-                        <div>
-                          <label className="block text-[10px] font-bold uppercase mb-1.5" style={{ color: theme.textMuted }}>Almoço Início</label>
+                        <div className="min-w-0">
+                          <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textMuted }} title="Almoço Início">Alm. Início</label>
                           <input
                             type="time"
                             value={bh.lunch_start}
@@ -2677,12 +2677,12 @@ export default function Configuracoes() {
                               updated[idx].lunch_start = e.target.value;
                               setBusinessHours(updated);
                             }}
-                            className="themed-input text-sm py-2 px-3 opacity-90"
+                            className="themed-input w-full min-w-0 max-w-full box-border text-center text-xs sm:text-sm py-2 px-1 opacity-90"
                             placeholder="--:--"
                           />
                         </div>
-                        <div>
-                          <label className="block text-[10px] font-bold uppercase mb-1.5" style={{ color: theme.textMuted }}>Almoço Fim</label>
+                        <div className="min-w-0">
+                          <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textMuted }} title="Almoço Fim">Alm. Fim</label>
                           <input
                             type="time"
                             value={bh.lunch_end}
@@ -2691,7 +2691,7 @@ export default function Configuracoes() {
                               updated[idx].lunch_end = e.target.value;
                               setBusinessHours(updated);
                             }}
-                            className="themed-input text-sm py-2 px-3 opacity-90"
+                            className="themed-input w-full min-w-0 max-w-full box-border text-center text-xs sm:text-sm py-2 px-1 opacity-90"
                             placeholder="--:--"
                           />
                         </div>

@@ -123,13 +123,13 @@ export function PWAInstallButton({
           onClick={handleInstallClick}
           className={`flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl border font-bold text-xs shadow-sm transition-all cursor-pointer ${className}`}
           style={{
-            background: isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF',
-            borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0',
+            background: isDark ? '#1E293B' : '#FFFFFF',
+            borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#E2E8F0',
             color: isDark ? '#FFFFFF' : '#0F172A',
           }}
         >
           <Smartphone className="w-4 h-4 shrink-0" style={{ color: accentColor }} />
-          <span>Baixar App</span>
+          <span className="font-bold" style={{ color: isDark ? '#FFFFFF' : '#0F172A' }}>Baixar App</span>
         </motion.button>
       )}
 

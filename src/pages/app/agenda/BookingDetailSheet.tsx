@@ -103,18 +103,26 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
       <div className="fixed inset-0 z-40 bg-[var(--theme-bg-overlay)] backdrop-blur-sm" onClick={onClose} />
 
       {/* Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 md:top-0 md:right-0 md:left-auto md:bottom-0 z-50 flex flex-col w-full md:w-[480px] h-[92vh] md:h-full"
-        style={{ background: 'var(--theme-bg)', borderTop: '1px solid var(--theme-border)', borderLeft: '1px solid var(--theme-border)', borderRadius: '28px 28px 0 0' }}>
-
+      <div
+        className="fixed bottom-0 left-0 right-0 md:top-0 md:right-0 md:left-auto md:bottom-0 z-50 flex flex-col w-full md:w-[480px] h-[85vh] sm:h-[90vh] md:h-full max-h-[100dvh]"
+        style={{
+          background: 'var(--theme-bg)',
+          borderTop: '1px solid var(--theme-border)',
+          borderLeft: '1px solid var(--theme-border)',
+          borderRadius: '28px 28px 0 0',
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
         {/* Handle bar (mobile) */}
-        <div className="flex justify-center pt-3 pb-1 md:hidden shrink-0">
-          <div className="w-12 h-1 rounded-full" style={{ background: 'var(--theme-border)' }} />
+        <div className="flex justify-center pt-2.5 pb-1 md:hidden shrink-0">
+          <div className="w-12 h-1 rounded-full opacity-60" style={{ background: 'var(--theme-text-secondary)' }} />
         </div>
 
         {/* Header (Customer Info) */}
-        <div className="flex items-start justify-between px-6 py-6 border-b shrink-0" style={{ borderColor: 'var(--theme-border)' }}>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-start justify-between px-6 py-4 sm:py-5 border-b shrink-0" style={{ borderColor: 'var(--theme-border)' }}>
+          <div className="min-w-0 pr-3">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                <p className="text-[10px] font-bold uppercase tracking-wider opacity-60" style={{ color: 'var(--theme-text-secondary)' }}>Agendamento #{booking.order_number}</p>
                {booking.customer?.segment && (
                   <span
@@ -128,7 +136,12 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                   </span>
                )}
             </div>
-            <h3 className="font-serif text-2xl font-bold mb-3 truncate" style={{ color: 'var(--theme-text-primary)' }}>{booking.customer?.name ?? 'Cliente'}</h3>
+            {booking.created_at && (
+              <p className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--theme-text-secondary)' }}>
+                Realizado em: <span className="font-semibold" style={{ color: 'var(--theme-text-primary)' }}>{format(new Date(booking.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+              </p>
+            )}
+            <h3 className="font-serif text-2xl font-bold mb-2 truncate" style={{ color: 'var(--theme-text-primary)' }}>{booking.customer?.name ?? 'Cliente'}</h3>
             
             <div className="flex flex-col gap-1.5">
               {booking.customer?.phone && (

@@ -205,26 +205,32 @@ export default function EditBookingModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
       <div
-        className="relative w-full max-w-lg sm:rounded-3xl rounded-t-3xl border shadow-xl flex flex-col"
+        className="relative w-full max-w-lg sm:rounded-3xl rounded-t-3xl border shadow-xl flex flex-col h-[88vh] sm:h-auto sm:max-h-[90vh]"
         style={{
           background: 'var(--theme-card-bg)',
           borderColor: 'var(--theme-border)',
-          maxHeight: '92vh',
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
+        {/* Handle bar (mobile) */}
+        <div className="flex justify-center pt-2.5 pb-1 sm:hidden shrink-0">
+          <div className="w-12 h-1 rounded-full opacity-60" style={{ background: 'var(--theme-text-secondary)' }} />
+        </div>
+
         {/* Header */}
-        <div className="p-6 pb-4 shrink-0 border-b" style={{ borderColor: 'var(--theme-border)' }}>
+        <div className="px-6 py-4 sm:p-6 sm:pb-4 shrink-0 border-b" style={{ borderColor: 'var(--theme-border)' }}>
           <div className="flex justify-between items-start">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider opacity-60" style={{ color: 'var(--theme-text-secondary)' }}>
                 Reagendamento #{booking.order_number}
               </p>
-              <h2 className="font-serif text-2xl font-bold mt-0.5" style={{ color: 'var(--theme-text-primary)' }}>
+              <h2 className="font-serif text-xl sm:text-2xl font-bold mt-0.5" style={{ color: 'var(--theme-text-primary)' }}>
                 Editar Agendamento
               </h2>
-              <p className="text-xs mt-1 font-medium opacity-75" style={{ color: 'var(--theme-text-secondary)' }}>
+              <p className="text-xs mt-0.5 sm:mt-1 font-medium opacity-75" style={{ color: 'var(--theme-text-secondary)' }}>
                 Cliente:{' '}
                 <span className="font-bold" style={{ color: 'var(--theme-text-primary)' }}>
                   {booking.customer?.name}
