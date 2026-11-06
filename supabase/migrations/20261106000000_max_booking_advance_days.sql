@@ -110,3 +110,4 @@ CREATE TRIGGER trg_enforce_booking_advance_limit
   BEFORE INSERT OR UPDATE ON public.bookings
   FOR EACH ROW
   EXECUTE FUNCTION public.enforce_booking_advance_limit();
+

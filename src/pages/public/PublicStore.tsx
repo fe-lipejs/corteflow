@@ -3282,47 +3282,16 @@ export default function PublicStore() {
 
                     {/* Horizontal Date Carousel */}
                     <div>
-                      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                      <div className="flex items-center justify-between mb-3">
                         <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: theme.textSecondary }}>
                           Selecione o Dia
                         </p>
-                        <div className="flex items-center gap-2.5">
-                          {(maxAdvanceDays === null || maxAdvanceDays > 15) && (
-                            <label
-                              className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-bold cursor-pointer transition-opacity hover:opacity-85"
-                              style={{
-                                borderColor: cardBorderColor,
-                                background: cardBackground,
-                                color: accent,
-                              }}
-                            >
-                              <Calendar className="w-3.5 h-3.5 shrink-0" />
-                              <span>Escolher data</span>
-                              <input
-                                type="date"
-                                min={horizonData.minDateISO}
-                                max={horizonData.maxDateISO}
-                                value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
-                                onChange={(e) => {
-                                  if (!e.target.value) return;
-                                  const [yy, mm, dd] = e.target.value.split("-").map(Number);
-                                  const picked = startOfDay(new Date(yy, mm - 1, dd));
-                                  if (!isDateWithinBookingHorizon(picked, maxAdvanceDays)) return;
-                                  setHasScrolledDates(true);
-                                  setSelectedDate(picked);
-                                  setSelectedTime(null);
-                                }}
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              />
-                            </label>
-                          )}
-                          {!hasScrolledDates && availableDays.length > 4 && (
-                            <div className="flex items-center gap-1 text-[11px] font-medium" style={{ color: theme.textMuted }}>
-                              <span>Deslize para ver mais</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </div>
-                          )}
-                        </div>
+                        {!hasScrolledDates && availableDays.length > 4 && (
+                          <div className="flex items-center gap-1 text-[11px] font-medium" style={{ color: theme.textMuted }}>
+                            <span>Deslize para ver mais</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </div>
+                        )}
                       </div>
 
                       <div

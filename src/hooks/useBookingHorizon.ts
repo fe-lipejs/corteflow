@@ -125,3 +125,4 @@ export function useTenantDayBlocks(tenantId: string | null | undefined, date: Da
     },
   });
 }
+
