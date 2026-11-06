@@ -4,7 +4,7 @@ import { useTenantSlug } from '../../hooks/useTenantSlug';
 import { getTenantPublicUrl, getTenantPortalUrl } from '../../lib/tenantUrl';
 import { supabase } from '../../integrations/supabase/client';
 import { motion } from 'framer-motion';
-import { Check, Calendar, Clock, User, Scissors, MessageCircle } from 'lucide-react';
+import { Check, Calendar, Clock, User, Scissors, MessageCircle, AlertCircle, ArrowRight } from 'lucide-react';
 import { useTenantPortalTheme } from '../../hooks/useTenantPortalTheme';
 import { PortalLoadingScreen } from '../../components/public/PortalLoadingScreen';
 
@@ -43,7 +43,6 @@ export default function SuccessBooking() {
             .maybeSingle();
           setSettings(sData);
 
-          // Buscar agendamento real
           let bookingData: any = null;
 
           if (orderNumber) {
@@ -56,7 +55,6 @@ export default function SuccessBooking() {
             bookingData = bData;
           }
 
-          // Se não encontrou por order_number mas tem payment_intent ou session_id
           if (!bookingData && (paymentIntentId || sessionId)) {
             const targetPi = paymentIntentId || sessionId;
             const { data: pData } = await supabase
@@ -76,7 +74,6 @@ export default function SuccessBooking() {
           }
 
           if (bookingData) {
-            // Se o agendamento ainda estiver pendente e retornou do Stripe, confirma de forma segura via Edge Function
             if (bookingData.status === 'pending' && (paymentIntentId || sessionId)) {
               try {
                 await supabase.functions.invoke('create-payment-intent', {
@@ -122,6 +119,8 @@ export default function SuccessBooking() {
 
   const portalTheme = useTenantPortalTheme(slug, settings, null);
   const accentColor = portalTheme.accent;
+  const btnBg = portalTheme.theme.btnPrimaryBg || accentColor;
+  const btnText = portalTheme.theme.btnPrimaryText;
 
   if (loading) {
     return (
@@ -151,7 +150,7 @@ export default function SuccessBooking() {
       >
         {/* Circle Check Icon */}
         <div
-          className="w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-xl"
+          className="w-20 h-20 rounded-full flex items-center justify-center mb-5 shadow-xl"
           style={{ background: `${accentColor}20`, border: `2px solid ${accentColor}` }}
         >
           <div
@@ -162,17 +161,35 @@ export default function SuccessBooking() {
           </div>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-extrabold mb-2 tracking-tight">Agendamento Confirmado!</h1>
-        <p className="text-zinc-400 mb-8 text-xs sm:text-sm">
-          {booking?.customerName ? `${booking.customerName}, seu horário está garantido.` : 'Seu horário foi agendado com sucesso.'}
+        <div className="inline-block relative mb-3">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight">Quase lá!</h1>
+          <svg
+            viewBox="0 0 120 12"
+            fill="none"
+            className="w-24 sm:w-28 h-2.5 mx-auto mt-0.5"
+            aria-hidden="true"
+          >
+            <path
+              d="M4 8.5C34 2.5 86 2.5 116 7.5"
+              stroke={accentColor}
+              strokeWidth="4"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
+
+        <p className="text-zinc-400 mb-6 text-xs sm:text-sm leading-relaxed">
+          Seu agendamento está quase concluído.
+          <br />
+          Clique no botão abaixo para enviar pelo <strong className="font-extrabold text-white">WhatsApp</strong> e finalizar seu agendamento.
         </p>
 
         {/* Card Resumo */}
-        <div className="w-full bg-[#13131A] border border-white/10 rounded-2xl p-5 space-y-3.5 mb-6 text-left shadow-2xl">
+        <div className="w-full bg-[#13131A] border border-white/10 rounded-2xl p-5 space-y-3.5 mb-5 text-left shadow-2xl">
           {booking?.order_number && (
             <div className="flex justify-between items-center pb-3 border-b border-white/10">
               <span className="text-zinc-400 text-xs">Pedido</span>
-              <span className="font-mono text-xs font-bold text-emerald-400">#{booking.order_number}</span>
+              <span className="font-mono text-xs font-bold" style={{ color: accentColor }}>#{booking.order_number}</span>
             </div>
           )}
 
@@ -205,19 +222,43 @@ export default function SuccessBooking() {
           </div>
         </div>
 
-        <p className="text-zinc-400 text-xs mb-5">
-          Avise o estabelecimento com 1 clique para agilizar seu atendimento:
-        </p>
+        <div
+          className="w-full rounded-2xl border px-4 py-3.5 mb-3.5 flex items-center gap-3.5 text-left"
+          style={{
+            background: `${accentColor}14`,
+            borderColor: `${accentColor}40`,
+          }}
+        >
+          <div className="flex items-center gap-3 shrink-0 self-stretch">
+            <AlertCircle className="w-6 h-6 shrink-0" style={{ color: accentColor }} />
+            <div className="w-[1.5px] self-stretch rounded-full" style={{ background: `${accentColor}55` }} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs sm:text-sm font-extrabold leading-tight" style={{ color: accentColor }}>
+              Ação obrigatória
+            </p>
+            <p className="text-xs leading-snug mt-0.5 text-zinc-300">
+              Clique no botão abaixo para enviar sua reserva pelo <strong className="font-extrabold text-white">WhatsApp</strong> e concluir o agendamento.
+            </p>
+          </div>
+        </div>
 
         {cleanNumber && (
           <a 
             href={whatsappLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold py-3.5 rounded-xl transition-all mb-3 flex justify-center items-center gap-2 shadow-lg shadow-emerald-500/20 text-xs cursor-pointer active:scale-95"
+            className="w-full font-extrabold py-4 px-6 rounded-full transition-all mb-3 flex justify-center items-center gap-3.5 shadow-lg text-sm sm:text-base cursor-pointer active:scale-95"
+            style={{
+              background: btnBg,
+              color: btnText,
+              boxShadow: `0 10px 25px -5px ${accentColor}55`,
+            }}
           >
-            <MessageCircle className="w-4 h-4 fill-current" />
-            Notificar Salão via WhatsApp
+            <MessageCircle className="w-5 h-5" />
+            <span className="h-5 w-[1.5px] rounded-full opacity-35" style={{ background: btnText }} />
+            <span>Concluir Agendamento</span>
+            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
           </a>
         )}
 
@@ -230,7 +271,7 @@ export default function SuccessBooking() {
 
         <Link 
           to={`${getTenantPortalUrl(slug)}${booking?.order_number ? `?order=${booking.order_number}` : ''}`}
-          className="mt-5 text-zinc-400 hover:text-emerald-400 transition-colors text-xs font-medium underline underline-offset-4"
+          className="mt-5 text-zinc-400 hover:text-white transition-colors text-xs font-medium underline underline-offset-4"
         >
           Acessar Meus Agendamentos
         </Link>

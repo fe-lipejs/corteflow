@@ -278,19 +278,18 @@ export default function BookingModal({
   const STEPS = ['Serviço', 'Profissional', 'Horário', 'Confirmar'];
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-x-0 top-16 bottom-0 md:inset-0 z-[100] flex items-end md:items-center justify-center pt-6 md:p-4 bg-black/55 backdrop-blur-[2px]">
       <div
-        className="relative w-full max-w-lg sm:rounded-3xl rounded-t-3xl border shadow-2xl flex flex-col h-[82dvh] sm:h-auto max-h-[calc(100dvh-1rem)] sm:max-h-[90dvh]"
+        className="relative w-full max-w-lg md:rounded-3xl rounded-t-[28px] border shadow-2xl flex flex-col h-full max-h-full md:h-auto md:max-h-[90dvh] overflow-hidden"
         style={{
           background: 'var(--theme-card-bg)',
           borderColor: 'var(--theme-border)',
-          paddingTop: 'env(safe-area-inset-top, 0px)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
         {/* Handle bar (mobile) */}
-        <div className="flex justify-center pt-2.5 pb-1 sm:hidden shrink-0">
-          <div className="w-12 h-1 rounded-full opacity-60" style={{ background: 'var(--theme-text-secondary)' }} />
+        <div className="flex justify-center pt-3 pb-1 md:hidden shrink-0">
+          <div className="w-12 h-1.5 rounded-full opacity-45" style={{ background: 'var(--theme-text-secondary)' }} />
         </div>
 
         {/* Header */}

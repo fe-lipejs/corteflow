@@ -54,8 +54,8 @@ export default function PendingBookingsModal({ tenantId, onClose, onBookingClick
   }, [bookings, sortOrder]);
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-md rounded-3xl shadow-2xl flex flex-col max-h-[82dvh] animate-slide-up" style={{ background: theme.bg, border: `1px solid ${theme.border}` }}>
+    <div className="fixed inset-x-0 top-16 bottom-0 md:inset-0 z-[100] flex items-end md:items-center justify-center pt-6 md:p-4 bg-black/55 backdrop-blur-[2px] animate-fade-in">
+      <div className="w-full max-w-md rounded-t-[28px] md:rounded-3xl shadow-2xl flex flex-col h-full max-h-full md:h-auto md:max-h-[85dvh] overflow-hidden animate-slide-up" style={{ background: theme.bg, border: `1px solid ${theme.border}` }}>
         <div className="flex items-center justify-between p-5 border-b shrink-0" style={{ borderColor: theme.border }}>
           <div>
             <h2 className="font-bold text-base flex items-center gap-2" style={{ color: theme.textPrimary }}>

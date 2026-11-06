@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   ChevronUp,
   AlertTriangle,
+  AlertCircle,
   Store,
   Home,
   Plus,
@@ -1151,17 +1152,19 @@ export default function PublicStore() {
       return `https://wa.me/${cleanOwnerPhone}?text=${encodeURIComponent(text)}`;
     }
     const lines = [
-      `*NOVA RESERVA — ${storeName}*`,
-      "",
-      `*Código:* #${bookingCode}`,
-      `*Cliente:* ${customerName}`,
-      `*Serviço:* ${selectedService.name} (${formatDuration(selectedService.duration_minutes)})`,
-      `*Profissional:* ${proName}`,
-      `*Data/Hora:* ${format(selectedDate, "dd 'de' MMMM", { locale: ptBR })} às ${selectedTime}`,
-      "",
-      `*Valor:* ${money(total)}`,
-      storeAddress ? `*Local:* ${storeAddress}` : "",
-      customerNotes ? `*Obs:* ${customerNotes}` : "",
+      `Olá, *${storeName}*! 👋`,
+      `Acabei de confirmar um agendamento:`,
+      ``,
+      `🔖 *Código:* #${bookingCode}`,
+      `✂️ *Serviço:* ${selectedService.name} (${formatDuration(selectedService.duration_minutes)})`,
+      `💈 *Profissional:* ${proName}`,
+      `📅 *Data:* ${format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}`,
+      `⏰ *Horário:* ${selectedTime}`,
+      `👤 *Cliente:* ${customerName}`,
+      `💰 *Total:* ${money(total)}`,
+      paymentScope === "partial" ? `✅ *Entrada paga:* ${money(amountPaid)}` : "",
+      storeAddress ? `📍 *Local:* ${storeAddress}` : "",
+      customerNotes ? `📝 *Obs:* ${customerNotes}` : "",
     ].filter(Boolean);
     return `https://wa.me/${onlyDigits(storePhone)}?text=${encodeURIComponent(lines.join("\n"))}`;
   }, [
@@ -1172,6 +1175,8 @@ export default function PublicStore() {
     customerName,
     proName,
     total,
+    amountPaid,
+    paymentScope,
     storeName,
     storeAddress,
     storePhone,
@@ -3849,14 +3854,39 @@ export default function PublicStore() {
                       <CheckCircle2 className="w-10 h-10" />
                     </motion.div>
 
-                    <h2
-                      className="text-2xl sm:text-3xl font-black mb-2"
-                      style={{ color: theme.textPrimary, fontFamily: theme.fontSerif }}
+                    <div className="inline-block relative mb-3">
+                      <h2
+                        className="text-3xl sm:text-4xl font-black tracking-tight"
+                        style={{ color: theme.textPrimary }}
+                      >
+                        Quase lá!
+                      </h2>
+                      <svg
+                        viewBox="0 0 120 12"
+                        fill="none"
+                        className="w-24 sm:w-28 h-2.5 mx-auto mt-0.5"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M4 8.5C34 2.5 86 2.5 116 7.5"
+                          stroke={accent}
+                          strokeWidth="4"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </div>
+
+                    <p
+                      className="text-xs sm:text-sm font-medium leading-relaxed max-w-md mx-auto"
+                      style={{ color: theme.textSecondary }}
                     >
-                      Reserva Confirmada!
-                    </h2>
-                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.textSecondary }}>
-                      Seu horário está garantido. Apresente o código abaixo se necessário.
+                      Seu agendamento está quase concluído.
+                      <br />
+                      Clique no botão abaixo para enviar pelo{" "}
+                      <strong className="font-extrabold" style={{ color: theme.textPrimary }}>
+                        WhatsApp
+                      </strong>{" "}
+                      e finalizar seu agendamento.
                     </p>
 
                     {/* Receipt Card */}
@@ -3903,19 +3933,59 @@ export default function PublicStore() {
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="mt-6 space-y-2.5">
+                    {/* Ação Obrigatória + Action Buttons */}
+                    <div className="mt-5 space-y-3">
+                      <div
+                        className="rounded-2xl border px-4 py-3.5 flex items-center gap-3.5 text-left"
+                        style={{
+                          background: `${accent}12`,
+                          borderColor: `${accent}35`,
+                        }}
+                      >
+                        <div className="flex items-center gap-3 shrink-0 self-stretch">
+                          <AlertCircle className="w-6 h-6 shrink-0" style={{ color: accent }} />
+                          <div
+                            className="w-[1.5px] self-stretch rounded-full"
+                            style={{ background: `${accent}55` }}
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs sm:text-sm font-extrabold leading-tight" style={{ color: accent }}>
+                            Ação obrigatória
+                          </p>
+                          <p
+                            className="text-xs leading-snug mt-0.5 font-medium"
+                            style={{ color: theme.textSecondary }}
+                          >
+                            Clique no botão abaixo para enviar sua reserva pelo{" "}
+                            <strong className="font-extrabold" style={{ color: theme.textPrimary }}>
+                              WhatsApp
+                            </strong>{" "}
+                            e concluir o agendamento.
+                          </p>
+                        </div>
+                      </div>
+
                       <motion.a
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         href={whatsappUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center justify-center gap-2.5 w-full py-4 rounded-2xl font-bold text-sm shadow-md transition-all cursor-pointer"
-                        style={{ background: "#25D366", color: "#FFFFFF" }}
+                        className="flex items-center justify-center gap-3.5 w-full py-4 px-6 rounded-full font-extrabold text-sm sm:text-base shadow-lg transition-all cursor-pointer"
+                        style={{
+                          background: theme.btnPrimaryBg || accent,
+                          color: theme.btnPrimaryText,
+                          boxShadow: `0 10px 25px -5px ${accent}55`,
+                        }}
                       >
                         <WhatsAppIcon />
-                        <span>Enviar Reserva no WhatsApp</span>
+                        <span
+                          className="h-5 w-[1.5px] rounded-full opacity-35"
+                          style={{ background: theme.btnPrimaryText }}
+                        />
+                        <span>Concluir Agendamento</span>
+                        <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                       </motion.a>
 
                       <a

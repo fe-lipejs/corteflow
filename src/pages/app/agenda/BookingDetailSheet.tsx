@@ -101,23 +101,21 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
   return createPortal(
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-[90] bg-[var(--theme-bg-overlay)] backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-x-0 top-16 bottom-0 md:inset-0 z-[90] bg-black/55 backdrop-blur-[2px]" onClick={onClose} />
 
       {/* Sheet */}
       <div
-        className="fixed bottom-0 left-0 right-0 md:top-0 md:right-0 md:left-auto md:bottom-0 z-[100] flex flex-col w-full md:w-[480px] h-[82dvh] sm:h-[88dvh] md:h-full max-h-[calc(100dvh-1rem)] md:max-h-[100dvh] shadow-2xl"
+        className="fixed inset-x-0 top-[5.5rem] bottom-0 md:top-0 md:right-0 md:left-auto md:bottom-0 z-[100] flex flex-col w-full md:w-[480px] rounded-t-[28px] md:rounded-none shadow-2xl overflow-hidden"
         style={{
           background: 'var(--theme-bg)',
           borderTop: '1px solid var(--theme-border)',
           borderLeft: '1px solid var(--theme-border)',
-          borderRadius: '28px 28px 0 0',
-          paddingTop: 'env(safe-area-inset-top, 0px)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
         {/* Handle bar (mobile) */}
-        <div className="flex justify-center pt-2.5 pb-1 md:hidden shrink-0">
-          <div className="w-12 h-1 rounded-full opacity-60" style={{ background: 'var(--theme-text-secondary)' }} />
+        <div className="flex justify-center pt-3 pb-1 md:hidden shrink-0">
+          <div className="w-12 h-1.5 rounded-full opacity-45" style={{ background: 'var(--theme-text-secondary)' }} />
         </div>
 
         {/* Header (Customer Info) */}
