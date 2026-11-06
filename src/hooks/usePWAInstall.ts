@@ -33,10 +33,10 @@ export function usePWAInstall() {
 
     checkIsInstalled();
 
-    // Detectar iOS / Safari
+    // Detectar sistema operacional com precisão
     if (typeof window !== 'undefined' && window.navigator) {
       const ua = window.navigator.userAgent.toLowerCase();
-      const isApple = /iphone|ipad|ipod/.test(ua);
+      const isApple = /iphone|ipad|ipod/.test(ua) && !(window as any).MSStream;
       setIsIOS(isApple);
     }
 

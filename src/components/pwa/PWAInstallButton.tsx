@@ -26,15 +26,17 @@ export function PWAInstallButton({
   const [showModal, setShowModal] = useState(false);
 
   const handleInstallClick = async () => {
-    // 1. SE FOR ANDROID / CHROME / EDGE -> Dispara o prompt nativo do sistema
-    if (!isIOS) {
+    // 1. TENTA PRIMEIRO O PROMPT NATIVO DO ANDROID/CHROME
+    try {
       const promptSuccess = await promptInstall();
       if (promptSuccess) {
         return;
       }
+    } catch (e) {
+      console.warn('Tentando fallback de instalação...', e);
     }
 
-    // 2. SE FOR IPHONE (iOS) OU FALLBACK -> Abre o modal interativo com guia direto
+    // 2. SE NÃO DISPAROU (iPhone Safari ou Chrome sem evento de instalação no momento)
     setShowModal(true);
   };
 
@@ -180,7 +182,7 @@ export function PWAInstallButton({
                   </div>
                   <div>
                     <h3 className="text-sm font-bold leading-tight" style={{ color: isDark ? '#FFFFFF' : '#0F172A' }}>
-                      Instalar no seu iPhone
+                      {isIOS ? 'Instalar no seu iPhone' : 'Adicionar Atalho à Tela Inicial'}
                     </h3>
                     <p className="text-[11px] mt-0.5 opacity-70" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
                       Cria o ícone oficial na sua tela de início
@@ -197,45 +199,87 @@ export function PWAInstallButton({
                 </button>
               </div>
 
-              {/* 3 passos rápidos para o iPhone */}
+              {/* Passos rápidos específicos para o sistema detectado */}
               <div className="py-5 space-y-4">
-                <div className="flex items-start gap-3.5">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
-                    style={{ background: `${accentColor}20`, color: accentColor }}
-                  >
-                    1
-                  </div>
-                  <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
-                    No <strong>Safari</strong> do seu iPhone, toque no botão <strong>Compartilhar</strong>{' '}
-                    <Share2 className="inline w-4 h-4 text-sky-400 mx-0.5" /> (o ícone de quadrado com seta para cima na barra inferior).
-                  </div>
-                </div>
+                {isIOS ? (
+                  <>
+                    <div className="flex items-start gap-3.5">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
+                        style={{ background: `${accentColor}20`, color: accentColor }}
+                      >
+                        1
+                      </div>
+                      <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
+                        No <strong>Safari</strong> do seu iPhone, toque no botão <strong>Compartilhar</strong>{' '}
+                        <Share2 className="inline w-4 h-4 text-sky-400 mx-0.5" /> (o ícone de quadrado com seta para cima na barra inferior).
+                      </div>
+                    </div>
 
-                <div className="flex items-start gap-3.5">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
-                    style={{ background: `${accentColor}20`, color: accentColor }}
-                  >
-                    2
-                  </div>
-                  <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
-                    Role a lista para baixo e toque em <strong>"Adicionar à Tela de Início"</strong>{' '}
-                    <PlusSquare className="inline w-4 h-4 text-neutral-400 mx-0.5" />.
-                  </div>
-                </div>
+                    <div className="flex items-start gap-3.5">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
+                        style={{ background: `${accentColor}20`, color: accentColor }}
+                      >
+                        2
+                      </div>
+                      <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
+                        Role a lista para baixo e toque em <strong>"Adicionar à Tela de Início"</strong>{' '}
+                        <PlusSquare className="inline w-4 h-4 text-neutral-400 mx-0.5" />.
+                      </div>
+                    </div>
 
-                <div className="flex items-start gap-3.5">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
-                    style={{ background: `${accentColor}20`, color: accentColor }}
-                  >
-                    3
-                  </div>
-                  <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
-                    Toque em <strong>Adicionar</strong> no canto superior direito. O aplicativo aparecerá instantaneamente como um app nativo!
-                  </div>
-                </div>
+                    <div className="flex items-start gap-3.5">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
+                        style={{ background: `${accentColor}20`, color: accentColor }}
+                      >
+                        3
+                      </div>
+                      <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
+                        Toque em <strong>Adicionar</strong> no canto superior direito. O aplicativo aparecerá instantaneamente como um app nativo!
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-3.5">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
+                        style={{ background: `${accentColor}20`, color: accentColor }}
+                      >
+                        1
+                      </div>
+                      <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
+                        Toque no <strong>menu de 3 pontinhos</strong> (⋮) no canto superior direito do seu Chrome.
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3.5">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
+                        style={{ background: `${accentColor}20`, color: accentColor }}
+                      >
+                        2
+                      </div>
+                      <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
+                        Selecione <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3.5">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
+                        style={{ background: `${accentColor}20`, color: accentColor }}
+                      >
+                        3
+                      </div>
+                      <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
+                        Confirme em <strong>Instalar</strong>. O ícone aparecerá junto aos seus outros aplicativos!
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               <button
