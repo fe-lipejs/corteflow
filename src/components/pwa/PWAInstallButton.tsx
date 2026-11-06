@@ -42,9 +42,10 @@ export function PWAInstallButton({
 
     // 2. SE FOR IPHONE (iOS), BAIXA O PERFIL NATIVO .mobileconfig PARA A TELA INICIAL
     if (isIOS) {
+      const adminUrl = window.location.origin + '/admin';
       downloadMobileConfig({
         title: storeName,
-        url: window.location.href,
+        url: adminUrl,
         iconBase64: APP_ICON_BASE64,
         identifier: `com.raffros.${storeName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'app'}`,
       });
