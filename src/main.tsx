@@ -10,8 +10,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RealtimeProvider } from './contexts/RealtimeContext';
 import CookieConsentBanner from './components/cookies/CookieConsentBanner';
 
-// Registrar Service Worker para PWA
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// Registrar Service Worker para PWA (tanto em Dev quanto em Prod para habilitar o prompt nativo do Chrome)
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/service-worker.js')

@@ -34,34 +34,26 @@ export function PWAInstallButton({
   }
 
   const handleInstallClick = async () => {
-    // 1. SE FOR ANDROID / CHROME / EDGE (Prompt Nativo Direto)
-    if (isInstallable) {
-      const installed = await promptInstall();
-      if (installed) {
-        return;
-      }
+    // 1. TENTA O PROMPT NATIVO DO NAVEGADOR PRIMEIRO (Chrome / Edge / Samsung Internet no Android)
+    const promptSuccess = await promptInstall();
+    if (promptSuccess) {
+      return;
     }
 
-    // 2. SE FOR IPHONE (iOS)
+    // 2. SE FOR IPHONE (iOS), BAIXA O PERFIL NATIVO .mobileconfig PARA A TELA INICIAL
     if (isIOS) {
-      // Baixa diretamente o perfil nativo do iOS (.mobileconfig) para disparar a instalação automática na tela inicial
       downloadMobileConfig({
         title: storeName,
         url: window.location.href,
         iconBase64: APP_ICON_BASE64,
         identifier: `com.raffros.${storeName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'app'}`,
       });
-
-      // Abre modal rápido confirmando que o perfil foi baixado e basta tocar em Ajustes -> Instalar
       setShowIOSModal(true);
       return;
     }
 
-    // 3. Fallback para outros navegadores / desktop
-    const res = await promptInstall();
-    if (!res) {
-      setShowIOSModal(true);
-    }
+    // 3. SE O NAVEGADOR ANDROID AINDA NÃO DISPAROU OU ESTÁ EM ABA ANÔNIMA / HTTP LOCAL
+    setShowIOSModal(true);
   };
 
   return (

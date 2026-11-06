@@ -26,6 +26,16 @@
   <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
   <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
 
+  <!-- Preload & Immediate Capture of PWA Install Prompt before React boots -->
+  <script>
+    window.__deferredPWAInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      window.__deferredPWAInstallPrompt = e;
+      window.dispatchEvent(new CustomEvent('pwa-prompt-ready'));
+    });
+  </script>
+
   <!-- Open Graph / Facebook / WhatsApp -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://raffros.com/">
