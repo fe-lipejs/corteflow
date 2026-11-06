@@ -3,6 +3,7 @@ import { format, addDays, isSameDay, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { type Booking, BOOKING_STATUS_CONFIG } from '../../../hooks/useBookings';
 import { supabase } from '../../../integrations/supabase/client';
+import { isDateWithinBookingHorizon, sanitizeHexColor } from '../../../lib/bookingHorizon';
 
 interface BusinessHour {
   weekday: number;
@@ -18,6 +19,7 @@ interface WeekViewProps {
   bookings: Booking[];
   businessHours: BusinessHour[];
   selectedProfessionalId?: string | null;
+  maxAdvanceDays?: number | null;
   onBookingClick: (booking: Booking) => void;
   onSlotClick: (date: Date, hour: number) => void;
 }
@@ -29,6 +31,7 @@ export default function WeekView({
   bookings,
   businessHours,
   selectedProfessionalId,
+  maxAdvanceDays,
   onBookingClick,
   onSlotClick,
 }: WeekViewProps) {
@@ -311,7 +314,11 @@ export default function WeekView({
                   const slotEnd = new Date(day);
                   slotEnd.setHours(h + 1, 0, 0, 0);
                   const isPast = slotEnd.getTime() <= now.getTime();
-                  const canSchedule = open && inHours && !isPast;
+                  const withinHorizon =
+                    maxAdvanceDays === undefined
+                      ? true
+                      : isDateWithinBookingHorizon(day, maxAdvanceDays, now);
+                  const canSchedule = open && inHours && !isPast && withinHorizon;
 
                   return (
                     <div
@@ -382,11 +389,12 @@ export default function WeekView({
                 {/* ── Booking blocks ── */}
                 {positionedBookings.map(({ booking, top, height, widthPercent, leftPercent }) => {
                   const statusCfg = BOOKING_STATUS_CONFIG[booking.status] || BOOKING_STATUS_CONFIG.confirmed;
-                  const accentColor =
+                  const accentColor = sanitizeHexColor(
                     booking.professional?.agenda_color ||
-                    booking.pro_color ||
-                    booking.service?.color ||
-                    '#C9963B';
+                      booking.pro_color ||
+                      booking.service?.color,
+                    '#C9963B'
+                  );
 
                   const isCompact = height < 62;
                   const isNarrow = widthPercent < 55;

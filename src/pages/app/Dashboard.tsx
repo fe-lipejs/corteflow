@@ -11,8 +11,9 @@ import { ptBR } from 'date-fns/locale';
 
 import { useProfessionals } from '../../hooks/useProfessionals';
 import { useServices } from '../../hooks/useServices';
-import { useCreateBooking, useBookingsRealtime, useUpdateBookingStatus, useDeleteBooking } from '../../hooks/useBookings';
+import { useCreateBooking, useBookingsRealtime, useUpdateBookingStatus, useDeleteBooking, useUpdateBooking } from '../../hooks/useBookings';
 import BookingModal from './agenda/BookingModal';
+import EditBookingModal from './agenda/EditBookingModal';
 import BookingDetailSheet from './agenda/BookingDetailSheet';
 import { PWAInstallButton } from '../../components/pwa/PWAInstallButton';
 
@@ -38,7 +39,9 @@ export default function Dashboard() {
 
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [editingBooking, setEditingBooking] = useState<any>(null);
   const updateStatus = useUpdateBookingStatus(tenantId);
+  const updateBooking = useUpdateBooking(tenantId);
   const deleteBooking = useDeleteBooking(tenantId);
 
   const getGreeting = () => {
@@ -632,7 +635,25 @@ export default function Dashboard() {
             await deleteBooking.mutateAsync(id);
             setSelectedBooking(null);
           }}
+          onEdit={(b) => setEditingBooking(b)}
           isUpdating={updateStatus.isPending || deleteBooking.isPending}
+        />
+      )}
+
+      {editingBooking && (
+        <EditBookingModal
+          tenantId={tenantId}
+          booking={editingBooking}
+          services={services}
+          professionals={professionals}
+          businessHours={businessHours}
+          onClose={() => setEditingBooking(null)}
+          onSave={async (fields) => {
+            await updateBooking.mutateAsync(fields);
+            setEditingBooking(null);
+            setSelectedBooking(null);
+          }}
+          isLoading={updateBooking.isPending}
         />
       )}
     </div>

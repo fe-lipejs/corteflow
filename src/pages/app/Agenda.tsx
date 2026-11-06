@@ -19,6 +19,9 @@ import {
   useBookingsRealtime
 } from '../../hooks/useBookings';
 import { supabase } from '../../integrations/supabase/client';
+import toast from 'react-hot-toast';
+import { formatBookingHorizonSummary, isDateWithinBookingHorizon } from '../../lib/bookingHorizon';
+import { useTenantBookingHorizon } from '../../hooks/useBookingHorizon';
 
 import WeekView from './agenda/WeekView';
 import DayView from './agenda/DayView';
@@ -38,6 +41,7 @@ export default function Agenda() {
   const { theme } = useTheme();
   const engine = usePermissionEngine();
   const tenantId = tenant?.id ?? '';
+  const { maxAdvanceDays } = useTenantBookingHorizon(tenantId || null);
   const { play: playChime } = useBarberSound();
 
   const [view, setView] = useState<View>('week');
@@ -173,6 +177,10 @@ export default function Agenda() {
   const handleSlotClick = (date: Date, hour: number) => {
     if (!engine.hasPermission('agenda.criar')) {
       setShowUpgradeModal('agenda.criar');
+      return;
+    }
+    if (!isDateWithinBookingHorizon(date, maxAdvanceDays)) {
+      toast.error(`Fora da antecedência máxima configurada: ${formatBookingHorizonSummary(maxAdvanceDays)}.`);
       return;
     }
     const d = new Date(date);
@@ -444,9 +452,17 @@ export default function Agenda() {
                 <MobileTimeline
                   currentDay={currentDay}
                   bookings={filteredWeekBookings}
+                  maxAdvanceDays={maxAdvanceDays}
                   onDayChange={setCurrentDay}
                   onBookingClick={setSelectedBooking}
-                  onNewBooking={() => { setInitialBookingDate(undefined); setBookingModalOpen(true); }}
+                  onNewBooking={(preferredDate) => {
+                    if (!engine.hasPermission('agenda.criar')) {
+                      setShowUpgradeModal('agenda.criar');
+                      return;
+                    }
+                    setInitialBookingDate(preferredDate);
+                    setBookingModalOpen(true);
+                  }}
                 />
               </div>
 
@@ -458,6 +474,7 @@ export default function Agenda() {
                     bookings={filteredWeekBookings}
                     businessHours={businessHours}
                     selectedProfessionalId={selectedProfessionalId}
+                    maxAdvanceDays={maxAdvanceDays}
                     onBookingClick={setSelectedBooking}
                     onSlotClick={handleSlotClick}
                   />
@@ -467,6 +484,7 @@ export default function Agenda() {
                     bookings={filteredDayBookings}
                     businessHours={businessHours}
                     selectedProfessionalId={selectedProfessionalId}
+                    maxAdvanceDays={maxAdvanceDays}
                     onBookingClick={setSelectedBooking}
                     onSlotClick={handleSlotClick}
                   />

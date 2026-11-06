@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { X, User, Scissors, Clock, CreditCard, MessageSquare, Phone, Mail, Loader2, CalendarClock, MapPin, AlertTriangle } from 'lucide-react';
 import { BOOKING_STATUS_CONFIG, type Booking, type BookingStatus } from '../../../hooks/useBookings';
+import { sanitizeHexColor } from '../../../lib/bookingHorizon';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../integrations/supabase/client';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -192,7 +193,9 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
                 value: booking.professional?.name ?? 'Não atribuído',
                 sub: null,
                 photo: booking.professional?.photo_url ?? null,
-                color: booking.pro_color,
+                color: booking.professional?.agenda_color || booking.pro_color
+                  ? sanitizeHexColor(booking.professional?.agenda_color || booking.pro_color, '#C9963B')
+                  : null,
               },
               {
                 icon: CreditCard,
