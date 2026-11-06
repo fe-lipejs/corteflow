@@ -1152,19 +1152,16 @@ export default function PublicStore() {
       return `https://wa.me/${cleanOwnerPhone}?text=${encodeURIComponent(text)}`;
     }
     const lines = [
-      `Olá, *${storeName}*! 👋`,
-      `Acabei de confirmar um agendamento:`,
-      ``,
-      `🔖 *Código:* #${bookingCode}`,
-      `✂️ *Serviço:* ${selectedService.name} (${formatDuration(selectedService.duration_minutes)})`,
-      `💈 *Profissional:* ${proName}`,
-      `📅 *Data:* ${format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}`,
-      `⏰ *Horário:* ${selectedTime}`,
-      `👤 *Cliente:* ${customerName}`,
-      `💰 *Total:* ${money(total)}`,
-      paymentScope === "partial" ? `✅ *Entrada paga:* ${money(amountPaid)}` : "",
-      storeAddress ? `📍 *Local:* ${storeAddress}` : "",
-      customerNotes ? `📝 *Obs:* ${customerNotes}` : "",
+      `*NOVA RESERVA — ${storeName}*`,
+      `*Código:* #${bookingCode}`,
+      `*Cliente:* ${customerName}`,
+      `*Serviço:* ${selectedService.name} (${formatDuration(selectedService.duration_minutes)})`,
+      `*Profissional:* ${proName}`,
+      `*Data/Hora:* ${format(selectedDate, "dd 'de' MMMM", { locale: ptBR })} às ${selectedTime}`,
+      `*Valor:* ${money(total)}`,
+      paymentScope === "partial" ? `*Entrada paga:* ${money(amountPaid)}` : "",
+      storeAddress ? `*Local:* ${storeAddress}` : "",
+      customerNotes ? `*Obs:* ${customerNotes}` : "",
     ].filter(Boolean);
     return `https://wa.me/${onlyDigits(storePhone)}?text=${encodeURIComponent(lines.join("\n"))}`;
   }, [
@@ -3967,25 +3964,62 @@ export default function PublicStore() {
                       </div>
 
                       <motion.a
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        animate={{
+                          scale: [1, 1.028, 1],
+                          boxShadow: [
+                            `0 8px 22px -4px ${accent}50, 0 0 0 0px ${accent}40`,
+                            `0 14px 30px -4px ${accent}75, 0 0 0 7px ${accent}00`,
+                            `0 8px 22px -4px ${accent}50, 0 0 0 0px ${accent}00`,
+                          ],
+                        }}
+                        transition={{
+                          duration: 2.2,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.97 }}
                         href={whatsappUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center justify-center gap-3.5 w-full py-4 px-6 rounded-full font-extrabold text-sm sm:text-base shadow-lg transition-all cursor-pointer"
+                        className="relative overflow-hidden flex items-center justify-center gap-3.5 w-full py-4 px-6 rounded-full font-extrabold text-sm sm:text-base shadow-lg cursor-pointer"
                         style={{
                           background: theme.btnPrimaryBg || accent,
                           color: theme.btnPrimaryText,
-                          boxShadow: `0 10px 25px -5px ${accent}55`,
                         }}
                       >
+                        <motion.span
+                          aria-hidden="true"
+                          animate={{ x: ["-140%", "240%"] }}
+                          transition={{
+                            duration: 2.6,
+                            repeat: Infinity,
+                            repeatDelay: 1.1,
+                            ease: "easeInOut",
+                          }}
+                          className="pointer-events-none absolute inset-y-0 w-1/3 -skew-x-12"
+                          style={{
+                            background:
+                              "linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent)",
+                          }}
+                        />
                         <WhatsAppIcon />
                         <span
                           className="h-5 w-[1.5px] rounded-full opacity-35"
                           style={{ background: theme.btnPrimaryText }}
                         />
                         <span>Concluir Agendamento</span>
-                        <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                        <motion.span
+                          animate={{ x: [0, 4, 0] }}
+                          transition={{
+                            duration: 1.4,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
+                          className="inline-flex items-center"
+                        >
+                          <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                        </motion.span>
                       </motion.a>
 
                       <a

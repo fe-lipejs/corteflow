@@ -135,9 +135,19 @@ export default function SuccessBooking() {
   // wa.me logic
   const whatsappNumber = settings?.whatsapp_number || settings?.phone || '';
   const cleanNumber = whatsappNumber.replace(/\D/g, '');
-  const text = booking
-    ? `📅 Novo Agendamento #${booking.order_number}\n👤 Cliente: ${booking.customerName}\n💈 Serviço: ${booking.serviceName}\n🧑‍💼 Profissional: ${booking.professionalName}\n🗓️ Data: ${booking.date} às ${booking.time}`
-    : 'Olá! Concluí meu agendamento na plataforma.';
+  const lines = booking
+    ? [
+        `*NOVA RESERVA — ${settings?.fantasy_name || 'Salão'}*`,
+        `*Código:* #${booking.order_number}`,
+        `*Cliente:* ${booking.customerName}`,
+        `*Serviço:* ${booking.serviceName}`,
+        `*Profissional:* ${booking.professionalName}`,
+        `*Data/Hora:* ${booking.date} às ${booking.time}`,
+        booking.amount_total != null ? `*Valor:* R$ ${Number(booking.amount_total).toFixed(2).replace('.', ',')}` : '',
+        settings?.address ? `*Local:* ${settings.address}` : '',
+      ].filter(Boolean)
+    : ['Olá! Concluí meu agendamento na plataforma.'];
+  const text = lines.join('\n');
   const whatsappLink = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(text)}`;
 
   return (
@@ -244,22 +254,60 @@ export default function SuccessBooking() {
         </div>
 
         {cleanNumber && (
-          <a 
+          <motion.a
+            animate={{
+              scale: [1, 1.028, 1],
+              boxShadow: [
+                `0 8px 22px -4px ${accentColor}50, 0 0 0 0px ${accentColor}40`,
+                `0 14px 30px -4px ${accentColor}75, 0 0 0 7px ${accentColor}00`,
+                `0 8px 22px -4px ${accentColor}50, 0 0 0 0px ${accentColor}00`,
+              ],
+            }}
+            transition={{
+              duration: 2.2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
             href={whatsappLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full font-extrabold py-4 px-6 rounded-full transition-all mb-3 flex justify-center items-center gap-3.5 shadow-lg text-sm sm:text-base cursor-pointer active:scale-95"
+            className="relative overflow-hidden w-full font-extrabold py-4 px-6 rounded-full mb-3 flex justify-center items-center gap-3.5 shadow-lg text-sm sm:text-base cursor-pointer"
             style={{
               background: btnBg,
               color: btnText,
-              boxShadow: `0 10px 25px -5px ${accentColor}55`,
             }}
           >
+            <motion.span
+              aria-hidden="true"
+              animate={{ x: ['-140%', '240%'] }}
+              transition={{
+                duration: 2.6,
+                repeat: Infinity,
+                repeatDelay: 1.1,
+                ease: 'easeInOut',
+              }}
+              className="pointer-events-none absolute inset-y-0 w-1/3 -skew-x-12"
+              style={{
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent)',
+              }}
+            />
             <MessageCircle className="w-5 h-5" />
             <span className="h-5 w-[1.5px] rounded-full opacity-35" style={{ background: btnText }} />
             <span>Concluir Agendamento</span>
-            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-          </a>
+            <motion.span
+              animate={{ x: [0, 4, 0] }}
+              transition={{
+                duration: 1.4,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+              className="inline-flex items-center"
+            >
+              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+            </motion.span>
+          </motion.a>
         )}
 
         <button 
