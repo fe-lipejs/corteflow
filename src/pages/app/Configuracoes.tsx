@@ -199,7 +199,7 @@ export default function Configuracoes() {
   const [cancelFeePercent, setCancelFeePercent] = useState(0);
   const [noshowFeePercent, setNoshowFeePercent] = useState(0);
   const [delayToleranceMinutes, setDelayToleranceMinutes] = useState(15);
-  
+
 
 
   // Notifications
@@ -2483,39 +2483,22 @@ export default function Configuracoes() {
                   border: `1px solid ${theme.id === 'elegant' ? '#E2E8F0' : theme.inputBorder}`,
                 }}
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-2.5">
-                  <h3 className="font-bold text-sm sm:text-base flex items-center gap-2" style={{ color: theme.textPrimary }}>
-                    <CalendarCheck className="w-4 h-4 shrink-0" style={{ color: customPalette?.primary || theme.accent }} />
-                    Antecedência de Agendamento
-                  </h3>
-                  <span
-                    className="inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-md w-fit"
-                    style={{
-                      background: `${customPalette?.primary || theme.accent}15`,
-                      color: customPalette?.primary || theme.accent,
-                    }}
-                  >
-                    {(() => {
-                      const previewDays =
-                        bookingHorizonSelect === 'unlimited'
-                          ? null
-                          : bookingHorizonSelect === 'custom'
-                            ? (Number(customAdvanceDays) >= 1 ? Math.floor(Number(customAdvanceDays)) : null)
-                            : Number(bookingHorizonSelect);
-                      return formatBookingHorizonSummary(previewDays);
-                    })()}
-                  </span>
-                </div>
 
-                <p className="text-xs sm:text-sm mb-3.5" style={{ color: theme.textSecondary }}>
-                  Até quando seus clientes podem visualizar e agendar horários futuros.
-                </p>
+
+
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
                   <div className="min-w-0">
                     <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: theme.textSecondary }}>
-                      Período liberado
+                      Disponibilidade de Agenda
+
                     </label>
+                    <br />
+                    <h3 className="font-bold text-sm sm:text-base flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                      <CalendarCheck className="w-4 h-4 shrink-0" style={{ color: customPalette?.primary || theme.accent }} />
+                      Até quando seus clientes podem agendar?
+                    </h3>
+                    <br />
                     <select
                       value={bookingHorizonSelect}
                       onChange={(e) => {
@@ -2535,6 +2518,27 @@ export default function Configuracoes() {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-2.5">
+
+                    <span
+                      className="inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-md w-fit"
+                      style={{
+                        background: `${customPalette?.primary || theme.accent}15`,
+                        color: customPalette?.primary || theme.accent,
+                      }}
+                    >
+                      {(() => {
+                        const previewDays =
+                          bookingHorizonSelect === 'unlimited'
+                            ? null
+                            : bookingHorizonSelect === 'custom'
+                              ? (Number(customAdvanceDays) >= 1 ? Math.floor(Number(customAdvanceDays)) : null)
+                              : Number(bookingHorizonSelect);
+                        return formatBookingHorizonSummary(previewDays);
+                      })()}
+                    </span>
                   </div>
 
                   {bookingHorizonSelect === 'custom' && (
@@ -2570,136 +2574,136 @@ export default function Configuracoes() {
                   )}
                 </div>
 
-                <p className="mt-2.5 text-[11px]" style={{ color: theme.textMuted }}>
-                  * Reservas existentes são mantidas intactas ao alterar esta regra.
-                </p>
-              </div>
 
+              </div>
+              <br />
               <FeatureGate permission="agenda.bloquear_horario" inline>
-              <div>
-                <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
-                  <Clock className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
-                  Horário de Funcionamento
-                </h3>
-                <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>
-                  Defina os dias e horários de atendimento. Clientes só poderão agendar dentro destes horários.
-                </p>
-              </div>
+                <div>
+                  <h3 className="font-bold text-base mb-1" style={{ color: theme.textPrimary }}>
+                    <Clock className="w-4 h-4 inline mr-2 -mt-0.5" style={{ color: theme.accent }} />
+                    Horário de Funcionamento
+                  </h3>
+                  <br />
+                  <p className="text-xs mb-4" style={{ color: theme.textSecondary }}>
+                    Defina os dias e horários de atendimento. Clientes só poderão agendar dentro destes horários.
+                  </p>
 
-              <div className="space-y-3">
-                {businessHours.map((bh, idx) => (
-                  <div
-                    key={bh.weekday}
-                    className="rounded-2xl p-3.5 sm:p-4 transition-all"
-                    style={{
-                      background: bh.is_open ? theme.inputBg : `${theme.inputBg}60`,
-                      border: `1px solid ${bh.is_open ? (theme.id === 'elegant' ? '#E2E8F0' : theme.inputBorder) : theme.border}`,
-                      opacity: bh.is_open ? 1 : 0.65,
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = [...businessHours];
-                            updated[idx].is_open = !updated[idx].is_open;
-                            setBusinessHours(updated);
-                          }}
-                          className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 cursor-pointer"
+                </div>
+
+                <div className="space-y-3">
+                  {businessHours.map((bh, idx) => (
+                    <div
+                      key={bh.weekday}
+                      className="rounded-2xl p-3.5 sm:p-4 transition-all"
+                      style={{
+                        background: bh.is_open ? theme.inputBg : `${theme.inputBg}60`,
+                        border: `1px solid ${bh.is_open ? (theme.id === 'elegant' ? '#E2E8F0' : theme.inputBorder) : theme.border}`,
+                        opacity: bh.is_open ? 1 : 0.65,
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...businessHours];
+                              updated[idx].is_open = !updated[idx].is_open;
+                              setBusinessHours(updated);
+                            }}
+                            className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 cursor-pointer"
+                            style={{
+                              background: bh.is_open
+                                ? (customPalette?.primary || theme.accent)
+                                : (theme.id === 'elegant' ? '#CBD5E1' : '#2A2A2A')
+                            }}
+                          >
+                            <span
+                              className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                              style={{ transform: bh.is_open ? 'translateX(22px)' : 'translateX(4px)' }}
+                            />
+                          </button>
+                          <span className="text-sm font-bold" style={{ color: theme.textPrimary }}>
+                            {WEEKDAY_NAMES[bh.weekday]}
+                          </span>
+                        </div>
+                        <span
+                          className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border"
                           style={{
-                            background: bh.is_open
-                              ? (customPalette?.primary || theme.accent)
-                              : (theme.id === 'elegant' ? '#CBD5E1' : '#2A2A2A')
+                            background: bh.is_open ? `${theme.success}15` : `${theme.error}15`,
+                            borderColor: bh.is_open ? `${theme.success}30` : `${theme.error}30`,
+                            color: bh.is_open ? theme.success : theme.error,
                           }}
                         >
-                          <span
-                            className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-                            style={{ transform: bh.is_open ? 'translateX(22px)' : 'translateX(4px)' }}
-                          />
-                        </button>
-                        <span className="text-sm font-bold" style={{ color: theme.textPrimary }}>
-                          {WEEKDAY_NAMES[bh.weekday]}
+                          {bh.is_open ? 'Aberto' : 'Fechado'}
                         </span>
                       </div>
-                      <span
-                        className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border"
-                        style={{
-                          background: bh.is_open ? `${theme.success}15` : `${theme.error}15`,
-                          borderColor: bh.is_open ? `${theme.success}30` : `${theme.error}30`,
-                          color: bh.is_open ? theme.success : theme.error,
-                        }}
-                      >
-                        {bh.is_open ? 'Aberto' : 'Fechado'}
-                      </span>
-                    </div>
 
-                    {bh.is_open && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-3.5 pt-3 border-t"
-                        style={{ borderColor: theme.border }}
-                      >
-                        <div className="min-w-0">
-                          <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textSecondary }}>Abre</label>
-                          <input
-                            type="time"
-                            value={bh.open_time}
-                            onChange={(e) => {
-                              const updated = [...businessHours];
-                              updated[idx].open_time = e.target.value;
-                              setBusinessHours(updated);
-                            }}
-                            className="themed-input w-full min-w-0 max-w-full box-border text-center text-xs sm:text-sm py-2 px-1 font-semibold"
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textSecondary }}>Fecha</label>
-                          <input
-                            type="time"
-                            value={bh.close_time}
-                            onChange={(e) => {
-                              const updated = [...businessHours];
-                              updated[idx].close_time = e.target.value;
-                              setBusinessHours(updated);
-                            }}
-                            className="themed-input w-full min-w-0 max-w-full box-border text-center text-xs sm:text-sm py-2 px-1 font-semibold"
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textMuted }} title="Almoço Início">Alm. Início</label>
-                          <input
-                            type="time"
-                            value={bh.lunch_start}
-                            onChange={(e) => {
-                              const updated = [...businessHours];
-                              updated[idx].lunch_start = e.target.value;
-                              setBusinessHours(updated);
-                            }}
-                            className="themed-input w-full min-w-0 max-w-full box-border text-center text-xs sm:text-sm py-2 px-1 opacity-90"
-                            placeholder="--:--"
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textMuted }} title="Almoço Fim">Alm. Fim</label>
-                          <input
-                            type="time"
-                            value={bh.lunch_end}
-                            onChange={(e) => {
-                              const updated = [...businessHours];
-                              updated[idx].lunch_end = e.target.value;
-                              setBusinessHours(updated);
-                            }}
-                            className="themed-input w-full min-w-0 max-w-full box-border text-center text-xs sm:text-sm py-2 px-1 opacity-90"
-                            placeholder="--:--"
-                          />
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                      {bh.is_open && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-3.5 pt-3 border-t"
+                          style={{ borderColor: theme.border }}
+                        >
+                          <div className="min-w-0">
+                            <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textSecondary }}>Abre</label>
+                            <input
+                              type="time"
+                              value={bh.open_time}
+                              onChange={(e) => {
+                                const updated = [...businessHours];
+                                updated[idx].open_time = e.target.value;
+                                setBusinessHours(updated);
+                              }}
+                              className="themed-input w-full min-w-0 max-w-full box-border text-center text-xs sm:text-sm py-2 px-1 font-semibold"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textSecondary }}>Fecha</label>
+                            <input
+                              type="time"
+                              value={bh.close_time}
+                              onChange={(e) => {
+                                const updated = [...businessHours];
+                                updated[idx].close_time = e.target.value;
+                                setBusinessHours(updated);
+                              }}
+                              className="themed-input w-full min-w-0 max-w-full box-border text-center text-xs sm:text-sm py-2 px-1 font-semibold"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textMuted }} title="Almoço Início">Alm. Início</label>
+                            <input
+                              type="time"
+                              value={bh.lunch_start}
+                              onChange={(e) => {
+                                const updated = [...businessHours];
+                                updated[idx].lunch_start = e.target.value;
+                                setBusinessHours(updated);
+                              }}
+                              className="themed-input w-full min-w-0 max-w-full box-border text-center text-xs sm:text-sm py-2 px-1 opacity-90"
+                              placeholder="--:--"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textMuted }} title="Almoço Fim">Alm. Fim</label>
+                            <input
+                              type="time"
+                              value={bh.lunch_end}
+                              onChange={(e) => {
+                                const updated = [...businessHours];
+                                updated[idx].lunch_end = e.target.value;
+                                setBusinessHours(updated);
+                              }}
+                              className="themed-input w-full min-w-0 max-w-full box-border text-center text-xs sm:text-sm py-2 px-1 opacity-90"
+                              placeholder="--:--"
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </FeatureGate>
             </div>
           )}
@@ -3120,871 +3124,871 @@ export default function Configuracoes() {
         <>
           {/* Cancel Subscription Modal */}
           {cancelSubModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-            <div className="p-6 border-b border-[#1a1a1a]">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
-                <ShieldAlert className="w-6 h-6 text-amber-500" />
-              </div>
-              <h3 className="text-xl font-bold text-center text-white mb-2">Cancelar Assinatura?</h3>
-              <p className="text-sm text-[#888] text-center leading-relaxed">
-                Ao cancelar, sua assinatura permanecerá ativa até o encerramento do ciclo já pago. Após esse período, seu salão será <strong>bloqueado automaticamente</strong> e você não receberá nenhuma nova cobrança.
-              </p>
-            </div>
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+              <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+                <div className="p-6 border-b border-[#1a1a1a]">
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
+                    <ShieldAlert className="w-6 h-6 text-amber-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-center text-white mb-2">Cancelar Assinatura?</h3>
+                  <p className="text-sm text-[#888] text-center leading-relaxed">
+                    Ao cancelar, sua assinatura permanecerá ativa até o encerramento do ciclo já pago. Após esse período, seu salão será <strong>bloqueado automaticamente</strong> e você não receberá nenhuma nova cobrança.
+                  </p>
+                </div>
 
-            <div className="p-6">
-              <label className="block text-sm font-bold text-[#888] mb-2">
-                Para confirmar o cancelamento, digite <strong className="text-amber-400">CANCELAR</strong> abaixo:
-              </label>
-              <input
-                type="text"
-                value={cancelConfirmationText}
-                onChange={(e) => setCancelConfirmationText(e.target.value)}
-                className="w-full px-4 py-3 bg-[#111] border border-[#1a1a1a] rounded-xl text-white outline-none focus:border-amber-500 transition-colors uppercase font-mono"
-                placeholder="CANCELAR"
-                onPaste={e => e.preventDefault()}
-              />
-            </div>
+                <div className="p-6">
+                  <label className="block text-sm font-bold text-[#888] mb-2">
+                    Para confirmar o cancelamento, digite <strong className="text-amber-400">CANCELAR</strong> abaixo:
+                  </label>
+                  <input
+                    type="text"
+                    value={cancelConfirmationText}
+                    onChange={(e) => setCancelConfirmationText(e.target.value)}
+                    className="w-full px-4 py-3 bg-[#111] border border-[#1a1a1a] rounded-xl text-white outline-none focus:border-amber-500 transition-colors uppercase font-mono"
+                    placeholder="CANCELAR"
+                    onPaste={e => e.preventDefault()}
+                  />
+                </div>
 
-            <div className="border-t border-[#1a1a1a] p-4 flex justify-end gap-3 bg-[#0a0a0a]">
-              <button
-                type="button"
-                onClick={() => {
-                  setCancelSubModalOpen(false);
-                  setCancelConfirmationText('');
-                }}
-                className="px-4 py-2 text-xs font-semibold text-[#888] hover:text-white transition-colors"
-              >
-                Voltar
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelSubscription}
-                disabled={cancelConfirmationText !== 'CANCELAR' || cancelSubLoading}
-                className="px-5 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-30 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2"
-              >
-                {cancelSubLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldAlert className="w-3.5 h-3.5" />}
-                Confirmar Cancelamento
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Account Modal */}
-      {deleteAccountModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-            <div className="p-6 border-b border-[#1a1a1a]">
-              <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-6 h-6 text-red-500" />
-              </div>
-              <h3 className="text-xl font-bold text-center text-white mb-2">Excluir Conta Permanentemente?</h3>
-              <p className="text-sm text-[#888] text-center">
-                Esta ação <strong>cancelará imediatamente</strong> qualquer assinatura ativa no Stripe e revogará seu acesso ao sistema. O histórico será mantido apenas para fins de auditoria.
-              </p>
-            </div>
-
-            <div className="p-6">
-              <label className="block text-sm font-bold text-[#888] mb-2">
-                Para confirmar, digite <strong className="text-white">EXCLUIR</strong> abaixo:
-              </label>
-              <input
-                type="text"
-                value={deleteConfirmationText}
-                onChange={(e) => setDeleteConfirmationText(e.target.value)}
-                className="w-full px-4 py-3 bg-[#111] border border-[#1a1a1a] rounded-xl text-white outline-none focus:border-red-500 transition-colors uppercase font-mono"
-                placeholder="EXCLUIR"
-                onPaste={e => e.preventDefault()}
-              />
-            </div>
-
-            <div className="border-t border-[#1a1a1a] p-4 flex justify-end gap-3 bg-[#0a0a0a]">
-              <button
-                onClick={() => {
-                  setDeleteAccountModalOpen(false);
-                  setDeleteConfirmationText('');
-                }}
-                className="px-4 py-2 text-sm text-[#888] hover:text-white transition-colors"
-                disabled={deleteLoading}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={deleteConfirmationText !== 'EXCLUIR' || deleteLoading}
-                className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-              >
-                {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                {deleteLoading ? 'Excluindo...' : 'Sim, Excluir Minha Conta'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══════════════════════════ STUDIO DE IDENTIDADE VISUAL (POP-UP MODAL) ════════════════════════════════ */}
-      <AnimatePresence>
-        {isCustomizerOpen && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 md:p-6 pb-6 pt-16 bg-black/80 backdrop-blur-md overflow-hidden touch-none">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-4xl h-full sm:h-auto max-h-[85dvh] sm:max-h-[90vh] rounded-3xl border shadow-2xl flex flex-col overflow-hidden overscroll-contain mt-auto sm:mt-0"
-              style={{
-                background: theme.cardBg,
-                borderColor: theme.cardBorder,
-              }}
-            >
-              {/* Modal Header */}
-              <div
-                className="px-5 sm:px-6 py-4 border-b flex items-center justify-between shrink-0"
-                style={{ borderColor: theme.border, background: theme.bg }}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md shrink-0"
-                    style={{ background: customPalette?.primary || theme.accent, color: theme.btnPrimaryText }}
+                <div className="border-t border-[#1a1a1a] p-4 flex justify-end gap-3 bg-[#0a0a0a]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCancelSubModalOpen(false);
+                      setCancelConfirmationText('');
+                    }}
+                    className="px-4 py-2 text-xs font-semibold text-[#888] hover:text-white transition-colors"
                   >
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-base sm:text-lg font-bold" style={{ color: theme.textPrimary }}>
-                      Studio de Identidade Visual
-                    </h3>
-                    <p className="text-xs hidden sm:block" style={{ color: theme.textSecondary }}>
-                      Personalize atmosfera, cores e tipografia com prévia ao vivo. Só muda no sistema ao clicar em salvar.
-                    </p>
-                  </div>
+                    Voltar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelSubscription}
+                    disabled={cancelConfirmationText !== 'CANCELAR' || cancelSubLoading}
+                    className="px-5 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-30 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2"
+                  >
+                    {cancelSubLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldAlert className="w-3.5 h-3.5" />}
+                    Confirmar Cancelamento
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setIsCustomizerOpen(false)}
-                  className="p-2 rounded-xl transition-all hover:opacity-80 cursor-pointer"
-                  style={{ background: theme.inputBg, color: theme.textSecondary }}
-                >
-                  <X className="w-5 h-5" />
-                </button>
               </div>
+            </div>
+          )}
 
-              {/* Modal Body - 2 Columns */}
-              <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-10">
-                {/* ── Left Column: Controls ── */}
-                <div className="lg:col-span-7 space-y-8">
-
-                  {/* 1. Atmosfera */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: `${customPalette?.primary || theme.accent}20`, color: customPalette?.primary || theme.accent }}>
-                        <span className="text-[10px] font-black">1</span>
-                      </div>
-                      <label className="text-xs font-extrabold uppercase tracking-widest" style={{ color: theme.textSecondary }}>Atmosfera do Salão</label>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Modo Noturno */}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleBgMode('dark')}
-                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer"
-                        style={{
-                          background: bgMode === 'dark' ? '#09090B' : theme.inputBg,
-                          borderColor: bgMode === 'dark' ? (customPalette?.primary || theme.accent) : theme.border,
-                          boxShadow: 'none',
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
-                            style={{
-                              background: bgMode === 'dark' ? `${customPalette?.primary || theme.accent}20` : theme.bg,
-                              color: bgMode === 'dark' ? (customPalette?.primary || theme.accent) : theme.textSecondary,
-                            }}
-                          >
-                            <Moon className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold" style={{ color: bgMode === 'dark' ? '#FFFFFF' : theme.textPrimary }}>
-                              Modo Escuro
-                            </p>
-                            <p className="text-[10px] mt-0.5" style={{ color: bgMode === 'dark' ? '#A1A1AA' : theme.textMuted }}>
-                              Fundo escuro luxuoso
-                            </p>
-                          </div>
-                        </div>
-                        {bgMode === 'dark' && (
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center shadow shrink-0" style={{ background: customPalette?.primary || theme.accent }}>
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
-                        )}
-                      </button>
-
-                      {/* Modo Claro */}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleBgMode('light')}
-                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer"
-                        style={{
-                          background: bgMode === 'light' ? '#FFFFFF' : theme.inputBg,
-                          borderColor: bgMode === 'light' ? (customPalette?.primary || theme.accent) : theme.border,
-                          boxShadow: 'none',
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
-                            style={{
-                              background: bgMode === 'light' ? `${customPalette?.primary || theme.accent}20` : theme.bg,
-                              color: bgMode === 'light' ? (customPalette?.primary || theme.accent) : theme.textSecondary,
-                            }}
-                          >
-                            <Sun className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold" style={{ color: bgMode === 'light' ? '#0F172A' : theme.textPrimary }}>
-                              Modo Claro
-                            </p>
-                            <p className="text-[10px] mt-0.5" style={{ color: bgMode === 'light' ? '#64748B' : theme.textMuted }}>
-                              Fundo claro acetinado
-                            </p>
-                          </div>
-                        </div>
-                        {bgMode === 'light' && (
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center shadow shrink-0" style={{ background: customPalette?.primary || theme.accent }}>
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
-                        )}
-                      </button>
-                    </div>
+          {/* Delete Account Modal */}
+          {deleteAccountModalOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+              <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+                <div className="p-6 border-b border-[#1a1a1a]">
+                  <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
+                    <Trash2 className="w-6 h-6 text-red-500" />
                   </div>
-
-                  {/* 2. Cor de Destaque */}
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: `${customPalette?.primary || theme.accent}20`, color: customPalette?.primary || theme.accent }}>
-                          <span className="text-[10px] font-black">2</span>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-extrabold uppercase tracking-widest" style={{ color: theme.textSecondary }}>Cor Principal da Marca</label>
-                          <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Define botões, destaque e identidade</p>
-                        </div>
-                      </div>
-                      {(logoUrl || logoUpload.preview) && (
-                        <button
-                          type="button"
-                          onClick={() => handleMagicExtract()}
-                          disabled={isExtracting}
-                          className="text-[11px] font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all hover:scale-105 cursor-pointer shadow-sm"
-                          style={{ borderColor: theme.accent, color: theme.accent, background: `${theme.accent}12` }}
-                        >
-                          {isExtracting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                          Extrair da logo
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {/* Cor 1: Rosa Padrão */}
-                      {(() => {
-                        const hex = '#FF5C95';
-                        const isActive = (normalizeAccentColor(customPalette?.primary) || theme.accent).toUpperCase() === hex.toUpperCase();
-                        return (
-                          <button
-                            key="noir-gold"
-                            type="button"
-                            onClick={() => handleSelectSwatchColor(hex)}
-                            className="flex items-center justify-between p-3.5 rounded-xl border text-left transition-all hover:scale-[1.02] cursor-pointer"
-                            style={{
-                              background: isActive ? `${hex}15` : theme.inputBg,
-                              borderColor: isActive ? hex : theme.border,
-                              boxShadow: 'none',
-                            }}
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <span className="w-5 h-5 rounded-full shadow flex items-center justify-center shrink-0" style={{ background: hex }}>
-                                {isActive && <Check className="w-3 h-3 text-white" />}
-                              </span>
-                              <div>
-                                <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Rosa Padrão</p>
-                                <p className="text-[10px] font-mono" style={{ color: theme.textMuted }}>#FF5C95</p>
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })()}
-
-                      {/* Cor 2: Cor da Logo ou Azul */}
-                      {(() => {
-                        const hex = (customPalette?.primary && normalizeAccentColor(customPalette.primary)!.toUpperCase() !== '#FF5C95')
-                          ? customPalette.primary
-                          : '#3B82F6';
-                        const isCustomSelected = (normalizeAccentColor(customPalette?.primary) || theme.accent).toUpperCase() === hex.toUpperCase() && hex.toUpperCase() !== '#FF5C95';
-                        return (
-                          <button
-                            key="brand-color"
-                            type="button"
-                            onClick={() => handleSelectSwatchColor(hex)}
-                            className="flex items-center justify-between p-3.5 rounded-xl border text-left transition-all hover:scale-[1.02] cursor-pointer"
-                            style={{
-                              background: isCustomSelected ? `${hex}15` : theme.inputBg,
-                              borderColor: isCustomSelected ? hex : theme.border,
-                              boxShadow: 'none',
-                            }}
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <span className="w-5 h-5 rounded-full shadow flex items-center justify-center shrink-0" style={{ background: hex }}>
-                                {isCustomSelected && <Check className="w-3 h-3 text-white" />}
-                              </span>
-                              <div>
-                                <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>
-                                  {logoUrl || logoUpload.preview ? 'Cor da Logo' : 'Azul Moderno'}
-                                </p>
-                                <p className="text-[10px] font-mono" style={{ color: theme.textMuted }}>{hex}</p>
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })()}
-
-                      {/* Cor 3: Seletor Livre */}
-                      <label
-                        className="flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all hover:scale-[1.02]"
-                        style={{
-                          background: theme.inputBg,
-                          borderColor: theme.border,
-                        }}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <input
-                            type="color"
-                            value={customPalette?.primary || theme.accent}
-                            onChange={(e) => handleSelectSwatchColor(e.target.value)}
-                            className="w-5 h-5 rounded-full cursor-pointer border-0 p-0 bg-transparent shrink-0"
-                          />
-                          <div>
-                            <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Personalizar</p>
-                            <p className="text-[10px]" style={{ color: theme.textMuted }}>Qualquer tom</p>
-                          </div>
-                        </div>
-                      </label>
-                    </div>
-
-                    {/* Cor do texto no botão */}
-                    <div className="mt-4 p-4 rounded-2xl border" style={{ borderColor: theme.border, background: theme.inputBg }}>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Texto nos Botões</p>
-                          <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Ajuste quando o contraste automático não agrada</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleSetBtnTextColor('#FFFFFF')}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all"
-                            style={{
-                              background: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#FFFFFF' ? (customPalette?.primary || theme.accent) : 'transparent',
-                              borderColor: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#FFFFFF' ? (customPalette?.primary || theme.accent) : theme.border,
-                              color: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#FFFFFF' ? theme.btnPrimaryText : theme.textSecondary,
-                            }}
-                          >
-                            <span className="w-3 h-3 rounded-full border" style={{ background: '#FFFFFF', borderColor: theme.border }}></span>
-                            Branco
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleSetBtnTextColor('#0F172A')}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all"
-                            style={{
-                              background: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#0F172A' ? (customPalette?.primary || theme.accent) : 'transparent',
-                              borderColor: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#0F172A' ? (customPalette?.primary || theme.accent) : theme.border,
-                              color: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#0F172A' ? theme.btnPrimaryText : theme.textSecondary,
-                            }}
-                          >
-                            <span className="w-3 h-3 rounded-full" style={{ background: '#0F172A' }}></span>
-                            Preto
-                          </button>
-                        </div>
-                      </div>
-                      {/* Preview do botão */}
-                      <div className="mt-3 flex items-center justify-center">
-                        <div
-                          className="px-6 py-2.5 rounded-xl text-xs font-bold shadow-md"
-                          style={{
-                            background: customPalette?.primary || theme.accent,
-                            color: customPalette?.btnTextColor || theme.btnPrimaryText,
-                          }}
-                        >
-                          Agendar agora
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 3. Tipografia */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: `${customPalette?.primary || theme.accent}20`, color: customPalette?.primary || theme.accent }}>
-                        <span className="text-[10px] font-black">3</span>
-                      </div>
-                      <label className="text-xs font-extrabold uppercase tracking-widest" style={{ color: theme.textSecondary }}>Estilo Tipográfico</label>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Playfair Display */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDraftFontStyle('serif');
-                          setCustomPalette((prev: any) => ({ ...(prev || {}), fontStyle: 'serif' }));
-                        }}
-                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
-                        style={{
-                          background: draftFontStyle === 'serif' ? (bgMode === 'dark' ? '#09090B' : '#FFFFFF') : theme.inputBg,
-                          borderColor: draftFontStyle === 'serif' ? (customPalette?.primary || theme.accent) : theme.border,
-                          boxShadow: 'none',
-                        }}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-xl font-serif font-bold" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
-                          <div>
-                            <p className="text-xs font-bold font-serif" style={{ color: theme.textPrimary }}>Clássico &amp; Elegante</p>
-                            <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Playfair Display</p>
-                          </div>
-                        </div>
-                        {draftFontStyle === 'serif' && (
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center shadow shrink-0" style={{ background: customPalette?.primary || theme.accent }}>
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
-                        )}
-                      </button>
-
-                      {/* Plus Jakarta Sans */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDraftFontStyle('sans');
-                          setCustomPalette((prev: any) => ({ ...(prev || {}), fontStyle: 'sans' }));
-                        }}
-                        className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
-                        style={{
-                          background: draftFontStyle === 'sans' ? (bgMode === 'dark' ? '#09090B' : '#FFFFFF') : theme.inputBg,
-                          borderColor: draftFontStyle === 'sans' ? (customPalette?.primary || theme.accent) : theme.border,
-                          boxShadow: 'none',
-                        }}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-xl font-sans font-black" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
-                          <div>
-                            <p className="text-xs font-bold font-sans" style={{ color: theme.textPrimary }}>Moderno &amp; Minimalista</p>
-                            <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Plus Jakarta Sans</p>
-                          </div>
-                        </div>
-                        {draftFontStyle === 'sans' && (
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center shadow shrink-0" style={{ background: customPalette?.primary || theme.accent }}>
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
-                        )}
-                      </button>
-                    </div>
-                  </div>
+                  <h3 className="text-xl font-bold text-center text-white mb-2">Excluir Conta Permanentemente?</h3>
+                  <p className="text-sm text-[#888] text-center">
+                    Esta ação <strong>cancelará imediatamente</strong> qualquer assinatura ativa no Stripe e revogará seu acesso ao sistema. O histórico será mantido apenas para fins de auditoria.
+                  </p>
                 </div>
 
-                {/* ── Right Column: Interactive Live Device Preview ── */}
-                <div className="lg:col-span-5 space-y-3.5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5" style={{ color: theme.textPrimary }}>
-                      <Eye className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-                      Prévia Ao Vivo
-                    </p>
+                <div className="p-6">
+                  <label className="block text-sm font-bold text-[#888] mb-2">
+                    Para confirmar, digite <strong className="text-white">EXCLUIR</strong> abaixo:
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteConfirmationText}
+                    onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                    className="w-full px-4 py-3 bg-[#111] border border-[#1a1a1a] rounded-xl text-white outline-none focus:border-red-500 transition-colors uppercase font-mono"
+                    placeholder="EXCLUIR"
+                    onPaste={e => e.preventDefault()}
+                  />
+                </div>
 
-                    <div className="flex items-center p-1 rounded-xl border gap-1" style={{ background: theme.inputBg, borderColor: theme.border }}>
-                      <button
-                        type="button"
-                        onClick={() => setPreviewMode('public')}
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${previewMode === 'public' ? 'shadow-sm' : 'opacity-70 hover:opacity-100'}`}
-                        style={{
-                          background: previewMode === 'public' ? (customPalette?.primary || theme.accent) : 'transparent',
-                          color: previewMode === 'public' ? theme.btnPrimaryText : theme.textSecondary,
-                        }}
+                <div className="border-t border-[#1a1a1a] p-4 flex justify-end gap-3 bg-[#0a0a0a]">
+                  <button
+                    onClick={() => {
+                      setDeleteAccountModalOpen(false);
+                      setDeleteConfirmationText('');
+                    }}
+                    className="px-4 py-2 text-sm text-[#888] hover:text-white transition-colors"
+                    disabled={deleteLoading}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deleteConfirmationText !== 'EXCLUIR' || deleteLoading}
+                    className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                  >
+                    {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    {deleteLoading ? 'Excluindo...' : 'Sim, Excluir Minha Conta'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════ STUDIO DE IDENTIDADE VISUAL (POP-UP MODAL) ════════════════════════════════ */}
+          <AnimatePresence>
+            {isCustomizerOpen && (
+              <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 md:p-6 pb-6 pt-16 bg-black/80 backdrop-blur-md overflow-hidden touch-none">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  className="relative w-full max-w-4xl h-full sm:h-auto max-h-[85dvh] sm:max-h-[90vh] rounded-3xl border shadow-2xl flex flex-col overflow-hidden overscroll-contain mt-auto sm:mt-0"
+                  style={{
+                    background: theme.cardBg,
+                    borderColor: theme.cardBorder,
+                  }}
+                >
+                  {/* Modal Header */}
+                  <div
+                    className="px-5 sm:px-6 py-4 border-b flex items-center justify-between shrink-0"
+                    style={{ borderColor: theme.border, background: theme.bg }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md shrink-0"
+                        style={{ background: customPalette?.primary || theme.accent, color: theme.btnPrimaryText }}
                       >
-                        <Smartphone className="w-3.5 h-3.5" /> Página
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPreviewMode('admin')}
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${previewMode === 'admin' ? 'shadow-sm' : 'opacity-70 hover:opacity-100'}`}
-                        style={{
-                          background: previewMode === 'admin' ? (customPalette?.primary || theme.accent) : 'transparent',
-                          color: previewMode === 'admin' ? theme.btnPrimaryText : theme.textSecondary,
-                        }}
-                      >
-                        <Laptop className="w-3.5 h-3.5" /> Painel
-                      </button>
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-base sm:text-lg font-bold" style={{ color: theme.textPrimary }}>
+                          Studio de Identidade Visual
+                        </h3>
+                        <p className="text-xs hidden sm:block" style={{ color: theme.textSecondary }}>
+                          Personalize atmosfera, cores e tipografia com prévia ao vivo. Só muda no sistema ao clicar em salvar.
+                        </p>
+                      </div>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomizerOpen(false)}
+                      className="p-2 rounded-xl transition-all hover:opacity-80 cursor-pointer"
+                      style={{ background: theme.inputBg, color: theme.textSecondary }}
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
 
-                  {/* Preview Canvas */}
-                  {(() => {
-                    const activeAccent = customPalette?.primary || theme.accent;
-                    const isDarkPrev = bgMode === 'dark';
-                    const prevBg = isDarkPrev ? '#0B0B0D' : '#F8FAFC';
-                    const prevCardBg = isDarkPrev ? '#141416' : '#FFFFFF';
-                    const prevBorder = isDarkPrev ? '#242427' : '#E2E8F0';
-                    const prevTextPrimary = isDarkPrev ? '#FFFFFF' : '#0F172A';
-                    const prevTextSecondary = isDarkPrev ? '#A1A1AA' : '#475569';
-                    const prevTextMuted = isDarkPrev ? '#71717A' : '#94A3B8';
-                    const prevFontFamily = draftFontStyle === 'serif' ? "'Playfair Display', Georgia, serif" : "'Plus Jakarta Sans', -apple-system, sans-serif";
+                  {/* Modal Body - 2 Columns */}
+                  <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-10">
+                    {/* ── Left Column: Controls ── */}
+                    <div className="lg:col-span-7 space-y-8">
 
-                    const hex = activeAccent.replace('#', '');
-                    const r = parseInt(hex.substring(0, 2), 16);
-                    const g = parseInt(hex.substring(2, 4), 16);
-                    const b = parseInt(hex.substring(4, 6), 16);
-                    const rVal = isNaN(r) ? 201 : r;
-                    const gVal = isNaN(g) ? 150 : g;
-                    const bVal = isNaN(b) ? 59 : b;
-                    const lum = 0.2126 * rVal + 0.7152 * gVal + 0.0722 * bVal;
-                    const autoPrevBtnText = lum > 145 ? '#000000' : '#FFFFFF';
-                    const prevBtnText = customPalette?.btnTextColor || autoPrevBtnText;
-
-                    return (
-                      <div
-                        className="rounded-2xl border p-4 sm:p-5 transition-all shadow-inner overflow-hidden"
-                        style={{
-                          background: prevBg,
-                          borderColor: prevBorder,
-                        }}
-                      >
-                        {previewMode === 'public' ? (
-                          /* Public Booking Mockup */
-                          <div className="space-y-3.5">
-                            <div className="rounded-2xl p-3.5 border relative overflow-hidden flex items-center justify-between gap-3"
-                              style={{ background: prevCardBg, borderColor: prevBorder }}>
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div
-                                  className="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-base shrink-0 shadow-sm overflow-hidden"
-                                  style={{
-                                    background: logoUrl || logoUpload.preview ? (isDarkPrev ? '#1E1E22' : '#F1F5F9') : activeAccent,
-                                    color: prevBtnText,
-                                    fontFamily: prevFontFamily,
-                                  }}
-                                >
-                                  {logoUrl || logoUpload.preview ? (
-                                    <img
-                                      src={logoUrl || logoUpload.preview || ''}
-                                      alt="Logo"
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    fantasyName ? fantasyName.charAt(0).toUpperCase() : 'N'
-                                  )}
-                                </div>
-                                <div className="min-w-0">
-                                  <h5
-                                    className="font-bold text-sm truncate leading-tight"
-                                    style={{
-                                      color: prevTextPrimary,
-                                      fontFamily: prevFontFamily,
-                                    }}
-                                  >
-                                    {fantasyName || 'Nome da Barbearia'}
-                                  </h5>
-                                  <p className="text-[11px] truncate mt-0.5" style={{ color: prevTextSecondary }}>
-                                    {slogan || 'O melhor atendimento da cidade'}
-                                  </p>
-
-                                  {description && (
-                                    <p className="text-[10px] line-clamp-1 mt-0.5" style={{ color: prevTextMuted }}>
-                                      {description}
-                                    </p>
-  
-                                  )}
-
-                                </div>
-                              </div>
-                              <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border shrink-0"
-                                style={{ background: `${activeAccent}15`, borderColor: `${activeAccent}30`, color: activeAccent }}>
-                                Aberto
-                              </span>
-                            </div>
-
-                            <div className="rounded-2xl p-3.5 border flex items-center justify-between gap-3"
-                              style={{ background: prevCardBg, borderColor: prevBorder }}>
-                              <div>
-                                <h6 className="font-bold text-xs leading-tight" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>
-                                  Corte Degradê & Barba
-                                </h6>
-                                <p className="text-[11px] mt-0.5" style={{ color: prevTextMuted }}>
-                                  45 min • Individual
-                                </p>
-                                <p className="text-xs font-extrabold mt-1" style={{ color: activeAccent }}>
-                                  R$ 65,00
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold shadow shrink-0"
+                      {/* 1. Atmosfera */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: `${customPalette?.primary || theme.accent}20`, color: customPalette?.primary || theme.accent }}>
+                            <span className="text-[10px] font-black">1</span>
+                          </div>
+                          <label className="text-xs font-extrabold uppercase tracking-widest" style={{ color: theme.textSecondary }}>Atmosfera do Salão</label>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Modo Noturno */}
+                          <button
+                            type="button"
+                            onClick={() => handleToggleBgMode('dark')}
+                            className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer"
+                            style={{
+                              background: bgMode === 'dark' ? '#09090B' : theme.inputBg,
+                              borderColor: bgMode === 'dark' ? (customPalette?.primary || theme.accent) : theme.border,
+                              boxShadow: 'none',
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
                                 style={{
-                                  background: activeAccent,
-                                  color: prevBtnText,
+                                  background: bgMode === 'dark' ? `${customPalette?.primary || theme.accent}20` : theme.bg,
+                                  color: bgMode === 'dark' ? (customPalette?.primary || theme.accent) : theme.textSecondary,
                                 }}
                               >
-                                Agendar
+                                <Moon className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold" style={{ color: bgMode === 'dark' ? '#FFFFFF' : theme.textPrimary }}>
+                                  Modo Escuro
+                                </p>
+                                <p className="text-[10px] mt-0.5" style={{ color: bgMode === 'dark' ? '#A1A1AA' : theme.textMuted }}>
+                                  Fundo escuro luxuoso
+                                </p>
+                              </div>
+                            </div>
+                            {bgMode === 'dark' && (
+                              <div className="w-5 h-5 rounded-full flex items-center justify-center shadow shrink-0" style={{ background: customPalette?.primary || theme.accent }}>
+                                <Check className="w-3 h-3 text-white" />
+                              </div>
+                            )}
+                          </button>
+
+                          {/* Modo Claro */}
+                          <button
+                            type="button"
+                            onClick={() => handleToggleBgMode('light')}
+                            className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer"
+                            style={{
+                              background: bgMode === 'light' ? '#FFFFFF' : theme.inputBg,
+                              borderColor: bgMode === 'light' ? (customPalette?.primary || theme.accent) : theme.border,
+                              boxShadow: 'none',
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                                style={{
+                                  background: bgMode === 'light' ? `${customPalette?.primary || theme.accent}20` : theme.bg,
+                                  color: bgMode === 'light' ? (customPalette?.primary || theme.accent) : theme.textSecondary,
+                                }}
+                              >
+                                <Sun className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold" style={{ color: bgMode === 'light' ? '#0F172A' : theme.textPrimary }}>
+                                  Modo Claro
+                                </p>
+                                <p className="text-[10px] mt-0.5" style={{ color: bgMode === 'light' ? '#64748B' : theme.textMuted }}>
+                                  Fundo claro acetinado
+                                </p>
+                              </div>
+                            </div>
+                            {bgMode === 'light' && (
+                              <div className="w-5 h-5 rounded-full flex items-center justify-center shadow shrink-0" style={{ background: customPalette?.primary || theme.accent }}>
+                                <Check className="w-3 h-3 text-white" />
+                              </div>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 2. Cor de Destaque */}
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: `${customPalette?.primary || theme.accent}20`, color: customPalette?.primary || theme.accent }}>
+                              <span className="text-[10px] font-black">2</span>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-extrabold uppercase tracking-widest" style={{ color: theme.textSecondary }}>Cor Principal da Marca</label>
+                              <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Define botões, destaque e identidade</p>
+                            </div>
+                          </div>
+                          {(logoUrl || logoUpload.preview) && (
+                            <button
+                              type="button"
+                              onClick={() => handleMagicExtract()}
+                              disabled={isExtracting}
+                              className="text-[11px] font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all hover:scale-105 cursor-pointer shadow-sm"
+                              style={{ borderColor: theme.accent, color: theme.accent, background: `${theme.accent}12` }}
+                            >
+                              {isExtracting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                              Extrair da logo
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {/* Cor 1: Rosa Padrão */}
+                          {(() => {
+                            const hex = '#FF5C95';
+                            const isActive = (normalizeAccentColor(customPalette?.primary) || theme.accent).toUpperCase() === hex.toUpperCase();
+                            return (
+                              <button
+                                key="noir-gold"
+                                type="button"
+                                onClick={() => handleSelectSwatchColor(hex)}
+                                className="flex items-center justify-between p-3.5 rounded-xl border text-left transition-all hover:scale-[1.02] cursor-pointer"
+                                style={{
+                                  background: isActive ? `${hex}15` : theme.inputBg,
+                                  borderColor: isActive ? hex : theme.border,
+                                  boxShadow: 'none',
+                                }}
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <span className="w-5 h-5 rounded-full shadow flex items-center justify-center shrink-0" style={{ background: hex }}>
+                                    {isActive && <Check className="w-3 h-3 text-white" />}
+                                  </span>
+                                  <div>
+                                    <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Rosa Padrão</p>
+                                    <p className="text-[10px] font-mono" style={{ color: theme.textMuted }}>#FF5C95</p>
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })()}
+
+                          {/* Cor 2: Cor da Logo ou Azul */}
+                          {(() => {
+                            const hex = (customPalette?.primary && normalizeAccentColor(customPalette.primary)!.toUpperCase() !== '#FF5C95')
+                              ? customPalette.primary
+                              : '#3B82F6';
+                            const isCustomSelected = (normalizeAccentColor(customPalette?.primary) || theme.accent).toUpperCase() === hex.toUpperCase() && hex.toUpperCase() !== '#FF5C95';
+                            return (
+                              <button
+                                key="brand-color"
+                                type="button"
+                                onClick={() => handleSelectSwatchColor(hex)}
+                                className="flex items-center justify-between p-3.5 rounded-xl border text-left transition-all hover:scale-[1.02] cursor-pointer"
+                                style={{
+                                  background: isCustomSelected ? `${hex}15` : theme.inputBg,
+                                  borderColor: isCustomSelected ? hex : theme.border,
+                                  boxShadow: 'none',
+                                }}
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <span className="w-5 h-5 rounded-full shadow flex items-center justify-center shrink-0" style={{ background: hex }}>
+                                    {isCustomSelected && <Check className="w-3 h-3 text-white" />}
+                                  </span>
+                                  <div>
+                                    <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>
+                                      {logoUrl || logoUpload.preview ? 'Cor da Logo' : 'Azul Moderno'}
+                                    </p>
+                                    <p className="text-[10px] font-mono" style={{ color: theme.textMuted }}>{hex}</p>
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })()}
+
+                          {/* Cor 3: Seletor Livre */}
+                          <label
+                            className="flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all hover:scale-[1.02]"
+                            style={{
+                              background: theme.inputBg,
+                              borderColor: theme.border,
+                            }}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <input
+                                type="color"
+                                value={customPalette?.primary || theme.accent}
+                                onChange={(e) => handleSelectSwatchColor(e.target.value)}
+                                className="w-5 h-5 rounded-full cursor-pointer border-0 p-0 bg-transparent shrink-0"
+                              />
+                              <div>
+                                <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Personalizar</p>
+                                <p className="text-[10px]" style={{ color: theme.textMuted }}>Qualquer tom</p>
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+
+                        {/* Cor do texto no botão */}
+                        <div className="mt-4 p-4 rounded-2xl border" style={{ borderColor: theme.border, background: theme.inputBg }}>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Texto nos Botões</p>
+                              <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Ajuste quando o contraste automático não agrada</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleSetBtnTextColor('#FFFFFF')}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all"
+                                style={{
+                                  background: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#FFFFFF' ? (customPalette?.primary || theme.accent) : 'transparent',
+                                  borderColor: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#FFFFFF' ? (customPalette?.primary || theme.accent) : theme.border,
+                                  color: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#FFFFFF' ? theme.btnPrimaryText : theme.textSecondary,
+                                }}
+                              >
+                                <span className="w-3 h-3 rounded-full border" style={{ background: '#FFFFFF', borderColor: theme.border }}></span>
+                                Branco
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSetBtnTextColor('#0F172A')}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all"
+                                style={{
+                                  background: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#0F172A' ? (customPalette?.primary || theme.accent) : 'transparent',
+                                  borderColor: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#0F172A' ? (customPalette?.primary || theme.accent) : theme.border,
+                                  color: (customPalette?.btnTextColor || theme.btnPrimaryText) === '#0F172A' ? theme.btnPrimaryText : theme.textSecondary,
+                                }}
+                              >
+                                <span className="w-3 h-3 rounded-full" style={{ background: '#0F172A' }}></span>
+                                Preto
                               </button>
                             </div>
                           </div>
-                        ) : (
-                          /* Admin Mockup */
-                          <div className="space-y-3.5">
-                            <div className="flex items-center justify-between border-b pb-2.5" style={{ borderColor: prevBorder }}>
-                              <div>
-                                <p className="text-[9px] uppercase font-extrabold tracking-widest" style={{ color: prevTextMuted }}>Painel do Salão</p>
-                                <h5 className="font-bold text-sm mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>
-                                  Olá, {profile?.full_name?.split(' ')[0] || 'Dono'} 👋
-                                </h5>
-                              </div>
-                              <div className="px-2.5 py-1 rounded-xl text-[11px] font-bold shadow-sm"
-                                style={{ background: activeAccent, color: prevBtnText }}>
-                                + Agendar
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2.5">
-                              <div className="rounded-xl p-2.5 border" style={{ background: prevCardBg, borderColor: prevBorder }}>
-                                <p className="text-[9px] font-bold uppercase" style={{ color: prevTextMuted }}>Hoje</p>
-                                <p className="text-base font-black mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>R$ 480,00</p>
-                                <p className="text-[9px] text-emerald-500 font-bold mt-0.5">+14%</p>
-                              </div>
-                              <div className="rounded-xl p-2.5 border" style={{ background: prevCardBg, borderColor: prevBorder }}>
-                                <p className="text-[9px] font-bold uppercase" style={{ color: prevTextMuted }}>Ocupação</p>
-                                <p className="text-base font-black mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>85%</p>
-                                <p className="text-[9px] font-bold mt-0.5" style={{ color: activeAccent }}>6 clientes</p>
-                              </div>
+                          {/* Preview do botão */}
+                          <div className="mt-3 flex items-center justify-center">
+                            <div
+                              className="px-6 py-2.5 rounded-xl text-xs font-bold shadow-md"
+                              style={{
+                                background: customPalette?.primary || theme.accent,
+                                color: customPalette?.btnTextColor || theme.btnPrimaryText,
+                              }}
+                            >
+                              Agendar agora
                             </div>
                           </div>
-                        )}
+                        </div>
                       </div>
-                    );
-                  })()}
-                </div>
-              </div>
 
-              {/* Modal Footer */}
-              <div
-                className="px-6 py-4 border-t flex items-center justify-between shrink-0"
-                style={{ borderColor: theme.border, background: theme.bg }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setIsCustomizerOpen(false)}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold border transition-all hover:opacity-80 cursor-pointer"
-                  style={{ borderColor: theme.border, color: theme.textSecondary, background: theme.inputBg }}
-                >
-                  Fechar sem Salvar
-                </button>
+                      {/* 3. Tipografia */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: `${customPalette?.primary || theme.accent}20`, color: customPalette?.primary || theme.accent }}>
+                            <span className="text-[10px] font-black">3</span>
+                          </div>
+                          <label className="text-xs font-extrabold uppercase tracking-widest" style={{ color: theme.textSecondary }}>Estilo Tipográfico</label>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Playfair Display */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDraftFontStyle('serif');
+                              setCustomPalette((prev: any) => ({ ...(prev || {}), fontStyle: 'serif' }));
+                            }}
+                            className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
+                            style={{
+                              background: draftFontStyle === 'serif' ? (bgMode === 'dark' ? '#09090B' : '#FFFFFF') : theme.inputBg,
+                              borderColor: draftFontStyle === 'serif' ? (customPalette?.primary || theme.accent) : theme.border,
+                              boxShadow: 'none',
+                            }}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-xl font-serif font-bold" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
+                              <div>
+                                <p className="text-xs font-bold font-serif" style={{ color: theme.textPrimary }}>Clássico &amp; Elegante</p>
+                                <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Playfair Display</p>
+                              </div>
+                            </div>
+                            {draftFontStyle === 'serif' && (
+                              <div className="w-5 h-5 rounded-full flex items-center justify-center shadow shrink-0" style={{ background: customPalette?.primary || theme.accent }}>
+                                <Check className="w-3 h-3 text-white" />
+                              </div>
+                            )}
+                          </button>
 
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={loading}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer"
-                  style={{
-                    background: theme.btnPrimaryBg || theme.accent,
-                    color: theme.btnPrimaryText,
-                  }}
-                >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>Salvar Alterações</span>
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                          {/* Plus Jakarta Sans */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDraftFontStyle('sans');
+                              setCustomPalette((prev: any) => ({ ...(prev || {}), fontStyle: 'sans' }));
+                            }}
+                            className="flex items-center justify-between p-4 rounded-2xl border text-left transition-all cursor-pointer hover:scale-[1.01]"
+                            style={{
+                              background: draftFontStyle === 'sans' ? (bgMode === 'dark' ? '#09090B' : '#FFFFFF') : theme.inputBg,
+                              borderColor: draftFontStyle === 'sans' ? (customPalette?.primary || theme.accent) : theme.border,
+                              boxShadow: 'none',
+                            }}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-xl font-sans font-black" style={{ color: customPalette?.primary || theme.accent }}>Aa</span>
+                              <div>
+                                <p className="text-xs font-bold font-sans" style={{ color: theme.textPrimary }}>Moderno &amp; Minimalista</p>
+                                <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Plus Jakarta Sans</p>
+                              </div>
+                            </div>
+                            {draftFontStyle === 'sans' && (
+                              <div className="w-5 h-5 rounded-full flex items-center justify-center shadow shrink-0" style={{ background: customPalette?.primary || theme.accent }}>
+                                <Check className="w-3 h-3 text-white" />
+                              </div>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
 
-      {/* Stripe Connect Activation & Guided Choice Modal */}
-      <StripeActivatedModal
-        isOpen={showStripeActivatedModal}
-        onClose={() => setShowStripeActivatedModal(false)}
-        onConfirmChoice={handleStripeActivatedChoice}
-      />
+                    {/* ── Right Column: Interactive Live Device Preview ── */}
+                    <div className="lg:col-span-5 space-y-3.5">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5" style={{ color: theme.textPrimary }}>
+                          <Eye className="w-3.5 h-3.5" style={{ color: theme.accent }} />
+                          Prévia Ao Vivo
+                        </p>
 
-      {/* Modal Informativo: Stripe Necessário */}
-      <AnimatePresence>
-        {stripeRequiredModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setStripeRequiredModalOpen(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md rounded-3xl p-6 border shadow-2xl z-10 space-y-4"
-              style={{ background: theme.cardBg, borderColor: theme.border }}
-            >
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto" style={{ background: '#635BFF20', color: '#635BFF' }}>
-                <CreditCard className="w-6 h-6" />
+                        <div className="flex items-center p-1 rounded-xl border gap-1" style={{ background: theme.inputBg, borderColor: theme.border }}>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewMode('public')}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${previewMode === 'public' ? 'shadow-sm' : 'opacity-70 hover:opacity-100'}`}
+                            style={{
+                              background: previewMode === 'public' ? (customPalette?.primary || theme.accent) : 'transparent',
+                              color: previewMode === 'public' ? theme.btnPrimaryText : theme.textSecondary,
+                            }}
+                          >
+                            <Smartphone className="w-3.5 h-3.5" /> Página
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewMode('admin')}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${previewMode === 'admin' ? 'shadow-sm' : 'opacity-70 hover:opacity-100'}`}
+                            style={{
+                              background: previewMode === 'admin' ? (customPalette?.primary || theme.accent) : 'transparent',
+                              color: previewMode === 'admin' ? theme.btnPrimaryText : theme.textSecondary,
+                            }}
+                          >
+                            <Laptop className="w-3.5 h-3.5" /> Painel
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Preview Canvas */}
+                      {(() => {
+                        const activeAccent = customPalette?.primary || theme.accent;
+                        const isDarkPrev = bgMode === 'dark';
+                        const prevBg = isDarkPrev ? '#0B0B0D' : '#F8FAFC';
+                        const prevCardBg = isDarkPrev ? '#141416' : '#FFFFFF';
+                        const prevBorder = isDarkPrev ? '#242427' : '#E2E8F0';
+                        const prevTextPrimary = isDarkPrev ? '#FFFFFF' : '#0F172A';
+                        const prevTextSecondary = isDarkPrev ? '#A1A1AA' : '#475569';
+                        const prevTextMuted = isDarkPrev ? '#71717A' : '#94A3B8';
+                        const prevFontFamily = draftFontStyle === 'serif' ? "'Playfair Display', Georgia, serif" : "'Plus Jakarta Sans', -apple-system, sans-serif";
+
+                        const hex = activeAccent.replace('#', '');
+                        const r = parseInt(hex.substring(0, 2), 16);
+                        const g = parseInt(hex.substring(2, 4), 16);
+                        const b = parseInt(hex.substring(4, 6), 16);
+                        const rVal = isNaN(r) ? 201 : r;
+                        const gVal = isNaN(g) ? 150 : g;
+                        const bVal = isNaN(b) ? 59 : b;
+                        const lum = 0.2126 * rVal + 0.7152 * gVal + 0.0722 * bVal;
+                        const autoPrevBtnText = lum > 145 ? '#000000' : '#FFFFFF';
+                        const prevBtnText = customPalette?.btnTextColor || autoPrevBtnText;
+
+                        return (
+                          <div
+                            className="rounded-2xl border p-4 sm:p-5 transition-all shadow-inner overflow-hidden"
+                            style={{
+                              background: prevBg,
+                              borderColor: prevBorder,
+                            }}
+                          >
+                            {previewMode === 'public' ? (
+                              /* Public Booking Mockup */
+                              <div className="space-y-3.5">
+                                <div className="rounded-2xl p-3.5 border relative overflow-hidden flex items-center justify-between gap-3"
+                                  style={{ background: prevCardBg, borderColor: prevBorder }}>
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <div
+                                      className="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-base shrink-0 shadow-sm overflow-hidden"
+                                      style={{
+                                        background: logoUrl || logoUpload.preview ? (isDarkPrev ? '#1E1E22' : '#F1F5F9') : activeAccent,
+                                        color: prevBtnText,
+                                        fontFamily: prevFontFamily,
+                                      }}
+                                    >
+                                      {logoUrl || logoUpload.preview ? (
+                                        <img
+                                          src={logoUrl || logoUpload.preview || ''}
+                                          alt="Logo"
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        fantasyName ? fantasyName.charAt(0).toUpperCase() : 'N'
+                                      )}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <h5
+                                        className="font-bold text-sm truncate leading-tight"
+                                        style={{
+                                          color: prevTextPrimary,
+                                          fontFamily: prevFontFamily,
+                                        }}
+                                      >
+                                        {fantasyName || 'Nome da Barbearia'}
+                                      </h5>
+                                      <p className="text-[11px] truncate mt-0.5" style={{ color: prevTextSecondary }}>
+                                        {slogan || 'O melhor atendimento da cidade'}
+                                      </p>
+
+                                      {description && (
+                                        <p className="text-[10px] line-clamp-1 mt-0.5" style={{ color: prevTextMuted }}>
+                                          {description}
+                                        </p>
+
+                                      )}
+
+                                    </div>
+                                  </div>
+                                  <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border shrink-0"
+                                    style={{ background: `${activeAccent}15`, borderColor: `${activeAccent}30`, color: activeAccent }}>
+                                    Aberto
+                                  </span>
+                                </div>
+
+                                <div className="rounded-2xl p-3.5 border flex items-center justify-between gap-3"
+                                  style={{ background: prevCardBg, borderColor: prevBorder }}>
+                                  <div>
+                                    <h6 className="font-bold text-xs leading-tight" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>
+                                      Corte Degradê & Barba
+                                    </h6>
+                                    <p className="text-[11px] mt-0.5" style={{ color: prevTextMuted }}>
+                                      45 min • Individual
+                                    </p>
+                                    <p className="text-xs font-extrabold mt-1" style={{ color: activeAccent }}>
+                                      R$ 65,00
+                                    </p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold shadow shrink-0"
+                                    style={{
+                                      background: activeAccent,
+                                      color: prevBtnText,
+                                    }}
+                                  >
+                                    Agendar
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              /* Admin Mockup */
+                              <div className="space-y-3.5">
+                                <div className="flex items-center justify-between border-b pb-2.5" style={{ borderColor: prevBorder }}>
+                                  <div>
+                                    <p className="text-[9px] uppercase font-extrabold tracking-widest" style={{ color: prevTextMuted }}>Painel do Salão</p>
+                                    <h5 className="font-bold text-sm mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>
+                                      Olá, {profile?.full_name?.split(' ')[0] || 'Dono'} 👋
+                                    </h5>
+                                  </div>
+                                  <div className="px-2.5 py-1 rounded-xl text-[11px] font-bold shadow-sm"
+                                    style={{ background: activeAccent, color: prevBtnText }}>
+                                    + Agendar
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2.5">
+                                  <div className="rounded-xl p-2.5 border" style={{ background: prevCardBg, borderColor: prevBorder }}>
+                                    <p className="text-[9px] font-bold uppercase" style={{ color: prevTextMuted }}>Hoje</p>
+                                    <p className="text-base font-black mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>R$ 480,00</p>
+                                    <p className="text-[9px] text-emerald-500 font-bold mt-0.5">+14%</p>
+                                  </div>
+                                  <div className="rounded-xl p-2.5 border" style={{ background: prevCardBg, borderColor: prevBorder }}>
+                                    <p className="text-[9px] font-bold uppercase" style={{ color: prevTextMuted }}>Ocupação</p>
+                                    <p className="text-base font-black mt-0.5" style={{ color: prevTextPrimary, fontFamily: prevFontFamily }}>85%</p>
+                                    <p className="text-[9px] font-bold mt-0.5" style={{ color: activeAccent }}>6 clientes</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div
+                    className="px-6 py-4 border-t flex items-center justify-between shrink-0"
+                    style={{ borderColor: theme.border, background: theme.bg }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomizerOpen(false)}
+                      className="px-5 py-2.5 rounded-xl text-xs font-bold border transition-all hover:opacity-80 cursor-pointer"
+                      style={{ borderColor: theme.border, color: theme.textSecondary, background: theme.inputBg }}
+                    >
+                      Fechar sem Salvar
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleSave}
+                      disabled={loading}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                      style={{
+                        background: theme.btnPrimaryBg || theme.accent,
+                        color: theme.btnPrimaryText,
+                      }}
+                    >
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      <span>Salvar Alterações</span>
+                    </button>
+                  </div>
+                </motion.div>
               </div>
-              <div className="text-center space-y-1.5">
-                <h3 className="text-lg font-bold" style={{ color: theme.textPrimary }}>
-                  Conexão com o Stripe Necessária
-                </h3>
-                <p className="text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
-                  Para habilitar pagamentos online (Pix e cartão de crédito direto dos seus clientes pelo seu site), você precisa conectar sua conta Stripe Connect.
-                </p>
-              </div>
-              <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
-                <button
-                  type="button"
+            )}
+          </AnimatePresence>
+
+          {/* Stripe Connect Activation & Guided Choice Modal */}
+          <StripeActivatedModal
+            isOpen={showStripeActivatedModal}
+            onClose={() => setShowStripeActivatedModal(false)}
+            onConfirmChoice={handleStripeActivatedChoice}
+          />
+
+          {/* Modal Informativo: Stripe Necessário */}
+          <AnimatePresence>
+            {stripeRequiredModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/60 backdrop-blur-sm"
                   onClick={() => setStripeRequiredModalOpen(false)}
-                  className="w-full sm:w-1/2 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer hover:opacity-80"
-                  style={{ borderColor: theme.border, color: theme.textSecondary, background: theme.inputBg }}
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  className="relative w-full max-w-md rounded-3xl p-6 border shadow-2xl z-10 space-y-4"
+                  style={{ background: theme.cardBg, borderColor: theme.border }}
                 >
-                  Agora Não
-                </button>
-                <button
-                  type="button"
-                  disabled={isConnectingStripe}
-                  onClick={() => {
-                    setStripeRequiredModalOpen(false);
-                    handleConnectStripe();
-                  }}
-                  className="w-full sm:w-1/2 py-2.5 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer hover:opacity-95 disabled:opacity-75"
-                  style={{ background: '#635BFF' }}
-                >
-                  {isConnectingStripe ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Conectando...</span>
-                    </>
-                  ) : (
-                    <span>Conectar Conta</span>
-                  )}
-                </button>
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto" style={{ background: '#635BFF20', color: '#635BFF' }}>
+                    <CreditCard className="w-6 h-6" />
+                  </div>
+                  <div className="text-center space-y-1.5">
+                    <h3 className="text-lg font-bold" style={{ color: theme.textPrimary }}>
+                      Conexão com o Stripe Necessária
+                    </h3>
+                    <p className="text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
+                      Para habilitar pagamentos online (Pix e cartão de crédito direto dos seus clientes pelo seu site), você precisa conectar sua conta Stripe Connect.
+                    </p>
+                  </div>
+                  <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setStripeRequiredModalOpen(false)}
+                      className="w-full sm:w-1/2 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer hover:opacity-80"
+                      style={{ borderColor: theme.border, color: theme.textSecondary, background: theme.inputBg }}
+                    >
+                      Agora Não
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isConnectingStripe}
+                      onClick={() => {
+                        setStripeRequiredModalOpen(false);
+                        handleConnectStripe();
+                      }}
+                      className="w-full sm:w-1/2 py-2.5 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer hover:opacity-95 disabled:opacity-75"
+                      style={{ background: '#635BFF' }}
+                    >
+                      {isConnectingStripe ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Conectando...</span>
+                        </>
+                      ) : (
+                        <span>Conectar Conta</span>
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+            )}
+          </AnimatePresence>
 
-      {/* Modal: Desconectar Stripe */}
-      <AnimatePresence>
-        {disconnectStripeModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => !disconnectingStripe && setDisconnectStripeModalOpen(false)}
+          {/* Modal: Desconectar Stripe */}
+          <AnimatePresence>
+            {disconnectStripeModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                  onClick={() => !disconnectingStripe && setDisconnectStripeModalOpen(false)}
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  className="relative w-full max-w-md rounded-3xl p-6 border shadow-2xl z-10 space-y-4"
+                  style={{ background: theme.cardBg, borderColor: theme.border }}
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mx-auto">
+                    <AlertCircle className="w-6 h-6" />
+                  </div>
+                  <div className="text-center space-y-1.5">
+                    <h3 className="text-lg font-bold" style={{ color: theme.textPrimary }}>
+                      Desconectar Conta Stripe?
+                    </h3>
+                    <p className="text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
+                      Ao desconectar, o recebimento de pagamentos online (Pix e cartão) será desativado. Seus clientes só poderão agendar com a opção <strong>"Pagar no Local"</strong>.
+                    </p>
+                  </div>
+                  <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={disconnectingStripe}
+                      onClick={() => setDisconnectStripeModalOpen(false)}
+                      className="w-full sm:w-1/2 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer hover:opacity-80"
+                      style={{ borderColor: theme.border, color: theme.textSecondary, background: theme.inputBg }}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={disconnectingStripe}
+                      onClick={handleDisconnectStripe}
+                      className="w-full sm:w-1/2 py-2.5 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer hover:bg-red-700 bg-red-600 disabled:opacity-75"
+                    >
+                      {disconnectingStripe ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Desconectando...</span>
+                        </>
+                      ) : (
+                        <span>Sim, Desconectar</span>
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
+          {/* Modal: Conta Excluída com Sucesso */}
+          <AnimatePresence>
+            {accountDeletedSuccess && (
+              <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="fixed inset-0 bg-black/85 backdrop-blur-md"
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  className="relative w-full max-w-md rounded-3xl p-8 border shadow-2xl z-10 text-center space-y-4"
+                  style={{ background: '#09090b', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                >
+                  <div className="w-16 h-16 rounded-full bg-red-500/15 text-red-500 flex items-center justify-center mx-auto text-2xl border border-red-500/30">
+                    <Trash2 className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-black text-white">
+                      Conta Deletada com Sucesso!
+                    </h3>
+                    <p className="text-sm text-zinc-400 leading-relaxed">
+                      Seu salão, dados e assinaturas do Stripe foram permanentemente cancelados e excluídos.
+                    </p>
+                  </div>
+                  <div className="pt-2 flex items-center justify-center gap-2 text-xs font-semibold text-zinc-400">
+                    <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                    <span>Voltando para a página inicial...</span>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+          {/* ── Modal: Upgrade Plan ── */}
+          {showUpgradeModal && (
+            <UpgradeModal
+              feature={showUpgradeModal}
+              onClose={() => setShowUpgradeModal(null)}
             />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md rounded-3xl p-6 border shadow-2xl z-10 space-y-4"
-              style={{ background: theme.cardBg, borderColor: theme.border }}
-            >
-              <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mx-auto">
-                <AlertCircle className="w-6 h-6" />
-              </div>
-              <div className="text-center space-y-1.5">
-                <h3 className="text-lg font-bold" style={{ color: theme.textPrimary }}>
-                  Desconectar Conta Stripe?
-                </h3>
-                <p className="text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
-                  Ao desconectar, o recebimento de pagamentos online (Pix e cartão) será desativado. Seus clientes só poderão agendar com a opção <strong>"Pagar no Local"</strong>.
-                </p>
-              </div>
-              <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
-                <button
-                  type="button"
-                  disabled={disconnectingStripe}
-                  onClick={() => setDisconnectStripeModalOpen(false)}
-                  className="w-full sm:w-1/2 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer hover:opacity-80"
-                  style={{ borderColor: theme.border, color: theme.textSecondary, background: theme.inputBg }}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  disabled={disconnectingStripe}
-                  onClick={handleDisconnectStripe}
-                  className="w-full sm:w-1/2 py-2.5 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer hover:bg-red-700 bg-red-600 disabled:opacity-75"
-                >
-                  {disconnectingStripe ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Desconectando...</span>
-                    </>
-                  ) : (
-                    <span>Sim, Desconectar</span>
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+          )}
 
-      {/* Modal: Conta Excluída com Sucesso */}
-      <AnimatePresence>
-        {accountDeletedSuccess && (
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="fixed inset-0 bg-black/85 backdrop-blur-md"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="relative w-full max-w-md rounded-3xl p-8 border shadow-2xl z-10 text-center space-y-4"
-              style={{ background: '#09090b', borderColor: 'rgba(239, 68, 68, 0.3)' }}
-            >
-              <div className="w-16 h-16 rounded-full bg-red-500/15 text-red-500 flex items-center justify-center mx-auto text-2xl border border-red-500/30">
-                <Trash2 className="w-8 h-8" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-black text-white">
-                  Conta Deletada com Sucesso!
-                </h3>
-                <p className="text-sm text-zinc-400 leading-relaxed">
-                  Seu salão, dados e assinaturas do Stripe foram permanentemente cancelados e excluídos.
-                </p>
-              </div>
-              <div className="pt-2 flex items-center justify-center gap-2 text-xs font-semibold text-zinc-400">
-                <Loader2 className="w-4 h-4 animate-spin text-red-500" />
-                <span>Voltando para a página inicial...</span>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-      {/* ── Modal: Upgrade Plan ── */}
-      {showUpgradeModal && (
-        <UpgradeModal 
-          feature={showUpgradeModal}
-          onClose={() => setShowUpgradeModal(null)}
-        />
-      )}
-
-      {/* ── Modal: Image Cropper ── */}
-      <ImageCropperModal
-        isOpen={cropModalOpen}
-        onClose={() => setCropModalOpen(false)}
-        imageSrc={cropImageSrc}
-        onCropComplete={handleCropComplete}
-        aspect={cropType === 'logo' ? 1 : 16 / 6}
-        shape={cropType === 'logo' ? 'round' : 'rect'}
-        title={cropType === 'logo' ? 'Ajustar Logo' : 'Ajustar Banner'}
-      />
+          {/* ── Modal: Image Cropper ── */}
+          <ImageCropperModal
+            isOpen={cropModalOpen}
+            onClose={() => setCropModalOpen(false)}
+            imageSrc={cropImageSrc}
+            onCropComplete={handleCropComplete}
+            aspect={cropType === 'logo' ? 1 : 16 / 6}
+            shape={cropType === 'logo' ? 'round' : 'rect'}
+            title={cropType === 'logo' ? 'Ajustar Logo' : 'Ajustar Banner'}
+          />
         </>
       ), document.body)}
     </div>
