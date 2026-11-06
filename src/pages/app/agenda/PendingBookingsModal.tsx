@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { createPortal } from "react-dom";
 import { supabase } from "../../../integrations/supabase/client";
 import { X, Clock, AlertCircle, CheckCircle, ArrowDownUp } from "lucide-react";
 import { format } from "date-fns";
@@ -31,7 +32,16 @@ export default function PendingBookingsModal({ tenantId, onClose, onBookingClick
         .in("status", ["pending", "confirmed", "arrived", "in_progress"])
         .lt("scheduled_at", now);
       if (error) throw error;
-      return data || [];
+      return (data || []).filter((b: any) => {
+        if (
+          b.status === "pending" &&
+          (b.payment_mode === "deposit" || b.payment_mode === "full") &&
+          (!b.payment_status || b.payment_status === "pending")
+        ) {
+          return false;
+        }
+        return true;
+      });
     }
   });
 
@@ -43,9 +53,9 @@ export default function PendingBookingsModal({ tenantId, onClose, onBookingClick
     });
   }, [bookings, sortOrder]);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-md rounded-3xl shadow-xl flex flex-col max-h-[85vh] animate-slide-up" style={{ background: theme.bg, border: `1px solid ${theme.border}` }}>
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+      <div className="w-full max-w-md rounded-3xl shadow-2xl flex flex-col max-h-[82dvh] animate-slide-up" style={{ background: theme.bg, border: `1px solid ${theme.border}` }}>
         <div className="flex items-center justify-between p-5 border-b shrink-0" style={{ borderColor: theme.border }}>
           <div>
             <h2 className="font-bold text-base flex items-center gap-2" style={{ color: theme.textPrimary }}>
@@ -110,6 +120,7 @@ export default function PendingBookingsModal({ tenantId, onClose, onBookingClick
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

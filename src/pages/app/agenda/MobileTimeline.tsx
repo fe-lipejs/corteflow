@@ -76,12 +76,23 @@ export default function MobileTimeline({
           </button>
 
           <div className="flex flex-col items-center">
-            <h2
-              className="font-serif text-[18px] font-bold capitalize tracking-tight"
+            <label
+              className="relative font-serif text-[18px] font-bold capitalize tracking-tight cursor-pointer px-2 py-0.5 rounded-lg hover:bg-black/5 transition-colors"
               style={{ color: theme.textPrimary }}
+              title="Toque para ir a uma data específica"
             >
               {format(currentDay, 'MMMM yyyy', { locale: ptBR })}
-            </h2>
+              <input
+                type="date"
+                value={format(currentDay, 'yyyy-MM-dd')}
+                onChange={(e) => {
+                  if (!e.target.value) return;
+                  const [yy, mm, dd] = e.target.value.split('-').map(Number);
+                  onDayChange(new Date(yy, mm - 1, dd));
+                }}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+              />
+            </label>
             <div className="flex items-center gap-2 mt-1">
               <p
                 className="text-[10px] uppercase tracking-widest font-semibold opacity-70"

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { X, User, Scissors, Clock, CreditCard, MessageSquare, Phone, Mail, Loader2, CalendarClock, MapPin, AlertTriangle } from 'lucide-react';
@@ -97,14 +98,14 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
 
   const waDigits = booking.customer?.phone ? formatWhatsAppNumber(booking.customer.phone) : '';
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-[var(--theme-bg-overlay)] backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-[90] bg-[var(--theme-bg-overlay)] backdrop-blur-sm" onClick={onClose} />
 
       {/* Sheet */}
       <div
-        className="fixed bottom-0 left-0 right-0 md:top-0 md:right-0 md:left-auto md:bottom-0 z-50 flex flex-col w-full md:w-[480px] h-[85vh] sm:h-[90vh] md:h-full max-h-[100dvh]"
+        className="fixed bottom-0 left-0 right-0 md:top-0 md:right-0 md:left-auto md:bottom-0 z-[100] flex flex-col w-full md:w-[480px] h-[82dvh] sm:h-[88dvh] md:h-full max-h-[calc(100dvh-1rem)] md:max-h-[100dvh] shadow-2xl"
         style={{
           background: 'var(--theme-bg)',
           borderTop: '1px solid var(--theme-border)',
@@ -488,6 +489,7 @@ export default function BookingDetailSheet({ booking, onClose, onStatusChange, o
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }

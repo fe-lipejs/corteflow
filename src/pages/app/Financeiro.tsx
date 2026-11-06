@@ -160,9 +160,7 @@ export default function Financeiro() {
           .from('bookings')
           .select('id')
           .eq('tenant_id', tenantId)
-          .eq('professional_id', selectedProfessionalId)
-          .gte('scheduled_at', start)
-          .lte('scheduled_at', end);
+          .eq('professional_id', selectedProfessionalId);
         professionalBookingIds = (myBookings || []).map((b: any) => b.id);
       }
 

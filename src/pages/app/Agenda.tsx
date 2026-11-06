@@ -45,8 +45,8 @@ export default function Agenda() {
   const { play: playChime } = useBarberSound();
 
   const [view, setView] = useState<View>('week');
-  const [weekStart, setWeekStart] = useState<Date>(() => startOfDay(new Date()));
   const [currentDay, setCurrentDay] = useState<Date>(new Date());
+  const weekStart = useMemo(() => startOfDay(currentDay), [currentDay]);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -124,14 +124,6 @@ export default function Agenda() {
     () => searchParams.get('professional')
   );
 
-  // Sync weekStart with currentDay to ensure weekBookings always contains the currentDay
-  useEffect(() => {
-    const expectedWeekStart = startOfDay(currentDay);
-    if (expectedWeekStart.getTime() !== weekStart.getTime()) {
-      setWeekStart(expectedWeekStart);
-    }
-  }, [currentDay, weekStart]);
-
   // Se o usuário NÃO tiver permissão para visualizar todos, filtra a agenda automaticamente para ele mesmo
   useEffect(() => {
     if (!engine.isLoading && !engine.hasPermission('agenda.visualizar_todos')) {
@@ -150,6 +142,13 @@ export default function Agenda() {
     if (!selectedProfessionalId) return dayBookings;
     return dayBookings.filter(b => b.professional_id === selectedProfessionalId);
   }, [dayBookings, selectedProfessionalId]);
+
+  const mobileTimelineBookings = useMemo(() => {
+    const map = new Map<string, Booking>();
+    for (const b of filteredWeekBookings) map.set(b.id, b);
+    for (const b of filteredDayBookings) map.set(b.id, b);
+    return Array.from(map.values());
+  }, [filteredWeekBookings, filteredDayBookings]);
 
   // Today's stats (sempre preserva os dados reais de hoje mesmo quando o usuário navega para outras semanas)
   const todayBookings = useMemo(() => {
@@ -276,12 +275,22 @@ export default function Agenda() {
                 <button onClick={() => { setCurrentDay(new Date()); }} className="px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer" style={{ color: theme.textPrimary }}>
                   Hoje
                 </button>
-                <span className="px-2 text-sm font-semibold min-w-[145px] text-center capitalize" style={{ color: theme.textPrimary }}>
+                <label className="relative px-2 py-1 rounded-lg hover:bg-[var(--theme-bg-hover)] text-sm font-semibold min-w-[145px] text-center capitalize cursor-pointer transition-colors" style={{ color: theme.textPrimary }} title="Clique para ir a uma data específica">
                   {view === 'week'
                     ? `${format(weekStart, "dd MMM", { locale: ptBR })} – ${format(addDays(weekStart, 6), "dd MMM", { locale: ptBR })}`
                     : format(currentDay, "dd 'de' MMMM", { locale: ptBR })
                   }
-                </span>
+                  <input
+                    type="date"
+                    value={format(currentDay, 'yyyy-MM-dd')}
+                    onChange={(e) => {
+                      if (!e.target.value) return;
+                      const [yy, mm, dd] = e.target.value.split('-').map(Number);
+                      setCurrentDay(new Date(yy, mm - 1, dd));
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  />
+                </label>
                 <button onClick={() => {
                   if (view === 'week') {
                     setCurrentDay(d => addWeeks(d, 1));
@@ -451,7 +460,7 @@ export default function Agenda() {
               <div className="md:hidden h-full">
                 <MobileTimeline
                   currentDay={currentDay}
-                  bookings={filteredWeekBookings}
+                  bookings={mobileTimelineBookings}
                   maxAdvanceDays={maxAdvanceDays}
                   onDayChange={setCurrentDay}
                   onBookingClick={setSelectedBooking}

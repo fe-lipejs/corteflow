@@ -83,7 +83,7 @@ export default function Dashboard() {
     enabled: !!tenantId,
   });
 
-  // 1.5 Fetch Upcoming Bookings (for the next 7 days list)
+  // 1.5 Fetch Upcoming Bookings (all future bookings chronologically)
   const { data: rawUpcomingBookings = [], isLoading: isLoadingUpcoming } = useQuery({
     queryKey: ['bookings', tenantId, 'dashboard_upcoming'],
     queryFn: async () => {
@@ -97,8 +97,8 @@ export default function Dashboard() {
         `)
         .eq('tenant_id', tenantId)
         .gte('scheduled_at', todayStart)
-        .lte('scheduled_at', futureWeekEnd)
-        .order('scheduled_at', { ascending: true });
+        .order('scheduled_at', { ascending: true })
+        .limit(25);
 
       if (profile?.role === 'professional' && professionalProfile?.id) {
         query = query.eq('professional_id', professionalProfile.id);

@@ -184,9 +184,10 @@ function computeFreeBlocks(
   for (const booking of proBookings) {
     const bStart = new Date(booking.scheduled_at);
     if (isNaN(bStart.getTime())) continue;
-    const bookedService = allServices.find((s) => s.id === booking.service_id);
+    const bookedService = allServices.find((s) => s.id === booking.service_id) || booking.service || booking.services;
     const bDuration =
-      (bookedService?.duration_minutes || 30) + (bookedService?.buffer_minutes || 0);
+      (bookedService?.duration_minutes ?? booking.duration_minutes ?? 30) +
+      (bookedService?.buffer_minutes ?? booking.buffer_minutes ?? 0);
     freeBlocks = subtractInterval(freeBlocks, {
       start: bStart,
       end: addMinutes(bStart, bDuration),
@@ -291,9 +292,10 @@ function getUnavailableReasonForPro(
   for (const booking of proBookings) {
     const bStart = new Date(booking.scheduled_at);
     if (isNaN(bStart.getTime())) continue;
-    const bookedService = allServices.find((s) => s.id === booking.service_id);
+    const bookedService = allServices.find((s) => s.id === booking.service_id) || booking.service || booking.services;
     const bDuration =
-      (bookedService?.duration_minutes || 30) + (bookedService?.buffer_minutes || 0);
+      (bookedService?.duration_minutes ?? booking.duration_minutes ?? 30) +
+      (bookedService?.buffer_minutes ?? booking.buffer_minutes ?? 0);
     const bEnd = addMinutes(bStart, bDuration);
     if (overlaps({ start: slotStart, end: slotEnd }, { start: bStart, end: bEnd })) {
       return 'occupied';
@@ -337,7 +339,7 @@ function isRecommended(
 export function generateAvailableSlots(
   date: Date,
   service: any,
-  selectedProfessionalId: string | 'any',
+  selectedProfessionalId: string | 'any' | null | undefined,
   professionals: any[],
   allServices: any[],
   businessHours: any[],
@@ -375,7 +377,7 @@ export function generateAvailableSlots(
 
   // Determine candidate professionals
   let prosToCheck =
-    selectedProfessionalId === 'any'
+    !selectedProfessionalId || selectedProfessionalId === 'any'
       ? professionals
       : professionals.filter((p) => p.id === selectedProfessionalId);
 

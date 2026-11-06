@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Loader2, Check, Calendar, Clock, Scissors, User, Plus } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
@@ -94,6 +95,9 @@ export default function EditBookingModal({
     let list = professionals.filter(
       (p) => (p.active !== false && (!p.status || p.status === 'active')) || p.id === booking.professional_id
     );
+    if (booking.professional_id && !list.some((p: any) => p.id === booking.professional_id) && booking.professional) {
+      list = [...list, { id: booking.professional_id, ...booking.professional }];
+    }
     const proServices = availabilityMeta?.professionalServices ?? [];
     if (selectedService && proServices.length > 0) {
       const allowedProIds = proServices
@@ -107,7 +111,7 @@ export default function EditBookingModal({
       });
     }
     return list;
-  }, [professionals, booking.professional_id, selectedService, availabilityMeta?.professionalServices]);
+  }, [professionals, booking.professional_id, booking.professional, selectedService, availabilityMeta?.professionalServices]);
 
   const isDateAllowedForEdit = (d: Date) =>
     isSameCalendarDate(d, initialCalendarDay) || isDateWithinBookingHorizon(d, maxAdvanceDays);
@@ -204,10 +208,10 @@ export default function EditBookingModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
       <div
-        className="relative w-full max-w-lg sm:rounded-3xl rounded-t-3xl border shadow-xl flex flex-col h-[88vh] sm:h-auto sm:max-h-[90vh]"
+        className="relative w-full max-w-lg sm:rounded-3xl rounded-t-3xl border shadow-2xl flex flex-col h-[82dvh] sm:h-auto max-h-[calc(100dvh-1rem)] sm:max-h-[90dvh]"
         style={{
           background: 'var(--theme-card-bg)',
           borderColor: 'var(--theme-border)',
@@ -393,7 +397,7 @@ export default function EditBookingModal({
                       if (!e.target.value) return;
                       const [yy, mm, dd] = e.target.value.split('-').map(Number);
                       const picked = startOfDay(new Date(yy, mm - 1, dd));
-                      if (!isDateWithinBookingHorizon(picked, maxAdvanceDays)) return;
+                      if (!isDateAllowedForEdit(picked)) return;
                       setSelectedDate(picked);
                       setSelectedTime(null);
                     }}
@@ -534,6 +538,7 @@ export default function EditBookingModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -12,6 +12,7 @@ import {
   CAROUSEL_LOAD_MORE_STEP,
   INITIAL_CAROUSEL_DAYS_CAP,
   isDateWithinBookingHorizon,
+  isSameCalendarDate,
   resolveMaxAdvanceDays,
 } from '../../lib/bookingHorizon';
 import { ptBR } from 'date-fns/locale';
@@ -102,16 +103,13 @@ export default function ClientPortal() {
     } else if (phoneParam && tenant?.id && !isLogged) {
       const cleanPhone = phoneParam.replace(/\D/g, '');
       supabase
-        .from('customers')
-        .select('id, phone')
-        .eq('tenant_id', tenant.id)
-        .eq('phone', cleanPhone)
-        .maybeSingle()
+        .rpc('get_customer_by_phone', { p_tenant_id: tenant.id, p_phone: cleanPhone })
         .then(({ data }) => {
-          if (data?.id) {
-            setCustomerId(data.id);
+          const customer = Array.isArray(data) ? data[0] : data;
+          if (customer?.id) {
+            setCustomerId(customer.id);
             setIsLogged(true);
-            setPhone(phoneFormat.format(data.phone));
+            setPhone(phoneFormat.format(customer.phone || cleanPhone));
           }
         });
     }
@@ -174,22 +172,30 @@ export default function ClientPortal() {
     [settings]
   );
 
+  const originalRescheduleDay = useMemo(
+    () => (rescheduleBooking?.scheduled_at ? startOfDay(new Date(rescheduleBooking.scheduled_at)) : null),
+    [rescheduleBooking?.scheduled_at]
+  );
+
   const horizonData = useMemo(
     () =>
       buildHorizonDateList({
         maxAdvanceDays,
         visibleCount: visibleDaysLimit,
         selectedDate: newDate,
+        preserveExtraDate: originalRescheduleDay,
       }),
-    [maxAdvanceDays, visibleDaysLimit, newDate]
+    [maxAdvanceDays, visibleDaysLimit, newDate, originalRescheduleDay]
   );
 
   const availableDays = useMemo(() => {
     return horizonData.dates.map((d) => {
       const h = storeData?.businessHours?.find((x: any) => x.weekday === d.getDay());
-      return { date: d, isOpen: h?.is_open === true };
+      const isOriginalDay = originalRescheduleDay ? isSameCalendarDate(d, originalRescheduleDay) : false;
+      const isAllowedByHorizon = isOriginalDay || isDateWithinBookingHorizon(d, maxAdvanceDays);
+      return { date: d, isOpen: h?.is_open === true && isAllowedByHorizon };
     });
-  }, [horizonData.dates, storeData?.businessHours]);
+  }, [horizonData.dates, storeData?.businessHours, originalRescheduleDay, maxAdvanceDays]);
 
   const isFarFutureSelection = useMemo(() => {
     if (!newDate || tenant?.isDemo) return false;
@@ -229,9 +235,12 @@ export default function ClientPortal() {
 
   const availableSlots: Slot[] = useMemo(() => {
     if (!newDate || !rescheduleBooking) return [];
-    if (!isDateWithinBookingHorizon(newDate, maxAdvanceDays)) return [];
+    const isOriginalDay = originalRescheduleDay ? isSameCalendarDate(newDate, originalRescheduleDay) : false;
+    if (!isOriginalDay && !isDateWithinBookingHorizon(newDate, maxAdvanceDays)) return [];
 
-    const service = storeData?.services?.find((s: any) => s.id === rescheduleBooking.service_id);
+    const service =
+      storeData?.services?.find((s: any) => s.id === rescheduleBooking.service_id) ||
+      rescheduleBooking.services;
     if (!service) return [];
 
     const mergedBlocked = farFutureDayData?.blockedTimes?.length
@@ -245,13 +254,13 @@ export default function ClientPortal() {
     const otherBookings = rawBookings.filter((bk: any) => bk.id !== rescheduleBooking.id);
 
     return generateAvailableSlots(
-      newDate, service, rescheduleBooking.professional_id,
+      newDate, service, rescheduleBooking.professional_id || 'any',
       storeData?.professionals || [], storeData?.services || [], storeData?.businessHours || [],
       storeData?.professionalWorkingHours || [], mergedBlocked,
       otherBookings, storeData?.professionalServices || [],
       [service]
     );
-  }, [newDate, rescheduleBooking, storeData, maxAdvanceDays, farFutureDayData]);
+  }, [newDate, rescheduleBooking, storeData, maxAdvanceDays, farFutureDayData, originalRescheduleDay]);
 
   const visibleSlots = useMemo(() => {
     return availableSlots.filter(
@@ -489,10 +498,16 @@ export default function ClientPortal() {
       const tzStr = `${tzSign}${pad(Math.floor(tzAbs / 60))}:${pad(tzAbs % 60)}`;
       const scheduledAt = `${format(newDate, 'yyyy-MM-dd')}T${newTime}:00${tzStr}`;
 
+      const chosenSlotObj = availableSlots.find((s) => s.time === newTime);
+      const resolvedProId =
+        rescheduleBooking.professional_id ||
+        chosenSlotObj?.availableProIds?.[0] ||
+        null;
+
       await rescheduleMutation.mutateAsync({
         bookingId: rescheduleBooking.id,
         newTime: scheduledAt,
-        newProId: rescheduleBooking.professional_id,
+        newProId: resolvedProId,
         actorType: 'client',
       });
       toast.success('Agendamento reagendado com sucesso!');
@@ -974,9 +989,9 @@ export default function ClientPortal() {
 
       {/* Reschedule Modal */}
       {rescheduleBooking && (
-        <div className="fixed inset-0 z-50 flex flex-col p-0 sm:p-4 bg-black/60 backdrop-blur-md sm:justify-center sm:items-center">
-          <div className="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-md p-6 rounded-none sm:rounded-3xl shadow-2xl border flex flex-col bg-white" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
-            <div className="flex justify-between items-center mb-6">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md">
+          <div className="w-full h-[85dvh] sm:h-auto max-h-[calc(100dvh-1rem)] sm:max-h-[90dvh] sm:max-w-md p-6 rounded-t-3xl sm:rounded-3xl shadow-2xl border flex flex-col bg-white" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+            <div className="flex justify-between items-center mb-6 shrink-0">
               <div>
                 <h3 className="text-2xl font-serif font-bold" style={{ color: theme.textPrimary }}>Reagendar</h3>
                 <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>
@@ -984,7 +999,7 @@ export default function ClientPortal() {
                   {rescheduleBooking.services?.duration_minutes ? ` • ${formatDuration(rescheduleBooking.services.duration_minutes)}` : ''}
                 </p>
               </div>
-              <button onClick={() => setRescheduleBooking(null)} className="p-2 rounded-full hover:bg-black/5" style={{ color: theme.textPrimary }}>
+              <button onClick={() => setRescheduleBooking(null)} className="p-2 rounded-full hover:bg-black/5 shrink-0" style={{ color: theme.textPrimary }}>
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -996,34 +1011,6 @@ export default function ClientPortal() {
                   <h4 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2" style={{ color: theme.textSecondary }}>
                     <Calendar className="w-4 h-4" /> Nova Data
                   </h4>
-                  {(maxAdvanceDays === null || maxAdvanceDays > 15) && (
-                    <label
-                      className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-bold cursor-pointer"
-                      style={{
-                        borderColor: theme.inputBorder,
-                        backgroundColor: theme.inputBg,
-                        color: theme.accent,
-                      }}
-                    >
-                      <Calendar className="w-3.5 h-3.5 shrink-0" />
-                      <span>Escolher data</span>
-                      <input
-                        type="date"
-                        min={horizonData.minDateISO}
-                        max={horizonData.maxDateISO}
-                        value={newDate ? format(newDate, 'yyyy-MM-dd') : ''}
-                        onChange={(e) => {
-                          if (!e.target.value) return;
-                          const [yy, mm, dd] = e.target.value.split('-').map(Number);
-                          const picked = startOfDay(new Date(yy, mm - 1, dd));
-                          if (!isDateWithinBookingHorizon(picked, maxAdvanceDays)) return;
-                          setNewDate(picked);
-                          setNewTime('');
-                        }}
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      />
-                    </label>
-                  )}
                 </div>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
                   {availableDays.map((day) => {

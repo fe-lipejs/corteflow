@@ -124,6 +124,26 @@ body {
   }
 }
 
+/* Corrige largura intrínseca de inputs de hora/data no iOS WebKit (Safari/Chrome) */
+input[type="time"],
+input[type="date"],
+input[type="datetime-local"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  display: block;
+}
+
+input[type="time"]::-webkit-date-and-time-value,
+input[type="date"]::-webkit-date-and-time-value,
+input[type="datetime-local"]::-webkit-date-and-time-value {
+  text-align: inherit;
+  margin: 0;
+}
+
 .font-serif {
   font-family: var(--theme-font-serif);
 }
@@ -207,6 +227,9 @@ body {
 /* ─── Themed Inputs ────────────────────────────────────────────────────────── */
 .themed-input {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   padding-top: 10px;
   padding-bottom: 10px;
   padding-left: 14px;
@@ -218,6 +241,11 @@ body {
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input[type="time"].themed-input {
+  padding-left: 6px;
+  padding-right: 6px;
 }
 
 .themed-input-search {
@@ -371,7 +399,7 @@ body {
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.3s ease forwards;
+  animation: fadeIn 0.3s ease;
 }
 
 .animate-slide-up {

@@ -1129,6 +1129,10 @@ export default function Configuracoes() {
       queryClient.invalidateQueries({ queryKey: ['tenant_settings'] });
       queryClient.invalidateQueries({ queryKey: TENANT_BOOKING_HORIZON_KEY(tenant?.id) });
       queryClient.invalidateQueries({ queryKey: ['tenant_booking_horizon'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard_business_hours', tenant?.id] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard_business_hours'] });
+      queryClient.invalidateQueries({ queryKey: ['business_hours', tenant?.id] });
+      queryClient.invalidateQueries({ queryKey: ['business_hours'] });
 
       // Refresh auth tenant data
       await refreshProfile?.();
@@ -2645,7 +2649,7 @@ export default function Configuracoes() {
                           className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-3.5 pt-3 border-t"
                           style={{ borderColor: theme.border }}
                         >
-                          <div className="min-w-0">
+                          <div className="min-w-0 overflow-hidden">
                             <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textSecondary }}>Abre</label>
                             <input
                               type="time"
@@ -2658,7 +2662,7 @@ export default function Configuracoes() {
                               className="themed-input w-full min-w-0 max-w-full box-border text-center text-xs sm:text-sm py-2 px-1 font-semibold"
                             />
                           </div>
-                          <div className="min-w-0">
+                          <div className="min-w-0 overflow-hidden">
                             <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textSecondary }}>Fecha</label>
                             <input
                               type="time"
@@ -2671,7 +2675,7 @@ export default function Configuracoes() {
                               className="themed-input w-full min-w-0 max-w-full box-border text-center text-xs sm:text-sm py-2 px-1 font-semibold"
                             />
                           </div>
-                          <div className="min-w-0">
+                          <div className="min-w-0 overflow-hidden">
                             <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textMuted }} title="Almoço Início">Alm. Início</label>
                             <input
                               type="time"
@@ -2685,7 +2689,7 @@ export default function Configuracoes() {
                               placeholder="--:--"
                             />
                           </div>
-                          <div className="min-w-0">
+                          <div className="min-w-0 overflow-hidden">
                             <label className="block text-[10px] font-bold uppercase mb-1 truncate text-center" style={{ color: theme.textMuted }} title="Almoço Fim">Alm. Fim</label>
                             <input
                               type="time"
