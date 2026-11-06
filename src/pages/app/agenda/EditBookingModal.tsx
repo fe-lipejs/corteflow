@@ -96,7 +96,7 @@ export default function EditBookingModal({
       (p) => (p.active !== false && (!p.status || p.status === 'active')) || p.id === booking.professional_id
     );
     if (booking.professional_id && !list.some((p: any) => p.id === booking.professional_id) && booking.professional) {
-      list = [...list, { id: booking.professional_id, ...booking.professional }];
+      list = [...list, { ...booking.professional, id: booking.professional_id }];
     }
     const proServices = availabilityMeta?.professionalServices ?? [];
     if (selectedService && proServices.length > 0) {
