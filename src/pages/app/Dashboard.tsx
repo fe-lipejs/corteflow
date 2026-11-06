@@ -357,16 +357,6 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-1">
-          {/* Botão de Instalar Aplicativo no Celular / Desktop */}
-          <PWAInstallButton
-            storeName={tenant?.name || 'Raffros'}
-            logoUrl={tenantSettings?.logo_url}
-            accentColor={theme.accent}
-            textColor={theme.textInverse || '#FFFFFF'}
-            isDark={true}
-            variant="button"
-          />
-
           <a 
             href={tenant?.slug ? getTenantPublicUrl(tenant.slug) : '#'} 
             target="_blank" 

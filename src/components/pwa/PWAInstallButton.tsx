@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, Smartphone, Share2, PlusSquare, Check, X, Sparkles } from 'lucide-react';
+import { Download, Smartphone, Check, X, ShieldCheck, ExternalLink } from 'lucide-react';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
+import { downloadMobileConfig } from '../../lib/mobileConfig';
+import { APP_ICON_BASE64 } from '../../lib/iconBase64';
 
 interface PWAInstallButtonProps {
   storeName?: string;
@@ -32,13 +34,32 @@ export function PWAInstallButton({
   }
 
   const handleInstallClick = async () => {
+    // 1. SE FOR ANDROID / CHROME / EDGE (Prompt Nativo Direto)
     if (isInstallable) {
       const installed = await promptInstall();
       if (installed) {
         return;
       }
-    } else {
-      // No iOS Safari ou navegadores sem prompt nativo automático, abre instrução clara
+    }
+
+    // 2. SE FOR IPHONE (iOS)
+    if (isIOS) {
+      // Baixa diretamente o perfil nativo do iOS (.mobileconfig) para disparar a instalação automática na tela inicial
+      downloadMobileConfig({
+        title: storeName,
+        url: window.location.href,
+        iconBase64: APP_ICON_BASE64,
+        identifier: `com.raffros.${storeName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'app'}`,
+      });
+
+      // Abre modal rápido confirmando que o perfil foi baixado e basta tocar em Ajustes -> Instalar
+      setShowIOSModal(true);
+      return;
+    }
+
+    // 3. Fallback para outros navegadores / desktop
+    const res = await promptInstall();
+    if (!res) {
       setShowIOSModal(true);
     }
   };
@@ -79,20 +100,20 @@ export function PWAInstallButton({
                     className="text-xs sm:text-sm font-bold truncate block"
                     style={{ color: isDark ? '#FFFFFF' : '#0F172A' }}
                   >
-                    Instalar aplicativo do salão
+                    Instalar aplicativo no celular
                   </span>
                   <span
                     className="px-1.5 py-0.2 text-[10px] font-extrabold rounded-md uppercase tracking-wider"
                     style={{ background: `${accentColor}20`, color: accentColor }}
                   >
-                    App
+                    {isIOS ? 'iOS' : 'App'}
                   </span>
                 </div>
                 <p
                   className="text-[11px] sm:text-xs truncate mt-0.5 opacity-80"
                   style={{ color: isDark ? '#94A3B8' : '#64748B' }}
                 >
-                  Acesse com 1 toque na tela inicial do celular
+                  Acesse com 1 toque direto na tela inicial
                 </p>
               </div>
             </div>
@@ -166,7 +187,7 @@ export function PWAInstallButton({
         </motion.button>
       )}
 
-      {/* MODAL / BOTTOM SHEET DE GUIA DE INSTALAÇÃO (IOS SAFARI OU MANUAL) */}
+      {/* MODAL PARA FINALIZAR A INSTALAÇÃO DO PERFIL NO IPHONE */}
       <AnimatePresence>
         {showIOSModal && (
           <div
@@ -192,14 +213,14 @@ export function PWAInstallButton({
                     className="w-8 h-8 rounded-xl flex items-center justify-center"
                     style={{ background: `${accentColor}20`, color: accentColor }}
                   >
-                    <Smartphone className="w-4 h-4" />
+                    <ShieldCheck className="w-4 h-4" />
                   </div>
                   <div>
                     <h3 className="text-sm font-bold leading-tight" style={{ color: isDark ? '#FFFFFF' : '#0F172A' }}>
-                      Instalar {storeName}
+                      {isIOS ? 'Perfil Baixado com Sucesso!' : `Instalar ${storeName}`}
                     </h3>
                     <p className="text-[11px] mt-0.5 opacity-70" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
-                      Adicione à tela inicial do seu celular
+                      {isIOS ? 'Ativação do ícone na tela inicial' : 'Adicione à tela inicial'}
                     </p>
                   </div>
                 </div>
@@ -213,71 +234,84 @@ export function PWAInstallButton({
                 </button>
               </div>
 
-              {/* Instruções passo a passo */}
+              {/* Instruções do iPhone */}
               <div className="py-5 space-y-4">
-                <div className="flex items-start gap-3.5">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
-                    style={{ background: `${accentColor}20`, color: accentColor }}
-                  >
-                    1
-                  </div>
-                  <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
-                    {isIOS ? (
-                      <>
-                        No Safari do seu iPhone, toque no botão <strong>Compartilhar</strong>{' '}
-                        <Share2 className="inline w-3.5 h-3.5 text-blue-500 mx-0.5" /> na barra inferior.
-                      </>
-                    ) : (
-                      <>
-                        No menu do navegador (três pontinhos no canto superior direito).
-                      </>
-                    )}
-                  </div>
-                </div>
+                {isIOS ? (
+                  <>
+                    <div className="flex items-start gap-3.5">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
+                        style={{ background: `${accentColor}20`, color: accentColor }}
+                      >
+                        1
+                      </div>
+                      <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
+                        Toque em <strong>Permitir</strong> no aviso que o Safari exibiu na tela.
+                      </div>
+                    </div>
 
-                <div className="flex items-start gap-3.5">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
-                    style={{ background: `${accentColor}20`, color: accentColor }}
-                  >
-                    2
-                  </div>
-                  <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
-                    {isIOS ? (
-                      <>
-                        Role as opções e toque em <strong>"Adicionar à Tela de Início"</strong>{' '}
-                        <PlusSquare className="inline w-3.5 h-3.5 text-neutral-400 mx-0.5" />.
-                      </>
-                    ) : (
-                      <>
-                        Selecione <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.
-                      </>
-                    )}
-                  </div>
-                </div>
+                    <div className="flex items-start gap-3.5">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
+                        style={{ background: `${accentColor}20`, color: accentColor }}
+                      >
+                        2
+                      </div>
+                      <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
+                        Abra os <strong>Ajustes</strong> do seu iPhone e toque na opção <strong>"Perfil Baixado"</strong> (logo no topo).
+                      </div>
+                    </div>
 
-                <div className="flex items-start gap-3.5">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
-                    style={{ background: `${accentColor}20`, color: accentColor }}
-                  >
-                    3
-                  </div>
+                    <div className="flex items-start gap-3.5">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5"
+                        style={{ background: `${accentColor}20`, color: accentColor }}
+                      >
+                        3
+                      </div>
+                      <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
+                        Toque em <strong>Instalar</strong> no canto superior direito. O ícone oficial do {storeName} aparecerá direto na sua tela principal!
+                      </div>
+                    </div>
+                  </>
+                ) : (
                   <div className="text-xs leading-relaxed" style={{ color: isDark ? '#E2E8F0' : '#334155' }}>
-                    Toque em <strong>Adicionar</strong> no canto superior. Pronto! O ícone ficará junto aos seus outros aplicativos.
+                    No menu do navegador, toque em <strong>Instalar Aplicativo</strong> ou <strong>Adicionar à Tela Inicial</strong>.
                   </div>
-                </div>
+                )}
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowIOSModal(false)}
-                className="w-full py-3 rounded-xl font-bold text-xs shadow-md transition-all cursor-pointer"
-                style={{ background: accentColor, color: textColor }}
-              >
-                Entendi
-              </button>
+              <div className="flex gap-2">
+                {isIOS && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      downloadMobileConfig({
+                        title: storeName,
+                        url: window.location.href,
+                        iconBase64: APP_ICON_BASE64,
+                        identifier: `com.raffros.${storeName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'app'}`,
+                      });
+                    }}
+                    className="flex-1 py-3 rounded-xl font-bold text-xs border transition-all cursor-pointer"
+                    style={{
+                      borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0',
+                      color: isDark ? '#FFFFFF' : '#0F172A',
+                    }}
+                  >
+                    Baixar Novamente
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowIOSModal(false)}
+                  className="flex-1 py-3 rounded-xl font-bold text-xs shadow-md transition-all cursor-pointer"
+                  style={{ background: accentColor, color: textColor }}
+                >
+                  Entendi
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
@@ -285,4 +319,3 @@ export function PWAInstallButton({
     </>
   );
 }
-
