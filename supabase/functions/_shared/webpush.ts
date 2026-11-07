@@ -390,11 +390,12 @@ export async function dispatchBookingPushEvent(
         professional_id,
         service_id,
         scheduled_at,
+        amount_total,
         status,
         payment_mode,
         payment_status,
         customers(name),
-        services(name),
+        services(name, price),
         professionals(id, name, auth_user_id, permissions)
       `)
       .eq("id", bookingId)
@@ -471,22 +472,25 @@ export async function dispatchBookingPushEvent(
     const { dateParam, formattedTime } = formatSaoPauloDateTime(booking.scheduled_at);
     const targetUrl = `/admin/agenda?bookingId=${booking.id}&date=${dateParam}`;
 
+    const priceVal = booking.amount_total != null ? booking.amount_total : (booking.services as any)?.price;
+    const formattedPrice = priceVal != null ? ` (R$ ${Number(priceVal).toFixed(2).replace('.', ',')})` : "";
+
     let title = "Novo agendamento";
-    let body = `${customerName} agendou ${serviceName} com ${proName} para ${formattedTime}.`;
+    let body = `${customerName} agendou ${serviceName}${formattedPrice} com ${proName} para ${formattedTime}.`;
     let dedupKey = `${eventType}:${booking.id}`;
 
     if (eventType === "booking_canceled") {
       title = "Agendamento cancelado";
-      body = `O agendamento de ${customerName} (${serviceName}) em ${formattedTime} foi cancelado.`;
+      body = `O agendamento de ${customerName} (${serviceName}${formattedPrice}) em ${formattedTime} foi cancelado.`;
       dedupKey = `booking_canceled:${booking.id}`;
     } else if (eventType === "booking_rescheduled") {
       title = "Agendamento reagendado";
-      body = `${customerName} (${serviceName}) foi reagendado para ${formattedTime} com ${proName}.`;
+      body = `${customerName} (${serviceName}${formattedPrice}) foi reagendado para ${formattedTime} com ${proName}.`;
       const epochSec = Math.floor(new Date(booking.scheduled_at).getTime() / 1000);
       dedupKey = `booking_rescheduled:${booking.id}:${epochSec}`;
     } else if (eventType === "booking_reminder") {
       title = "Agendamento próximo";
-      body = `Lembrete: ${customerName} (${serviceName}) às ${formattedTime.split(" às ")[1] || formattedTime} com ${proName}.`;
+      body = `Lembrete: ${customerName} (${serviceName}${formattedPrice}) às ${formattedTime.split(" às ")[1] || formattedTime} com ${proName}.`;
       const epochSec = Math.floor(new Date(booking.scheduled_at).getTime() / 1000);
       dedupKey = `booking_reminder:${booking.id}:${epochSec}`;
     }

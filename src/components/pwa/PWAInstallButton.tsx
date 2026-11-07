@@ -25,6 +25,11 @@ export function PWAInstallButton({
   const { isInstallable, isInstalled, isIOS, promptInstall } = usePWAInstall();
   const [showModal, setShowModal] = useState(false);
 
+  // Se o aplicativo já estiver instalado no dispositivo (Android/iPhone em modo standalone), não exibe botão/banner desnecessário
+  if (isInstalled) {
+    return null;
+  }
+
   const handleInstallClick = async () => {
     // 1. TENTA PRIMEIRO O PROMPT NATIVO DO ANDROID/CHROME
     try {

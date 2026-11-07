@@ -3893,7 +3893,7 @@ export default function PublicStore() {
 
                     {/* Clean Minimalist Summary Card */}
                     <div
-                      className="w-full rounded-2xl border px-4 py-3.5 mb-5 text-left"
+                      className="w-full rounded-2xl border px-4 py-3.5 mb-4 text-left"
                       style={{
                         borderColor: cardBorderColor,
                         background: cardBackground,
@@ -3922,6 +3922,26 @@ export default function PublicStore() {
                           {money(total)}
                         </span>
                       </div>
+                    </div>
+
+                    {/* Mensagem Clean de Obrigatoriedade */}
+                    <div
+                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl mt-1 mb-4 border text-xs font-semibold text-center"
+                      style={{
+                        background: `${accent}0d`,
+                        borderColor: `${accent}25`,
+                        color: accent,
+                      }}
+                    >
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" style={{ color: accent }} />
+                      <span>
+                        <strong className="font-extrabold" style={{ color: accent }}>
+                          Ação obrigatória:
+                        </strong>{" "}
+                        <span style={{ opacity: 0.95 }}>
+                          o salão só recebe seu agendamento após o envio no WhatsApp.
+                        </span>
+                      </span>
                     </div>
 
                     {/* Hero Animated WhatsApp Button */}
