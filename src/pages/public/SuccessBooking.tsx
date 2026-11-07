@@ -149,17 +149,17 @@ export default function SuccessBooking() {
   const cleanNumber = whatsappNumber.replace(/\D/g, '');
   const lines = booking
     ? [
-        `*NOVA RESERVA — ${settings?.fantasy_name || 'Salão'}*`,
-        `*Código:* #${booking.order_number}`,
-        `*Cliente:* ${booking.customerName}`,
-        `*Serviço:* ${booking.serviceName}`,
-        `*Profissional:* ${booking.professionalName}`,
-        `*Data/Hora:* ${booking.date} às ${booking.time}`,
-        booking.amount_total != null
-          ? `*Valor:* R$ ${Number(booking.amount_total).toFixed(2).replace('.', ',')}`
-          : '',
-        settings?.address ? `*Local:* ${settings.address}` : '',
-      ].filter(Boolean)
+      `*NOVA RESERVA — ${settings?.fantasy_name || 'Salão'}*`,
+      `*Código:* #${booking.order_number}`,
+      `*Cliente:* ${booking.customerName}`,
+      `*Serviço:* ${booking.serviceName}`,
+      `*Profissional:* ${booking.professionalName}`,
+      `*Data/Hora:* ${booking.date} às ${booking.time}`,
+      booking.amount_total != null
+        ? `*Valor:* R$ ${Number(booking.amount_total).toFixed(2).replace('.', ',')}`
+        : '',
+      settings?.address ? `*Local:* ${settings.address}` : '',
+    ].filter(Boolean)
     : ['Olá! Concluí meu agendamento na plataforma.'];
   const text = lines.join('\n');
   const whatsappLink = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(text)}`;
@@ -196,7 +196,7 @@ export default function SuccessBooking() {
         </motion.div>
 
         {/* Title */}
-        <div className="inline-block relative mb-2">
+        <div className="inline-block relative mb-3">
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: textPrimary }}>
             Quase lá!
           </h1>
@@ -215,22 +215,23 @@ export default function SuccessBooking() {
           </svg>
         </div>
 
-        {/* Single Clear Instruction */}
         <p
-          className="text-xs sm:text-sm font-medium leading-relaxed max-w-xs mx-auto mb-5"
+          className="text-xs sm:text-sm font-medium leading-relaxed max-w-sm mx-auto mb-4"
           style={{ color: textSecondary }}
         >
-          Envie sua reserva no{' '}
-          <strong className="font-bold" style={{ color: textPrimary }}>
+          Seu agendamento está quase concluído.
+          <br />
+          Clique no botão abaixo para enviar pelo{' '}
+          <strong className="font-extrabold" style={{ color: textPrimary }}>
             WhatsApp
           </strong>{' '}
-          para confirmar seu horário.
+          e finalizar seu agendamento.
         </p>
 
         {/* Clean Minimalist Summary Card */}
         {booking && (
           <div
-            className="w-full rounded-2xl border px-4 py-3.5 mb-5 text-left shadow-sm"
+            className="w-full rounded-2xl border px-4 py-3.5 mb-3.5 text-left shadow-sm"
             style={{
               background: cardBg,
               borderColor: cardBorder,

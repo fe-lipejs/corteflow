@@ -464,3 +464,35 @@ input[type="time"].themed-input {
   max-width: 280px;
   line-height: 1.5;
 }
+
+/* ─── Safe Area Top (iOS Notch / Dynamic Island / Status Bar & Android) ────── */
+:root {
+  --app-safe-top: env(safe-area-inset-top, 0px);
+  --app-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* No iPhone em modo PWA instalado (standalone), garante que o topo nunca fique
+   atrás do relógio, sinal de rede, Wi-Fi e bateria, mesmo que o WebKit reporte 0px no boot */
+@supports (-webkit-touch-callout: none) {
+  @media (display-mode: standalone) {
+    :root {
+      --app-safe-top: max(env(safe-area-inset-top, 0px), 48px);
+    }
+  }
+}
+
+.app-mobile-topbar {
+  padding-top: var(--app-safe-top, 0px);
+  height: calc(4rem + var(--app-safe-top, 0px));
+}
+
+.app-mobile-drawer-header {
+  padding-top: calc(1.25rem + var(--app-safe-top, 0px));
+}
+
+@media (max-width: 767px) {
+  .app-main-content {
+    padding-top: calc(4rem + var(--app-safe-top, 0px)) !important;
+  }
+}
+

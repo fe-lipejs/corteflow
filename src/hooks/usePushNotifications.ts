@@ -44,6 +44,11 @@ const DEFAULT_PREFERENCES: Omit<PushNotificationPreferences, 'user_id' | 'tenant
   reminder_minutes_before: 30,
 };
 
+let cachedVapidPublicKey: string =
+  (typeof window !== 'undefined' && window.localStorage?.getItem('raffros_vapid_public_key')) ||
+  (import.meta as any).env?.VITE_VAPID_PUBLIC_KEY ||
+  '';
+
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -145,7 +150,24 @@ export function usePushNotifications() {
 
   useEffect(() => {
     syncLocalBrowserState();
-  }, [syncLocalBrowserState]);
+    // Pré-carrega a chave pública VAPID em segundo plano para que, no iPhone (WebKit),
+    // o clique em "Ativar" não perca o gesto do usuário aguardando rede antes do pushManager.subscribe()
+    if (!cachedVapidPublicKey && user?.id) {
+      supabase.functions
+        .invoke('push-notifications', {
+          body: { action: 'get_vapid_public_key' },
+        })
+        .then(({ data }) => {
+          if (data?.publicKey) {
+            cachedVapidPublicKey = data.publicKey;
+            try {
+              window.localStorage?.setItem('raffros_vapid_public_key', data.publicKey);
+            } catch {}
+          }
+        })
+        .catch(() => {});
+    }
+  }, [syncLocalBrowserState, user?.id]);
 
   // Buscar dispositivos registrados do usuário atual neste tenant
   const devicesQuery = useQuery({
@@ -211,25 +233,31 @@ export function usePushNotifications() {
       throw new Error('Sessão inválida. Faça login novamente.');
     }
 
-    if (isIOS && !isInstalled) {
+    const hasPushApis =
+      typeof window !== 'undefined' &&
+      'serviceWorker' in navigator &&
+      'PushManager' in window &&
+      'Notification' in window;
+
+    if (isIOS && (!isInstalled || !hasPushApis)) {
       throw new Error(
-        'No iPhone, instale primeiro o Raffros na Tela de Início (Compartilhar → Adicionar à Tela de Início) e abra pelo ícone instalado para ativar as notificações.'
+        'No iPhone, toque em Compartilhar no navegador → "Adicionar à Tela de Início" e abra o Raffros pelo ícone instalado para ativar as notificações no celular.'
       );
     }
 
-    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
-      throw new Error('Seu navegador ou dispositivo atual não suporta notificações Web Push.');
+    if (!hasPushApis) {
+      throw new Error('Seu navegador atual não suporta notificações Web Push neste modo.');
     }
 
     setIsSubscribing(true);
     try {
-      // 1. Solicitar permissão ao navegador (ação explícita do usuário)
+      // 1. Solicitar permissão ao navegador IMEDIATAMENTE dentro do gesto de toque (obrigatório no iOS WebKit)
       const requestedPermission = await Notification.requestPermission();
       setPermission(requestedPermission);
 
       if (requestedPermission !== 'granted') {
         throw new Error(
-          'Permissão de notificações negada no navegador. Libere as notificações nas configurações do navegador/aparelho e tente novamente.'
+          'Permissão de notificações negada. Libere as notificações nas configurações do navegador/aparelho e tente novamente.'
         );
       }
 
@@ -240,8 +268,8 @@ export function usePushNotifications() {
       }
       await navigator.serviceWorker.ready;
 
-      // 3. Obter a chave pública VAPID via Edge Function (ou env se definida)
-      let vapidPublicKey = (import.meta as any).env?.VITE_VAPID_PUBLIC_KEY || '';
+      // 3. Obter a chave pública VAPID (usando cache pré-carregado para preservar gesto no iOS)
+      let vapidPublicKey = cachedVapidPublicKey;
       if (!vapidPublicKey) {
         const { data: keyData, error: keyErr } = await supabase.functions.invoke('push-notifications', {
           body: { action: 'get_vapid_public_key' },
@@ -250,6 +278,10 @@ export function usePushNotifications() {
           throw new Error('Não foi possível obter a chave de segurança VAPID do servidor.');
         }
         vapidPublicKey = keyData.publicKey;
+        cachedVapidPublicKey = vapidPublicKey;
+        try {
+          window.localStorage?.setItem('raffros_vapid_public_key', vapidPublicKey);
+        } catch {}
       }
 
       const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);

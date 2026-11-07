@@ -237,7 +237,7 @@ export function PushNotificationSettings({ accentColor = '#FF2D78' }: PushNotifi
                 <button
                   type="button"
                   onClick={handleActivateCurrentDevice}
-                  disabled={isSubscribing || !isSupported}
+                  disabled={isSubscribing}
                   className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white shadow-md transition-all cursor-pointer disabled:opacity-50"
                   style={{ background: accentColor }}
                 >

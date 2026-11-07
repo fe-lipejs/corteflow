@@ -380,7 +380,13 @@ export default function Dashboard() {
         logoUrl={tenantSettings?.logo_url}
         accentColor={theme.accent}
         textColor={theme.textInverse || '#FFFFFF'}
-        isDark={true}
+        isDark={
+          !(
+            theme.bg?.toLowerCase().startsWith('#f') ||
+            theme.bg?.toLowerCase().startsWith('#e') ||
+            theme.bg?.toLowerCase() === '#ffffff'
+          )
+        }
         variant="banner"
       />
 

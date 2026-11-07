@@ -3856,7 +3856,7 @@ export default function PublicStore() {
                     </motion.div>
 
                     {/* Title */}
-                    <div className="inline-block relative mb-2">
+                    <div className="inline-block relative mb-3">
                       <h2
                         className="text-2xl sm:text-3xl font-black tracking-tight"
                         style={{ color: theme.textPrimary }}
@@ -3878,16 +3878,17 @@ export default function PublicStore() {
                       </svg>
                     </div>
 
-                    {/* Single Clear Instruction */}
                     <p
-                      className="text-xs sm:text-sm font-medium leading-relaxed max-w-xs mx-auto mb-5"
+                      className="text-xs sm:text-sm font-medium leading-relaxed max-w-sm mx-auto mb-4"
                       style={{ color: theme.textSecondary }}
                     >
-                      Envie sua reserva no{" "}
-                      <strong className="font-bold" style={{ color: theme.textPrimary }}>
+                      Seu agendamento está quase concluído.
+                      <br />
+                      Clique no botão abaixo para enviar pelo{" "}
+                      <strong className="font-extrabold" style={{ color: theme.textPrimary }}>
                         WhatsApp
                       </strong>{" "}
-                      para confirmar seu horário.
+                      e finalizar seu agendamento.
                     </p>
 
                     {/* Clean Minimalist Summary Card */}

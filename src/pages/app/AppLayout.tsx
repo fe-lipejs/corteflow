@@ -14,6 +14,7 @@ import { ConnectionStatus } from '../../components/notifications/ConnectionStatu
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 import { RefreshCw } from 'lucide-react';
 import { TenantSelectorModal } from '../../components/TenantSelectorModal';
+import { Toaster } from 'react-hot-toast';
 
 export default function AppLayout() {
   const { signOut, tenant, profile, loading, role, professionalPermissions, professionalProfile, memberships, pendingTenantSelection } = useAuth();
@@ -233,10 +234,17 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen flex" style={{ background: theme.bg }}>
-      
-      {/* Mobile Top Bar */}
+      <Toaster
+        position="top-center"
+        containerStyle={{
+          top: 'calc(var(--app-safe-top, 0px) + 14px)',
+          zIndex: 99999,
+        }}
+      />
+
+      {/* Mobile Top Bar (respeita Safe Area da barra de status/bateria/relógio do iPhone e Android) */}
       <div 
-        className="md:hidden fixed top-0 left-0 right-0 h-16 backdrop-blur-xl z-40 flex items-center justify-between px-4"
+        className="app-mobile-topbar md:hidden fixed top-0 left-0 right-0 backdrop-blur-xl z-40 flex items-center justify-between px-4"
         style={{ background: theme.sidebarBg, borderBottom: `1px solid ${theme.border}` }}
       >
         <div 
@@ -289,7 +297,7 @@ export default function AppLayout() {
         }}
       >
         {/* Logo & Tenant Area - Clicável para voltar a /admin */}
-        <div className="p-6 border-b flex items-center justify-between gap-3" style={{ borderColor: theme.sidebarBorder }}>
+        <div className="app-mobile-drawer-header md:pt-6 p-6 border-b flex items-center justify-between gap-3" style={{ borderColor: theme.sidebarBorder }}>
           <div 
             onClick={() => {
               setIsMobileMenuOpen(false);
@@ -403,7 +411,7 @@ export default function AppLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 min-h-screen pt-16 md:pt-4 md:ml-[280px] md:pr-4 md:pb-4 transition-all flex flex-col">
+      <main className="app-main-content flex-1 min-w-0 min-h-screen pt-16 md:pt-4 md:ml-[280px] md:pr-4 md:pb-4 transition-all flex flex-col">
         <div className="p-4 md:p-8 max-w-7xl mx-auto w-full flex-1 flex flex-col rounded-none md:rounded-3xl border border-transparent md:border-[color-mix(in_srgb,var(--theme-card-border)_50%,transparent)]"
              style={{ 
                background: `color-mix(in srgb, ${theme.cardBg} 40%, transparent)`, 

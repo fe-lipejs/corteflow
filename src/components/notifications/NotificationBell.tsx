@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Clock, Smartphone, CheckCircle2, Settings2, Loader2 } from 'lucide-react';
+import { Bell, Clock, Smartphone, CheckCircle2, Settings2, Loader2, AlertCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../integrations/supabase/client';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -16,6 +16,10 @@ interface NotificationBellProps {
 
 export function NotificationBell({ align = 'right' }: NotificationBellProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<{
+    type: 'success' | 'error' | 'info';
+    message: string;
+  } | null>(null);
   const { theme } = useTheme();
   const { tenant, role, professionalProfile } = useAuth();
   const queryClient = useQueryClient();
@@ -57,7 +61,6 @@ export function NotificationBell({ align = 'right' }: NotificationBellProps = {}
         .eq('tenant_id', tenant.id);
 
       if (professionalProfile?.id) {
-        // Professionals only see their own notifications, plus any tenant-wide ones where professional_id is null
         query = query.or(`professional_id.eq.${professionalProfile.id},professional_id.is.null`);
       }
 
@@ -93,24 +96,42 @@ export function NotificationBell({ align = 'right' }: NotificationBellProps = {}
   });
 
   const handleOpen = () => {
-    setIsOpen(!isOpen);
-    if (!isOpen && unreadCount > 0) {
+    const nextOpen = !isOpen;
+    setIsOpen(nextOpen);
+    if (!nextOpen) {
+      setActionFeedback(null);
+    }
+    if (nextOpen && unreadCount > 0) {
       markAsReadMutation.mutate();
     }
   };
 
   const handleQuickEnablePush = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    setActionFeedback(null);
     try {
       if (currentDeviceRecord && !currentDeviceRecord.is_active && permission === 'granted') {
         await toggleDeviceActive({ deviceId: currentDeviceRecord.id, isActive: true });
-        toast.success('Notificações reativadas neste aparelho!');
+        const msg = 'Notificações reativadas neste aparelho!';
+        setActionFeedback({ type: 'success', message: msg });
+        toast.success(msg);
         return;
       }
       await subscribeCurrentDevice();
-      toast.success('Notificações ativadas no seu celular/aparelho!');
+      const msg = 'Pronto! Notificações ativadas no seu celular/aparelho.';
+      setActionFeedback({ type: 'success', message: msg });
+      toast.success(msg);
     } catch (err: any) {
-      toast.error(err?.message || 'Não foi possível ativar as notificações.');
+      const errorMessage =
+        err?.message ||
+        (isIOS && !isInstalled
+          ? 'No iPhone, adicione primeiro o app à Tela de Início (Compartilhar → Adicionar à Tela de Início) e abra pelo ícone instalado.'
+          : 'Não foi possível ativar as notificações neste navegador.');
+      setActionFeedback({
+        type: isIOS && !isInstalled ? 'info' : 'error',
+        message: errorMessage,
+      });
+      toast.error(errorMessage, { duration: 5000 });
     }
   };
 
@@ -130,7 +151,7 @@ export function NotificationBell({ align = 'right' }: NotificationBellProps = {}
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={handleOpen}
-        className="relative p-2 rounded-full transition-colors"
+        className="relative p-2 rounded-full transition-colors cursor-pointer"
         style={{ color: theme.textMuted }}
         onMouseEnter={(e) => (e.currentTarget.style.background = theme.bgHover)}
         onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
@@ -175,7 +196,7 @@ export function NotificationBell({ align = 'right' }: NotificationBellProps = {}
             <button
               onClick={handleOpenSettings}
               title="Configurações de notificações"
-              className="p-1.5 rounded-lg transition-colors hover:opacity-80"
+              className="p-1.5 rounded-lg transition-colors hover:opacity-80 cursor-pointer"
               style={{ color: theme.textMuted }}
             >
               <Settings2 className="w-4 h-4" />
@@ -183,14 +204,14 @@ export function NotificationBell({ align = 'right' }: NotificationBellProps = {}
           </div>
 
           {/* Barra sucinta de ativação rápida de notificações no celular / app instalado */}
-          {(isSupported || isIOS) && (
-            <div
-              className="px-4 py-2.5 border-b flex items-center justify-between gap-3"
-              style={{
-                borderColor: theme.border,
-                background: isPushFullyActiveHere ? 'rgba(16,185,129,0.06)' : `${theme.accent}10`,
-              }}
-            >
+          <div
+            className="px-4 py-2.5 border-b flex flex-col gap-2"
+            style={{
+              borderColor: theme.border,
+              background: isPushFullyActiveHere ? 'rgba(16,185,129,0.06)' : `${theme.accent}10`,
+            }}
+          >
+            <div className="flex items-center justify-between gap-3">
               {isPushFullyActiveHere ? (
                 <>
                   <div className="flex items-center gap-2 min-w-0">
@@ -222,7 +243,7 @@ export function NotificationBell({ align = 'right' }: NotificationBellProps = {}
                       </p>
                       <p className="text-[10px] leading-tight truncate mt-0.5" style={{ color: theme.textMuted }}>
                         {isIOS && !isInstalled
-                          ? 'Adicione o app à Tela de Início primeiro'
+                          ? 'Requer app na Tela de Início (iPhone)'
                           : 'Alertas de agendamentos na tela e no app'}
                       </p>
                     </div>
@@ -246,9 +267,43 @@ export function NotificationBell({ align = 'right' }: NotificationBellProps = {}
                 </>
               )}
             </div>
-          )}
 
-          <div className="max-h-[380px] overflow-y-auto">
+            {actionFeedback && (
+              <div
+                className="rounded-xl px-3 py-2 text-[11px] leading-snug flex items-start gap-2 border"
+                style={{
+                  background:
+                    actionFeedback.type === 'success'
+                      ? 'rgba(16,185,129,0.12)'
+                      : actionFeedback.type === 'info'
+                      ? `${theme.accent}14`
+                      : 'rgba(239,68,68,0.12)',
+                  borderColor:
+                    actionFeedback.type === 'success'
+                      ? 'rgba(16,185,129,0.3)'
+                      : actionFeedback.type === 'info'
+                      ? `${theme.accent}35`
+                      : 'rgba(239,68,68,0.3)',
+                  color: theme.textPrimary,
+                }}
+              >
+                <AlertCircle
+                  className="w-3.5 h-3.5 shrink-0 mt-0.5"
+                  style={{
+                    color:
+                      actionFeedback.type === 'success'
+                        ? '#10B981'
+                        : actionFeedback.type === 'info'
+                        ? theme.accent
+                        : '#EF4444',
+                  }}
+                />
+                <span className="flex-1">{actionFeedback.message}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="max-h-[360px] overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="p-8 text-center" style={{ color: theme.textMuted }}>
                 <Bell className="w-8 h-8 mx-auto mb-2 opacity-20" />
