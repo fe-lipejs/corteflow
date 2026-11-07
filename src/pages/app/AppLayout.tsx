@@ -61,6 +61,19 @@ export default function AppLayout() {
     }
   }, [tenant?.language, i18n]);
 
+  // Garantir Safe Area no iOS (evita que o topo misture com relógio, bateria, Dynamic Island e notch)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+    if (isIOS) {
+      document.documentElement.style.setProperty(
+        '--app-safe-top',
+        isStandalone ? 'max(env(safe-area-inset-top, 0px), 48px)' : 'env(safe-area-inset-top, 0px)'
+      );
+    }
+  }, []);
+
   // Escutar cliques em notificações Web Push quando o Raffros já estiver aberto (reutiliza a janela atual)
   // e forçar atualização silenciosa do Service Worker para usuários que já tinham o app instalado antes
   useEffect(() => {
@@ -245,7 +258,12 @@ export default function AppLayout() {
       {/* Mobile Top Bar (respeita Safe Area da barra de status/bateria/relógio do iPhone e Android) */}
       <div 
         className="app-mobile-topbar md:hidden fixed top-0 left-0 right-0 backdrop-blur-xl z-40 flex items-center justify-between px-4"
-        style={{ background: theme.sidebarBg, borderBottom: `1px solid ${theme.border}` }}
+        style={{
+          background: theme.sidebarBg,
+          borderBottom: `1px solid ${theme.border}`,
+          paddingTop: 'var(--app-safe-top, env(safe-area-inset-top, 0px))',
+          height: 'calc(4rem + var(--app-safe-top, env(safe-area-inset-top, 0px)))',
+        }}
       >
         <div 
           onClick={() => {
@@ -297,7 +315,13 @@ export default function AppLayout() {
         }}
       >
         {/* Logo & Tenant Area - Clicável para voltar a /admin */}
-        <div className="app-mobile-drawer-header md:pt-6 p-6 border-b flex items-center justify-between gap-3" style={{ borderColor: theme.sidebarBorder }}>
+        <div 
+          className="app-mobile-drawer-header md:pt-6 p-6 border-b flex items-center justify-between gap-3" 
+          style={{ 
+            borderColor: theme.sidebarBorder,
+            paddingTop: 'calc(1.25rem + var(--app-safe-top, env(safe-area-inset-top, 0px)))',
+          }}
+        >
           <div 
             onClick={() => {
               setIsMobileMenuOpen(false);
@@ -411,7 +435,12 @@ export default function AppLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="app-main-content flex-1 min-w-0 min-h-screen pt-16 md:pt-4 md:ml-[280px] md:pr-4 md:pb-4 transition-all flex flex-col">
+      <main 
+        className="app-main-content flex-1 min-w-0 min-h-screen md:pt-4 md:ml-[280px] md:pr-4 md:pb-4 transition-all flex flex-col"
+        style={{
+          paddingTop: 'calc(4.25rem + var(--app-safe-top, env(safe-area-inset-top, 0px)))',
+        }}
+      >
         <div className="p-4 md:p-8 max-w-7xl mx-auto w-full flex-1 flex flex-col rounded-none md:rounded-3xl border border-transparent md:border-[color-mix(in_srgb,var(--theme-card-border)_50%,transparent)]"
              style={{ 
                background: `color-mix(in srgb, ${theme.cardBg} 40%, transparent)`, 

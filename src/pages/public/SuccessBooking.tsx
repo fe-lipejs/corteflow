@@ -270,7 +270,7 @@ export default function SuccessBooking() {
 
         {/* Mensagem Clean de Obrigatoriedade */}
         <div
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl mt-1 mb-4 border text-xs font-semibold text-center"
+          className="w-full flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl mt-1 mb-4 border text-xs font-semibold text-center leading-snug"
           style={{
             background: `${accentColor}0d`,
             borderColor: `${accentColor}25`,
@@ -280,10 +280,10 @@ export default function SuccessBooking() {
           <AlertCircle className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} />
           <span>
             <strong className="font-extrabold" style={{ color: accentColor }}>
-              Ação obrigatória:
+              Obrigatório:
             </strong>{' '}
             <span style={{ opacity: 0.95 }}>
-              o salão só recebe seu agendamento após o envio no WhatsApp.
+              sem o envio no WhatsApp, seu agendamento é inválido.
             </span>
           </span>
         </div>
