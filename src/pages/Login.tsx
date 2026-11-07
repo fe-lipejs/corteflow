@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../integrations/supabase/client';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Eye, EyeOff, Shield, CheckCircle2, X, KeyRound, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { normalizeBrazilianPhone } from '../lib/phoneUtils';
@@ -9,6 +9,7 @@ import { normalizeBrazilianPhone } from '../lib/phoneUtils';
 export default function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -197,6 +198,13 @@ export default function Login() {
       const isProfessional = profileData?.role === 'professional';
       const isCompleted = profileData?.onboarding_completed || Boolean(profileData?.tenant_id) || isProfessional;
 
+      const fromState = (location.state as any)?.from;
+      const fromUrl =
+        fromState?.pathname &&
+        (fromState.pathname.startsWith('/admin') || fromState.pathname.startsWith('/app'))
+          ? `${fromState.pathname}${fromState.search || ''}`
+          : null;
+
       if (isSuperAdminMode || profileData?.role === 'super_admin') {
         navigate('/platform');
       } else if (isCompleted || isProfessional) {
@@ -207,10 +215,10 @@ export default function Login() {
           .eq('user_id', user.id)
           .eq('status', 'active');
 
-        if (memData && memData.length > 1) {
+        if (memData && memData.length > 1 && !fromUrl) {
           navigate('/select-tenant');
         } else {
-          navigate('/admin');
+          navigate(fromUrl || '/admin', { replace: true });
         }
       } else {
         navigate('/onboarding');

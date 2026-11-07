@@ -60,6 +60,58 @@ export default function AppLayout() {
     }
   }, [tenant?.language, i18n]);
 
+  // Escutar cliques em notificações Web Push quando o Raffros já estiver aberto (reutiliza a janela atual)
+  // e forçar atualização silenciosa do Service Worker para usuários que já tinham o app instalado antes
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    navigator.serviceWorker
+      .getRegistration()
+      .then((reg) => {
+        if (reg) {
+          reg.update().catch(() => {});
+        } else {
+          navigator.serviceWorker.register('/service-worker.js', { scope: '/' }).catch(() => {});
+        }
+      })
+      .catch(() => {});
+
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'RAFFROS_NOTIFICATION_CLICK' && event.data?.url) {
+        navigate(event.data.url);
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+    };
+  }, [navigate]);
+
+  // Processar lembretes de agendamentos próximos e resumo diário de forma idempotente
+  useEffect(() => {
+    if (!tenant?.id) return;
+
+    const triggerScheduledNotifications = () => {
+      supabase.functions
+        .invoke('push-notifications', {
+          body: {
+            action: 'process_scheduled_notifications',
+            tenantId: tenant.id,
+          },
+        })
+        .catch(() => {});
+    };
+
+    const initialTimer = setTimeout(triggerScheduledNotifications, 4000);
+    const interval = setInterval(triggerScheduledNotifications, 10 * 60 * 1000);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
+  }, [tenant?.id]);
+
   const handleSignOut = async () => {
     setIsSigningOut(true);
     await signOut();

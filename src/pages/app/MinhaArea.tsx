@@ -9,6 +9,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { PushNotificationSettings } from '../../components/notifications/PushNotificationSettings';
 
 export default function MinhaArea() {
   const { theme } = useTheme();
@@ -221,6 +222,15 @@ export default function MinhaArea() {
             })
           )}
         </div>
+      </motion.div>
+
+      {/* Push Notifications & Connected Devices */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+      >
+        <PushNotificationSettings accentColor={theme.accent} />
       </motion.div>
 
       {/* Security Info */}

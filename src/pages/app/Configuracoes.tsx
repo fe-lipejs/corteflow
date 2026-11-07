@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../integrations/supabase/client';
 import { useAuth } from '../../hooks/useAuth';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import StripeActivatedModal from '../../components/modals/StripeActivatedModal';
 import { ImageCropperModal } from '../../components/ImageCropperModal';
+import { PushNotificationSettings } from '../../components/notifications/PushNotificationSettings';
 import toast from 'react-hot-toast';
 
 
@@ -81,6 +82,7 @@ type TabId = typeof TABS[number]['id'];
 
 export default function Configuracoes() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { tenant, profile, signOut, refreshProfile } = useAuth();
   const engine = usePermissionEngine();
   const { i18n } = useTranslation();
@@ -493,6 +495,15 @@ export default function Configuracoes() {
       }
     }
   }, [tenant, loadSettings]);
+
+  // Sync activeTab when URL query string (?tab=...) changes
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && TABS.some(t => t.id === tabParam)) {
+      setActiveTab(tabParam as TabId);
+    }
+  }, [location.search]);
 
   // Auto sync fresh Stripe status whenever entering Stripe tab
   useEffect(() => {
@@ -1988,15 +1999,17 @@ export default function Configuracoes() {
                   Central de Notificações
                 </h3>
                 <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>
-                  Configure como você deseja ser avisado sobre novos agendamentos e cancelamentos.
+                  Configure como você deseja ser avisado sobre novos agendamentos, cancelamentos, reagendamentos e lembretes.
                 </p>
               </div>
+
+              <PushNotificationSettings accentColor={customPalette?.primary || theme.accent} />
 
               <div className="p-4 rounded-xl border transition-colors" style={{ background: theme.inputBg, borderColor: theme.border }}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-sm" style={{ color: theme.textPrimary }}>Aviso Sonoro</p>
-                    <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>Tocar um som discreto ao receber um novo agendamento ou cancelamento na sua tela.</p>
+                    <p className="font-semibold text-sm" style={{ color: theme.textPrimary }}>Aviso Sonoro no Painel</p>
+                    <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>Tocar um som discreto ao receber um novo agendamento ou cancelamento enquanto o painel estiver aberto.</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" checked={soundEnabled} onChange={(e) => setSoundEnabled(e.target.checked)} />

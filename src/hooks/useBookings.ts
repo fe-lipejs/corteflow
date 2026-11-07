@@ -238,6 +238,17 @@ export function useCreateBooking(tenantId: string) {
         } as any)
         .select('*').single();
       if (error) throw error;
+      if (data?.id) {
+        supabase.functions
+          .invoke('push-notifications', {
+            body: {
+              action: 'dispatch_booking_event',
+              bookingId: data.id,
+              eventType: 'booking_new',
+            },
+          })
+          .catch((err) => console.warn('[useCreateBooking] Web Push error:', err));
+      }
       return data;
     },
     onSuccess: () => {
@@ -301,6 +312,18 @@ export function useUpdateBookingStatus(tenantId: string) {
         reason: note ?? null,
         actor_type: 'admin',
       });
+
+      if (status === 'canceled') {
+        supabase.functions
+          .invoke('push-notifications', {
+            body: {
+              action: 'dispatch_booking_event',
+              bookingId: id,
+              eventType: 'booking_canceled',
+            },
+          })
+          .catch((err) => console.warn('[useUpdateBookingStatus] Web Push error:', err));
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
@@ -324,6 +347,17 @@ export function useUpdateBooking(tenantId: string) {
     mutationFn: async ({ id, ...fields }: Partial<CreateBookingInput> & { id: string }) => {
       const { error } = await supabase.from('bookings').update(fields as any).eq('id', id);
       if (error) throw error;
+      if (fields.scheduled_at) {
+        supabase.functions
+          .invoke('push-notifications', {
+            body: {
+              action: 'dispatch_booking_event',
+              bookingId: id,
+              eventType: 'booking_rescheduled',
+            },
+          })
+          .catch((err) => console.warn('[useUpdateBooking] Web Push error:', err));
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings', tenantId] });

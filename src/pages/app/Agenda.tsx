@@ -118,11 +118,71 @@ export default function Agenda() {
   const isLoading = isMobile || view === 'day' ? loadingDay : loadingWeek;
   const isRefreshing = fetchingWeek || fetchingDay;
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   // Initialize from URL ?professional= query param (set when navigating from Equipe.tsx)
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(
     () => searchParams.get('professional')
   );
+
+  // Deep-linking via Notificação Push ou Sino (?bookingId=...&date=...)
+  useEffect(() => {
+    if (!tenantId || engine.isLoading) return;
+
+    const dateParam = searchParams.get('date');
+    const bookingIdParam = searchParams.get('bookingId');
+
+    if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+      const [yy, mm, dd] = dateParam.split('-').map(Number);
+      if (yy && mm && dd) {
+        setCurrentDay(new Date(yy, mm - 1, dd));
+      }
+    }
+
+    if (!bookingIdParam) return;
+
+    let cancelled = false;
+
+    const loadTargetBooking = async () => {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          customer:customers(id, name, phone, email, segment, total_spent, visit_count, last_visit, past_services),
+          professional:professionals(id, name, agenda_color, photo_url),
+          service:services(id, name, duration_minutes, buffer_minutes, color, price, commission_pct)
+        `)
+        .eq('id', bookingIdParam)
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      if (cancelled || error || !data) return;
+
+      const targetBooking = data as unknown as Booking;
+
+      // Respeitar isolamento de permissão do profissional
+      const canSeeAll = engine.hasPermission('agenda.visualizar_todos');
+      if (!canSeeAll && professionalProfile?.id && targetBooking.professional_id !== professionalProfile.id) {
+        toast.error('Você não possui permissão para visualizar agendamentos de outro profissional.');
+        return;
+      }
+
+      if (targetBooking.scheduled_at) {
+        setCurrentDay(new Date(targetBooking.scheduled_at));
+      }
+      setSelectedBooking(targetBooking);
+
+      // Limpar bookingId da URL após abrir para permitir fechar o modal normalmente
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('bookingId');
+      setSearchParams(nextParams, { replace: true });
+    };
+
+    loadTargetBooking();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantId, engine.isLoading, engine.hasPermission, professionalProfile?.id, searchParams, setSearchParams]);
 
   // Se o usuário NÃO tiver permissão para visualizar todos, filtra a agenda automaticamente para ele mesmo
   useEffect(() => {

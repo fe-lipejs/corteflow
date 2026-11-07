@@ -51,3 +51,9 @@ entrypoint = "./functions/clear-professional-password-flag/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/clear-professional-password-flag/*.html" ]
+
+[functions.push-notifications]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/push-notifications/index.ts"
+

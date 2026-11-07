@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getStripeContext } from '../_shared/stripe.ts';
+import { dispatchBookingPushEvent } from '../_shared/webpush.ts';
 
 async function finalizeConfirmedBooking(
   supabase: any,
@@ -77,6 +78,9 @@ async function finalizeConfirmedBooking(
       });
     }
   }
+
+  // Dispara Web Push após confirmação do pagamento do agendamento no banco (com deduplicação)
+  await dispatchBookingPushEvent(supabase, booking.id, 'booking_new').catch(() => {});
 }
 
 serve(async (req) => {

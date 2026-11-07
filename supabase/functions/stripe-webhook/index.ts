@@ -3,6 +3,7 @@ import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getStripeContext } from '../_shared/stripe.ts';
+import { dispatchBookingPushEvent } from '../_shared/webpush.ts';
 
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
@@ -171,6 +172,8 @@ serve(async (req) => {
                 stripe_payment_intent_id: piId,
               }).eq('booking_id', bookingId);
             }
+
+            await dispatchBookingPushEvent(supabase, bookingId, 'booking_new').catch(() => {});
           }
         }
         break;
@@ -291,6 +294,8 @@ serve(async (req) => {
                 amount_due: amountDueBRL,
               }).eq('id', bookingId);
             }
+
+            await dispatchBookingPushEvent(supabase, bookingId, 'booking_new').catch(() => {});
           }
         }
         break;
