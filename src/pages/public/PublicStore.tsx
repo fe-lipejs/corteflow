@@ -915,6 +915,9 @@ export default function PublicStore() {
         setPaymentScope(allowedPaymentScopes[0].key);
       }
     }
+    if (step === 5) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }, [step, allowedPaymentScopes, paymentScope]);
 
   const distanceKm = useMemo(
@@ -2176,7 +2179,7 @@ export default function PublicStore() {
         <div className="flex flex-col lg:flex-row min-h-screen w-full max-w-[100vw]">
           {/* ── LEFT SIDEBAR ── */}
           <aside
-            className="relative lg:w-[410px] xl:w-[440px] lg:h-screen lg:sticky lg:top-0 lg:self-start border-b lg:border-b-0 lg:border-r overflow-y-auto scrollbar-none flex flex-col shrink-0"
+            className={`${step === 5 ? "hidden lg:flex" : "flex"} relative lg:w-[410px] xl:w-[440px] lg:h-screen lg:sticky lg:top-0 lg:self-start border-b lg:border-b-0 lg:border-r overflow-y-auto scrollbar-none flex-col shrink-0`}
             style={{
               background: sidebarBackground,
               borderColor: cardBorderColor,
@@ -2546,7 +2549,7 @@ export default function PublicStore() {
             </AnimatePresence>
 
             {/* Step Views */}
-            <div className="flex-1 overflow-y-auto">
+            <div className={`flex-1 overflow-y-auto ${step === 5 ? "flex flex-col justify-center min-h-[100dvh] lg:min-h-screen" : ""}`}>
               <AnimatePresence mode="wait">
                 {/* ───────────────── STEP 1: SERVICES ───────────────── */}
                 {step === 1 && (
@@ -3828,32 +3831,34 @@ export default function PublicStore() {
                   </motion.div>
                 )}
 
-                {/* ───────────────── STEP 5: SUCCESS ───────────────── */}
+                {/* ───────────────── STEP 5: SUCCESS (CLEAN & ZERO-SCROLL) ───────────────── */}
                 {step === 5 && bookingCode && (
                   <motion.div
                     key="s5"
-                    initial={{ opacity: 0, scale: 0.96 }}
+                    initial={{ opacity: 0, scale: 0.97 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="px-5 lg:px-10 py-10 max-w-lg mx-auto w-full text-center"
+                    transition={{ duration: 0.25 }}
+                    className="px-5 py-6 max-w-md mx-auto w-full text-center flex flex-col items-center justify-center"
                   >
+                    {/* Compact Check Icon */}
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ type: "spring", damping: 14, stiffness: 200, delay: 0.1 }}
-                      className="w-20 h-20 rounded-3xl mx-auto flex items-center justify-center mb-5 shadow-xl"
+                      transition={{ type: "spring", damping: 14, stiffness: 220, delay: 0.05 }}
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3.5 shadow-lg"
                       style={{
-                        background: `${accent}20`,
-                        border: `2px solid ${accent}`,
+                        background: `${accent}18`,
+                        border: `1.5px solid ${accent}60`,
                         color: accent,
                       }}
                     >
-                      <CheckCircle2 className="w-10 h-10" />
+                      <CheckCircle2 className="w-7 h-7" />
                     </motion.div>
 
-                    <div className="inline-block relative mb-3">
+                    {/* Title */}
+                    <div className="inline-block relative mb-2">
                       <h2
-                        className="text-3xl sm:text-4xl font-black tracking-tight"
+                        className="text-2xl sm:text-3xl font-black tracking-tight"
                         style={{ color: theme.textPrimary }}
                       >
                         Quase lá!
@@ -3861,7 +3866,7 @@ export default function PublicStore() {
                       <svg
                         viewBox="0 0 120 12"
                         fill="none"
-                        className="w-24 sm:w-28 h-2.5 mx-auto mt-0.5"
+                        className="w-20 sm:w-24 h-2 mx-auto mt-0.5"
                         aria-hidden="true"
                       >
                         <path
@@ -3873,170 +3878,134 @@ export default function PublicStore() {
                       </svg>
                     </div>
 
+                    {/* Single Clear Instruction */}
                     <p
-                      className="text-xs sm:text-sm font-medium leading-relaxed max-w-md mx-auto"
+                      className="text-xs sm:text-sm font-medium leading-relaxed max-w-xs mx-auto mb-5"
                       style={{ color: theme.textSecondary }}
                     >
-                      Seu agendamento está quase concluído.
-                      <br />
-                      Clique no botão abaixo para enviar pelo{" "}
-                      <strong className="font-extrabold" style={{ color: theme.textPrimary }}>
+                      Envie sua reserva no{" "}
+                      <strong className="font-bold" style={{ color: theme.textPrimary }}>
                         WhatsApp
                       </strong>{" "}
-                      e finalizar seu agendamento.
+                      para confirmar seu horário.
                     </p>
 
-                    {/* Receipt Card */}
+                    {/* Clean Minimalist Summary Card */}
                     <div
-                      className="mt-6 rounded-3xl border overflow-hidden"
+                      className="w-full rounded-2xl border px-4 py-3.5 mb-5 text-left"
                       style={{
                         borderColor: cardBorderColor,
                         background: cardBackground,
                         boxShadow: cardShadowStyle,
                       }}
                     >
-                      <div
-                        className="px-6 py-4 border-b flex items-center justify-between"
-                        style={{
-                          borderColor: cardBorderColor,
-                          background: `${accent}0a`,
-                        }}
-                      >
-                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: accent }}>
-                          Código da Reserva
-                        </p>
-                        <p className="text-xl font-black font-mono" style={{ color: accent }}>
+                      <div className="flex items-center justify-between gap-2 pb-2.5 border-b" style={{ borderColor: cardBorderColor }}>
+                        <span className="font-bold text-sm truncate" style={{ color: theme.textPrimary }}>
+                          {selectedService?.name}
+                        </span>
+                        <span
+                          className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md shrink-0"
+                          style={{ background: `${accent}15`, color: accent }}
+                        >
                           #{bookingCode}
-                        </p>
+                        </span>
                       </div>
-                      <div className="px-6 py-4 space-y-2.5 text-left text-xs">
-                        {[
-                          { label: "Serviço", value: selectedService?.name },
-                          { label: "Profissional", value: proName },
-                          {
-                            label: "Data",
-                            value: selectedDate ? format(selectedDate, "dd 'de' MMMM", { locale: ptBR }) : "",
-                          },
-                          { label: "Horário", value: selectedTime },
-                          { label: "Total", value: money(total) },
-                        ].map(({ label, value }) => (
-                          <div key={label} className="flex justify-between">
-                            <span style={{ color: theme.textSecondary }}>{label}</span>
-                            <span className="font-semibold" style={{ color: theme.textPrimary }}>
-                              {value}
-                            </span>
-                          </div>
-                        ))}
+
+                      <div className="pt-2.5 flex items-center justify-between gap-2 text-xs">
+                        <span className="font-medium truncate" style={{ color: theme.textSecondary }}>
+                          {selectedDate ? format(selectedDate, "dd 'de' MMM", { locale: ptBR }) : ""} às{" "}
+                          <strong style={{ color: theme.textPrimary }}>{selectedTime}</strong>
+                          {proName ? ` • ${proName}` : ""}
+                        </span>
+                        <span className="font-bold shrink-0" style={{ color: theme.textPrimary }}>
+                          {money(total)}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Ação Obrigatória + Action Buttons */}
-                    <div className="mt-5 space-y-3">
-                      <div
-                        className="rounded-2xl border px-4 py-3.5 flex items-center gap-3.5 text-left"
-                        style={{
-                          background: `${accent}12`,
-                          borderColor: `${accent}35`,
-                        }}
-                      >
-                        <div className="flex items-center gap-3 shrink-0 self-stretch">
-                          <AlertCircle className="w-6 h-6 shrink-0" style={{ color: accent }} />
-                          <div
-                            className="w-[1.5px] self-stretch rounded-full"
-                            style={{ background: `${accent}55` }}
-                          />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs sm:text-sm font-extrabold leading-tight" style={{ color: accent }}>
-                            Ação obrigatória
-                          </p>
-                          <p
-                            className="text-xs leading-snug mt-0.5 font-medium"
-                            style={{ color: theme.textSecondary }}
-                          >
-                            Clique no botão abaixo para enviar sua reserva pelo{" "}
-                            <strong className="font-extrabold" style={{ color: theme.textPrimary }}>
-                              WhatsApp
-                            </strong>{" "}
-                            e concluir o agendamento.
-                          </p>
-                        </div>
-                      </div>
-
-                      <motion.a
-                        animate={{
-                          scale: [1, 1.028, 1],
-                          boxShadow: [
-                            `0 8px 22px -4px ${accent}50, 0 0 0 0px ${accent}40`,
-                            `0 14px 30px -4px ${accent}75, 0 0 0 7px ${accent}00`,
-                            `0 8px 22px -4px ${accent}50, 0 0 0 0px ${accent}00`,
-                          ],
-                        }}
+                    {/* Hero Animated WhatsApp Button */}
+                    <motion.a
+                      animate={{
+                        scale: [1, 1.028, 1],
+                        boxShadow: [
+                          `0 8px 22px -4px ${accent}50, 0 0 0 0px ${accent}40`,
+                          `0 14px 30px -4px ${accent}75, 0 0 0 7px ${accent}00`,
+                          `0 8px 22px -4px ${accent}50, 0 0 0 0px ${accent}00`,
+                        ],
+                      }}
+                      transition={{
+                        duration: 2.2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                      whileHover={{ scale: 1.04 }}
+                      whileTap={{ scale: 0.97 }}
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="relative overflow-hidden flex items-center justify-center gap-3.5 w-full py-4 px-6 rounded-full font-extrabold text-sm sm:text-base shadow-lg cursor-pointer"
+                      style={{
+                        background: theme.btnPrimaryBg || accent,
+                        color: theme.btnPrimaryText,
+                      }}
+                    >
+                      <motion.span
+                        aria-hidden="true"
+                        animate={{ x: ["-140%", "240%"] }}
                         transition={{
-                          duration: 2.2,
+                          duration: 2.6,
+                          repeat: Infinity,
+                          repeatDelay: 1.1,
+                          ease: "easeInOut",
+                        }}
+                        className="pointer-events-none absolute inset-y-0 w-1/3 -skew-x-12"
+                        style={{
+                          background:
+                            "linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent)",
+                        }}
+                      />
+                      <WhatsAppIcon />
+                      <span
+                        className="h-5 w-[1.5px] rounded-full opacity-35"
+                        style={{ background: theme.btnPrimaryText }}
+                      />
+                      <span>Concluir Agendamento</span>
+                      <motion.span
+                        animate={{ x: [0, 4, 0] }}
+                        transition={{
+                          duration: 1.4,
                           repeat: Infinity,
                           ease: "easeInOut",
                         }}
-                        whileHover={{ scale: 1.04 }}
-                        whileTap={{ scale: 0.97 }}
-                        href={whatsappUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="relative overflow-hidden flex items-center justify-center gap-3.5 w-full py-4 px-6 rounded-full font-extrabold text-sm sm:text-base shadow-lg cursor-pointer"
-                        style={{
-                          background: theme.btnPrimaryBg || accent,
-                          color: theme.btnPrimaryText,
-                        }}
+                        className="inline-flex items-center"
                       >
-                        <motion.span
-                          aria-hidden="true"
-                          animate={{ x: ["-140%", "240%"] }}
-                          transition={{
-                            duration: 2.6,
-                            repeat: Infinity,
-                            repeatDelay: 1.1,
-                            ease: "easeInOut",
-                          }}
-                          className="pointer-events-none absolute inset-y-0 w-1/3 -skew-x-12"
-                          style={{
-                            background:
-                              "linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent)",
-                          }}
-                        />
-                        <WhatsAppIcon />
-                        <span
-                          className="h-5 w-[1.5px] rounded-full opacity-35"
-                          style={{ background: theme.btnPrimaryText }}
-                        />
-                        <span>Concluir Agendamento</span>
-                        <motion.span
-                          animate={{ x: [0, 4, 0] }}
-                          transition={{
-                            duration: 1.4,
-                            repeat: Infinity,
-                            ease: "easeInOut",
-                          }}
-                          className="inline-flex items-center"
-                        >
-                          <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                        </motion.span>
-                      </motion.a>
+                        <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                      </motion.span>
+                    </motion.a>
 
+                    <p className="text-[11px] mt-2.5 font-medium" style={{ color: theme.textMuted }}>
+                      Ao abrir o WhatsApp, toque em <strong style={{ color: theme.textSecondary }}>Enviar</strong>.
+                    </p>
+
+                    {/* Discreet Secondary Links */}
+                    <div className="mt-6 flex items-center justify-center gap-4 text-xs font-medium">
                       <a
-                        href={getTenantPortalUrl(slug || '', tenant?.isDemo)}
-                        className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-semibold text-xs border transition-all hover:opacity-80 cursor-pointer"
-                        style={{ borderColor: cardBorderColor, color: theme.textPrimary, background: cardBackground }}
-                      >
-                        <Calendar className="w-4 h-4" style={{ color: accent }} />
-                        <span>Ver Meus Agendamentos</span>
-                      </a>
-
-                      <button
-                        onClick={resetAll}
-                        className="text-xs underline block mx-auto pt-2 cursor-pointer font-medium"
+                        href={getTenantPortalUrl(slug || "", tenant?.isDemo)}
+                        className="hover:underline transition-opacity opacity-80 hover:opacity-100 cursor-pointer"
                         style={{ color: theme.textSecondary }}
                       >
-                        Fazer outro agendamento
+                        Meus agendamentos
+                      </a>
+                      <span className="opacity-30" style={{ color: theme.textMuted }}>
+                        •
+                      </span>
+                      <button
+                        type="button"
+                        onClick={resetAll}
+                        className="hover:underline transition-opacity opacity-80 hover:opacity-100 cursor-pointer"
+                        style={{ color: theme.textSecondary }}
+                      >
+                        Novo agendamento
                       </button>
                     </div>
                   </motion.div>
@@ -4044,15 +4013,17 @@ export default function PublicStore() {
               </AnimatePresence>
 
               {/* Footer */}
-              <div className="w-full mt-10 pb-8 flex flex-col items-center justify-center text-center opacity-60">
-                <Sparkles className="w-3.5 h-3.5 mb-1.5" style={{ color: theme.textSecondary }} />
-                <p className="text-[9px] uppercase tracking-[0.2em] font-bold" style={{ color: theme.textSecondary }}>
-                  Powered by RAFFROS
-                </p>
-                <p className="text-[8px] mt-1 font-medium" style={{ color: theme.textMuted }}>
-                  Tecnologia em agendamentos
-                </p>
-              </div>
+              {step < 5 && (
+                <div className="w-full mt-10 pb-8 flex flex-col items-center justify-center text-center opacity-60">
+                  <Sparkles className="w-3.5 h-3.5 mb-1.5" style={{ color: theme.textSecondary }} />
+                  <p className="text-[9px] uppercase tracking-[0.2em] font-bold" style={{ color: theme.textSecondary }}>
+                    Powered by RAFFROS
+                  </p>
+                  <p className="text-[8px] mt-1 font-medium" style={{ color: theme.textMuted }}>
+                    Tecnologia em agendamentos
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* ── MOBILE FIXED BOTTOM BAR (Step 4) ── */}
