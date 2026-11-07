@@ -219,7 +219,6 @@ export default function SuccessBooking() {
           className="text-xs sm:text-sm font-medium leading-relaxed max-w-sm mx-auto mb-4"
           style={{ color: textSecondary }}
         >
-          Seu agendamento está quase concluído.
           <br />
           Clique no botão abaixo para enviar pelo{' '}
           <strong className="font-extrabold" style={{ color: textPrimary }}>
@@ -282,8 +281,8 @@ export default function SuccessBooking() {
             <strong className="font-extrabold" style={{ color: accentColor }}>
               Obrigatório:
             </strong>{' '}
-            <span style={{ opacity: 0.95 }}>
-              sem o envio no WhatsApp, seu agendamento é inválido.
+            <span style={{ color: accentColor }}>
+              Confirme seu agendamento clicando abaixo:
             </span>
           </span>
         </div>

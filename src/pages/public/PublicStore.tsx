@@ -3882,8 +3882,6 @@ export default function PublicStore() {
                       className="text-xs sm:text-sm font-medium leading-relaxed max-w-sm mx-auto mb-4"
                       style={{ color: theme.textSecondary }}
                     >
-                      Seu agendamento está quase concluído.
-                      <br />
                       Clique no botão abaixo para enviar pelo{" "}
                       <strong className="font-extrabold" style={{ color: theme.textPrimary }}>
                         WhatsApp
@@ -3938,8 +3936,8 @@ export default function PublicStore() {
                         <strong className="font-extrabold" style={{ color: accent }}>
                           Obrigatório:
                         </strong>{" "}
-                        <span style={{ opacity: 0.95 }}>
-                          sem o envio no WhatsApp, seu agendamento é inválido.
+                        <span style={{ color: accent }}>
+                          Confirme seu agendamento clicando abaixo:
                         </span>
                       </span>
                     </div>
