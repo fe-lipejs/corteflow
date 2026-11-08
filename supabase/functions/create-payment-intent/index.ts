@@ -15,11 +15,19 @@ async function finalizeConfirmedBooking(
   const finalDue = Math.max(0, Number(booking.amount_total || 0) - finalPaid);
   const primaryPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'paid';
 
+  const methodTypes: string[] = Array.isArray(resolvedPi?.payment_method_types)
+    ? resolvedPi.payment_method_types
+    : [];
+  const detectedMethod =
+    resolvedPi?.metadata?.payment_method_type ||
+    (methodTypes.includes('pix') && !methodTypes.includes('card') ? 'pix' : methodTypes[0] || 'pix');
+
   const { error: upErr } = await supabase
     .from('bookings')
     .update({
       status: 'confirmed',
       payment_status: primaryPaymentStatus,
+      payment_method: detectedMethod,
       amount_paid: finalPaid,
       amount_due: finalDue,
     })
@@ -32,6 +40,7 @@ async function finalizeConfirmedBooking(
       .update({
         status: 'confirmed',
         payment_status: booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid',
+        payment_method: detectedMethod,
         amount_paid: finalPaid,
         amount_due: finalDue,
       })
@@ -39,12 +48,6 @@ async function finalizeConfirmedBooking(
   }
 
   if (resolvedPi?.id) {
-    const methodTypes: string[] = Array.isArray(resolvedPi.payment_method_types)
-      ? resolvedPi.payment_method_types
-      : [];
-    const detectedMethod =
-      resolvedPi?.metadata?.payment_method_type ||
-      (methodTypes.includes('pix') && !methodTypes.includes('card') ? 'pix' : methodTypes[0] || 'pix');
 
     const { data: existingPayment } = await supabase
       .from('payments')

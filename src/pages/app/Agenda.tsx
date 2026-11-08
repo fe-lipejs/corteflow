@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { format, addWeeks, subWeeks, addDays, startOfDay } from 'date-fns';
+import { format, addWeeks, subWeeks, addDays, startOfDay, isToday, isTomorrow } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import {
   ChevronLeft, ChevronRight, Plus, Calendar, RefreshCw,
@@ -13,8 +13,8 @@ import { useProfessionals } from '../../hooks/useProfessionals';
 import { useServices } from '../../hooks/useServices';
 import { useTheme } from '../../contexts/ThemeContext';
 import {
-  useBookingsByWeek, useBookingsByDay,
-  useCreateBooking, useUpdateBookingStatus, useDeleteBooking, useUpdateBooking,
+  useBookingsByWeek, useBookingsByDay, useUpcomingCenterBookings,
+  useCreateBooking, useConfirmBooking, useUpdateBookingStatus, useDeleteBooking, useUpdateBooking,
   type Booking, type BookingStatus, type CreateBookingInput,
   useBookingsRealtime
 } from '../../hooks/useBookings';
@@ -29,6 +29,9 @@ import MobileTimeline from './agenda/MobileTimeline';
 import BookingModal from './agenda/BookingModal';
 import EditBookingModal from './agenda/EditBookingModal';
 import BookingDetailSheet from './agenda/BookingDetailSheet';
+import UpcomingConfirmationsCenter from './agenda/UpcomingConfirmationsCenter';
+import BookingConfirmationModal from './agenda/BookingConfirmationModal';
+import KpiListModal from './agenda/KpiListModal';
 import { UpgradeModal } from '../../components/UpgradeModal';
 import PendingBookingsModal from './agenda/PendingBookingsModal';
 
@@ -48,9 +51,17 @@ export default function Agenda() {
   const [currentDay, setCurrentDay] = useState<Date>(new Date());
   const weekStart = useMemo(() => startOfDay(currentDay), [currentDay]);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [bookingToConfirm, setBookingToConfirm] = useState<Booking | null>(null);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [showPendingModal, setShowPendingModal] = useState(false);
+  const [kpiModalData, setKpiModalData] = useState<{
+    title: string;
+    subtitle: string;
+    icon: any;
+    iconColor: string;
+    bookings: Booking[];
+  } | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
   const [initialBookingDate, setInitialBookingDate] = useState<Date | undefined>();
   const [businessHours, setBusinessHours] = useState<any[]>([]);
@@ -76,6 +87,12 @@ export default function Agenda() {
 
   const proScopeId = role === 'professional' ? professionalProfile?.id : undefined;
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Initialize from URL ?professional= query param (set when navigating from Equipe.tsx)
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(
+    () => searchParams.get('professional')
+  );
+
   // Data fetching
   const { data: weekBookings = [], isLoading: loadingWeek, refetch: refetchWeek, isFetching: fetchingWeek } = useBookingsByWeek(
     tenantId || null,
@@ -92,6 +109,11 @@ export default function Agenda() {
     todayAnchor,
     proScopeId
   );
+  const {
+    data: rawUpcomingCenterBookings = [],
+    isLoading: loadingUpcomingCenter,
+    refetch: refetchUpcomingCenter,
+  } = useUpcomingCenterBookings(tenantId || null, proScopeId);
 
   // Se for profissional, filtra a lista de profissionais apenas para ele mesmo para que o seletor da UI exiba apenas ele.
   const { data: allProfessionals = [] } = useProfessionals(tenantId || null);
@@ -110,6 +132,7 @@ export default function Agenda() {
 
   // Mutations
   const createBooking = useCreateBooking(tenantId);
+  const confirmBooking = useConfirmBooking(tenantId);
   const updateStatus = useUpdateBookingStatus(tenantId);
   const updateBooking = useUpdateBooking(tenantId);
   const deleteBooking = useDeleteBooking(tenantId);
@@ -117,12 +140,8 @@ export default function Agenda() {
   // Active bookings for current context
   const isLoading = isMobile || view === 'day' ? loadingDay : loadingWeek;
   const isRefreshing = fetchingWeek || fetchingDay;
-
-  const [searchParams, setSearchParams] = useSearchParams();
-  // Initialize from URL ?professional= query param (set when navigating from Equipe.tsx)
-  const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(
-    () => searchParams.get('professional')
-  );
+  const canConfirmBooking = engine.hasPermission('agenda.mudar_status');
+  const canSeeAll = engine.hasPermission('agenda.visualizar_todos');
 
   // Deep-linking via Notificação Push ou Sino (?bookingId=...&date=...)
   useEffect(() => {
@@ -134,7 +153,15 @@ export default function Agenda() {
     if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
       const [yy, mm, dd] = dateParam.split('-').map(Number);
       if (yy && mm && dd) {
-        setCurrentDay(new Date(yy, mm - 1, dd));
+        setCurrentDay(prev => {
+          const prevStr = format(prev, 'yyyy-MM-dd');
+          return prevStr === dateParam ? prev : new Date(yy, mm - 1, dd);
+        });
+      }
+      if (!bookingIdParam) {
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete('date');
+        setSearchParams(nextParams, { replace: true });
       }
     }
 
@@ -160,7 +187,6 @@ export default function Agenda() {
       const targetBooking = data as unknown as Booking;
 
       // Respeitar isolamento de permissão do profissional
-      const canSeeAll = engine.hasPermission('agenda.visualizar_todos');
       if (!canSeeAll && professionalProfile?.id && targetBooking.professional_id !== professionalProfile.id) {
         toast.error('Você não possui permissão para visualizar agendamentos de outro profissional.');
         return;
@@ -171,9 +197,10 @@ export default function Agenda() {
       }
       setSelectedBooking(targetBooking);
 
-      // Limpar bookingId da URL após abrir para permitir fechar o modal normalmente
+      // Limpar bookingId e date da URL após abrir para permitir fechar o modal normalmente
       const nextParams = new URLSearchParams(searchParams);
       nextParams.delete('bookingId');
+      nextParams.delete('date');
       setSearchParams(nextParams, { replace: true });
     };
 
@@ -182,16 +209,16 @@ export default function Agenda() {
     return () => {
       cancelled = true;
     };
-  }, [tenantId, engine.isLoading, engine.hasPermission, professionalProfile?.id, searchParams, setSearchParams]);
+  }, [tenantId, engine.isLoading, canSeeAll, professionalProfile?.id, searchParams, setSearchParams]);
 
   // Se o usuário NÃO tiver permissão para visualizar todos, filtra a agenda automaticamente para ele mesmo
   useEffect(() => {
-    if (!engine.isLoading && !engine.hasPermission('agenda.visualizar_todos')) {
+    if (!engine.isLoading && !canSeeAll) {
       if (professionalProfile?.id && selectedProfessionalId !== professionalProfile.id) {
         setSelectedProfessionalId(professionalProfile.id);
       }
     }
-  }, [engine.isLoading, engine.hasPermission, professionalProfile?.id, selectedProfessionalId]);
+  }, [engine.isLoading, canSeeAll, professionalProfile?.id, selectedProfessionalId]);
 
   const filteredWeekBookings = useMemo(() => {
     if (!selectedProfessionalId) return weekBookings;
@@ -202,6 +229,11 @@ export default function Agenda() {
     if (!selectedProfessionalId) return dayBookings;
     return dayBookings.filter(b => b.professional_id === selectedProfessionalId);
   }, [dayBookings, selectedProfessionalId]);
+
+  const filteredUpcomingCenterBookings = useMemo(() => {
+    if (!selectedProfessionalId) return rawUpcomingCenterBookings;
+    return rawUpcomingCenterBookings.filter(b => b.professional_id === selectedProfessionalId);
+  }, [rawUpcomingCenterBookings, selectedProfessionalId]);
 
   const mobileTimelineBookings = useMemo(() => {
     const map = new Map<string, Booking>();
@@ -225,13 +257,58 @@ export default function Agenda() {
     return { total, completed, inProgress, pending, revenue };
   }, [todayBookings]);
 
-  // Next booking
+  // Agendamentos esquecidos e atrasados (passados da data/hora atual ainda não finalizados nem cancelados)
+  const forgottenBookings = useMemo(() => {
+    const nowMs = new Date().getTime();
+    const map = new Map<string, Booking>();
+
+    // Unifica todas as fontes conhecidas para capturar atrasados de hoje e dias anteriores
+    for (const b of filteredUpcomingCenterBookings) map.set(b.id, b);
+    for (const b of todayBookings) map.set(b.id, b);
+    for (const b of filteredWeekBookings) map.set(b.id, b);
+    for (const b of filteredDayBookings) map.set(b.id, b);
+
+    return Array.from(map.values())
+      .filter(
+        (b) =>
+          new Date(b.scheduled_at).getTime() < nowMs &&
+          b.status !== 'completed' &&
+          b.status !== 'canceled' &&
+          b.status !== 'no_show'
+      )
+      .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+  }, [filteredUpcomingCenterBookings, todayBookings, filteredWeekBookings, filteredDayBookings]);
+
+  // Agendamentos futuros a partir de agora
+  const upcomingActiveBookings = useMemo(() => {
+    const nowMs = new Date().getTime();
+    return filteredUpcomingCenterBookings
+      .filter((b) => new Date(b.scheduled_at).getTime() > nowMs && b.status !== 'canceled' && b.status !== 'no_show')
+      .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+  }, [filteredUpcomingCenterBookings]);
+
+  // Next booking (prioriza hoje, senão pega o próximo futuro geral)
   const nextBooking = useMemo(() => {
-    const now = new Date();
-    return todayBookings
-      .filter(b => new Date(b.scheduled_at) > now && b.status !== 'canceled' && b.status !== 'no_show')
+    const nowMs = new Date().getTime();
+    const todayNext = todayBookings
+      .filter((b) => new Date(b.scheduled_at).getTime() > nowMs && b.status !== 'canceled' && b.status !== 'no_show')
       .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())[0];
-  }, [todayBookings]);
+
+    if (todayNext) return todayNext;
+
+    return upcomingActiveBookings[0] || null;
+  }, [todayBookings, upcomingActiveBookings]);
+
+  // Exibição amigável para o card Próximo (mostra horário/data ou 0 se nenhum)
+  const nextBookingDisplay = useMemo(() => {
+    if (nextBooking) {
+      const sched = new Date(nextBooking.scheduled_at);
+      if (isToday(sched)) return format(sched, 'HH:mm');
+      if (isTomorrow(sched)) return format(sched, 'HH:mm');
+      return format(sched, 'dd/MM');
+    }
+    return upcomingActiveBookings.length > 0 ? String(upcomingActiveBookings.length) : '0';
+  }, [nextBooking, upcomingActiveBookings]);
 
   const handleSlotClick = (date: Date, hour: number) => {
     if (!engine.hasPermission('agenda.criar')) {
@@ -257,6 +334,47 @@ export default function Agenda() {
     setBookingModalOpen(false);
   };
 
+  const executeConfirmBooking = async (id: string) => {
+    if (!engine.hasPermission('agenda.mudar_status')) {
+      setShowUpgradeModal('agenda.mudar_status');
+      return;
+    }
+    const nowIso = new Date().toISOString();
+    await confirmBooking.mutateAsync({ id });
+    if (selectedBooking?.id === id) {
+      setSelectedBooking(prev =>
+        prev
+          ? {
+              ...prev,
+              confirmation_status: 'confirmed',
+              confirmed_at: nowIso,
+              status: prev.status === 'pending' ? 'confirmed' : prev.status,
+            }
+          : null
+      );
+    }
+    toast.success('Agendamento confirmado!');
+  };
+
+  const handleConfirmBooking = (id: string, bookingObj?: Booking) => {
+    if (!engine.hasPermission('agenda.mudar_status')) {
+      setShowUpgradeModal('agenda.mudar_status');
+      return;
+    }
+    const found =
+      bookingObj ||
+      (selectedBooking?.id === id ? selectedBooking : null) ||
+      filteredUpcomingCenterBookings.find(b => b.id === id) ||
+      filteredWeekBookings.find(b => b.id === id) ||
+      filteredDayBookings.find(b => b.id === id);
+
+    if (found) {
+      setBookingToConfirm(found);
+    } else {
+      executeConfirmBooking(id);
+    }
+  };
+
   const handleStatusChange = async (id: string, status: BookingStatus) => {
     if (!engine.hasPermission('agenda.mudar_status')) {
       setShowUpgradeModal('agenda.mudar_status');
@@ -270,6 +388,9 @@ export default function Agenda() {
         setSelectedBooking(prev => prev ? {
           ...prev,
           status,
+          ...(status === 'confirmed' || status === 'arrived' || status === 'in_progress' || status === 'completed'
+            ? { confirmation_status: 'confirmed' as const }
+            : {}),
           ...(status === 'completed' ? { amount_paid: prev.amount_total, payment_status: 'paid' } : {})
         } : null);
       }
@@ -291,6 +412,7 @@ export default function Agenda() {
     refetchWeek();
     refetchDay();
     refetchToday();
+    refetchUpcomingCenter();
   };
 
   if (!engine.isLoading && !engine.hasPermission('agenda.visualizar_todos') && !engine.hasPermission('agenda.visualizar_minha')) {
@@ -309,7 +431,7 @@ export default function Agenda() {
 
   return (
     <>
-      <div className="flex flex-col h-full max-w-7xl mx-auto w-full animate-fade-in" style={{ minHeight: 'calc(100vh - 80px)' }}>
+      <div className="flex flex-col max-w-7xl mx-auto w-full animate-fade-in pb-12" style={{ minHeight: 'calc(100vh - 80px)' }}>
 
         {/* ── Header ── */}
         <div className="flex flex-col gap-4 mb-4 shrink-0">
@@ -418,27 +540,121 @@ export default function Agenda() {
                 className="flex overflow-x-auto md:grid md:grid-cols-4 lg:grid-cols-7 gap-2.5 pb-2 md:pb-0 scrollbar-none snap-x relative z-10"
               >
                 {[
-                  { label: 'Hoje', value: stats.total, icon: Calendar, color: theme.accent },
-                  { label: 'Confirmados', value: stats.pending, icon: Clock, color: '#f59e0b' },
-                  { label: 'Esquecidos', value: 'Ver Lista', icon: Bell, color: '#ef4444', isButton: true },
-                  { label: 'Finalizados', value: stats.completed, icon: CheckCircle, color: theme.success },
-                  { label: 'Em atendimento', value: stats.inProgress, icon: Users, color: '#a78bfa' },
-                  { label: 'Próximo', value: nextBooking ? format(new Date(nextBooking.scheduled_at), 'HH:mm') : '—', icon: Clock, color: theme.info },
-                  { label: 'Receita hoje', value: fmt.format(stats.revenue), icon: DollarSign, color: theme.warning },
+                  {
+                    label: 'Hoje',
+                    value: stats.total,
+                    icon: Calendar,
+                    color: theme.accent,
+                    onClick: () =>
+                      setKpiModalData({
+                        title: 'Agendamentos de Hoje',
+                        subtitle: 'Todos os horários marcados para hoje',
+                        icon: Calendar,
+                        iconColor: theme.accent,
+                        bookings: todayBookings,
+                      }),
+                  },
+                  {
+                    label: 'Confirmados',
+                    value: stats.pending,
+                    icon: Clock,
+                    color: '#f59e0b',
+                    onClick: () =>
+                      setKpiModalData({
+                        title: 'Agendamentos Confirmados',
+                        subtitle: 'Horários confirmados para hoje',
+                        icon: Clock,
+                        iconColor: '#f59e0b',
+                        bookings: todayBookings.filter((b) => b.status === 'confirmed' || b.status === 'pending'),
+                      }),
+                  },
+                  {
+                    label: 'Esquecidos',
+                    value: forgottenBookings.length,
+                    icon: Bell,
+                    color: '#ef4444',
+                    isAlert: forgottenBookings.length > 0,
+                    onClick: () =>
+                      setKpiModalData({
+                        title: 'Atrasados e Esquecidos',
+                        subtitle: `${forgottenBookings.length} atendimento(s) atrasados ou esquecidos em aberto`,
+                        icon: Bell,
+                        iconColor: '#ef4444',
+                        bookings: forgottenBookings,
+                      }),
+                  },
+                  {
+                    label: 'Finalizados',
+                    value: stats.completed,
+                    icon: CheckCircle,
+                    color: theme.success,
+                    onClick: () =>
+                      setKpiModalData({
+                        title: 'Atendimentos Finalizados',
+                        subtitle: 'Atendimentos concluídos hoje',
+                        icon: CheckCircle,
+                        iconColor: theme.success,
+                        bookings: todayBookings.filter((b) => b.status === 'completed'),
+                      }),
+                  },
+                  {
+                    label: 'Em atendimento',
+                    value: stats.inProgress,
+                    icon: Users,
+                    color: '#a78bfa',
+                    onClick: () =>
+                      setKpiModalData({
+                        title: 'Em Atendimento',
+                        subtitle: 'Clientes sendo atendidos agora',
+                        icon: Users,
+                        iconColor: '#a78bfa',
+                        bookings: todayBookings.filter((b) => b.status === 'in_progress' || b.status === 'arrived'),
+                      }),
+                  },
+                  {
+                    label: 'Próximo',
+                    value: nextBookingDisplay,
+                    icon: Clock,
+                    color: theme.info,
+                    onClick: () =>
+                      setKpiModalData({
+                        title: 'Próximos Agendamentos',
+                        subtitle: `${upcomingActiveBookings.length} agendamento(s) a partir de agora`,
+                        icon: Clock,
+                        iconColor: theme.info,
+                        bookings: upcomingActiveBookings,
+                      }),
+                  },
+                  {
+                    label: 'Receita hoje',
+                    value: fmt.format(stats.revenue),
+                    icon: DollarSign,
+                    color: theme.warning,
+                    onClick: () =>
+                      setKpiModalData({
+                        title: 'Receita Prevista de Hoje',
+                        subtitle: 'Agendamentos que compõem o faturamento de hoje',
+                        icon: DollarSign,
+                        iconColor: theme.warning,
+                        bookings: todayBookings.filter((b) => b.status !== 'canceled' && b.status !== 'no_show'),
+                      }),
+                  },
                 ].map((s, i) => (
                   <div
                     key={i}
-                    onClick={() => s.isButton ? setShowPendingModal(true) : undefined}
-                    className={`flex flex-col flex-shrink-0 min-w-[135px] md:min-w-0 p-2.5 rounded-2xl border glass-card ${s.isButton ? 'cursor-pointer hover:scale-[1.02] transition-transform bg-red-500/5 border-red-500/20' : ''}`}
-                    style={{ borderColor: s.isButton ? undefined : theme.border }}
+                    onClick={s.onClick}
+                    className={`flex flex-col flex-shrink-0 min-w-[135px] md:min-w-0 p-2.5 rounded-2xl border glass-card cursor-pointer hover:scale-[1.02] active:scale-95 transition-all ${
+                      s.isAlert ? 'bg-red-500/10 border-red-500/30' : ''
+                    }`}
+                    style={{ borderColor: s.isAlert ? 'rgba(239, 68, 68, 0.4)' : theme.border }}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="p-2 rounded-xl shrink-0" style={{ backgroundColor: `${s.color}15`, color: s.color }}>
                         <s.icon className="w-4 h-4" />
                       </div>
                       <div className="min-w-0 truncate">
-                        <p className={`text-lg font-bold font-display truncate ${s.isButton ? 'text-xs mt-0.5' : ''}`} style={{ color: s.isButton ? s.color : theme.textPrimary }}>
-                          {isLoading && !s.isButton ? '—' : s.value}
+                        <p className="text-lg font-bold font-display truncate" style={{ color: s.isAlert ? '#ef4444' : theme.textPrimary }}>
+                          {isLoading ? '—' : s.value}
                         </p>
                         <p className="text-[10px] font-bold uppercase tracking-wider opacity-80 truncate" style={{ color: theme.textSecondary }}>{s.label}</p>
                       </div>
@@ -507,9 +723,9 @@ export default function Agenda() {
         </div>
 
         {/* ── Calendar body ── */}
-        <div className="flex-1 min-h-0 rounded-2xl border overflow-hidden glass-card">
+        <div className="rounded-2xl border overflow-hidden glass-card md:h-[640px] flex flex-col">
           {isLoading && (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center py-20 md:h-full">
               <Loader2 className="w-8 h-8 animate-spin" style={{ color: theme.accent }} />
             </div>
           )}
@@ -517,13 +733,15 @@ export default function Agenda() {
           {!isLoading && (
             <>
               {/* Mobile */}
-              <div className="md:hidden h-full">
+              <div className="md:hidden">
                 <MobileTimeline
                   currentDay={currentDay}
                   bookings={mobileTimelineBookings}
                   maxAdvanceDays={maxAdvanceDays}
+                  canConfirm={canConfirmBooking}
                   onDayChange={setCurrentDay}
                   onBookingClick={setSelectedBooking}
+                  onConfirmBooking={handleConfirmBooking}
                   onNewBooking={(preferredDate) => {
                     if (!engine.hasPermission('agenda.criar')) {
                       setShowUpgradeModal('agenda.criar');
@@ -536,7 +754,7 @@ export default function Agenda() {
               </div>
 
               {/* Desktop */}
-              <div className="hidden md:flex flex-col h-full w-full">
+              <div className="hidden md:flex flex-col h-full w-full min-h-0">
                 {view === 'week' ? (
                   <WeekView
                     weekStart={weekStart}
@@ -544,7 +762,9 @@ export default function Agenda() {
                     businessHours={businessHours}
                     selectedProfessionalId={selectedProfessionalId}
                     maxAdvanceDays={maxAdvanceDays}
+                    canConfirm={canConfirmBooking}
                     onBookingClick={setSelectedBooking}
+                    onConfirmBooking={handleConfirmBooking}
                     onSlotClick={handleSlotClick}
                   />
                 ) : (
@@ -554,7 +774,9 @@ export default function Agenda() {
                     businessHours={businessHours}
                     selectedProfessionalId={selectedProfessionalId}
                     maxAdvanceDays={maxAdvanceDays}
+                    canConfirm={canConfirmBooking}
                     onBookingClick={setSelectedBooking}
+                    onConfirmBooking={handleConfirmBooking}
                     onSlotClick={handleSlotClick}
                   />
                 )}
@@ -562,6 +784,15 @@ export default function Agenda() {
             </>
           )}
         </div>
+
+        {/* ── Nova Seção Abaixo da Agenda: Central de Próximos Agendamentos e Confirmações ── */}
+        <UpcomingConfirmationsCenter
+          bookings={filteredUpcomingCenterBookings}
+          isLoading={loadingUpcomingCenter}
+          canConfirm={canConfirmBooking}
+          onBookingClick={setSelectedBooking}
+          onConfirmBooking={handleConfirmBooking}
+        />
 
         {/* ── Booking Creation Modal ── */}
         {bookingModalOpen && (
@@ -581,8 +812,10 @@ export default function Agenda() {
         {selectedBooking && (
           <BookingDetailSheet
             booking={selectedBooking}
+            canConfirm={canConfirmBooking}
             onClose={() => setSelectedBooking(null)}
             onStatusChange={handleStatusChange}
+            onConfirmBooking={handleConfirmBooking}
             onDelete={handleDelete}
             onEdit={(b) => {
               if (!engine.hasPermission('agenda.editar')) {
@@ -591,7 +824,7 @@ export default function Agenda() {
               }
               setEditingBooking(b);
             }}
-            isUpdating={updateStatus.isPending || deleteBooking.isPending}
+            isUpdating={updateStatus.isPending || deleteBooking.isPending || confirmBooking.isPending}
           />
         )}
 
@@ -633,6 +866,27 @@ export default function Agenda() {
               setShowPendingModal(false);
               setSelectedBooking(b);
             }}
+          />
+        )}
+
+        {kpiModalData && (
+          <KpiListModal
+            title={kpiModalData.title}
+            subtitle={kpiModalData.subtitle}
+            icon={kpiModalData.icon}
+            iconColor={kpiModalData.iconColor}
+            bookings={kpiModalData.bookings}
+            onClose={() => setKpiModalData(null)}
+            onBookingClick={(b) => setSelectedBooking(b)}
+          />
+        )}
+
+        {bookingToConfirm && (
+          <BookingConfirmationModal
+            booking={bookingToConfirm}
+            initialStep="confirm"
+            onClose={() => setBookingToConfirm(null)}
+            onConfirm={executeConfirmBooking}
           />
         )}
       </div>

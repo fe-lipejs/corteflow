@@ -43,12 +43,26 @@ serve(async (req) => {
 
     let customerId = existingSub?.stripe_customer_id;
 
-    // 2. If no customer ID, search Stripe by user email
-    if (!customerId && user.email) {
-      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-      if (customers.data.length > 0) {
-        customerId = customers.data[0].id;
+    // Se temos um customerId salvo, verificar se ele existe na conta ativa do Stripe
+    if (customerId) {
+      try {
+        await stripe.customers.retrieve(customerId);
+      } catch (err: any) {
+        if (err?.code === 'resource_missing' || err?.statusCode === 404) {
+          // O ID pertence a outro modo (ex: teste vs live) ou foi excluído
+          customerId = null;
+        }
       }
+    }
+
+    // 2. If no valid customer ID, search Stripe by user email
+    if (!customerId && user.email) {
+      try {
+        const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+        if (customers.data.length > 0) {
+          customerId = customers.data[0].id;
+        }
+      } catch (_) {}
     }
 
     if (!customerId) {
@@ -57,18 +71,30 @@ serve(async (req) => {
         message: "Nenhuma conta de faturamento do Stripe foi encontrada para este e-mail." 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
       });
     }
 
     // 3. Find active subscriptions on Stripe for this customer
-    const subs = await stripe.subscriptions.list({
-      customer: customerId,
-      status: 'all',
-      limit: 5,
-      expand: ['data.default_payment_method']
-    });
+    let subs: any;
+    try {
+      subs = await stripe.subscriptions.list({
+        customer: customerId,
+        status: 'all',
+        limit: 5,
+        expand: ['data.default_payment_method']
+      });
+    } catch (e: any) {
+      return new Response(JSON.stringify({ 
+        synced: false, 
+        message: "Erro ao consultar assinaturas no Stripe." 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
 
-    const activeStripeSub = subs.data.find(s => s.status === 'active' || s.status === 'trialing') || subs.data[0];
+    const activeStripeSub = subs?.data?.find((s: any) => s.status === 'active' || s.status === 'trialing') || subs?.data?.[0];
 
     if (!activeStripeSub) {
       return new Response(JSON.stringify({ 
@@ -76,6 +102,7 @@ serve(async (req) => {
         message: "Nenhuma assinatura ativa encontrada no Stripe." 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
       });
     }
 

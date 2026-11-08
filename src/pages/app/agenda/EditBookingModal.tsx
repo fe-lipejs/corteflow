@@ -20,6 +20,7 @@ import {
   useTenantBookingHorizon,
   useTenantDayBlocks,
 } from '../../../hooks/useBookingHorizon';
+import { useLockBodyScroll } from '../../../hooks/useLockBodyScroll';
 
 interface Props {
   tenantId: string;
@@ -44,6 +45,8 @@ export default function EditBookingModal({
   onSave,
   isLoading,
 }: Props) {
+  useLockBodyScroll(true);
+
   const { theme } = useTheme();
   const { maxAdvanceDays } = useTenantBookingHorizon(tenantId);
   const { data: availabilityMeta } = useTenantAvailabilityMeta(tenantId);
@@ -251,7 +254,7 @@ export default function EditBookingModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+        <div className="p-6 overflow-y-auto overscroll-contain flex-1 space-y-6">
           {error && (
             <div className="p-3.5 rounded-xl text-xs font-semibold bg-red-500/10 border border-red-500/20 text-red-500">
               {error}

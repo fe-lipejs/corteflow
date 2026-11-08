@@ -1,4 +1,10 @@
 import { useCallback, useMemo } from 'react';
+import {
+  formatBrPhoneMask,
+  normalizeBrPhoneDigits,
+  validateBrPhone,
+  type PhoneValidationResult,
+} from '../lib/phoneValidation';
 
 type CountryCode = 'BR' | 'US' | 'FR' | 'ES' | 'DE' | 'GB' | 'PT';
 
@@ -12,7 +18,7 @@ interface PhoneConfig {
 const PHONE_CONFIGS: Record<CountryCode, PhoneConfig> = {
   BR: {
     mask: '(##) #####-####',
-    placeholder: '(11) 98888-7777',
+    placeholder: '(27) 99999-9999',
     countryCode: '+55',
     maxLength: 15,
   },
@@ -81,6 +87,9 @@ function applyMask(value: string, mask: string): string {
 }
 
 function validatePhone(value: string, country: CountryCode): boolean {
+  if (country === 'BR') {
+    return validateBrPhone(value).valid;
+  }
   const digits = value.replace(/\D/g, '');
   const config = PHONE_CONFIGS[country];
 
@@ -98,9 +107,12 @@ export function usePhoneFormat(language: string = 'pt') {
 
   const format = useCallback(
     (value: string): string => {
+      if (country === 'BR') {
+        return formatBrPhoneMask(value);
+      }
       return applyMask(value, config.mask);
     },
-    [config.mask]
+    [country, config.mask]
   );
 
   const validate = useCallback(
@@ -110,13 +122,38 @@ export function usePhoneFormat(language: string = 'pt') {
     [country]
   );
 
-  const getDigits = useCallback((value: string): string => {
-    return value.replace(/\D/g, '');
-  }, []);
+  const validateWithDetail = useCallback(
+    (value: string): PhoneValidationResult => {
+      if (country === 'BR') {
+        return validateBrPhone(value);
+      }
+      const isValid = validatePhone(value, country);
+      const digits = value.replace(/\D/g, '');
+      return {
+        valid: isValid,
+        error: isValid ? undefined : `Informe um telefone válido. Ex: ${config.placeholder}`,
+        digits,
+        formatted: applyMask(value, config.mask),
+        whatsappUrl: isValid ? `https://wa.me/${digits}` : null,
+      };
+    },
+    [country, config.mask, config.placeholder]
+  );
+
+  const getDigits = useCallback(
+    (value: string): string => {
+      if (country === 'BR') {
+        return normalizeBrPhoneDigits(value);
+      }
+      return value.replace(/\D/g, '');
+    },
+    [country]
+  );
 
   return {
     format,
     validate,
+    validateWithDetail,
     getDigits,
     mask: config.mask,
     placeholder: config.placeholder,
@@ -125,4 +162,3 @@ export function usePhoneFormat(language: string = 'pt') {
     country,
   };
 }
-

@@ -5,6 +5,7 @@ import { X, Clock, AlertCircle, CheckCircle, ArrowDownUp } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useMemo } from "react";
 import { useTheme } from "../../../contexts/ThemeContext";
+import { useLockBodyScroll } from "../../../hooks/useLockBodyScroll";
 
 interface Props {
   tenantId: string;
@@ -13,6 +14,8 @@ interface Props {
 }
 
 export default function PendingBookingsModal({ tenantId, onClose, onBookingClick }: Props) {
+  useLockBodyScroll(true);
+
   const { theme } = useTheme();
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -55,7 +58,7 @@ export default function PendingBookingsModal({ tenantId, onClose, onBookingClick
 
   return createPortal(
     <div className="fixed inset-x-0 top-16 bottom-0 md:inset-0 z-[100] flex items-end md:items-center justify-center pt-6 md:p-4 bg-black/55 backdrop-blur-[2px] animate-fade-in">
-      <div className="w-full max-w-md rounded-t-[28px] md:rounded-3xl shadow-2xl flex flex-col h-full max-h-full md:h-auto md:max-h-[85dvh] overflow-hidden animate-slide-up" style={{ background: theme.bg, border: `1px solid ${theme.border}` }}>
+      <div className="w-full max-w-md rounded-t-[28px] md:rounded-3xl shadow-2xl flex flex-col h-full max-h-full md:h-auto md:max-h-[85dvh] overflow-hidden overscroll-contain animate-slide-up" style={{ background: theme.bg, border: `1px solid ${theme.border}` }}>
         <div className="flex items-center justify-between p-5 border-b shrink-0" style={{ borderColor: theme.border }}>
           <div>
             <h2 className="font-bold text-base flex items-center gap-2" style={{ color: theme.textPrimary }}>
@@ -80,7 +83,7 @@ export default function PendingBookingsModal({ tenantId, onClose, onBookingClick
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 space-y-2.5">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-5 space-y-2.5">
           {isLoading ? (
             <div className="flex justify-center p-8"><Clock className="w-6 h-6 animate-spin text-amber-500" /></div>
           ) : sortedBookings.length === 0 ? (

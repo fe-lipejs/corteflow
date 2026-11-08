@@ -20,6 +20,8 @@ import {
   useTenantBookingHorizon,
   useTenantDayBlocks,
 } from '../../../hooks/useBookingHorizon';
+import { formatBrPhoneMask, validateBrPhone } from '../../../lib/phoneValidation';
+import { useLockBodyScroll } from '../../../hooks/useLockBodyScroll';
 
 interface Props {
   tenantId: string;
@@ -44,6 +46,8 @@ export default function BookingModal({
   onCreate,
   isLoading,
 }: Props) {
+  useLockBodyScroll(true);
+
   const { theme } = useTheme();
   const { maxAdvanceDays } = useTenantBookingHorizon(tenantId);
   const { data: availabilityMeta } = useTenantAvailabilityMeta(tenantId);
@@ -63,6 +67,8 @@ export default function BookingModal({
   const [customerResults, setCustomerResults] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
   const [notes, setNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'local' | 'pix' | 'card'>('local');
+  const [confirmationStatus, setConfirmationStatus] = useState<'confirmed' | 'pending'>('confirmed');
   const [searchingCustomers, setSearchingCustomers] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -201,6 +207,13 @@ export default function BookingModal({
       setError('Preencha nome e telefone do cliente.');
       return;
     }
+
+    const phoneValidation = validateBrPhone(newCustomerPhone);
+    if (!phoneValidation.valid) {
+      setError(phoneValidation.error || 'Informe um telefone válido com DDD. Ex: (27) 99999-9999');
+      return;
+    }
+
     setCreatingCustomer(true);
     setError(null);
     try {
@@ -209,7 +222,7 @@ export default function BookingModal({
         .insert({
           tenant_id: tenantId,
           name: newCustomerName.trim(),
-          phone: newCustomerPhone.trim(),
+          phone: phoneValidation.digits,
         } as any)
         .select('*')
         .single();
@@ -262,6 +275,9 @@ export default function BookingModal({
         service_id: selectedService.id,
         scheduled_at: scheduledAt.toISOString(),
         payment_mode: 'local',
+        payment_method: paymentMethod,
+        confirmation_status: confirmationStatus,
+        booking_source: 'manual',
         amount_total: selectedService.price,
         duration_minutes: selectedService.duration_minutes,
         buffer_minutes: selectedService.buffer_minutes,
@@ -324,7 +340,7 @@ export default function BookingModal({
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 p-6">
+        <div className="overflow-y-auto overscroll-contain flex-1 p-6">
           {/* Step 1: Service */}
           {step === 1 && (
             <div className="space-y-3">
@@ -636,7 +652,7 @@ export default function BookingModal({
                         {selectedCustomer.name}
                       </p>
                       <p className="text-xs mt-0.5 opacity-75" style={{ color: 'var(--theme-text-secondary)' }}>
-                        {selectedCustomer.phone}
+                        {formatBrPhoneMask(selectedCustomer.phone)}
                       </p>
                     </div>
                     <button
@@ -663,17 +679,22 @@ export default function BookingModal({
                       }}
                       placeholder="Nome completo..."
                     />
-                    <input
-                      value={newCustomerPhone}
-                      onChange={(e) => setNewCustomerPhone(e.target.value)}
-                      className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none"
-                      style={{
-                        background: 'var(--theme-input-bg)',
-                        color: 'var(--theme-input-text)',
-                        border: '1px solid var(--theme-input-border)',
-                      }}
-                      placeholder="Telefone ou WhatsApp..."
-                    />
+                    <div>
+                      <input
+                        value={newCustomerPhone}
+                        onChange={(e) => setNewCustomerPhone(formatBrPhoneMask(e.target.value))}
+                        className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none"
+                        style={{
+                          background: 'var(--theme-input-bg)',
+                          color: 'var(--theme-input-text)',
+                          border: '1px solid var(--theme-input-border)',
+                        }}
+                        placeholder="(27) 99999-9999"
+                      />
+                      <p className="text-[11px] mt-1 opacity-70" style={{ color: 'var(--theme-text-secondary)' }}>
+                        Ex: (27) 99999-9999 — informe com DDD
+                      </p>
+                    </div>
                     <button
                       onClick={handleCreateCustomer}
                       disabled={creatingCustomer}
@@ -723,7 +744,7 @@ export default function BookingModal({
                                 {c.name}
                               </p>
                               <p className="text-xs opacity-75" style={{ color: 'var(--theme-text-secondary)' }}>
-                                {c.phone}
+                                {formatBrPhoneMask(c.phone)}
                               </p>
                             </div>
                           </button>
@@ -735,6 +756,68 @@ export default function BookingModal({
                     )}
                   </div>
                 )}
+              </div>
+
+              {/* Payment Method & Confirmation Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold mb-2 uppercase tracking-wider opacity-70" style={{ color: 'var(--theme-text-secondary)' }}>
+                    Forma de pagamento
+                  </label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {([
+                      { id: 'local', label: 'No local' },
+                      { id: 'pix', label: 'PIX' },
+                      { id: 'card', label: 'Cartão' },
+                    ] as const).map((opt) => {
+                      const active = paymentMethod === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setPaymentMethod(opt.id)}
+                          className="py-2 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer"
+                          style={{
+                            borderColor: active ? 'var(--theme-accent)' : 'var(--theme-border)',
+                            background: active ? 'var(--theme-accent-gradient)' : 'var(--theme-bg-hover)',
+                            color: active ? 'var(--theme-btn-primary-text)' : 'var(--theme-text-secondary)',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-2 uppercase tracking-wider opacity-70" style={{ color: 'var(--theme-text-secondary)' }}>
+                    Status de confirmação
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {([
+                      { id: 'confirmed', label: 'Confirmado' },
+                      { id: 'pending', label: 'Aguardando' },
+                    ] as const).map((opt) => {
+                      const active = confirmationStatus === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setConfirmationStatus(opt.id)}
+                          className="py-2 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer"
+                          style={{
+                            borderColor: active ? 'var(--theme-accent)' : 'var(--theme-border)',
+                            background: active ? 'var(--theme-accent-gradient)' : 'var(--theme-bg-hover)',
+                            color: active ? 'var(--theme-btn-primary-text)' : 'var(--theme-text-secondary)',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               {/* Summary */}
@@ -751,6 +834,11 @@ export default function BookingModal({
                   { label: 'Data', value: format(selectedDate, "dd 'de' MMMM", { locale: ptBR }) },
                   { label: 'Horário', value: selectedTime },
                   { label: 'Duração', value: selectedService ? `${selectedService.duration_minutes} min` : null },
+                  { label: 'Origem', value: 'Manual' },
+                  {
+                    label: 'Pagamento',
+                    value: paymentMethod === 'pix' ? 'PIX' : paymentMethod === 'card' ? 'Cartão' : 'No local',
+                  },
                   { label: 'Valor', value: selectedService ? fmt.format(selectedService.price) : null },
                 ].map(
                   (row) =>

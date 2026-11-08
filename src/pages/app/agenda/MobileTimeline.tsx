@@ -1,17 +1,29 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { format, addDays, startOfDay, isSameDay, isToday, addMinutes, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
-import { Plus, ChevronLeft, ChevronRight, Clock, User } from 'lucide-react';
+import {
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  User,
+  Check,
+  Loader2,
+} from 'lucide-react';
 import { BOOKING_STATUS_CONFIG, type Booking } from '../../../hooks/useBookings';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { isDateWithinBookingHorizon, sanitizeHexColor } from '../../../lib/bookingHorizon';
+import { getBookingConfirmationInfo } from '../../../lib/bookingConfirmation';
+import { BookingMetaIcons, WhatsAppSvgIcon } from './BookingMetaIcons';
 
 interface Props {
   currentDay: Date;
   bookings: Booking[];
   maxAdvanceDays?: number | null;
+  canConfirm?: boolean;
   onDayChange: (d: Date) => void;
   onBookingClick: (b: Booking) => void;
+  onConfirmBooking?: (bookingId: string, booking?: Booking) => void | Promise<void>;
   onNewBooking: (preferredDate?: Date) => void;
 }
 
@@ -21,11 +33,14 @@ export default function MobileTimeline({
   currentDay,
   bookings,
   maxAdvanceDays,
+  canConfirm = false,
   onDayChange,
   onBookingClick,
+  onConfirmBooking,
   onNewBooking,
 }: Props) {
   const { theme } = useTheme();
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const days = Array.from({ length: 15 }, (_, i) => addDays(startOfDay(currentDay), i - 7));
   const activeDayRef = useRef<HTMLButtonElement>(null);
@@ -57,8 +72,19 @@ export default function MobileTimeline({
       ? !isPastDay
       : isDateWithinBookingHorizon(currentDay, maxAdvanceDays);
 
+  const handleConfirm = async (e: React.MouseEvent, booking: Booking) => {
+    e.stopPropagation();
+    if (!onConfirmBooking || !canConfirm || confirmingId) return;
+    setConfirmingId(booking.id);
+    try {
+      await onConfirmBooking(booking.id, booking);
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full pb-20 bg-transparent">
+    <div className="flex flex-col bg-transparent pb-6">
       {/* Header Strip */}
       <div
         className="shrink-0 pt-5 pb-3 relative z-10 glass-card mx-3 mt-3 rounded-3xl mb-5 border"
@@ -178,9 +204,9 @@ export default function MobileTimeline({
       </div>
 
       {/* Main Timeline (Cards) */}
-      <div className="flex-1 overflow-y-auto px-3 space-y-4">
+      <div className="px-3 space-y-4">
         {sorted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center pb-20 px-6">
+          <div className="flex flex-col items-center justify-center text-center py-10 px-6">
             <div
               className="w-20 h-20 rounded-3xl flex items-center justify-center mb-6 glass-card"
               style={{ borderColor: theme.border }}
@@ -208,8 +234,8 @@ export default function MobileTimeline({
             )}
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between px-2">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between px-2 pb-1">
               <span
                 className="text-xs uppercase tracking-widest font-semibold opacity-70"
                 style={{ color: theme.textSecondary }}
@@ -218,8 +244,16 @@ export default function MobileTimeline({
               </span>
             </div>
 
-            {sorted.map((b) => {
+            <div
+              className={
+                sorted.length > 3
+                  ? 'max-h-[430px] overflow-y-auto overscroll-contain pr-1 space-y-3 scrollbar-thin'
+                  : 'space-y-3'
+              }
+            >
+              {sorted.map((b) => {
               const statusCfg = BOOKING_STATUS_CONFIG[b.status] || BOOKING_STATUS_CONFIG.confirmed;
+              const confInfo = getBookingConfirmationInfo(b);
               const accent = sanitizeHexColor(
                 b.professional?.agenda_color || b.pro_color || b.service?.color,
                 theme.accent
@@ -227,6 +261,14 @@ export default function MobileTimeline({
               const start = new Date(b.scheduled_at);
               const durationMins = Number(b.duration_minutes) || Number(b.service?.duration_minutes) || 30;
               const end = addMinutes(start, durationMins);
+              const isConfirmingThis = confirmingId === b.id;
+
+              const badgeStyle =
+                confInfo.confirmationState === 'overdue'
+                  ? { bg: 'rgba(239, 68, 68, 0.14)', color: '#ef4444', label: 'Atrasado' }
+                  : confInfo.confirmationState === 'pending'
+                    ? { bg: 'rgba(245, 158, 11, 0.15)', color: '#d97706', label: 'Aguarda confirmação' }
+                    : { bg: statusCfg.bg, color: statusCfg.color, label: statusCfg.label };
 
               return (
                 <div
@@ -235,9 +277,9 @@ export default function MobileTimeline({
                   className="rounded-3xl p-5 active:scale-[0.98] transition-transform glass-card cursor-pointer border"
                   style={{ borderColor: theme.border }}
                 >
-                  {/* Top: Time & Status */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2.5">
+                  {/* Top: Time & Confirmation / Status */}
+                  <div className="flex items-center justify-between gap-2 mb-3.5">
+                    <div className="flex items-center gap-2">
                       <div
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
                         style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}
@@ -252,51 +294,96 @@ export default function MobileTimeline({
                       </span>
                     </div>
 
-                    <span
-                      className="px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold"
-                      style={{ background: statusCfg.bg, color: statusCfg.color }}
-                    >
-                      {statusCfg.label}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold"
+                        style={{ background: badgeStyle.bg, color: badgeStyle.color }}
+                      >
+                        {badgeStyle.label}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Center: Service & Customer */}
-                  <div className="mb-5">
-                    <h3
-                      className="font-serif text-xl font-bold mb-1 tracking-tight"
-                      style={{ color: theme.textPrimary }}
-                    >
-                      {b.customer?.name ?? 'Cliente'}
-                    </h3>
-                    <p className="text-sm font-medium opacity-75" style={{ color: theme.textSecondary }}>
-                      {b.service?.name ?? 'Serviço'}
-                    </p>
+                  {/* Center: Customer & Service + WhatsApp button */}
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3
+                        className="font-serif text-xl font-bold mb-0.5 tracking-tight truncate"
+                        style={{ color: theme.textPrimary }}
+                      >
+                        {b.customer?.name ?? 'Cliente'}
+                      </h3>
+                      <p className="text-sm font-medium opacity-75 truncate" style={{ color: theme.textSecondary }}>
+                        {b.service?.name ?? 'Serviço'}
+                      </p>
+                    </div>
+
+                    {confInfo.whatsappUrl && (
+                      <a
+                        href={confInfo.whatsappUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        title={`WhatsApp: ${b.customer?.name ?? 'Cliente'}`}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 transition-opacity hover:opacity-80"
+                        style={{
+                          borderColor: theme.border,
+                          backgroundColor: theme.cardBg,
+                          color: '#25D366',
+                        }}
+                      >
+                        <WhatsAppSvgIcon className="w-4.5 h-4.5" />
+                      </a>
+                    )}
                   </div>
 
-                  {/* Bottom: Professional & Price */}
+                  {/* Bottom: Professional, Price & Direct Confirm Action */}
                   <div
-                    className="pt-4 border-t flex items-center justify-between"
+                    className="pt-3.5 border-t flex items-center justify-between gap-2"
                     style={{ borderColor: theme.border }}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center"
+                        className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
                         style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}
                       >
                         <User className="w-3.5 h-3.5" style={{ color: theme.textSecondary }} />
                       </div>
-                      <span className="text-sm font-semibold" style={{ color: theme.textPrimary }}>
+                      <span className="text-sm font-semibold truncate" style={{ color: theme.textPrimary }}>
                         {b.professional?.name ?? 'Sem profissional'}
                       </span>
                     </div>
 
-                    <span className="text-base font-bold" style={{ color: theme.textPrimary }}>
-                      {fmt.format(b.amount_total || 0)}
-                    </span>
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      {confInfo.isPending && canConfirm && onConfirmBooking && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleConfirm(e, b)}
+                          disabled={isConfirmingThis}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 active:scale-95 cursor-pointer shadow-sm hover:opacity-90 disabled:opacity-50"
+                          style={{
+                            background: 'var(--theme-accent-gradient)',
+                            color: 'var(--theme-btn-primary-text)',
+                          }}
+                        >
+                          {isConfirmingThis ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                          )}
+                          <span>Confirmar</span>
+                        </button>
+                      )}
+
+                      <span className="text-base font-bold" style={{ color: theme.textPrimary }}>
+                        {fmt.format(b.amount_total || 0)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
             })}
+            </div>
           </div>
         )}
       </div>

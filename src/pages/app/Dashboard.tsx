@@ -3,19 +3,30 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getTenantPublicUrl } from '../../lib/tenantUrl';
 import { supabase } from '../../integrations/supabase/client';
-import { Calendar, DollarSign, UserPlus, Clock, ArrowUpRight, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
+import { Calendar, DollarSign, UserPlus, Clock, ArrowUpRight, ArrowRight, Loader2, CheckCircle, Check } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useQuery } from '@tanstack/react-query';
-import { addDays, startOfDay, endOfDay, format } from 'date-fns';
+import { addDays, startOfDay, endOfDay, format, isToday, isTomorrow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import { useProfessionals } from '../../hooks/useProfessionals';
 import { useServices } from '../../hooks/useServices';
-import { useCreateBooking, useBookingsRealtime, useUpdateBookingStatus, useDeleteBooking, useUpdateBooking } from '../../hooks/useBookings';
+import {
+  useCreateBooking,
+  useConfirmBooking,
+  useBookingsRealtime,
+  useUpdateBookingStatus,
+  useDeleteBooking,
+  useUpdateBooking,
+} from '../../hooks/useBookings';
+import { getBookingConfirmationInfo } from '../../lib/bookingConfirmation';
+import { BookingMetaIcons, WhatsAppSvgIcon } from './agenda/BookingMetaIcons';
+import BookingConfirmationModal from './agenda/BookingConfirmationModal';
 import BookingModal from './agenda/BookingModal';
 import EditBookingModal from './agenda/EditBookingModal';
 import BookingDetailSheet from './agenda/BookingDetailSheet';
 import { PWAInstallButton } from '../../components/pwa/PWAInstallButton';
+import toast from 'react-hot-toast';
 
 function isValidConfirmedOrLocalBooking(b: any): boolean {
   if (!b) return false;
@@ -39,10 +50,30 @@ export default function Dashboard() {
 
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [bookingToConfirm, setBookingToConfirm] = useState<any>(null);
   const [editingBooking, setEditingBooking] = useState<any>(null);
+  const confirmBooking = useConfirmBooking(tenantId);
   const updateStatus = useUpdateBookingStatus(tenantId);
   const updateBooking = useUpdateBooking(tenantId);
   const deleteBooking = useDeleteBooking(tenantId);
+
+  const executeConfirmBooking = async (id: string) => {
+    const nowIso = new Date().toISOString();
+    await confirmBooking.mutateAsync({ id });
+    if (selectedBooking?.id === id) {
+      setSelectedBooking((prev: any) =>
+        prev
+          ? {
+              ...prev,
+              confirmation_status: 'confirmed',
+              confirmed_at: nowIso,
+              status: prev.status === 'pending' ? 'confirmed' : prev.status,
+            }
+          : null
+      );
+    }
+    toast.success('Agendamento confirmado!');
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -83,7 +114,8 @@ export default function Dashboard() {
     enabled: !!tenantId,
   });
 
-  // 1.5 Fetch Upcoming Bookings (all future bookings chronologically)
+  // 1.5 Fetch Upcoming Bookings (inclusive de dias anteriores em aberto e futuros cronologicamente)
+  const pastLookback = startOfDay(addDays(new Date(), -30)).toISOString();
   const { data: rawUpcomingBookings = [], isLoading: isLoadingUpcoming } = useQuery({
     queryKey: ['bookings', tenantId, 'dashboard_upcoming'],
     queryFn: async () => {
@@ -96,9 +128,10 @@ export default function Dashboard() {
           service:services ( id, name, duration_minutes, buffer_minutes, color, price )
         `)
         .eq('tenant_id', tenantId)
-        .gte('scheduled_at', todayStart)
+        .gte('scheduled_at', pastLookback)
+        .not('status', 'in', '(canceled,no_show)')
         .order('scheduled_at', { ascending: true })
-        .limit(25);
+        .limit(30);
 
       if (profile?.role === 'professional' && professionalProfile?.id) {
         query = query.eq('professional_id', professionalProfile.id);
@@ -476,7 +509,7 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="mt-4 flex flex-col gap-2 max-h-[360px] overflow-y-auto pr-1">
+          <div className="mt-3 flex flex-col gap-4 max-h-[385px] sm:max-h-[520px] overflow-y-auto overscroll-contain pr-1 scrollbar-thin">
             {(() => {
               const proximosAgendamentos = upcomingBookings.filter(item => {
                 const isPast = new Date(item.scheduled_at) < new Date();
@@ -487,60 +520,210 @@ export default function Dashboard() {
 
               if (proximosAgendamentos.length === 0) {
                 return (
-                  <div className="empty-state">
+                  <div className="empty-state py-8">
                     <div className="empty-state-icon">
                       <Calendar className="w-8 h-8" />
                     </div>
-                    <p className="empty-state-title">Nenhum próximo agendamento</p>
+                    <p className="empty-state-title">Nenhum agendamento pendente</p>
                     <p className="empty-state-text">Você está livre pelo resto do dia.</p>
                   </div>
                 );
               }
 
-              return proximosAgendamentos.map((item) => {
-                const isLate = new Date(item.scheduled_at) < new Date() && (item.status === 'pending' || item.status === 'confirmed');
-                const customerName = item.customer?.name || item.customers?.name || 'Cliente';
-                const serviceName = item.service?.name || item.services?.name || 'Serviço';
-                const proName = item.professional?.name || item.professionals?.name || 'Equipe';
+              const todayStartMs = startOfDay(new Date()).getTime();
+              const nowMs = new Date().getTime();
 
-                return (
-                  <div
-                    key={item.id}
-                    onClick={() => setSelectedBooking(item)}
-                    className={`agenda-item flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg border cursor-pointer transition-colors hover:bg-[var(--theme-bg-hover)] ${isLate ? 'border-red-300 bg-red-50 hover:bg-red-100' : ''}`}
-                    style={{ borderColor: isLate ? '#FCA5A5' : theme.border }}
-                  >
-                    <div className="flex flex-col items-center flex-shrink-0 w-12 md:w-14">
-                      <span className={`font-bold text-xs md:text-sm ${isLate ? 'text-red-600' : ''}`} style={{ color: isLate ? '#DC2626' : theme.accent }}>{formatTime(item.scheduled_at)}</span>
-                      <span className="text-[9px] md:text-[10px] font-medium" style={{ color: theme.textMuted }}>{format(new Date(item.scheduled_at), 'dd/MM')}</span>
-                      {isLate && <span className="text-[8px] md:text-[9px] font-bold text-red-600 bg-red-100 px-1 py-0.5 rounded-sm mt-0.5 uppercase tracking-wider">Atrasado</span>}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 w-full mb-0.5">
-                        <span className={`font-semibold text-[13px] md:text-sm truncate ${isLate ? 'text-red-900' : ''}`} style={{ color: isLate ? '#7F1D1D' : theme.textPrimary }}>
-                          {customerName}
-                        </span>
-                        {item.order_number && (
-                          <span className={`text-[9px] md:text-[10px] font-mono px-1 py-0.5 rounded-md border flex-shrink-0 ${isLate ? 'border-red-200 bg-red-100 text-red-700' : ''}`} style={!isLate ? { color: theme.textMuted, borderColor: theme.border, background: theme.bg } : {}}>
-                            #{item.order_number}
-                          </span>
-                        )}
-                        {item.payment_mode && item.payment_mode !== 'local' && Number(item.amount_paid || 0) > 0 && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-500 shrink-0">
-                            {item.payment_mode === 'deposit' ? 'Sinal Pago' : 'Pago Online'}
-                          </span>
-                        )}
-                      </div>
-                      <p className={`text-[11px] md:text-xs truncate ${isLate ? 'text-red-700/80' : ''}`} style={{ color: isLate ? 'rgb(185 28 28 / 0.8)' : theme.textMuted }}>
-                        {serviceName} · {proName}
-                      </p>
-                    </div>
-                    <span className={`text-[13px] md:text-sm font-semibold flex-shrink-0 ${isLate ? 'text-red-700' : ''}`} style={{ color: isLate ? '#B91C1C' : theme.textSecondary }}>
-                      {formatCurrency(item.amount_total || 0)}
+              // Agrupar por data exatamente como na Central de Agendamentos (Padrão Apple)
+              const groupMap = new Map<string, { key: string; title: string; subtitle?: string; isAlertGroup?: boolean; items: typeof proximosAgendamentos }>();
+
+              for (const item of proximosAgendamentos) {
+                const schedDate = new Date(item.scheduled_at);
+                const schedMs = schedDate.getTime();
+                const isPastDay = schedMs < todayStartMs;
+
+                let key: string;
+                let title: string;
+                let subtitle: string | undefined;
+                let isAlertGroup = false;
+
+                if (isPastDay) {
+                  key = `past_${format(schedDate, 'yyyy-MM-dd')}`;
+                  title = format(schedDate, "dd 'de' MMMM", { locale: ptBR });
+                  subtitle = 'Atrasado';
+                  isAlertGroup = true;
+                } else if (isToday(schedDate)) {
+                  key = `today_${format(schedDate, 'yyyy-MM-dd')}`;
+                  title = 'Hoje';
+                  subtitle = format(schedDate, "dd 'de' MMMM", { locale: ptBR });
+                } else if (isTomorrow(schedDate)) {
+                  key = `tomorrow_${format(schedDate, 'yyyy-MM-dd')}`;
+                  title = 'Amanhã';
+                  subtitle = format(schedDate, "dd 'de' MMMM", { locale: ptBR });
+                } else {
+                  key = `day_${format(schedDate, 'yyyy-MM-dd')}`;
+                  title = format(schedDate, "EEEE, dd 'de' MMMM", { locale: ptBR });
+                }
+
+                if (!groupMap.has(key)) {
+                  groupMap.set(key, { key, title, subtitle, isAlertGroup, items: [] });
+                }
+                groupMap.get(key)!.items.push(item);
+              }
+
+              const groups = Array.from(groupMap.values());
+
+              return groups.map((group) => (
+                <div key={group.key} className="space-y-2">
+                  {/* Header do Grupo Apple */}
+                  <div className="flex items-center gap-2 px-1 pb-0.5">
+                    <span
+                      className="text-[11px] font-bold uppercase tracking-wider capitalize"
+                      style={{ color: group.isAlertGroup ? '#FF3B30' : theme.textSecondary }}
+                    >
+                      {group.title}
                     </span>
+                    {group.subtitle && (
+                      <span
+                        className="text-[11px] font-medium opacity-65"
+                        style={{ color: group.isAlertGroup ? '#FF3B30' : theme.textSecondary }}
+                      >
+                        · {group.subtitle}
+                      </span>
+                    )}
                   </div>
-                );
-              });
+
+                  {/* Cards Padrão Apple 2026 */}
+                  <div className="flex flex-col gap-2">
+                    {group.items.map((item) => {
+                      const customerName = item.customer?.name || item.customers?.name || 'Cliente';
+                      const serviceName = item.service?.name || item.services?.name || 'Serviço';
+                      const proName = item.professional?.name || item.professionals?.name || 'Equipe';
+                      const confInfo = getBookingConfirmationInfo(item);
+                      const schedDate = new Date(item.scheduled_at);
+                      const schedMs = schedDate.getTime();
+                      const isPastDay = schedMs < todayStartMs;
+                      const isPastTime = isToday(schedDate) && schedMs < nowMs;
+                      const isPastSchedule = isPastDay || isPastTime;
+                      const isPending = confInfo.isPending;
+
+                      // Barra de status vertical padrão Apple:
+                      // Vermelho (#FF3B30): Data ou horário agendado já passou sem ser finalizado
+                      // Laranja (#FF9500): Agendamento futuro pendente de confirmação
+                      // Verde (#34C759): Agendamento futuro confirmado
+                      const indicatorColor = isPastSchedule
+                        ? '#FF3B30'
+                        : isPending
+                          ? '#FF9500'
+                          : '#34C759';
+
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => setSelectedBooking(item)}
+                          className="group flex items-center justify-between gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer hover:bg-[var(--theme-bg-hover)] active:scale-[0.99] shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
+                          style={{
+                            backgroundColor: isPastDay ? 'rgba(255, 59, 48, 0.04)' : 'var(--theme-bg)',
+                            borderColor: isPastDay
+                              ? 'rgba(255, 59, 48, 0.45)'
+                              : isPastTime
+                                ? 'rgba(255, 59, 48, 0.25)'
+                                : isPending
+                                  ? 'rgba(255, 149, 0, 0.25)'
+                                  : theme.border,
+                          }}
+                        >
+                          {/* Esquerda: Barra Apple + Horário e Data */}
+                          <div className="flex items-center gap-2.5 shrink-0 min-w-[70px] sm:min-w-[80px]">
+                            {/* Apple Vertical Indicator Bar */}
+                            <div
+                              className="w-1 h-9 sm:h-10 rounded-full shrink-0 transition-colors"
+                              style={{ backgroundColor: indicatorColor }}
+                            />
+
+                            <div className="flex flex-col">
+                              <span
+                                className="font-bold text-xs sm:text-sm tabular-nums leading-tight tracking-tight"
+                                style={{ color: isPastSchedule ? '#FF3B30' : theme.textPrimary }}
+                              >
+                                {format(schedDate, 'HH:mm')}
+                              </span>
+                              <span
+                                className="text-[10px] font-semibold uppercase tracking-wider leading-tight opacity-65 tabular-nums"
+                                style={{ color: isPastSchedule ? '#FF3B30' : theme.textSecondary }}
+                              >
+                                {format(schedDate, 'dd MMM', { locale: ptBR })}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Centro: Nome do Cliente + Ícones Neutros + Serviço e Status Diferenciado */}
+                          <div className="flex-1 min-w-0 pr-1">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <p
+                                className="font-bold text-sm sm:text-[15px] truncate tracking-tight"
+                                style={{ color: theme.textPrimary }}
+                              >
+                                {customerName}
+                              </p>
+                              <BookingMetaIcons
+                                origin={confInfo.origin}
+                                originLabel={confInfo.originLabel}
+                                paymentType={confInfo.paymentType}
+                                paymentLabel={confInfo.paymentLabel}
+                              />
+                            </div>
+                            <p
+                              className="text-xs truncate mt-0.5"
+                              style={{ color: theme.textSecondary }}
+                            >
+                              <span className="opacity-80">{serviceName}</span>
+                              {proName && <span className="opacity-60"> · com {proName.split(' ')[0]}</span>}
+
+                              {/* Diferenciação Clara de Status: Atrasado vs Pendente vs Ambos */}
+                              {isPastSchedule && isPending ? (
+                                <>
+                                  <span className="font-bold ml-1.5 text-[#FF3B30]">· Atrasado</span>
+                                  <span className="font-semibold ml-1 text-[#FF9500]">· Aguarda confirmação</span>
+                                </>
+                              ) : isPastSchedule ? (
+                                <span className="font-bold ml-1.5 text-[#FF3B30]">
+                                  · {isPastDay ? 'Dia atrasado' : 'Horário atrasado'}
+                                </span>
+                              ) : isPending ? (
+                                <span className="font-semibold ml-1.5 text-[#FF9500]">
+                                  · Aguarda confirmação
+                                </span>
+                              ) : null}
+                            </p>
+                          </div>
+
+                          {/* Direita: Botão Circular Apple WhatsApp + Preço */}
+                          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                            {confInfo.whatsappUrl && (
+                              <a
+                                href={confInfo.whatsappUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                title={`WhatsApp: ${customerName} (${confInfo.formattedPhone})`}
+                                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 active:scale-90 transition-transform flex items-center justify-center shrink-0 cursor-pointer"
+                              >
+                                <WhatsAppSvgIcon className="w-4 h-4" />
+                              </a>
+                            )}
+                            <span
+                              className="text-xs sm:text-sm font-bold tabular-nums text-right"
+                              style={{ color: theme.textPrimary }}
+                            >
+                              {formatCurrency(item.amount_total || 0)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ));
             })()}
           </div>
         </div>
@@ -625,6 +808,7 @@ export default function Dashboard() {
         <BookingDetailSheet
           booking={selectedBooking}
           onClose={() => setSelectedBooking(null)}
+          onConfirmBooking={(_id, b) => setBookingToConfirm(b || selectedBooking)}
           onStatusChange={async (id, status) => {
             await updateStatus.mutateAsync({ id, status });
             if (status === 'canceled' || status === 'no_show') {
@@ -633,6 +817,9 @@ export default function Dashboard() {
               setSelectedBooking((prev: any) => prev ? {
                 ...prev,
                 status,
+                ...(status === 'confirmed' || status === 'arrived' || status === 'in_progress' || status === 'completed'
+                  ? { confirmation_status: 'confirmed' }
+                  : {}),
                 ...(status === 'completed' ? { amount_paid: prev.amount_total, payment_status: 'paid' } : {})
               } : null);
             }
@@ -642,7 +829,16 @@ export default function Dashboard() {
             setSelectedBooking(null);
           }}
           onEdit={(b) => setEditingBooking(b)}
-          isUpdating={updateStatus.isPending || deleteBooking.isPending}
+          isUpdating={updateStatus.isPending || deleteBooking.isPending || confirmBooking.isPending}
+        />
+      )}
+
+      {bookingToConfirm && (
+        <BookingConfirmationModal
+          booking={bookingToConfirm}
+          initialStep="confirm"
+          onClose={() => setBookingToConfirm(null)}
+          onConfirm={executeConfirmBooking}
         />
       )}
 

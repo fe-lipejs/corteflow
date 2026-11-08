@@ -23,6 +23,9 @@ export interface Booking {
   order_number: string;
   scheduled_at: string;
   status: BookingStatus;
+  confirmation_status?: 'pending' | 'confirmed';
+  confirmed_at?: string | null;
+  booking_source?: 'manual' | 'online';
   payment_mode?: 'local' | 'deposit' | 'full';
   payment_status?: 'pending' | 'partial_paid' | 'paid' | 'full_paid' | 'refunded' | 'failed';
 
@@ -66,6 +69,9 @@ export interface CreateBookingInput {
   service_id: string;
   scheduled_at: string; // ISO string
   payment_mode: string;
+  payment_method?: string;
+  confirmation_status?: 'pending' | 'confirmed';
+  booking_source?: 'manual' | 'online';
   amount_total: number;
   duration_minutes: number;
   buffer_minutes: number;
@@ -94,6 +100,15 @@ export const BOOKING_STATUS_CONFIG: Record<BookingStatus, { label: string; color
 // ─── Query Key ────────────────────────────────────────────────────────────────
 export const BOOKINGS_KEY = (tenantId: string, dateKey: string) => ['bookings', tenantId, dateKey];
 
+// ─── Helper: filter out unpaid online checkout drafts ─────────────────────────
+function isUnpaidOnlineDraft(b: Booking): boolean {
+  return (
+    b.status === 'pending' &&
+    (b.payment_mode === 'deposit' || b.payment_mode === 'full') &&
+    (!b.payment_status || b.payment_status === 'pending')
+  );
+}
+
 // ─── Fetch bookings for a date range ─────────────────────────────────────────
 async function fetchBookings(tenantId: string, from: Date, to: Date, professionalId?: string | null): Promise<Booking[]> {
   let query = supabase
@@ -118,15 +133,46 @@ async function fetchBookings(tenantId: string, from: Date, to: Date, professiona
 
   if (error) throw error;
   const rows = (data ?? []) as unknown as Booking[];
-  // Filtrar rascunhos de checkout online (PIX/Cartão) que ainda não foram pagos pelo cliente
-  return rows.filter(
-    (b) =>
-      !(
-        b.status === 'pending' &&
-        (b.payment_mode === 'deposit' || b.payment_mode === 'full') &&
-        (!b.payment_status || b.payment_status === 'pending')
-      )
-  );
+  return rows.filter((b) => !isUnpaidOnlineDraft(b));
+}
+
+// ─── Fetch bookings for the Upcoming & Confirmations Center ───────────────────
+async function fetchUpcomingCenterBookings(tenantId: string, professionalId?: string | null): Promise<Booking[]> {
+  const now = new Date();
+  const pastLookback = startOfDay(addDays(now, -30));
+  const futureHorizon = endOfDay(addDays(now, 60));
+
+  let query = supabase
+    .from('bookings')
+    .select(`
+      *,
+      customer:customers(id, name, phone, email, segment, total_spent, visit_count, last_visit, past_services),
+      professional:professionals(id, name, agenda_color, photo_url),
+      service:services(id, name, duration_minutes, buffer_minutes, color, price, commission_pct)
+    `)
+    .eq('tenant_id', tenantId)
+    .gte('scheduled_at', pastLookback.toISOString())
+    .lte('scheduled_at', futureHorizon.toISOString())
+    .not('status', 'in', '(canceled,no_show)')
+    .order('scheduled_at', { ascending: true });
+
+  if (professionalId) {
+    query = query.eq('professional_id', professionalId);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const rows = (data ?? []) as unknown as Booking[];
+
+  return rows.filter((b) => {
+    if (isUnpaidOnlineDraft(b)) return false;
+    // Agendamentos já finalizados, cancelados ou no_show não entram na central
+    if (b.status === 'completed' || b.status === 'canceled' || b.status === 'no_show') return false;
+
+    // Retorna TODOS os agendamentos ativos em aberto: atrasados/esquecidos passados, hoje e futuros
+    return true;
+  });
 }
 
 // ─── Fetch ALL bookings for a date (for conflict check) ───────────────────────
@@ -149,14 +195,7 @@ async function fetchBookingsForConflict(
 
   const { data } = await query;
   const rows = (data ?? []) as unknown as Booking[];
-  return rows.filter(
-    (b) =>
-      !(
-        b.status === 'pending' &&
-        (b.payment_mode === 'deposit' || b.payment_mode === 'full') &&
-        (!b.payment_status || b.payment_status === 'pending')
-      )
-  );
+  return rows.filter((b) => !isUnpaidOnlineDraft(b));
 }
 
 // ─── Check time slot availability ────────────────────────────────────────────
@@ -210,6 +249,17 @@ export function useBookingsByDay(tenantId: string | null, day: Date, professiona
   });
 }
 
+// ─── Hook: useUpcomingCenterBookings ──────────────────────────────────────────
+export function useUpcomingCenterBookings(tenantId: string | null, professionalId?: string | null) {
+  return useQuery({
+    queryKey: ['upcoming-center-bookings', tenantId ?? '', professionalId ?? 'all'],
+    queryFn: () => fetchUpcomingCenterBookings(tenantId!, professionalId),
+    enabled: !!tenantId,
+    staleTime: 1000 * 20,
+    refetchInterval: 1000 * 45,
+  });
+}
+
 // ─── Hook: useCreateBooking ───────────────────────────────────────────────────
 export function useCreateBooking(tenantId: string) {
   const qc = useQueryClient();
@@ -217,6 +267,8 @@ export function useCreateBooking(tenantId: string) {
     mutationFn: async (input: CreateBookingInput) => {
       const orderNumber = `BOK-${Date.now().toString(36).toUpperCase()}`;
       const accessCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+      const confStatus = input.confirmation_status ?? 'confirmed';
+      const nowIso = new Date().toISOString();
 
       const { data, error } = await supabase
         .from('bookings')
@@ -228,7 +280,11 @@ export function useCreateBooking(tenantId: string) {
           order_number: orderNumber,
           scheduled_at: input.scheduled_at,
           status: 'confirmed',
+          confirmation_status: confStatus,
+          confirmed_at: confStatus === 'confirmed' ? nowIso : null,
+          booking_source: input.booking_source ?? 'manual',
           payment_mode: input.payment_mode,
+          payment_method: input.payment_method ?? 'local',
           amount_total: input.amount_total,
           duration_minutes: input.duration_minutes,
           buffer_minutes: input.buffer_minutes,
@@ -253,12 +309,71 @@ export function useCreateBooking(tenantId: string) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['upcoming-center-bookings', tenantId] });
       qc.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
       qc.invalidateQueries({ queryKey: ['financials_full', tenantId] });
       qc.invalidateQueries({ queryKey: ['commissions', tenantId] });
       qc.invalidateQueries({ queryKey: ['clientes', tenantId] });
       qc.invalidateQueries({ queryKey: ['customer_history', tenantId] });
       qc.invalidateQueries({ queryKey: ['customer_history_bookings'] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_today'] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_recent'] });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_upcoming'] });
+    },
+  });
+}
+
+// ─── Hook: useConfirmBooking (Single Source of Truth Confirmation) ────────────
+export function useConfirmBooking(tenantId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, note }: { id: string; note?: string }) => {
+      const nowIso = new Date().toISOString();
+
+      const { data: current } = await supabase
+        .from('bookings')
+        .select('id, status, confirmation_status')
+        .eq('id', id)
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      const updatePayload: Record<string, any> = {
+        confirmation_status: 'confirmed',
+        confirmed_at: nowIso,
+      };
+
+      if (current && (current as any).status === 'pending') {
+        updatePayload.status = 'confirmed';
+      }
+
+      const { data, error } = await supabase
+        .from('bookings')
+        .update(updatePayload as any)
+        .eq('id', id)
+        .eq('tenant_id', tenantId)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      // Log history non-blocking (usa exatamente as colunas reais da tabela booking_history)
+      supabase
+        .from('booking_history')
+        .insert({
+          booking_id: id,
+          tenant_id: tenantId,
+          from_status: (current as any)?.status ?? 'pending',
+          to_status: 'confirmed',
+          note: note ?? 'Confirmação de agendamento',
+        })
+        .then(() => {});
+
+      return data as unknown as Booking;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['upcoming-center-bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
       qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_today'] });
       qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_recent'] });
       qc.invalidateQueries({ queryKey: ['bookings', tenantId, 'dashboard_upcoming'] });
@@ -279,6 +394,12 @@ export function useUpdateBookingStatus(tenantId: string) {
         .single();
 
       const updateFields: any = { status };
+      if (status === 'confirmed' || status === 'arrived' || status === 'in_progress' || status === 'completed') {
+        updateFields.confirmation_status = 'confirmed';
+        if (!(current as any)?.confirmed_at) {
+          updateFields.confirmed_at = new Date().toISOString();
+        }
+      }
       if (status === 'completed') {
         updateFields.amount_paid = current?.amount_total || 0;
         updateFields.amount_due = 0;
@@ -303,15 +424,17 @@ export function useUpdateBookingStatus(tenantId: string) {
         }
       }
 
-      // Log history
-      await supabase.from('booking_history').insert({
-        booking_id: id,
-        tenant_id: tenantId,
-        action: 'status_changed',
-        details: { from_status: (current as any)?.status, to_status: status },
-        reason: note ?? null,
-        actor_type: 'admin',
-      });
+      // Log history (usa exatamente as colunas reais da tabela booking_history)
+      supabase
+        .from('booking_history')
+        .insert({
+          booking_id: id,
+          tenant_id: tenantId,
+          from_status: (current as any)?.status ?? null,
+          to_status: status,
+          note: note ?? null,
+        })
+        .then(() => {});
 
       if (status === 'canceled') {
         supabase.functions
@@ -327,6 +450,7 @@ export function useUpdateBookingStatus(tenantId: string) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['upcoming-center-bookings', tenantId] });
       qc.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
       qc.invalidateQueries({ queryKey: ['financials_full', tenantId] });
       qc.invalidateQueries({ queryKey: ['commissions', tenantId] });
@@ -361,6 +485,7 @@ export function useUpdateBooking(tenantId: string) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['upcoming-center-bookings', tenantId] });
       qc.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
       qc.invalidateQueries({ queryKey: ['financials_full', tenantId] });
       qc.invalidateQueries({ queryKey: ['commissions', tenantId] });
@@ -382,6 +507,7 @@ export function useDeleteBooking(tenantId: string) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['upcoming-center-bookings', tenantId] });
       qc.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
       qc.invalidateQueries({ queryKey: ['financials_full', tenantId] });
       qc.invalidateQueries({ queryKey: ['commissions', tenantId] });
@@ -408,6 +534,7 @@ export function useCancelBooking(tenantId?: string) {
     onSuccess: () => {
       if (tenantId) {
         qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+        qc.invalidateQueries({ queryKey: ['upcoming-center-bookings', tenantId] });
         qc.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
         qc.invalidateQueries({ queryKey: ['financials_full', tenantId] });
         qc.invalidateQueries({ queryKey: ['commissions', tenantId] });
@@ -432,6 +559,7 @@ export function useRescheduleBooking(tenantId?: string) {
     onSuccess: () => {
       if (tenantId) {
         qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+        qc.invalidateQueries({ queryKey: ['upcoming-center-bookings', tenantId] });
         qc.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
       }
       qc.invalidateQueries({ queryKey: ['booking'] });
@@ -537,6 +665,7 @@ export function useBookingsRealtime(tenantId: string | null) {
           }
           // Invalidate bookings and related financial/customer queries for this tenant
           queryClient.invalidateQueries({ queryKey: ['bookings', tenantId] });
+          queryClient.invalidateQueries({ queryKey: ['upcoming-center-bookings', tenantId] });
           queryClient.invalidateQueries({ queryKey: ['forgotten-bookings', tenantId] });
           queryClient.invalidateQueries({ queryKey: ['financials_full', tenantId] });
           queryClient.invalidateQueries({ queryKey: ['commissions', tenantId] });

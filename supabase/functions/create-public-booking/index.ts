@@ -193,7 +193,39 @@ serve(async (req) => {
     }
 
     let customerId = null;
-    const cleanPhone = customer.phone.replace(/\D/g, "");
+    let cleanPhone = (customer.phone || "").replace(/\D/g, "");
+    const VALID_BR_DDDS = new Set([
+      "11", "12", "13", "14", "15", "16", "17", "18", "19",
+      "21", "22", "24", "27", "28",
+      "31", "32", "33", "34", "35", "37", "38",
+      "41", "42", "43", "44", "45", "46", "47", "48", "49",
+      "51", "53", "54", "55",
+      "61", "62", "63", "64", "65", "66", "67", "68", "69",
+      "71", "73", "74", "75", "77", "79",
+      "81", "82", "83", "84", "85", "86", "87", "88", "89",
+      "91", "92", "93", "94", "95", "96", "97", "98", "99",
+    ]);
+
+    if (
+      (cleanPhone.length === 12 || cleanPhone.length === 13) &&
+      cleanPhone.startsWith("55") &&
+      VALID_BR_DDDS.has(cleanPhone.slice(2, 4))
+    ) {
+      cleanPhone = cleanPhone.slice(2);
+    }
+
+    if (cleanPhone.length !== 10 && cleanPhone.length !== 11) {
+      throw new Error("Informe um telefone válido com DDD (ex: (27) 99999-9999).");
+    }
+
+    const ddd = cleanPhone.slice(0, 2);
+    if (!VALID_BR_DDDS.has(ddd)) {
+      throw new Error(`O DDD (${ddd}) informado não é válido no Brasil. Confira o seu número.`);
+    }
+
+    if (cleanPhone.length === 11 && cleanPhone[2] !== "9") {
+      throw new Error("Celular com 9 dígitos deve começar com 9 após o DDD. Ex: (27) 99999-9999.");
+    }
 
     const { data: existingCustomer } = await supabase
       .from("customers")
@@ -250,6 +282,12 @@ serve(async (req) => {
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     const accessCode = Math.random().toString(36).substring(2, 12);
     const isOnlinePending = payment_scope !== "local" && payment_method !== "cash";
+    const resolvedPaymentMethod =
+      payment_scope === "local" || payment_method === "cash"
+        ? "local"
+        : payment_method === "card"
+          ? "card"
+          : "pix";
 
     const { data: newBooking, error: bErr } = await supabase
       .from("bookings")
@@ -265,6 +303,9 @@ serve(async (req) => {
           buffer_minutes: service.buffer_minutes ?? 0,
           pro_color: resolvedProColor,
           status: isOnlinePending ? "pending" : "confirmed",
+          confirmation_status: "pending",
+          booking_source: "online",
+          payment_method: resolvedPaymentMethod,
           payment_status: "pending",
           payment_mode:
             payment_scope === "full"

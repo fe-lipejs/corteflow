@@ -1154,6 +1154,10 @@ export default function PublicStore() {
       const text = `Novo agendamento! ${customerName.trim()} marcou ${selectedService.name} com ${proName} em ${dayFormatted} às ${selectedTime}. Era isso que eu queria te mostrar: seus clientes marcando sozinhos 😉`;
       return `https://wa.me/${cleanOwnerPhone}?text=${encodeURIComponent(text)}`;
     }
+    const portalUrl = typeof window !== 'undefined' && slug
+      ? `${window.location.origin}${getTenantPortalUrl(slug, tenant?.isDemo)}${bookingCode ? `?order=${bookingCode}` : ''}`
+      : `https://raffros.com/${slug}/portal`;
+
     const lines = [
       `*NOVA RESERVA — ${storeName}*`,
       `*Código:* #${bookingCode}`,
@@ -1165,6 +1169,7 @@ export default function PublicStore() {
       paymentScope === "partial" ? `*Entrada paga:* ${money(amountPaid)}` : "",
       storeAddress ? `*Local:* ${storeAddress}` : "",
       customerNotes ? `*Obs:* ${customerNotes}` : "",
+      `\nAcompanhe seu agendamento aqui: ${portalUrl}`,
     ].filter(Boolean);
     return `https://wa.me/${onlyDigits(storePhone)}?text=${encodeURIComponent(lines.join("\n"))}`;
   }, [
@@ -1178,6 +1183,11 @@ export default function PublicStore() {
     amountPaid,
     paymentScope,
     storeName,
+    storeAddress,
+    customerNotes,
+    storePhone,
+    slug,
+    tenant?.isDemo,
     storeAddress,
     storePhone,
     customerNotes,
@@ -1204,13 +1214,14 @@ export default function PublicStore() {
 
     const cleanName = customerName.trim();
     const cleanPhone = customerPhone.trim();
+    const phoneCheck = phoneFormat.validateWithDetail(customerPhone);
     let hasValidationError = false;
 
     if (!cleanPhone) {
-      setPhoneFieldError("Digite seu WhatsApp com DDD para continuar");
+      setPhoneFieldError("Digite seu telefone com DDD. Exemplo: (27) 99999-9999");
       hasValidationError = true;
-    } else if (!phoneFormat.validate(customerPhone)) {
-      setPhoneFieldError("Digite um WhatsApp válido com DDD");
+    } else if (!phoneCheck.valid) {
+      setPhoneFieldError(phoneCheck.error || "Digite um telefone válido com DDD. Ex: (27) 99999-9999");
       hasValidationError = true;
     } else {
       setPhoneFieldError("");
@@ -1226,7 +1237,7 @@ export default function PublicStore() {
     if (hasValidationError) {
       inputsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       setTimeout(() => {
-        if (!cleanPhone || !phoneFormat.validate(customerPhone)) {
+        if (!cleanPhone || !phoneCheck.valid) {
           phoneInputRef.current?.focus();
         } else if (!cleanName) {
           nameInputRef.current?.focus();
@@ -1305,8 +1316,8 @@ export default function PublicStore() {
         service_id: selectedService.id,
         professional_id: proId,
         customer: {
-          name: customerName,
-          phone: customerPhone,
+          name: customerName.trim(),
+          phone: phoneFormat.getDigits(customerPhone),
           email: customerEmail,
         },
         scheduled_at: scheduledAt,
@@ -3515,16 +3526,23 @@ export default function PublicStore() {
                           </h3>
                           <div className="space-y-4">
                             <div>
-                              <label
-                                className="block text-xs font-semibold mb-1.5 transition-colors"
-                                style={{ color: phoneFieldError ? "#EF4444" : theme.textPrimary }}
-                              >
-                                WhatsApp com DDD *
-                              </label>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <label
+                                  className="block text-xs font-semibold transition-colors"
+                                  style={{ color: phoneFieldError ? "#EF4444" : theme.textPrimary }}
+                                >
+                                  WhatsApp / Telefone com DDD *
+                                </label>
+                                <span className="text-[11px] opacity-65" style={{ color: theme.textSecondary }}>
+                                  Ex: (27) 99999-9999
+                                </span>
+                              </div>
                               <input
                                 ref={phoneInputRef}
                                 type="tel"
-                                placeholder={phoneFormat.placeholder}
+                                inputMode="numeric"
+                                autoComplete="tel"
+                                placeholder="(27) 99999-9999"
                                 value={customerPhone}
                                 onChange={(e) => {
                                   const formatted = phoneFormat.format(e.target.value);
@@ -3546,13 +3564,25 @@ export default function PublicStore() {
                                   if (!phoneFieldError) e.target.style.borderColor = accent;
                                 }}
                                 onBlur={(e) => {
+                                  if (customerPhone.trim()) {
+                                    const check = phoneFormat.validateWithDetail(customerPhone);
+                                    if (!check.valid) {
+                                      setPhoneFieldError(check.error || "Digite um telefone válido com DDD. Ex: (27) 99999-9999");
+                                      e.target.style.borderColor = "#EF4444";
+                                      return;
+                                    }
+                                  }
                                   if (!phoneFieldError) e.target.style.borderColor = cardBorderColor;
                                 }}
                               />
-                              {phoneFieldError && (
+                              {phoneFieldError ? (
                                 <p className="mt-1.5 text-[11px] font-medium flex items-center gap-1 text-[#EF4444]">
                                   <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                                   <span>{phoneFieldError}</span>
+                                </p>
+                              ) : (
+                                <p className="mt-1 text-[11px] opacity-65" style={{ color: theme.textSecondary }}>
+                                  Informe o DDD + número completo (celular ou fixo).
                                 </p>
                               )}
                             </div>

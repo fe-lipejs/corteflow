@@ -4,6 +4,8 @@ import { ptBR } from 'date-fns/locale/pt-BR';
 import { type Booking, BOOKING_STATUS_CONFIG } from '../../../hooks/useBookings';
 import { supabase } from '../../../integrations/supabase/client';
 import { isDateWithinBookingHorizon, sanitizeHexColor } from '../../../lib/bookingHorizon';
+import { getBookingConfirmationInfo } from '../../../lib/bookingConfirmation';
+import { BookingMetaIcons } from './BookingMetaIcons';
 
 interface BusinessHour {
   weekday: number;
@@ -20,7 +22,9 @@ interface DayViewProps {
   businessHours: BusinessHour[];
   selectedProfessionalId?: string | null;
   maxAdvanceDays?: number | null;
+  canConfirm?: boolean;
   onBookingClick: (booking: Booking) => void;
+  onConfirmBooking?: (bookingId: string, booking?: Booking) => void | Promise<void>;
   onSlotClick: (date: Date, hour: number) => void;
 }
 
@@ -32,11 +36,14 @@ export default function DayView({
   businessHours,
   selectedProfessionalId,
   maxAdvanceDays,
+  canConfirm = false,
   onBookingClick,
+  onConfirmBooking,
   onSlotClick,
 }: DayViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [proWorkingHours, setProWorkingHours] = useState<any[]>([]);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedProfessionalId) {
@@ -188,6 +195,17 @@ export default function DayView({
     return hour >= openH && hour < closeH;
   };
 
+  const handleConfirm = async (e: React.MouseEvent, booking: Booking) => {
+    e.stopPropagation();
+    if (!onConfirmBooking || !canConfirm || confirmingId) return;
+    setConfirmingId(booking.id);
+    try {
+      await onConfirmBooking(booking.id, booking);
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden select-none">
       {/* Header */}
@@ -324,6 +342,7 @@ export default function DayView({
             {/* Bookings */}
             {positionedBookings.map(({ booking, top, height, widthPercent, leftPercent }) => {
               const statusCfg = BOOKING_STATUS_CONFIG[booking.status] || BOOKING_STATUS_CONFIG.confirmed;
+              const confInfo = getBookingConfirmationInfo(booking);
               const accentColor = sanitizeHexColor(
                 booking.professional?.agenda_color ||
                   booking.pro_color ||
@@ -331,6 +350,14 @@ export default function DayView({
                 '#C9963B'
               );
               const isCompact = height < 58;
+              const isConfirmingThis = confirmingId === booking.id;
+
+              const badgeStyle =
+                confInfo.confirmationState === 'overdue'
+                  ? { bg: 'rgba(239, 68, 68, 0.16)', color: '#ef4444', label: 'Atrasado' }
+                  : confInfo.confirmationState === 'pending'
+                    ? { bg: 'rgba(245, 158, 11, 0.16)', color: '#d97706', label: 'Aguarda confirmação' }
+                    : { bg: statusCfg.bg, color: statusCfg.color, label: statusCfg.label };
 
               return (
                 <div
@@ -357,16 +384,22 @@ export default function DayView({
                     style={{ backgroundColor: `${accentColor}15` }}
                   />
                   <div className="relative z-10 min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                       <span className="text-xs font-black" style={{ color: accentColor }}>
                         {format(new Date(booking.scheduled_at), 'HH:mm')}
                       </span>
                       <span
                         className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-                        style={{ backgroundColor: statusCfg.bg, color: statusCfg.color }}
+                        style={{ backgroundColor: badgeStyle.bg, color: badgeStyle.color }}
                       >
-                        {statusCfg.label}
+                        {badgeStyle.label}
                       </span>
+                      <BookingMetaIcons
+                        origin={confInfo.origin}
+                        originLabel={confInfo.originLabel}
+                        paymentType={confInfo.paymentType}
+                        paymentLabel={confInfo.paymentLabel}
+                      />
                       {booking.professional?.name && (
                         <span
                           className="text-[10px] font-bold px-2 py-0.5 rounded-full"
@@ -383,15 +416,17 @@ export default function DayView({
                       </span>
                     </p>
                   </div>
-                  <div className="relative z-10 text-right shrink-0">
-                    <p className="text-sm font-bold" style={{ color: accentColor }}>
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                        booking.amount_total || 0
-                      )}
-                    </p>
-                    <p className="text-[10px]" style={{ color: 'var(--theme-text-secondary)' }}>
-                      {booking.duration_minutes || booking.service?.duration_minutes || 30}min
-                    </p>
+                  <div className="relative z-10 flex items-center gap-2.5 shrink-0">
+                    <div className="text-right">
+                      <p className="text-sm font-bold" style={{ color: accentColor }}>
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                          booking.amount_total || 0
+                        )}
+                      </p>
+                      <p className="text-[10px]" style={{ color: 'var(--theme-text-secondary)' }}>
+                        {booking.duration_minutes || booking.service?.duration_minutes || 30}min
+                      </p>
+                    </div>
                   </div>
                 </div>
               );

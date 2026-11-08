@@ -4,6 +4,7 @@ import { ptBR } from 'date-fns/locale/pt-BR';
 import { type Booking, BOOKING_STATUS_CONFIG } from '../../../hooks/useBookings';
 import { supabase } from '../../../integrations/supabase/client';
 import { isDateWithinBookingHorizon, sanitizeHexColor } from '../../../lib/bookingHorizon';
+import { getBookingConfirmationInfo } from '../../../lib/bookingConfirmation';
 
 interface BusinessHour {
   weekday: number;
@@ -20,7 +21,9 @@ interface WeekViewProps {
   businessHours: BusinessHour[];
   selectedProfessionalId?: string | null;
   maxAdvanceDays?: number | null;
+  canConfirm?: boolean;
   onBookingClick: (booking: Booking) => void;
+  onConfirmBooking?: (bookingId: string, booking?: Booking) => void | Promise<void>;
   onSlotClick: (date: Date, hour: number) => void;
 }
 
@@ -32,11 +35,14 @@ export default function WeekView({
   businessHours,
   selectedProfessionalId,
   maxAdvanceDays,
+  canConfirm = false,
   onBookingClick,
+  onConfirmBooking,
   onSlotClick,
 }: WeekViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [proWorkingHours, setProWorkingHours] = useState<any[]>([]);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedProfessionalId) {
@@ -205,6 +211,17 @@ export default function WeekView({
     const openH = parseInt(bh.open_time.split(':')[0], 10);
     const closeH = parseInt(bh.close_time.split(':')[0], 10);
     return hour >= openH && hour < closeH;
+  };
+
+  const handleConfirm = async (e: React.MouseEvent, booking: Booking) => {
+    e.stopPropagation();
+    if (!onConfirmBooking || !canConfirm || confirmingId) return;
+    setConfirmingId(booking.id);
+    try {
+      await onConfirmBooking(booking.id, booking);
+    } finally {
+      setConfirmingId(null);
+    }
   };
 
   return (
@@ -389,6 +406,7 @@ export default function WeekView({
                 {/* ── Booking blocks ── */}
                 {positionedBookings.map(({ booking, top, height, widthPercent, leftPercent }) => {
                   const statusCfg = BOOKING_STATUS_CONFIG[booking.status] || BOOKING_STATUS_CONFIG.confirmed;
+                  const confInfo = getBookingConfirmationInfo(booking);
                   const accentColor = sanitizeHexColor(
                     booking.professional?.agenda_color ||
                       booking.pro_color ||
@@ -398,6 +416,21 @@ export default function WeekView({
 
                   const isCompact = height < 62;
                   const isNarrow = widthPercent < 55;
+                  const isConfirmingThis = confirmingId === booking.id;
+
+                  const dotColor =
+                    confInfo.confirmationState === 'overdue'
+                      ? '#ef4444'
+                      : confInfo.confirmationState === 'pending'
+                        ? '#f59e0b'
+                        : statusCfg.color;
+
+                  const dotTitle =
+                    confInfo.confirmationState === 'overdue'
+                      ? 'Confirmação atrasada'
+                      : confInfo.confirmationState === 'pending'
+                        ? 'Aguarda confirmação'
+                        : statusCfg.label;
 
                   return (
                     <div
@@ -414,7 +447,7 @@ export default function WeekView({
                         e.stopPropagation();
                         onBookingClick(booking);
                       }}
-                      title={`${format(new Date(booking.scheduled_at), 'HH:mm')} • ${booking.customer?.name ?? 'Cliente'} • ${booking.service?.name ?? 'Serviço'}${booking.professional?.name ? ` (${booking.professional.name})` : ''}`}
+                      title={`${format(new Date(booking.scheduled_at), 'HH:mm')} • ${booking.customer?.name ?? 'Cliente'} • ${booking.service?.name ?? 'Serviço'} (${confInfo.originLabel} · ${confInfo.paymentLabel} · ${confInfo.confirmationLabel})`}
                       className={`absolute rounded-lg border-l-[3.5px] cursor-pointer z-10 overflow-hidden
                         hover:z-30 hover:scale-[1.01] transition-all shadow-md hover:shadow-xl flex flex-col justify-between ${
                           isCompact ? 'px-2 py-1' : 'px-2.5 py-1.5'
@@ -441,8 +474,8 @@ export default function WeekView({
                             </span>
                             <span
                               className="w-1.5 h-1.5 rounded-full shrink-0"
-                              style={{ backgroundColor: statusCfg.color }}
-                              title={statusCfg.label}
+                              style={{ backgroundColor: dotColor }}
+                              title={dotTitle}
                             />
                           </div>
                           <p
@@ -450,7 +483,7 @@ export default function WeekView({
                             style={{ color: 'var(--theme-text-secondary)' }}
                           >
                             {booking.service?.name ?? 'Serviço'}
-                            {!isNarrow && booking.professional?.name ? ` • ${booking.professional.name.split(' ')[0]}` : ''}
+                            {!isNarrow && confInfo.isPending ? ` · ${confInfo.confirmationShortLabel}` : ''}
                           </p>
                         </div>
                       ) : (
@@ -477,8 +510,8 @@ export default function WeekView({
                               )}
                               <span
                                 className="w-2 h-2 rounded-full shrink-0"
-                                style={{ backgroundColor: statusCfg.color }}
-                                title={statusCfg.label}
+                                style={{ backgroundColor: dotColor }}
+                                title={dotTitle}
                               />
                             </div>
                           </div>
@@ -498,6 +531,7 @@ export default function WeekView({
                               style={{ color: 'var(--theme-text-secondary)' }}
                             >
                               {booking.service?.name ?? 'Serviço'}
+                              {!isNarrow && confInfo.isPending ? ` · ${confInfo.confirmationShortLabel}` : ''}
                             </p>
                           </div>
                         </>

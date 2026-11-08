@@ -147,6 +147,10 @@ export default function SuccessBooking() {
   // wa.me logic
   const whatsappNumber = settings?.whatsapp_number || settings?.phone || '';
   const cleanNumber = whatsappNumber.replace(/\D/g, '');
+  const portalUrl = typeof window !== 'undefined' && slug
+    ? `${window.location.origin}${getTenantPortalUrl(slug)}${booking?.order_number ? `?order=${booking.order_number}` : ''}`
+    : `https://raffros.com/${slug}/portal`;
+
   const lines = booking
     ? [
       `*NOVA RESERVA — ${settings?.fantasy_name || 'Salão'}*`,
@@ -159,6 +163,7 @@ export default function SuccessBooking() {
         ? `*Valor:* R$ ${Number(booking.amount_total).toFixed(2).replace('.', ',')}`
         : '',
       settings?.address ? `*Local:* ${settings.address}` : '',
+      `\nAcompanhe seu agendamento aqui: ${portalUrl}`,
     ].filter(Boolean)
     : ['Olá! Concluí meu agendamento na plataforma.'];
   const text = lines.join('\n');
