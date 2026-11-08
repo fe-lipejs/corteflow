@@ -4,6 +4,8 @@ import { ptBR } from 'date-fns/locale/pt-BR';
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  Calendar,
   Clock,
   User,
   Check,
@@ -15,7 +17,7 @@ import {
 } from 'lucide-react';
 import { BOOKING_STATUS_CONFIG, type Booking } from '../../../hooks/useBookings';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { isDateWithinBookingHorizon, sanitizeHexColor } from '../../../lib/bookingHorizon';
+import { isDateWithinBookingHorizon } from '../../../lib/bookingHorizon';
 import { getBookingConfirmationInfo } from '../../../lib/bookingConfirmation';
 import { BookingMetaIcons, WhatsAppSvgIcon } from './BookingMetaIcons';
 import {
@@ -163,18 +165,24 @@ export default function MobileTimeline({
             <button
               type="button"
               onClick={() => onOpenMonthCalendar?.()}
-              className="relative font-serif text-[18px] font-bold capitalize tracking-tight cursor-pointer px-2.5 py-0.5 rounded-xl hover:bg-black/5 active:scale-95 transition-all flex items-center gap-1.5"
-              style={{ color: theme.textPrimary }}
+              className="relative font-serif text-[17px] font-bold capitalize tracking-tight cursor-pointer px-3.5 py-1.5 rounded-2xl border active:scale-95 transition-all flex items-center gap-2"
+              style={{
+                color: theme.textPrimary,
+                backgroundColor: 'var(--theme-bg)',
+                borderColor: theme.border,
+              }}
               title="Toque para abrir o calendário do mês"
             >
+              <Calendar className="w-4 h-4 shrink-0" style={{ color: theme.accent }} />
               <span>{format(currentDay, 'MMMM yyyy', { locale: ptBR })}</span>
+              <ChevronDown className="w-4 h-4 shrink-0 opacity-60" />
             </button>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1.5">
               <p
                 className="text-[10px] uppercase tracking-widest font-semibold opacity-70"
                 style={{ color: theme.textSecondary }}
               >
-                {format(currentDay, 'EEEE', { locale: ptBR })}
+                {format(currentDay, "EEEE, dd 'de' MMM", { locale: ptBR })}
               </p>
               {!isToday(currentDay) && (
                 <button
@@ -521,42 +529,70 @@ export default function MobileTimeline({
               {sorted.map((b) => {
                 const statusCfg = BOOKING_STATUS_CONFIG[b.status] || BOOKING_STATUS_CONFIG.confirmed;
                 const confInfo = getBookingConfirmationInfo(b);
-                const accent = sanitizeHexColor(
-                  b.professional?.agenda_color || b.pro_color || b.service?.color,
-                  theme.accent
-                );
                 const start = new Date(b.scheduled_at);
                 const durationMins = Number(b.duration_minutes) || Number(b.service?.duration_minutes) || 30;
                 const end = addMinutes(start, durationMins);
                 const isConfirmingThis = confirmingId === b.id;
 
-                const badgeStyle =
-                  confInfo.confirmationState === 'overdue'
-                    ? { bg: 'rgba(239, 68, 68, 0.14)', color: '#ef4444', label: 'Atrasado' }
-                    : confInfo.confirmationState === 'pending'
-                      ? {
+                const isOverdue = confInfo.confirmationState === 'overdue';
+                const isPending = confInfo.confirmationState === 'pending';
+
+                const badgeStyle = isOverdue
+                  ? { bg: 'rgba(239, 68, 68, 0.14)', color: '#ef4444', label: 'Atrasado' }
+                  : isPending
+                    ? {
                         bg: `color-mix(in srgb, ${theme.accent} 16%, transparent)`,
                         color: theme.accent,
                         label: 'Aguarda confirmação',
                       }
-                      : { bg: statusCfg.bg, color: statusCfg.color, label: statusCfg.label };
+                    : { bg: statusCfg.bg, color: statusCfg.color, label: statusCfg.label };
 
                 return (
                   <div
                     key={b.id}
                     onClick={() => onBookingClick(b)}
                     className="rounded-3xl p-5 active:scale-[0.98] transition-transform glass-card cursor-pointer border"
-                    style={{ borderColor: theme.border }}
+                    style={{
+                      borderColor: isOverdue
+                        ? 'rgba(239, 68, 68, 0.35)'
+                        : isPending
+                          ? `color-mix(in srgb, ${theme.accent} 30%, ${theme.border})`
+                          : theme.border,
+                    }}
                   >
                     {/* Top: Time & Confirmation / Status */}
                     <div className="flex items-center justify-between gap-2 mb-3.5">
                       <div className="flex items-center gap-2">
                         <div
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
-                          style={{ background: theme.cardBg, border: `1px solid ${theme.border}` }}
+                          style={{
+                            background: theme.cardBg,
+                            border: `1px solid ${
+                              isOverdue
+                                ? 'rgba(239, 68, 68, 0.35)'
+                                : isPending
+                                  ? `color-mix(in srgb, ${theme.accent} 35%, transparent)`
+                                  : theme.border
+                            }`,
+                          }}
                         >
-                          <div className="w-1.5 h-1.5 rounded-full" style={{ background: accent }} />
-                          <span className="text-sm font-bold" style={{ color: theme.textPrimary }}>
+                          {isOverdue ? (
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0"
+                              style={{ backgroundColor: '#ef4444' }}
+                              title="Horário atrasado"
+                            />
+                          ) : isPending ? (
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0"
+                              style={{ backgroundColor: theme.accent }}
+                              title="Aguarda confirmação"
+                            />
+                          ) : null}
+                          <span
+                            className="text-sm font-bold tabular-nums"
+                            style={{ color: isOverdue ? '#ef4444' : theme.textPrimary }}
+                          >
                             {format(start, 'HH:mm')}
                           </span>
                         </div>

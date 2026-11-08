@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { format, isToday, isTomorrow, startOfDay } from 'date-fns';
+import { format, isToday, isTomorrow, startOfDay, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import {
   AlertCircle,
@@ -8,8 +8,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
+  User,
+  Check,
 } from 'lucide-react';
-import type { Booking } from '../../../hooks/useBookings';
+import { BOOKING_STATUS_CONFIG, type Booking } from '../../../hooks/useBookings';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { getBookingConfirmationInfo, type BookingConfirmationInfo } from '../../../lib/bookingConfirmation';
 import { BookingMetaIcons, WhatsAppSvgIcon } from './BookingMetaIcons';
@@ -22,7 +24,7 @@ interface UpcomingConfirmationsCenterProps {
   onConfirmBooking: (bookingId: string, booking?: Booking) => void | Promise<void>;
 }
 
-type FilterTab = 'all' | 'overdue' | 'pending' | 'confirmed';
+type FilterTab = 'all' | 'pending' | 'overdue' | 'confirmed';
 type SortOrder = 'oldest_first' | 'newest_first';
 
 interface EnrichedBookingItem {
@@ -45,17 +47,20 @@ const fmt = new Intl.NumberFormat('pt-BR', {
   minimumFractionDigits: 0,
 });
 
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 6;
 
 export default function UpcomingConfirmationsCenter({
   bookings,
   isLoading = false,
+  canConfirm,
   onBookingClick,
+  onConfirmBooking,
 }: UpcomingConfirmationsCenterProps) {
   const { theme } = useTheme();
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [sortOrder, setSortOrder] = useState<SortOrder>('oldest_first');
   const [currentPage, setCurrentPage] = useState(1);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const now = new Date();
   const todayStartMs = startOfDay(now).getTime();
@@ -103,7 +108,7 @@ export default function UpcomingConfirmationsCenter({
     };
   }, [enrichedItems, todayStartMs, now]);
 
-  // Filtragem e Ordenação por data (Mais antigo primeiro padrão por solicitação)
+  // Filtragem e Ordenação por data
   const filteredItems = useMemo(() => {
     let list = enrichedItems;
 
@@ -149,8 +154,8 @@ export default function UpcomingConfirmationsCenter({
 
       if (isPastDay) {
         key = `past_${format(item.scheduledDate, 'yyyy-MM-dd')}`;
-        title = format(item.scheduledDate, "dd 'de' MMMM", { locale: ptBR });
-        subtitle = 'Atrasado';
+        title = format(item.scheduledDate, "EEEE, dd 'de' MMMM", { locale: ptBR });
+        subtitle = 'Em atraso';
         isAlertGroup = true;
       } else if (isToday(item.scheduledDate)) {
         key = `today_${format(item.scheduledDate, 'yyyy-MM-dd')}`;
@@ -191,280 +196,366 @@ export default function UpcomingConfirmationsCenter({
     setCurrentPage(1);
   };
 
-  const totalVisibleItems = pagedItems.length;
+  const handleDirectConfirm = async (e: React.MouseEvent, booking: Booking) => {
+    e.stopPropagation();
+    if (!canConfirm || confirmingId) return;
+    setConfirmingId(booking.id);
+    try {
+      await onConfirmBooking(booking.id, booking);
+    } finally {
+      setConfirmingId(null);
+    }
+  };
 
   return (
     <section
-      aria-label="Central de agendamentos: atrasados, recentes e próximos"
-      className="mt-6 rounded-3xl border p-5 sm:p-6 transition-all shadow-[0_4px_24px_rgba(0,0,0,0.02)]"
+      aria-label="Central de agendamentos"
+      className="mt-6 rounded-3xl border p-4 sm:p-6 transition-all glass-card"
       style={{
         borderColor: theme.border,
-        backgroundColor: theme.cardBg,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
       }}
     >
-      {/* ── Header da Central ── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b" style={{ borderColor: theme.border }}>
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="font-serif text-lg sm:text-xl font-bold tracking-tight" style={{ color: theme.textPrimary }}>
-              Central de agendamentos
-            </h2>
+      {/* ── Header da Central (Estilo Apple iOS) ── */}
+      <div className="flex flex-col gap-3.5 pb-4 border-b" style={{ borderColor: theme.border }}>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="font-serif text-xl font-bold tracking-tight" style={{ color: theme.textPrimary }}>
+                Próximos & Pendentes
+              </h2>
 
-            {counts.overdue > 0 && (
-              <span
-                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold"
-                style={{
-                  backgroundColor: 'rgba(255, 59, 48, 0.12)',
-                  color: '#FF3B30',
-                }}
-                title={`${counts.overdue} agendamento(s) atrasados`}
-              >
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                {counts.overdue} atrasado{counts.overdue > 1 ? 's' : ''}
-              </span>
-            )}
-          </div>
-          <p className="text-xs mt-0.5 opacity-70" style={{ color: theme.textSecondary }}>
-            Acompanhamento centralizado: atrasados, hoje e próximos
-          </p>
-        </div>
-
-        {/* Controles de Filtros e Ordenação */}
-        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
-          {/* Tabs de Filtro — Grade 2x2 no mobile para nunca vazar da tela, pill horizontal no desktop */}
-          <div
-            className="grid grid-cols-2 sm:inline-flex items-center gap-1 p-1 rounded-2xl border w-full sm:w-auto"
-            style={{ borderColor: theme.border, backgroundColor: 'var(--theme-bg)' }}
-          >
-            {[
-              { id: 'all' as FilterTab, label: `Todos (${counts.total})` },
-              { id: 'overdue' as FilterTab, label: `Atrasados (${counts.overdue})`, isAlert: counts.overdue > 0 },
-              { id: 'pending' as FilterTab, label: `Pendentes (${counts.pending})` },
-              { id: 'confirmed' as FilterTab, label: `Confirmados (${counts.confirmed})` },
-            ].map((tab) => {
-              const active = activeFilter === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => handleFilterChange(tab.id)}
-                  className="px-2.5 py-1.5 sm:py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap text-center flex items-center justify-center"
+              {counts.overdue > 0 && (
+                <span
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold"
                   style={{
-                    backgroundColor: active ? `${theme.accent}18` : 'transparent',
-                    color: active ? theme.accent : tab.isAlert ? '#EF4444' : theme.textSecondary,
+                    backgroundColor: 'rgba(239, 68, 68, 0.14)',
+                    color: '#EF4444',
                   }}
                 >
-                  {tab.label}
-                </button>
-              );
-            })}
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {counts.overdue} {counts.overdue === 1 ? 'atrasado' : 'atrasados'}
+                </span>
+              )}
+            </div>
+            <p className="text-xs mt-0.5 opacity-75" style={{ color: theme.textSecondary }}>
+              Confirme reservas pendentes ou converse com o cliente em um toque
+            </p>
           </div>
 
-          {/* Toggle de Ordenação por Data (Padrão: Mais antigos primeiro) */}
+          {/* Botão compacto de Ordenação */}
           <button
             type="button"
             onClick={handleSortToggle}
-            className="inline-flex items-center justify-center sm:justify-start gap-1.5 px-3 py-1.5 rounded-2xl border text-xs font-bold transition-all hover:bg-[var(--theme-bg-hover)] cursor-pointer shrink-0"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl border text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0"
             style={{
               borderColor: theme.border,
-              backgroundColor: 'var(--theme-bg)',
+              backgroundColor: theme.cardBg,
               color: theme.textPrimary,
             }}
-            title="Alternar ordem de exibição das datas"
+            title="Alternar ordem das datas"
           >
-            <ArrowUpDown className="w-3.5 h-3.5 opacity-70" />
-            <span>
-              {sortOrder === 'oldest_first' ? 'Mais antigos primeiro' : 'Mais distantes primeiro'}
+            <ArrowUpDown className="w-3.5 h-3.5" style={{ color: theme.accent }} />
+            <span className="hidden sm:inline">
+              {sortOrder === 'oldest_first' ? 'Mais próximos' : 'Mais distantes'}
             </span>
           </button>
         </div>
+
+        {/* Barra de Filtros Deslizante (Pills Estilo Apple) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+          {[
+            { id: 'all' as FilterTab, label: 'Todos', count: counts.total },
+            { id: 'pending' as FilterTab, label: 'Aguardando confirmação', count: counts.pending },
+            { id: 'overdue' as FilterTab, label: 'Atrasados', count: counts.overdue, isAlert: counts.overdue > 0 },
+            { id: 'confirmed' as FilterTab, label: 'Confirmados', count: counts.confirmed },
+          ].map((tab) => {
+            const active = activeFilter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => handleFilterChange(tab.id)}
+                className="px-3.5 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 shrink-0 active:scale-95 border"
+                style={{
+                  background: active
+                    ? tab.isAlert
+                      ? '#EF4444'
+                      : theme.accentGradient
+                    : theme.cardBg,
+                  borderColor: active
+                    ? 'transparent'
+                    : tab.isAlert
+                      ? 'rgba(239, 68, 68, 0.35)'
+                      : theme.border,
+                  color: active
+                    ? tab.isAlert
+                      ? '#FFFFFF'
+                      : theme.btnPrimaryText
+                    : tab.isAlert
+                      ? '#EF4444'
+                      : theme.textSecondary,
+                }}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold tabular-nums"
+                  style={{
+                    backgroundColor: active ? 'rgba(0,0,0,0.18)' : 'rgba(128,128,128,0.12)',
+                    color: active ? '#FFFFFF' : 'inherit',
+                  }}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* ── Lista de Agendamentos (Scroll interno no mobile após 3 itens) ── */}
+      {/* ── Lista de Cards Unificados (Mesmo Design Limpo do Card Superior) ── */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin" style={{ color: theme.accent }} />
         </div>
       ) : groups.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 text-center">
-          <Calendar className="w-8 h-8 opacity-40 mb-2" style={{ color: theme.textSecondary }} />
-          <p className="text-sm font-semibold" style={{ color: theme.textPrimary }}>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3 border"
+            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
+          >
+            <Calendar className="w-6 h-6 opacity-40" style={{ color: theme.textSecondary }} />
+          </div>
+          <p className="text-sm font-bold" style={{ color: theme.textPrimary }}>
             {activeFilter === 'overdue'
               ? 'Nenhum agendamento atrasado'
               : activeFilter === 'pending'
-                ? 'Nenhuma confirmação pendente'
-                : 'Nenhum agendamento ativo encontrado'}
+                ? 'Tudo confirmado por aqui'
+                : 'Nenhum agendamento encontrado'}
           </p>
-          <p className="text-xs mt-0.5 opacity-65" style={{ color: theme.textSecondary }}>
+          <p className="text-xs mt-1 opacity-70 max-w-xs" style={{ color: theme.textSecondary }}>
             {activeFilter === 'overdue'
-              ? 'Todos os agendamentos anteriores estão em dia ou finalizados.'
+              ? 'Todos os atendimentos anteriores já foram concluídos ou atualizados.'
               : 'Novos agendamentos aparecerão aqui automaticamente.'}
           </p>
         </div>
       ) : (
-        <div
-          className={`pt-4 space-y-5 ${
-            totalVisibleItems > 3
-              ? 'max-h-[385px] sm:max-h-[520px] overflow-y-auto overscroll-contain pr-1 scrollbar-thin'
-              : ''
-          }`}
-        >
+        <div className="pt-5 space-y-6">
           {groups.map((group) => (
-            <div key={group.key} className="space-y-2">
-              {/* Header do Grupo com estética Apple */}
-              <div className="flex items-center gap-2 px-1 pb-0.5">
-                {group.isAlertGroup && <AlertCircle className="w-3.5 h-3.5 text-[#FF3B30] shrink-0" />}
-                <span
-                  className="text-[11px] font-bold uppercase tracking-wider capitalize"
-                  style={{ color: group.isAlertGroup ? '#FF3B30' : theme.textSecondary }}
-                >
-                  {group.title}
-                </span>
-                {group.subtitle && (
+            <div key={group.key} className="space-y-3">
+              {/* Cabeçalho do Dia */}
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  {group.isAlertGroup && <AlertCircle className="w-4 h-4 text-[#EF4444] shrink-0" />}
                   <span
-                    className="text-[11px] font-medium opacity-65"
-                    style={{ color: group.isAlertGroup ? '#FF3B30' : theme.textSecondary }}
+                    className="text-xs font-extrabold uppercase tracking-wider"
+                    style={{ color: group.isAlertGroup ? '#EF4444' : theme.textSecondary }}
                   >
-                    · {group.subtitle}
+                    {group.title}
                   </span>
-                )}
+                  {group.subtitle && (
+                    <span
+                      className="text-xs font-semibold opacity-75"
+                      style={{ color: group.isAlertGroup ? '#EF4444' : theme.textSecondary }}
+                    >
+                      · {group.subtitle}
+                    </span>
+                  )}
+                </div>
+
+                <span
+                  className="text-[11px] font-bold opacity-60"
+                  style={{ color: theme.textSecondary }}
+                >
+                  {group.items.length} {group.items.length === 1 ? 'horário' : 'horários'}
+                </span>
               </div>
 
-              {/* Cards Padrão Apple 2026 */}
-              <div className="flex flex-col gap-2">
+              {/* Grid de Cards (1 coluna no mobile, 2 colunas no desktop para máximo aproveitamento visual) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 {group.items.map(({ booking, info, scheduledDate }) => {
-                  const timeStr = format(scheduledDate, 'HH:mm');
+                  const statusCfg = BOOKING_STATUS_CONFIG[booking.status] || BOOKING_STATUS_CONFIG.confirmed;
                   const schedMs = scheduledDate.getTime();
                   const isPastDay = schedMs < todayStartMs;
                   const isPastTime = isToday(scheduledDate) && schedMs < now.getTime();
                   const isPastSchedule = isPastDay || isPastTime;
                   const isPending = info.isPending;
 
+                  const durationMins =
+                    Number(booking.duration_minutes) ||
+                    Number(booking.service?.duration_minutes) ||
+                    30;
+                  const endDate = addMinutes(scheduledDate, durationMins);
+                  const isConfirmingThis = confirmingId === booking.id;
+
+                  // Regra estrita de cores do badge e do dot:
+                  // - Vermelho (#EF4444) quando atrasado
+                  // - Accent (theme.accent) quando pendente de confirmação
+                  const badgeStyle = isPastSchedule
+                    ? { bg: 'rgba(239, 68, 68, 0.14)', color: '#EF4444', label: 'Atrasado' }
+                    : isPending
+                      ? {
+                          bg: `color-mix(in srgb, ${theme.accent} 16%, transparent)`,
+                          color: theme.accent,
+                          label: 'Aguarda confirmação',
+                        }
+                      : { bg: statusCfg.bg, color: statusCfg.color, label: statusCfg.label };
+
                   return (
                     <div
                       key={booking.id}
                       onClick={() => onBookingClick(booking)}
-                      className="group flex items-center justify-between gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer hover:bg-[var(--theme-bg-hover)] active:scale-[0.99] shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
+                      className="rounded-3xl p-4 sm:p-5 active:scale-[0.99] transition-all cursor-pointer border flex flex-col justify-between"
                       style={{
-                        backgroundColor: isPastDay
-                          ? 'rgba(239, 68, 68, 0.04)'
-                          : isPastTime
-                            ? 'rgba(239, 68, 68, 0.02)'
-                            : 'var(--theme-bg)',
-                        borderColor: isPastDay
-                          ? 'rgba(239, 68, 68, 0.45)'
-                          : isPastTime
-                            ? 'rgba(239, 68, 68, 0.25)'
-                            : isPending
-                              ? `color-mix(in srgb, ${theme.accent} 25%, transparent)`
-                              : theme.border,
+                        backgroundColor: isPastSchedule
+                          ? 'rgba(239, 68, 68, 0.03)'
+                          : theme.cardBg,
+                        borderColor: isPastSchedule
+                          ? 'rgba(239, 68, 68, 0.35)'
+                          : isPending
+                            ? `color-mix(in srgb, ${theme.accent} 30%, ${theme.border})`
+                            : theme.border,
                       }}
                     >
-                      {/* Esquerda: Horário com Pontinho Redondo + Data */}
-                      <div className="flex flex-col shrink-0 min-w-[62px] sm:min-w-[72px]">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className="font-bold text-xs sm:text-sm tabular-nums leading-tight tracking-tight"
-                            style={{ color: isPastSchedule ? '#EF4444' : theme.textPrimary }}
-                          >
-                            {timeStr}
-                          </span>
+                      <div>
+                        {/* Topo do Card: Pill de Horário (com dot redondo apenas p/ pendente ou atrasado) + Status */}
+                        <div className="flex items-center justify-between gap-2 mb-3.5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl shrink-0"
+                              style={{
+                                background: 'var(--theme-bg)',
+                                border: `1px solid ${
+                                  isPastSchedule
+                                    ? 'rgba(239, 68, 68, 0.35)'
+                                    : isPending
+                                      ? `color-mix(in srgb, ${theme.accent} 35%, transparent)`
+                                      : theme.border
+                                }`,
+                              }}
+                            >
+                              {isPastSchedule ? (
+                                <span
+                                  className="w-2 h-2 rounded-full shrink-0"
+                                  style={{ backgroundColor: '#EF4444' }}
+                                  title="Horário atrasado"
+                                />
+                              ) : isPending ? (
+                                <span
+                                  className="w-2 h-2 rounded-full shrink-0"
+                                  style={{ backgroundColor: theme.accent }}
+                                  title="Aguarda confirmação"
+                                />
+                              ) : null}
 
-                          {/* Pontinho Redondo: Vermelho para atrasados, Accent apenas para pendentes */}
-                          {isPastSchedule ? (
-                            <span
-                              className="w-2 h-2 rounded-full shrink-0 shadow-sm"
-                              style={{ backgroundColor: '#EF4444' }}
-                              title="Atrasado"
-                            />
-                          ) : isPending ? (
-                            <span
-                              className="w-2 h-2 rounded-full shrink-0 shadow-sm"
-                              style={{ backgroundColor: theme.accent }}
-                              title="Pendente de confirmação"
-                            />
-                          ) : null}
+                              <span
+                                className="text-sm font-bold tabular-nums"
+                                style={{ color: isPastSchedule ? '#EF4444' : theme.textPrimary }}
+                              >
+                                {format(scheduledDate, 'HH:mm')}
+                              </span>
+                            </div>
+
+                            <span className="text-xs font-medium truncate" style={{ color: theme.textSecondary }}>
+                              até {format(endDate, 'HH:mm')} · {format(scheduledDate, 'dd MMM', { locale: ptBR })}
+                            </span>
+                          </div>
+
+                          <span
+                            className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shrink-0"
+                            style={{ backgroundColor: badgeStyle.bg, color: badgeStyle.color }}
+                          >
+                            {badgeStyle.label}
+                          </span>
                         </div>
-                        <span
-                          className="text-[10px] font-semibold uppercase tracking-wider leading-tight opacity-65 tabular-nums mt-0.5"
-                          style={{ color: isPastSchedule ? '#EF4444' : theme.textSecondary }}
-                        >
-                          {format(scheduledDate, 'dd MMM', { locale: ptBR })}
-                        </span>
+
+                        {/* Meio do Card: Nome Completo do Cliente + Serviço + Botão WhatsApp na cor do Accent */}
+                        <div className="flex items-start justify-between gap-3 mb-4">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4
+                                className="font-bold text-base sm:text-lg leading-snug break-words"
+                                style={{ color: theme.textPrimary }}
+                              >
+                                {booking.customer?.name ?? 'Cliente'}
+                              </h4>
+                              <BookingMetaIcons
+                                origin={info.origin}
+                                originLabel={info.originLabel}
+                                paymentType={info.paymentType}
+                                paymentLabel={info.paymentLabel}
+                              />
+                            </div>
+                            <p
+                              className="text-sm font-medium mt-0.5 truncate"
+                              style={{ color: theme.textSecondary }}
+                            >
+                              {booking.service?.name ?? 'Serviço'}
+                            </p>
+                          </div>
+
+                          {info.whatsappUrl && (
+                            <a
+                              href={info.whatsappUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              title={`Conversar no WhatsApp com ${booking.customer?.name ?? 'Cliente'}`}
+                              className="w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 transition-transform active:scale-90 hover:opacity-85"
+                              style={{
+                                borderColor: `color-mix(in srgb, ${theme.accent} 25%, transparent)`,
+                                backgroundColor: `color-mix(in srgb, ${theme.accent} 12%, transparent)`,
+                                color: theme.accent,
+                              }}
+                            >
+                              <WhatsAppSvgIcon className="w-4.5 h-4.5" />
+                            </a>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Centro: Nome do Cliente + Ícones Neutros + Serviço e Status */}
-                      <div className="flex-1 min-w-0 pr-1">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span
-                            className="font-bold text-sm sm:text-[15px] truncate tracking-tight"
-                            style={{ color: theme.textPrimary }}
+                      {/* Rodapé do Card: Profissional + Botão Confirmar Direto + Valor */}
+                      <div
+                        className="pt-3.5 border-t flex items-center justify-between gap-2"
+                        style={{ borderColor: theme.border }}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div
+                            className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                            style={{ background: 'var(--theme-bg)', border: `1px solid ${theme.border}` }}
                           >
-                            {booking.customer?.name ?? 'Cliente'}
+                            <User className="w-3.5 h-3.5" style={{ color: theme.textSecondary }} />
+                          </div>
+                          <span className="text-sm font-semibold truncate" style={{ color: theme.textPrimary }}>
+                            {booking.professional?.name ?? 'Sem profissional'}
                           </span>
-
-                          <BookingMetaIcons
-                            origin={info.origin}
-                            originLabel={info.originLabel}
-                            paymentType={info.paymentType}
-                            paymentLabel={info.paymentLabel}
-                          />
                         </div>
 
-                        <p
-                          className="text-xs truncate mt-0.5"
-                          style={{ color: theme.textSecondary }}
-                        >
-                          <span className="opacity-80">{booking.service?.name ?? 'Serviço'}</span>
-                          {booking.professional?.name && (
-                            <span className="opacity-60">
-                              {' '}· com {booking.professional.name.split(' ')[0]}
-                            </span>
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          {isPending && canConfirm && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleDirectConfirm(e, booking)}
+                              disabled={isConfirmingThis}
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 active:scale-95 cursor-pointer shadow-sm hover:opacity-90 disabled:opacity-50"
+                              style={{
+                                background: theme.accentGradient,
+                                color: theme.btnPrimaryText,
+                              }}
+                            >
+                              {isConfirmingThis ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                              )}
+                              <span>Confirmar</span>
+                            </button>
                           )}
 
-                          {/* Status Diferenciado: Atrasado (Vermelho) e Pendente (Accent) */}
-                          {isPastSchedule && isPending ? (
-                            <>
-                              <span className="font-bold ml-1.5 text-[#EF4444]">· Atrasado</span>
-                              <span className="font-semibold ml-1" style={{ color: theme.accent }}>· Aguarda confirmação</span>
-                            </>
-                          ) : isPastSchedule ? (
-                            <span className="font-bold ml-1.5 text-[#EF4444]">
-                              · {isPastDay ? 'Dia atrasado' : 'Horário atrasado'}
-                            </span>
-                          ) : isPending ? (
-                            <span className="font-semibold ml-1.5" style={{ color: theme.accent }}>
-                              · Aguarda confirmação
-                            </span>
-                          ) : null}
-                        </p>
-                      </div>
-
-                      {/* Direita: Botão Quadrado Arredondado WhatsApp na cor do Accent + Preço */}
-                      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                        {info.whatsappUrl && (
-                          <a
-                            href={info.whatsappUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            title={`WhatsApp: ${booking.customer?.name ?? 'Cliente'} (${info.formattedPhone})`}
-                            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border hover:opacity-85 active:scale-90 transition-transform flex items-center justify-center shrink-0 cursor-pointer"
-                            style={{
-                              backgroundColor: `color-mix(in srgb, ${theme.accent} 12%, transparent)`,
-                              borderColor: `color-mix(in srgb, ${theme.accent} 25%, transparent)`,
-                              color: theme.accent,
-                            }}
-                          >
-                            <WhatsAppSvgIcon className="w-4 h-4" />
-                          </a>
-                        )}
-                        <span
-                          className="text-xs sm:text-sm font-bold tabular-nums text-right"
-                          style={{ color: theme.textPrimary }}
-                        >
-                          {fmt.format(booking.amount_total || 0)}
-                        </span>
+                          <span className="text-base font-bold tabular-nums" style={{ color: theme.textPrimary }}>
+                            {fmt.format(booking.amount_total || 0)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );
@@ -475,12 +566,15 @@ export default function UpcomingConfirmationsCenter({
 
           {/* ── Paginação Limpa ── */}
           {totalPages > 1 && (
-            <div className="pt-3 border-t flex items-center justify-between gap-3" style={{ borderColor: theme.border }}>
+            <div
+              className="pt-4 border-t flex items-center justify-between gap-3"
+              style={{ borderColor: theme.border }}
+            >
               <button
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={safePage <= 1}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--theme-bg-hover)] cursor-pointer"
+                className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--theme-bg-hover)] cursor-pointer"
                 style={{
                   borderColor: theme.border,
                   color: theme.textPrimary,
@@ -492,15 +586,14 @@ export default function UpcomingConfirmationsCenter({
 
               <span className="text-xs font-medium opacity-75" style={{ color: theme.textSecondary }}>
                 Página <strong style={{ color: theme.textPrimary }}>{safePage}</strong> de{' '}
-                <strong style={{ color: theme.textPrimary }}>{totalPages}</strong>{' '}
-                <span className="hidden sm:inline">· Total de {filteredItems.length} agendamentos</span>
+                <strong style={{ color: theme.textPrimary }}>{totalPages}</strong>
               </span>
 
               <button
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={safePage >= totalPages}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--theme-bg-hover)] cursor-pointer"
+                className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--theme-bg-hover)] cursor-pointer"
                 style={{
                   borderColor: theme.border,
                   color: theme.textPrimary,

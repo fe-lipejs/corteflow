@@ -67,7 +67,9 @@ export default function MonthCalendarModal({
   businessHours,
   knownBookings,
   knownBlocks,
+  isTogglingDayBlock = false,
   onSelectDay,
+  onQuickToggleFullDay,
   onOpenBlockManager,
   onOpenBlockedOverview,
   onClose,
@@ -713,6 +715,38 @@ export default function MonthCalendarModal({
               </div>
             </div>
 
+            {/* Segmented Control Estilo iOS: Alternar entre Calendário e Bloquear Vários Dias */}
+            <div className="px-5 pb-3">
+              <div
+                className="grid grid-cols-2 p-1 rounded-2xl border"
+                style={{ borderColor: theme.border, backgroundColor: theme.bg }}
+              >
+                <button
+                  type="button"
+                  className="py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  style={{
+                    backgroundColor: theme.cardBg,
+                    color: theme.textPrimary,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  }}
+                >
+                  <span>Calendário</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocalDaysBlockedMap({ ...dbMonthBlockedMap });
+                    setIsBlockDaysScreen(true);
+                  }}
+                  className="py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 opacity-75 hover:opacity-100"
+                  style={{ color: theme.textSecondary }}
+                >
+                  <Lock className="w-3 h-3" style={{ color: theme.accent }} />
+                  <span>Bloquear vários dias</span>
+                </button>
+              </div>
+            </div>
+
             {/* Cabeçalho dos Dias da Semana */}
             <div className="grid grid-cols-7 px-4 pb-2 text-center">
               {WEEKDAYS.map((w) => (
@@ -853,26 +887,35 @@ export default function MonthCalendarModal({
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const key = format(inspectedDay, 'yyyy-MM-dd');
-                    setLocalDaysBlockedMap({
-                      ...dbMonthBlockedMap,
-                      [key]: !dbMonthBlockedMap[key],
-                    });
-                    setIsBlockDaysScreen(true);
-                  }}
-                  className="px-3 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 shrink-0 cursor-pointer"
-                  style={{
-                    backgroundColor: theme.cardBg,
-                    borderColor: theme.border,
-                    color: theme.textPrimary,
-                  }}
-                >
-                  <Lock className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-                  <span>Bloquear dias</span>
-                </button>
+                {onQuickToggleFullDay && (
+                  <button
+                    type="button"
+                    disabled={isTogglingDayBlock}
+                    onClick={() => onQuickToggleFullDay(inspectedDay, inspectedBlockInfo.isFullyBlocked)}
+                    className="px-3 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 shrink-0 cursor-pointer"
+                    style={{
+                      backgroundColor: inspectedBlockInfo.isFullyBlocked
+                        ? `color-mix(in srgb, ${theme.accent} 16%, transparent)`
+                        : theme.cardBg,
+                      borderColor: inspectedBlockInfo.isFullyBlocked ? theme.accent : theme.border,
+                      color: inspectedBlockInfo.isFullyBlocked ? theme.accent : theme.textPrimary,
+                    }}
+                  >
+                    {isTogglingDayBlock ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : inspectedBlockInfo.isFullyBlocked ? (
+                      <>
+                        <Unlock className="w-3.5 h-3.5" />
+                        <span>Liberar dia</span>
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-3.5 h-3.5" style={{ color: theme.accent }} />
+                        <span>Bloquear dia</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
