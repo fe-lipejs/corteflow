@@ -889,6 +889,28 @@ export default function Agenda() {
             onConfirm={executeConfirmBooking}
           />
         )}
+
+        {/* ── Botão Flutuante Mobile (+) para Novo Agendamento (Sempre Visível e Sobre Todos os Elementos) ── */}
+        <button
+          type="button"
+          onClick={() => {
+            if (!engine.hasPermission('agenda.criar')) {
+              setShowUpgradeModal('agenda.criar');
+              return;
+            }
+            setInitialBookingDate(currentDay);
+            setBookingModalOpen(true);
+          }}
+          className="md:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.5)] flex items-center justify-center z-50 active:scale-90 transition-transform cursor-pointer border border-white/20"
+          style={{
+            background: theme.accentGradient || theme.accent,
+            color: theme.btnPrimaryText,
+          }}
+          aria-label="Novo agendamento"
+          title="Novo agendamento"
+        >
+          <Plus className="w-6 h-6 stroke-[2.5]" />
+        </button>
       </div>
     </>
   );

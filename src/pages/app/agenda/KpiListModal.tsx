@@ -169,12 +169,6 @@ export default function KpiListModal({
               const isPastTime = isPast && !isPastDay;
               const isOverdue = isPast && b.status !== 'completed' && b.status !== 'canceled';
 
-              const indicatorColor = isOverdue
-                ? '#FF3B30'
-                : confInfo.isPending
-                  ? '#FF9500'
-                  : '#34C759';
-
               return (
                 <div
                   key={b.id}
@@ -184,34 +178,51 @@ export default function KpiListModal({
                   }}
                   className="group flex items-center justify-between gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer hover:bg-[var(--theme-bg-hover)] active:scale-[0.99] shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
                   style={{
-                    backgroundColor: isPastDay ? 'rgba(255, 59, 48, 0.04)' : 'var(--theme-bg)',
-                    borderColor: isPastDay
-                      ? 'rgba(255, 59, 48, 0.45)'
+                    backgroundColor: isPastDay
+                      ? 'rgba(239, 68, 68, 0.04)'
                       : isPastTime
-                        ? 'rgba(255, 59, 48, 0.25)'
-                        : 'var(--theme-border)',
+                        ? 'rgba(239, 68, 68, 0.02)'
+                        : 'var(--theme-bg)',
+                    borderColor: isPastDay
+                      ? 'rgba(239, 68, 68, 0.45)'
+                      : isPastTime
+                        ? 'rgba(239, 68, 68, 0.25)'
+                        : confInfo.isPending
+                          ? `color-mix(in srgb, ${theme.accent} 25%, transparent)`
+                          : 'var(--theme-border)',
                   }}
                 >
-                  {/* Esquerda: Barra Apple + Horário e Data */}
-                  <div className="flex items-center gap-2.5 shrink-0 min-w-[70px]">
-                    <div
-                      className="w-1 h-9 rounded-full shrink-0"
-                      style={{ backgroundColor: indicatorColor }}
-                    />
-                    <div className="flex flex-col">
+                  {/* Esquerda: Horário com Pontinho Redondo + Data */}
+                  <div className="flex flex-col shrink-0 min-w-[62px] sm:min-w-[72px]">
+                    <div className="flex items-center gap-1.5">
                       <span
                         className="font-bold text-xs sm:text-sm tabular-nums leading-tight tracking-tight"
-                        style={{ color: isOverdue ? '#FF3B30' : 'var(--theme-text-primary)' }}
+                        style={{ color: isOverdue ? '#EF4444' : 'var(--theme-text-primary)' }}
                       >
                         {format(schedDate, 'HH:mm')}
                       </span>
-                      <span
-                        className="text-[10px] font-semibold uppercase tracking-wider leading-tight opacity-65 tabular-nums"
-                        style={{ color: isOverdue ? '#FF3B30' : 'var(--theme-text-secondary)' }}
-                      >
-                        {format(schedDate, 'dd MMM', { locale: ptBR })}
-                      </span>
+
+                      {/* Pontinho Redondo: Vermelho para atrasados, Accent apenas para pendentes */}
+                      {isOverdue ? (
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+                          style={{ backgroundColor: '#EF4444' }}
+                          title="Atrasado"
+                        />
+                      ) : confInfo.isPending ? (
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+                          style={{ backgroundColor: theme.accent }}
+                          title="Pendente de confirmação"
+                        />
+                      ) : null}
                     </div>
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-wider leading-tight opacity-65 tabular-nums mt-0.5"
+                      style={{ color: isOverdue ? '#EF4444' : 'var(--theme-text-secondary)' }}
+                    >
+                      {format(schedDate, 'dd MMM', { locale: ptBR })}
+                    </span>
                   </div>
 
                   {/* Centro: Cliente e Serviço */}
@@ -240,22 +251,22 @@ export default function KpiListModal({
                       )}
                       {isPast && confInfo.isPending ? (
                         <>
-                          <span className="font-bold ml-1.5 text-[#FF3B30]">· Atrasado</span>
-                          <span className="font-semibold ml-1 text-[#FF9500]">· Aguarda confirmação</span>
+                          <span className="font-bold ml-1.5 text-[#EF4444]">· Atrasado</span>
+                          <span className="font-semibold ml-1" style={{ color: theme.accent }}>· Aguarda confirmação</span>
                         </>
                       ) : isPast ? (
-                        <span className="font-bold ml-1.5 text-[#FF3B30]">
+                        <span className="font-bold ml-1.5 text-[#EF4444]">
                           · {isPastDay ? 'Dia atrasado' : 'Horário atrasado'}
                         </span>
                       ) : confInfo.isPending ? (
-                        <span className="font-semibold ml-1.5 text-[#FF9500]">
+                        <span className="font-semibold ml-1.5" style={{ color: theme.accent }}>
                           · Aguarda confirmação
                         </span>
                       ) : null}
                     </p>
                   </div>
 
-                  {/* Direita: Botão Circular Apple WhatsApp + Preço */}
+                  {/* Direita: Botão Circular Apple WhatsApp na cor do Accent + Preço */}
                   <div className="flex items-center gap-2.5 shrink-0">
                     {confInfo.whatsappUrl && (
                       <a
@@ -264,7 +275,11 @@ export default function KpiListModal({
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
                         title={`WhatsApp: ${b.customer?.name ?? 'Cliente'}`}
-                        className="w-8 h-8 rounded-full bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 active:scale-90 transition-transform flex items-center justify-center shrink-0 cursor-pointer"
+                        className="w-8 h-8 rounded-full hover:opacity-85 active:scale-90 transition-transform flex items-center justify-center shrink-0 cursor-pointer"
+                        style={{
+                          backgroundColor: `color-mix(in srgb, ${theme.accent} 14%, transparent)`,
+                          color: theme.accent,
+                        }}
                       >
                         <WhatsAppSvgIcon className="w-4 h-4" />
                       </a>

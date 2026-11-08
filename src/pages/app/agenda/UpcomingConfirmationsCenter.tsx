@@ -340,57 +340,60 @@ export default function UpcomingConfirmationsCenter({
                   const isPastSchedule = isPastDay || isPastTime;
                   const isPending = info.isPending;
 
-                  // Barra de status vertical padrão Apple:
-                  // Vermelho (#FF3B30): Data ou horário agendado já passou sem ser finalizado
-                  // Laranja (#FF9500): Agendamento futuro pendente de confirmação
-                  // Verde (#34C759): Agendamento futuro confirmado
-                  const indicatorColor = isPastSchedule
-                    ? '#FF3B30'
-                    : isPending
-                      ? '#FF9500'
-                      : '#34C759';
-
                   return (
                     <div
                       key={booking.id}
                       onClick={() => onBookingClick(booking)}
                       className="group flex items-center justify-between gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer hover:bg-[var(--theme-bg-hover)] active:scale-[0.99] shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
                       style={{
-                        backgroundColor: isPastDay ? 'rgba(255, 59, 48, 0.04)' : 'var(--theme-bg)',
-                        borderColor: isPastDay
-                          ? 'rgba(255, 59, 48, 0.45)'
+                        backgroundColor: isPastDay
+                          ? 'rgba(239, 68, 68, 0.04)'
                           : isPastTime
-                            ? 'rgba(255, 59, 48, 0.25)'
+                            ? 'rgba(239, 68, 68, 0.02)'
+                            : 'var(--theme-bg)',
+                        borderColor: isPastDay
+                          ? 'rgba(239, 68, 68, 0.45)'
+                          : isPastTime
+                            ? 'rgba(239, 68, 68, 0.25)'
                             : isPending
-                              ? 'rgba(255, 149, 0, 0.25)'
+                              ? `color-mix(in srgb, ${theme.accent} 25%, transparent)`
                               : theme.border,
                       }}
                     >
-                      {/* Esquerda: Barra Apple + Horário e Data */}
-                      <div className="flex items-center gap-2.5 shrink-0 min-w-[70px] sm:min-w-[80px]">
-                        {/* Apple Vertical Indicator Bar */}
-                        <div
-                          className="w-1 h-9 sm:h-10 rounded-full shrink-0 transition-colors"
-                          style={{ backgroundColor: indicatorColor }}
-                        />
-
-                        <div className="flex flex-col">
+                      {/* Esquerda: Horário com Pontinho Redondo + Data */}
+                      <div className="flex flex-col shrink-0 min-w-[62px] sm:min-w-[72px]">
+                        <div className="flex items-center gap-1.5">
                           <span
                             className="font-bold text-xs sm:text-sm tabular-nums leading-tight tracking-tight"
-                            style={{ color: isPastSchedule ? '#FF3B30' : theme.textPrimary }}
+                            style={{ color: isPastSchedule ? '#EF4444' : theme.textPrimary }}
                           >
                             {timeStr}
                           </span>
-                          <span
-                            className="text-[10px] font-semibold uppercase tracking-wider leading-tight opacity-65 tabular-nums"
-                            style={{ color: isPastSchedule ? '#FF3B30' : theme.textSecondary }}
-                          >
-                            {format(scheduledDate, 'dd MMM', { locale: ptBR })}
-                          </span>
+
+                          {/* Pontinho Redondo: Vermelho para atrasados, Accent apenas para pendentes */}
+                          {isPastSchedule ? (
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+                              style={{ backgroundColor: '#EF4444' }}
+                              title="Atrasado"
+                            />
+                          ) : isPending ? (
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+                              style={{ backgroundColor: theme.accent }}
+                              title="Pendente de confirmação"
+                            />
+                          ) : null}
                         </div>
+                        <span
+                          className="text-[10px] font-semibold uppercase tracking-wider leading-tight opacity-65 tabular-nums mt-0.5"
+                          style={{ color: isPastSchedule ? '#EF4444' : theme.textSecondary }}
+                        >
+                          {format(scheduledDate, 'dd MMM', { locale: ptBR })}
+                        </span>
                       </div>
 
-                      {/* Centro: Nome do Cliente + Ícones Neutros + Serviço e Status Diferenciado */}
+                      {/* Centro: Nome do Cliente + Ícones Neutros + Serviço e Status */}
                       <div className="flex-1 min-w-0 pr-1">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <span
@@ -419,25 +422,25 @@ export default function UpcomingConfirmationsCenter({
                             </span>
                           )}
 
-                          {/* Diferenciação Clara de Status: Atrasado vs Pendente vs Ambos */}
+                          {/* Status Diferenciado: Atrasado (Vermelho) e Pendente (Accent) */}
                           {isPastSchedule && isPending ? (
                             <>
-                              <span className="font-bold ml-1.5 text-[#FF3B30]">· Atrasado</span>
-                              <span className="font-semibold ml-1 text-[#FF9500]">· Aguarda confirmação</span>
+                              <span className="font-bold ml-1.5 text-[#EF4444]">· Atrasado</span>
+                              <span className="font-semibold ml-1" style={{ color: theme.accent }}>· Aguarda confirmação</span>
                             </>
                           ) : isPastSchedule ? (
-                            <span className="font-bold ml-1.5 text-[#FF3B30]">
+                            <span className="font-bold ml-1.5 text-[#EF4444]">
                               · {isPastDay ? 'Dia atrasado' : 'Horário atrasado'}
                             </span>
                           ) : isPending ? (
-                            <span className="font-semibold ml-1.5 text-[#FF9500]">
+                            <span className="font-semibold ml-1.5" style={{ color: theme.accent }}>
                               · Aguarda confirmação
                             </span>
                           ) : null}
                         </p>
                       </div>
 
-                      {/* Direita: Botão Circular Apple WhatsApp + Preço */}
+                      {/* Direita: Botão Circular Apple WhatsApp na cor do Accent + Preço */}
                       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                         {info.whatsappUrl && (
                           <a
@@ -446,7 +449,11 @@ export default function UpcomingConfirmationsCenter({
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
                             title={`WhatsApp: ${booking.customer?.name ?? 'Cliente'} (${info.formattedPhone})`}
-                            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 active:scale-90 transition-transform flex items-center justify-center shrink-0 cursor-pointer"
+                            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full hover:opacity-85 active:scale-90 transition-transform flex items-center justify-center shrink-0 cursor-pointer"
+                            style={{
+                              backgroundColor: `color-mix(in srgb, ${theme.accent} 14%, transparent)`,
+                              color: theme.accent,
+                            }}
                           >
                             <WhatsAppSvgIcon className="w-4 h-4" />
                           </a>

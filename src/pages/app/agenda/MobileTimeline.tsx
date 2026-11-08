@@ -328,8 +328,8 @@ export default function MobileTimeline({
                         className="w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 transition-opacity hover:opacity-80"
                         style={{
                           borderColor: theme.border,
-                          backgroundColor: theme.cardBg,
-                          color: '#25D366',
+                          backgroundColor: `color-mix(in srgb, ${theme.accent} 12%, transparent)`,
+                          color: theme.accent,
                         }}
                       >
                         <WhatsAppSvgIcon className="w-4.5 h-4.5" />
@@ -387,15 +387,6 @@ export default function MobileTimeline({
           </div>
         )}
       </div>
-
-      {/* FAB */}
-      <button
-        onClick={() => onNewBooking(canScheduleOnCurrentDay ? currentDay : undefined)}
-        className="fixed bottom-24 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-30 active:scale-95 transition-transform"
-        style={{ background: theme.accentGradient, color: theme.btnPrimaryText }}
-      >
-        <Plus className="w-6 h-6" />
-      </button>
     </div>
   );
 }
