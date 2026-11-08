@@ -28,15 +28,15 @@ import { useAttentionTracker } from '../hooks/useAttentionTracker';
 
 const ACCENT = "#FF95BA";
 const M = {
-  booking: "/Mockups/Iphone - Tela de Agendamento.png",
+  booking: "/Mockups/Iphone - Tela de Agendamento.PNG",
   booking2: "/Mockups/Iphone - Tela de Agendamento2.jpeg",
   services: "/Mockups/Iphone - Serviços.jpeg",
-  domicilio: "/Mockups/Iphone - Tela de Escolha Domicilio.png",
+  domicilio: "/Mockups/Iphone - Tela de Escolha Domicilio.PNG",
   pix: "/Mockups/Iphone - Tela de Pagamento Pix.png",
   payment: "/Mockups/Iphone - Tela de Pagamento.png",
-  themeA: "/Mockups/Iphone - Personalização Tema 1.png",
-  themeB: "/Mockups/Iphone - Personalização Tema 2.png",
-  themeC: "/Mockups/Iphone - Personalização Tema 3.png",
+  themeA: "/Mockups/Iphone - Personalização Tema 1.PNG",
+  themeB: "/Mockups/Iphone - Personalização Tema 2.PNG",
+  themeC: "/Mockups/Iphone - Personalização Tema 3.PNG",
   barber: "/Mockups/Tablet Horizontal - Tela de Agendamento Barbearia.png",
   salon: "/Mockups/Tablet Horizontal - Tela de Agendamento Salão.jpg",
   metrics: "/Mockups/Tablet Horizontal - Visão Geral Metricas.jpg",
