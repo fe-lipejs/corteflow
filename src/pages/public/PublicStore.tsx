@@ -966,11 +966,43 @@ export default function PublicStore() {
   );
 
   const availableDays = useMemo(() => {
+    const blockedList = storeData?.professionalBlockedTimes || [];
+    const targetPros =
+      selectedPro && selectedPro !== "any"
+        ? [selectedPro]
+        : professionalsList.filter((p: any) => p.status === 'active' || !p.status);
+
     return horizonData.dates.map((d) => {
       const h = businessHoursList.find((x: any) => x.weekday === d.getDay());
-      return { date: d, isOpen: h?.is_open === true };
+      if (h?.is_open !== true) {
+        return { date: d, isOpen: false };
+      }
+
+      if (targetPros.length > 0 && blockedList.length > 0) {
+        const [oh, om] = (h.open_time || "08:00").slice(0, 5).split(":").map(Number);
+        const [ch, cm] = (h.close_time || "20:00").slice(0, 5).split(":").map(Number);
+        const workStart = new Date(d);
+        workStart.setHours(oh || 8, om || 0, 0, 0);
+        const workEnd = new Date(d);
+        workEnd.setHours(ch || 20, cm || 0, 0, 0);
+
+        const allTargetProsBlockedAllDay = targetPros.every((pro: any) =>
+          blockedList.some((blk: any) => {
+            if (blk.professional_id && blk.professional_id !== pro.id) return false;
+            const bStart = new Date(blk.starts_at || blk.start_at).getTime();
+            const bEnd = new Date(blk.ends_at || blk.end_at).getTime();
+            return bStart <= workStart.getTime() && bEnd >= workEnd.getTime();
+          })
+        );
+
+        if (allTargetProsBlockedAllDay) {
+          return { date: d, isOpen: false };
+        }
+      }
+
+      return { date: d, isOpen: true };
     });
-  }, [horizonData.dates, businessHoursList]);
+  }, [horizonData.dates, businessHoursList, storeData?.professionalBlockedTimes, selectedPro, professionalsList]);
 
   // Se o salão estiver em "Sem limite" ou personalizado > 365 dias e o cliente escolher uma data além de 360 dias,
   // busca sob demanda agendamentos e bloqueios daquele dia para evitar conflitos.

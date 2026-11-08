@@ -1,10 +1,16 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
 import { format, addDays, isSameDay, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
+import { Lock, Unlock } from 'lucide-react';
 import { type Booking, BOOKING_STATUS_CONFIG } from '../../../hooks/useBookings';
 import { supabase } from '../../../integrations/supabase/client';
 import { isDateWithinBookingHorizon, sanitizeHexColor } from '../../../lib/bookingHorizon';
 import { getBookingConfirmationInfo } from '../../../lib/bookingConfirmation';
+import {
+  type NormalizedBlock,
+  getConsolidatedDayBlocks,
+  isDayFullyBlocked,
+} from '../../../hooks/useBlockedTimes';
 
 interface BusinessHour {
   weekday: number;
@@ -22,9 +28,13 @@ interface WeekViewProps {
   selectedProfessionalId?: string | null;
   maxAdvanceDays?: number | null;
   canConfirm?: boolean;
+  blocks?: NormalizedBlock[];
+  targetProIds?: string[];
   onBookingClick: (booking: Booking) => void;
   onConfirmBooking?: (bookingId: string, booking?: Booking) => void | Promise<void>;
   onSlotClick: (date: Date, hour: number) => void;
+  onOpenBlockManager?: (date?: Date) => void;
+  onQuickToggleFullDay?: (date: Date, currentlyBlocked: boolean) => void;
 }
 
 const HOUR_HEIGHT = 96; // px per hour
@@ -36,9 +46,13 @@ export default function WeekView({
   selectedProfessionalId,
   maxAdvanceDays,
   canConfirm = false,
+  blocks = [],
+  targetProIds = [],
   onBookingClick,
   onConfirmBooking,
   onSlotClick,
+  onOpenBlockManager,
+  onQuickToggleFullDay,
 }: WeekViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [proWorkingHours, setProWorkingHours] = useState<any[]>([]);
@@ -184,6 +198,15 @@ export default function WeekView({
     });
   };
 
+  const getDayOpenCloseStr = (day: Date) => {
+    const weekday = day.getDay();
+    const bh = effectiveHours.find((b) => b.weekday === weekday);
+    return {
+      openTimeStr: bh?.open_time ? bh.open_time.slice(0, 5) : '08:00',
+      closeTimeStr: bh?.close_time ? bh.close_time.slice(0, 5) : '20:00',
+    };
+  };
+
   const isDayOpen = (day: Date) => {
     const weekday = day.getDay();
     const bh = effectiveHours.find((b) => b.weekday === weekday);
@@ -239,16 +262,42 @@ export default function WeekView({
         {days.map((day, idx) => {
           const today = isToday(day);
           const open = isDayOpen(day);
+          const { openTimeStr, closeTimeStr } = getDayOpenCloseStr(day);
+          const fullBlocked = isDayFullyBlocked(day, blocks, targetProIds, openTimeStr, closeTimeStr);
           const dayCount = bookings.filter((b) => isSameDay(new Date(b.scheduled_at), day)).length;
           return (
             <div
               key={idx}
-              className={`py-3 px-1 text-center border-r last:border-r-0 transition-colors ${!open ? 'opacity-40' : ''}`}
+              className={`py-2.5 px-1 text-center border-r last:border-r-0 transition-colors relative group ${!open ? 'opacity-40' : ''}`}
               style={{
                 borderColor: 'var(--theme-border)',
                 backgroundColor: today ? 'rgba(201,150,59,0.06)' : undefined,
               }}
             >
+              {/* Quick 1-click day block / unblock icon in corner */}
+              {open && onQuickToggleFullDay && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onQuickToggleFullDay(day, fullBlocked);
+                  }}
+                  title={fullBlocked ? 'Clique para liberar este dia' : 'Clique para bloquear este dia inteiro'}
+                  className={`absolute top-1.5 right-1.5 w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer border ${
+                    fullBlocked
+                      ? 'opacity-100'
+                      : 'opacity-0 group-hover:opacity-90'
+                  }`}
+                  style={{
+                    backgroundColor: fullBlocked ? 'rgba(201,150,59,0.16)' : 'var(--theme-card-bg)',
+                    borderColor: fullBlocked ? 'var(--theme-accent)' : 'var(--theme-border)',
+                    color: 'var(--theme-accent)',
+                  }}
+                >
+                  {fullBlocked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3 opacity-75" />}
+                </button>
+              )}
+
               <p
                 className="text-[10px] font-bold uppercase tracking-wider mb-1"
                 style={{ color: today ? 'var(--theme-accent)' : 'var(--theme-text-secondary)' }}
@@ -256,7 +305,11 @@ export default function WeekView({
                 {format(day, 'EEE', { locale: ptBR })}
               </p>
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center mx-auto font-bold text-sm transition-all"
+                onClick={() => onOpenBlockManager && onOpenBlockManager(day)}
+                title={onOpenBlockManager ? 'Gerenciar horários deste dia' : undefined}
+                className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto font-bold text-sm transition-all ${
+                  onOpenBlockManager ? 'cursor-pointer hover:scale-105' : ''
+                } ${fullBlocked && !today ? 'line-through opacity-65' : ''}`}
                 style={{
                   backgroundColor: today ? 'var(--theme-accent)' : 'transparent',
                   color: today ? 'var(--theme-btn-primary-text, #090A0B)' : 'var(--theme-text-primary)',
@@ -275,6 +328,15 @@ export default function WeekView({
                     />
                   ))}
                 </div>
+              )}
+              {fullBlocked && open && (
+                <p
+                  onClick={() => onOpenBlockManager && onOpenBlockManager(day)}
+                  className="text-[9px] font-bold mt-0.5 cursor-pointer flex items-center justify-center gap-0.5"
+                  style={{ color: 'var(--theme-accent)' }}
+                >
+                  <Lock className="w-2.5 h-2.5" /> Bloqueado
+                </p>
               )}
               {!open && (
                 <p className="text-[9px] font-semibold mt-0.5" style={{ color: 'var(--theme-text-secondary)' }}>
@@ -310,6 +372,54 @@ export default function WeekView({
             const open = isDayOpen(day);
             const today = isToday(day);
             const lunch = getLunchBand(day);
+            const { openTimeStr, closeTimeStr } = getDayOpenCloseStr(day);
+            const fullBlocked = isDayFullyBlocked(day, blocks, targetProIds, openTimeStr, closeTimeStr);
+            const consolidatedBlocks = getConsolidatedDayBlocks(
+              day,
+              blocks,
+              targetProIds,
+              openTimeStr,
+              closeTimeStr
+            );
+
+            const blockedBands: Array<{
+              startMs: number;
+              endMs: number;
+              startTime: string;
+              endTime: string;
+              isFullDay: boolean;
+              top: number;
+              height: number;
+            }> = [];
+
+            for (const cb of consolidatedBlocks) {
+              const s = cb.start;
+              const e = cb.end;
+              const startMins = (s.getHours() - startHour) * 60 + s.getMinutes();
+              const endMins = (e.getHours() - startHour) * 60 + e.getMinutes();
+              const clampedStart = Math.max(0, startMins);
+              const clampedEnd = Math.min(hours.length * 60, endMins);
+              if (clampedEnd <= clampedStart) continue;
+              blockedBands.push({
+                startMs: s.getTime(),
+                endMs: e.getTime(),
+                startTime: format(s, 'HH:mm'),
+                endTime: format(e, 'HH:mm'),
+                isFullDay: fullBlocked,
+                top: (clampedStart / 60) * HOUR_HEIGHT,
+                height: Math.max(((clampedEnd - clampedStart) / 60) * HOUR_HEIGHT, 24),
+              });
+            }
+
+            const isHourBlocked = (hour: number) => {
+              const hs = new Date(day);
+              hs.setHours(hour, 0, 0, 0);
+              const he = new Date(day);
+              he.setHours(hour + 1, 0, 0, 0);
+              return consolidatedBlocks.some(
+                (cb) => cb.start.getTime() <= hs.getTime() && cb.end.getTime() >= he.getTime()
+              );
+            };
 
             return (
               <div
@@ -327,6 +437,7 @@ export default function WeekView({
                 {/* Hour rows (click targets) */}
                 {hours.map((h) => {
                   const inHours = isHourInBusinessHours(day, h);
+                  const hourBlocked = isHourBlocked(h);
                   // Só considera passado se o FIM daquela hora já passou (permite agendar na hora atual de hoje)
                   const slotEnd = new Date(day);
                   slotEnd.setHours(h + 1, 0, 0, 0);
@@ -335,7 +446,7 @@ export default function WeekView({
                     maxAdvanceDays === undefined
                       ? true
                       : isDateWithinBookingHorizon(day, maxAdvanceDays, now);
-                  const canSchedule = open && inHours && !isPast && withinHorizon;
+                  const canSchedule = open && inHours && !hourBlocked && !isPast && withinHorizon;
 
                   return (
                     <div
@@ -365,6 +476,39 @@ export default function WeekView({
                     </div>
                   );
                 })}
+
+                {/* Blocked bands */}
+                {blockedBands.map((band, bIdx) => (
+                  <div
+                    key={`wk-block-${bIdx}`}
+                    style={{
+                      top: band.top,
+                      height: band.height,
+                      borderColor: 'var(--theme-accent)',
+                      backgroundColor: 'rgba(0,0,0,0.24)',
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onOpenBlockManager) onOpenBlockManager(day);
+                    }}
+                    title={
+                      band.isFullDay
+                        ? 'Dia bloqueado — clique para gerenciar ou liberar'
+                        : `Bloqueado (${band.startTime} – ${band.endTime}) — clique para gerenciar`
+                    }
+                    className="absolute inset-x-1 rounded-lg border border-dashed z-[8] flex items-center justify-center px-1.5 cursor-pointer hover:opacity-90 transition-opacity backdrop-blur-[1px] overflow-hidden"
+                  >
+                    <div className="flex items-center gap-1 min-w-0">
+                      <Lock className="w-3 h-3 shrink-0" style={{ color: 'var(--theme-accent)' }} />
+                      <span
+                        className="text-[10px] font-bold truncate"
+                        style={{ color: 'var(--theme-text-primary)' }}
+                      >
+                        {band.isFullDay ? 'Dia bloqueado' : `${band.startTime}–${band.endTime}`}
+                      </span>
+                    </div>
+                  </div>
+                ))}
 
                 {/* Lunch break band */}
                 {lunch && lunch.top >= 0 && (

@@ -1,11 +1,17 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
+import { Lock, Unlock, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { type Booking, BOOKING_STATUS_CONFIG } from '../../../hooks/useBookings';
 import { supabase } from '../../../integrations/supabase/client';
 import { isDateWithinBookingHorizon, sanitizeHexColor } from '../../../lib/bookingHorizon';
 import { getBookingConfirmationInfo } from '../../../lib/bookingConfirmation';
 import { BookingMetaIcons } from './BookingMetaIcons';
+import {
+  type NormalizedBlock,
+  getConsolidatedDayBlocks,
+  isDayFullyBlocked,
+} from '../../../hooks/useBlockedTimes';
 
 interface BusinessHour {
   weekday: number;
@@ -23,9 +29,14 @@ interface DayViewProps {
   selectedProfessionalId?: string | null;
   maxAdvanceDays?: number | null;
   canConfirm?: boolean;
+  blocks?: NormalizedBlock[];
+  targetProIds?: string[];
+  isTogglingDayBlock?: boolean;
   onBookingClick: (booking: Booking) => void;
   onConfirmBooking?: (bookingId: string, booking?: Booking) => void | Promise<void>;
   onSlotClick: (date: Date, hour: number) => void;
+  onOpenBlockManager?: (date?: Date) => void;
+  onQuickToggleFullDay?: (date: Date, currentlyBlocked: boolean) => void;
 }
 
 const HOUR_HEIGHT = 88; // px per hour
@@ -37,9 +48,14 @@ export default function DayView({
   selectedProfessionalId,
   maxAdvanceDays,
   canConfirm = false,
+  blocks = [],
+  targetProIds = [],
+  isTogglingDayBlock = false,
   onBookingClick,
   onConfirmBooking,
   onSlotClick,
+  onOpenBlockManager,
+  onQuickToggleFullDay,
 }: DayViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [proWorkingHours, setProWorkingHours] = useState<any[]>([]);
@@ -74,6 +90,9 @@ export default function DayView({
   const weekday = day.getDay();
   const bh = effectiveHours.find((b) => b.weekday === weekday);
 
+  const openTimeStr = bh?.open_time ? bh.open_time.slice(0, 5) : '08:00';
+  const closeTimeStr = bh?.close_time ? bh.close_time.slice(0, 5) : '20:00';
+
   const { startHour, endHour } = useMemo(() => {
     if (!bh || !bh.is_open) return { startHour: 7, endHour: 21 };
     const openH = parseInt(bh.open_time.split(':')[0], 10);
@@ -100,6 +119,58 @@ export default function DayView({
       scrollRef.current.scrollTop = Math.max(0, nowOffset - 200);
     }
   }, [nowOffset]);
+
+  const dayFullBlocked = useMemo(
+    () => isDayFullyBlocked(day, blocks, targetProIds, openTimeStr, closeTimeStr),
+    [day, blocks, targetProIds, openTimeStr, closeTimeStr]
+  );
+
+  const consolidatedBlocks = useMemo(
+    () => getConsolidatedDayBlocks(day, blocks, targetProIds, openTimeStr, closeTimeStr),
+    [day, blocks, targetProIds, openTimeStr, closeTimeStr]
+  );
+
+  const blockedBands = useMemo(() => {
+    const result: Array<{
+      startMs: number;
+      endMs: number;
+      startTime: string;
+      endTime: string;
+      isFullDay: boolean;
+      top: number;
+      height: number;
+    }> = [];
+
+    for (const cb of consolidatedBlocks) {
+      const s = cb.start;
+      const e = cb.end;
+      const startMins = (s.getHours() - startHour) * 60 + s.getMinutes();
+      const endMins = (e.getHours() - startHour) * 60 + e.getMinutes();
+      const clampedStart = Math.max(0, startMins);
+      const clampedEnd = Math.min(hours.length * 60, endMins);
+      if (clampedEnd <= clampedStart) continue;
+      result.push({
+        startMs: s.getTime(),
+        endMs: e.getTime(),
+        startTime: format(s, 'HH:mm'),
+        endTime: format(e, 'HH:mm'),
+        isFullDay: dayFullBlocked,
+        top: (clampedStart / 60) * HOUR_HEIGHT,
+        height: Math.max(((clampedEnd - clampedStart) / 60) * HOUR_HEIGHT, 28),
+      });
+    }
+    return result;
+  }, [consolidatedBlocks, startHour, hours.length, dayFullBlocked]);
+
+  const isHourBlocked = (hour: number) => {
+    const hs = new Date(day);
+    hs.setHours(hour, 0, 0, 0);
+    const he = new Date(day);
+    he.setHours(hour + 1, 0, 0, 0);
+    return consolidatedBlocks.some(
+      (cb) => cb.start.getTime() <= hs.getTime() && cb.end.getTime() >= he.getTime()
+    );
+  };
 
   // Posicionamento em colunas lado a lado quando 2+ profissionais têm agendamento no mesmo horário
   const positionedBookings = useMemo(() => {
@@ -210,32 +281,90 @@ export default function DayView({
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden select-none">
       {/* Header */}
       <div
-        className="flex items-center gap-4 px-6 py-3.5 border-b shrink-0"
+        className="flex flex-wrap items-center justify-between gap-4 px-6 py-3.5 border-b shrink-0"
         style={{ borderColor: 'var(--theme-border)', backgroundColor: 'var(--theme-bg)' }}
       >
-        <div
-          className="w-11 h-11 rounded-2xl flex flex-col items-center justify-center font-bold transition-all"
-          style={{
-            backgroundColor: today ? 'var(--theme-accent)' : 'var(--theme-card-bg)',
-            color: today ? '#090A0B' : 'var(--theme-text-primary)',
-            boxShadow: today ? '0 0 16px rgba(201,150,59,0.4)' : undefined,
-          }}
-        >
-          <span className="text-[9px] uppercase tracking-wider font-black">
-            {format(day, 'EEE', { locale: ptBR })}
-          </span>
-          <span className="text-base font-black leading-none">{format(day, 'd')}</span>
+        <div className="flex items-center gap-4">
+          <div
+            className="w-11 h-11 rounded-2xl flex flex-col items-center justify-center font-bold transition-all"
+            style={{
+              backgroundColor: today ? 'var(--theme-accent)' : 'var(--theme-card-bg)',
+              color: today ? '#090A0B' : 'var(--theme-text-primary)',
+              boxShadow: today ? '0 0 16px rgba(201,150,59,0.4)' : undefined,
+            }}
+          >
+            <span className="text-[9px] uppercase tracking-wider font-black">
+              {format(day, 'EEE', { locale: ptBR })}
+            </span>
+            <span className="text-base font-black leading-none">{format(day, 'd')}</span>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="font-bold text-sm capitalize" style={{ color: 'var(--theme-text-primary)' }}>
+                {format(day, "EEEE, d 'de' MMMM", { locale: ptBR })}
+              </p>
+              {dayFullBlocked && (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                  style={{
+                    color: 'var(--theme-accent)',
+                    borderColor: 'var(--theme-accent)',
+                    backgroundColor: 'rgba(201,150,59,0.12)',
+                  }}
+                >
+                  <Lock className="w-2.5 h-2.5" /> Dia bloqueado
+                </span>
+              )}
+            </div>
+            <p className="text-xs" style={{ color: 'var(--theme-text-secondary)' }}>
+              {bh && bh.is_open
+                ? `Aberto das ${bh.open_time.slice(0, 5)} às ${bh.close_time.slice(0, 5)} · ${bookings.length} agendamento${bookings.length !== 1 ? 's' : ''}`
+                : 'Estabelecimento fechado neste dia'}
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="font-bold text-sm capitalize" style={{ color: 'var(--theme-text-primary)' }}>
-            {format(day, "EEEE, d 'de' MMMM", { locale: ptBR })}
-          </p>
-          <p className="text-xs" style={{ color: 'var(--theme-text-secondary)' }}>
-            {bh && bh.is_open
-              ? `Aberto das ${bh.open_time.slice(0, 5)} às ${bh.close_time.slice(0, 5)} · ${bookings.length} agendamento${bookings.length !== 1 ? 's' : ''}`
-              : 'Estabelecimento fechado neste dia'}
-          </p>
-        </div>
+
+        {(onQuickToggleFullDay || onOpenBlockManager) && (
+          <div className="flex items-center gap-2">
+            {onQuickToggleFullDay && (
+              <button
+                type="button"
+                disabled={isTogglingDayBlock}
+                onClick={() => onQuickToggleFullDay(day, dayFullBlocked)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
+                style={{
+                  backgroundColor: dayFullBlocked ? 'rgba(201,150,59,0.12)' : 'var(--theme-card-bg)',
+                  color: dayFullBlocked ? 'var(--theme-accent)' : 'var(--theme-text-primary)',
+                  borderColor: dayFullBlocked ? 'var(--theme-accent)' : 'var(--theme-border)',
+                }}
+              >
+                {isTogglingDayBlock ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : dayFullBlocked ? (
+                  <Unlock className="w-3.5 h-3.5" style={{ color: 'var(--theme-accent)' }} />
+                ) : (
+                  <Lock className="w-3.5 h-3.5" style={{ color: 'var(--theme-accent)' }} />
+                )}
+                <span>{dayFullBlocked ? 'Liberar dia' : 'Bloquear dia'}</span>
+              </button>
+            )}
+            {onOpenBlockManager && (
+              <button
+                type="button"
+                onClick={() => onOpenBlockManager(day)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
+                style={{
+                  backgroundColor: 'var(--theme-card-bg)',
+                  color: 'var(--theme-text-secondary)',
+                  borderColor: 'var(--theme-border)',
+                }}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" style={{ color: 'var(--theme-accent)' }} />
+                <span>Bloquear horários</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Scrollable time grid */}
@@ -260,6 +389,7 @@ export default function DayView({
           <div className="relative">
             {hours.map((h) => {
               const inHours = isInBusinessHours(h);
+              const hourBlocked = isHourBlocked(h);
               const slotEnd = new Date(day);
               slotEnd.setHours(h + 1, 0, 0, 0);
               const isPast = slotEnd.getTime() <= now.getTime();
@@ -267,7 +397,7 @@ export default function DayView({
                 maxAdvanceDays === undefined
                   ? true
                   : isDateWithinBookingHorizon(day, maxAdvanceDays, now);
-              const canSchedule = inHours && !isPast && withinHorizon;
+              const canSchedule = inHours && !hourBlocked && !isPast && withinHorizon;
 
               return (
                 <div
@@ -302,6 +432,44 @@ export default function DayView({
                 </div>
               );
             })}
+
+            {/* Blocked time bands */}
+            {blockedBands.map((band, bIdx) => (
+              <div
+                key={`block-${bIdx}`}
+                style={{
+                  top: band.top,
+                  height: band.height,
+                  borderColor: 'var(--theme-accent)',
+                  backgroundColor: 'rgba(0,0,0,0.22)',
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onOpenBlockManager) onOpenBlockManager(day);
+                }}
+                title="Horário bloqueado — clique para editar ou liberar"
+                className="absolute inset-x-2 rounded-xl border border-dashed z-[8] flex items-center justify-between px-4 cursor-pointer hover:opacity-90 transition-opacity backdrop-blur-[1px]"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <Lock className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--theme-accent)' }} />
+                  <span className="text-xs font-bold truncate" style={{ color: 'var(--theme-text-primary)' }}>
+                    {band.isFullDay
+                      ? 'Dia inteiro bloqueado'
+                      : `Horário bloqueado (${band.startTime} – ${band.endTime})`}
+                  </span>
+                </div>
+                <span
+                  className="text-[11px] font-bold px-2.5 py-1 rounded-lg border shrink-0"
+                  style={{
+                    color: 'var(--theme-accent)',
+                    borderColor: 'var(--theme-border)',
+                    backgroundColor: 'var(--theme-card-bg)',
+                  }}
+                >
+                  Editar / Liberar
+                </span>
+              </div>
+            ))}
 
             {/* Lunch break */}
             {lunchBand && lunchBand.top >= 0 && (

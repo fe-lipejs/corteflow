@@ -700,7 +700,7 @@ export default function Dashboard() {
                             </p>
                           </div>
 
-                          {/* Direita: Botão Circular Apple WhatsApp na cor do Accent + Preço */}
+                          {/* Direita: Botão Quadrado Arredondado WhatsApp na cor do Accent + Preço */}
                           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                             {confInfo.whatsappUrl && (
                               <a
@@ -709,9 +709,10 @@ export default function Dashboard() {
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
                                 title={`WhatsApp: ${customerName} (${confInfo.formattedPhone})`}
-                                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full hover:opacity-85 active:scale-90 transition-transform flex items-center justify-center shrink-0 cursor-pointer"
+                                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border hover:opacity-85 active:scale-90 transition-transform flex items-center justify-center shrink-0 cursor-pointer"
                                 style={{
-                                  backgroundColor: `color-mix(in srgb, ${theme.accent} 14%, transparent)`,
+                                  backgroundColor: `color-mix(in srgb, ${theme.accent} 12%, transparent)`,
+                                  borderColor: `color-mix(in srgb, ${theme.accent} 25%, transparent)`,
                                   color: theme.accent,
                                 }}
                               >

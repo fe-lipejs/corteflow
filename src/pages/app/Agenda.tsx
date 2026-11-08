@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
-import { format, addWeeks, subWeeks, addDays, startOfDay, isToday, isTomorrow } from 'date-fns';
+import { format, addWeeks, subWeeks, addDays, startOfDay, isToday, isTomorrow, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import {
   ChevronLeft, ChevronRight, Plus, Calendar, RefreshCw,
-  Users, CheckCircle, Clock, DollarSign, Loader2, Bell
+  Users, CheckCircle, Clock, DollarSign, Loader2, Bell, Lock, AlertTriangle, RotateCcw
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
@@ -18,6 +18,10 @@ import {
   type Booking, type BookingStatus, type CreateBookingInput,
   useBookingsRealtime
 } from '../../hooks/useBookings';
+import {
+  useTenantBlocksInRange,
+  useManageBlockedTimes,
+} from '../../hooks/useBlockedTimes';
 import { supabase } from '../../integrations/supabase/client';
 import toast from 'react-hot-toast';
 import { formatBookingHorizonSummary, isDateWithinBookingHorizon } from '../../lib/bookingHorizon';
@@ -32,6 +36,7 @@ import BookingDetailSheet from './agenda/BookingDetailSheet';
 import UpcomingConfirmationsCenter from './agenda/UpcomingConfirmationsCenter';
 import BookingConfirmationModal from './agenda/BookingConfirmationModal';
 import KpiListModal from './agenda/KpiListModal';
+import AvailabilityBlockModal from './agenda/AvailabilityBlockModal';
 import { UpgradeModal } from '../../components/UpgradeModal';
 import PendingBookingsModal from './agenda/PendingBookingsModal';
 
@@ -54,6 +59,12 @@ export default function Agenda() {
   const [bookingToConfirm, setBookingToConfirm] = useState<Booking | null>(null);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [availabilityModalOpen, setAvailabilityModalOpen] = useState(false);
+  const [availabilityModalDate, setAvailabilityModalDate] = useState<Date>(new Date());
+  const [pendingQuickDayBlock, setPendingQuickDayBlock] = useState<{
+    date: Date;
+    conflictCount: number;
+  } | null>(null);
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [kpiModalData, setKpiModalData] = useState<{
     title: string;
@@ -115,6 +126,16 @@ export default function Agenda() {
     refetch: refetchUpcomingCenter,
   } = useUpcomingCenterBookings(tenantId || null, proScopeId);
 
+  // Blocked times range (covers -14d to +90d around current view)
+  const blocksRangeStart = useMemo(() => addDays(weekStart, -14), [weekStart]);
+  const blocksRangeEnd = useMemo(() => addDays(weekStart, 90), [weekStart]);
+  const { data: blockedTimes = [], refetch: refetchBlocks } = useTenantBlocksInRange(
+    tenantId || null,
+    blocksRangeStart,
+    blocksRangeEnd
+  );
+  const { batchDaysBlock } = useManageBlockedTimes(tenantId);
+
   // Se for profissional, filtra a lista de profissionais apenas para ele mesmo para que o seletor da UI exiba apenas ele.
   const { data: allProfessionals = [] } = useProfessionals(tenantId || null);
   const professionals = useMemo(() => {
@@ -124,6 +145,11 @@ export default function Agenda() {
     }
     return activeList;
   }, [allProfessionals, role, professionalProfile]);
+
+  const targetProIds = useMemo(() => {
+    if (selectedProfessionalId) return [selectedProfessionalId];
+    return professionals.map(p => p.id);
+  }, [selectedProfessionalId, professionals]);
 
   const { data: services = [] } = useServices(tenantId || null);
 
@@ -235,6 +261,14 @@ export default function Agenda() {
     return rawUpcomingCenterBookings.filter(b => b.professional_id === selectedProfessionalId);
   }, [rawUpcomingCenterBookings, selectedProfessionalId]);
 
+  const allKnownBookings = useMemo(() => {
+    const map = new Map<string, Booking>();
+    for (const b of filteredUpcomingCenterBookings) map.set(b.id, b);
+    for (const b of filteredWeekBookings) map.set(b.id, b);
+    for (const b of filteredDayBookings) map.set(b.id, b);
+    return Array.from(map.values());
+  }, [filteredUpcomingCenterBookings, filteredWeekBookings, filteredDayBookings]);
+
   const mobileTimelineBookings = useMemo(() => {
     const map = new Map<string, Booking>();
     for (const b of filteredWeekBookings) map.set(b.id, b);
@@ -309,6 +343,97 @@ export default function Agenda() {
     }
     return upcomingActiveBookings.length > 0 ? String(upcomingActiveBookings.length) : '0';
   }, [nextBooking, upcomingActiveBookings]);
+
+  const handleOpenBlockManager = (date?: Date) => {
+    setAvailabilityModalDate(date || currentDay);
+    setAvailabilityModalOpen(true);
+  };
+
+  const executeQuickDayBlock = async (date: Date, mode: 'block' | 'unblock') => {
+    if (!targetProIds.length) {
+      toast.error('Nenhum profissional ativo encontrado.');
+      return;
+    }
+    try {
+      await batchDaysBlock.mutateAsync({
+        dates: [date],
+        targetProIds,
+        block: mode === 'block',
+        reason: mode === 'block' ? 'Dia bloqueado na Agenda' : undefined,
+      });
+
+      const dateLabel = format(date, "dd 'de' MMM", { locale: ptBR });
+      const inverseBlock = mode !== 'block';
+
+      toast.custom(
+        (t) => (
+          <div
+            className="flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-2xl"
+            style={{
+              backgroundColor: theme.cardBg,
+              borderColor: theme.border,
+              color: theme.textPrimary,
+            }}
+          >
+            <Lock className="w-4 h-4 shrink-0" style={{ color: theme.accent }} />
+            <span className="text-xs font-bold">
+              {mode === 'block'
+                ? `Dia ${dateLabel} bloqueado`
+                : `Dia ${dateLabel} liberado`}
+            </span>
+            <button
+              type="button"
+              onClick={async () => {
+                toast.dismiss(t.id);
+                await batchDaysBlock.mutateAsync({
+                  dates: [date],
+                  targetProIds,
+                  block: inverseBlock,
+                });
+                toast.success('Alteração desfeita.');
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold border ml-1 cursor-pointer active:scale-95 transition-transform"
+              style={{
+                color: theme.accent,
+                borderColor: `${theme.accent}45`,
+                backgroundColor: `${theme.accent}12`,
+              }}
+            >
+              <RotateCcw className="w-3 h-3" /> Desfazer
+            </button>
+          </div>
+        ),
+        { duration: 5000 }
+      );
+    } catch {
+      toast.error('Não foi possível atualizar o bloqueio do dia.');
+    }
+  };
+
+  const handleQuickToggleFullDay = (date: Date, currentlyBlocked: boolean) => {
+    if (currentlyBlocked) {
+      executeQuickDayBlock(date, 'unblock');
+      return;
+    }
+
+    const dayActiveBookings = allKnownBookings.filter(
+      (b) =>
+        isSameDay(new Date(b.scheduled_at), date) &&
+        b.status !== 'canceled' &&
+        b.status !== 'no_show' &&
+        (selectedProfessionalId ? b.professional_id === selectedProfessionalId : true)
+    );
+
+    if (dayActiveBookings.length > 0) {
+      setPendingQuickDayBlock({
+        date,
+        conflictCount: dayActiveBookings.length,
+      });
+      return;
+    }
+
+    executeQuickDayBlock(date, 'block');
+  };
 
   const handleSlotClick = (date: Date, hour: number) => {
     if (!engine.hasPermission('agenda.criar')) {
@@ -413,6 +538,7 @@ export default function Agenda() {
     refetchDay();
     refetchToday();
     refetchUpcomingCenter();
+    refetchBlocks();
   };
 
   if (!engine.isLoading && !engine.hasPermission('agenda.visualizar_todos') && !engine.hasPermission('agenda.visualizar_minha')) {
@@ -512,6 +638,20 @@ export default function Agenda() {
                 title="Testar som de novo agendamento"
               >
                 <Bell className="w-4 h-4" />
+              </button>
+
+              {/* Availability / Blocking Manager Button */}
+              <button
+                type="button"
+                onClick={() => handleOpenBlockManager(currentDay)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs border transition-all glass-card cursor-pointer hover:opacity-90"
+                style={{
+                  color: theme.textPrimary,
+                  borderColor: theme.cardBorder,
+                }}
+              >
+                <Lock className="w-3.5 h-3.5" style={{ color: theme.accent }} />
+                <span>Bloquear</span>
               </button>
 
               <button
@@ -739,9 +879,15 @@ export default function Agenda() {
                   bookings={mobileTimelineBookings}
                   maxAdvanceDays={maxAdvanceDays}
                   canConfirm={canConfirmBooking}
+                  blocks={blockedTimes}
+                  targetProIds={targetProIds}
+                  businessHours={businessHours}
+                  isTogglingDayBlock={batchDaysBlock.isPending}
                   onDayChange={setCurrentDay}
                   onBookingClick={setSelectedBooking}
                   onConfirmBooking={handleConfirmBooking}
+                  onOpenBlockManager={handleOpenBlockManager}
+                  onQuickToggleFullDay={handleQuickToggleFullDay}
                   onNewBooking={(preferredDate) => {
                     if (!engine.hasPermission('agenda.criar')) {
                       setShowUpgradeModal('agenda.criar');
@@ -763,9 +909,13 @@ export default function Agenda() {
                     selectedProfessionalId={selectedProfessionalId}
                     maxAdvanceDays={maxAdvanceDays}
                     canConfirm={canConfirmBooking}
+                    blocks={blockedTimes}
+                    targetProIds={targetProIds}
                     onBookingClick={setSelectedBooking}
                     onConfirmBooking={handleConfirmBooking}
                     onSlotClick={handleSlotClick}
+                    onOpenBlockManager={handleOpenBlockManager}
+                    onQuickToggleFullDay={handleQuickToggleFullDay}
                   />
                 ) : (
                   <DayView
@@ -775,9 +925,14 @@ export default function Agenda() {
                     selectedProfessionalId={selectedProfessionalId}
                     maxAdvanceDays={maxAdvanceDays}
                     canConfirm={canConfirmBooking}
+                    blocks={blockedTimes}
+                    targetProIds={targetProIds}
+                    isTogglingDayBlock={batchDaysBlock.isPending}
                     onBookingClick={setSelectedBooking}
                     onConfirmBooking={handleConfirmBooking}
                     onSlotClick={handleSlotClick}
+                    onOpenBlockManager={handleOpenBlockManager}
+                    onQuickToggleFullDay={handleQuickToggleFullDay}
                   />
                 )}
               </div>
@@ -793,6 +948,84 @@ export default function Agenda() {
           onBookingClick={setSelectedBooking}
           onConfirmBooking={handleConfirmBooking}
         />
+
+        {/* ── Availability & Blocking Interactive Modal (Apple Style) ── */}
+        {availabilityModalOpen && (
+          <AvailabilityBlockModal
+            initialDate={availabilityModalDate}
+            tenantId={tenantId}
+            professionals={professionals}
+            selectedProfessionalId={selectedProfessionalId}
+            businessHours={businessHours}
+            bookings={allKnownBookings}
+            blocks={blockedTimes}
+            canSeeAll={canSeeAll}
+            onClose={() => setAvailabilityModalOpen(false)}
+          />
+        )}
+
+        {/* ── Quick Day Block Conflict Confirmation Modal ── */}
+        {pendingQuickDayBlock && (
+          <div
+            className="fixed inset-0 z-[130] flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.68)', backdropFilter: 'blur(8px)' }}
+            onClick={() => setPendingQuickDayBlock(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm rounded-3xl border p-5 shadow-2xl space-y-4"
+              style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#EF4444' }}
+                >
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm" style={{ color: theme.textPrimary }}>
+                    Agendamentos existentes neste dia
+                  </h4>
+                  <p className="text-xs mt-1 leading-relaxed" style={{ color: theme.textSecondary }}>
+                    Existem <strong>{pendingQuickDayBlock.conflictCount} agendamento(s)</strong> em{' '}
+                    <strong>{format(pendingQuickDayBlock.date, "dd 'de' MMMM", { locale: ptBR })}</strong>.
+                    Seus agendamentos confirmados ou pendentes <strong>não serão apagados</strong>, mas novos horários não poderão ser marcados neste dia.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setPendingQuickDayBlock(null)}
+                  className="flex-1 py-2.5 rounded-2xl text-xs font-bold border cursor-pointer"
+                  style={{
+                    color: theme.textSecondary,
+                    borderColor: theme.border,
+                    backgroundColor: theme.cardBg,
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const targetDate = pendingQuickDayBlock.date;
+                    setPendingQuickDayBlock(null);
+                    executeQuickDayBlock(targetDate, 'block');
+                  }}
+                  className="flex-1 py-2.5 rounded-2xl text-xs font-bold cursor-pointer"
+                  style={{
+                    background: theme.accentGradient || theme.accent,
+                    color: theme.btnPrimaryText,
+                  }}
+                >
+                  Bloquear mesmo assim
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Booking Creation Modal ── */}
         {bookingModalOpen && (

@@ -230,10 +230,10 @@ export default function UpcomingConfirmationsCenter({
         </div>
 
         {/* Controles de Filtros e Ordenação */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Tabs de Filtro */}
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          {/* Tabs de Filtro — Grade 2x2 no mobile para nunca vazar da tela, pill horizontal no desktop */}
           <div
-            className="inline-flex items-center gap-1 p-1 rounded-2xl border"
+            className="grid grid-cols-2 sm:inline-flex items-center gap-1 p-1 rounded-2xl border w-full sm:w-auto"
             style={{ borderColor: theme.border, backgroundColor: 'var(--theme-bg)' }}
           >
             {[
@@ -248,10 +248,10 @@ export default function UpcomingConfirmationsCenter({
                   key={tab.id}
                   type="button"
                   onClick={() => handleFilterChange(tab.id)}
-                  className="px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                  className="px-2.5 py-1.5 sm:py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap text-center flex items-center justify-center"
                   style={{
                     backgroundColor: active ? `${theme.accent}18` : 'transparent',
-                    color: active ? theme.accent : tab.isAlert ? '#FF3B30' : theme.textSecondary,
+                    color: active ? theme.accent : tab.isAlert ? '#EF4444' : theme.textSecondary,
                   }}
                 >
                   {tab.label}
@@ -264,7 +264,7 @@ export default function UpcomingConfirmationsCenter({
           <button
             type="button"
             onClick={handleSortToggle}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border text-xs font-bold transition-all hover:bg-[var(--theme-bg-hover)] cursor-pointer shrink-0"
+            className="inline-flex items-center justify-center sm:justify-start gap-1.5 px-3 py-1.5 rounded-2xl border text-xs font-bold transition-all hover:bg-[var(--theme-bg-hover)] cursor-pointer shrink-0"
             style={{
               borderColor: theme.border,
               backgroundColor: 'var(--theme-bg)',
@@ -440,7 +440,7 @@ export default function UpcomingConfirmationsCenter({
                         </p>
                       </div>
 
-                      {/* Direita: Botão Circular Apple WhatsApp na cor do Accent + Preço */}
+                      {/* Direita: Botão Quadrado Arredondado WhatsApp na cor do Accent + Preço */}
                       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                         {info.whatsappUrl && (
                           <a
@@ -449,9 +449,10 @@ export default function UpcomingConfirmationsCenter({
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
                             title={`WhatsApp: ${booking.customer?.name ?? 'Cliente'} (${info.formattedPhone})`}
-                            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full hover:opacity-85 active:scale-90 transition-transform flex items-center justify-center shrink-0 cursor-pointer"
+                            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border hover:opacity-85 active:scale-90 transition-transform flex items-center justify-center shrink-0 cursor-pointer"
                             style={{
-                              backgroundColor: `color-mix(in srgb, ${theme.accent} 14%, transparent)`,
+                              backgroundColor: `color-mix(in srgb, ${theme.accent} 12%, transparent)`,
+                              borderColor: `color-mix(in srgb, ${theme.accent} 25%, transparent)`,
                               color: theme.accent,
                             }}
                           >
