@@ -48,6 +48,7 @@ import { usePublicStore, PUBLIC_STORE_QUERY_KEY } from "../../hooks/usePublicSto
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getThemeContrastEngine } from "../../lib/themeEngine";
 import { HomeLocationWizard, type LocationWizardResult } from "../../components/public/HomeLocationWizard";
+import { trackEvent, ActiveDwellTracker } from "../../lib/analytics";
 import { useTenantPortalTheme } from "../../hooks/useTenantPortalTheme";
 import { PortalLoadingScreen } from "../../components/public/PortalLoadingScreen";
 import { StripeLivePaymentSection, type StripeLivePaymentHandle } from "../../components/public/StripeLivePaymentSection";
@@ -633,6 +634,173 @@ export default function PublicStore() {
   const inputsRef = useRef<HTMLDivElement>(null);
   const phoneInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Raffros Analytics: Portal Funnel, Dwell & Interaction Tracking ─────────
+  const portalDwellRef = useRef<ActiveDwellTracker>(new ActiveDwellTracker(60000));
+  const stepDwellRef = useRef<ActiveDwellTracker>(new ActiveDwellTracker(60000));
+  const lastTrackedStepRef = useRef<number>(1);
+  const completedBookingRef = useRef<boolean>(false);
+
+  const getStepKey = (s: number) => {
+    if (s === 1) return "service_step";
+    if (s === 2) return "professional_step";
+    if (s === 3) return "datetime_step";
+    if (s === 4) return "checkout_step";
+    return "completed";
+  };
+
+  useEffect(() => {
+    if (!tenant?.id || tenant?.isDemo) return;
+    const tid = tenant.id;
+    portalDwellRef.current.reset();
+    stepDwellRef.current.reset();
+
+    trackEvent("portal_view", {
+      eventType: "page_view",
+      source: "portal",
+      tenantId: tid,
+      stepName: "service_step",
+      elementId: "portal_entry",
+      metadata: { label: "Acesso ao Portal Público", slug: tenant.slug },
+    });
+
+    const onInteract = () => {
+      portalDwellRef.current.recordInteraction();
+      stepDwellRef.current.recordInteraction();
+    };
+
+    window.addEventListener("pointerdown", onInteract, { passive: true });
+    window.addEventListener("scroll", onInteract, { passive: true });
+    window.addEventListener("keydown", onInteract, { passive: true });
+
+    const onPageHide = () => {
+      const totalActiveMs = portalDwellRef.current.getActiveDurationMs();
+      const currentStep = stepRef.current;
+      if (!completedBookingRef.current && currentStep >= 2 && currentStep < 5) {
+        trackEvent("booking_abandoned", {
+          eventType: "click",
+          source: "portal",
+          tenantId: tid,
+          stepName: getStepKey(currentStep),
+          durationMs: totalActiveMs,
+          elementId: `abandon_step_${currentStep}`,
+          metadata: { label: `Desistência na etapa ${currentStep}`, last_step: currentStep },
+        });
+      }
+    };
+
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("pointerdown", onInteract);
+      window.removeEventListener("scroll", onInteract);
+      window.removeEventListener("keydown", onInteract);
+      window.removeEventListener("pagehide", onPageHide);
+    };
+  }, [tenant?.id, tenant?.isDemo, tenant?.slug]);
+
+  useEffect(() => {
+    if (!tenant?.id || tenant?.isDemo) return;
+    const prevStep = lastTrackedStepRef.current;
+    if (prevStep !== step) {
+      const stepDurationMs = stepDwellRef.current.reset();
+      if (stepDurationMs > 300) {
+        trackEvent("portal_step_dwell", {
+          eventType: "page_view",
+          source: "portal",
+          tenantId: tenant.id,
+          stepName: getStepKey(prevStep),
+          durationMs: stepDurationMs,
+          metadata: { label: `Tempo na etapa ${prevStep}`, step: prevStep },
+          dedupeWindowMs: 100,
+        });
+      }
+      lastTrackedStepRef.current = step;
+    }
+    if (step === 5) {
+      completedBookingRef.current = true;
+    }
+  }, [step, tenant?.id, tenant?.isDemo]);
+
+  useEffect(() => {
+    if (!tenant?.id || tenant?.isDemo || !selectedService) return;
+    trackEvent("service_selected", {
+      eventType: "click",
+      source: "portal",
+      tenantId: tenant.id,
+      stepName: "service_step",
+      elementId: `service_${selectedService.id}`,
+      metadata: {
+        label: `Serviço: ${selectedService.name}`,
+        service_id: selectedService.id,
+        service_name: selectedService.name,
+        price: selectedService.price,
+      },
+    });
+  }, [selectedService, tenant?.id, tenant?.isDemo]);
+
+  useEffect(() => {
+    if (!tenant?.id || tenant?.isDemo || !selectedPro) return;
+    const proLabel = selectedPro === "any" ? "Qualquer profissional" : selectedPro.name || "Profissional";
+    trackEvent("professional_selected", {
+      eventType: "click",
+      source: "portal",
+      tenantId: tenant.id,
+      stepName: "professional_step",
+      elementId: selectedPro === "any" ? "pro_any" : `pro_${selectedPro.id}`,
+      metadata: {
+        label: `Profissional: ${proLabel}`,
+        professional_id: selectedPro === "any" ? "any" : selectedPro.id,
+        professional_name: proLabel,
+      },
+    });
+  }, [selectedPro, tenant?.id, tenant?.isDemo]);
+
+  useEffect(() => {
+    if (!tenant?.id || tenant?.isDemo || !selectedDate) return;
+    trackEvent("date_selected", {
+      eventType: "click",
+      source: "portal",
+      tenantId: tenant.id,
+      stepName: "datetime_step",
+      elementId: "calendar_day",
+      metadata: {
+        label: "Seleção de Data",
+        date_iso: format(selectedDate, "yyyy-MM-dd"),
+      },
+    });
+  }, [selectedDate, tenant?.id, tenant?.isDemo]);
+
+  useEffect(() => {
+    if (!tenant?.id || tenant?.isDemo || !selectedTime) return;
+    trackEvent("time_selected", {
+      eventType: "click",
+      source: "portal",
+      tenantId: tenant.id,
+      stepName: "datetime_step",
+      elementId: `slot_${selectedTime}`,
+      durationMs: portalDwellRef.current.getActiveDurationMs(),
+      metadata: {
+        label: `Horário ${selectedTime}`,
+        time_slot: selectedTime,
+      },
+    });
+  }, [selectedTime, tenant?.id, tenant?.isDemo]);
+
+  useEffect(() => {
+    if (!tenant?.id || tenant?.isDemo || step !== 4) return;
+    trackEvent("payment_method_selected", {
+      eventType: "click",
+      source: "portal",
+      tenantId: tenant.id,
+      stepName: "checkout_step",
+      elementId: `pay_${paymentScope}_${paymentMethod}`,
+      metadata: {
+        label: `Pagamento: ${paymentScope === "local" ? "No Local" : paymentMethod.toUpperCase()}`,
+        payment_scope: paymentScope,
+        payment_method: paymentScope === "local" ? "local" : paymentMethod,
+      },
+    });
+  }, [paymentScope, paymentMethod, step, tenant?.id, tenant?.isDemo]);
   const timeSlotsRef = useRef<HTMLDivElement>(null);
   const confirmBtnRef = useRef<HTMLDivElement>(null);
 
@@ -1244,6 +1412,16 @@ export default function PublicStore() {
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleBack = () => {
     setErrorMsg("");
+    if (tenant?.id && !tenant?.isDemo) {
+      trackEvent("click_step_back", {
+        eventType: "click",
+        source: "portal",
+        tenantId: tenant.id,
+        stepName: getStepKey(step),
+        elementId: "btn_voltar",
+        metadata: { label: "Botão Voltar Etapa", from_step: step },
+      });
+    }
     if (step === 1 && bookingMode === 'home' && !isHomeLocationValidated) {
       setBookingMode('instore');
       setSelectedService(null);
@@ -1296,6 +1474,20 @@ export default function PublicStore() {
 
     setIsProcessing(true);
     setErrorMsg("");
+
+    if (tenant?.id && !tenant?.isDemo) {
+      trackEvent("customer_data_submitted", {
+        eventType: "click",
+        source: "portal",
+        tenantId: tenant.id,
+        stepName: "checkout_step",
+        elementId: "btn_confirm_booking",
+        metadata: {
+          label: "Dados preenchidos / Confirmar Agendamento",
+          payment_scope: paymentScope,
+        },
+      });
+    }
 
     try {
       let proId = selectedPro === "any" ? null : selectedPro?.id;
@@ -1441,6 +1633,24 @@ export default function PublicStore() {
           queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(slug) });
         }
 
+        completedBookingRef.current = true;
+        if (tenant?.id && !tenant?.isDemo) {
+          trackEvent("booking_completed", {
+            eventType: "conversion",
+            source: "portal",
+            tenantId: tenant.id,
+            bookingId: paymentResult.bookingId,
+            stepName: "completed",
+            durationMs: portalDwellRef.current.getActiveDurationMs(),
+            elementId: "booking_completed_online",
+            metadata: {
+              label: "Agendamento Concluído (Pagamento Online)",
+              service_name: selectedService?.name,
+              payment_scope: paymentScope,
+            },
+          });
+        }
+
         setBookingCode(paymentResult.orderNumber);
         setStep(5);
         return;
@@ -1492,6 +1702,24 @@ export default function PublicStore() {
 
       if (slug) {
         queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(slug) });
+      }
+
+      completedBookingRef.current = true;
+      if (tenant?.id && !tenant?.isDemo) {
+        trackEvent("booking_completed", {
+          eventType: "conversion",
+          source: "portal",
+          tenantId: tenant.id,
+          bookingId: newBooking.id,
+          stepName: "completed",
+          durationMs: portalDwellRef.current.getActiveDurationMs(),
+          elementId: "booking_completed_local",
+          metadata: {
+            label: "Agendamento Concluído (Pagar no Local)",
+            service_name: selectedService?.name,
+            payment_scope: paymentScope,
+          },
+        });
       }
 
       setBookingCode(newBooking.order_number);

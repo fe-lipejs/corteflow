@@ -26,6 +26,7 @@ import { supabase } from '../../integrations/supabase/client';
 import toast from 'react-hot-toast';
 import { formatBookingHorizonSummary, isDateWithinBookingHorizon } from '../../lib/bookingHorizon';
 import { useTenantBookingHorizon } from '../../hooks/useBookingHorizon';
+import { trackEvent } from '../../lib/analytics';
 
 import WeekView from './agenda/WeekView';
 import DayView from './agenda/DayView';
@@ -462,7 +463,18 @@ export default function Agenda() {
       setShowUpgradeModal('agenda.criar');
       return;
     }
-    await createBooking.mutateAsync(input);
+    const created = await createBooking.mutateAsync(input);
+    if (tenantId) {
+      trackEvent('booking_created_manual', {
+        eventType: 'conversion',
+        source: 'admin',
+        tenantId,
+        userRole: role || 'owner',
+        bookingId: (created as any)?.id || null,
+        stepName: 'agenda',
+        metadata: { label: 'Agendamento Manual Criado na Agenda', area_label: 'Agenda' },
+      });
+    }
     setBookingModalOpen(false);
   };
 
@@ -473,6 +485,17 @@ export default function Agenda() {
     }
     const nowIso = new Date().toISOString();
     await confirmBooking.mutateAsync({ id });
+    if (tenantId) {
+      trackEvent('booking_confirmed', {
+        eventType: 'click',
+        source: 'admin',
+        tenantId,
+        userRole: role || 'owner',
+        bookingId: id,
+        stepName: 'agenda',
+        metadata: { label: 'Agendamento Confirmado na Agenda', area_label: 'Agenda' },
+      });
+    }
     if (selectedBooking?.id === id) {
       setSelectedBooking(prev =>
         prev

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity, Users, Eye, MousePointerClick, TrendingUp, Smartphone,
@@ -344,6 +345,13 @@ export default function AdminAnalytics() {
 
         {/* Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            to="/platform/intelligence"
+            className="px-3.5 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 text-xs font-bold flex items-center gap-1.5 transition-all"
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>Raffros Analytics (Lojas)</span>
+          </Link>
           {/* Time range buttons */}
           <div className="flex bg-[#0B0B0E] border border-white/10 p-1 rounded-xl items-center shadow-xs">
             {(['today', '24h', '7d', '30d', 'all'] as const).map((r) => (

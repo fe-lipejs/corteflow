@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../integrations/supabase/client';
 import { getTenantPublicUrl } from '../../lib/tenantUrl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -6,7 +7,7 @@ import { motion } from 'framer-motion';
 import {
   Search, ExternalLink, MoreVertical, CheckCircle,
   ShieldAlert, Ban, PlayCircle, Building2, ChevronLeft, ChevronRight,
-  ArrowUpDown, Trash2, RotateCcw, Sliders, Loader2, Sparkles, X, Save, DollarSign
+  ArrowUpDown, Trash2, RotateCcw, Sliders, Loader2, Sparkles, X, Save, DollarSign, BarChart3
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminPageHeader from './components/AdminPageHeader';
@@ -42,6 +43,7 @@ type TypeFilter = 'all' | 'barbearia' | 'salao' | 'esmalteria';
 const PAGE_SIZE = 20;
 
 export default function AdminTenants() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
@@ -511,12 +513,20 @@ export default function AdminTenants() {
                   {/* Actions */}
                   <div className="col-span-6 md:col-span-5 lg:col-span-2 flex items-center justify-end gap-1.5">
                     <button
+                      onClick={() => navigate(`/platform/tenants/${tenant.id}/analytics`)}
+                      className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-zinc-200 hover:text-emerald-400 bg-white/[0.04] hover:bg-emerald-500/15 border border-white/10 hover:border-emerald-500/30 rounded-lg transition-all cursor-pointer shadow-xs"
+                      title="Abrir Raffros Analytics deste estabelecimento"
+                    >
+                      <BarChart3 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="hidden sm:inline">Ver métricas</span>
+                    </button>
+                    <button
                       onClick={() => handleOpenContractModal(tenant)}
                       className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-lg transition-all cursor-pointer shadow-xs"
                       title="Editar Limites, Telas e Preço Promocional"
                     >
                       <Sliders className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Limites</span>
+                      <span className="hidden xl:inline">Limites</span>
                     </button>
                     {!tenant.deleted_at && (
                       <button
@@ -572,6 +582,15 @@ export default function AdminTenants() {
                             </div>
                           )}
                           <div>
+                            <button
+                              onClick={() => {
+                                navigate(`/platform/tenants/${tenant.id}/analytics`);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-zinc-200 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors font-semibold cursor-pointer"
+                            >
+                              <BarChart3 className="w-3.5 h-3.5 text-emerald-400" /> Ver métricas
+                            </button>
                             <button
                               onClick={() => {
                                 handleOpenContractModal(tenant);

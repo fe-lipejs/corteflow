@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Outlet, NavLink, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { trackEvent, ActiveDwellTracker } from '../../lib/analytics';
 import {
   LayoutDashboard, Calendar, Users, Scissors,
   DollarSign, Settings, LogOut, Bell, CreditCard, Shield, Loader2, Menu, X,
@@ -25,6 +26,91 @@ export default function AppLayout() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [tenantSettings, setTenantSettings] = useState<any>(null);
+
+  // ── Raffros Analytics: Admin Panel Session, Page Views & Active Dwell Time ──
+  const adminDwellRef = useRef<ActiveDwellTracker>(new ActiveDwellTracker(60000));
+  const lastAdminPathRef = useRef<string>(location.pathname);
+
+  const resolveAdminAreaMeta = (pathname: string) => {
+    if (pathname === '/admin' || pathname === '/admin/') return { key: 'visao_geral', label: 'Visão Geral' };
+    if (pathname.startsWith('/admin/agenda')) return { key: 'agenda', label: 'Agenda' };
+    if (pathname.startsWith('/admin/equipe')) return { key: 'equipe', label: 'Profissionais / Equipe' };
+    if (pathname.startsWith('/admin/servicos')) return { key: 'servicos', label: 'Serviços & Catálogo' };
+    if (pathname.startsWith('/admin/clientes')) return { key: 'clientes', label: 'Clientes' };
+    if (pathname.startsWith('/admin/financeiro')) return { key: 'financeiro', label: 'Financeiro' };
+    if (pathname.startsWith('/admin/configuracoes')) return { key: 'configuracoes', label: 'Configurações' };
+    if (pathname.startsWith('/admin/assinatura')) return { key: 'assinatura', label: 'Assinatura' };
+    if (pathname.startsWith('/admin/suporte')) return { key: 'suporte', label: 'Suporte' };
+    if (pathname.startsWith('/admin/minha-comissao')) return { key: 'minha_comissao', label: 'Minha Comissão' };
+    if (pathname.startsWith('/admin/minha-area')) return { key: 'minha_area', label: 'Minha Área' };
+    return { key: 'outros', label: pathname };
+  };
+
+  useEffect(() => {
+    if (!tenant?.id || role === 'super_admin') return;
+    const onInteract = () => adminDwellRef.current.recordInteraction();
+    window.addEventListener('pointerdown', onInteract, { passive: true });
+    window.addEventListener('keydown', onInteract, { passive: true });
+    window.addEventListener('scroll', onInteract, { passive: true });
+
+    trackEvent('admin_session_started', {
+      eventType: 'page_view',
+      source: 'admin',
+      tenantId: tenant.id,
+      userId: profile?.id || null,
+      userRole: role || 'owner',
+      stepName: resolveAdminAreaMeta(location.pathname).key,
+      metadata: {
+        label: 'Sessão Administrativa Iniciada',
+        area_label: resolveAdminAreaMeta(location.pathname).label,
+      },
+      dedupeWindowMs: 60000,
+    });
+
+    return () => {
+      window.removeEventListener('pointerdown', onInteract);
+      window.removeEventListener('keydown', onInteract);
+      window.removeEventListener('scroll', onInteract);
+    };
+  }, [tenant?.id, role, profile?.id]);
+
+  useEffect(() => {
+    if (!tenant?.id || role === 'super_admin') return;
+    const prevPath = lastAdminPathRef.current;
+    if (prevPath && prevPath !== location.pathname) {
+      const prevMeta = resolveAdminAreaMeta(prevPath);
+      const dwellMs = adminDwellRef.current.reset();
+      if (dwellMs > 500) {
+        trackEvent('admin_page_dwell', {
+          eventType: 'click',
+          source: 'admin',
+          tenantId: tenant.id,
+          userId: profile?.id || null,
+          userRole: role || 'owner',
+          pagePath: prevPath,
+          stepName: prevMeta.key,
+          durationMs: dwellMs,
+          metadata: { label: `Tempo em ${prevMeta.label}`, area_label: prevMeta.label },
+          dedupeWindowMs: 100,
+        });
+      }
+    } else {
+      adminDwellRef.current.reset();
+    }
+    lastAdminPathRef.current = location.pathname;
+
+    const currMeta = resolveAdminAreaMeta(location.pathname);
+    trackEvent('admin_page_view', {
+      eventType: 'page_view',
+      source: 'admin',
+      tenantId: tenant.id,
+      userId: profile?.id || null,
+      userRole: role || 'owner',
+      pagePath: location.pathname,
+      stepName: currMeta.key,
+      metadata: { label: currMeta.label, area_label: currMeta.label },
+    });
+  }, [location.pathname, tenant?.id, role, profile?.id]);
 
   const engine = usePermissionEngine();
   const features = {

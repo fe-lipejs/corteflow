@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Building2, CreditCard, DollarSign,
   Users, ScrollText, Bell, Settings, Shield,
   LogOut, Menu, X, ChevronRight, Zap, LifeBuoy, Activity,
-  Sparkles, Target
+  Sparkles, Target, BarChart3
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../integrations/supabase/client';
@@ -23,6 +23,7 @@ const navGroups = [
     label: 'Visão Geral',
     items: [
       { to: '/platform', icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/platform/intelligence', icon: BarChart3, label: 'Raffros Analytics' },
       { to: '/platform/analytics', icon: Activity, label: 'Visitas & Cliques' },
     ],
   },
@@ -272,6 +273,7 @@ const routeLabels: Record<string, string> = {
   seguranca: 'Segurança',
   settings: 'Configurações',
   'custom-pricing': 'Preços Customizados',
+  intelligence: 'Raffros Analytics',
   analytics: 'Visitas & Cliques',
   history: 'CRM & Histórico',
   suporte: 'Suporte',

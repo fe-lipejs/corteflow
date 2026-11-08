@@ -360,11 +360,12 @@ export default function MobileTimeline({
                 style={{
                   backgroundColor: 'var(--theme-bg)',
                   borderColor: theme.border,
-                  color: theme.textSecondary,
+                  color: theme.textPrimary,
                 }}
                 title="Ver todos os dias e horários bloqueados (Beta)"
               >
                 <ListChecks className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accent }} />
+                <span>Bloqueios</span>
               </button>
             )}
           </div>

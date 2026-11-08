@@ -34,6 +34,8 @@ import AdminAuditoria from '../pages/admin/AdminAuditoria';
 import AdminNotificacoes from '../pages/admin/AdminNotificacoes';
 import AdminSeguranca from '../pages/admin/AdminSeguranca';
 import AdminAnalytics from '../pages/admin/AdminAnalytics';
+import AdminRaffrosAnalytics from '../pages/admin/AdminRaffrosAnalytics';
+import AdminTenantAnalytics from '../pages/admin/AdminTenantAnalytics';
 import AdminSuporte from '../pages/admin/AdminSuporte';
 import { AdminHistory } from '../pages/admin/AdminHistory';
 import PublicDemoStore from '../pages/public/PublicDemoStore';
@@ -144,8 +146,10 @@ function AdminRouteTree() {
       }
     >
       <Route index element={<AdminDashboard />} />
+      <Route path="intelligence" element={<AdminRaffrosAnalytics />} />
       <Route path="analytics" element={<AdminAnalytics />} />
       <Route path="tenants" element={<AdminTenants />} />
+      <Route path="tenants/:tenantId/analytics" element={<AdminTenantAnalytics />} />
       <Route path="demos" element={<AdminDemoPortals />} />
       <Route path="captacao" element={<AdminCaptacao />} />
       <Route path="plans" element={<AdminPlans />} />
