@@ -123,6 +123,21 @@ export default function SuccessBooking() {
     loadData();
   }, [slug, orderNumber, sessionId, paymentIntentId]);
 
+  useEffect(() => {
+    if (settings?.fantasy_name) {
+      document.title = `${settings.fantasy_name} | Agendamento Online`;
+      if (settings?.logo_url) {
+        let linkIcon = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+        if (!linkIcon) {
+          linkIcon = document.createElement('link');
+          linkIcon.rel = 'icon';
+          document.head.appendChild(linkIcon);
+        }
+        linkIcon.href = settings.logo_url;
+      }
+    }
+  }, [settings]);
+
   const portalTheme = useTenantPortalTheme(slug, settings, null);
   const accentColor = portalTheme.accent;
   const btnBg = portalTheme.theme.btnPrimaryBg || accentColor;

@@ -51,7 +51,55 @@ export default function ClientPortal() {
 
   const { data: storeData, isLoading: loadingStore } = usePublicStore(slug || '');
   const tenant = storeData?.tenant;
+  const settings = storeData?.settings;
+  const storeName = settings?.fantasy_name || tenant?.name || '';
   const portalTheme = useTenantPortalTheme(slug, storeData?.settings, tenant);
+
+  useEffect(() => {
+    if (storeName) {
+      document.title = `${storeName} | Agendamento Online`;
+
+      const updateMeta = (selector: string, attr: string, value: string) => {
+        let el = document.querySelector(selector);
+        if (!el) {
+          el = document.createElement("meta");
+          if (selector.includes("property=")) {
+            const prop = selector.match(/property="([^"]+)"/)?.[1];
+            if (prop) el.setAttribute("property", prop);
+          } else if (selector.includes("name=")) {
+            const name = selector.match(/name="([^"]+)"/)?.[1];
+            if (name) el.setAttribute("name", name);
+          }
+          document.head.appendChild(el);
+        }
+        el.setAttribute(attr, value);
+      };
+
+      const pageImg = settings?.logo_url || settings?.banner_url;
+      if (pageImg) {
+        updateMeta('meta[property="og:image"]', "content", pageImg);
+        updateMeta('meta[property="twitter:image"]', "content", pageImg);
+      }
+      if (settings?.short_description) {
+        updateMeta('meta[property="og:description"]', "content", settings.short_description);
+        updateMeta('meta[name="description"]', "content", settings.short_description);
+        updateMeta('meta[property="twitter:description"]', "content", settings.short_description);
+      }
+      updateMeta('meta[property="og:title"]', "content", `${storeName} | Agendamento Online`);
+      updateMeta('meta[property="twitter:title"]', "content", `${storeName} | Agendamento Online`);
+      updateMeta('meta[property="og:site_name"]', "content", storeName);
+
+      if (settings?.logo_url) {
+        let linkIcon = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+        if (!linkIcon) {
+          linkIcon = document.createElement('link');
+          linkIcon.rel = 'icon';
+          document.head.appendChild(linkIcon);
+        }
+        linkIcon.href = settings.logo_url;
+      }
+    }
+  }, [storeName, settings]);
   
   // Habilitar atualizações em tempo real para o portal do cliente
   useBookingsRealtime(tenant?.id || null);
@@ -166,7 +214,6 @@ export default function ClientPortal() {
   const rescheduleMutation = useRescheduleBooking();
   const [visibleDaysLimit, setVisibleDaysLimit] = useState(INITIAL_CAROUSEL_DAYS_CAP);
 
-  const settings = storeData?.settings;
   const maxAdvanceDays = useMemo(
     () => resolveMaxAdvanceDays((settings as any)?.max_advance_days, !!settings),
     [settings]
@@ -581,7 +628,6 @@ export default function ClientPortal() {
   const isDark = contrast.isDark;
   const sidebarBackground = isDark ? theme.sidebarBg : "#FFFFFF";
   const cardBorderColor = isDark ? theme.cardBorder : "#E5E7EB";
-  const storeName = settings?.fantasy_name || tenant?.name || "";
 
   const storeHeader = (
     <div className="relative mb-6">

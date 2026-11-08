@@ -790,10 +790,26 @@ export default function PublicStore() {
         updateMeta('meta[property="og:image"]', "content", pageImg);
         updateMeta('meta[property="twitter:image"]', "content", pageImg);
       }
+      if (settings?.short_description) {
+        updateMeta('meta[property="og:description"]', "content", settings.short_description);
+        updateMeta('meta[name="description"]', "content", settings.short_description);
+        updateMeta('meta[property="twitter:description"]', "content", settings.short_description);
+      }
       updateMeta('meta[property="og:title"]', "content", `${storeName} | Agendamento Online`);
       updateMeta('meta[property="twitter:title"]', "content", `${storeName} | Agendamento Online`);
+      updateMeta('meta[property="og:site_name"]', "content", storeName);
+
+      if (settings?.logo_url) {
+        let linkIcon = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+        if (!linkIcon) {
+          linkIcon = document.createElement('link');
+          linkIcon.rel = 'icon';
+          document.head.appendChild(linkIcon);
+        }
+        linkIcon.href = settings.logo_url;
+      }
     }
-  }, [storeName, settings?.logo_url, settings?.banner_url]);
+  }, [storeName, settings]);
 
   // Apple-inspired canvas background for Light mode (#F5F5F7), or exact theme.bg for Dark mode
   const canvasBg = isDark ? theme.bg : "#F5F5F7";
