@@ -11,6 +11,7 @@ import {
   Lock,
   Unlock,
   SlidersHorizontal,
+  ListChecks,
 } from 'lucide-react';
 import { BOOKING_STATUS_CONFIG, type Booking } from '../../../hooks/useBookings';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -38,6 +39,8 @@ interface Props {
   onNewBooking: (preferredDate?: Date) => void;
   onOpenBlockManager?: (date?: Date) => void;
   onQuickToggleFullDay?: (date: Date, currentlyBlocked: boolean) => void | Promise<void>;
+  onOpenMonthCalendar?: () => void;
+  onOpenBlockedOverview?: () => void;
 }
 
 const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
@@ -57,6 +60,8 @@ export default function MobileTimeline({
   onNewBooking,
   onOpenBlockManager,
   onQuickToggleFullDay,
+  onOpenMonthCalendar,
+  onOpenBlockedOverview,
 }: Props) {
   const { theme } = useTheme();
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -155,23 +160,15 @@ export default function MobileTimeline({
           </button>
 
           <div className="flex flex-col items-center">
-            <label
-              className="relative font-serif text-[18px] font-bold capitalize tracking-tight cursor-pointer px-2 py-0.5 rounded-lg hover:bg-black/5 transition-colors"
+            <button
+              type="button"
+              onClick={() => onOpenMonthCalendar?.()}
+              className="relative font-serif text-[18px] font-bold capitalize tracking-tight cursor-pointer px-2.5 py-0.5 rounded-xl hover:bg-black/5 active:scale-95 transition-all flex items-center gap-1.5"
               style={{ color: theme.textPrimary }}
-              title="Toque para ir a uma data específica"
+              title="Toque para abrir o calendário do mês"
             >
-              {format(currentDay, 'MMMM yyyy', { locale: ptBR })}
-              <input
-                type="date"
-                value={format(currentDay, 'yyyy-MM-dd')}
-                onChange={(e) => {
-                  if (!e.target.value) return;
-                  const [yy, mm, dd] = e.target.value.split('-').map(Number);
-                  onDayChange(new Date(yy, mm - 1, dd));
-                }}
-                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-              />
-            </label>
+              <span>{format(currentDay, 'MMMM yyyy', { locale: ptBR })}</span>
+            </button>
             <div className="flex items-center gap-2 mt-1">
               <p
                 className="text-[10px] uppercase tracking-widest font-semibold opacity-70"
@@ -225,22 +222,20 @@ export default function MobileTimeline({
                 key={day.toISOString()}
                 ref={selected ? activeDayRef : null}
                 onClick={() => onDayChange(day)}
-                className={`snap-center shrink-0 flex flex-col items-center justify-center w-[64px] h-[96px] rounded-[20px] transition-all relative ${
-                  selected ? 'scale-105 z-10' : 'hover:-translate-y-1'
-                }`}
+                className={`snap-center shrink-0 flex flex-col items-center justify-center w-[64px] h-[96px] rounded-[20px] transition-all relative ${selected ? 'scale-105 z-10' : 'hover:-translate-y-1'
+                  }`}
                 style={{
                   background: selected
                     ? theme.accentGradient
                     : dayBlockInfo.isFullyBlocked
                       ? `color-mix(in srgb, ${theme.accent} 10%, ${theme.cardBg})`
                       : theme.cardBg,
-                  border: `1px solid ${
-                    selected
+                  border: `1px solid ${selected
                       ? 'transparent'
                       : dayBlockInfo.isFullyBlocked
                         ? `color-mix(in srgb, ${theme.accent} 45%, transparent)`
                         : theme.border
-                  }`,
+                    }`,
                   opacity: !selected && dayBlockInfo.isFullyBlocked ? 0.85 : 1,
                 }}
               >
@@ -354,6 +349,22 @@ export default function MobileTimeline({
                     ? `Horários (${currentDayBlockStatus.blockedSlotsCount} bloq.)`
                     : 'Bloquear horários'}
                 </span>
+              </button>
+            )}
+
+            {onOpenBlockedOverview && (
+              <button
+                type="button"
+                onClick={onOpenBlockedOverview}
+                className="py-2 px-2.5 rounded-2xl text-xs font-bold border transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                style={{
+                  backgroundColor: 'var(--theme-bg)',
+                  borderColor: theme.border,
+                  color: theme.textSecondary,
+                }}
+                title="Ver todos os dias e horários bloqueados (Beta)"
+              >
+                <ListChecks className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accent }} />
               </button>
             )}
           </div>
@@ -523,10 +534,10 @@ export default function MobileTimeline({
                     ? { bg: 'rgba(239, 68, 68, 0.14)', color: '#ef4444', label: 'Atrasado' }
                     : confInfo.confirmationState === 'pending'
                       ? {
-                          bg: `color-mix(in srgb, ${theme.accent} 16%, transparent)`,
-                          color: theme.accent,
-                          label: 'Aguarda confirmação',
-                        }
+                        bg: `color-mix(in srgb, ${theme.accent} 16%, transparent)`,
+                        color: theme.accent,
+                        label: 'Aguarda confirmação',
+                      }
                       : { bg: statusCfg.bg, color: statusCfg.color, label: statusCfg.label };
 
                 return (

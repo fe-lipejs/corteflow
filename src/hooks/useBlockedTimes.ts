@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { startOfDay, endOfDay, format, addMinutes, isBefore, isAfter } from 'date-fns';
+import { startOfDay, endOfDay, format, addMinutes, isBefore, isAfter, addDays } from 'date-fns';
 import { supabase } from '../integrations/supabase/client';
 
 export interface NormalizedBlock {
@@ -20,9 +20,15 @@ export interface TimeRange {
 
 export const TENANT_BLOCKS_RANGE_KEY = (
   tenantId: string | null | undefined,
-  startIso: string,
-  endIso: string
-) => ['tenant_blocks_range', tenantId ?? '', startIso, endIso];
+  startKey: string,
+  endKey: string
+) => ['tenant_blocks_range', tenantId ?? '', startKey, endKey];
+
+export const TENANT_ALL_UPCOMING_BLOCKS_KEY = (tenantId: string | null | undefined) => [
+  'tenant_blocks_range',
+  'all_upcoming',
+  tenantId ?? '',
+];
 
 /**
  * Busca todos os bloqueios (`professional_blocked_times` + `blocked_times`) dentro de uma janela de datas.
@@ -36,9 +42,11 @@ export function useTenantBlocksInRange(
   const rangeEnd = endDate ? endOfDay(endDate) : null;
   const startIso = rangeStart ? rangeStart.toISOString() : '';
   const endIso = rangeEnd ? rangeEnd.toISOString() : '';
+  const startKey = rangeStart ? format(rangeStart, 'yyyy-MM-dd') : '';
+  const endKey = rangeEnd ? format(rangeEnd, 'yyyy-MM-dd') : '';
 
   return useQuery({
-    queryKey: TENANT_BLOCKS_RANGE_KEY(tenantId, startIso.slice(0, 10), endIso.slice(0, 10)),
+    queryKey: TENANT_BLOCKS_RANGE_KEY(tenantId, startKey, endKey),
     enabled: !!tenantId && !!rangeStart && !!rangeEnd,
     staleTime: 0,
     queryFn: async (): Promise<NormalizedBlock[]> => {
@@ -89,6 +97,58 @@ export function useTenantBlocksInRange(
 }
 
 /**
+ * Busca todos os bloqueios ativos/futuros (a partir de hoje) para a tela de visualização de bloqueios.
+ */
+export function useAllUpcomingTenantBlocks(tenantId: string | null | undefined) {
+  return useQuery({
+    queryKey: TENANT_ALL_UPCOMING_BLOCKS_KEY(tenantId),
+    enabled: !!tenantId,
+    staleTime: 0,
+    queryFn: async (): Promise<NormalizedBlock[]> => {
+      const todayIso = startOfDay(new Date()).toISOString();
+      const [{ data: proBlocks }, { data: legacyBlocks }] = await Promise.all([
+        supabase
+          .from('professional_blocked_times')
+          .select('*')
+          .eq('tenant_id', tenantId!)
+          .gte('ends_at', todayIso)
+          .order('starts_at', { ascending: true }),
+        supabase
+          .from('blocked_times')
+          .select('*')
+          .eq('tenant_id', tenantId!)
+          .gte('end_at', todayIso)
+          .order('start_at', { ascending: true }),
+      ]);
+
+      const normalizedPro: NormalizedBlock[] = (proBlocks ?? []).map((b: any) => ({
+        id: b.id,
+        tenant_id: b.tenant_id,
+        professional_id: b.professional_id,
+        starts_at: b.starts_at,
+        ends_at: b.ends_at,
+        reason: b.reason ?? null,
+        block_type: b.block_type ?? 'custom',
+        source: 'pro',
+      }));
+
+      const normalizedLegacy: NormalizedBlock[] = (legacyBlocks ?? []).map((b: any) => ({
+        id: b.id,
+        tenant_id: b.tenant_id,
+        professional_id: b.professional_id ?? null,
+        starts_at: b.start_at,
+        ends_at: b.end_at,
+        reason: b.reason ?? null,
+        block_type: 'custom',
+        source: 'legacy',
+      }));
+
+      return [...normalizedPro, ...normalizedLegacy];
+    },
+  });
+}
+
+/**
  * Verifica se um intervalo [slotStart, slotEnd] está bloqueado para um único profissional.
  */
 export function isIntervalBlockedForPro(
@@ -109,7 +169,7 @@ export function isIntervalBlockedForPro(
 
 /**
  * Verifica se um intervalo [slotStart, slotEnd] está bloqueado para todos os profissionais alvo.
- * Se `targetProIds` estiver vazio, considera apenas bloqueios globais (`professional_id === null`).
+ * Se `targetProIds` estiver vazio, considera qualquer bloqueio no intervalo.
  */
 export function isSlotBlockedForTarget(
   slotStart: Date,
@@ -253,7 +313,20 @@ export async function applyDayBlocksInDb(params: {
   isFullDay?: boolean;
   reason?: string;
 }) {
-  const { tenantId, date, targetProIds, newBlockedRanges, isFullDay, reason } = params;
+  const { tenantId, date, newBlockedRanges, isFullDay, reason } = params;
+  let targetProIds = params.targetProIds;
+
+  // Fallback seguro: se targetProIds vier vazio, busca todos os profissionais ativos do salão
+  if (targetProIds.length === 0) {
+    const { data: pros } = await supabase
+      .from('professionals')
+      .select('id, active, status')
+      .eq('tenant_id', tenantId);
+    targetProIds = (pros ?? [])
+      .filter((p: any) => p.active !== false && (!p.status || p.status === 'active'))
+      .map((p: any) => p.id);
+  }
+
   const dayStart = startOfDay(date);
   const dayEnd = endOfDay(date);
   const dayStartMs = dayStart.getTime();
@@ -369,6 +442,74 @@ export async function applyDayBlocksInDb(params: {
 }
 
 /**
+ * Agrupa bloqueios ativos/futuros por data local (`yyyy-MM-dd`), separando dias inteiros bloqueados
+ * de dias com intervalos de horários bloqueados.
+ */
+export function groupBlocksByDaySummary(
+  blocks: NormalizedBlock[],
+  targetProIds: string[],
+  businessHours: any[]
+): Array<{
+  date: Date;
+  dateKey: string;
+  isFullDay: boolean;
+  intervals: TimeRange[];
+}> {
+  if (blocks.length === 0) return [];
+
+  const uniqueDateKeys = new Set<string>();
+  const today = startOfDay(new Date());
+
+  for (const b of blocks) {
+    if (
+      targetProIds.length > 0 &&
+      b.professional_id !== null &&
+      !targetProIds.includes(b.professional_id)
+    ) {
+      continue;
+    }
+    let cursor = startOfDay(new Date(b.starts_at));
+    if (isBefore(cursor, today)) cursor = today;
+    const endDay = startOfDay(new Date(b.ends_at));
+    let safety = 0;
+    while (!isAfter(cursor, endDay) && safety < 366) {
+      uniqueDateKeys.add(format(cursor, 'yyyy-MM-dd'));
+      cursor = addDays(cursor, 1);
+      safety++;
+    }
+  }
+
+  const sortedKeys = Array.from(uniqueDateKeys).sort();
+  const summaries: Array<{
+    date: Date;
+    dateKey: string;
+    isFullDay: boolean;
+    intervals: TimeRange[];
+  }> = [];
+
+  for (const key of sortedKeys) {
+    const [yy, mm, dd] = key.split('-').map(Number);
+    const d = new Date(yy, mm - 1, dd);
+    const bh = businessHours.find((x: any) => x.weekday === d.getDay());
+    const openTime = bh?.open_time ? String(bh.open_time).slice(0, 5) : '08:00';
+    const closeTime = bh?.close_time ? String(bh.close_time).slice(0, 5) : '20:00';
+
+    const status = isDayPartiallyOrFullyBlocked(d, blocks, targetProIds, openTime, closeTime);
+    if (!status.isFullyBlocked && !status.isPartiallyBlocked) continue;
+
+    const intervals = getConsolidatedDayBlocks(d, blocks, targetProIds, openTime, closeTime);
+    summaries.push({
+      date: d,
+      dateKey: key,
+      isFullDay: status.isFullyBlocked,
+      intervals,
+    });
+  }
+
+  return summaries;
+}
+
+/**
  * Hook com mutações para bloqueio/liberação rápida de horários e múltiplos dias,
  * invalidando automaticamente o cache da Agenda e da Página Pública.
  */
@@ -411,16 +552,55 @@ export function useManageBlockedTimes(tenantId: string | null | undefined) {
       if (!tenantId) throw new Error('Estabelecimento não identificado');
       const { dates, targetProIds, block, reason } = params;
 
-      for (const d of dates) {
-        await applyDayBlocksInDb({
-          tenantId,
-          date: d,
-          targetProIds,
-          newBlockedRanges: block ? [{ start: startOfDay(d), end: endOfDay(d) }] : [],
-          isFullDay: block,
-          reason: reason ?? (block ? 'Dia bloqueado' : undefined),
-        });
-      }
+      await Promise.all(
+        dates.map((d) =>
+          applyDayBlocksInDb({
+            tenantId,
+            date: d,
+            targetProIds,
+            newBlockedRanges: block ? [{ start: startOfDay(d), end: endOfDay(d) }] : [],
+            isFullDay: block,
+            reason: reason ?? (block ? 'Dia bloqueado' : undefined),
+          })
+        )
+      );
+    },
+    onSuccess: () => {
+      invalidateAllAvailability();
+    },
+  });
+
+  const saveMultiDaysToggleMutation = useMutation({
+    mutationFn: async (params: {
+      daysToBlock: Date[];
+      daysToUnblock: Date[];
+      targetProIds: string[];
+      reason?: string;
+    }) => {
+      if (!tenantId) throw new Error('Estabelecimento não identificado');
+      const { daysToBlock, daysToUnblock, targetProIds, reason } = params;
+
+      await Promise.all([
+        ...daysToBlock.map((d) =>
+          applyDayBlocksInDb({
+            tenantId,
+            date: d,
+            targetProIds,
+            newBlockedRanges: [{ start: startOfDay(d), end: endOfDay(d) }],
+            isFullDay: true,
+            reason: reason ?? 'Dia bloqueado',
+          })
+        ),
+        ...daysToUnblock.map((d) =>
+          applyDayBlocksInDb({
+            tenantId,
+            date: d,
+            targetProIds,
+            newBlockedRanges: [],
+            isFullDay: false,
+          })
+        ),
+      ]);
     },
     onSuccess: () => {
       invalidateAllAvailability();
@@ -430,7 +610,7 @@ export function useManageBlockedTimes(tenantId: string | null | undefined) {
   return {
     saveDayBlocks: saveDayBlocksMutation,
     batchDaysBlock: batchDaysBlockMutation,
+    saveMultiDaysToggle: saveMultiDaysToggleMutation,
     invalidateAllAvailability,
   };
 }
-

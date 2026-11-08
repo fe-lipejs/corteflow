@@ -1,29 +1,21 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   format,
-  addDays,
   startOfDay,
-  endOfDay,
   isSameDay,
-  isToday,
-  isBefore,
   addMinutes,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import {
+  ArrowLeft,
   X,
   Lock,
   Unlock,
-  Calendar as CalendarIcon,
-  Clock,
   Check,
   AlertTriangle,
   RotateCcw,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
-  User,
-  Sparkles,
+  ListChecks,
 } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { type Booking } from '../../../hooks/useBookings';
@@ -32,8 +24,8 @@ import {
   type TimeRange,
   buildDayTimeSlots,
   isSlotBlockedForTarget,
-  isDayFullyBlocked,
   useManageBlockedTimes,
+  useTenantBlocksInRange,
 } from '../../../hooks/useBlockedTimes';
 import toast from 'react-hot-toast';
 
@@ -55,11 +47,10 @@ interface Props {
   businessHours: BusinessHour[];
   blocks: NormalizedBlock[];
   bookings: Booking[];
+  onBack?: () => void;
+  onOpenBlockedOverview?: () => void;
   onClose: () => void;
-  onDateChange?: (d: Date) => void;
 }
-
-type ModeTab = 'slots' | 'days';
 
 interface UndoSnapshot {
   date: Date;
@@ -77,17 +68,31 @@ export default function AvailabilityBlockModal({
   businessHours,
   blocks,
   bookings,
+  onBack,
+  onOpenBlockedOverview,
   onClose,
-  onDateChange,
 }: Props) {
   const { theme } = useTheme();
-  const { saveDayBlocks, batchDaysBlock } = useManageBlockedTimes(tenantId);
+  const { saveDayBlocks } = useManageBlockedTimes(tenantId);
 
-  const [activeTab, setActiveTab] = useState<ModeTab>('slots');
-  const [activeDate, setActiveDate] = useState<Date>(() => startOfDay(initialDate));
+  const activeDate = useMemo(() => startOfDay(initialDate), [initialDate]);
   const [targetProId, setTargetProId] = useState<string | 'all'>(() =>
     selectedProfessionalId ? selectedProfessionalId : canSeeAll ? 'all' : professionals[0]?.id ?? 'all'
   );
+
+  // Busca dedicada para o dia ativo (garante sincronia mesmo em datas distantes fora da janela da semana)
+  const { data: daySpecificBlocks = [] } = useTenantBlocksInRange(
+    tenantId || null,
+    activeDate,
+    activeDate
+  );
+
+  const mergedBlocks = useMemo(() => {
+    const map = new Map<string, NormalizedBlock>();
+    for (const b of blocks) map.set(`${b.source}-${b.id}`, b);
+    for (const b of daySpecificBlocks) map.set(`${b.source}-${b.id}`, b);
+    return Array.from(map.values());
+  }, [blocks, daySpecificBlocks]);
 
   // Profissionais alvo da operação
   const targetProIds = useMemo(() => {
@@ -110,7 +115,7 @@ export default function AvailabilityBlockModal({
     };
   }, [activeDate, businessHours]);
 
-  // Slots de 30 min do dia ativo
+  // Slots de 30 min do dia selecionado
   const daySlots = useMemo(
     () => buildDayTimeSlots(activeDate, daySchedule.openTime, daySchedule.closeTime, 30),
     [activeDate, daySchedule.openTime, daySchedule.closeTime]
@@ -146,14 +151,14 @@ export default function AvailabilityBlockModal({
   const dbBlockedIndices = useMemo(() => {
     const set = new Set<number>();
     daySlots.forEach((slot, idx) => {
-      if (isSlotBlockedForTarget(slot.start, slot.end, blocks, targetProIds)) {
+      if (isSlotBlockedForTarget(slot.start, slot.end, mergedBlocks, targetProIds)) {
         set.add(idx);
       }
     });
     return set;
-  }, [daySlots, blocks, targetProIds]);
+  }, [daySlots, mergedBlocks, targetProIds]);
 
-  // Estado interativo local dos slots bloqueados (para resposta visual imediata a 60fps durante arraste)
+  // Estado interativo local dos slots bloqueados
   const [localBlockedSet, setLocalBlockedSet] = useState<Set<number>>(() => new Set(dbBlockedIndices));
   const [isDirty, setIsDirty] = useState(false);
 
@@ -180,23 +185,8 @@ export default function AvailabilityBlockModal({
     actionLabel: string;
   } | null>(null);
 
-  // Seleção de múltiplos dias (Tab "Bloquear Dias")
-  const [multiDaysOffset, setMultiDaysOffset] = useState(0);
-  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-
-  const stripDays = useMemo(
-    () => Array.from({ length: 14 }, (_, i) => addDays(startOfDay(new Date()), i)),
-    []
-  );
-
-  const calendarDays = useMemo(() => {
-    const base = addDays(startOfDay(new Date()), multiDaysOffset * 28);
-    return Array.from({ length: 28 }, (_, i) => addDays(base, i));
-  }, [multiDaysOffset]);
-
   // Verifica se todos os slots do dia estão bloqueados localmente
   const isAllDayBlockedLocal = daySlots.length > 0 && localBlockedSet.size === daySlots.length;
-  const isPartiallyBlockedLocal = localBlockedSet.size > 0 && localBlockedSet.size < daySlots.length;
 
   // Inicia interação em um slot (clique ou início de arraste)
   const handleSlotDragStart = (idx: number) => {
@@ -295,14 +285,13 @@ export default function AvailabilityBlockModal({
 
     setIsDirty(false);
     setConflictWarning(null);
-    toast.success(labelForToast || 'Disponibilidade atualizada!');
+    toast.success(labelForToast || 'Disponibilidade salva!');
   };
 
   // Verifica se há agendamentos nos slots que estão sendo bloqueados antes de salvar
   const handleRequestSaveSlots = async (customSet?: Set<number>, isFullDayFlag?: boolean, customLabel?: string) => {
     const targetSet = customSet ?? localBlockedSet;
 
-    // Quais slots passaram a ser bloqueados (ou estão bloqueados) e possuem agendamento ativo?
     const conflictingMap = new Map<string, Booking>();
     targetSet.forEach((idx) => {
       const bks = slotBookingsMap.get(idx);
@@ -312,8 +301,6 @@ export default function AvailabilityBlockModal({
     });
 
     const conflictingList = Array.from(conflictingMap.values());
-
-    // Mostrar aviso apenas se o usuário estiver bloqueando horários que têm agendamentos e ainda não estavam todos bloqueados
     const hasNewConflict = Array.from(targetSet).some(
       (idx) => !dbBlockedIndices.has(idx) && slotBookingsMap.has(idx)
     );
@@ -335,12 +322,10 @@ export default function AvailabilityBlockModal({
   // 1-Click: Bloquear / Liberar Dia Inteiro
   const handleToggleFullDayQuick = async () => {
     if (isAllDayBlockedLocal) {
-      // Liberar o dia todo imediatamente
       const emptySet = new Set<number>();
       setLocalBlockedSet(emptySet);
       await executeSaveDaySlots(emptySet, false, `Dia ${format(activeDate, 'dd/MM')} liberado!`);
     } else {
-      // Bloquear todos os horários do dia
       const allSet = new Set<number>(daySlots.map((_, i) => i));
       setLocalBlockedSet(allSet);
       await handleRequestSaveSlots(
@@ -349,29 +334,6 @@ export default function AvailabilityBlockModal({
         `Dia ${format(activeDate, 'dd/MM')} bloqueado!`
       );
     }
-  };
-
-  // Atalhos rápidos de período (Manhã, Tarde, Liberar tudo)
-  const applyQuickPeriod = (startHour: number, endHour: number) => {
-    const next = new Set(localBlockedSet);
-    const matchingIndices: number[] = [];
-
-    daySlots.forEach((s, idx) => {
-      const h = s.start.getHours() + s.start.getMinutes() / 60;
-      if (h >= startHour && h < endHour) {
-        matchingIndices.push(idx);
-      }
-    });
-
-    const allAlreadyBlocked = matchingIndices.every((idx) => next.has(idx));
-    matchingIndices.forEach((idx) => {
-      if (allAlreadyBlocked) next.delete(idx);
-      else next.add(idx);
-    });
-
-    setLocalBlockedSet(next);
-    setIsDirty(true);
-    setConflictWarning(null);
   };
 
   // Desfazer última alteração
@@ -392,123 +354,92 @@ export default function AvailabilityBlockModal({
     toast.success('Alteração desfeita!');
   };
 
-  // Multi-day toggle
-  const toggleSelectMultiDate = (d: Date) => {
-    setConflictWarning(null);
-    setSelectedDates((prev) => {
-      const exists = prev.some((x) => isSameDay(x, d));
-      if (exists) return prev.filter((x) => !isSameDay(x, d));
-      return [...prev, d];
-    });
-  };
-
-  const handleBatchMultiDays = async (block: boolean) => {
-    if (selectedDates.length === 0) return;
-
-    if (block) {
-      // Verificar se há agendamentos em algum dos dias selecionados
-      const conflicts = bookings.filter((b) => {
-        if (b.status === 'canceled' || b.status === 'no_show') return false;
-        if (targetProId !== 'all' && b.professional_id !== targetProId) return false;
-        const bDate = new Date(b.scheduled_at);
-        return selectedDates.some((d) => isSameDay(d, bDate));
-      });
-
-      if (conflicts.length > 0) {
-        setConflictWarning({
-          conflictingBookings: conflicts,
-          actionLabel: `Bloquear ${selectedDates.length} dia(s)`,
-          onProceed: async () => {
-            await batchDaysBlock.mutateAsync({
-              dates: selectedDates,
-              targetProIds,
-              block: true,
-            });
-            setSelectedDates([]);
-            setConflictWarning(null);
-            toast.success(`${selectedDates.length} dia(s) bloqueado(s)!`);
-          },
-        });
-        return;
-      }
-    }
-
-    await batchDaysBlock.mutateAsync({
-      dates: selectedDates,
-      targetProIds,
-      block,
-    });
-    const count = selectedDates.length;
-    setSelectedDates([]);
-    setConflictWarning(null);
-    toast.success(block ? `${count} dia(s) bloqueado(s)!` : `${count} dia(s) liberado(s)!`);
-  };
-
-  const isSaving = saveDayBlocks.isPending || batchDaysBlock.isPending;
+  const isSaving = saveDayBlocks.isPending;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/55 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-xl rounded-t-3xl sm:rounded-3xl border shadow-2xl overflow-hidden flex flex-col max-h-[92vh] transition-all"
+        className="w-full sm:max-w-lg rounded-t-[28px] sm:rounded-[28px] border shadow-2xl overflow-hidden flex flex-col max-h-[90vh] transition-all"
         style={{
-          backgroundColor: theme.cardBg,
+          backgroundColor: theme.bg,
           borderColor: theme.border,
           color: theme.textPrimary,
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ── Header Padrão Apple ── */}
+        {/* ── Header Clean com Botão de Retorno ── */}
         <div
-          className="px-5 pt-5 pb-4 border-b flex flex-col gap-3.5 shrink-0"
-          style={{ borderColor: theme.border }}
+          className="px-5 pt-5 pb-4 border-b flex flex-col gap-3 shrink-0"
+          style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
         >
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div
-                className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <button
+                type="button"
+                onClick={onBack || onClose}
+                className="w-9 h-9 rounded-full border flex items-center justify-center shrink-0 transition-all active:scale-95 cursor-pointer"
                 style={{
-                  backgroundColor: `color-mix(in srgb, ${theme.accent} 14%, transparent)`,
-                  color: theme.accent,
+                  borderColor: theme.border,
+                  backgroundColor: theme.bg,
+                  color: theme.textPrimary,
                 }}
+                title="Voltar"
               >
-                <Lock className="w-5 h-5" />
-              </div>
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+
               <div className="min-w-0">
-                <h2 className="text-base sm:text-lg font-bold tracking-tight truncate">
-                  Controle de Disponibilidade
+                <h2 className="text-base sm:text-lg font-extrabold tracking-tight truncate">
+                  Disponibilidade
                 </h2>
-                <p className="text-xs opacity-70 truncate" style={{ color: theme.textSecondary }}>
-                  Toque ou arraste o dedo para bloquear e liberar horários
+                <p className="text-xs font-medium truncate" style={{ color: theme.textSecondary }}>
+                  Toque ou deslize o dedo sobre os horários
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               {undoSnapshot && (
                 <button
                   type="button"
                   onClick={handleUndo}
                   disabled={isSaving}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
                   style={{
                     borderColor: `color-mix(in srgb, ${theme.accent} 35%, transparent)`,
                     backgroundColor: `color-mix(in srgb, ${theme.accent} 10%, transparent)`,
                     color: theme.accent,
                   }}
-                  title="Desfazer última alteração"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Desfazer</span>
                 </button>
               )}
 
+              {onOpenBlockedOverview && (
+                <button
+                  type="button"
+                  onClick={onOpenBlockedOverview}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
+                  style={{
+                    borderColor: theme.border,
+                    backgroundColor: theme.bg,
+                    color: theme.textPrimary,
+                  }}
+                  title="Ver todos os dias e horários bloqueados"
+                >
+                  <ListChecks className="w-3.5 h-3.5" style={{ color: theme.accent }} />
+                  <span className="hidden xs:inline">Bloqueios</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={onClose}
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 cursor-pointer"
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-75 cursor-pointer"
                 style={{ color: theme.textSecondary }}
               >
                 <X className="w-5 h-5" />
@@ -516,121 +447,60 @@ export default function AvailabilityBlockModal({
             </div>
           </div>
 
-          {/* Seletor de Modo (Horários do Dia vs Vários Dias) + Filtro de Profissional */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            <div
-              className="grid grid-cols-2 p-1 rounded-2xl border w-full sm:w-auto"
-              style={{ backgroundColor: 'var(--theme-bg)', borderColor: theme.border }}
-            >
+          {professionals.length > 1 && canSeeAll && (
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
               <button
                 type="button"
-                onClick={() => {
-                  setActiveTab('slots');
-                  setConflictWarning(null);
-                }}
-                className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                onClick={() => setTargetProId('all')}
+                className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border shrink-0 transition-all cursor-pointer"
                 style={{
-                  backgroundColor: activeTab === 'slots' ? `${theme.accent}20` : 'transparent',
-                  color: activeTab === 'slots' ? theme.accent : theme.textSecondary,
+                  backgroundColor: targetProId === 'all' ? `${theme.accent}16` : theme.bg,
+                  borderColor: targetProId === 'all' ? theme.accent : theme.border,
+                  color: targetProId === 'all' ? theme.accent : theme.textSecondary,
                 }}
               >
-                <Clock className="w-3.5 h-3.5" />
-                <span>Horários do Dia</span>
+                Todos
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('days');
-                  setConflictWarning(null);
-                }}
-                className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                style={{
-                  backgroundColor: activeTab === 'days' ? `${theme.accent}20` : 'transparent',
-                  color: activeTab === 'days' ? theme.accent : theme.textSecondary,
-                }}
-              >
-                <CalendarIcon className="w-3.5 h-3.5" />
-                <span>Bloquear Dias</span>
-              </button>
+              {professionals.map((p) => {
+                const active = targetProId === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setTargetProId(p.id)}
+                    className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border shrink-0 transition-all cursor-pointer"
+                    style={{
+                      backgroundColor: active ? `${theme.accent}16` : theme.bg,
+                      borderColor: active ? theme.accent : theme.border,
+                      color: active ? theme.accent : theme.textSecondary,
+                    }}
+                  >
+                    {p.name.split(' ')[0]}
+                  </button>
+                );
+              })}
             </div>
-
-            {professionals.length > 1 && canSeeAll && (
-              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-                <button
-                  type="button"
-                  onClick={() => setTargetProId('all')}
-                  className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border shrink-0 transition-all cursor-pointer"
-                  style={{
-                    backgroundColor: targetProId === 'all' ? `${theme.accent}18` : 'var(--theme-bg)',
-                    borderColor: targetProId === 'all' ? theme.accent : theme.border,
-                    color: targetProId === 'all' ? theme.accent : theme.textSecondary,
-                  }}
-                >
-                  Todo o salão
-                </button>
-                {professionals.map((p) => {
-                  const active = targetProId === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setTargetProId(p.id)}
-                      className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border shrink-0 transition-all cursor-pointer"
-                      style={{
-                        backgroundColor: active ? `${theme.accent}18` : 'var(--theme-bg)',
-                        borderColor: active ? theme.accent : theme.border,
-                        color: active ? theme.accent : theme.textSecondary,
-                      }}
-                    >
-                      {p.name.split(' ')[0]}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
         {/* ── Aviso de Conflito com Agendamentos Existentes ── */}
         {conflictWarning && (
           <div
-            className="mx-5 mt-4 p-4 rounded-2xl border flex flex-col gap-3 animate-in fade-in slide-in-from-top-2"
+            className="mx-5 mt-4 p-4 rounded-2xl border flex flex-col gap-3 animate-in fade-in"
             style={{
               backgroundColor: 'rgba(239, 68, 68, 0.08)',
               borderColor: 'rgba(239, 68, 68, 0.35)',
             }}
           >
             <div className="flex items-start gap-2.5">
-              <AlertTriangle className="w-5 h-5 text-[#EF4444] shrink-0 mt-0.5" />
+              <AlertTriangle className="w-4 h-4 text-[#EF4444] shrink-0 mt-0.5" />
               <div className="text-xs leading-relaxed">
-                <p className="font-bold text-[#EF4444] text-sm">
-                  Existem {conflictWarning.conflictingBookings.length} agendamento(s) neste período
+                <p className="font-bold text-[#EF4444]">
+                  {conflictWarning.conflictingBookings.length} agendamento(s) já marcado(s)
                 </p>
                 <p className="mt-0.5 opacity-90" style={{ color: theme.textPrimary }}>
-                  Os agendamentos já confirmados{' '}
-                  <strong>não serão apagados nem alterados</strong>. Apenas os horários vagos ficarão
-                  bloqueados para novas reservas.
+                  Os agendamentos existentes <strong>não serão alterados</strong>. Apenas os horários livres serão bloqueados.
                 </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {conflictWarning.conflictingBookings.slice(0, 4).map((b) => (
-                    <span
-                      key={b.id}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold border"
-                      style={{
-                        backgroundColor: theme.cardBg,
-                        borderColor: theme.border,
-                        color: theme.textPrimary,
-                      }}
-                    >
-                      {format(new Date(b.scheduled_at), 'HH:mm')} · {b.customer?.name ?? 'Cliente'}
-                    </span>
-                  ))}
-                  {conflictWarning.conflictingBookings.length > 4 && (
-                    <span className="text-[11px] opacity-75">
-                      +{conflictWarning.conflictingBookings.length - 4} mais
-                    </span>
-                  )}
-                </div>
               </div>
             </div>
 
@@ -638,7 +508,7 @@ export default function AvailabilityBlockModal({
               <button
                 type="button"
                 onClick={() => setConflictWarning(null)}
-                className="px-3.5 py-1.5 rounded-xl text-xs font-bold border cursor-pointer"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold border cursor-pointer"
                 style={{
                   borderColor: theme.border,
                   backgroundColor: theme.cardBg,
@@ -651,7 +521,7 @@ export default function AvailabilityBlockModal({
                 type="button"
                 disabled={isSaving}
                 onClick={conflictWarning.onProceed}
-                className="px-4 py-1.5 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5"
+                className="px-3.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5"
                 style={{
                   background: theme.accentGradient || theme.accent,
                   color: theme.btnPrimaryText,
@@ -664,528 +534,171 @@ export default function AvailabilityBlockModal({
           </div>
         )}
 
-        {/* ── Corpo Principal ── */}
-        <div className="flex-1 overflow-y-auto overscroll-contain p-5 space-y-4">
-          {activeTab === 'slots' ? (
-            <>
-              {/* Seletor Rápido de Dia (Carrossel Horizontal + Input Date) */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider opacity-70" style={{ color: theme.textSecondary }}>
-                    {format(activeDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-                  </span>
-                  <label
-                    className="relative inline-flex items-center gap-1 text-xs font-bold cursor-pointer px-2.5 py-1 rounded-xl border"
-                    style={{
-                      borderColor: theme.border,
-                      backgroundColor: 'var(--theme-bg)',
-                      color: theme.accent,
-                    }}
-                  >
-                    <CalendarIcon className="w-3.5 h-3.5" />
-                    <span>Outra data</span>
-                    <input
-                      type="date"
-                      value={format(activeDate, 'yyyy-MM-dd')}
-                      onChange={(e) => {
-                        if (!e.target.value) return;
-                        const [yy, mm, dd] = e.target.value.split('-').map(Number);
-                        const nextD = new Date(yy, mm - 1, dd);
-                        setActiveDate(nextD);
-                        onDateChange?.(nextD);
-                      }}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                    />
-                  </label>
-                </div>
+        {/* ── Grade Clean de Horários do Dia Selecionado ── */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-5">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <p
+              className="text-[11px] font-bold uppercase tracking-widest"
+              style={{ color: theme.textSecondary }}
+            >
+              Horários em {format(activeDate, "dd 'de' MMMM", { locale: ptBR })}
+            </p>
 
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                  {stripDays.map((d) => {
-                    const isSel = isSameDay(d, activeDate);
-                    const fullBlocked = isDayFullyBlocked(
-                      d,
-                      blocks,
-                      targetProIds,
-                      daySchedule.openTime,
-                      daySchedule.closeTime
-                    );
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={handleToggleFullDayQuick}
+              className="px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
+              style={{
+                backgroundColor: isAllDayBlockedLocal
+                  ? `color-mix(in srgb, ${theme.accent} 14%, ${theme.cardBg})`
+                  : theme.cardBg,
+                borderColor: isAllDayBlockedLocal ? theme.accent : theme.border,
+                color: isAllDayBlockedLocal ? theme.accent : theme.textPrimary,
+              }}
+            >
+              {isSaving ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : isAllDayBlockedLocal ? (
+                <>
+                  <Unlock className="w-3 h-3" style={{ color: theme.accent }} />
+                  <span>Liberar dia</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-3 h-3" style={{ color: theme.accent }} />
+                  <span>Bloquear dia</span>
+                </>
+              )}
+            </button>
+          </div>
 
-                    return (
-                      <button
-                        key={d.toISOString()}
-                        type="button"
-                        onClick={() => {
-                          setActiveDate(d);
-                          onDateChange?.(d);
-                        }}
-                        className="shrink-0 flex flex-col items-center justify-center w-14 py-2 rounded-2xl border transition-all cursor-pointer relative"
-                        style={{
-                          backgroundColor: isSel
-                            ? theme.accent
-                            : fullBlocked
-                              ? `color-mix(in srgb, ${theme.accent} 10%, transparent)`
-                              : 'var(--theme-bg)',
-                          borderColor: isSel
-                            ? theme.accent
-                            : fullBlocked
-                              ? `color-mix(in srgb, ${theme.accent} 35%, transparent)`
-                              : theme.border,
-                          color: isSel ? theme.btnPrimaryText : theme.textPrimary,
-                        }}
-                      >
-                        <span
-                          className="text-[9px] font-bold uppercase tracking-wider opacity-75"
-                          style={{ color: isSel ? theme.btnPrimaryText : theme.textSecondary }}
-                        >
-                          {isToday(d) ? 'Hoje' : format(d, 'EEE', { locale: ptBR }).slice(0, 3)}
-                        </span>
-                        <span className="text-sm font-extrabold tabular-nums leading-tight mt-0.5">
-                          {format(d, 'dd')}
-                        </span>
-                        {fullBlocked && (
-                          <Lock
-                            className="w-2.5 h-2.5 mt-0.5"
-                            style={{ color: isSel ? theme.btnPrimaryText : theme.accent }}
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+          {/* Grade Clean de 3 Colunas (Toque ou Arraste) */}
+          <div
+            className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 sm:gap-3 select-none touch-none"
+            onTouchMove={handleTouchMoveGrid}
+            onMouseLeave={handleSlotDragEnd}
+          >
+            {daySlots.map((slot, idx) => {
+              const isBlocked = localBlockedSet.has(idx);
+              const slotBks = slotBookingsMap.get(idx);
+              const hasBooking = !!slotBks && slotBks.length > 0;
+              const timeLabel = format(slot.start, 'HH:mm');
 
-              {/* Card de Bloqueio de Dia Inteiro em 1 Clique */}
-              <div
-                className="p-3.5 rounded-2xl border flex items-center justify-between gap-3 transition-all"
-                style={{
-                  backgroundColor: isAllDayBlockedLocal
-                    ? `color-mix(in srgb, ${theme.accent} 12%, transparent)`
-                    : 'var(--theme-bg)',
-                  borderColor: isAllDayBlockedLocal
-                    ? `color-mix(in srgb, ${theme.accent} 40%, transparent)`
-                    : theme.border,
-                }}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                    style={{
-                      backgroundColor: isAllDayBlockedLocal
-                        ? theme.accent
-                        : `color-mix(in srgb, ${theme.accent} 14%, transparent)`,
-                      color: isAllDayBlockedLocal ? theme.btnPrimaryText : theme.accent,
-                    }}
-                  >
-                    {isAllDayBlockedLocal ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold truncate">
-                      {isAllDayBlockedLocal
-                        ? 'Dia Inteiro Bloqueado'
-                        : isPartiallyBlockedLocal
-                          ? `${localBlockedSet.size} de ${daySlots.length} horários bloqueados`
-                          : 'Dia Disponível para Agendamentos'}
-                    </p>
-                    <p className="text-[11px] opacity-70 truncate" style={{ color: theme.textSecondary }}>
-                      {isAllDayBlockedLocal
-                        ? 'Nenhum horário disponível na página pública neste dia'
-                        : 'Bloqueie o dia todo com um toque ou selecione horários abaixo'}
-                    </p>
-                  </div>
-                </div>
-
+              return (
                 <button
+                  key={timeLabel}
                   type="button"
-                  disabled={isSaving}
-                  onClick={handleToggleFullDayQuick}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 border"
+                  data-slot-idx={idx}
+                  onMouseDown={() => handleSlotDragStart(idx)}
+                  onMouseEnter={() => handleSlotDragEnter(idx)}
+                  onMouseUp={handleSlotDragEnd}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    handleSlotDragStart(idx);
+                  }}
+                  className="py-3 px-2 rounded-xl text-xs sm:text-sm font-bold border transition-all duration-150 relative cursor-pointer select-none flex items-center justify-center gap-1.5"
                   style={{
-                    background: isAllDayBlockedLocal
-                      ? theme.cardBg
-                      : theme.accentGradient || theme.accent,
-                    borderColor: isAllDayBlockedLocal ? theme.accent : 'transparent',
-                    color: isAllDayBlockedLocal ? theme.accent : theme.btnPrimaryText,
+                    borderColor: isBlocked ? theme.accent : theme.border,
+                    backgroundColor: isBlocked
+                      ? `color-mix(in srgb, ${theme.accent} 14%, ${theme.cardBg})`
+                      : theme.cardBg,
+                    color: isBlocked ? theme.accent : theme.textPrimary,
+                    boxShadow: isBlocked
+                      ? 'none'
+                      : '0 1px 4px rgba(0,0,0,0.04)',
                   }}
                 >
-                  {isSaving ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : isAllDayBlockedLocal ? (
-                    <>
-                      <Unlock className="w-3.5 h-3.5" />
-                      <span>Liberar Dia</span>
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-3.5 h-3.5" />
-                      <span>Bloquear Dia</span>
-                    </>
+                  {isBlocked && (
+                    <Lock className="w-3 h-3 shrink-0" style={{ color: theme.accent }} />
+                  )}
+                  <span className="tabular-nums">{timeLabel}</span>
+                  {hasBooking && !isBlocked && (
+                    <span
+                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                      style={{ backgroundColor: theme.accent }}
+                      title="Horário com agendamento"
+                    />
                   )}
                 </button>
-              </div>
-
-              {/* Atalhos Rápidos por Período */}
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[11px] font-semibold opacity-65 mr-1" style={{ color: theme.textSecondary }}>
-                    Seleção rápida:
-                  </span>
-                  {[
-                    { label: 'Manhã', start: 0, end: 12 },
-                    { label: 'Almoço (12h–14h)', start: 12, end: 14 },
-                    { label: 'Tarde (14h–18h)', start: 14, end: 18 },
-                    { label: 'Noite (18h+)', start: 18, end: 24 },
-                  ].map((p) => (
-                    <button
-                      key={p.label}
-                      type="button"
-                      onClick={() => applyQuickPeriod(p.start, p.end)}
-                      className="px-2.5 py-1 rounded-xl text-[11px] font-semibold border transition-all hover:opacity-85 active:scale-95 cursor-pointer"
-                      style={{
-                        borderColor: theme.border,
-                        backgroundColor: 'var(--theme-bg)',
-                        color: theme.textPrimary,
-                      }}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-
-                {localBlockedSet.size > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLocalBlockedSet(new Set());
-                      setIsDirty(true);
-                      setConflictWarning(null);
-                    }}
-                    className="text-[11px] font-bold underline cursor-pointer"
-                    style={{ color: theme.accent }}
-                  >
-                    Liberar todos
-                  </button>
-                )}
-              </div>
-
-              {/* Legenda Compacta dos Estados */}
-              <div className="flex items-center gap-4 text-[11px] px-1" style={{ color: theme.textSecondary }}>
-                <span className="inline-flex items-center gap-1.5">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full border"
-                    style={{ borderColor: theme.border, backgroundColor: 'var(--theme-bg)' }}
-                  />
-                  Disponível
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: theme.accent }}
-                  />
-                  Bloqueado
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <User className="w-3 h-3 opacity-80" />
-                  Com agendamento (protegido)
-                </span>
-              </div>
-
-              {/* Grade Interativa Touch & Drag de Horários */}
-              <div
-                className="grid grid-cols-3 sm:grid-cols-4 gap-2 select-none touch-none py-1"
-                onTouchMove={handleTouchMoveGrid}
-                onMouseLeave={handleSlotDragEnd}
-              >
-                {daySlots.map((slot, idx) => {
-                  const isBlocked = localBlockedSet.has(idx);
-                  const slotBks = slotBookingsMap.get(idx);
-                  const hasBooking = !!slotBks && slotBks.length > 0;
-                  const firstBooking = slotBks?.[0];
-                  const timeLabel = format(slot.start, 'HH:mm');
-
-                  return (
-                    <button
-                      key={timeLabel}
-                      type="button"
-                      data-slot-idx={idx}
-                      onMouseDown={() => handleSlotDragStart(idx)}
-                      onMouseEnter={() => handleSlotDragEnter(idx)}
-                      onMouseUp={handleSlotDragEnd}
-                      onTouchStart={(e) => {
-                        e.preventDefault();
-                        handleSlotDragStart(idx);
-                      }}
-                      className="relative flex flex-col items-center justify-center py-2.5 px-2 rounded-2xl border transition-all cursor-pointer select-none"
-                      style={{
-                        backgroundColor: isBlocked
-                          ? `color-mix(in srgb, ${theme.accent} 16%, transparent)`
-                          : hasBooking
-                            ? 'rgba(255, 255, 255, 0.03)'
-                            : 'var(--theme-bg)',
-                        borderColor: isBlocked
-                          ? theme.accent
-                          : hasBooking
-                            ? `color-mix(in srgb, ${theme.textSecondary} 40%, transparent)`
-                            : theme.border,
-                        color: isBlocked ? theme.accent : theme.textPrimary,
-                      }}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        {isBlocked ? (
-                          <Lock className="w-3 h-3 shrink-0" style={{ color: theme.accent }} />
-                        ) : hasBooking ? (
-                          <User className="w-3 h-3 shrink-0 opacity-75" />
-                        ) : null}
-                        <span className="text-xs sm:text-sm font-bold tabular-nums tracking-tight">
-                          {timeLabel}
-                        </span>
-                      </div>
-
-                      <span
-                        className="text-[10px] font-semibold truncate max-w-full mt-0.5"
-                        style={{
-                          color: isBlocked
-                            ? theme.accent
-                            : hasBooking
-                              ? theme.textPrimary
-                              : theme.textSecondary,
-                          opacity: isBlocked ? 0.95 : 0.65,
-                        }}
-                      >
-                        {hasBooking
-                          ? `${firstBooking?.customer?.name?.split(' ')[0] ?? 'Ocupado'}${
-                              isBlocked ? ' · Bloq.' : ''
-                            }`
-                          : isBlocked
-                            ? 'Bloqueado'
-                            : 'Livre'}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          ) : (
-            /* ── Tab 2: Bloqueio de Vários Dias de uma só vez ── */
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-bold">Selecione um ou mais dias</p>
-                  <p className="text-xs opacity-70" style={{ color: theme.textSecondary }}>
-                    Toque nos dias para bloqueá-los ou liberá-los de uma só vez
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    disabled={multiDaysOffset <= 0}
-                    onClick={() => setMultiDaysOffset((p) => Math.max(0, p - 1))}
-                    className="w-8 h-8 rounded-xl border flex items-center justify-center disabled:opacity-30 cursor-pointer"
-                    style={{ borderColor: theme.border, backgroundColor: 'var(--theme-bg)' }}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMultiDaysOffset((p) => p + 1)}
-                    className="w-8 h-8 rounded-xl border flex items-center justify-center cursor-pointer"
-                    style={{ borderColor: theme.border, backgroundColor: 'var(--theme-bg)' }}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-                {calendarDays.map((d) => {
-                  const isSelected = selectedDates.some((x) => isSameDay(x, d));
-                  const fullBlocked = isDayFullyBlocked(
-                    d,
-                    blocks,
-                    targetProIds,
-                    daySchedule.openTime,
-                    daySchedule.closeTime
-                  );
-                  const hasDayBks = bookings.some(
-                    (b) =>
-                      b.status !== 'canceled' &&
-                      b.status !== 'no_show' &&
-                      (targetProId === 'all' || b.professional_id === targetProId) &&
-                      isSameDay(new Date(b.scheduled_at), d)
-                  );
-
-                  return (
-                    <button
-                      key={d.toISOString()}
-                      type="button"
-                      onClick={() => toggleSelectMultiDate(d)}
-                      className="flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all active:scale-95 cursor-pointer relative"
-                      style={{
-                        backgroundColor: isSelected
-                          ? theme.accent
-                          : fullBlocked
-                            ? `color-mix(in srgb, ${theme.accent} 14%, transparent)`
-                            : 'var(--theme-bg)',
-                        borderColor: isSelected
-                          ? theme.accent
-                          : fullBlocked
-                            ? theme.accent
-                            : theme.border,
-                        color: isSelected ? theme.btnPrimaryText : theme.textPrimary,
-                      }}
-                    >
-                      <span
-                        className="text-[9px] font-bold uppercase tracking-wider opacity-75"
-                        style={{ color: isSelected ? theme.btnPrimaryText : theme.textSecondary }}
-                      >
-                        {isToday(d) ? 'Hoje' : format(d, 'EEE', { locale: ptBR }).slice(0, 3)}
-                      </span>
-                      <span className="text-base font-extrabold tabular-nums my-0.5">
-                        {format(d, 'dd/MM')}
-                      </span>
-                      <div className="flex items-center gap-1 h-3.5">
-                        {fullBlocked && (
-                          <Lock
-                            className="w-3 h-3"
-                            style={{ color: isSelected ? theme.btnPrimaryText : theme.accent }}
-                          />
-                        )}
-                        {hasDayBks && (
-                          <span
-                            className="w-1.5 h-1.5 rounded-full"
-                            style={{
-                              backgroundColor: isSelected ? theme.btnPrimaryText : theme.accent,
-                            }}
-                            title="Possui agendamentos"
-                          />
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
 
-        {/* ── Barra Inferior de Ação Rápida ── */}
+        {/* ── Barra Inferior Clean com Retorno + Salvar/Concluir ── */}
         <div
-          className="px-5 py-4 border-t flex items-center justify-between gap-3 shrink-0"
+          className="px-5 py-3.5 border-t flex items-center justify-between gap-3 shrink-0"
           style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
         >
-          {activeTab === 'slots' ? (
-            <>
-              <div className="text-xs min-w-0">
-                <p className="font-bold truncate">
-                  {localBlockedSet.size === 0
-                    ? 'Todos os horários disponíveis'
-                    : localBlockedSet.size === daySlots.length
-                      ? 'Dia inteiro bloqueado'
-                      : `${localBlockedSet.size} horário(s) bloqueado(s)`}
-                </p>
-                <p className="opacity-65 truncate" style={{ color: theme.textSecondary }}>
-                  {isDirty ? 'Alterações prontas para aplicar' : 'Sincronizado com a página pública'}
-                </p>
-              </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={onBack || onClose}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0"
+              style={{
+                borderColor: theme.border,
+                backgroundColor: theme.bg,
+                color: theme.textPrimary,
+              }}
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Voltar</span>
+            </button>
 
-              <div className="flex items-center gap-2 shrink-0">
-                {isDirty && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLocalBlockedSet(new Set(dbBlockedIndices));
-                      setIsDirty(false);
-                      setConflictWarning(null);
-                    }}
-                    className="px-3.5 py-2.5 rounded-xl text-xs font-bold border cursor-pointer"
-                    style={{
-                      borderColor: theme.border,
-                      color: theme.textSecondary,
-                    }}
-                  >
-                    Reverter
-                  </button>
-                )}
+            <span className="text-xs font-semibold truncate hidden xs:inline" style={{ color: theme.textSecondary }}>
+              {localBlockedSet.size === 0
+                ? 'Todos os horários livres'
+                : `${localBlockedSet.size} bloqueado(s)`}
+            </span>
+          </div>
 
-                <button
-                  type="button"
-                  disabled={isSaving || !isDirty}
-                  onClick={() => handleRequestSaveSlots()}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95 disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
-                  style={{
-                    background: theme.accentGradient || theme.accent,
-                    color: theme.btnPrimaryText,
-                    boxShadow: isDirty ? theme.shadowAccent : 'none',
-                  }}
-                >
-                  {isSaving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Check className="w-4 h-4 stroke-[2.5]" />
-                  )}
-                  <span>Salvar disponibilidade</span>
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="text-xs min-w-0">
-                <p className="font-bold truncate">
-                  {selectedDates.length === 0
-                    ? 'Nenhum dia selecionado'
-                    : `${selectedDates.length} dia(s) selecionado(s)`}
-                </p>
-                {selectedDates.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDates([])}
-                    className="text-[11px] underline cursor-pointer"
-                    style={{ color: theme.accent }}
-                  >
-                    Limpar seleção
-                  </button>
-                )}
-              </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {isDirty && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocalBlockedSet(new Set(dbBlockedIndices));
+                  setIsDirty(false);
+                  setConflictWarning(null);
+                }}
+                className="px-3 py-2 rounded-xl text-xs font-bold border cursor-pointer"
+                style={{
+                  borderColor: theme.border,
+                  color: theme.textSecondary,
+                }}
+              >
+                Reverter
+              </button>
+            )}
 
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  disabled={isSaving || selectedDates.length === 0}
-                  onClick={() => handleBatchMultiDays(false)}
-                  className="px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all active:scale-95 disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
-                  style={{
-                    borderColor: theme.border,
-                    backgroundColor: 'var(--theme-bg)',
-                    color: theme.textPrimary,
-                  }}
-                >
-                  <Unlock className="w-3.5 h-3.5" />
-                  <span>Liberar ({selectedDates.length})</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isSaving || selectedDates.length === 0}
-                  onClick={() => handleBatchMultiDays(true)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95 disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
-                  style={{
-                    background: theme.accentGradient || theme.accent,
-                    color: theme.btnPrimaryText,
-                  }}
-                >
-                  {isSaving ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Lock className="w-3.5 h-3.5" />
-                  )}
-                  <span>Bloquear ({selectedDates.length})</span>
-                </button>
-              </div>
-            </>
-          )}
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={async () => {
+                if (isDirty) {
+                  await handleRequestSaveSlots();
+                } else {
+                  onClose();
+                }
+              }}
+              className="px-5 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+              style={{
+                background: theme.accentGradient || theme.accent,
+                color: theme.btnPrimaryText,
+                boxShadow: theme.shadowAccent,
+              }}
+            >
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4 stroke-[2.5]" />
+              )}
+              <span>{isDirty ? 'Salvar' : 'Concluir'}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

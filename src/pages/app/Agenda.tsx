@@ -3,7 +3,7 @@ import { format, addWeeks, subWeeks, addDays, startOfDay, isToday, isTomorrow, i
 import { ptBR } from 'date-fns/locale/pt-BR';
 import {
   ChevronLeft, ChevronRight, Plus, Calendar, RefreshCw,
-  Users, CheckCircle, Clock, DollarSign, Loader2, Bell, Lock, AlertTriangle, RotateCcw
+  Users, CheckCircle, Clock, DollarSign, Loader2, Bell, Lock, AlertTriangle, RotateCcw, ListChecks
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
@@ -37,6 +37,8 @@ import UpcomingConfirmationsCenter from './agenda/UpcomingConfirmationsCenter';
 import BookingConfirmationModal from './agenda/BookingConfirmationModal';
 import KpiListModal from './agenda/KpiListModal';
 import AvailabilityBlockModal from './agenda/AvailabilityBlockModal';
+import MonthCalendarModal from './agenda/MonthCalendarModal';
+import BlockedOverviewModal from './agenda/BlockedOverviewModal';
 import { UpgradeModal } from '../../components/UpgradeModal';
 import PendingBookingsModal from './agenda/PendingBookingsModal';
 
@@ -61,6 +63,10 @@ export default function Agenda() {
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [availabilityModalOpen, setAvailabilityModalOpen] = useState(false);
   const [availabilityModalDate, setAvailabilityModalDate] = useState<Date>(new Date());
+  const [monthCalendarOpen, setMonthCalendarOpen] = useState(false);
+  const [blockedOverviewOpen, setBlockedOverviewOpen] = useState(false);
+  const [openedSlotsFromCalendar, setOpenedSlotsFromCalendar] = useState(false);
+  const [openedOverviewFrom, setOpenedOverviewFrom] = useState<'calendar' | 'slots' | null>(null);
   const [pendingQuickDayBlock, setPendingQuickDayBlock] = useState<{
     date: Date;
     conflictCount: number;
@@ -344,7 +350,8 @@ export default function Agenda() {
     return upcomingActiveBookings.length > 0 ? String(upcomingActiveBookings.length) : '0';
   }, [nextBooking, upcomingActiveBookings]);
 
-  const handleOpenBlockManager = (date?: Date) => {
+  const handleOpenBlockManager = (date?: Date, fromCalendar = false) => {
+    setOpenedSlotsFromCalendar(fromCalendar);
     setAvailabilityModalDate(date || currentDay);
     setAvailabilityModalOpen(true);
   };
@@ -583,22 +590,18 @@ export default function Agenda() {
                 <button onClick={() => { setCurrentDay(new Date()); }} className="px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer" style={{ color: theme.textPrimary }}>
                   Hoje
                 </button>
-                <label className="relative px-2 py-1 rounded-lg hover:bg-[var(--theme-bg-hover)] text-sm font-semibold min-w-[145px] text-center capitalize cursor-pointer transition-colors" style={{ color: theme.textPrimary }} title="Clique para ir a uma data específica">
+                <button
+                  type="button"
+                  onClick={() => setMonthCalendarOpen(true)}
+                  className="relative px-2.5 py-1 rounded-lg hover:bg-[var(--theme-bg-hover)] text-sm font-semibold min-w-[145px] text-center capitalize cursor-pointer transition-colors"
+                  style={{ color: theme.textPrimary }}
+                  title="Clique para abrir o calendário mensal"
+                >
                   {view === 'week'
                     ? `${format(weekStart, "dd MMM", { locale: ptBR })} – ${format(addDays(weekStart, 6), "dd MMM", { locale: ptBR })}`
                     : format(currentDay, "dd 'de' MMMM", { locale: ptBR })
                   }
-                  <input
-                    type="date"
-                    value={format(currentDay, 'yyyy-MM-dd')}
-                    onChange={(e) => {
-                      if (!e.target.value) return;
-                      const [yy, mm, dd] = e.target.value.split('-').map(Number);
-                      setCurrentDay(new Date(yy, mm - 1, dd));
-                    }}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                  />
-                </label>
+                </button>
                 <button onClick={() => {
                   if (view === 'week') {
                     setCurrentDay(d => addWeeks(d, 1));
@@ -643,7 +646,7 @@ export default function Agenda() {
               {/* Availability / Blocking Manager Button */}
               <button
                 type="button"
-                onClick={() => handleOpenBlockManager(currentDay)}
+                onClick={() => handleOpenBlockManager(currentDay, false)}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs border transition-all glass-card cursor-pointer hover:opacity-90"
                 style={{
                   color: theme.textPrimary,
@@ -652,6 +655,24 @@ export default function Agenda() {
               >
                 <Lock className="w-3.5 h-3.5" style={{ color: theme.accent }} />
                 <span>Bloquear</span>
+              </button>
+
+              {/* Beta: Blocked Overview Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setOpenedOverviewFrom(null);
+                  setBlockedOverviewOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-bold text-xs border transition-all glass-card cursor-pointer hover:opacity-90"
+                style={{
+                  color: theme.textPrimary,
+                  borderColor: theme.cardBorder,
+                }}
+                title="Visualizar dias e horários bloqueados (Beta)"
+              >
+                <ListChecks className="w-3.5 h-3.5" style={{ color: theme.accent }} />
+                <span>Bloqueios</span>
               </button>
 
               <button
@@ -886,8 +907,13 @@ export default function Agenda() {
                   onDayChange={setCurrentDay}
                   onBookingClick={setSelectedBooking}
                   onConfirmBooking={handleConfirmBooking}
-                  onOpenBlockManager={handleOpenBlockManager}
+                  onOpenBlockManager={(d) => handleOpenBlockManager(d, false)}
                   onQuickToggleFullDay={handleQuickToggleFullDay}
+                  onOpenMonthCalendar={() => setMonthCalendarOpen(true)}
+                  onOpenBlockedOverview={() => {
+                    setOpenedOverviewFrom(null);
+                    setBlockedOverviewOpen(true);
+                  }}
                   onNewBooking={(preferredDate) => {
                     if (!engine.hasPermission('agenda.criar')) {
                       setShowUpgradeModal('agenda.criar');
@@ -960,7 +986,82 @@ export default function Agenda() {
             bookings={allKnownBookings}
             blocks={blockedTimes}
             canSeeAll={canSeeAll}
-            onClose={() => setAvailabilityModalOpen(false)}
+            onBack={() => {
+              setAvailabilityModalOpen(false);
+              if (openedSlotsFromCalendar) {
+                setOpenedSlotsFromCalendar(false);
+                setMonthCalendarOpen(true);
+              }
+            }}
+            onOpenBlockedOverview={() => {
+              setAvailabilityModalOpen(false);
+              setOpenedOverviewFrom('slots');
+              setBlockedOverviewOpen(true);
+            }}
+            onClose={() => {
+              setAvailabilityModalOpen(false);
+              setOpenedSlotsFromCalendar(false);
+            }}
+          />
+        )}
+
+        {/* ── Monthly Calendar Overview Modal ── */}
+        {monthCalendarOpen && (
+          <MonthCalendarModal
+            tenantId={tenantId}
+            currentDay={currentDay}
+            selectedProfessionalId={selectedProfessionalId}
+            proScopeId={proScopeId}
+            targetProIds={targetProIds}
+            businessHours={businessHours}
+            knownBookings={allKnownBookings}
+            knownBlocks={blockedTimes}
+            isTogglingDayBlock={batchDaysBlock.isPending}
+            onSelectDay={(d) => setCurrentDay(d)}
+            onQuickToggleFullDay={handleQuickToggleFullDay}
+            onOpenBlockManager={(d) => {
+              setMonthCalendarOpen(false);
+              handleOpenBlockManager(d, true);
+            }}
+            onOpenBlockedOverview={() => {
+              setMonthCalendarOpen(false);
+              setOpenedOverviewFrom('calendar');
+              setBlockedOverviewOpen(true);
+            }}
+            onClose={() => setMonthCalendarOpen(false)}
+          />
+        )}
+
+        {/* ── Beta: Blocked Days & Hours Overview Modal ── */}
+        {blockedOverviewOpen && (
+          <BlockedOverviewModal
+            tenantId={tenantId}
+            targetProIds={targetProIds}
+            businessHours={businessHours}
+            knownBlocks={blockedTimes}
+            onOpenDaySlots={(date: Date) => {
+              setBlockedOverviewOpen(false);
+              setCurrentDay(date);
+              handleOpenBlockManager(date, false);
+            }}
+            onSelectDayInAgenda={(date: Date) => {
+              setBlockedOverviewOpen(false);
+              setCurrentDay(date);
+            }}
+            onBack={() => {
+              setBlockedOverviewOpen(false);
+              if (openedOverviewFrom === 'calendar') {
+                setOpenedOverviewFrom(null);
+                setMonthCalendarOpen(true);
+              } else if (openedOverviewFrom === 'slots') {
+                setOpenedOverviewFrom(null);
+                setAvailabilityModalOpen(true);
+              }
+            }}
+            onClose={() => {
+              setBlockedOverviewOpen(false);
+              setOpenedOverviewFrom(null);
+            }}
           />
         )}
 
@@ -1123,27 +1224,39 @@ export default function Agenda() {
           />
         )}
 
-        {/* ── Botão Flutuante Mobile (+) para Novo Agendamento (Sempre Visível e Sobre Todos os Elementos) ── */}
-        <button
-          type="button"
-          onClick={() => {
-            if (!engine.hasPermission('agenda.criar')) {
-              setShowUpgradeModal('agenda.criar');
-              return;
-            }
-            setInitialBookingDate(currentDay);
-            setBookingModalOpen(true);
-          }}
-          className="md:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.5)] flex items-center justify-center z-50 active:scale-90 transition-transform cursor-pointer border border-white/20"
-          style={{
-            background: theme.accentGradient || theme.accent,
-            color: theme.btnPrimaryText,
-          }}
-          aria-label="Novo agendamento"
-          title="Novo agendamento"
-        >
-          <Plus className="w-6 h-6 stroke-[2.5]" />
-        </button>
+        {/* ── Botão Flutuante Mobile (+) para Novo Agendamento (Oculto quando qualquer modal está aberto) ── */}
+        {!availabilityModalOpen &&
+          !monthCalendarOpen &&
+          !blockedOverviewOpen &&
+          !bookingModalOpen &&
+          !selectedBooking &&
+          !editingBooking &&
+          !kpiModalData &&
+          !bookingToConfirm &&
+          !pendingQuickDayBlock &&
+          !showUpgradeModal &&
+          !showPendingModal && (
+            <button
+              type="button"
+              onClick={() => {
+                if (!engine.hasPermission('agenda.criar')) {
+                  setShowUpgradeModal('agenda.criar');
+                  return;
+                }
+                setInitialBookingDate(currentDay);
+                setBookingModalOpen(true);
+              }}
+              className="md:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.5)] flex items-center justify-center z-40 active:scale-90 transition-transform cursor-pointer border border-white/20"
+              style={{
+                background: theme.accentGradient || theme.accent,
+                color: theme.btnPrimaryText,
+              }}
+              aria-label="Novo agendamento"
+              title="Novo agendamento"
+            >
+              <Plus className="w-6 h-6 stroke-[2.5]" />
+            </button>
+          )}
       </div>
     </>
   );
