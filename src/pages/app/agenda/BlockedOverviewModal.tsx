@@ -13,6 +13,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { useLockBodyScroll } from '../../../hooks/useLockBodyScroll';
 import {
   type NormalizedBlock,
   useAllUpcomingTenantBlocks,
@@ -45,6 +46,7 @@ export default function BlockedOverviewModal({
   onClose,
 }: Props) {
   const { theme } = useTheme();
+  useLockBodyScroll(true);
   const [filter, setFilter] = useState<FilterType>('all');
   const [unblockingKey, setUnblockingKey] = useState<string | null>(null);
 

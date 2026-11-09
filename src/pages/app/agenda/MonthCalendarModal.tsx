@@ -30,6 +30,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { type Booking } from '../../../hooks/useBookings';
+import { useLockBodyScroll } from '../../../hooks/useLockBodyScroll';
 import { supabase } from '../../../integrations/supabase/client';
 import {
   type NormalizedBlock,
@@ -75,6 +76,7 @@ export default function MonthCalendarModal({
   onClose,
 }: Props) {
   const { theme } = useTheme();
+  useLockBodyScroll(true);
   const { saveMultiDaysToggle } = useManageBlockedTimes(tenantId);
 
   const [viewMonth, setViewMonth] = useState<Date>(() => startOfMonth(currentDay));
@@ -89,10 +91,6 @@ export default function MonthCalendarModal({
     conflictingBookings: Booking[];
     onProceed: () => Promise<void>;
   } | null>(null);
-
-  // Suporte a toque e arraste pelos cards de dias
-  const isDraggingDayRef = useRef(false);
-  const dragDayIntentRef = useRef<boolean>(true);
 
   const gridStart = useMemo(
     () => startOfWeek(startOfMonth(viewMonth), { weekStartsOn: 0 }),
@@ -201,18 +199,6 @@ export default function MonthCalendarModal({
     setConflictWarning(null);
   }, [dbMonthBlockedMap]);
 
-  useEffect(() => {
-    const stopDrag = () => {
-      isDraggingDayRef.current = false;
-    };
-    window.addEventListener('mouseup', stopDrag);
-    window.addEventListener('touchend', stopDrag);
-    return () => {
-      window.removeEventListener('mouseup', stopDrag);
-      window.removeEventListener('touchend', stopDrag);
-    };
-  }, []);
-
   const inspectedSchedule = useMemo(
     () => getScheduleForDay(inspectedDay),
     [inspectedDay, businessHours]
@@ -260,40 +246,12 @@ export default function MonthCalendarModal({
     };
   }, [monthOnlyDays, dbMonthBlockedMap, localDaysBlockedMap]);
 
-  const handleDayCardStart = (dateKey: string) => {
+  const handleDayCardClick = (dateKey: string) => {
     setConflictWarning(null);
-    isDraggingDayRef.current = true;
-    const currentVal = !!localDaysBlockedMap[dateKey];
-    const nextVal = !currentVal;
-    dragDayIntentRef.current = nextVal;
     setLocalDaysBlockedMap((prev) => ({
       ...prev,
-      [dateKey]: nextVal,
+      [dateKey]: !prev[dateKey],
     }));
-  };
-
-  const handleDayCardEnter = (dateKey: string) => {
-    if (!isDraggingDayRef.current) return;
-    const targetVal = dragDayIntentRef.current;
-    setLocalDaysBlockedMap((prev) => {
-      if (prev[dateKey] === targetVal) return prev;
-      return {
-        ...prev,
-        [dateKey]: targetVal,
-      };
-    });
-  };
-
-  const handleTouchMoveDaysGrid = (e: React.TouchEvent) => {
-    if (!isDraggingDayRef.current) return;
-    const touch = e.touches[0];
-    if (!touch) return;
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (!el) return;
-    const card = el.closest('[data-day-key]') as HTMLElement | null;
-    if (!card) return;
-    const key = card.getAttribute('data-day-key');
-    if (key) handleDayCardEnter(key);
   };
 
   const executeSaveDaysChanges = async () => {
@@ -428,22 +386,6 @@ export default function MonthCalendarModal({
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
-
-                {onOpenBlockedOverview && (
-                  <button
-                    type="button"
-                    onClick={onOpenBlockedOverview}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-                    style={{
-                      borderColor: theme.border,
-                      backgroundColor: theme.bg,
-                      color: theme.textPrimary,
-                    }}
-                  >
-                    <ListChecks className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-                    <span>Ver bloqueios</span>
-                  </button>
-                )}
               </div>
             </div>
 
@@ -494,13 +436,7 @@ export default function MonthCalendarModal({
 
             {/* Grade de Cards Verticais de Dias (Visual Estilo img2 — Diferenciado do Calendário) */}
             <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-5">
-              <div
-                className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 sm:gap-3 select-none touch-none"
-                onTouchMove={handleTouchMoveDaysGrid}
-                onMouseLeave={() => {
-                  isDraggingDayRef.current = false;
-                }}
-              >
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 sm:gap-3 select-none">
                 {monthOnlyDays.map((day) => {
                   const dateKey = format(day, 'yyyy-MM-dd');
                   const isBlocked = !!localDaysBlockedMap[dateKey];
@@ -514,17 +450,8 @@ export default function MonthCalendarModal({
                     <button
                       key={dateKey}
                       type="button"
-                      data-day-key={dateKey}
-                      onMouseDown={() => handleDayCardStart(dateKey)}
-                      onMouseEnter={() => handleDayCardEnter(dateKey)}
-                      onMouseUp={() => {
-                        isDraggingDayRef.current = false;
-                      }}
-                      onTouchStart={(e) => {
-                        e.preventDefault();
-                        handleDayCardStart(dateKey);
-                      }}
-                      className={`py-3.5 px-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all relative cursor-pointer select-none ${
+                      onClick={() => handleDayCardClick(dateKey)}
+                      className={`py-3.5 px-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all relative cursor-pointer select-none active:scale-95 ${
                         isClosed && !isBlocked ? 'opacity-45' : ''
                       }`}
                       style={{
@@ -669,23 +596,6 @@ export default function MonthCalendarModal({
               </div>
 
               <div className="flex items-center gap-1.5">
-                {onOpenBlockedOverview && (
-                  <button
-                    type="button"
-                    onClick={onOpenBlockedOverview}
-                    className="px-2.5 py-1.5 rounded-full text-[11px] font-bold border flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
-                    style={{
-                      borderColor: theme.border,
-                      backgroundColor: theme.bg,
-                      color: theme.textPrimary,
-                    }}
-                    title="Visualizar dias e horários bloqueados"
-                  >
-                    <ListChecks className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-                    <span>Bloqueios</span>
-                  </button>
-                )}
-
                 {!isToday(inspectedDay) && (
                   <button
                     type="button"
@@ -866,78 +776,82 @@ export default function MonthCalendarModal({
 
             {/* Rodapé da Visão Geral do Mês */}
             <div
-              className="p-4 border-t space-y-3"
+              className="p-4 border-t space-y-3.5"
               style={{ borderColor: theme.border, backgroundColor: theme.bg }}
             >
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-xs font-extrabold capitalize truncate" style={{ color: theme.textPrimary }}>
-                    {format(inspectedDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-                  </p>
-                  <p className="text-[11px] font-medium truncate" style={{ color: theme.textSecondary }}>
-                    {inspectedBlockInfo.isFullyBlocked
-                      ? 'Dia inteiro bloqueado'
-                      : !inspectedSchedule.isOpen
-                        ? 'Fechado no horário padrão'
-                        : inspectedBookings.length === 0
-                          ? 'Dia livre · Nenhum agendamento'
-                          : `${inspectedBookings.length} ${
-                              inspectedBookings.length === 1 ? 'agendamento marcado' : 'agendamentos marcados'
-                            }`}
-                  </p>
-                </div>
-
-                {onQuickToggleFullDay && (
-                  <button
-                    type="button"
-                    disabled={isTogglingDayBlock}
-                    onClick={() => onQuickToggleFullDay(inspectedDay, inspectedBlockInfo.isFullyBlocked)}
-                    className="px-3 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 shrink-0 cursor-pointer"
-                    style={{
-                      backgroundColor: inspectedBlockInfo.isFullyBlocked
-                        ? `color-mix(in srgb, ${theme.accent} 16%, transparent)`
-                        : theme.cardBg,
-                      borderColor: inspectedBlockInfo.isFullyBlocked ? theme.accent : theme.border,
-                      color: inspectedBlockInfo.isFullyBlocked ? theme.accent : theme.textPrimary,
-                    }}
-                  >
-                    {isTogglingDayBlock ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : inspectedBlockInfo.isFullyBlocked ? (
-                      <>
-                        <Unlock className="w-3.5 h-3.5" />
-                        <span>Liberar dia</span>
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-                        <span>Bloquear dia</span>
-                      </>
-                    )}
-                  </button>
-                )}
+              {/* Informações do Dia Selecionado */}
+              <div className="min-w-0">
+                <p className="text-sm font-extrabold capitalize truncate" style={{ color: theme.textPrimary }}>
+                  {format(inspectedDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                </p>
+                <p className="text-xs font-medium truncate mt-0.5" style={{ color: theme.textSecondary }}>
+                  {inspectedBlockInfo.isFullyBlocked
+                    ? 'Dia inteiro bloqueado'
+                    : !inspectedSchedule.isOpen
+                      ? 'Fechado no horário padrão'
+                      : inspectedBookings.length === 0
+                        ? 'Dia livre · Nenhum agendamento'
+                        : `${inspectedBookings.length} ${
+                            inspectedBookings.length === 1 ? 'agendamento marcado' : 'agendamentos marcados'
+                          }`}
+                </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                {onOpenBlockManager && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onSelectDay(inspectedDay);
-                      onClose();
-                      onOpenBlockManager(inspectedDay);
-                    }}
-                    className="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
-                    style={{
-                      backgroundColor: theme.cardBg,
-                      borderColor: theme.border,
-                      color: theme.textPrimary,
-                    }}
-                  >
-                    <SlidersHorizontal className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-                    <span>Horários</span>
-                  </button>
-                )}
+              {/* Botões do Rodapé:
+                  Linha 1: "Horários" e "Bloquear dia" (50% / 50%)
+                  Linha 2: "Ver este dia" ocupando toda a largura */}
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  {onOpenBlockManager ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelectDay(inspectedDay);
+                        onClose();
+                        onOpenBlockManager(inspectedDay);
+                      }}
+                      className="py-2.5 px-3 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                      style={{
+                        backgroundColor: theme.cardBg,
+                        borderColor: theme.border,
+                        color: theme.textPrimary,
+                      }}
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5" style={{ color: theme.accent }} />
+                      <span>Horários</span>
+                    </button>
+                  ) : <div />}
+
+                  {onQuickToggleFullDay && (
+                    <button
+                      type="button"
+                      disabled={isTogglingDayBlock}
+                      onClick={() => onQuickToggleFullDay(inspectedDay, inspectedBlockInfo.isFullyBlocked)}
+                      className="py-2.5 px-3 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                      style={{
+                        backgroundColor: inspectedBlockInfo.isFullyBlocked
+                          ? `color-mix(in srgb, ${theme.accent} 16%, transparent)`
+                          : theme.cardBg,
+                        borderColor: inspectedBlockInfo.isFullyBlocked ? theme.accent : theme.border,
+                        color: inspectedBlockInfo.isFullyBlocked ? theme.accent : theme.textPrimary,
+                      }}
+                    >
+                      {isTogglingDayBlock ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : inspectedBlockInfo.isFullyBlocked ? (
+                        <>
+                          <Unlock className="w-3.5 h-3.5" />
+                          <span>Liberar dia</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-3.5 h-3.5" style={{ color: theme.accent }} />
+                          <span>Bloquear dia</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
 
                 <button
                   type="button"
@@ -945,7 +859,7 @@ export default function MonthCalendarModal({
                     onSelectDay(inspectedDay);
                     onClose();
                   }}
-                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
                   style={{
                     background: theme.accentGradient || theme.accent,
                     color: theme.btnPrimaryText,

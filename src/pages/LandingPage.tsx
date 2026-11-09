@@ -28,51 +28,32 @@ import { useAttentionTracker } from '../hooks/useAttentionTracker';
 
 const ACCENT = "#FF95BA";
 const M = {
-  booking: "/Mockups/Iphone - Tela de Agendamento.PNG",
-  booking2: "/Mockups/Iphone - Tela de Agendamento2.jpeg",
-  services: "/Mockups/Iphone - Serviços.jpeg",
-  domicilio: "/Mockups/Iphone - Tela de Escolha Domicilio.PNG",
-  pix: "/Mockups/Iphone - Tela de Pagamento Pix.png",
-  payment: "/Mockups/Iphone - Tela de Pagamento.png",
-  themeA: "/Mockups/Iphone - Personalização Tema 1.PNG",
-  themeB: "/Mockups/Iphone - Personalização Tema 2.PNG",
-  themeC: "/Mockups/Iphone - Personalização Tema 3.PNG",
-  barber: "/Mockups/Tablet Horizontal - Tela de Agendamento Barbearia.png",
-  salon: "/Mockups/Tablet Horizontal - Tela de Agendamento Salão.jpg",
-  metrics: "/Mockups/Tablet Horizontal - Visão Geral Metricas.jpg",
+  booking: "/images/mockups/iphone-booking.png",
+  booking2: "/images/mockups/iphone-booking-2.jpeg",
+  services: "/images/mockups/iphone-services.jpeg",
+  domicilio: "/images/mockups/iphone-domicilio.png",
+  pix: "/images/mockups/iphone-pix.png",
+  payment: "/images/mockups/iphone-payment.png",
+  themeA: "/images/mockups/theme-classic.png",
+  themeB: "/images/mockups/theme-noir.png",
+  themeC: "/images/mockups/theme-elegant.png",
+  barber: "/images/mockups/tablet-barber.png",
+  salon: "/images/mockups/tablet-salon.jpg",
+  metrics: "/images/mockups/tablet-metrics.jpg",
 } as const;
 
 function handleImageFallback(e: React.SyntheticEvent<HTMLImageElement, Event>) {
   const img = e.currentTarget;
+  if (img.dataset.failed) return;
+  img.dataset.failed = 'true';
+
   const currentSrc = img.src;
-  const extensions = ['.png', '.PNG', '.jpg', '.jpeg', '.JPG', '.JPEG'];
-
-  const base = currentSrc.replace(/\.(png|jpe?g|PNG|JPE?G)(\?.*)?$/, '');
-
-  for (const ext of extensions) {
-    const candidate = `${base}${ext}`;
-    const tried = img.dataset.tried || '';
-    if (!tried.includes(ext) && candidate !== currentSrc) {
-      img.dataset.tried = tried + ',' + ext;
-      img.src = candidate;
-      return;
-    }
-  }
-
-  if (!img.dataset.triedFallback) {
-    img.dataset.triedFallback = 'true';
-    if (currentSrc.includes('Servi')) {
-      img.src = '/Mockups/Iphone - Serviços.jpeg';
-      return;
-    }
-    if (currentSrc.includes('Agendamento2')) {
-      img.src = '/Mockups/Iphone - Tela de Agendamento2.jpeg';
-      return;
-    }
-    if (currentSrc.includes('Sal')) {
-      img.src = '/Mockups/Tablet Horizontal - Tela de Agendamento Salão.jpg';
-      return;
-    }
+  if (currentSrc.includes('iphone-services')) {
+    img.src = '/images/mockups/iphone-services.jpeg';
+  } else if (currentSrc.includes('iphone-booking')) {
+    img.src = '/images/mockups/iphone-booking.png';
+  } else if (currentSrc.includes('tablet-salon')) {
+    img.src = '/images/mockups/tablet-salon.jpg';
   }
 }
 

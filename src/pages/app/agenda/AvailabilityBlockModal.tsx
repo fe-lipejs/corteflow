@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   format,
   startOfDay,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { type Booking } from '../../../hooks/useBookings';
+import { useLockBodyScroll } from '../../../hooks/useLockBodyScroll';
 import {
   type NormalizedBlock,
   type TimeRange,
@@ -73,6 +74,7 @@ export default function AvailabilityBlockModal({
   onClose,
 }: Props) {
   const { theme } = useTheme();
+  useLockBodyScroll(true);
   const { saveDayBlocks } = useManageBlockedTimes(tenantId);
 
   const activeDate = useMemo(() => startOfDay(initialDate), [initialDate]);
@@ -169,12 +171,6 @@ export default function AvailabilityBlockModal({
     setConflictWarning(null);
   }, [dbBlockedIndices, activeDate, targetProId]);
 
-  // Controle de Arraste (Touch & Mouse)
-  const isDraggingRef = useRef(false);
-  const dragIntentRef = useRef<'block' | 'unblock'>('block');
-  const dragStartIndexRef = useRef<number | null>(null);
-  const preDragSnapshotRef = useRef<Set<number>>(new Set());
-
   // Undo state
   const [undoSnapshot, setUndoSnapshot] = useState<UndoSnapshot | null>(null);
 
@@ -185,81 +181,23 @@ export default function AvailabilityBlockModal({
     actionLabel: string;
   } | null>(null);
 
-  // Verifica se todos os slots do dia estão bloqueados localmente
-  const isAllDayBlockedLocal = daySlots.length > 0 && localBlockedSet.size === daySlots.length;
-
-  // Inicia interação em um slot (clique ou início de arraste)
-  const handleSlotDragStart = (idx: number) => {
-    isDraggingRef.current = true;
-    dragStartIndexRef.current = idx;
-    preDragSnapshotRef.current = new Set(localBlockedSet);
-
-    const currentlyBlocked = localBlockedSet.has(idx);
-    const intent: 'block' | 'unblock' = currentlyBlocked ? 'unblock' : 'block';
-    dragIntentRef.current = intent;
-
-    const next = new Set(localBlockedSet);
-    if (intent === 'block') next.add(idx);
-    else next.delete(idx);
-
-    setLocalBlockedSet(next);
+  // Toggle individual do slot no clique direto (permite clicar para selecionar e deselecionar instantaneamente)
+  const handleSlotClick = (idx: number) => {
+    setLocalBlockedSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) {
+        next.delete(idx);
+      } else {
+        next.add(idx);
+      }
+      return next;
+    });
     setIsDirty(true);
     setConflictWarning(null);
   };
 
-  // Atualiza seleção conforme o dedo ou mouse desliza sobre os slots
-  const handleSlotDragEnter = (currentIdx: number) => {
-    if (!isDraggingRef.current || dragStartIndexRef.current === null) return;
-
-    const startIdx = Math.min(dragStartIndexRef.current, currentIdx);
-    const endIdx = Math.max(dragStartIndexRef.current, currentIdx);
-    const intent = dragIntentRef.current;
-
-    const next = new Set(preDragSnapshotRef.current);
-    for (let i = startIdx; i <= endIdx; i++) {
-      if (intent === 'block') next.add(i);
-      else next.delete(i);
-    }
-
-    setLocalBlockedSet(next);
-    setIsDirty(true);
-  };
-
-  const handleSlotDragEnd = () => {
-    isDraggingRef.current = false;
-    dragStartIndexRef.current = null;
-  };
-
-  useEffect(() => {
-    const onWindowUp = () => {
-      isDraggingRef.current = false;
-      dragStartIndexRef.current = null;
-    };
-    window.addEventListener('mouseup', onWindowUp);
-    window.addEventListener('touchend', onWindowUp);
-    return () => {
-      window.removeEventListener('mouseup', onWindowUp);
-      window.removeEventListener('touchend', onWindowUp);
-    };
-  }, []);
-
-  // Suporte nativo ao arraste do dedo no celular via elementFromPoint
-  const handleTouchMoveGrid = (e: React.TouchEvent) => {
-    if (!isDraggingRef.current) return;
-    const touch = e.touches[0];
-    if (!touch) return;
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (!el) return;
-    const slotButton = el.closest('[data-slot-idx]') as HTMLElement | null;
-    if (!slotButton) return;
-    const idxStr = slotButton.getAttribute('data-slot-idx');
-    if (idxStr !== null) {
-      const idx = parseInt(idxStr, 10);
-      if (!Number.isNaN(idx)) {
-        handleSlotDragEnter(idx);
-      }
-    }
-  };
+  // Verifica se todos os slots do dia estão bloqueados localmente
+  const isAllDayBlockedLocal = daySlots.length > 0 && localBlockedSet.size === daySlots.length;
 
   // Executa a persistência dos horários do dia ativo
   const executeSaveDaySlots = async (indicesToSave: Set<number>, isFullDayFlag?: boolean, labelForToast?: string) => {
@@ -396,7 +334,7 @@ export default function AvailabilityBlockModal({
                   Disponibilidade
                 </h2>
                 <p className="text-xs font-medium truncate" style={{ color: theme.textSecondary }}>
-                  Toque ou deslize o dedo sobre os horários
+                  Toque para bloquear ou liberar horários
                 </p>
               </div>
             </div>
@@ -416,23 +354,6 @@ export default function AvailabilityBlockModal({
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Desfazer</span>
-                </button>
-              )}
-
-              {onOpenBlockedOverview && (
-                <button
-                  type="button"
-                  onClick={onOpenBlockedOverview}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
-                  style={{
-                    borderColor: theme.border,
-                    backgroundColor: theme.bg,
-                    color: theme.textPrimary,
-                  }}
-                  title="Ver todos os dias e horários bloqueados"
-                >
-                  <ListChecks className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-                  <span className="hidden xs:inline">Bloqueios</span>
                 </button>
               )}
 
@@ -573,12 +494,8 @@ export default function AvailabilityBlockModal({
             </button>
           </div>
 
-          {/* Grade Clean de 3 Colunas (Toque ou Arraste) */}
-          <div
-            className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 sm:gap-3 select-none touch-none"
-            onTouchMove={handleTouchMoveGrid}
-            onMouseLeave={handleSlotDragEnd}
-          >
+          {/* Grade Clean de 3 Colunas (Clique direto para bloquear e desbloquear) */}
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 sm:gap-3 select-none">
             {daySlots.map((slot, idx) => {
               const isBlocked = localBlockedSet.has(idx);
               const slotBks = slotBookingsMap.get(idx);
@@ -589,15 +506,8 @@ export default function AvailabilityBlockModal({
                 <button
                   key={timeLabel}
                   type="button"
-                  data-slot-idx={idx}
-                  onMouseDown={() => handleSlotDragStart(idx)}
-                  onMouseEnter={() => handleSlotDragEnter(idx)}
-                  onMouseUp={handleSlotDragEnd}
-                  onTouchStart={(e) => {
-                    e.preventDefault();
-                    handleSlotDragStart(idx);
-                  }}
-                  className="py-3 px-2 rounded-xl text-xs sm:text-sm font-bold border transition-all duration-150 relative cursor-pointer select-none flex items-center justify-center gap-1.5"
+                  onClick={() => handleSlotClick(idx)}
+                  className="py-3 px-2 rounded-xl text-xs sm:text-sm font-bold border transition-all duration-150 relative cursor-pointer select-none flex items-center justify-center gap-1.5 active:scale-95"
                   style={{
                     borderColor: isBlocked ? theme.accent : theme.border,
                     backgroundColor: isBlocked
