@@ -26,6 +26,7 @@ import {
   SlidersHorizontal,
   AlertTriangle,
   ListChecks,
+  Calendar,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -625,35 +626,23 @@ export default function MonthCalendarModal({
               </div>
             </div>
 
-            {/* Segmented Control Estilo iOS: Alternar entre Calendário e Bloquear Vários Dias */}
+            {/* Indicador Centralizado: Calendário */}
             <div className="px-5 pb-3">
               <div
-                className="grid grid-cols-2 p-1 rounded-2xl border"
+                className="p-1 rounded-2xl border flex items-center justify-center"
                 style={{ borderColor: theme.border, backgroundColor: theme.bg }}
               >
-                <button
-                  type="button"
-                  className="py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                <div
+                  className="w-full py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
                   style={{
                     backgroundColor: theme.cardBg,
                     color: theme.textPrimary,
                     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                   }}
                 >
+                  <Calendar className="w-3.5 h-3.5" style={{ color: theme.accent }} />
                   <span>Calendário</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLocalDaysBlockedMap({ ...dbMonthBlockedMap });
-                    setIsBlockDaysScreen(true);
-                  }}
-                  className="py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 opacity-75 hover:opacity-100"
-                  style={{ color: theme.textSecondary }}
-                >
-                  <Lock className="w-3 h-3" style={{ color: theme.accent }} />
-                  <span>Bloquear vários dias</span>
-                </button>
+                </div>
               </div>
             </div>
 
