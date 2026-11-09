@@ -287,6 +287,7 @@ export function usePublicStore(slug: string | null | undefined) {
     queryFn: () => fetchPublicStore(slug!),
     enabled: !!slug,
     staleTime: 0, // Always fetch fresh to reflect admin changes instantly
+    refetchInterval: 1000 * 30, // Mantém o portal atualizado a cada 30s caso o salão bloqueie horários
     retry: 1,
   });
 }

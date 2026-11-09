@@ -181,6 +181,53 @@ serve(async (req) => {
       }
     }
 
+    // ── Validação rigorosa de bloqueios e colisões no backend ─────────────────
+    const bookingStart = scheduledDate;
+    const durationMinutesTotal = (service.duration_minutes ?? 30) + (service.buffer_minutes ?? 0);
+    const bookingEnd = new Date(bookingStart.getTime() + durationMinutesTotal * 60 * 1000);
+    const targetProId = professional_id && professional_id !== "any" ? professional_id : null;
+
+    // 1. Valida se o profissional ou o salão possui bloqueio ativo no intervalo
+    let blockQuery = supabase
+      .from("professional_blocked_times")
+      .select("id")
+      .eq("tenant_id", tenant_id)
+      .lt("starts_at", bookingEnd.toISOString())
+      .gt("ends_at", bookingStart.toISOString());
+
+    if (targetProId) {
+      blockQuery = blockQuery.or(`professional_id.eq.${targetProId},professional_id.is.null`);
+    }
+
+    const { data: activeBlocks } = await blockQuery.limit(1);
+    if (activeBlocks && activeBlocks.length > 0) {
+      throw new Error("Este horário ou dia está bloqueado para agendamentos. Por favor, escolha outro horário.");
+    }
+
+    // 2. Valida se já existe agendamento ativo concorrente no mesmo intervalo
+    if (targetProId) {
+      const searchWindowStart = new Date(bookingStart.getTime() - 240 * 60 * 1000).toISOString();
+      const { data: existingBookings } = await supabase
+        .from("bookings")
+        .select("id, scheduled_at, duration_minutes, buffer_minutes")
+        .eq("tenant_id", tenant_id)
+        .eq("professional_id", targetProId)
+        .in("status", ["confirmed", "pending"])
+        .lt("scheduled_at", bookingEnd.toISOString())
+        .gt("scheduled_at", searchWindowStart);
+
+      const hasCollision = (existingBookings || []).some((b: any) => {
+        const bStart = new Date(b.scheduled_at);
+        const bDur = (b.duration_minutes ?? 30) + (b.buffer_minutes ?? 0);
+        const bEnd = new Date(bStart.getTime() + bDur * 60 * 1000);
+        return bookingStart.getTime() < bEnd.getTime() && bookingEnd.getTime() > bStart.getTime();
+      });
+
+      if (hasCollision) {
+        throw new Error("Este horário acabou de ser preenchido por outro cliente. Por favor, escolha outro horário.");
+      }
+    }
+
     const serviceHomeExtra = booking_mode === "home" ? (service.home_price_extra || 0) : 0;
     const amount_total = (service.price || 0) + serviceHomeExtra + travel_fee;
     const depositPct = (tenantSettings?.deposit_percentage ?? 50) / 100;
