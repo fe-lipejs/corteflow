@@ -328,29 +328,6 @@ export default function Agenda() {
       .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
   }, [filteredUpcomingCenterBookings]);
 
-  // Next booking (prioriza hoje, senão pega o próximo futuro geral)
-  const nextBooking = useMemo(() => {
-    const nowMs = new Date().getTime();
-    const todayNext = todayBookings
-      .filter((b) => new Date(b.scheduled_at).getTime() > nowMs && b.status !== 'canceled' && b.status !== 'no_show')
-      .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())[0];
-
-    if (todayNext) return todayNext;
-
-    return upcomingActiveBookings[0] || null;
-  }, [todayBookings, upcomingActiveBookings]);
-
-  // Exibição amigável para o card Próximo (mostra horário/data ou 0 se nenhum)
-  const nextBookingDisplay = useMemo(() => {
-    if (nextBooking) {
-      const sched = new Date(nextBooking.scheduled_at);
-      if (isToday(sched)) return format(sched, 'HH:mm');
-      if (isTomorrow(sched)) return format(sched, 'HH:mm');
-      return format(sched, 'dd/MM');
-    }
-    return upcomingActiveBookings.length > 0 ? String(upcomingActiveBookings.length) : '0';
-  }, [nextBooking, upcomingActiveBookings]);
-
   const handleOpenBlockManager = (date?: Date, fromCalendar = false) => {
     setOpenedSlotsFromCalendar(fromCalendar);
     setAvailabilityModalDate(date || currentDay);
@@ -590,11 +567,47 @@ export default function Agenda() {
       <div className="flex flex-col max-w-7xl mx-auto w-full animate-fade-in pb-12" style={{ minHeight: 'calc(100vh - 80px)' }}>
 
         {/* ── Header ── */}
-        <div className="flex flex-col gap-4 mb-4 shrink-0">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex flex-col gap-4 mb-4 shrink-0 px-3 md:px-0">
+          <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>Gestão</p>
               <h1 className="font-serif text-3xl font-bold" style={{ color: theme.textPrimary }}>Agenda</h1>
+            </div>
+
+            {/* Mobile Header Controls: Bloqueios & Novo */}
+            <div className="flex md:hidden items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpenedOverviewFrom(null);
+                  setBlockedOverviewOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs border transition-all glass-card cursor-pointer active:scale-95 shadow-sm"
+                style={{
+                  color: theme.textPrimary,
+                  borderColor: theme.cardBorder,
+                  backgroundColor: 'var(--theme-card-bg)',
+                }}
+                title="Visualizar resumo de dias e horários bloqueados"
+              >
+                <ListChecks className="w-3.5 h-3.5" style={{ color: theme.accent }} />
+                <span>Bloqueios</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  if (!engine.hasPermission('agenda.criar')) {
+                    setShowUpgradeModal('agenda.criar');
+                    return;
+                  }
+                  setInitialBookingDate(undefined);
+                  setBookingModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all active:scale-95 shadow-sm"
+                style={{ background: theme.accentGradient, color: theme.btnPrimaryText, boxShadow: theme.shadowAccent }}
+              >
+                <Plus className="w-3.5 h-3.5" /> Novo
+              </button>
             </div>
 
             {/* Desktop controls */}
@@ -796,8 +809,8 @@ export default function Agenda() {
                       }),
                   },
                   {
-                    label: 'Próximo',
-                    value: nextBookingDisplay,
+                    label: 'Próximos',
+                    value: upcomingActiveBookings.length,
                     icon: Clock,
                     color: theme.accent,
                     onClick: () =>
