@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
-import { getStripeContext } from '../_shared/stripe.ts';
+import { getStripeContext, preserveCustomContractAndPricing } from '../_shared/stripe.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -73,9 +73,13 @@ serve(async (req) => {
     // Se o salão tinha uma assinatura anterior diferente no Stripe, cancela a anterior para evitar cobrança dupla
     const { data: previousSub } = await supabaseAdmin
       .from('subscriptions')
-      .select('stripe_subscription_id')
+      .select('id, stripe_subscription_id, subscription_contracts(*)')
       .eq('tenant_id', tenantId)
       .maybeSingle();
+
+    const previousContract = Array.isArray(previousSub?.subscription_contracts)
+      ? previousSub?.subscription_contracts[0]
+      : previousSub?.subscription_contracts;
 
     if (previousSub?.stripe_subscription_id && subId && previousSub.stripe_subscription_id !== subId) {
       try {
@@ -108,6 +112,13 @@ serve(async (req) => {
     }, { onConflict: 'tenant_id' });
 
     if (upsertError) throw upsertError;
+
+    // Preservar permissões/limites personalizados e preço promocional (custom_pricing)
+    const stripeUnitAmountCents =
+      (stripeSub && typeof stripeSub !== 'string' && stripeSub.items?.data?.[0]?.price?.unit_amount) ||
+      session.amount_total ||
+      null;
+    await preserveCustomContractAndPricing(supabaseAdmin, tenantId, planId, previousContract, stripeUnitAmountCents);
 
     // Ensure tenant is in correct state (trial or active) based on Stripe subscription
     await supabaseAdmin.from('tenants').update({

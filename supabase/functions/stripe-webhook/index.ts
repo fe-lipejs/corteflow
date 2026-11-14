@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
-import { getStripeContext } from '../_shared/stripe.ts';
+import { getStripeContext, preserveCustomContractAndPricing } from '../_shared/stripe.ts';
 import { dispatchBookingPushEvent } from '../_shared/webpush.ts';
 
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
@@ -117,6 +117,16 @@ serve(async (req) => {
           const initialAccountState = isTrialing ? 'trialing_with_card' : 'active';
           const periodEnd = stripeSub?.current_period_end ? new Date(stripeSub.current_period_end * 1000).toISOString() : null;
 
+          // Capturar contrato existente antes do upsert para preservar permissões/limites personalizados
+          const { data: prevSubData } = await supabase
+            .from('subscriptions')
+            .select('id, subscription_contracts(*)')
+            .eq('tenant_id', tenantId)
+            .maybeSingle();
+          const prevContract = Array.isArray(prevSubData?.subscription_contracts)
+            ? prevSubData?.subscription_contracts[0]
+            : prevSubData?.subscription_contracts;
+
           // Update subscriptions table
           const { error: subErr } = await supabase.from('subscriptions').upsert({
             tenant_id: tenantId,
@@ -132,6 +142,14 @@ serve(async (req) => {
           }, { onConflict: 'tenant_id' });
 
           if (subErr) console.error(subErr);
+
+          if (planId) {
+            const stripeUnitAmountCents =
+              stripeSub?.items?.data?.[0]?.price?.unit_amount ||
+              session.amount_total ||
+              null;
+            await preserveCustomContractAndPricing(supabase, tenantId, planId, prevContract, stripeUnitAmountCents);
+          }
 
           // State Machine Update
           await supabase.from('tenants').update({

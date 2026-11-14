@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
-import { getStripeContext } from '../_shared/stripe.ts';
+import { getStripeContext, preserveCustomContractAndPricing } from '../_shared/stripe.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -37,9 +37,13 @@ serve(async (req) => {
     // 1. Check existing subscription record for customer ID
     const { data: existingSub } = await supabaseAdmin
       .from('subscriptions')
-      .select('*')
+      .select('*, subscription_contracts(*)')
       .eq('tenant_id', tenantId)
       .maybeSingle();
+
+    const previousContract = Array.isArray(existingSub?.subscription_contracts)
+      ? existingSub?.subscription_contracts[0]
+      : existingSub?.subscription_contracts;
 
     let customerId = existingSub?.stripe_customer_id;
 
@@ -148,6 +152,9 @@ serve(async (req) => {
     }, { onConflict: 'tenant_id' });
 
     if (upsertError) throw upsertError;
+
+    const stripeUnitAmountCents = activeStripeSub?.items?.data?.[0]?.price?.unit_amount || null;
+    await preserveCustomContractAndPricing(supabaseAdmin, tenantId, planId, previousContract, stripeUnitAmountCents);
 
     await supabaseAdmin.from('tenants').update({ status: 'active' }).eq('id', tenantId);
 

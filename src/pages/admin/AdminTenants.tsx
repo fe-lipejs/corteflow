@@ -59,6 +59,8 @@ export default function AdminTenants() {
   const [contractModalTenant, setContractModalTenant] = useState<Tenant | null>(null);
   const [contractSubId, setContractSubId] = useState<string | null>(null);
   const [contractPlanId, setContractPlanId] = useState<string | null>(null);
+  const [contractTargetPlanId, setContractTargetPlanId] = useState<string>('');
+  const [availablePaidPlans, setAvailablePaidPlans] = useState<Array<{ id: string; name: string; key: string }>>([]);
   const [contractPlanName, setContractPlanName] = useState<string>('');
   const [contractMaxPros, setContractMaxPros] = useState<number>(1);
   const [contractMaxServices, setContractMaxServices] = useState<number>(3);
@@ -77,13 +79,20 @@ export default function AdminTenants() {
     setContractModalTenant(tenant);
     setIsLoadingContract(true);
     try {
-      const { data: sub, error } = await supabase
-        .from('subscriptions')
-        .select('id, plan_id, status, plans(*), subscription_contracts(*)')
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const [{ data: sub, error }, { data: allPlans }] = await Promise.all([
+        supabase
+          .from('subscriptions')
+          .select('id, plan_id, status, plans(*), subscription_contracts(*)')
+          .eq('tenant_id', tenant.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('plans')
+          .select('id, name, key, is_trial_plan, sort_order')
+          .eq('active', true)
+          .order('sort_order', { ascending: true })
+      ]);
 
       if (error) throw error;
 
@@ -92,6 +101,18 @@ export default function AdminTenants() {
         setContractModalTenant(null);
         return;
       }
+
+      const paidPlans = (allPlans || []).filter(
+        (p: any) =>
+          p.name !== 'Trial (Período de Teste)' &&
+          p.key !== 'expired_tier' &&
+          p.key !== 'fallback_tier' &&
+          !p.key?.includes('fallback') &&
+          !p.name?.toLowerCase().includes('fallback') &&
+          !p.name?.toLowerCase().includes('cancelado') &&
+          !p.is_trial_plan
+      );
+      setAvailablePaidPlans(paidPlans);
 
       setContractSubId(sub.id);
       setContractPlanId(sub.plan_id);
@@ -119,17 +140,28 @@ export default function AdminTenants() {
       }
 
       // Buscar preço promocional personalizado na tabela custom_pricing
-      const { data: cpData } = await supabase
+      const { data: cpRows } = await supabase
         .from('custom_pricing')
-        .select('amount_override')
-        .eq('tenant_id', tenant.id)
-        .maybeSingle();
+        .select('id, plan_id, amount_override')
+        .eq('tenant_id', tenant.id);
+
+      const cpData = cpRows?.[0] || null;
 
       if (cpData && cpData.amount_override != null) {
         setContractCustomPrice(String(cpData.amount_override));
       } else {
         setContractCustomPrice('');
       }
+
+      // Definir o plano pago alvo do desconto (se já existir em custom_pricing e for plano pago, usa ele; senão se sub.plan_id for pago usa ele; senão usa Solo)
+      const isCpPlanPaid = cpData?.plan_id && paidPlans.some((p: any) => p.id === cpData.plan_id);
+      const isSubPlanPaid = sub.plan_id && paidPlans.some((p: any) => p.id === sub.plan_id);
+      const defaultPaidPlanId = isCpPlanPaid
+        ? cpData.plan_id
+        : isSubPlanPaid
+          ? sub.plan_id
+          : (paidPlans[0]?.id || sub.plan_id);
+      setContractTargetPlanId(defaultPaidPlanId);
     } catch (err: any) {
       console.error('Erro ao carregar contrato:', err);
       toast.error('Erro ao carregar permissões do salão: ' + (err.message || ''));
@@ -143,61 +175,75 @@ export default function AdminTenants() {
     if (!contractSubId || !contractPlanId || !contractModalTenant) return;
     try {
       setIsSavingContract(true);
+      const customPriceNum = contractCustomPrice && Number(contractCustomPrice) > 0 ? Number(contractCustomPrice) : null;
+      const contractPayload: Record<string, any> = {
+        subscription_id: contractSubId,
+        plan_id: contractPlanId,
+        max_professionals: Number(contractMaxPros),
+        allow_products: contractAllowProdutos,
+        features: {
+          _custom_override: true,
+          agenda: true,
+          servicos: true,
+          clientes: true,
+          equipe: true,
+          financeiro: contractAllowFinanceiro,
+          produtos: contractAllowProdutos,
+          relatorios: contractAllowRelatorios,
+        },
+        limits: {
+          profissionais: Number(contractMaxPros),
+          servicos: Number(contractMaxServices),
+          produtos: Number(contractMaxProducts),
+        },
+        permissions: contractAllowAllPermissions ? ['*'] : [
+          'agenda.visualizar_todos', 'agenda.criar', 'agenda.editar', 'agenda.cancelar', 'agenda.mudar_status', 'agenda.bloquear_horario',
+          'equipe.visualizar', 'equipe.criar', 'equipe.editar_perfil', 'equipe.editar_horarios',
+          'catalogo.visualizar', 'catalogo.criar', 'catalogo.editar', 'catalogo.excluir',
+          'clientes.visualizar', 'clientes.exportar',
+          ...(contractAllowFinanceiro ? ['financeiro.visualizar_caixa_geral', 'financeiro.visualizar_meu_caixa', 'financeiro.criar_lancamento', 'financeiro.editar_lancamento', 'financeiro.excluir_lancamento', 'financeiro.exportar'] : []),
+          ...(contractAllowProdutos ? ['produtos.visualizar', 'produtos.criar', 'produtos.editar', 'produtos.excluir', 'produto.criar', 'produto.editar', 'produto.excluir'] : []),
+          'configuracoes.editar_layout'
+        ],
+        status: 'active',
+        updated_at: new Date().toISOString()
+      };
+
+      if (customPriceNum !== null) {
+        contractPayload.price_amount = customPriceNum;
+      }
+
       const { error } = await supabase
         .from('subscription_contracts')
-        .upsert({
-          subscription_id: contractSubId,
-          plan_id: contractPlanId,
-          max_professionals: Number(contractMaxPros),
-          allow_products: contractAllowProdutos,
-          features: {
-            agenda: true,
-            servicos: true,
-            clientes: true,
-            equipe: true,
-            financeiro: contractAllowFinanceiro,
-            produtos: contractAllowProdutos,
-            relatorios: contractAllowRelatorios,
-          },
-          limits: {
-            profissionais: Number(contractMaxPros),
-            servicos: Number(contractMaxServices),
-            produtos: Number(contractMaxProducts),
-          },
-          permissions: contractAllowAllPermissions ? ['*'] : [
-            'agenda.visualizar_todos', 'agenda.criar', 'agenda.editar', 'agenda.cancelar', 'agenda.mudar_status', 'agenda.bloquear_horario',
-            'equipe.visualizar', 'equipe.criar', 'equipe.editar_perfil', 'equipe.editar_horarios',
-            'catalogo.visualizar', 'catalogo.criar', 'catalogo.editar', 'catalogo.excluir',
-            'clientes.visualizar', 'clientes.exportar',
-            ...(contractAllowFinanceiro ? ['financeiro.visualizar_caixa_geral', 'financeiro.visualizar_meu_caixa', 'financeiro.criar_lancamento', 'financeiro.editar_lancamento', 'financeiro.excluir_lancamento', 'financeiro.exportar'] : []),
-            ...(contractAllowProdutos ? ['produtos.visualizar', 'produtos.criar', 'produtos.editar', 'produtos.excluir', 'produto.criar', 'produto.editar', 'produto.excluir'] : []),
-            'configuracoes.editar_layout'
-          ],
-          status: 'active',
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'subscription_id' });
+        .upsert(contractPayload, { onConflict: 'subscription_id' });
 
       if (error) throw error;
 
       // Salvar ou remover preço promocional personalizado na tabela custom_pricing
-      if (contractCustomPrice && Number(contractCustomPrice) > 0) {
-        const { data: existingCp } = await supabase
+      const targetPlanForDiscount = contractTargetPlanId || contractPlanId;
+      if (customPriceNum !== null) {
+        const { data: existingCps } = await supabase
           .from('custom_pricing')
           .select('id')
-          .eq('tenant_id', contractModalTenant.id)
-          .maybeSingle();
+          .eq('tenant_id', contractModalTenant.id);
 
-        if (existingCp) {
+        if (existingCps && existingCps.length > 0) {
           await supabase.from('custom_pricing').update({
-            amount_override: Number(contractCustomPrice),
-            plan_id: contractPlanId,
+            amount_override: customPriceNum,
+            plan_id: targetPlanForDiscount,
             note: 'Preço promocional personalizado',
-          }).eq('id', existingCp.id);
+          }).eq('id', existingCps[0].id);
+
+          // Se houver registros duplicados antigos para o mesmo salão, limpa os excedentes
+          if (existingCps.length > 1) {
+            const extraIds = existingCps.slice(1).map((r: any) => r.id);
+            await supabase.from('custom_pricing').delete().in('id', extraIds);
+          }
         } else {
           await supabase.from('custom_pricing').insert({
             tenant_id: contractModalTenant.id,
-            plan_id: contractPlanId,
-            amount_override: Number(contractCustomPrice),
+            plan_id: targetPlanForDiscount,
+            amount_override: customPriceNum,
             note: 'Preço promocional personalizado',
           });
         }
@@ -208,6 +254,10 @@ export default function AdminTenants() {
       toast.success('Permissões, limites e preço promocional salvos para ' + contractModalTenant?.name + '!');
       setContractModalTenant(null);
       queryClient.invalidateQueries({ queryKey: ['admin_tenants_v2'] });
+      queryClient.invalidateQueries({ queryKey: ['admin_custom_pricing'] });
+      queryClient.invalidateQueries({ queryKey: ['active_subscription_contract'] });
+      queryClient.invalidateQueries({ queryKey: ['permission_engine'] });
+      queryClient.invalidateQueries({ queryKey: ['plan_features'] });
     } catch (err: any) {
       console.error('Erro ao salvar contrato:', err);
       toast.error('Erro ao salvar alterações: ' + (err.message || ''));
@@ -949,27 +999,50 @@ export default function AdminTenants() {
                     Preço Promocional da Mensalidade (R$)
                   </h4>
                   <p className="text-[11px] text-zinc-400 mb-2.5">
-                    Defina um valor personalizado de mensalidade para este salão (ex: 17.90). O sistema aplicará esse desconto no checkout e na renovação mensal.
+                    Defina um valor personalizado de mensalidade para este salão (ex: 17.90). O Stripe criará a assinatura recorrente exatamente neste valor todos os meses.
                   </p>
-                  <div className="flex items-center gap-3">
-                    <div className="relative flex-1">
-                      <span className="absolute left-3 top-2.5 text-xs text-zinc-500 font-bold">R$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        placeholder="Ex: 17.90 (vazio = preço padrão)"
-                        value={contractCustomPrice}
-                        onChange={e => setContractCustomPrice(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-white outline-none focus:border-emerald-500"
-                      />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
+                        Plano Alvo do Desconto
+                      </label>
+                      <select
+                        value={contractTargetPlanId}
+                        onChange={e => setContractTargetPlanId(e.target.value)}
+                        className="w-full px-3 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-white outline-none focus:border-emerald-500 cursor-pointer"
+                      >
+                        {availablePaidPlans.map(p => (
+                          <option key={p.id} value={p.id}>
+                            Plano {p.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
+                        Valor Mensal com Desconto (R$)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-xs text-zinc-500 font-bold">R$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="Ex: 17.90 (vazio = padrão)"
+                          value={contractCustomPrice}
+                          onChange={e => setContractCustomPrice(e.target.value)}
+                          className="w-full pl-9 pr-3 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-white outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end">
                     {contractCustomPrice && Number(contractCustomPrice) > 0 ? (
-                      <span className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
-                        Promoção R$ {Number(contractCustomPrice).toFixed(2).replace('.', ',')}/mês
+                      <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
+                        ✓ Cobrança no Stripe: R$ {Number(contractCustomPrice).toFixed(2).replace('.', ',')}/mês
                       </span>
                     ) : (
                       <span className="text-xs text-zinc-500 whitespace-nowrap">
-                        Preço padrão do plano
+                        Usando preço padrão da tabela de planos
                       </span>
                     )}
                   </div>

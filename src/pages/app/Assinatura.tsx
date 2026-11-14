@@ -35,6 +35,7 @@ interface Plan {
     amount: number;
   }>;
   is_custom_price?: boolean;
+  original_amount?: number;
 }
 
 interface Subscription {
@@ -201,74 +202,67 @@ export default function Assinatura() {
       }
 
       if (planData) {
-        const validPlans = planData.filter(
-          (p: any) =>
-            p.name !== 'Trial (Período de Teste)' &&
-            p.key !== 'expired_tier' &&
-            p.key !== 'fallback_tier' &&
-            !p.key?.includes('fallback') &&
-            !p.name?.toLowerCase().includes('fallback') &&
-            !p.name?.toLowerCase().includes('cancelado') &&
-            !p.is_trial_plan
-        );
-
-        const plansWithCustomPrices =
-          validPlans.map((plan: any) => {
-            const customPrice =
-              customPricingData?.find(
-                (cp: any) =>
-                  cp.plan_id === plan.id
-              );
-
-            if (
-              customPrice &&
-              plan.plan_prices
-            ) {
-              const brlIndex =
-                plan.plan_prices.findIndex(
-                  (p: any) =>
-                    p.currency === 'BRL'
-                );
-
-              if (brlIndex >= 0) {
-                plan.plan_prices[
-                  brlIndex
-                ].amount =
-                  customPrice.amount_override;
-              } else {
-                plan.plan_prices.push({
-                  currency: 'BRL',
-                  amount:
-                    customPrice.amount_override,
-                });
-              }
-
-              plan.is_custom_price = true;
-            }
-
-            return plan;
+        const validPlans = planData
+          .filter(
+            (p: any) =>
+              p.name !== 'Trial (Período de Teste)' &&
+              p.key !== 'expired_tier' &&
+              p.key !== 'fallback_tier' &&
+              !p.key?.includes('fallback') &&
+              !p.name?.toLowerCase().includes('fallback') &&
+              !p.name?.toLowerCase().includes('cancelado') &&
+              !p.is_trial_plan
+          )
+          .sort((a: any, b: any) => {
+            const aPrice = a.plan_prices?.find((p: any) => p.currency === 'BRL')?.amount || 0;
+            const bPrice = b.plan_prices?.find((p: any) => p.currency === 'BRL')?.amount || 0;
+            return aPrice - bPrice;
           });
 
-        const sortedPlans =
-          plansWithCustomPrices.sort(
-            (a: any, b: any) => {
-              const aPrice =
-                a.plan_prices?.find(
-                  (p: any) =>
-                    p.currency === 'BRL'
-                )?.amount || 0;
+        // Verifica se existe um preço promocional salvo enquanto o salão estava no plano de Trial
+        // (cujo plan_id não está entre os planos pagos validPlans)
+        const validPlanIds = new Set(validPlans.map((vp: any) => vp.id));
+        const fallbackTrialCustomPrice = customPricingData?.find(
+          (cp: any) => cp.amount_override > 0 && !validPlanIds.has(cp.plan_id)
+        );
+        const fallbackTargetPlanId =
+          activeSub?.plan_id && validPlanIds.has(activeSub.plan_id)
+            ? activeSub.plan_id
+            : validPlans[0]?.id;
 
-              const bPrice =
-                b.plan_prices?.find(
-                  (p: any) =>
-                    p.currency === 'BRL'
-                )?.amount || 0;
-
-              return aPrice - bPrice;
-            }
+        const plansWithCustomPrices = validPlans.map((plan: any) => {
+          const directCustomPrice = customPricingData?.find(
+            (cp: any) => cp.plan_id === plan.id && cp.amount_override > 0
           );
 
-        setPlans(sortedPlans);
+          const customPrice =
+            directCustomPrice ||
+            (fallbackTrialCustomPrice && plan.id === fallbackTargetPlanId
+              ? fallbackTrialCustomPrice
+              : null);
+
+          if (customPrice && plan.plan_prices) {
+            const brlIndex = plan.plan_prices.findIndex(
+              (p: any) => p.currency === 'BRL'
+            );
+
+            if (brlIndex >= 0) {
+              plan.original_amount = plan.plan_prices[brlIndex].amount;
+              plan.plan_prices[brlIndex].amount = Number(customPrice.amount_override);
+            } else {
+              plan.plan_prices.push({
+                currency: 'BRL',
+                amount: Number(customPrice.amount_override),
+              });
+            }
+
+            plan.is_custom_price = true;
+          }
+
+          return plan;
+        });
+
+        setPlans(plansWithCustomPrices);
       }
     } catch (e) {
       console.error(
@@ -1070,41 +1064,47 @@ export default function Assinatura() {
 
                 const contracts =
                   subscription?.subscription_contracts;
+                const contract = Array.isArray(contracts)
+                  ? contracts[0]
+                  : contracts;
 
                 if (
-                  isCurrent &&
-                  contracts
+                  (isCurrent || (plan.is_custom_price && contract?.features?._custom_override)) &&
+                  contract
                 ) {
-                  const contract =
-                    Array.isArray(
-                      contracts
-                    )
-                      ? contracts[0]
-                      : contracts;
+                  const customOrContractAmount =
+                    plan.is_custom_price
+                      ? (plan.plan_prices?.find((p) => p.currency === displayCurrency)?.amount ?? contract.price_amount)
+                      : (contract.price_amount > 0 ? contract.price_amount : (plan.plan_prices?.find((p) => p.currency === displayCurrency)?.amount ?? 0));
 
-                  if (contract) {
-                    planToDisplay = {
-                      ...plan,
-                      max_professionals:
-                        contract.max_professionals,
-                      allow_products:
-                        contract.allow_products,
-                      features:
-                        contract.features,
-                      permissions:
-                        contract.permissions,
-                      limits:
-                        contract.limits,
-                      plan_prices: [
-                        {
-                          currency:
-                            contract.currency,
-                          amount:
-                            contract.price_amount,
-                        },
-                      ],
-                    };
-                  }
+                  planToDisplay = {
+                    ...plan,
+                    max_professionals: Math.max(
+                      Number(contract.max_professionals || 0),
+                      Number(plan.max_professionals || 1)
+                    ),
+                    allow_products: Boolean(
+                      contract.allow_products || plan.allow_products
+                    ),
+                    features: {
+                      ...(plan.features || {}),
+                      ...(contract.features || {}),
+                    },
+                    permissions:
+                      contract.permissions && Array.isArray(contract.permissions) && contract.permissions.length > 0
+                        ? contract.permissions
+                        : plan.permissions,
+                    limits: {
+                      ...(plan.limits || {}),
+                      ...(contract.limits || {}),
+                    },
+                    plan_prices: [
+                      {
+                        currency: contract.currency || displayCurrency,
+                        amount: customOrContractAmount,
+                      },
+                    ],
+                  };
                 }
 
                 const planPriceObj =
@@ -1295,98 +1295,59 @@ export default function Assinatura() {
 
                       <div className="mt-5 mb-5">
                         {planPriceObj ? (
-                          tenant?.status ===
-                            'trial' ? (
-                            <>
-                              <div className="flex items-baseline gap-2">
-                                <span
-                                  className="text-[38px] leading-none font-black tracking-[-0.045em]"
-                                  style={{
-                                    color:
-                                      theme.textPrimary,
-                                  }}
-                                >
-                                  {money(
-                                    0,
-                                    displayCurrency
-                                  )}
-                                </span>
-
-                                <span
-                                  className="text-[10px] font-bold"
-                                  style={{
-                                    color:
-                                      theme.accent,
-                                  }}
-                                >
-                                  hoje
-                                </span>
-                              </div>
-
-                              <p
-                                className="text-xs mt-2"
+                          <>
+                            {plan.is_custom_price &&
+                              plan.original_amount &&
+                              plan.original_amount > planPriceObj.amount && (
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span
+                                    className="text-xs line-through opacity-60 font-medium"
+                                    style={{ color: theme.textSecondary }}
+                                  >
+                                    De {money(plan.original_amount, displayCurrency).replace(/,00$/, '')}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-emerald-500">
+                                    Desconto exclusivo aplicado
+                                  </span>
+                                </div>
+                              )}
+                            <div className="flex items-baseline gap-1">
+                              <span
+                                className="text-[40px] leading-none font-black tracking-[-0.05em]"
                                 style={{
-                                  color:
-                                    theme.textSecondary,
+                                  color: theme.textPrimary,
                                 }}
                               >
-                                Depois do trial:{' '}
-                                <strong
-                                  style={{
-                                    color:
-                                      theme.textPrimary,
-                                  }}
-                                >
-                                  {money(
-                                    planPriceObj.amount,
-                                    displayCurrency
-                                  )}
-                                  /mês
-                                </strong>
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <div className="flex items-baseline gap-1">
-                                <span
-                                  className="text-[40px] leading-none font-black tracking-[-0.05em]"
-                                  style={{
-                                    color:
-                                      theme.textPrimary,
-                                  }}
-                                >
-                                  {money(
-                                    planPriceObj.amount,
-                                    displayCurrency
-                                  ).replace(
-                                    /,\d\d$/,
-                                    ''
-                                  )}
-                                </span>
+                                {money(
+                                  planPriceObj.amount,
+                                  displayCurrency
+                                ).replace(
+                                  /,00$/,
+                                  ''
+                                )}
+                              </span>
 
-                                <span
-                                  className="text-xs font-semibold"
-                                  style={{
-                                    color:
-                                      theme.textSecondary,
-                                  }}
-                                >
-                                  /mês
-                                </span>
-                              </div>
-
-                              <p
-                                className="text-[10px] mt-2"
+                              <span
+                                className="text-xs font-semibold"
                                 style={{
-                                  color:
-                                    theme.textMuted,
+                                  color: theme.textSecondary,
                                 }}
                               >
-                                Cobrança mensal. Sem
-                                fidelidade.
-                              </p>
-                            </>
-                          )
+                                /mês
+                              </span>
+                            </div>
+
+                            <p
+                              className="text-[10px] mt-2"
+                              style={{
+                                color: theme.textMuted,
+                              }}
+                            >
+                              {plan.is_custom_price
+                                ? 'Valor promocional recorrente mensal • Sem fidelidade'
+                                : 'Cobrança mensal. Sem fidelidade.'}
+                            </p>
+                          </>
                         ) : (
                           <span
                             className="text-sm font-semibold"

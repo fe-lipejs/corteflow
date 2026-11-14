@@ -50,21 +50,31 @@ export default function AdminCustomPricing() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('plans')
-        .select('id, name, key')
-        .not('key', 'in', '(expired_tier,fallback_tier)')
+        .select('id, name, key, is_trial_plan')
+        .eq('active', true)
         .order('sort_order');
       if (error) throw error;
-      return data;
+      return (data || []).filter(
+        (p: any) =>
+          p.name !== 'Trial (Período de Teste)' &&
+          p.key !== 'expired_tier' &&
+          p.key !== 'fallback_tier' &&
+          !p.key?.includes('fallback') &&
+          !p.name?.toLowerCase().includes('fallback') &&
+          !p.name?.toLowerCase().includes('cancelado') &&
+          !p.is_trial_plan
+      );
     }
   });
 
   // Mutations
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const parsedAmount = parseFloat(amountOverride);
       const payload = {
         tenant_id: tenantId,
         plan_id: planId,
-        amount_override: parseFloat(amountOverride),
+        amount_override: parsedAmount,
         note: note || null
       };
 
@@ -75,9 +85,27 @@ export default function AdminCustomPricing() {
         const { error } = await supabase.from('custom_pricing').insert(payload as any);
         if (error) throw error;
       }
+
+      // Atualizar também o price_amount no contrato ativo deste salão, se existir
+      const { data: activeSub } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('tenant_id', tenantId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (activeSub?.id) {
+        await supabase
+          .from('subscription_contracts')
+          .update({ price_amount: parsedAmount, updated_at: new Date().toISOString() })
+          .eq('subscription_id', activeSub.id);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_custom_pricing'] });
+      queryClient.invalidateQueries({ queryKey: ['admin_tenants_v2'] });
+      queryClient.invalidateQueries({ queryKey: ['active_subscription_contract'] });
       toast.success(formId ? 'Preço personalizado atualizado!' : 'Preço personalizado criado com sucesso!');
       closeModal();
     },

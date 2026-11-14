@@ -63,16 +63,51 @@ serve(async (req) => {
 
     const targetCurrency = (requestedCurrency || (tenantData?.language === 'en' ? 'USD' : (['es', 'fr', 'de'].includes(tenantData?.language || '')) ? 'EUR' : 'BRL')).toUpperCase();
 
-    // 1. Verificar se existe preço personalizado (Custom Pricing)
-    const { data: customPrice } = await supabase
+    // 1. Verificar se existe preço personalizado (Custom Pricing) usando supabaseAdmin para não depender de RLS
+    const { data: tenantCustomPrices } = await supabaseAdmin
       .from('custom_pricing')
-      .select('amount_override')
-      .eq('tenant_id', tenantId)
-      .eq('plan_id', plan.id)
-      .maybeSingle();
+      .select('id, plan_id, amount_override')
+      .eq('tenant_id', tenantId);
+
+    let customPrice = tenantCustomPrices?.find((cp: any) => cp.plan_id === plan.id && Number(cp.amount_override) > 0) || null;
+
+    // Fallback: se o Super Admin cadastrou o desconto enquanto o salão estava no plano de Trial,
+    // o plan_id salvo em custom_pricing pode ser o ID do plano de Trial.
+    if (!customPrice && tenantCustomPrices && tenantCustomPrices.length > 0) {
+      const { data: allPlans } = await supabaseAdmin
+        .from('plans')
+        .select('id, name, key, is_trial_plan, sort_order')
+        .eq('active', true)
+        .order('sort_order', { ascending: true });
+
+      const paidPlans = (allPlans || []).filter(
+        (p: any) =>
+          p.name !== 'Trial (Período de Teste)' &&
+          p.key !== 'expired_tier' &&
+          p.key !== 'fallback_tier' &&
+          !p.key?.includes('fallback') &&
+          !p.name?.toLowerCase().includes('fallback') &&
+          !p.name?.toLowerCase().includes('cancelado') &&
+          !p.is_trial_plan
+      );
+      const paidPlanIds = new Set(paidPlans.map((p: any) => p.id));
+      const orphanTrialCp = tenantCustomPrices.find(
+        (cp: any) => Number(cp.amount_override) > 0 && !paidPlanIds.has(cp.plan_id)
+      );
+
+      // Se o plano escolhido for o plano de entrada (Solo) ou se houver apenas 1 exceção órfã de Trial
+      if (orphanTrialCp && (paidPlans[0]?.id === plan.id || tenantCustomPrices.length === 1)) {
+        customPrice = orphanTrialCp;
+        // Auto-corrige o plan_id na tabela custom_pricing para apontar para o plano pago escolhido
+        await supabaseAdmin
+          .from('custom_pricing')
+          .update({ plan_id: plan.id })
+          .eq('id', orphanTrialCp.id);
+      }
+    }
 
     // 2. Buscar preço do plano para a moeda do tenant (com suporte a IDs de Teste e Live)
-    let { data: planPrice } = await supabase
+    let { data: planPrice } = await supabaseAdmin
       .from('plan_prices')
       .select('amount, currency, stripe_price_id, stripe_price_id_test, stripe_price_id_live')
       .eq('plan_id', plan.id)
@@ -81,7 +116,7 @@ serve(async (req) => {
     
     // Fallback para o primeiro preço cadastrado se não houver da moeda específica
     if (!planPrice) {
-      const { data: fallbackPrice } = await supabase
+      const { data: fallbackPrice } = await supabaseAdmin
         .from('plan_prices')
         .select('amount, currency, stripe_price_id, stripe_price_id_test, stripe_price_id_live')
         .eq('plan_id', plan.id)
@@ -93,8 +128,8 @@ serve(async (req) => {
     const currency = (planPrice?.currency ?? targetCurrency).toLowerCase();
     const lineItem: any = { quantity: 1 };
 
-    if (customPrice?.amount_override) {
-      const customUnitAmount = Math.round(customPrice.amount_override * 100);
+    if (customPrice?.amount_override && Number(customPrice.amount_override) > 0) {
+      const customUnitAmount = Math.round(Number(customPrice.amount_override) * 100);
       if (customUnitAmount <= 0) throw new Error("Valor inválido.");
       lineItem.price_data = {
         currency: currency,
@@ -155,6 +190,7 @@ serve(async (req) => {
       metadata: {
         tenant_id: tenantId,
         plan_id: plan.id,
+        ...(customPrice?.amount_override ? { custom_price_amount: String(customPrice.amount_override) } : {}),
       },
     };
 
@@ -213,6 +249,7 @@ serve(async (req) => {
       metadata: {
         tenant_id: tenantId,
         plan_id: plan.id,
+        ...(customPrice?.amount_override ? { custom_price_amount: String(customPrice.amount_override) } : {}),
       },
     };
 
