@@ -197,13 +197,14 @@ export default function AdminTenants() {
           produtos: Number(contractMaxProducts),
         },
         permissions: contractAllowAllPermissions ? ['*'] : [
-          'agenda.visualizar_todos', 'agenda.criar', 'agenda.editar', 'agenda.cancelar', 'agenda.mudar_status', 'agenda.bloquear_horario',
-          'equipe.visualizar', 'equipe.criar', 'equipe.editar_perfil', 'equipe.editar_horarios',
-          'catalogo.visualizar', 'catalogo.criar', 'catalogo.editar', 'catalogo.excluir',
-          'clientes.visualizar', 'clientes.exportar',
+          'agenda.visualizar_todos', 'agenda.visualizar_minha', 'agenda.criar', 'agenda.editar', 'agenda.cancelar', 'agenda.mudar_status', 'agenda.bloquear_horario',
+          'equipe.visualizar', 'equipe.criar', 'equipe.editar_perfil', 'equipe.editar_horarios', 'equipe.inativar', 'equipe.ver_comissoes',
+          'catalogo.visualizar', 'catalogo.criar', 'catalogo.editar', 'catalogo.excluir', 'catalogo.ajustar_estoque',
+          'clientes.visualizar', 'clientes.criar', 'clientes.editar', 'clientes.ver_historico', 'clientes.exportar',
           ...(contractAllowFinanceiro ? ['financeiro.visualizar_caixa_geral', 'financeiro.visualizar_meu_caixa', 'financeiro.criar_lancamento', 'financeiro.editar_lancamento', 'financeiro.excluir_lancamento', 'financeiro.exportar'] : []),
           ...(contractAllowProdutos ? ['produtos.visualizar', 'produtos.criar', 'produtos.editar', 'produtos.excluir', 'produto.criar', 'produto.editar', 'produto.excluir'] : []),
-          'configuracoes.editar_layout'
+          'configuracoes.editar_perfil', 'configuracoes.editar_layout', 'configuracoes.editar_horarios_loja', 'configuracoes.gerenciar_pagamentos', 'assinatura.gerenciar',
+          'suporte.visualizar', 'suporte.abrir_chamado'
         ],
         status: 'active',
         updated_at: new Date().toISOString()

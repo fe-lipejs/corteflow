@@ -128,14 +128,28 @@ serve(async (req) => {
     const currency = (planPrice?.currency ?? targetCurrency).toLowerCase();
     const lineItem: any = { quantity: 1 };
 
+    // Garantir descrição alinhada a Salões de Beleza, Esmalterias e Profissionais (nunca "barbeiro autônomo")
+    let cleanDescription = (plan.description || '').trim();
+    if (!cleanDescription || cleanDescription.toLowerCase().includes('barbeiro')) {
+      cleanDescription =
+        plan.key === 'solo_tier' || plan.name?.toLowerCase() === 'solo'
+          ? 'Ideal para profissionais independentes, salões de beleza e esmalterias. Agenda, clientes e financeiro.'
+          : `Assinatura Plano ${plan.name} — Raffros`;
+      // Atualiza permanentemente no banco caso ainda estivesse com o texto antigo
+      await supabaseAdmin
+        .from('plans')
+        .update({ description: cleanDescription })
+        .eq('id', plan.id);
+    }
+
     if (customPrice?.amount_override && Number(customPrice.amount_override) > 0) {
       const customUnitAmount = Math.round(Number(customPrice.amount_override) * 100);
       if (customUnitAmount <= 0) throw new Error("Valor inválido.");
       lineItem.price_data = {
         currency: currency,
         product_data: {
-          name: `Plano ${plan.name} - Customizado`,
-          description: plan.description || `Assinatura ${plan.name}`,
+          name: `Plano ${plan.name}`,
+          description: cleanDescription,
         },
         unit_amount: customUnitAmount,
         recurring: { interval: 'month' },
@@ -150,10 +164,16 @@ serve(async (req) => {
 
       if (targetPriceId) {
         try {
-          const retrievedPrice = await stripe.prices.retrieve(targetPriceId);
+          const retrievedPrice = await stripe.prices.retrieve(targetPriceId, { expand: ['product'] });
           if (retrievedPrice && retrievedPrice.active) {
             lineItem.price = targetPriceId;
             priceResolved = true;
+
+            // Se o produto no Stripe tiver descrição antiga mencionando "barbeiro", atualiza no próprio Stripe
+            const stripeProd = retrievedPrice.product as any;
+            if (stripeProd && typeof stripeProd === 'object' && stripeProd.id && stripeProd.description?.toLowerCase().includes('barbeiro')) {
+              await stripe.products.update(stripeProd.id, { description: cleanDescription }).catch(() => {});
+            }
           }
         } catch (priceErr: any) {
           console.warn(`[Stripe] stripe_price_id '${targetPriceId}' não pôde ser recuperado no ambiente ${mode.toUpperCase()}:`, priceErr?.message);
@@ -166,7 +186,7 @@ serve(async (req) => {
           currency: currency,
           product_data: {
             name: `Plano ${plan.name}`,
-            description: plan.description || `Assinatura ${plan.name} no Raffros`,
+            description: cleanDescription,
           },
           unit_amount: Math.round(Number(planPrice?.amount || plan.price || 0) * 100),
           recurring: { interval: 'month' },

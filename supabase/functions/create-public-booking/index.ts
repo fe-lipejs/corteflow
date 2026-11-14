@@ -77,13 +77,16 @@ serve(async (req) => {
 
     const { data: tenant, error: tErr } = await supabase
       .from("tenants")
-      .select("id, status")
+      .select("id, status, trial_ends_at")
       .eq("id", tenant_id)
       .single();
 
     if (tErr || !tenant) throw new Error("Invalid tenant.");
     if (tenant.status !== "active" && tenant.status !== "trial") {
       throw new Error("Tenant is not active.");
+    }
+    if (tenant.status === "trial" && tenant.trial_ends_at && new Date(tenant.trial_ends_at) < new Date()) {
+      throw new Error("Período de avaliação encerrado. O estabelecimento está temporariamente indisponível para agendamentos.");
     }
 
     // Fetch tenant_settings for horizon validation, coordinates & deposit_percentage

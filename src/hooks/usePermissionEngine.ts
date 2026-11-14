@@ -234,14 +234,26 @@ export function usePermissionEngine(): PermissionEngine {
     limitsObj.profissionais = source.max_professionals;
   }
 
+  const isProductsAllowedByFeature = Boolean(source?.allow_products || featuresObj?.produtos);
+  const isFinanceiroExplicitlyDisabled = featuresObj?.financeiro === false;
+
   const planHas = (key: string) => {
+    if (key.startsWith('produto')) {
+      if (isProductsAllowedByFeature) return true;
+      return (
+        permissionsArr.includes(key) ||
+        (key === 'produto.criar' && permissionsArr.includes('produtos.criar')) ||
+        (key === 'produto.editar' && permissionsArr.includes('produtos.editar')) ||
+        (key === 'produto.excluir' && permissionsArr.includes('produtos.excluir')) ||
+        (key === 'produtos.criar' && permissionsArr.includes('produto.criar')) ||
+        (key === 'produtos.editar' && permissionsArr.includes('produto.editar')) ||
+        (key === 'produtos.excluir' && permissionsArr.includes('produto.excluir'))
+      );
+    }
+    if (key.startsWith('financeiro') && isFinanceiroExplicitlyDisabled) {
+      return permissionsArr.includes(key);
+    }
     if (permissionsArr.includes('*') || permissionsArr.includes(key)) return true;
-    if (key === 'produto.criar' && permissionsArr.includes('produtos.criar')) return true;
-    if (key === 'produto.editar' && permissionsArr.includes('produtos.editar')) return true;
-    if (key === 'produto.excluir' && permissionsArr.includes('produtos.excluir')) return true;
-    if (key === 'produtos.criar' && permissionsArr.includes('produto.criar')) return true;
-    if (key === 'produtos.editar' && permissionsArr.includes('produto.editar')) return true;
-    if (key === 'produtos.excluir' && permissionsArr.includes('produto.excluir')) return true;
     return false;
   };
 
@@ -282,6 +294,14 @@ export function usePermissionEngine(): PermissionEngine {
       return false;
     }
 
+    if (cleanPrefix.startsWith('produto') && !isProductsAllowedByFeature) {
+      return permissionsArr.some((p) => (p.startsWith('produto.') || p.startsWith('produtos.')) && roleHas(p));
+    }
+
+    if (cleanPrefix === 'financeiro' && isFinanceiroExplicitlyDisabled) {
+      return permissionsArr.some((p) => p.startsWith('financeiro.') && roleHas(p));
+    }
+
     if (permissionsArr.length === 0) return false;
 
     const matchesPrefix = (p: string) => p === cleanPrefix || p.startsWith(cleanPrefix + '.');
@@ -297,8 +317,7 @@ export function usePermissionEngine(): PermissionEngine {
   const hasFeature = (key: string) => {
     if (isSuperAdmin) return true;
     if (key === 'produtos') {
-      if (hasPermission('produto.criar') || hasPermission('produto.editar') || hasPermission('produto.excluir')) return true;
-      return !!source?.allow_products || !!featuresObj?.produtos;
+      return isProductsAllowedByFeature || hasPermission('produto.criar') || hasPermission('produto.editar') || hasPermission('produto.excluir');
     }
     return !!featuresObj[key];
   };

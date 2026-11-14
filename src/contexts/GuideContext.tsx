@@ -34,8 +34,8 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     target: '[data-guide="nav-equipe"]',
-    title: 'Gestão da sua Equipe 💈',
-    description: 'Cadastre seus profissionais e barbeiros com horários individuais de trabalho e serviços que cada um realiza.',
+    title: 'Gestão da sua Equipe ✨',
+    description: 'Cadastre seus profissionais com horários individuais de trabalho e os serviços que cada um realiza.',
     badge: 'Passo 4 de 4',
     route: '/admin',
   },

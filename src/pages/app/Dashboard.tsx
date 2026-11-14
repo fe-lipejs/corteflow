@@ -26,6 +26,8 @@ import BookingModal from './agenda/BookingModal';
 import EditBookingModal from './agenda/EditBookingModal';
 import BookingDetailSheet from './agenda/BookingDetailSheet';
 import { PWAInstallButton } from '../../components/pwa/PWAInstallButton';
+import { usePermissionEngine } from '../../hooks/usePermissionEngine';
+import { UpgradeModal } from '../../components/UpgradeModal';
 import toast from 'react-hot-toast';
 
 function isValidConfirmedOrLocalBooking(b: any): boolean {
@@ -45,6 +47,7 @@ export default function Dashboard() {
   const { profile, tenant, professionalProfile } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const engine = usePermissionEngine();
   const tenantId = tenant?.id ?? '';
   const firstName = profile?.full_name?.split(' ')[0] || 'Dono';
 
@@ -52,6 +55,7 @@ export default function Dashboard() {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [bookingToConfirm, setBookingToConfirm] = useState<any>(null);
   const [editingBooking, setEditingBooking] = useState<any>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
   const confirmBooking = useConfirmBooking(tenantId);
   const updateStatus = useUpdateBookingStatus(tenantId);
   const updateBooking = useUpdateBooking(tenantId);
@@ -403,7 +407,18 @@ export default function Dashboard() {
             <ArrowUpRight className="w-4 h-4" />
             Ver Minha Página
           </a>
-          <button onClick={() => setBookingModalOpen(true)} className="btn-primary">+ Agendar</button>
+          <button
+            onClick={() => {
+              if (!engine.hasPermission('agenda.criar')) {
+                setShowUpgradeModal('agenda.criar');
+                return;
+              }
+              setBookingModalOpen(true);
+            }}
+            className="btn-primary"
+          >
+            + Agendar
+          </button>
         </div>
       </div>
 
@@ -816,8 +831,18 @@ export default function Dashboard() {
         <BookingDetailSheet
           booking={selectedBooking}
           onClose={() => setSelectedBooking(null)}
-          onConfirmBooking={(_id, b) => setBookingToConfirm(b || selectedBooking)}
+          onConfirmBooking={(_id, b) => {
+            if (!engine.hasPermission('agenda.editar')) {
+              setShowUpgradeModal('agenda.editar');
+              return;
+            }
+            setBookingToConfirm(b || selectedBooking);
+          }}
           onStatusChange={async (id, status) => {
+            if (!engine.hasPermission('agenda.editar')) {
+              setShowUpgradeModal('agenda.editar');
+              return;
+            }
             await updateStatus.mutateAsync({ id, status });
             if (status === 'canceled' || status === 'no_show') {
               setSelectedBooking(null);
@@ -833,10 +858,20 @@ export default function Dashboard() {
             }
           }}
           onDelete={async (id) => {
+            if (!engine.hasPermission('agenda.editar')) {
+              setShowUpgradeModal('agenda.editar');
+              return;
+            }
             await deleteBooking.mutateAsync(id);
             setSelectedBooking(null);
           }}
-          onEdit={(b) => setEditingBooking(b)}
+          onEdit={(b) => {
+            if (!engine.hasPermission('agenda.editar')) {
+              setShowUpgradeModal('agenda.editar');
+              return;
+            }
+            setEditingBooking(b);
+          }}
           isUpdating={updateStatus.isPending || deleteBooking.isPending || confirmBooking.isPending}
         />
       )}
@@ -864,6 +899,13 @@ export default function Dashboard() {
             setSelectedBooking(null);
           }}
           isLoading={updateBooking.isPending}
+        />
+      )}
+
+      {showUpgradeModal && (
+        <UpgradeModal
+          onClose={() => setShowUpgradeModal(null)}
+          feature={showUpgradeModal}
         />
       )}
     </div>

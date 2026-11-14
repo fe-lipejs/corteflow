@@ -222,7 +222,7 @@ export default function Suporte() {
   // ── Views ─────────────────────────────────────────────────────────────────
   if (view === 'new') {
     return (
-      <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+      <div className="w-full min-w-0 max-w-2xl mx-auto space-y-6 animate-fade-in">
         <div className="flex items-center gap-3">
           <button onClick={() => setView('list')} className="p-2 rounded-xl transition-colors hover:opacity-70" style={{ color: theme.textSecondary }}>
             <ChevronLeft className="w-5 h-5" />
@@ -306,7 +306,7 @@ export default function Suporte() {
     const StatusIcon = statusCfg.icon;
 
     return (
-      <div className="max-w-3xl mx-auto flex flex-col h-full animate-fade-in" style={{ minHeight: 'calc(100vh - 8rem)' }}>
+      <div className="w-full min-w-0 max-w-3xl mx-auto flex flex-col h-full animate-fade-in" style={{ minHeight: 'calc(100vh - 8rem)' }}>
         {/* Header */}
         <div className="flex items-start gap-3 mb-4">
           <button onClick={() => { setView('list'); setSelectedTicket(null); }} className="p-2 rounded-xl mt-1 hover:opacity-70 transition-colors" style={{ color: theme.textSecondary }}>
@@ -400,7 +400,7 @@ export default function Suporte() {
 
   // ── List view ─────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+    <div className="w-full min-w-0 max-w-3xl mx-auto space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: theme.textSecondary }}>Central de Ajuda</p>

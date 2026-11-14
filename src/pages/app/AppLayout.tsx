@@ -4,7 +4,7 @@ import { trackEvent, ActiveDwellTracker } from '../../lib/analytics';
 import {
   LayoutDashboard, Calendar, Users, Scissors,
   DollarSign, Settings, LogOut, Bell, CreditCard, Shield, Loader2, Menu, X,
-  AlertTriangle, Clock, LifeBuoy, UserCircle, ArrowRight
+  AlertTriangle, Clock, LifeBuoy, UserCircle, ArrowRight, Star
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -246,6 +246,10 @@ export default function AppLayout() {
     return () => { supabase.removeChannel(channel); };
   }, [tenant]);
 
+  const hasActivePaidSub =
+    engine.subscriptionStatus === 'active' &&
+    Boolean(engine.subscription?.stripe_subscription_id);
+
   let navItems = [
     { to: '/admin', icon: LayoutDashboard, label: 'Visão geral', end: true, permission: 'view_dashboard' },
     { to: '/admin/agenda', icon: Calendar, label: 'Agenda', end: false, permission: 'view_agenda' },
@@ -253,7 +257,7 @@ export default function AppLayout() {
     { to: '/admin/servicos', icon: Scissors, label: 'Serviços', end: false, permission: 'view_servicos' },
     { to: '/admin/clientes', icon: Users, label: 'Clientes', end: false, permission: 'view_clientes' },
     { to: '/admin/financeiro', icon: DollarSign, label: 'Financeiro', end: false, permission: 'view_financeiro' },
-    { to: '/admin/assinatura', icon: CreditCard, label: 'Assinatura', end: false, permission: null },
+    { to: '/admin/assinatura', icon: CreditCard, label: 'Assinatura', end: false, permission: null, showStar: !hasActivePaidSub },
     { to: '/admin/suporte', icon: LifeBuoy, label: 'Suporte', end: false, badge: unreadSupport, permission: null },
     { to: '/admin/configuracoes', icon: Settings, label: 'Configurações', end: false, permission: null },
   ];
@@ -332,7 +336,7 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: theme.bg }}>
+    <div className="min-h-screen flex overflow-x-hidden max-w-full" style={{ background: theme.bg }}>
       <Toaster
         position="top-center"
         containerStyle={{
@@ -429,7 +433,7 @@ export default function AppLayout() {
             <div className="truncate flex-1">
               <h2 className="font-bold text-sm leading-tight truncate group-hover:underline" style={{ color: theme.textPrimary }}>{tenant.name}</h2>
               <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wide inline-block mt-0.5" style={{ background: `${theme.accent}15`, color: theme.accent }}>
-                {tenant.business_type}
+                {tenant.business_type === 'salao' ? 'Salão' : tenant.business_type === 'esmalteria' ? 'Esmalteria' : tenant.business_type === 'barbearia' ? 'Barbearia' : tenant.business_type}
               </span>
             </div>
           </div>
@@ -478,8 +482,16 @@ export default function AppLayout() {
                 color: isActive ? theme.sidebarActiveItemText : theme.textPrimary,
               })}
             >
-              <item.icon className="w-4 h-4" />
-              <span className="flex-1">{item.label}</span>
+              <item.icon className="w-4 h-4 shrink-0" />
+              <span className="flex-1 flex items-center gap-1.5 min-w-0">
+                <span className="truncate">{item.label}</span>
+                {(item as any).showStar && (
+                  <Star
+                    className="w-3.5 h-3.5 shrink-0"
+                    style={{ color: theme.accent, fill: theme.accent }}
+                  />
+                )}
+              </span>
               {(item as any).badge && (
                 <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse"></span>
               )}
@@ -522,12 +534,12 @@ export default function AppLayout() {
 
       {/* Main Content */}
       <main 
-        className="app-main-content flex-1 min-w-0 min-h-screen md:pt-4 md:ml-[280px] md:pr-4 md:pb-4 transition-all flex flex-col"
+        className="app-main-content flex-1 min-w-0 max-w-full overflow-x-hidden min-h-screen md:pt-4 md:ml-[280px] md:pr-4 md:pb-4 transition-all flex flex-col"
         style={{
           paddingTop: 'calc(4.25rem + var(--app-safe-top, env(safe-area-inset-top, 0px)))',
         }}
       >
-        <div className="p-4 md:p-8 max-w-7xl mx-auto w-full flex-1 flex flex-col rounded-none md:rounded-3xl border border-transparent md:border-[color-mix(in_srgb,var(--theme-card-border)_50%,transparent)]"
+        <div className="p-4 md:p-8 max-w-7xl mx-auto w-full min-w-0 overflow-x-hidden flex-1 flex flex-col rounded-none md:rounded-3xl border border-transparent md:border-[color-mix(in_srgb,var(--theme-card-border)_50%,transparent)]"
              style={{ 
                background: `color-mix(in srgb, ${theme.cardBg} 40%, transparent)`, 
                boxShadow: `0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.05)`

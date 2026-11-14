@@ -66,6 +66,17 @@ function getDisplayFeatures(plan: Plan): string[] {
   return [];
 }
 
+function formatPlanDescription(plan: Plan): string {
+  const raw = plan.description?.trim() || '';
+  if (!raw || raw.toLowerCase().includes('barbeiro')) {
+    if (plan.key === 'solo_tier' || plan.name?.toLowerCase() === 'solo') {
+      return 'Ideal para profissionais independentes, salões de beleza e esmalterias. Agenda, clientes e financeiro.';
+    }
+    return 'Tudo o que você precisa para administrar seu negócio com excelência.';
+  }
+  return raw;
+}
+
 export default function Assinatura() {
   const { tenant, profile } = useAuth();
   const { theme } = useTheme();
@@ -613,7 +624,7 @@ export default function Assinatura() {
 
   return (
     <div
-      className="max-w-5xl mx-auto pb-10 px-4 sm:px-6 animate-fade-in"
+      className="w-full min-w-0 max-w-5xl mx-auto pb-10 px-0 sm:px-6 animate-fade-in overflow-x-hidden"
     >
       {/* ======================================================
           HEADER
@@ -698,7 +709,7 @@ export default function Assinatura() {
             <AlertTriangle className="w-3.5 h-3.5" />
             Modo Teste
           </span>
-          <p className="truncate" style={{ color: theme.textSecondary }}>
+          <p className="truncate min-w-0 flex-1" style={{ color: theme.textSecondary }}>
             Ambiente de testes ativo • Nenhuma cobrança real será debitada.
           </p>
         </div>
@@ -753,7 +764,7 @@ export default function Assinatura() {
             <AlertTriangle className="w-3.5 h-3.5" />
             Teste Finalizado
           </span>
-          <p className="truncate" style={{ color: theme.textSecondary }}>
+          <p className="truncate min-w-0 flex-1" style={{ color: theme.textSecondary }}>
             Seu período de teste terminou. Escolha um plano para continuar.
           </p>
         </div>
@@ -1003,7 +1014,7 @@ export default function Assinatura() {
               )}
           </div>
         ) : (
-          <div className="flex flex-col lg:flex-row justify-center items-stretch gap-6 max-w-5xl mx-auto">
+          <div className="flex flex-col lg:flex-row justify-center items-stretch gap-6 max-w-5xl mx-auto w-full min-w-0">
             {plans
               .filter((plan) => {
                 if (
@@ -1285,8 +1296,7 @@ export default function Assinatura() {
                             theme.textSecondary,
                         }}
                       >
-                        {planToDisplay.description ||
-                          'Tudo o que você precisa para administrar seu negócio.'}
+                        {formatPlanDescription(planToDisplay)}
                       </p>
 
                       {/* ======================================
@@ -1410,7 +1420,7 @@ export default function Assinatura() {
                               item
                                 .toLowerCase()
                                 .includes(
-                                  'profissional'
+                                  'profissiona'
                                 )
                           ) && (
                               <div className="flex items-start gap-2.5">

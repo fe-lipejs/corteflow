@@ -172,7 +172,7 @@ export default function Onboarding() {
     defaultValues: {
       language: 'pt',
       themePreset: 'elegant',
-      businessType: 'barbearia',
+      businessType: 'salao',
       businessName: '',
       slug: '',
       zipCode: '',
@@ -415,7 +415,7 @@ export default function Onboarding() {
       // 1. Create Tenant
       const { data: tenantData, error: tenantError } = await supabase.from('tenants').insert({
         owner_user_id: user.id,
-        business_type: data.businessType || 'barbearia',
+        business_type: data.businessType || 'salao',
         name: finalBusinessName,
         slug: finalSlug,
         language: data.language || 'pt',
@@ -733,9 +733,9 @@ export default function Onboarding() {
 
                   <div className="grid grid-cols-1 gap-3.5">
                     {[
-                      { id: 'barbearia', title: 'Barbearia', desc: 'Cortes, barba, navalha e combos masculinos', icon: Scissors },
                       { id: 'salao', title: 'Salão de Beleza', desc: 'Cabelo, escova, coloração e tratamentos', icon: Star },
                       { id: 'esmalteria', title: 'Esmalteria & Nails', desc: 'Manicure, pedicure, alongamento em gel e nail design', icon: Sparkles },
+                      { id: 'barbearia', title: 'Barbearia', desc: 'Cortes, barba, navalha e combos masculinos', icon: Scissors },
                     ].map(type => {
                       const isSelected = businessType === type.id;
                       return (

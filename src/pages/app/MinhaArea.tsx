@@ -66,7 +66,7 @@ export default function MinhaArea() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 pb-12">
+    <div className="w-full min-w-0 max-w-2xl mx-auto space-y-6 pb-12">
 
       {/* Header */}
       <div>

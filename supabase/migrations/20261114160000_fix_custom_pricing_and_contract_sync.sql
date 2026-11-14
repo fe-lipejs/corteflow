@@ -154,3 +154,10 @@ CREATE POLICY "Super admin can manage custom pricing" ON public.custom_pricing
     FOR ALL USING (public.is_super_admin())
     WITH CHECK (public.is_super_admin());
 
+-- 6. Update Solo plan description to focus on Beauty Salons & Nail Studios (with barbershops as 3rd option)
+UPDATE public.plans
+SET description = 'Ideal para profissionais independentes, salões de beleza e esmalterias. Agenda, clientes e financeiro.'
+WHERE key = 'solo_tier'
+   OR description ILIKE '%barbeiro%';
+
+

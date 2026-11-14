@@ -43,7 +43,7 @@ async function fetchPublicStore(slug: string) {
         id: demoPortal.id,
         name: demoPortal.business_name,
         slug: demoPortal.slug,
-        business_type: demoPortal.business_type || 'barbearia',
+        business_type: demoPortal.business_type || 'salao',
         status: 'active',
         isDemo: true,
         owner_whatsapp: demoPortal.owner_whatsapp,
@@ -141,13 +141,18 @@ async function fetchPublicStore(slug: string) {
     }
   }
 
-  // If tenant is soft-deleted or marked blocked/suspended/deleted
-  if (tenant && (tenant.deleted_at || ['blocked', 'suspended', 'deleted', 'canceled'].includes(tenant.status))) {
+  // If tenant is soft-deleted, marked blocked/suspended/deleted/canceled, or trial expired
+  if (
+    tenant &&
+    (tenant.deleted_at ||
+      ['blocked', 'suspended', 'deleted', 'canceled'].includes(tenant.status) ||
+      (tenant.status === 'trial' && tenant.trial_ends_at && new Date(tenant.trial_ends_at) < new Date()))
+  ) {
     tenant = null;
   }
 
   if (!tenant) {
-    throw new Error('Barbearia/Salão não encontrado ou desativado');
+    throw new Error('Estabelecimento não encontrado ou desativado');
   }
 
   const todayStart = startOfDay(new Date());
