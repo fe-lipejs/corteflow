@@ -98,7 +98,14 @@ serve(async (req) => {
       });
     }
 
-    const activeStripeSub = subs?.data?.find((s: any) => s.status === 'active' || s.status === 'trialing') || subs?.data?.[0];
+    // Se o salão já está ativo manualmente no banco (sem stripe_subscription_id), só sobrescreve se houver uma assinatura ATIVA no Stripe
+    const isManualActiveInDb = existingSub?.status === 'active' && !existingSub?.stripe_subscription_id;
+    const activeStripeSub = isManualActiveInDb
+      ? subs?.data?.find((s: any) => s.status === 'active' || s.status === 'trialing')
+      : (subs?.data?.find((s: any) => s.status === 'active' || s.status === 'trialing') ||
+         (existingSub?.stripe_subscription_id
+           ? subs?.data?.find((s: any) => s.id === existingSub.stripe_subscription_id)
+           : null));
 
     if (!activeStripeSub) {
       return new Response(JSON.stringify({ 

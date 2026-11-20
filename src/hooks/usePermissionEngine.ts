@@ -40,6 +40,8 @@ const SUBSCRIPTION_SELECT = `
   id,
   plan_id,
   status,
+  stripe_subscription_id,
+  stripe_customer_id,
   trial_ends_at,
   current_period_end,
   grace_period_ends_at,
@@ -69,6 +71,16 @@ function isTrialExpired(sub: any): boolean {
   return new Date(sub.trial_ends_at) < new Date();
 }
 
+function isManualPeriodExpired(sub: any): boolean {
+  if (!sub) return false;
+  if (sub.status !== 'active') return false;
+  // Se foi ativado manualmente pelo Super Admin (sem cobrança automática na Stripe) e o prazo venceu:
+  if (!sub.stripe_subscription_id && sub.current_period_end) {
+    return new Date(sub.current_period_end) < new Date();
+  }
+  return false;
+}
+
 /** Assinatura concede o plano contratado? */
 function subscriptionGrantsPlan(sub: any): boolean {
   if (!sub) return false;
@@ -78,6 +90,7 @@ function subscriptionGrantsPlan(sub: any): boolean {
   }
   if (INACTIVE_STATUSES.includes(sub.status)) return false;
   if (isTrialExpired(sub)) return false;
+  if (isManualPeriodExpired(sub)) return false;
   return true;
 }
 
@@ -174,9 +187,10 @@ export function usePermissionEngine(): PermissionEngine {
   // Status contextual
   const subStatus = sub?.status;
   const trialExpired = isTrialExpired(sub);
+  const manualPeriodExpired = isManualPeriodExpired(sub);
   const periodStillValid = sub?.current_period_end && new Date(sub.current_period_end) > new Date();
   const isCanceled = (subStatus === 'canceled' || subStatus === 'incomplete_expired') && !periodStillValid;
-  const isPastDue = subStatus === 'past_due' || subStatus === 'unpaid';
+  const isPastDue = subStatus === 'past_due' || subStatus === 'unpaid' || manualPeriodExpired;
   const isSubscriptionActive = isSuperAdmin ? true : subscriptionGrantsPlan(sub);
 
   let subscriptionStatus: SubscriptionStatusType = 'no_subscription';
@@ -194,6 +208,9 @@ export function usePermissionEngine(): PermissionEngine {
   } else if (trialExpired) {
     subscriptionStatus = 'trial_expired';
     subscriptionMessage = 'Seu período de teste gratuito de 7 dias encerrou. Escolha um plano para continuar aproveitando todos os recursos.';
+  } else if (manualPeriodExpired) {
+    subscriptionStatus = 'past_due';
+    subscriptionMessage = 'O período da sua assinatura encerrou. Renove seu plano para continuar aproveitando todos os recursos.';
   } else if (isPastDue) {
     subscriptionStatus = 'past_due';
     subscriptionMessage = 'Identificamos uma pendência no pagamento da sua assinatura. Regularize para liberar seu acesso.';

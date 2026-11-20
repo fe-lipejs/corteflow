@@ -114,6 +114,28 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     };
   }, [activeTenantId, queryClient]);
 
+  // ─── Fallback por polling ──────────────────────────────────────────────────
+  // Em redes que bloqueiam o WebSocket do Supabase (Realtime), a agenda deixaria de
+  // atualizar sozinha. Enquanto o canal não estiver conectado, recarregamos os dados
+  // críticos a cada 30s (via HTTP, que passa pelo proxy de contingência /sb).
+  useEffect(() => {
+    if (!activeTenantId || isConnected) return;
+
+    const refreshCriticalData = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-center-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['forgotten-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard_today_bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard_recent_bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    };
+
+    const interval = setInterval(refreshCriticalData, 30000);
+    return () => clearInterval(interval);
+  }, [activeTenantId, isConnected, queryClient]);
+
   return (
     <RealtimeContext.Provider value={{ isConnected, status }}>
       {children}

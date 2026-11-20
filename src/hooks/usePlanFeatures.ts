@@ -93,8 +93,14 @@ export function usePlanFeatures(): { features: PlanFeatures; isLoading: boolean 
   // Trial expirado lido do banco
   const trialEndsAt = sub?.trial_ends_at ? new Date(sub.trial_ends_at) : null;
   const trialExpired = trialEndsAt ? trialEndsAt < new Date() : false;
-  if (subStatus === 'trial' && trialExpired) {
+  if ((subStatus === 'trial' || subStatus === 'trialing') && trialExpired) {
     subStatus = 'trial_expired';
+    isActive = false;
+  }
+
+  // Assinatura manual cujo período expirou
+  if (subStatus === 'active' && !sub?.stripe_subscription_id && sub?.current_period_end && new Date(sub.current_period_end) < new Date()) {
+    subStatus = 'past_due';
     isActive = false;
   }
 

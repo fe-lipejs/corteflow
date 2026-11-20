@@ -132,11 +132,25 @@ async function fetchPublicStore(slug: string) {
   }
 
   // 2. Buscar tenant real por slug na tabela tenants
-  let { data: tenant } = await supabase.from('tenants').select('*').eq('slug', slug).maybeSingle();
+  let { data: tenant, error: tenantError } = await supabase
+    .from('tenants')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (tenantError) {
+    throw tenantError;
+  }
 
   if (!tenant) {
     if (slug === 'demo' || !slug) {
-      const { data } = await supabase.from('tenants').select('*').is('deleted_at', null).limit(1).maybeSingle();
+      const { data, error: demoFallbackErr } = await supabase
+        .from('tenants')
+        .select('*')
+        .is('deleted_at', null)
+        .limit(1)
+        .maybeSingle();
+      if (demoFallbackErr) throw demoFallbackErr;
       tenant = data;
     }
   }

@@ -67,8 +67,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     permChannelRef.current = channel;
   };
 
+  const AUTH_CACHE_PREFIX = 'raffros_auth_cache_';
+
+  const saveAuthCache = (userId: string, data: { profile?: any; tenant?: any }) => {
+    try {
+      const prevRaw = localStorage.getItem(`${AUTH_CACHE_PREFIX}${userId}`);
+      const prev = prevRaw ? JSON.parse(prevRaw) : {};
+      localStorage.setItem(
+        `${AUTH_CACHE_PREFIX}${userId}`,
+        JSON.stringify({ ...prev, ...data, updatedAt: Date.now() })
+      );
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  const readAuthCache = (userId: string): { profile?: any; tenant?: any } | null => {
+    try {
+      const raw = localStorage.getItem(`${AUTH_CACHE_PREFIX}${userId}`);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  };
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let isBootstrapping = true;
+
+    const isNetworkFailure = (err: any) => {
+      const msg = String(err?.message || err || '').toLowerCase();
+      return (
+        err?.name === 'AuthRetryableFetchError' ||
+        msg.includes('failed to fetch') ||
+        msg.includes('load failed') ||
+        msg.includes('networkerror')
+      );
+    };
+
+    // Recupera a sessão com novas tentativas em caso de falha de rede,
+    // evitando que o usuário seja "deslogado" só porque a conexão oscilou.
+    const loadInitialSession = async (attempt = 1): Promise<void> => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (!session && error && isNetworkFailure(error) && attempt < 4) {
+        await new Promise((r) => setTimeout(r, 800 * attempt));
+        return loadInitialSession(attempt + 1);
+      }
+      isBootstrapping = false;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -76,13 +120,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setLoading(false);
       }
+    };
+
+    loadInitialSession().catch(() => {
+      isBootstrapping = false;
+      setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Durante o boot, se INITIAL_SESSION vier nulo por falha momentânea de rede,
+      // aguardamos as retentativas do loadInitialSession antes de derrubar a sessão.
+      if (event === 'INITIAL_SESSION' && !session && isBootstrapping) {
+        return;
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        if (event !== 'TOKEN_REFRESHED') {
+          fetchProfile(session.user.id);
+        }
       } else {
         setProfile(null);
         setTenant(null);
@@ -108,16 +165,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data: prof, error: profErr } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+      let prof: any = null;
+      let profErr: any = null;
+      // Até 3 tentativas para falhas de rede (oscilação 4G / rota bloqueada)
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        const res = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+        prof = res.data;
+        profErr = res.error;
+        const msg = String(profErr?.message || '').toLowerCase();
+        const isNet = msg.includes('failed to fetch') || msg.includes('load failed') || msg.includes('networkerror');
+        if (!profErr || !isNet) break;
+        await new Promise((r) => setTimeout(r, 700 * attempt));
+      }
 
       if (profErr) {
         console.error('Error fetching profile:', profErr);
+        // Se todas as tentativas falharem por rede, restaura o último perfil/salão conhecido do cache
+        // para que o dono não perca o acesso nem seja forçado a relogar.
+        const cached = readAuthCache(userId);
+        if (cached?.profile) {
+          setProfile(cached.profile);
+          if (cached.tenant) setTenant(cached.tenant);
+        }
       } else if (prof) {
         setProfile(prof);
+        saveAuthCache(userId, { profile: prof });
         let resolvedTenantId = (prof as any)?.tenant_id;
 
         if ((prof.role === 'professional' || !resolvedTenantId) && prof.role !== 'super_admin') {
@@ -168,6 +244,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .maybeSingle();
           if (!tenErr && tenData) {
             setTenant(tenData as any);
+            saveAuthCache(userId, { tenant: tenData });
+          } else if (tenErr) {
+            const cached = readAuthCache(userId);
+            if (cached?.tenant) setTenant(cached.tenant);
           }
         }
 

@@ -153,11 +153,17 @@ export default function ClientPortal() {
       supabase
         .rpc('get_customer_by_phone', { p_tenant_id: tenant.id, p_phone: cleanPhone })
         .then(({ data }) => {
-          const customer = Array.isArray(data) ? data[0] : data;
-          if (customer?.id) {
-            setCustomerId(customer.id);
+          if (typeof data === 'string' && data) {
+            setCustomerId(data);
             setIsLogged(true);
-            setPhone(phoneFormat.format(customer.phone || cleanPhone));
+            setPhone(phoneFormat.format(cleanPhone));
+          } else {
+            const customer = Array.isArray(data) ? data[0] : data;
+            if (customer?.id) {
+              setCustomerId(customer.id);
+              setIsLogged(true);
+              setPhone(phoneFormat.format(customer.phone || cleanPhone));
+            }
           }
         });
     }
@@ -413,14 +419,25 @@ export default function ClientPortal() {
       const { data: customerIdData, error } = await supabase
         .rpc('get_customer_by_phone', { p_tenant_id: tenant.id, p_phone: cleanPhone });
 
-      if (customerIdData) {
-        setCustomerId(customerIdData);
+      if (error) {
+        toast.error('Falha de conexão ao buscar seus agendamentos. Verifique sua internet e tente novamente.');
+        return;
+      }
+
+      const resolvedId =
+        typeof customerIdData === 'string'
+          ? customerIdData
+          : (Array.isArray(customerIdData) ? customerIdData[0]?.id : (customerIdData as any)?.id);
+
+      if (resolvedId) {
+        setCustomerId(resolvedId);
         setIsLogged(true);
       } else {
         toast.error('Nenhum agendamento encontrado para este telefone.');
       }
     } catch (err) {
       console.error(err);
+      toast.error('Falha de conexão. Tente novamente em alguns segundos.');
     } finally {
       setLoading(false);
     }

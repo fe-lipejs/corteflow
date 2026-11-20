@@ -795,8 +795,7 @@ export default function Assinatura() {
       ====================================================== */}
 
       {hasActivePlan &&
-        !isTrial &&
-        subscription?.stripe_subscription_id && (
+        !isTrial && (
           <div
             className="mb-10 rounded-2xl border p-5 flex flex-col sm:flex-row sm:items-center gap-4"
             style={{
@@ -855,10 +854,14 @@ export default function Assinatura() {
                     theme.textSecondary,
                 }}
               >
-                Próxima cobrança:{' '}
-                {formatDate(
-                  subscription.current_period_end
-                )}
+                {subscription?.current_period_end &&
+                new Date(subscription.current_period_end).getFullYear() > new Date().getFullYear() + 10
+                  ? 'Assinatura vitalícia ativa'
+                  : subscription?.stripe_subscription_id
+                    ? `Próxima cobrança: ${formatDate(subscription.current_period_end)}`
+                    : subscription?.current_period_end
+                      ? `Válido até: ${formatDate(subscription.current_period_end)}`
+                      : 'Assinatura ativa'}
               </p>
             </div>
           </div>

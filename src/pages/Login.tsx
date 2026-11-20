@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { supabase } from '../integrations/supabase/client';
+import { supabase, friendlyNetworkError } from '../integrations/supabase/client';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Eye, EyeOff, Shield, CheckCircle2, X, KeyRound, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -157,7 +157,7 @@ export default function Login() {
         } else if (error.message.includes('Email not confirmed')) {
           setError('Você precisa confirmar seu e-mail antes de entrar. Verifique sua caixa de entrada ou spam.');
         } else {
-          setError(error.message);
+          setError(friendlyNetworkError(error.message));
         }
         setLoading(false);
         return;
@@ -180,14 +180,15 @@ export default function Login() {
         .maybeSingle();
 
       if (profileData?.tenant_id && profileData?.role !== 'super_admin') {
-        const { data: tenantCheck } = await supabase
+        const { data: tenantCheck, error: tenantCheckErr } = await supabase
           .from('tenants')
           .select('id, status, deleted_at')
           .eq('id', profileData.tenant_id)
           .maybeSingle();
 
         // If tenant is soft-deleted or RLS filtered out because of deletion
-        if (!tenantCheck || tenantCheck.deleted_at) {
+        // (nunca deslogar por falha de rede: só quando a consulta respondeu sem erro)
+        if (!tenantCheckErr && (!tenantCheck || tenantCheck.deleted_at)) {
           await supabase.auth.signOut();
           setError('Esta conta/empresa foi desativada ou excluída pelo administrador. Entre em contato com o suporte para reativação.');
           setLoading(false);
@@ -225,7 +226,7 @@ export default function Login() {
       }
     } catch (err: any) {
       console.error(err);
-      setError('Erro ao autenticar. Tente novamente.');
+      setError(friendlyNetworkError(err?.message) || 'Erro ao autenticar. Tente novamente.');
       setLoading(false);
     }
   };

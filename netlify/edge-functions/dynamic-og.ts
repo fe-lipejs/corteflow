@@ -13,6 +13,7 @@ export default async (request: Request, context: Context) => {
 
   // Ignorar arquivos estáticos e rotas de sistema do Raffros
   const systemRoutes = [
+    "sb",
     "api",
     "admin",
     "platform",

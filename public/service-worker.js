@@ -1,5 +1,5 @@
 // Service Worker para PWA do Raffros
-const CACHE_NAME = 'raffros-pwa-v1';
+const CACHE_NAME = 'raffros-pwa-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -45,13 +45,32 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const reqUrl = event.request.url;
+
+  // Imagens/arquivos públicos do Supabase Storage (logos, banners, fotos):
+  // tenta direto e, se a rede bloquear *.supabase.co, busca pelo proxy próprio /sb.
+  if (
+    event.request.method === 'GET' &&
+    reqUrl.includes('.supabase.co/storage/v1/object/public/')
+  ) {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        const parsed = new URL(reqUrl);
+        const proxied = self.location.origin + '/sb' + parsed.pathname + parsed.search;
+        return fetch(proxied);
+      })
+    );
+    return;
+  }
+
   // Não cacheia requisições do Supabase, Stripe, API externa ou métodos que não sejam GET
   if (
     event.request.method !== 'GET' ||
-    event.request.url.includes('supabase.co') ||
-    event.request.url.includes('stripe.com') ||
-    event.request.url.includes('/api/') ||
-    event.request.url.includes('chrome-extension')
+    reqUrl.includes('supabase.co') ||
+    reqUrl.includes('/sb/') ||
+    reqUrl.includes('stripe.com') ||
+    reqUrl.includes('/api/') ||
+    reqUrl.includes('chrome-extension')
   ) {
     return;
   }

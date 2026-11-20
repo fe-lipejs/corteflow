@@ -247,8 +247,11 @@ export default function AppLayout() {
   }, [tenant]);
 
   const hasActivePaidSub =
-    engine.subscriptionStatus === 'active' &&
-    Boolean(engine.subscription?.stripe_subscription_id);
+    engine.subscriptionStatus === 'active' ||
+    Boolean(
+      engine.subscription?.stripe_subscription_id &&
+      (engine.subscription?.status === 'active' || engine.subscription?.status === 'trialing')
+    );
 
   let navItems = [
     { to: '/admin', icon: LayoutDashboard, label: 'Visão geral', end: true, permission: 'view_dashboard' },

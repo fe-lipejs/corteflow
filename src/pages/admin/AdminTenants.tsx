@@ -60,7 +60,11 @@ export default function AdminTenants() {
   const [contractSubId, setContractSubId] = useState<string | null>(null);
   const [contractPlanId, setContractPlanId] = useState<string | null>(null);
   const [contractTargetPlanId, setContractTargetPlanId] = useState<string>('');
-  const [availablePaidPlans, setAvailablePaidPlans] = useState<Array<{ id: string; name: string; key: string }>>([]);
+  const [contractSubStatus, setContractSubStatus] = useState<'active' | 'trial' | 'past_due' | 'canceled'>('trial');
+  const [contractDurationDays, setContractDurationDays] = useState<'keep' | '30' | '90' | '180' | '365' | 'lifetime'>('30');
+  const [contractCurrentPeriodEnd, setContractCurrentPeriodEnd] = useState<string | null>(null);
+  const [contractHasStripeSub, setContractHasStripeSub] = useState<boolean>(false);
+  const [availablePaidPlans, setAvailablePaidPlans] = useState<Array<any>>([]);
   const [contractPlanName, setContractPlanName] = useState<string>('');
   const [contractMaxPros, setContractMaxPros] = useState<number>(1);
   const [contractMaxServices, setContractMaxServices] = useState<number>(3);
@@ -75,6 +79,17 @@ export default function AdminTenants() {
 
   const queryClient = useQueryClient();
 
+  function applyPlanDefaultsToForm(planObj: any) {
+    if (!planObj) return;
+    setContractPlanName(planObj.name || 'Plano Padrão');
+    setContractMaxPros(planObj.max_professionals ?? 1);
+    setContractMaxServices(planObj.limits?.servicos === 'unlimited' ? 999 : (planObj.limits?.servicos ?? 3));
+    setContractMaxProducts(planObj.limits?.produtos === 'unlimited' ? 999 : (planObj.limits?.produtos ?? (planObj.allow_products ? 50 : 0)));
+    setContractAllowFinanceiro(planObj.features?.financeiro ?? true);
+    setContractAllowProdutos(Boolean(planObj.allow_products || planObj.features?.produtos));
+    setContractAllowRelatorios(Boolean(planObj.features?.relatorios));
+  }
+
   async function handleOpenContractModal(tenant: Tenant) {
     setContractModalTenant(tenant);
     setIsLoadingContract(true);
@@ -82,14 +97,14 @@ export default function AdminTenants() {
       const [{ data: sub, error }, { data: allPlans }] = await Promise.all([
         supabase
           .from('subscriptions')
-          .select('id, plan_id, status, plans(*), subscription_contracts(*)')
+          .select('id, plan_id, status, stripe_subscription_id, current_period_end, trial_ends_at, plans(*), subscription_contracts(*)')
           .eq('tenant_id', tenant.id)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
         supabase
           .from('plans')
-          .select('id, name, key, is_trial_plan, sort_order')
+          .select('id, name, key, is_trial_plan, sort_order, max_professionals, allow_products, features, limits, permissions')
           .eq('active', true)
           .order('sort_order', { ascending: true })
       ]);
@@ -116,6 +131,23 @@ export default function AdminTenants() {
 
       setContractSubId(sub.id);
       setContractPlanId(sub.plan_id);
+      const normalizedStatus =
+        sub.status === 'active'
+          ? 'active'
+          : sub.status === 'past_due' || sub.status === 'unpaid'
+            ? 'past_due'
+            : sub.status === 'canceled'
+              ? 'canceled'
+              : 'trial';
+      setContractSubStatus(normalizedStatus);
+      setContractCurrentPeriodEnd(sub.current_period_end || sub.trial_ends_at || null);
+      setContractHasStripeSub(Boolean(sub.stripe_subscription_id));
+      setContractDurationDays(
+        normalizedStatus === 'active' && sub.current_period_end && new Date(sub.current_period_end) > new Date()
+          ? 'keep'
+          : '30'
+      );
+
       const plan = Array.isArray(sub.plans) ? sub.plans[0] : sub.plans;
       const contract = Array.isArray(sub.subscription_contracts) ? sub.subscription_contracts[0] : sub.subscription_contracts;
 
@@ -123,8 +155,8 @@ export default function AdminTenants() {
 
       if (contract) {
         setContractMaxPros(contract.max_professionals ?? plan?.max_professionals ?? 1);
-        setContractMaxServices(contract.limits?.servicos ?? plan?.limits?.servicos ?? 3);
-        setContractMaxProducts(contract.limits?.produtos ?? plan?.limits?.produtos ?? 0);
+        setContractMaxServices(contract.limits?.servicos === 'unlimited' ? 999 : (contract.limits?.servicos ?? plan?.limits?.servicos ?? 3));
+        setContractMaxProducts(contract.limits?.produtos === 'unlimited' ? 999 : (contract.limits?.produtos ?? plan?.limits?.produtos ?? 0));
         setContractAllowFinanceiro(contract.features?.financeiro ?? plan?.features?.financeiro ?? false);
         setContractAllowProdutos(contract.allow_products ?? contract.features?.produtos ?? plan?.allow_products ?? false);
         setContractAllowRelatorios(contract.features?.relatorios ?? plan?.features?.relatorios ?? false);
@@ -153,7 +185,7 @@ export default function AdminTenants() {
         setContractCustomPrice('');
       }
 
-      // Definir o plano pago alvo do desconto (se já existir em custom_pricing e for plano pago, usa ele; senão se sub.plan_id for pago usa ele; senão usa Solo)
+      // Definir o plano pago alvo (se já existir em custom_pricing e for plano pago, usa ele; senão se sub.plan_id for pago usa ele; senão usa Solo)
       const isCpPlanPaid = cpData?.plan_id && paidPlans.some((p: any) => p.id === cpData.plan_id);
       const isSubPlanPaid = sub.plan_id && paidPlans.some((p: any) => p.id === sub.plan_id);
       const defaultPaidPlanId = isCpPlanPaid
@@ -176,9 +208,76 @@ export default function AdminTenants() {
     try {
       setIsSavingContract(true);
       const customPriceNum = contractCustomPrice && Number(contractCustomPrice) > 0 ? Number(contractCustomPrice) : null;
+      const effectivePaidPlanId = contractTargetPlanId || contractPlanId;
+      const finalPlanIdForSub = contractSubStatus === 'active' ? effectivePaidPlanId : contractPlanId;
+
+      // 1. Calcular nova validade (current_period_end / trial_ends_at)
+      let newCurrentPeriodEnd = contractCurrentPeriodEnd;
+      let newTrialEndsAt: string | undefined = undefined;
+
+      if (contractSubStatus === 'active') {
+        if (contractDurationDays === 'keep' && contractCurrentPeriodEnd && new Date(contractCurrentPeriodEnd) > new Date()) {
+          newCurrentPeriodEnd = contractCurrentPeriodEnd;
+        } else if (contractDurationDays === 'lifetime') {
+          newCurrentPeriodEnd = new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString();
+        } else {
+          const daysToAdd = Number(contractDurationDays === 'keep' ? 30 : contractDurationDays);
+          newCurrentPeriodEnd = new Date(Date.now() + daysToAdd * 24 * 60 * 60 * 1000).toISOString();
+        }
+      } else if (contractSubStatus === 'trial') {
+        const trialDaysToAdd = contractDurationDays === 'keep' ? 7 : (contractDurationDays === 'lifetime' ? 365 : Number(contractDurationDays));
+        newTrialEndsAt = new Date(Date.now() + trialDaysToAdd * 24 * 60 * 60 * 1000).toISOString();
+        newCurrentPeriodEnd = newTrialEndsAt;
+      }
+
+      // 2. Atualizar status na tabela tenants
+      const newTenantStatus =
+        contractSubStatus === 'active'
+          ? 'active'
+          : contractSubStatus === 'trial'
+            ? 'trial'
+            : contractSubStatus === 'canceled'
+              ? 'canceled'
+              : 'suspended';
+
+      const tenantUpdatePayload: Record<string, any> = { status: newTenantStatus };
+      if (newTrialEndsAt) {
+        tenantUpdatePayload.trial_ends_at = newTrialEndsAt;
+      }
+
+      const { error: tenantErr } = await supabase
+        .from('tenants')
+        .update(tenantUpdatePayload as any)
+        .eq('id', contractModalTenant.id);
+      if (tenantErr) throw tenantErr;
+
+      // 3. Atualizar assinatura na tabela subscriptions
+      const subUpdatePayload: Record<string, any> = {
+        status: contractSubStatus,
+        plan_id: finalPlanIdForSub,
+        current_period_end: newCurrentPeriodEnd,
+        grace_period_ends_at: null,
+        suspension_reason: null,
+        canceled_at: contractSubStatus === 'canceled' ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      };
+      if (contractSubStatus === 'active') {
+        subUpdatePayload.latest_invoice_status = 'paid';
+      }
+      if (newTrialEndsAt) {
+        subUpdatePayload.trial_ends_at = newTrialEndsAt;
+      }
+
+      const { error: subErr } = await supabase
+        .from('subscriptions')
+        .update(subUpdatePayload as any)
+        .eq('id', contractSubId);
+      if (subErr) throw subErr;
+
+      // 4. Atualizar contrato na tabela subscription_contracts (após subscriptions para prevalecer sobre o trigger)
       const contractPayload: Record<string, any> = {
         subscription_id: contractSubId,
-        plan_id: contractPlanId,
+        plan_id: finalPlanIdForSub,
         max_professionals: Number(contractMaxPros),
         allow_products: contractAllowProdutos,
         features: {
@@ -206,7 +305,7 @@ export default function AdminTenants() {
           'configuracoes.editar_perfil', 'configuracoes.editar_layout', 'configuracoes.editar_horarios_loja', 'configuracoes.gerenciar_pagamentos', 'assinatura.gerenciar',
           'suporte.visualizar', 'suporte.abrir_chamado'
         ],
-        status: 'active',
+        status: contractSubStatus === 'active' ? 'active' : contractSubStatus,
         updated_at: new Date().toISOString()
       };
 
@@ -220,8 +319,8 @@ export default function AdminTenants() {
 
       if (error) throw error;
 
-      // Salvar ou remover preço promocional personalizado na tabela custom_pricing
-      const targetPlanForDiscount = contractTargetPlanId || contractPlanId;
+      // 5. Salvar ou remover preço promocional personalizado na tabela custom_pricing
+      const targetPlanForDiscount = effectivePaidPlanId;
       if (customPriceNum !== null) {
         const { data: existingCps } = await supabase
           .from('custom_pricing')
@@ -252,7 +351,11 @@ export default function AdminTenants() {
         await supabase.from('custom_pricing').delete().eq('tenant_id', contractModalTenant.id);
       }
 
-      toast.success('Permissões, limites e preço promocional salvos para ' + contractModalTenant?.name + '!');
+      toast.success(
+        contractSubStatus === 'active'
+          ? `Assinatura ativada e permissões salvas para ${contractModalTenant?.name}!`
+          : `Permissões e status salvos para ${contractModalTenant?.name}!`
+      );
       setContractModalTenant(null);
       queryClient.invalidateQueries({ queryKey: ['admin_tenants_v2'] });
       queryClient.invalidateQueries({ queryKey: ['admin_custom_pricing'] });
@@ -295,9 +398,131 @@ export default function AdminTenants() {
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase.from('tenants').update({ status } as any).eq('id', id);
       if (error) throw error;
+
+      // Sincronizar também a tabela subscriptions para refletir imediatamente no painel do salão
+      const { data: sub } = await supabase
+        .from('subscriptions')
+        .select('id, plan_id, status, current_period_end, subscription_contracts(*)')
+        .eq('tenant_id', id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (sub) {
+        if (status === 'active') {
+          const prevContract = Array.isArray((sub as any).subscription_contracts)
+            ? (sub as any).subscription_contracts[0]
+            : (sub as any).subscription_contracts;
+
+          // Garantir que plan_id aponte para um plano pago (e não o plano de Trial)
+          const [{ data: allPlans }, { data: cpRows }] = await Promise.all([
+            supabase
+              .from('plans')
+              .select('id, name, key, is_trial_plan, sort_order, max_professionals, allow_products, features, limits, permissions')
+              .eq('active', true)
+              .order('sort_order', { ascending: true }),
+            supabase
+              .from('custom_pricing')
+              .select('plan_id, amount_override')
+              .eq('tenant_id', id)
+              .limit(1),
+          ]);
+
+          const paidPlans = (allPlans || []).filter(
+            (p: any) =>
+              p.name !== 'Trial (Período de Teste)' &&
+              p.key !== 'expired_tier' &&
+              p.key !== 'fallback_tier' &&
+              !p.key?.includes('fallback') &&
+              !p.name?.toLowerCase().includes('fallback') &&
+              !p.name?.toLowerCase().includes('cancelado') &&
+              !p.is_trial_plan
+          );
+
+          const cpPlanId = cpRows?.[0]?.plan_id;
+          const cpAmount = cpRows?.[0]?.amount_override;
+          const isCpPaid = cpPlanId && paidPlans.some((p: any) => p.id === cpPlanId);
+          const isCurrentPaid = sub.plan_id && paidPlans.some((p: any) => p.id === sub.plan_id);
+          const targetPlanId = isCpPaid
+            ? cpPlanId
+            : isCurrentPaid
+              ? sub.plan_id
+              : (paidPlans[0]?.id || sub.plan_id);
+          const targetPlanObj = paidPlans.find((p: any) => p.id === targetPlanId);
+
+          const hasFutureEnd = sub.current_period_end && new Date(sub.current_period_end) > new Date();
+          const nextPeriodEnd = hasFutureEnd && sub.status === 'active'
+            ? sub.current_period_end
+            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+          await supabase
+            .from('subscriptions')
+            .update({
+              status: 'active',
+              plan_id: targetPlanId,
+              current_period_end: nextPeriodEnd,
+              latest_invoice_status: 'paid',
+              grace_period_ends_at: null,
+              suspension_reason: null,
+              canceled_at: null,
+              updated_at: new Date().toISOString(),
+            } as any)
+            .eq('id', sub.id);
+
+          // Preservar customizações do Super Admin em subscription_contracts caso já existam
+          if (prevContract?.features?._custom_override && targetPlanObj) {
+            await supabase
+              .from('subscription_contracts')
+              .upsert({
+                subscription_id: sub.id,
+                plan_id: targetPlanId,
+                price_amount: cpAmount && Number(cpAmount) > 0 ? Number(cpAmount) : prevContract.price_amount,
+                max_professionals: Math.max(Number(prevContract.max_professionals || 1), Number(targetPlanObj.max_professionals || 1)),
+                allow_products: Boolean(prevContract.allow_products || targetPlanObj.allow_products),
+                features: { ...(targetPlanObj.features || {}), ...(prevContract.features || {}), _custom_override: true },
+                limits: { ...(targetPlanObj.limits || {}), ...(prevContract.limits || {}) },
+                permissions: prevContract.permissions || targetPlanObj.permissions || ['*'],
+                status: 'active',
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'subscription_id' });
+          }
+        } else if (status === 'trial') {
+          const nextTrialEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+          await supabase.from('tenants').update({ trial_ends_at: nextTrialEnd } as any).eq('id', id);
+          await supabase
+            .from('subscriptions')
+            .update({
+              status: 'trial',
+              trial_ends_at: nextTrialEnd,
+              current_period_end: nextTrialEnd,
+              canceled_at: null,
+              updated_at: new Date().toISOString(),
+            } as any)
+            .eq('id', sub.id);
+        } else if (status === 'suspended' || status === 'blocked') {
+          await supabase
+            .from('subscriptions')
+            .update({
+              status: 'past_due',
+              suspension_reason: status === 'blocked' ? 'Conta bloqueada pelo administrador' : 'Conta suspensa pelo administrador',
+              updated_at: new Date().toISOString(),
+            } as any)
+            .eq('id', sub.id);
+        }
+      }
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      toast.success(
+        variables.status === 'active'
+          ? 'Salão ativado com sucesso (acesso liberado por 30 dias)!'
+          : variables.status === 'trial'
+            ? 'Salão colocado em Trial (+7 dias)!'
+            : 'Status do salão atualizado!'
+      );
       queryClient.invalidateQueries({ queryKey: ['admin_tenants_v2'] });
+      queryClient.invalidateQueries({ queryKey: ['active_subscription_contract'] });
+      queryClient.invalidateQueries({ queryKey: ['permission_engine'] });
+      queryClient.invalidateQueries({ queryKey: ['plan_features'] });
       setOpenMenuId(null);
     }
   });
@@ -869,7 +1094,114 @@ export default function AdminTenants() {
             ) : (
               <div className="p-6 space-y-5 overflow-y-auto">
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-300 leading-relaxed">
-                  💡 Os limites e módulos configurados aqui sobrescrevem as restrições padrão do plano <strong>exclusivamente para este salão</strong>, sem alterar os outros clientes.
+                  💡 Os limites, status de pagamento e módulos configurados aqui aplicam-se <strong>exclusivamente a este salão</strong>, sem alterar os outros clientes.
+                </div>
+
+                {/* Status da Assinatura & Ativação Manual (Pagamento por Fora / Pix) */}
+                <div className="p-4 bg-white/[0.03] border border-white/10 rounded-2xl space-y-3.5">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        Status da Assinatura &amp; Liberação Manual (Pix / Direto)
+                      </h4>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        {contractHasStripeSub
+                          ? 'Assinatura vinculada ao Stripe (você ainda pode ajustar plano e limites).'
+                          : 'Se o cliente pagou diretamente a você (Pix/Dinheiro), ative o acesso abaixo.'}
+                      </p>
+                    </div>
+                    {contractSubStatus !== 'active' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setContractSubStatus('active');
+                          setContractDurationDays('30');
+                          if (contractTargetPlanId) {
+                            const targetPlanObj = availablePaidPlans.find((p: any) => p.id === contractTargetPlanId);
+                            if (targetPlanObj) {
+                              setContractPlanName(targetPlanObj.name);
+                            }
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl text-xs transition-all cursor-pointer active:scale-95 shadow-sm"
+                      >
+                        ✓ Confirmar Pagamento (+30 dias)
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
+                        Status do Pagamento / Acesso
+                      </label>
+                      <select
+                        value={contractSubStatus}
+                        onChange={e => {
+                          const newSt = e.target.value as 'active' | 'trial' | 'past_due' | 'canceled';
+                          setContractSubStatus(newSt);
+                          if (newSt === 'active' && contractDurationDays === 'keep' && (!contractCurrentPeriodEnd || new Date(contractCurrentPeriodEnd) <= new Date())) {
+                            setContractDurationDays('30');
+                          }
+                        }}
+                        className="w-full px-3 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-white outline-none focus:border-emerald-500 cursor-pointer"
+                      >
+                        <option value="active">✅ Ativo (Pagamento Realizado)</option>
+                        <option value="trial">⏳ Período de Teste (Trial)</option>
+                        <option value="past_due">⚠️ Pendente / Inadimplente</option>
+                        <option value="canceled">🚫 Cancelado / Bloqueado</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
+                        Plano do Salão
+                      </label>
+                      <select
+                        value={contractTargetPlanId}
+                        onChange={e => {
+                          const newPlanId = e.target.value;
+                          setContractTargetPlanId(newPlanId);
+                          const selectedPlanObj = availablePaidPlans.find((p: any) => p.id === newPlanId);
+                          if (selectedPlanObj) {
+                            applyPlanDefaultsToForm(selectedPlanObj);
+                          }
+                        }}
+                        className="w-full px-3 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-white outline-none focus:border-emerald-500 cursor-pointer"
+                      >
+                        {availablePaidPlans.map(p => (
+                          <option key={p.id} value={p.id}>
+                            Plano {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {(contractSubStatus === 'active' || contractSubStatus === 'trial') && (
+                    <div>
+                      <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
+                        {contractSubStatus === 'active' ? 'Período de Liberação (Validade)' : 'Dias Restantes de Teste (Trial)'}
+                      </label>
+                      <select
+                        value={contractDurationDays}
+                        onChange={e => setContractDurationDays(e.target.value as any)}
+                        className="w-full px-3 py-2 bg-[#13131A] border border-white/10 rounded-xl text-sm text-white outline-none focus:border-emerald-500 cursor-pointer"
+                      >
+                        {contractCurrentPeriodEnd && new Date(contractCurrentPeriodEnd) > new Date() && (
+                          <option value="keep">
+                            Manter validade atual (até {new Date(contractCurrentPeriodEnd).toLocaleDateString('pt-BR')})
+                          </option>
+                        )}
+                        <option value="30">Liberar por +30 dias (Mensal)</option>
+                        <option value="90">Liberar por +90 dias (Trimestral)</option>
+                        <option value="180">Liberar por +180 dias (Semestral)</option>
+                        <option value="365">Liberar por +1 ano (Anual)</option>
+                        <option value="lifetime">Liberar Vitalício (Sem vencimento)</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 {/* Limites Operacionais */}

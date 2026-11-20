@@ -1726,7 +1726,17 @@ export default function PublicStore() {
       // audio removed as requested
       setStep(5);
     } catch (err: any) {
-      setErrorMsg(err?.message || "Erro ao registrar agendamento. Tente novamente.");
+      const rawMsg = err?.message || "Erro ao registrar agendamento. Tente novamente.";
+      const isNet =
+        rawMsg.toLowerCase().includes("failed to fetch") ||
+        rawMsg.toLowerCase().includes("load failed") ||
+        rawMsg.toLowerCase().includes("networkerror") ||
+        rawMsg.toLowerCase().includes("failed to send a request");
+      setErrorMsg(
+        isNet
+          ? "Conexão instável no momento. Por favor, toque em confirmar novamente para concluir seu agendamento."
+          : rawMsg
+      );
     } finally {
       setIsProcessing(false);
     }

@@ -15,6 +15,15 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       allowedHosts,
+      proxy: {
+        // Mesmo proxy de contingência do vercel.json (/sb → Supabase) para o ambiente local
+        '/sb': {
+          target: env.VITE_SUPABASE_URL || 'https://paefckmkawocjxzuoclq.supabase.co',
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/sb/, ''),
+        },
+      },
     },
     build: {
       rollupOptions: {

@@ -21,7 +21,31 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-const queryClient = new QueryClient();
+const isNetworkFailure = (error: any) => {
+  const msg = String(error?.message || error || '').toLowerCase();
+  return (
+    msg.includes('failed to fetch') ||
+    msg.includes('load failed') ||
+    msg.includes('networkerror') ||
+    msg.includes('network request failed')
+  );
+};
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Falhas de rede (4G oscilando / rota bloqueada): tenta de novo com backoff
+      retry: (failureCount, error) => (isNetworkFailure(error) ? failureCount < 4 : failureCount < 2),
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+      refetchOnReconnect: true,
+      refetchOnWindowFocus: true,
+    },
+    mutations: {
+      // Mutations (ex.: criar agendamento) NÃO são repetidas automaticamente para evitar duplicidade
+      retry: false,
+    },
+  },
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

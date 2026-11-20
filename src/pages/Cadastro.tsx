@@ -160,8 +160,15 @@ export default function Cadastro() {
     } catch (err: any) {
       console.error('Erro no cadastro:', err);
       const msg = err?.message || 'Erro inesperado ao criar conta. Tente novamente.';
+      const lower = msg.toLowerCase();
       if (msg.includes('already registered') || msg.includes('User already registered')) {
         setErrorList(['Este e-mail já está cadastrado. Faça login para continuar.']);
+      } else if (
+        lower.includes('failed to fetch') ||
+        lower.includes('load failed') ||
+        lower.includes('networkerror')
+      ) {
+        setErrorList(['Instabilidade na conexão com o servidor. Verifique sua internet e toque em criar conta novamente.']);
       } else {
         setErrorList([msg]);
       }
