@@ -106,6 +106,19 @@ export default function AdminLayout() {
       .then(({ data }) => { if (data) setProfile(data); });
   }, [user]);
 
+  // Garantir Safe Area no iOS (evita que o topo do Super Admin fique atrás do relógio, conexão, Dynamic Island e notch do iPhone)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+    if (isIOS) {
+      document.documentElement.style.setProperty(
+        '--app-safe-top',
+        isStandalone ? 'max(env(safe-area-inset-top, 0px), 48px)' : 'env(safe-area-inset-top, 0px)'
+      );
+    }
+  }, []);
+
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Admin';
 
   const getGreeting = () => {
@@ -116,7 +129,7 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050507] text-zinc-100 flex font-sans antialiased selection:bg-emerald-500/30 selection:text-emerald-200">
+    <div className="min-h-screen bg-[#050507] text-zinc-100 flex font-sans antialiased selection:bg-emerald-500/30 selection:text-emerald-200 overflow-x-hidden max-w-full">
 
       {/* ── Mobile Overlay ── */}
       <AnimatePresence>
@@ -131,8 +144,14 @@ export default function AdminLayout() {
         )}
       </AnimatePresence>
 
-      {/* ── Mobile Top Bar ── */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#09090c]/95 border-b border-white/10 z-50 flex items-center justify-between px-4 shadow-xl backdrop-blur-xl">
+      {/* ── Mobile Top Bar (respeita Safe Area da barra de status/bateria/relógio do iPhone e Android) ── */}
+      <div
+        className="app-mobile-topbar md:hidden fixed top-0 left-0 right-0 bg-[#09090c]/95 border-b border-white/10 z-40 flex items-center justify-between px-4 shadow-xl backdrop-blur-xl"
+        style={{
+          paddingTop: 'var(--app-safe-top, env(safe-area-inset-top, 0px))',
+          height: 'calc(4rem + var(--app-safe-top, env(safe-area-inset-top, 0px)))',
+        }}
+      >
         <div className="flex items-center gap-2">
           <img src="/logo.svg" alt="Raffros Corteflow" className="h-8 md:h-10 w-auto" />
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 ml-1">
@@ -141,30 +160,45 @@ export default function AdminLayout() {
         </div>
         <button
           onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="w-8 h-8 flex items-center justify-center rounded-md text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+          aria-label="Abrir menu do Super Admin"
+          className="w-10 h-10 -mr-1 flex items-center justify-center rounded-xl text-zinc-200 hover:text-white active:bg-white/15 hover:bg-white/10 transition-colors cursor-pointer"
         >
-          {isMobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
       {/* ── Sidebar ── */}
       <aside
         className={`
-          w-60 flex flex-col fixed top-0 left-0 md:top-4 md:left-4 h-full md:h-[calc(100vh-32px)] z-50 
-          bg-[#0A0A0E]/90 border border-white/10 md:rounded-3xl shadow-2xl backdrop-blur-2xl
+          w-64 md:w-60 flex flex-col fixed top-0 left-0 md:top-4 md:left-4 h-full md:h-[calc(100vh-32px)] z-50 
+          bg-[#0A0A0E]/95 border border-white/10 md:rounded-3xl shadow-2xl backdrop-blur-2xl
           transition-transform duration-300 ease-in-out
           md:translate-x-0
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center px-4 border-b border-white/5 gap-2.5">
-          <img src="/logo.svg" alt="Raffros Corteflow" className="h-10 w-auto flex-shrink-0" />
-          <div className="min-w-0">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-              <Sparkles className="w-2.5 h-2.5 text-emerald-400" /> Platform Admin
-            </span>
+        <div
+          className="app-mobile-drawer-header md:pt-4 pb-4 px-4 border-b border-white/5 flex items-center justify-between gap-2.5"
+          style={{
+            paddingTop: 'calc(1rem + var(--app-safe-top, env(safe-area-inset-top, 0px)))',
+          }}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <img src="/logo.svg" alt="Raffros Corteflow" className="h-9 w-auto flex-shrink-0" />
+            <div className="min-w-0">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                <Sparkles className="w-2.5 h-2.5 text-emerald-400" /> Platform Admin
+              </span>
+            </div>
           </div>
+          <button
+            onClick={() => setIsMobileOpen(false)}
+            aria-label="Fechar menu"
+            className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl text-zinc-400 hover:text-white active:bg-white/10 transition-colors cursor-pointer shrink-0"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Nav */}
@@ -196,7 +230,12 @@ export default function AdminLayout() {
         </nav>
 
         {/* User + Logout */}
-        <div className="border-t border-white/5 p-3 bg-white/[0.02] md:rounded-b-3xl">
+        <div
+          className="border-t border-white/5 p-3 bg-white/[0.02] md:rounded-b-3xl"
+          style={{
+            paddingBottom: 'calc(0.75rem + var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)))',
+          }}
+        >
           <div className="flex items-center gap-3 px-3 py-2 mb-1">
             <div className="w-8 h-8 bg-emerald-500/15 border border-emerald-500/30 rounded-full flex items-center justify-center flex-shrink-0 text-emerald-400 font-bold text-xs shadow-xs">
               {firstName.charAt(0).toUpperCase()}
@@ -217,7 +256,12 @@ export default function AdminLayout() {
       </aside>
 
       {/* ── Main Content ── */}
-      <main className="flex-1 min-w-0 w-full min-h-screen md:ml-[270px] flex flex-col md:pt-4 md:pr-4 md:pb-4 transition-all">
+      <main
+        className="app-main-content flex-1 min-w-0 max-w-full overflow-x-hidden w-full min-h-screen md:ml-[270px] flex flex-col md:pt-4 md:pr-4 md:pb-4 transition-all"
+        style={{
+          paddingTop: 'calc(4rem + var(--app-safe-top, env(safe-area-inset-top, 0px)))',
+        }}
+      >
         <div className="flex-1 min-h-0 bg-[#0B0B0F]/70 backdrop-blur-3xl md:rounded-3xl border border-transparent md:border-white/10 shadow-2xl overflow-hidden flex flex-col relative">
           
         {/* Top Header */}
@@ -233,7 +277,7 @@ export default function AdminLayout() {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 min-w-0 w-full p-6 md:p-8 pt-20 md:pt-8 max-w-screen-2xl">
+        <div className="flex-1 min-w-0 w-full p-4 sm:p-6 md:p-8 pt-6 md:pt-8 max-w-screen-2xl">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
