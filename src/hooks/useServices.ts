@@ -85,7 +85,12 @@ export function useCreateService(tenantId: string) {
       }
       return svc;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: SERVICES_QUERY_KEY(tenantId) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: SERVICES_QUERY_KEY(tenantId) });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['upcoming-center-bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['publicStore'] });
+    },
   });
 }
 
@@ -99,7 +104,12 @@ export function useUpdateService(tenantId: string) {
       const { error } = await supabase.from('services').update(payload as any).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: SERVICES_QUERY_KEY(tenantId) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: SERVICES_QUERY_KEY(tenantId) });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['upcoming-center-bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['publicStore'] });
+    },
   });
 }
 
@@ -112,7 +122,12 @@ export function useDeleteService(tenantId: string) {
       const { error } = await supabase.from('services').update({ active: false } as any).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: SERVICES_QUERY_KEY(tenantId) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: SERVICES_QUERY_KEY(tenantId) });
+      qc.invalidateQueries({ queryKey: ['bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['upcoming-center-bookings', tenantId] });
+      qc.invalidateQueries({ queryKey: ['publicStore'] });
+    },
   });
 }
 

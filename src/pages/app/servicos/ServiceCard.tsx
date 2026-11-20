@@ -1,4 +1,5 @@
-import { Clock, Tag, Edit, Trash2, ImageOff, Home, Store, MapPin } from 'lucide-react';
+import { useState } from 'react';
+import { Clock, Tag, Edit, Trash2, ImageOff, Home, Store, MapPin, Pencil, Check, X, Loader2 } from 'lucide-react';
 import type { Service } from '../../../hooks/useServices';
 import { useTheme } from '../../../contexts/ThemeContext';
 
@@ -7,13 +8,37 @@ const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL',
 interface Props {
   service: Service;
   onEdit: (s: Service) => void;
+  onRename?: (s: Service, newName: string) => Promise<void>;
   onDelete: (s: Service) => void;
 }
 
-export default function ServiceCard({ service: s, onEdit, onDelete }: Props) {
+export default function ServiceCard({ service: s, onEdit, onRename, onDelete }: Props) {
   const { theme } = useTheme();
   const accent = theme.accent;
   const initials = s.name.substring(0, 2).toUpperCase();
+
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [draftName, setDraftName] = useState(s.name);
+  const [savingRename, setSavingRename] = useState(false);
+
+  const handleConfirmRename = async () => {
+    const trimmed = draftName.trim();
+    if (!trimmed || trimmed === s.name) {
+      setDraftName(s.name);
+      setIsRenaming(false);
+      return;
+    }
+    if (!onRename) return;
+    try {
+      setSavingRename(true);
+      await onRename(s, trimmed);
+      setIsRenaming(false);
+    } catch {
+      setDraftName(s.name);
+    } finally {
+      setSavingRename(false);
+    }
+  };
 
   const isLight =
     theme.id === 'elegant' ||
@@ -99,12 +124,79 @@ export default function ServiceCard({ service: s, onEdit, onDelete }: Props) {
 
       {/* Content */}
       <div className="p-4 flex flex-col flex-1">
-        <h3
-          className="font-bold text-base leading-tight mb-1"
-          style={{ color: isLight ? '#0F172A' : theme.textPrimary }}
-        >
-          {s.name}
-        </h3>
+        {isRenaming ? (
+          <div className="flex items-center gap-1.5 mb-2">
+            <input
+              type="text"
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleConfirmRename();
+                if (e.key === 'Escape') {
+                  setDraftName(s.name);
+                  setIsRenaming(false);
+                }
+              }}
+              autoFocus
+              disabled={savingRename}
+              className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border text-sm font-bold focus:outline-none"
+              style={{
+                borderColor: accent,
+                background: isLight ? '#F8FAFC' : theme.inputBg,
+                color: isLight ? '#0F172A' : theme.textPrimary,
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleConfirmRename}
+              disabled={savingRename || !draftName.trim()}
+              title="Salvar nome"
+              className="p-1.5 rounded-lg text-white transition-opacity disabled:opacity-50 cursor-pointer shrink-0"
+              style={{ background: accent }}
+            >
+              {savingRename ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDraftName(s.name);
+                setIsRenaming(false);
+              }}
+              disabled={savingRename}
+              title="Cancelar"
+              className="p-1.5 rounded-lg border transition-opacity cursor-pointer shrink-0"
+              style={{
+                borderColor: isLight ? '#CBD5E1' : theme.border,
+                color: isLight ? '#475569' : theme.textSecondary,
+              }}
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-start justify-between gap-1.5 mb-1">
+            <h3
+              className="font-bold text-base leading-tight"
+              style={{ color: isLight ? '#0F172A' : theme.textPrimary }}
+            >
+              {s.name}
+            </h3>
+            {onRename && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDraftName(s.name);
+                  setIsRenaming(true);
+                }}
+                title="Alterar nome do serviço"
+                className="p-1 rounded-md opacity-70 hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                style={{ color: isLight ? '#64748B' : theme.textSecondary }}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
 
         {s.description && (
           <p

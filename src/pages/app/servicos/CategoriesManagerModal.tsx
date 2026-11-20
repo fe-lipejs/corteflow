@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useCategories } from '../../../hooks/useCategories';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { X, Plus, Trash2, Tag, Loader2 } from 'lucide-react';
+import { X, Plus, Trash2, Tag, Loader2, Pencil, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
@@ -12,13 +12,30 @@ interface Props {
 
 export function CategoriesManagerModal({ tenantId, isOpen, onClose }: Props) {
   const { theme } = useTheme();
-  const { categories, createCategory, deleteCategory, isCreating } = useCategories(tenantId);
+  const { categories, createCategory, updateCategory, deleteCategory, isCreating, isUpdating } = useCategories(tenantId);
   
   const [newCatName, setNewCatName] = useState('');
   const [newCatType, setNewCatType] = useState<'service' | 'product' | 'both'>('service');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editCatName, setEditCatName] = useState('');
   
   if (!isOpen) return null;
+
+  const handleSaveEdit = async (cat: { id: string; name: string; type: 'service' | 'product' | 'both' }) => {
+    const trimmed = editCatName.trim();
+    if (!trimmed || trimmed === cat.name) {
+      setEditingId(null);
+      return;
+    }
+    try {
+      await updateCategory({ id: cat.id, name: trimmed, type: cat.type });
+      setEditingId(null);
+    } catch (error) {
+      console.error('Error updating category:', error);
+      alert('Erro ao renomear categoria.');
+    }
+  };
 
   const handleCreate = async () => {
     if (!newCatName.trim()) return;
@@ -117,20 +134,67 @@ export function CategoriesManagerModal({ tenantId, isOpen, onClose }: Props) {
             ) : (
               <div className="space-y-2">
                 {categories.map(cat => (
-                  <div key={cat.id} className="flex items-center justify-between p-3 rounded-xl border" style={{ borderColor: theme.cardBorder, background: theme.inputBg }}>
-                    <div>
-                      <p className="font-semibold text-sm" style={{ color: theme.textPrimary }}>{cat.name}</p>
-                      <p className="text-[10px] uppercase font-bold tracking-wider opacity-60 mt-0.5" style={{ color: theme.textSecondary }}>
-                        {cat.type === 'service' ? 'SERVIÇO' : cat.type === 'product' ? 'PRODUTO' : 'SERVIÇO E PRODUTO'}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleDelete(cat.id)}
-                      disabled={deletingId === cat.id}
-                      className="p-2 rounded-lg transition-colors hover:bg-red-500/10 text-red-500 disabled:opacity-50"
-                    >
-                      {deletingId === cat.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                    </button>
+                  <div key={cat.id} className="flex items-center justify-between gap-2 p-3 rounded-xl border" style={{ borderColor: theme.cardBorder, background: theme.inputBg }}>
+                    {editingId === cat.id ? (
+                      <div className="flex items-center gap-2 flex-1">
+                        <input
+                          type="text"
+                          value={editCatName}
+                          onChange={e => setEditCatName(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') handleSaveEdit(cat);
+                            if (e.key === 'Escape') setEditingId(null);
+                          }}
+                          autoFocus
+                          className="flex-1 px-3 py-1.5 rounded-lg border text-sm focus:outline-none"
+                          style={{ background: theme.cardBg, borderColor: theme.accent, color: theme.textPrimary }}
+                        />
+                        <button
+                          onClick={() => handleSaveEdit(cat)}
+                          disabled={isUpdating || !editCatName.trim()}
+                          className="p-2 rounded-lg text-white disabled:opacity-50"
+                          style={{ background: theme.accent }}
+                        >
+                          {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="p-2 rounded-lg border"
+                          style={{ borderColor: theme.border, color: theme.textSecondary }}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-sm truncate" style={{ color: theme.textPrimary }}>{cat.name}</p>
+                          <p className="text-[10px] uppercase font-bold tracking-wider opacity-60 mt-0.5" style={{ color: theme.textSecondary }}>
+                            {cat.type === 'service' ? 'SERVIÇO' : cat.type === 'product' ? 'PRODUTO' : 'SERVIÇO E PRODUTO'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => {
+                              setEditingId(cat.id);
+                              setEditCatName(cat.name);
+                            }}
+                            title="Renomear categoria"
+                            className="p-2 rounded-lg transition-colors hover:bg-white/10"
+                            style={{ color: theme.textSecondary }}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(cat.id)}
+                            disabled={deletingId === cat.id}
+                            className="p-2 rounded-lg transition-colors hover:bg-red-500/10 text-red-500 disabled:opacity-50"
+                          >
+                            {deletingId === cat.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>

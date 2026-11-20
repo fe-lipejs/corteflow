@@ -349,6 +349,19 @@ export default function Servicos() {
                       setServiceModalOpen(true);
                       setMutationError(null);
                     }}
+                    onRename={async (s, newName) => {
+                      if (!engine.hasPermission('catalogo.editar')) {
+                        setShowUpgradeModal('catalogo.editar');
+                        return;
+                      }
+                      try {
+                        setMutationError(null);
+                        await updateService.mutateAsync({ id: s.id, name: newName });
+                      } catch (e: any) {
+                        setMutationError(e?.message ?? 'Erro ao renomear serviço.');
+                        throw e;
+                      }
+                    }}
                     onDelete={s => {
                       if (!engine.hasPermission('catalogo.excluir')) {
                         setShowUpgradeModal('catalogo.excluir');
