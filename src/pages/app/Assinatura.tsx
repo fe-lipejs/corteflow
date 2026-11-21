@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../integrations/supabase/client';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -290,6 +290,8 @@ export default function Assinatura() {
     fetchData();
   }, [fetchData]);
 
+  const verifiedCheckoutRef = useRef(false);
+
   /*
    * Confirmação do checkout (Mercado Pago).
    */
@@ -304,13 +306,15 @@ export default function Assinatura() {
 
     if (!tenant) return;
 
-    if (mpStatus === 'failure' || mpStatus === 'rejected') {
+    if (mpStatus === 'failure' || mpStatus === 'rejected' || mpStatus === 'cancelled' || mpStatus === 'null') {
       toast.error('O pagamento não foi concluído. Você pode escolher um plano e tentar novamente.');
       window.history.replaceState({}, document.title, window.location.pathname);
       return;
     }
 
     if (!sessionId && !paymentId && mpStatus !== 'approved') return;
+    if (verifiedCheckoutRef.current) return;
+    verifiedCheckoutRef.current = true;
 
     const verifySession = async () => {
       try {

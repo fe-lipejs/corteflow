@@ -63,7 +63,7 @@ serve(async (req) => {
     let results: any[] = [];
     try {
       const searchRes = await mpRequest<any>(
-        `/v1/payments/search?sort=date_created&criteria=desc&limit=30`,
+        `/v1/payments/search?status=approved&sort=date_created&criteria=desc&limit=100`,
         mpContext.accessToken,
         { method: 'GET' }
       );
@@ -82,6 +82,7 @@ serve(async (req) => {
     const thirtyFiveDaysAgo = Date.now() - 35 * 24 * 60 * 60 * 1000;
     const matchedPayment = results.find((p) => {
       if (p.status !== 'approved') return false;
+      if (mpContext.mode === 'live' && p.live_mode === false) return false;
       const isThisTenant =
         p.metadata?.tenant_id === tenantId ||
         (typeof p.external_reference === 'string' && p.external_reference.includes(`sub::${tenantId}::`));

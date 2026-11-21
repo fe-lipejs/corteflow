@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { getMercadoPagoContext, getTenantMercadoPagoAccount, mpRequest } from '../_shared/stripe.ts';
+import {
+  getMercadoPagoContext,
+  getTenantMercadoPagoAccount,
+  refreshTenantMercadoPagoToken,
+  mpRequest,
+} from '../_shared/stripe.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,19 +67,32 @@ serve(async (req) => {
       }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
     }
 
-    // Valida se o token do salão segue ativo no Mercado Pago
+    // Valida se o token do salão segue ativo no Mercado Pago (com auto-refresh em caso de 401)
     let mpUser: any = null;
     try {
       mpUser = await mpRequest('/users/me', tenantMp.accessToken, { method: 'GET' });
     } catch (err: any) {
-      console.warn('[sync-connect-account] Token Mercado Pago inválido ou revogado:', err?.message);
-      return new Response(JSON.stringify({
-        has_account: true,
-        charges_enabled: false,
-        payouts_enabled: false,
-        token_invalid: true,
-        error_detail: err?.message,
-      }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+      const msg = String(err?.message || '');
+      let recovered = false;
+      if (msg.includes('401') || msg.includes('unauthorized') || msg.includes('invalid')) {
+        const refreshedTok = await refreshTenantMercadoPagoToken(supabaseAdmin, tenantId, mpContext);
+        if (refreshedTok) {
+          try {
+            mpUser = await mpRequest('/users/me', refreshedTok, { method: 'GET' });
+            recovered = true;
+          } catch (_) {}
+        }
+      }
+      if (!recovered) {
+        console.warn('[sync-connect-account] Token Mercado Pago inválido ou revogado:', err?.message);
+        return new Response(JSON.stringify({
+          has_account: true,
+          charges_enabled: false,
+          payouts_enabled: false,
+          token_invalid: true,
+          error_detail: err?.message,
+        }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+      }
     }
 
     const wasAlreadyEnabled = connectAcc.charges_enabled === true;

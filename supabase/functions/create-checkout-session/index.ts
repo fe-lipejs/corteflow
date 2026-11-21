@@ -221,10 +221,7 @@ serve(async (req) => {
       body: prefBody,
     });
 
-    const checkoutUrl =
-      mpContext.mode === 'test' && pref.sandbox_init_point
-        ? pref.sandbox_init_point
-        : pref.init_point;
+    const checkoutUrl = pref.init_point || pref.sandbox_init_point;
 
     return new Response(
       JSON.stringify({

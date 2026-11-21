@@ -517,7 +517,7 @@ export const StripeLivePaymentSection = forwardRef<
                 <span className="truncate select-all opacity-75">
                   {activePixModal.qrData.data.slice(0, 34)}...
                 </span>
-                <span className="text-[10px] font-sans font-bold shrink-0" style={{ color: copiedPix ? "#16A34A" : accent }}>
+                <span className="text-[10px] font-sans font-bold shrink-0" style={{ color: copiedPix ? "#16A34A" : "#009EE3" }}>
                   {copiedPix ? "Copiado!" : "Copiar"}
                 </span>
               </div>
@@ -525,10 +525,10 @@ export const StripeLivePaymentSection = forwardRef<
               <button
                 type="button"
                 onClick={() => handleCopyPixCode(activePixModal.qrData.data)}
-                className="w-full h-12 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                className="w-full h-12 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md hover:brightness-105 active:scale-[0.99]"
                 style={{
-                  background: copiedPix ? "#16A34A" : accent,
-                  color: copiedPix ? "#FFFFFF" : btnPrimaryText,
+                  background: copiedPix ? "#16A34A" : "#009EE3",
+                  color: "#FFFFFF",
                 }}
               >
                 {copiedPix ? (
@@ -546,7 +546,7 @@ export const StripeLivePaymentSection = forwardRef<
 
               <div className="flex items-center justify-between gap-2 pt-1 text-[11px]" style={{ color: textSecondary }}>
                 <span className="flex items-center gap-1.5 min-w-0 truncate">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" style={{ color: accent }} />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" style={{ color: "#009EE3" }} />
                   <span>Aguardando confirmação do banco…</span>
                 </span>
                 <button
@@ -554,7 +554,7 @@ export const StripeLivePaymentSection = forwardRef<
                   onClick={handleManualPixCheck}
                   disabled={checkingPixNow}
                   className="font-bold underline cursor-pointer shrink-0 hover:opacity-80 disabled:opacity-50"
-                  style={{ color: accent }}
+                  style={{ color: "#009EE3" }}
                 >
                   {checkingPixNow ? "Verificando..." : "Já realizei o pagamento"}
                 </button>

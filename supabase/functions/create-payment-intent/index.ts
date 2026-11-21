@@ -4,6 +4,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 import {
   getMercadoPagoContext,
   getTenantMercadoPagoAccount,
+  refreshTenantMercadoPagoToken,
   mpRequest,
 } from '../_shared/stripe.ts';
 import { dispatchBookingPushEvent } from '../_shared/webpush.ts';
@@ -15,7 +16,19 @@ async function finalizeConfirmedBooking(
   collectorId: string | null,
   applicationFeePercent: number
 ) {
+  const wasAlreadyConfirmed = booking.status === 'confirmed';
+  const expectedAmount =
+    booking.payment_mode === 'deposit'
+      ? Number(booking.amount_paid || 0)
+      : Number(booking.amount_total || 0);
   const paidAmountBRL = Number(mpPayment?.transaction_amount || 0);
+
+  if (expectedAmount > 0 && paidAmountBRL > 0 && paidAmountBRL + 0.05 < expectedAmount) {
+    throw new Error(
+      `Valor pago no Mercado Pago (R$ ${paidAmountBRL.toFixed(2)}) inferior ao exigido para a reserva (R$ ${expectedAmount.toFixed(2)}).`
+    );
+  }
+
   const finalPaid = paidAmountBRL > 0 ? paidAmountBRL : Number(booking.amount_paid || 0);
   const finalDue = Math.max(0, Number(booking.amount_total || 0) - finalPaid);
   const primaryPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'paid';
@@ -93,7 +106,9 @@ async function finalizeConfirmedBooking(
     }
   }
 
-  await dispatchBookingPushEvent(supabase, booking.id, 'booking_new').catch(() => {});
+  if (!wasAlreadyConfirmed) {
+    await dispatchBookingPushEvent(supabase, booking.id, 'booking_new').catch(() => {});
+  }
 }
 
 async function resolveMercadoPagoPaymentForBooking(
@@ -211,12 +226,37 @@ serve(async (req) => {
         resolvedBookingId
       );
 
-      if (!mpPayment && mpContext.testAccessToken && mpContext.testAccessToken !== tenantMp.accessToken) {
+      if (!mpPayment && !tenantMp.isTestUser) {
+        const refreshedTok = await refreshTenantMercadoPagoToken(supabase, resolvedTenantId, mpContext);
+        if (refreshedTok) {
+          mpPayment = await resolveMercadoPagoPaymentForBooking(
+            refreshedTok,
+            paymentIntentId,
+            resolvedBookingId
+          );
+        }
+      }
+
+      if (
+        !mpPayment &&
+        (mpContext.mode === 'test' || tenantMp.isTestUser) &&
+        mpContext.testAccessToken &&
+        mpContext.testAccessToken !== tenantMp.accessToken
+      ) {
         mpPayment = await resolveMercadoPagoPaymentForBooking(
           mpContext.testAccessToken,
           paymentIntentId,
           resolvedBookingId
         );
+      }
+
+      if (
+        mpPayment &&
+        mpContext.mode === 'live' &&
+        mpPayment.live_mode === false &&
+        !tenantMp.isTestUser
+      ) {
+        mpPayment = null;
       }
 
       if (mpPayment && mpPayment.status === 'approved') {
@@ -317,12 +357,37 @@ serve(async (req) => {
         booking.id
       );
 
-      if (!mpPayment && mpContext.testAccessToken && mpContext.testAccessToken !== tenantMp.accessToken) {
+      if (!mpPayment && !tenantMp.isTestUser) {
+        const refreshedTok = await refreshTenantMercadoPagoToken(supabase, booking.tenant_id, mpContext);
+        if (refreshedTok) {
+          mpPayment = await resolveMercadoPagoPaymentForBooking(
+            refreshedTok,
+            lookupId,
+            booking.id
+          );
+        }
+      }
+
+      if (
+        !mpPayment &&
+        (mpContext.mode === 'test' || tenantMp.isTestUser) &&
+        mpContext.testAccessToken &&
+        mpContext.testAccessToken !== tenantMp.accessToken
+      ) {
         mpPayment = await resolveMercadoPagoPaymentForBooking(
           mpContext.testAccessToken,
           lookupId,
           booking.id
         );
+      }
+
+      if (
+        mpPayment &&
+        mpContext.mode === 'live' &&
+        mpPayment.live_mode === false &&
+        !tenantMp.isTestUser
+      ) {
+        mpPayment = null;
       }
 
       if (!mpPayment || mpPayment.status !== 'approved') {
@@ -475,9 +540,14 @@ serve(async (req) => {
     }
 
     // Application fee só pode ser enviado quando a conta foi conectada via OAuth (Marketplace)
-    const applicationFeeBRL =
+    // e precisa ser estritamente menor que o valor cobrado
+    const rawFeeBRL =
       tenantMp.isOAuth && mpContext.applicationFeePercent > 0
         ? Number(((amountToCharge * mpContext.applicationFeePercent) / 100).toFixed(2))
+        : 0;
+    const applicationFeeBRL =
+      rawFeeBRL > 0 && rawFeeBRL < amountToCharge && !tenantMp.isTestUser
+        ? rawFeeBRL
         : 0;
 
     const serviceName = (booking.services as any)?.name || 'Serviço';
@@ -520,29 +590,43 @@ serve(async (req) => {
         },
       };
 
-      if (applicationFeeBRL > 0) {
+      if (applicationFeeBRL > 0 && !tenantMp.isTestUser) {
         mpPaymentBody.application_fee = applicationFeeBRL;
       }
 
+      const pixAccessToken =
+        tenantMp.isTestUser && mpContext.testAccessToken
+          ? mpContext.testAccessToken
+          : tenantMp.accessToken;
+
       let mpPayment: any;
       try {
-        mpPayment = await mpRequest<any>('/v1/payments', tenantMp.accessToken, {
+        mpPayment = await mpRequest<any>('/v1/payments', pixAccessToken, {
           method: 'POST',
           body: mpPaymentBody,
           idempotencyKey: `booking-pix-${booking.id}-${Date.now()}`,
         });
       } catch (pixErr: any) {
         const errMsg = String(pixErr?.message || '');
-        const fallbackTok = mpContext.testAccessToken || mpContext.accessToken;
-        if (
-          fallbackTok &&
-          fallbackTok !== tenantMp.accessToken &&
-          (errMsg.includes('user_allowed_only_in_test') ||
-            errMsg.includes('unauthorized') ||
-            errMsg.includes('401'))
+        if (errMsg.includes('unauthorized') || errMsg.includes('401')) {
+          const refreshedTok = await refreshTenantMercadoPagoToken(supabase, booking.tenant_id, mpContext);
+          if (refreshedTok && !tenantMp.isTestUser) {
+            mpPayment = await mpRequest<any>('/v1/payments', refreshedTok, {
+              method: 'POST',
+              body: mpPaymentBody,
+              idempotencyKey: `booking-pix-rf-${booking.id}-${Date.now()}`,
+            });
+          } else {
+            throw pixErr;
+          }
+        } else if (
+          (mpContext.mode === 'test' || tenantMp.isTestUser) &&
+          errMsg.includes('user_allowed_only_in_test') &&
+          mpContext.testAccessToken &&
+          mpContext.testAccessToken !== pixAccessToken
         ) {
           delete mpPaymentBody.application_fee;
-          mpPayment = await mpRequest<any>('/v1/payments', fallbackTok, {
+          mpPayment = await mpRequest<any>('/v1/payments', mpContext.testAccessToken, {
             method: 'POST',
             body: mpPaymentBody,
             idempotencyKey: `booking-pix-fb-${booking.id}-${Date.now()}`,
@@ -658,45 +742,49 @@ serve(async (req) => {
       prefBody.auto_return = 'approved';
     }
 
-    if (applicationFeeBRL > 0) {
+    if (applicationFeeBRL > 0 && !tenantMp.isTestUser) {
       prefBody.marketplace_fee = applicationFeeBRL;
     }
 
     let pref: any;
-    let usedFallbackToken = false;
+    let activeCardToken = tenantMp.accessToken;
     try {
-      pref = await mpRequest<any>('/checkout/preferences', tenantMp.accessToken, {
+      pref = await mpRequest<any>('/checkout/preferences', activeCardToken, {
         method: 'POST',
         body: prefBody,
       });
     } catch (prefErr: any) {
       const errMsg = String(prefErr?.message || '');
-      const fallbackTok = mpContext.testAccessToken || mpContext.accessToken;
-      if (
-        fallbackTok &&
-        fallbackTok !== tenantMp.accessToken &&
-        (errMsg.includes('user_allowed_only_in_test') ||
-          errMsg.includes('unauthorized') ||
-          errMsg.includes('401'))
-      ) {
-        delete prefBody.marketplace_fee;
-        if (mpContext.mode === 'test' || fallbackTok.startsWith('TEST-')) {
+      if (errMsg.includes('unauthorized') || errMsg.includes('401') || errMsg.includes('invalid')) {
+        const refreshedTok = await refreshTenantMercadoPagoToken(supabase, booking.tenant_id, mpContext);
+        if (refreshedTok) {
+          activeCardToken = refreshedTok;
+          pref = await mpRequest<any>('/checkout/preferences', activeCardToken, {
+            method: 'POST',
+            body: prefBody,
+          });
+        } else if (
+          (mpContext.mode === 'test' || tenantMp.isTestUser) &&
+          mpContext.testAccessToken &&
+          mpContext.testAccessToken !== activeCardToken
+        ) {
+          delete prefBody.marketplace_fee;
           delete prefBody.payer;
+          pref = await mpRequest<any>('/checkout/preferences', mpContext.testAccessToken, {
+            method: 'POST',
+            body: prefBody,
+          });
+        } else {
+          throw prefErr;
         }
-        usedFallbackToken = true;
-        pref = await mpRequest<any>('/checkout/preferences', fallbackTok, {
-          method: 'POST',
-          body: prefBody,
-        });
       } else {
         throw prefErr;
       }
     }
 
-    const checkoutUrl =
-      (mpContext.mode === 'test' || tenantMp.isTestUser || usedFallbackToken) && pref.sandbox_init_point
-        ? pref.sandbox_init_point
-        : pref.init_point;
+    // Mercado Pago Checkout Pro moderno utiliza sempre `init_point` (inclusive para contas de teste);
+    // usar `sandbox_init_point` dispara o erro "Uma das partes é de teste".
+    const checkoutUrl = pref.init_point || pref.sandbox_init_point;
 
     await supabase.from('payments').insert({
       tenant_id: booking.tenant_id,

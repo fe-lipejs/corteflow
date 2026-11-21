@@ -53,9 +53,9 @@ serve(async (req) => {
         method: 'GET',
       });
     } else if (profile?.tenant_id) {
-      // Fallback: busca o pagamento mais recente deste tenant no Mercado Pago
+      // Fallback: busca os pagamentos aprovados mais recentes no Mercado Pago (evita perder entre pendentes/cancelados)
       const searchRes = await mpRequest<any>(
-        `/v1/payments/search?sort=date_created&criteria=desc&limit=25`,
+        `/v1/payments/search?status=approved&sort=date_created&criteria=desc&limit=100`,
         mpContext.accessToken,
         { method: 'GET' }
       );
@@ -66,13 +66,11 @@ serve(async (req) => {
             p.status === 'approved' &&
             (p.metadata?.tenant_id === profile.tenant_id ||
               (typeof p.external_reference === 'string' && p.external_reference.includes(`sub::${profile.tenant_id}::`)))
-        ) ||
-        list.find(
-          (p) =>
-            p.metadata?.tenant_id === profile.tenant_id ||
-            (typeof p.external_reference === 'string' && p.external_reference.includes(`sub::${profile.tenant_id}::`))
-        ) ||
-        null;
+        ) || null;
+    }
+
+    if (mpPayment && mpContext.mode === 'live' && mpPayment.live_mode === false) {
+      mpPayment = null;
     }
 
     if (!mpPayment) {
@@ -86,14 +84,23 @@ serve(async (req) => {
       );
     }
 
-    // Extrair tenantId e planId do metadata ou external_reference ("sub::tenantId::planId::amount")
+    // Extrair tenantId, planId e valor esperado do metadata ou external_reference ("sub::tenantId::planId::amount")
     let tenantId = mpPayment.metadata?.tenant_id || profile?.tenant_id;
     let planId = mpPayment.metadata?.plan_id || bodyPlanId;
+    let expectedBRL = 0;
 
     if (typeof mpPayment.external_reference === 'string' && mpPayment.external_reference.startsWith('sub::')) {
       const parts = mpPayment.external_reference.split('::');
       if (parts[1]) tenantId = parts[1];
       if (parts[2]) planId = parts[2];
+      if (parts[3] && Number(parts[3]) > 0) expectedBRL = Number(parts[3]);
+    }
+
+    if (mpPayment.status === 'approved' && expectedBRL > 0) {
+      const paidBRL = Number(mpPayment.transaction_amount || 0);
+      if (paidBRL + 0.05 < expectedBRL) {
+        throw new Error("Valor pago inferior ao esperado para o plano.");
+      }
     }
 
     if (!tenantId || !planId) {

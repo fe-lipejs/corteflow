@@ -1,13 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
+import {
+  getMercadoPagoContext,
+  getTenantMercadoPagoAccount,
+  refreshTenantMercadoPagoToken,
+  mpRequest,
+} from '../_shared/stripe.ts';
 import { dispatchBookingPushEvent } from '../_shared/webpush.ts';
-
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
-  apiVersion: '2024-06-20',
-  httpClient: Stripe.createFetchHttpClient(),
-});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -20,13 +20,13 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { bookingId, actorType, reason } = await req.json();
+    const { bookingId, actorType = 'client', reason } = await req.json();
 
     if (!bookingId) {
       throw new Error('Missing bookingId');
     }
 
-    // 1. Fetch booking (no join to tenant_settings — no FK exists between bookings and tenant_settings)
+    // 1. Fetch booking (sem join com tenant_settings — não há FK direta)
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .select('*')
@@ -37,80 +37,164 @@ serve(async (req) => {
       throw new Error('Booking not found');
     }
 
-    // 2. Fetch tenant_settings separately using tenant_id from the booking
+    if (booking.status === 'canceled') {
+      return new Response(JSON.stringify({ success: true, alreadyCanceled: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
+    // 2. Fetch tenant_settings
     const { data: settingsRow } = await supabase
       .from('tenant_settings')
       .select('allow_cancel, cancel_free_hours_before, cancel_fee_percent')
       .eq('tenant_id', booking.tenant_id)
       .maybeSingle();
 
-    // Safe defaults if no settings row exists yet
     const settings = settingsRow ?? {
       allow_cancel: true,
       cancel_free_hours_before: 2,
       cancel_fee_percent: 0,
     };
 
-    // 3. Fetch payments separately
+    // 3. Fetch payments
     const { data: payments } = await supabase
       .from('payments')
       .select('*')
       .eq('booking_id', bookingId);
 
     // 4. Validate cancellation policy (client only)
-    if (actorType === 'client') {
-      if (!settings.allow_cancel) {
-        throw new Error('O salão não permite cancelamentos pelo portal.');
-      }
+    if (actorType === 'client' && !settings.allow_cancel) {
+      throw new Error('O salão não permite cancelamentos pelo portal.');
     }
 
     const succeededPayment = (payments ?? []).find((p: any) => p.status === 'succeeded');
 
-    // 5. Process financials if there was a Stripe payment
-    if (succeededPayment?.stripe_payment_intent_id) {
+    // 5. Process Mercado Pago refund if there was a confirmed online payment
+    if (succeededPayment) {
       const scheduledDate = new Date(booking.scheduled_at);
       const freeDeadlineDate = new Date(scheduledDate);
-      freeDeadlineDate.setHours(freeDeadlineDate.getHours() - (settings.cancel_free_hours_before || 2));
+      freeDeadlineDate.setHours(
+        freeDeadlineDate.getHours() - (settings.cancel_free_hours_before ?? 2)
+      );
 
       const now = new Date();
-      let refundAmount = succeededPayment.amount;
+      const paidAmount = Number(succeededPayment.amount || booking.amount_paid || 0);
+      let refundAmount = Number(paidAmount.toFixed(2));
 
-      // Apply cancellation fee if past the free-cancel window
       if (now > freeDeadlineDate) {
-        const feePercent = settings.cancel_fee_percent || 0;
-        refundAmount = Math.round((succeededPayment.amount * (100 - feePercent)) / 100);
+        const feePercent = Number(settings.cancel_fee_percent || 0);
+        refundAmount = Number(((paidAmount * (100 - feePercent)) / 100).toFixed(2));
       }
 
-      if (refundAmount > 0) {
-        const pi = await stripe.paymentIntents.retrieve(succeededPayment.stripe_payment_intent_id);
-        const chargeId = pi.latest_charge as string;
+      if (refundAmount > 0 && paidAmount > 0) {
+        const mpContext = await getMercadoPagoContext(supabase);
+        const tenantMp = await getTenantMercadoPagoAccount(supabase, booking.tenant_id, mpContext);
 
-        if (!chargeId) {
-          throw new Error('No charge found for this payment intent');
+        let mpPayId: string | null = null;
+        if (succeededPayment.mp_payment_id && /^\d+$/.test(String(succeededPayment.mp_payment_id))) {
+          mpPayId = String(succeededPayment.mp_payment_id);
+        } else if (
+          succeededPayment.stripe_payment_intent_id &&
+          /^\d+$/.test(String(succeededPayment.stripe_payment_intent_id))
+        ) {
+          mpPayId = String(succeededPayment.stripe_payment_intent_id);
         }
 
-        const refund = await stripe.refunds.create({
-          charge: chargeId,
-          amount: Math.round(refundAmount * 100),
-          reason: 'requested_by_customer',
-        });
+        let activeToken =
+          tenantMp?.isTestUser && mpContext.testAccessToken
+            ? mpContext.testAccessToken
+            : tenantMp?.accessToken || mpContext.accessToken;
+
+        // Se só tínhamos preference_id salvo, localiza o payment_id numérico no Mercado Pago
+        if (!mpPayId && activeToken) {
+          try {
+            const searchRes = await mpRequest<any>(
+              `/v1/payments/search?external_reference=${encodeURIComponent(bookingId)}&status=approved&limit=5`,
+              activeToken,
+              { method: 'GET' }
+            );
+            const found = searchRes?.results?.find?.((p: any) => p.status === 'approved');
+            if (found?.id) {
+              mpPayId = String(found.id);
+            }
+          } catch (_) {}
+        }
+
+        if (!mpPayId || !activeToken) {
+          throw new Error(
+            'Não foi possível localizar o pagamento no Mercado Pago para efetuar o estorno automático.'
+          );
+        }
+
+        const isFullRefund = refundAmount >= paidAmount - 0.01;
+        const refundBody = isFullRefund ? {} : { amount: refundAmount };
+
+        let mpRefund: any = null;
+        const executeRefund = async (token: string) =>
+          await mpRequest<any>(`/v1/payments/${mpPayId}/refunds`, token, {
+            method: 'POST',
+            body: refundBody,
+            idempotencyKey: `refund-${bookingId}-${mpPayId}`,
+          });
+
+        try {
+          mpRefund = await executeRefund(activeToken);
+        } catch (refundErr: any) {
+          const msg = String(refundErr?.message || '');
+          if (msg.includes('unauthorized') || msg.includes('401')) {
+            const refreshedTok = await refreshTenantMercadoPagoToken(
+              supabase,
+              booking.tenant_id,
+              mpContext
+            );
+            if (refreshedTok) {
+              mpRefund = await executeRefund(refreshedTok);
+            } else {
+              throw refundErr;
+            }
+          } else if (
+            tenantMp?.isTestUser &&
+            mpContext.testAccessToken &&
+            mpContext.testAccessToken !== activeToken
+          ) {
+            mpRefund = await executeRefund(mpContext.testAccessToken);
+          } else if (msg.toLowerCase().includes('already') && msg.toLowerCase().includes('refund')) {
+            mpRefund = { id: `already_refunded_${mpPayId}`, status: 'approved' };
+          } else {
+            throw refundErr;
+          }
+        }
 
         await supabase.from('refunds').insert({
           tenant_id: booking.tenant_id,
           payment_id: succeededPayment.id,
-          stripe_refund_id: refund.id,
+          stripe_refund_id: mpRefund?.id ? String(mpRefund.id) : `mp_ref_${mpPayId}`,
           amount: refundAmount,
           status: 'succeeded',
           reason: reason || 'Cancelamento',
         });
 
         await supabase.from('payments').update({ status: 'refunded' }).eq('id', succeededPayment.id);
-        await supabase.from('bookings').update({ payment_status: 'refunded' }).eq('id', bookingId);
+        await supabase
+          .from('bookings')
+          .update({ payment_status: 'refunded', amount_due: 0 })
+          .eq('id', bookingId);
       } else {
-        // 100% retained as cancellation fee
-        await supabase.from('payments').update({ status: 'captured_as_fee' }).eq('id', succeededPayment.id);
+        // 100% retido como taxa de cancelamento
+        await supabase
+          .from('payments')
+          .update({ status: 'captured_as_fee' })
+          .eq('id', succeededPayment.id);
         await supabase.from('bookings').update({ payment_status: 'failed' }).eq('id', bookingId);
       }
+    } else {
+      // Marca eventuais pagamentos ainda pendentes como cancelados
+      await supabase
+        .from('payments')
+        .update({ status: 'failed' })
+        .eq('booking_id', bookingId)
+        .eq('status', 'pending');
     }
 
     // 6. Mark booking as canceled
@@ -130,12 +214,11 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
-
   } catch (error: any) {
-    console.error('Error processing cancellation:', error);
+    console.error('Error processing cancellation (MP):', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
+      status: 200,
     });
   }
 });

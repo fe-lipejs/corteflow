@@ -4,6 +4,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 import {
   getMercadoPagoContext,
   getTenantMercadoPagoAccount,
+  refreshTenantMercadoPagoToken,
   mpRequest,
 } from '../_shared/stripe.ts';
 
@@ -44,9 +45,13 @@ serve(async (req) => {
       throw new Error("O valor mínimo para pagamento online é de R$ 0,50.");
     }
 
-    const applicationFeeBRL =
+    const rawFeeBRL =
       tenantMp.isOAuth && mpContext.applicationFeePercent > 0
         ? Number(((amountToCharge * mpContext.applicationFeePercent) / 100).toFixed(2))
+        : 0;
+    const applicationFeeBRL =
+      rawFeeBRL > 0 && rawFeeBRL < amountToCharge && !tenantMp.isTestUser
+        ? rawFeeBRL
         : 0;
 
     const serviceName = (booking.services as any)?.name || 'Serviço';
@@ -113,7 +118,6 @@ serve(async (req) => {
     }
 
     let pref: any;
-    let usedFallbackToken = false;
     try {
       pref = await mpRequest<any>('/checkout/preferences', tenantMp.accessToken, {
         method: 'POST',
@@ -121,17 +125,24 @@ serve(async (req) => {
       });
     } catch (prefErr: any) {
       const errMsg = String(prefErr?.message || '');
-      const fallbackTok = mpContext.testAccessToken || mpContext.accessToken;
-      if (
-        fallbackTok &&
-        fallbackTok !== tenantMp.accessToken &&
-        (errMsg.includes('user_allowed_only_in_test') ||
-          errMsg.includes('unauthorized') ||
-          errMsg.includes('401'))
+      if (errMsg.includes('unauthorized') || errMsg.includes('401') || errMsg.includes('invalid')) {
+        const refreshedTok = await refreshTenantMercadoPagoToken(supabase, booking.tenant_id, mpContext);
+        if (refreshedTok) {
+          pref = await mpRequest<any>('/checkout/preferences', refreshedTok, {
+            method: 'POST',
+            body: prefBody,
+          });
+        } else {
+          throw prefErr;
+        }
+      } else if (
+        (mpContext.mode === 'test' || tenantMp.isTestUser) &&
+        errMsg.includes('user_allowed_only_in_test') &&
+        mpContext.testAccessToken &&
+        mpContext.testAccessToken !== tenantMp.accessToken
       ) {
         delete prefBody.marketplace_fee;
-        usedFallbackToken = true;
-        pref = await mpRequest<any>('/checkout/preferences', fallbackTok, {
+        pref = await mpRequest<any>('/checkout/preferences', mpContext.testAccessToken, {
           method: 'POST',
           body: prefBody,
         });
@@ -149,13 +160,11 @@ serve(async (req) => {
       amount: amountToCharge,
       platform_fee: applicationFeeBRL,
       net_amount: Math.max(0, amountToCharge - applicationFeeBRL),
+      payment_method: 'card',
       status: 'pending',
     });
 
-    const url =
-      (mpContext.mode === 'test' || tenantMp.isTestUser || usedFallbackToken) && pref.sandbox_init_point
-        ? pref.sandbox_init_point
-        : pref.init_point;
+    const url = pref.init_point || pref.sandbox_init_point;
 
     return new Response(JSON.stringify({ url, preferenceId: pref.id }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
