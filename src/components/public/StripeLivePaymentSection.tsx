@@ -5,8 +5,10 @@ import {
   Copy,
   Check,
   CheckCircle2,
+  ShieldCheck,
   X,
 } from "lucide-react";
+import { MercadoPagoHorizontalLogo } from "../icons/MercadoPagoLogo";
 import { supabase } from "../../integrations/supabase/client";
 
 const money = (val: number) =>
@@ -563,6 +565,23 @@ export const StripeLivePaymentSection = forwardRef<
                   {pixCheckFeedback}
                 </p>
               )}
+
+              <div
+                className="pt-2.5 border-t flex items-center justify-between gap-2"
+                style={{ borderColor: cardBorderColor }}
+              >
+                <MercadoPagoHorizontalLogo
+                  darkBg={isDark}
+                  className="h-5 w-auto shrink-0"
+                />
+                <span
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold"
+                  style={{ color: textSecondary }}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <span>Pagamento 100% seguro</span>
+                </span>
+              </div>
             </div>
           </div>
         </div>

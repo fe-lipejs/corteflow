@@ -1599,6 +1599,7 @@ export default function PublicStore() {
               body: {
                 action: "create",
                 bookingId: createdBooking.id,
+                tenantId: tenant.id,
                 paymentMethodType: methodType,
                 customerName,
                 customerEmail,
@@ -4126,7 +4127,14 @@ export default function PublicStore() {
                           >
                             {isProcessing ? (
                               <>
-                                <Loader2 className="w-4 h-4 animate-spin" /> Processando…
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>
+                                  {paymentScope !== "local"
+                                    ? paymentMethod === "pix"
+                                      ? "Gerando QR Code PIX…"
+                                      : "Abrindo pagamento…"
+                                    : "Confirmando…"}
+                                </span>
                               </>
                             ) : paymentScope === "local" ? (
                               <>
@@ -4397,7 +4405,14 @@ export default function PublicStore() {
                   >
                     {isProcessing ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Processando…
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>
+                          {paymentScope !== "local"
+                            ? paymentMethod === "pix"
+                              ? "Gerando QR Code PIX…"
+                              : "Abrindo pagamento…"
+                            : "Confirmando…"}
+                        </span>
                       </>
                     ) : paymentScope === "local" ? (
                       <>

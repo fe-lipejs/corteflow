@@ -133,16 +133,17 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
-    const action = body.action || 'create';
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabase = createClient(
       supabaseUrl,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const mpContext = await getMercadoPagoContext(supabase);
+    const [body, mpContext] = await Promise.all([
+      req.json().catch(() => ({})),
+      getMercadoPagoContext(supabase),
+    ]);
+    const action = body.action || 'create';
 
     // ── AÇÃO 0: Consultar status do PIX ou Cartão no Mercado Pago do salão ───
     if (action === 'check_pix_status') {
@@ -411,22 +412,27 @@ serve(async (req) => {
     }
 
     // ── AÇÃO 3 (Padrão): Criar pagamento Pix (QR Code) ou Cartão (Checkout MP) direto na conta do salão ─
-    const { bookingId, paymentMethodType, customerName, customerEmail, customerPhone, returnUrl } = body;
+    const { bookingId, tenantId: bodyTenantId, paymentMethodType, customerName, customerEmail, customerPhone, returnUrl } = body;
     if (!bookingId) {
       throw new Error("bookingId é obrigatório para iniciar o pagamento.");
     }
 
-    const { data: booking } = await supabase
-      .from('bookings')
-      .select('*, tenants(name), services(name, price)')
-      .eq('id', bookingId)
-      .single();
+    const [{ data: booking }, prefetchedTenantMp] = await Promise.all([
+      supabase
+        .from('bookings')
+        .select('*, tenants(name), services(name, price)')
+        .eq('id', bookingId)
+        .single(),
+      bodyTenantId
+        ? getTenantMercadoPagoAccount(supabase, bodyTenantId, mpContext)
+        : Promise.resolve(null),
+    ]);
 
     if (!booking) {
       throw new Error("Agendamento não encontrado.");
     }
 
-    const tenantMp = await getTenantMercadoPagoAccount(supabase, booking.tenant_id, mpContext);
+    const tenantMp = prefetchedTenantMp || (await getTenantMercadoPagoAccount(supabase, booking.tenant_id, mpContext));
     if (!tenantMp || !tenantMp.chargesEnabled) {
       throw new Error("O salão ainda não conectou sua conta Mercado Pago. Por favor, escolha 'Pagar no local'.");
     }
