@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Check, CreditCard, Store, ShieldCheck, X, Loader2 } from 'lucide-react';
+import { CheckCircle2, ArrowLeftRight, CreditCard, Store, ShieldCheck, X, Loader2 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { MercadoPagoMark } from '../icons/MercadoPagoLogo';
 
@@ -83,7 +83,7 @@ export default function StripeActivatedModal({
                     color: theme.accent,
                   }}
                 >
-                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  <ArrowLeftRight className="w-3.5 h-3.5 stroke-[2.5]" />
                 </div>
                 <div className="w-4 h-px border-t border-dashed" style={{ borderColor: theme.border }} />
               </div>

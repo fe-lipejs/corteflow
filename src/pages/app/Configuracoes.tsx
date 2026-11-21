@@ -1929,11 +1929,11 @@ export default function Configuracoes() {
                         key={item.id}
                         type="button"
                         onClick={() => setBusinessType(item.id as any)}
-                        className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${businessType === item.id ? 'ring-2 ring-[#FF5C95]' : ''
-                          }`}
+                        className="p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer"
                         style={{
                           background: businessType === item.id ? `${theme.accent}15` : theme.inputBg,
                           borderColor: businessType === item.id ? theme.accent : theme.border,
+                          boxShadow: businessType === item.id ? `0 0 0 1.5px ${theme.accent}` : 'none',
                           color: theme.textPrimary,
                         }}
                       >
