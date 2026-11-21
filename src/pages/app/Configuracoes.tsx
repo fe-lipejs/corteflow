@@ -2315,9 +2315,9 @@ export default function Configuracoes() {
                       </div>
 
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2.5 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="text-base font-bold" style={{ color: theme.textPrimary }}>
-                            Recebimentos Online — Mercado Pago
+                            Mercado Pago
                           </h4>
                           {isConnected ? (
                             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
@@ -2325,14 +2325,14 @@ export default function Configuracoes() {
                             </span>
                           ) : (
                             <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-zinc-500/10 text-zinc-500 border border-zinc-500/20">
-                              Não Conectado
+                              Desconectado
                             </span>
                           )}
                         </div>
-                        <p className="text-xs leading-relaxed max-w-xl font-medium" style={{ color: theme.textSecondary }}>
+                        <p className="text-xs leading-relaxed font-medium" style={{ color: theme.textSecondary }}>
                           {isConnected
-                            ? `Sua conta do Mercado Pago${stripeConnectInfo?.mp_nickname || stripeConnectInfo?.mp_email ? ` (${stripeConnectInfo.mp_nickname || stripeConnectInfo.mp_email})` : ''} está vinculada. Tudo o que o cliente pagar no Pix ou Cartão cai direto no seu Mercado Pago.`
-                            : 'Conecte o seu Mercado Pago para receber os pagamentos online dos clientes (Pix instantâneo na hora ou Cartão) direto na sua conta.'}
+                            ? `Conta vinculada${stripeConnectInfo?.mp_nickname || stripeConnectInfo?.mp_email ? ` (${stripeConnectInfo.mp_nickname || stripeConnectInfo.mp_email})` : ''} • Pix e Cartão ativos.`
+                            : 'Receba Pix e Cartão direto na sua conta.'}
                         </p>
                       </div>
                     </div>
@@ -2403,14 +2403,9 @@ export default function Configuracoes() {
 
               {/* 2. Formas de Pagamento no Agendamento */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-sm" style={{ color: theme.textPrimary }}>
-                    Opções de Pagamento para o Cliente
-                  </h3>
-                  <span className="text-[11px]" style={{ color: theme.textMuted }}>
-                    Pelo menos uma opção ativa
-                  </span>
-                </div>
+                <h3 className="font-bold text-sm" style={{ color: theme.textPrimary }}>
+                  Como o cliente pode pagar
+                </h3>
 
                 <div className="space-y-2.5">
                   {(() => {
@@ -2419,31 +2414,32 @@ export default function Configuracoes() {
                     return [
                       {
                         key: 'local' as const,
-                        label: 'Pagar no Local',
+                        label: 'Pagar no local',
                         desc: !isStripeFullyActive
-                          ? 'Obrigatório enquanto sua conta do Mercado Pago não estiver conectada'
-                          : 'Pagamento presencial no salão após o atendimento',
+                          ? 'Ativo até conectar o Mercado Pago'
+                          : 'Presencial após o atendimento',
                         state: !isStripeFullyActive ? true : allowLocal,
                         isLocked: !isStripeFullyActive,
-                        lockLabel: 'Obrigatório',
                         set: setAllowLocal,
                       },
                       {
                         key: 'deposit' as const,
-                        label: 'Sinal / Entrada Online',
-                        desc: 'Exige percentual antecipado via Pix ou Cartão para garantir o horário',
+                        label: 'Sinal / Entrada online',
+                        desc: !isStripeFullyActive
+                          ? 'Conecte o Mercado Pago para ativar'
+                          : 'Cobra entrada na reserva (Pix ou Cartão)',
                         state: isStripeFullyActive ? allowDeposit : false,
                         isLocked: !isStripeFullyActive,
-                        lockLabel: 'Requer Mercado Pago Ativo',
                         set: setAllowDeposit,
                       },
                       {
                         key: 'full' as const,
-                        label: '100% Antecipado Online',
-                        desc: 'Valor integral pago online na hora do agendamento (cai no seu Mercado Pago)',
+                        label: '100% antecipado online',
+                        desc: !isStripeFullyActive
+                          ? 'Conecte o Mercado Pago para ativar'
+                          : 'Pagamento total na reserva',
                         state: isStripeFullyActive ? allowFull : false,
                         isLocked: !isStripeFullyActive,
-                        lockLabel: 'Requer Mercado Pago Ativo',
                         set: setAllowFull,
                       },
                     ].map(m => {
@@ -2458,52 +2454,50 @@ export default function Configuracoes() {
                               setStripeRequiredModalOpen(true);
                             }
                           }}
-                          className={`p-4 rounded-xl border transition-all ${m.isLocked ? 'opacity-85' : ''}`}
+                          className={`p-4 rounded-xl border transition-all ${m.isLocked ? 'opacity-80 cursor-pointer' : ''}`}
                           style={{
                             background: m.state && (!m.isLocked || m.key === 'local') ? `${theme.accent}0d` : theme.inputBg,
                             borderColor: m.state && (!m.isLocked || m.key === 'local') ? theme.accent : theme.inputBorder,
                           }}
                         >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold" style={{ color: theme.textPrimary }}>
-                                  {m.label}
-                                </span>
-                                {m.isLocked && (
-                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
-                                    <Lock className="w-2.5 h-2.5" /> {m.lockLabel}
-                                  </span>
-                                )}
-                              </div>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <span className="text-sm font-bold block" style={{ color: theme.textPrimary }}>
+                                {m.label}
+                              </span>
                               <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
                                 {m.desc}
                               </p>
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (m.isLocked) {
-                                  if (m.key !== 'local') {
-                                    setStripeRequiredModalOpen(true);
-                                  } else {
-                                    toast('O pagamento no local não pode ser desativado até que sua conta do Mercado Pago esteja conectada.', { icon: 'ℹ️' });
+                            <div className="flex items-center gap-2 shrink-0">
+                              {m.isLocked && m.key !== 'local' && (
+                                <Lock className="w-3.5 h-3.5" style={{ color: theme.textMuted }} />
+                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (m.isLocked) {
+                                    if (m.key !== 'local') {
+                                      setStripeRequiredModalOpen(true);
+                                    } else {
+                                      toast('O pagamento no local não pode ser desativado até que sua conta do Mercado Pago esteja conectada.', { icon: 'ℹ️' });
+                                    }
+                                    return;
                                   }
-                                  return;
-                                }
-                                if (isLastActive) return;
-                                m.set(!m.state);
-                              }}
-                              className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ml-4 cursor-pointer"
-                              style={{ background: m.state && (!m.isLocked || m.key === 'local') ? theme.accent : theme.border }}
-                            >
-                              <span
-                                className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-                                style={{ transform: m.state && (!m.isLocked || m.key === 'local') ? 'translateX(22px)' : 'translateX(4px)' }}
-                              />
-                            </button>
+                                  if (isLastActive) return;
+                                  m.set(!m.state);
+                                }}
+                                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 cursor-pointer"
+                                style={{ background: m.state && (!m.isLocked || m.key === 'local') ? theme.accent : theme.border }}
+                              >
+                                <span
+                                  className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                                  style={{ transform: m.state && (!m.isLocked || m.key === 'local') ? 'translateX(22px)' : 'translateX(4px)' }}
+                                />
+                              </button>
+                            </div>
                           </div>
 
                           {/* Slider for deposit percentage */}
@@ -3155,10 +3149,10 @@ export default function Configuracoes() {
           </div>
           <div>
             <h4 className="text-sm font-bold" style={{ color: theme.textPrimary }}>
-              Salvar Alterações das Configurações
+              Salvar alterações
             </h4>
             <p className="text-xs" style={{ color: theme.textSecondary }}>
-              Todas as modificações de horário, dados do salão e visual só entram em vigor após salvar.
+              Salve para aplicar suas mudanças.
             </p>
           </div>
         </div>

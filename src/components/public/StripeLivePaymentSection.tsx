@@ -203,7 +203,6 @@ export const StripeLivePaymentSection = forwardRef<
           action: "check_pix_status",
           bookingId,
           paymentIntentId,
-          simulateTestApproval: true,
         },
       });
 
@@ -217,7 +216,7 @@ export const StripeLivePaymentSection = forwardRef<
         });
       } else {
         setPixCheckFeedback(
-          "Ainda estamos aguardando a confirmação do banco. Assim que concluir o PIX no aplicativo do seu banco, esta tela avançará automaticamente!"
+          "Pagamento ainda pendente no Mercado Pago. Conclua o PIX no aplicativo do seu banco; assim que compensar, a confirmação é automática."
         );
       }
     } catch {

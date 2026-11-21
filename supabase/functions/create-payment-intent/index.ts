@@ -218,51 +218,6 @@ serve(async (req) => {
         );
       }
 
-      // Em modo de teste / conta TESTUSER, o banco real não paga QR Code Sandbox (TEST-...).
-      // Quando o usuário clica em "Já realizei o pagamento" (simulateTestApproval), confirmamos o agendamento de teste imediatamente.
-      if (
-        (!mpPayment || mpPayment.status !== 'approved') &&
-        body?.simulateTestApproval === true &&
-        (mpContext.mode === 'test' || tenantMp.isTestUser || tenantMp.accessToken.startsWith('TEST-'))
-      ) {
-        const targetBookingId = resolvedBookingId || mpPayment?.metadata?.booking_id || mpPayment?.external_reference;
-        if (targetBookingId) {
-          const { data: booking } = await supabase
-            .from('bookings')
-            .select('id, tenant_id, order_number, status, payment_mode, amount_total, amount_paid')
-            .eq('id', targetBookingId)
-            .maybeSingle();
-
-          if (booking) {
-            const simulatedPayment = {
-              ...(mpPayment || {}),
-              id: paymentIntentId || mpPayment?.id || `test_pix_${Date.now()}`,
-              status: 'approved',
-              payment_method_id: 'pix',
-              transaction_amount: Number(
-                booking.payment_mode === 'deposit' ? booking.amount_paid : booking.amount_total
-              ),
-            };
-            await finalizeConfirmedBooking(
-              supabase,
-              booking,
-              simulatedPayment,
-              tenantMp.mpUserId,
-              0
-            );
-            return new Response(
-              JSON.stringify({
-                confirmed: true,
-                bookingId: booking.id,
-                order_number: booking.order_number,
-                status: 'succeeded',
-              }),
-              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
-          }
-        }
-      }
-
       if (mpPayment && mpPayment.status === 'approved') {
         const targetBookingId = resolvedBookingId || mpPayment.metadata?.booking_id || mpPayment.external_reference;
         if (targetBookingId) {
