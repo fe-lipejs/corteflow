@@ -216,8 +216,8 @@ export default function ClientPortal() {
     enabled: !!customerId,
   });
 
-  const cancelMutation = useCancelBooking();
-  const rescheduleMutation = useRescheduleBooking();
+  const cancelMutation = useCancelBooking(tenant?.id);
+  const rescheduleMutation = useRescheduleBooking(tenant?.id);
   const [visibleDaysLimit, setVisibleDaysLimit] = useState(INITIAL_CAROUSEL_DAYS_CAP);
 
   const maxAdvanceDays = useMemo(
@@ -496,7 +496,8 @@ export default function ClientPortal() {
   const isWithinRescheduleDeadline = (booking: any): boolean => {
     const s = storeData?.settings;
     if (!s?.allow_reschedule) return false;
-    const deadlineHours = s.reschedule_deadline_hours ?? 24;
+    const deadlineHours = s.reschedule_deadline_hours ?? null;
+    if (deadlineHours === null) return true;
     const oldAppointment = new Date(booking.scheduled_at);
     const cutoff = new Date(oldAppointment.getTime() - deadlineHours * 60 * 60 * 1000);
     return new Date() <= cutoff;
@@ -796,8 +797,15 @@ export default function ClientPortal() {
     );
   }
 
-  const futureBookings = (bookings as any[]).filter((b: any) => new Date(b.scheduled_at) >= new Date() && !['canceled', 'no_show', 'completed'].includes(b.status));
-  const pastBookings = (bookings as any[]).filter((b: any) => new Date(b.scheduled_at) < new Date() || ['canceled', 'no_show', 'completed'].includes(b.status));
+  const visibleClientBookings = (bookings as any[]).filter((b: any) => {
+    if (b.status === 'pending' && b.payment_mode !== 'local' && b.created_at) {
+      const ageMs = Date.now() - new Date(b.created_at).getTime();
+      if (ageMs > 15 * 60 * 1000) return false;
+    }
+    return true;
+  });
+  const futureBookings = visibleClientBookings.filter((b: any) => new Date(b.scheduled_at) >= new Date() && !['canceled', 'no_show', 'completed'].includes(b.status));
+  const pastBookings = visibleClientBookings.filter((b: any) => new Date(b.scheduled_at) < new Date() || ['canceled', 'no_show', 'completed'].includes(b.status));
 
   return (
     <div className="min-h-screen pb-20 transition-colors bg-[#050505]" style={{ backgroundColor: theme.bg, color: theme.textPrimary, fontFamily: theme.fontSerif }}>
@@ -845,13 +853,51 @@ export default function ClientPortal() {
                       <p className="font-serif font-extrabold text-2xl" style={{ color: theme.accent }}>
                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(b.amount_total)}
                       </p>
+                      {b.payment_status === 'partial_paid' && Number(b.amount_paid) > 0 && (
+                        <p className="text-[11px] font-medium mt-0.5" style={{ color: theme.textSecondary }}>
+                          Pago: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(b.amount_paid))} • Falta:{' '}
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                            Math.max(0, Number(b.amount_due ?? (Number(b.amount_total || 0) - Number(b.amount_paid || 0))))
+                          )}
+                        </p>
+                      )}
                       <div className="flex flex-col items-end gap-1 mt-1">
                         <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase" style={{ backgroundColor: `${theme.accent}20`, color: theme.accent }}>
                           {b.status === 'confirmed' ? 'Confirmado' : b.status === 'pending' ? 'Pendente' : b.status}
                         </span>
                         {b.payment_status && (
-                          <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase" style={{ backgroundColor: b.payment_status === 'paid' ? '#10b98120' : b.payment_status === 'partial_paid' ? '#f59e0b20' : '#ef444420', color: b.payment_status === 'paid' ? '#10b981' : b.payment_status === 'partial_paid' ? '#f59e0b' : '#ef4444' }}>
-                            {b.payment_status === 'paid' ? 'Pago Integral' : b.payment_status === 'partial_paid' ? 'Sinal Pago' : b.payment_status === 'refunded' ? 'Estornado' : b.payment_status === 'failed' ? 'Falha no Pagamento' : b.payment_status === 'pending' ? 'Aguardando Pagamento' : b.payment_status}
+                          <span
+                            className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"
+                            style={{
+                              backgroundColor:
+                                b.payment_status === 'paid' || b.payment_status === 'full_paid'
+                                  ? '#10b98120'
+                                  : b.payment_status === 'partial_paid'
+                                    ? '#f59e0b20'
+                                    : '#ef444420',
+                              color:
+                                b.payment_status === 'paid' || b.payment_status === 'full_paid'
+                                  ? '#10b981'
+                                  : b.payment_status === 'partial_paid'
+                                    ? '#f59e0b'
+                                    : '#ef4444',
+                            }}
+                          >
+                            {b.payment_status === 'paid' || b.payment_status === 'full_paid'
+                              ? 'Pago Integral'
+                              : b.payment_status === 'partial_paid'
+                                ? 'Sinal Pago'
+                                : b.payment_status === 'refunded'
+                                  ? 'Estornado'
+                                  : b.payment_status === 'captured_as_fee'
+                                    ? 'Taxa Retida'
+                                    : b.payment_status === 'failed'
+                                      ? 'Falha no Pagamento'
+                                      : b.payment_status === 'pending'
+                                        ? b.payment_mode === 'local'
+                                          ? 'Pagar no Local'
+                                          : 'Aguardando Pagamento'
+                                        : b.payment_status}
                           </span>
                         )}
                       </div>
@@ -965,19 +1011,21 @@ export default function ClientPortal() {
             {(() => {
               const settings = storeData?.settings;
               if (!settings) return null;
+              if (bookingToCancel.payment_status === 'refunded' || bookingToCancel.payment_mode === 'local') return null;
+              const freeHoursBefore = settings.cancel_free_hours_before ?? 2;
               const scheduledDate = new Date(bookingToCancel.scheduled_at);
               const freeDeadlineDate = new Date(scheduledDate);
-              freeDeadlineDate.setHours(freeDeadlineDate.getHours() - (settings.cancel_free_hours_before || 2));
-              
+              freeDeadlineDate.setHours(freeDeadlineDate.getHours() - freeHoursBefore);
+
               const now = new Date();
               const isLate = now > freeDeadlineDate;
-              const feePercent = settings.cancel_fee_percent || 0;
-              
+              const feePercent = settings.cancel_fee_percent ?? 0;
+
               if (isLate && feePercent > 0) {
-                const amountPaid = bookingToCancel.amount_paid || 0;
+                const amountPaid = Number(bookingToCancel.amount_paid || 0);
                 const penalty = (amountPaid * feePercent) / 100;
                 const refund = amountPaid - penalty;
-                
+
                 return (
                   <div className="mb-6 p-4 rounded-xl border flex flex-col gap-2" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
                     <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-bold text-sm">
@@ -985,7 +1033,7 @@ export default function ClientPortal() {
                       Aviso Legal: Cancelamento Tardio
                     </div>
                     <p className="text-xs text-red-600/90 dark:text-red-400/90 leading-relaxed">
-                      Você está cancelando com menos de {settings.cancel_free_hours_before}h de antecedência. De acordo com as políticas que você aceitou, uma multa de {feePercent}% será aplicada.
+                      Você está cancelando com menos de {freeHoursBefore}h de antecedência. De acordo com as políticas que você aceitou, uma multa de {feePercent}% será aplicada.
                     </p>
                     {amountPaid > 0 && (
                       <div className="mt-2 p-3 bg-red-500/10 rounded-lg text-xs font-medium text-red-700 dark:text-red-300">

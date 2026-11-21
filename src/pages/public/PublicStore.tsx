@@ -1686,25 +1686,30 @@ export default function PublicStore() {
             body: { bookingId: newBooking.id, returnUrl: returnSuccessUrl },
           }
         );
-        if (cErr2) {
-          let errDetail = cErr2.message;
-          try {
-            if ((cErr2 as any).context && typeof (cErr2 as any).context.json === "function") {
-              const body = await (cErr2 as any).context.json();
-              if (body?.error) errDetail = body.error;
-            }
-          } catch (_) {}
-          throw new Error(errDetail || "Não foi possível iniciar o pagamento online. Por favor, tente novamente ou escolha 'Pagar no local'.");
-        }
-        if (checkoutData?.error) {
-          throw new Error(checkoutData.error);
-        }
-        if (checkoutData?.url) {
-          window.location.href = checkoutData.url;
-          return;
-        } else {
+        if (cErr2 || checkoutData?.error || !checkoutData?.url) {
+          await supabase.functions
+            .invoke("create-payment-intent", {
+              body: { action: "abort_booking", bookingId: newBooking.id },
+            })
+            .catch(() => {});
+
+          if (cErr2) {
+            let errDetail = cErr2.message;
+            try {
+              if ((cErr2 as any).context && typeof (cErr2 as any).context.json === "function") {
+                const body = await (cErr2 as any).context.json();
+                if (body?.error) errDetail = body.error;
+              }
+            } catch (_) {}
+            throw new Error(errDetail || "Não foi possível iniciar o pagamento online. Por favor, tente novamente ou escolha 'Pagar no local'.");
+          }
+          if (checkoutData?.error) {
+            throw new Error(checkoutData.error);
+          }
           throw new Error("Sessão de pagamento indisponível no momento. Por favor, escolha 'Pagar no local'.");
         }
+        window.location.href = checkoutData.url;
+        return;
       }
 
       if (slug) {

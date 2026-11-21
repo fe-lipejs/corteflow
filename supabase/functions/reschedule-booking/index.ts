@@ -28,16 +28,15 @@ serve(async (req) => {
   }
 
   try {
-    // Use service role to bypass RLS (same pattern as cancel-booking-financials)
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { bookingId, newTime, newProId, actorType } = await req.json();
+    const { bookingId, newTime, newProId, actorType = 'client' } = await req.json();
 
     if (!bookingId || !newTime) {
-      throw new Error('Missing required fields: bookingId, newTime');
+      throw new Error('Campos obrigatórios ausentes para reagendar.');
     }
 
     const newAppointment = new Date(newTime);
@@ -45,7 +44,11 @@ serve(async (req) => {
       throw new Error('Nova data ou horário inválido.');
     }
 
-    // 1. Fetch the current booking
+    if (newAppointment.getTime() < Date.now() - 5 * 60 * 1000) {
+      throw new Error('Não é possível reagendar para um horário que já passou.');
+    }
+
+    // 1. Buscar agendamento atual
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .select('*')
@@ -53,27 +56,23 @@ serve(async (req) => {
       .single();
 
     if (bookingError || !booking) {
-      throw new Error('Booking not found');
+      throw new Error('Agendamento não encontrado.');
     }
 
-    // 2. Check booking can be rescheduled
+    // 2. Validar status atual
     const nonReschedulableStatuses = ['canceled', 'completed', 'no_show', 'in_progress', 'arrived'];
     if (nonReschedulableStatuses.includes(booking.status)) {
       throw new Error('Este agendamento não pode ser reagendado no status atual.');
     }
 
-    // 3. Fetch tenant_settings for global horizon + client-side policy validation
+    // 3. Políticas do salão e antecedência máxima
     const { data: settings } = await supabase
       .from('tenant_settings')
       .select('allow_reschedule, reschedule_deadline_hours, max_reschedules, max_advance_days')
       .eq('tenant_id', booking.tenant_id)
       .maybeSingle();
 
-    // Global Rule: Antecedência Máxima de Agendamento (aplica para cliente e proprietário ao mudar de dia)
-    const effectiveMaxAdvanceDays: number | null = settings
-      ? settings.max_advance_days
-      : 30;
-
+    const effectiveMaxAdvanceDays: number | null = settings ? settings.max_advance_days : 30;
     const oldDateKey = getSaoPauloDateKey(new Date(booking.scheduled_at));
     const targetDateKey = getSaoPauloDateKey(newAppointment);
 
@@ -91,33 +90,85 @@ serve(async (req) => {
     }
 
     if (actorType === 'client') {
-      // allow_reschedule check (null = allow by default)
       if (settings?.allow_reschedule === false) {
         throw new Error('O salão não permite reagendamentos pelo portal.');
       }
 
-      // max_reschedules check (null = unlimited)
       const maxReschedules = settings?.max_reschedules ?? null;
       const currentCount = booking.reschedule_count ?? 0;
       if (maxReschedules !== null && currentCount >= maxReschedules) {
         throw new Error(`Limite atingido: este agendamento já foi reagendado ${maxReschedules}x.`);
       }
 
-      // Deadline check: null = no deadline
       const deadlineHours = settings?.reschedule_deadline_hours ?? null;
       if (deadlineHours !== null) {
         const oldAppointment = new Date(booking.scheduled_at);
         const hoursUntilOld = (oldAppointment.getTime() - Date.now()) / (1000 * 60 * 60);
         if (hoursUntilOld < deadlineHours) {
-          throw new Error(`Prazo esgotado. O reagendamento deve ser feito com pelo menos ${deadlineHours}h de antecedência.`);
+          throw new Error(
+            `Prazo esgotado. O reagendamento deve ser feito com pelo menos ${deadlineHours}h de antecedência.`
+          );
         }
       }
     }
 
-    // 4. Determine the professional to use (keep existing if not provided)
-    const finalProId = newProId ?? booking.professional_id;
+    // 4. Profissional final + checagem de conflito (bloqueios e outros agendamentos)
+    const rawPro = newProId === 'any' ? null : (newProId ?? booking.professional_id);
+    const finalProId = rawPro || booking.professional_id || null;
 
-    // 5. Determine history action
+    const slotDurationMin = (booking.duration_minutes ?? 30) + (booking.buffer_minutes ?? 0);
+    const slotEnd = new Date(newAppointment.getTime() + slotDurationMin * 60 * 1000);
+
+    let blockQuery = supabase
+      .from('professional_blocked_times')
+      .select('id')
+      .eq('tenant_id', booking.tenant_id)
+      .lt('starts_at', slotEnd.toISOString())
+      .gt('ends_at', newAppointment.toISOString());
+
+    if (finalProId) {
+      blockQuery = blockQuery.or(`professional_id.eq.${finalProId},professional_id.is.null`);
+    }
+
+    const { data: activeBlocks } = await blockQuery.limit(1);
+    if (activeBlocks && activeBlocks.length > 0) {
+      throw new Error('Este horário está bloqueado na agenda do salão. Por favor, escolha outro horário.');
+    }
+
+    if (finalProId) {
+      const searchWindowStart = new Date(newAppointment.getTime() - 240 * 60 * 1000).toISOString();
+      const fifteenMinAgoMs = Date.now() - 15 * 60 * 1000;
+      const { data: existingBookings } = await supabase
+        .from('bookings')
+        .select('id, scheduled_at, duration_minutes, buffer_minutes, status, payment_mode, created_at')
+        .eq('tenant_id', booking.tenant_id)
+        .eq('professional_id', finalProId)
+        .neq('id', bookingId)
+        .in('status', ['confirmed', 'pending', 'arrived', 'in_progress'])
+        .lt('scheduled_at', slotEnd.toISOString())
+        .gt('scheduled_at', searchWindowStart);
+
+      const hasCollision = (existingBookings || []).some((b: any) => {
+        if (
+          b.status === 'pending' &&
+          b.payment_mode !== 'local' &&
+          b.created_at &&
+          new Date(b.created_at).getTime() < fifteenMinAgoMs
+        ) {
+          return false;
+        }
+        const bStart = new Date(b.scheduled_at);
+        const bDur = (b.duration_minutes ?? 30) + (b.buffer_minutes ?? 0);
+        const bEnd = new Date(bStart.getTime() + bDur * 60 * 1000);
+        return newAppointment.getTime() < bEnd.getTime() && slotEnd.getTime() > bStart.getTime();
+      });
+
+      if (hasCollision) {
+        throw new Error('Este horário acabou de ser preenchido por outro cliente. Por favor, escolha outro horário.');
+      }
+    }
+
+    // 5. Histórico e atualização
     let action = 'rescheduled';
     if (booking.scheduled_at !== newTime && booking.professional_id === finalProId) {
       action = 'time_changed';
@@ -125,7 +176,6 @@ serve(async (req) => {
       action = 'pro_changed';
     }
 
-    // 6. Update the booking
     const { error: updateError } = await supabase
       .from('bookings')
       .update({
@@ -139,7 +189,6 @@ serve(async (req) => {
       throw new Error(`Erro ao atualizar agendamento: ${updateError.message}`);
     }
 
-    // 7. Insert booking history
     await supabase.from('booking_history').insert({
       tenant_id: booking.tenant_id,
       booking_id: bookingId,
@@ -159,12 +208,11 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
-
   } catch (error: any) {
     console.error('Error processing reschedule:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
+      status: 200,
     });
   }
 });

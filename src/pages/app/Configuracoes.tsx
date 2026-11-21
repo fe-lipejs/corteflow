@@ -112,6 +112,7 @@ export default function Configuracoes() {
     mp_email?: string | null;
     mp_nickname?: string | null;
     is_oauth?: boolean;
+    is_test_account_in_live?: boolean;
   } | null>(null);
   const [syncingConnect, setSyncingConnect] = useState(false);
   const [isConnectingStripe, setIsConnectingStripe] = useState(false);
@@ -1307,6 +1308,8 @@ export default function Configuracoes() {
         if (data.just_activated && showModalIfActivated) {
           setShowStripeActivatedModal(true);
         }
+      } else if (data?.is_test_account_in_live) {
+        setStripeConnectInfo(data);
       } else {
         setStripeConnectInfo(null);
       }
@@ -2323,6 +2326,10 @@ export default function Configuracoes() {
                             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                               <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Conectado
                             </span>
+                          ) : stripeConnectInfo?.is_test_account_in_live ? (
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                              Conta de Teste (Reconectar)
+                            </span>
                           ) : (
                             <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-zinc-500/10 text-zinc-500 border border-zinc-500/20">
                               Desconectado
@@ -2332,7 +2339,9 @@ export default function Configuracoes() {
                         <p className="text-xs leading-relaxed font-medium" style={{ color: theme.textSecondary }}>
                           {isConnected
                             ? `Conta vinculada${stripeConnectInfo?.mp_nickname || stripeConnectInfo?.mp_email ? ` (${stripeConnectInfo.mp_nickname || stripeConnectInfo.mp_email})` : ''} • Pix e Cartão ativos.`
-                            : 'Receba Pix e Cartão direto na sua conta.'}
+                            : stripeConnectInfo?.is_test_account_in_live
+                              ? `A conta conectada (${stripeConnectInfo.mp_nickname || 'TESTUSER'}) é de testes. Conecte sua conta real do Mercado Pago para receber pagamentos em Produção.`
+                              : 'Receba Pix e Cartão direto na sua conta.'}
                         </p>
                       </div>
                     </div>

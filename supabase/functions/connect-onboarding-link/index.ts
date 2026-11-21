@@ -159,6 +159,16 @@ async function exchangeOAuthCodeAndSaveAccount(params: {
     [mpUser?.first_name, mpUser?.last_name].filter(Boolean).join(' ') ||
     mpUser?.email ||
     'Conta Mercado Pago';
+  const mpEmail = String(mpUser?.email || '').toLowerCase();
+  const isTestAccount =
+    mpEmail.endsWith('@testuser.com') || String(nickname).toUpperCase().startsWith('TESTUSER');
+
+  const mpCtxCheck = await getMercadoPagoContext(supabaseAdmin);
+  if (mpCtxCheck.mode === 'live' && isTestAccount) {
+    throw new Error(
+      'Você conectou uma conta de testes (TESTUSER). Como a plataforma está em Produção Oficial, autorize sua conta real do Mercado Pago.'
+    );
+  }
   const expiresAt = tokenData.expires_in
     ? new Date(Date.now() + Number(tokenData.expires_in) * 1000).toISOString()
     : null;

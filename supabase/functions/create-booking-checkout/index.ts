@@ -36,6 +36,12 @@ serve(async (req) => {
       throw new Error("O salão ainda não conectou sua conta Mercado Pago. Por favor, escolha a opção de pagamento no local.");
     }
 
+    if (mpContext.mode === 'live' && tenantMp.isTestUser) {
+      throw new Error(
+        "Este salão ainda está com uma conta de testes do Mercado Pago conectada. Solicite que reconecte sua conta real em Configurações ou escolha 'Pagar no local'."
+      );
+    }
+
     const amountTotal = Number(booking.amount_total);
     const amountToCharge = Number(
       (booking.payment_mode === 'deposit' ? Number(booking.amount_paid) : amountTotal).toFixed(2)

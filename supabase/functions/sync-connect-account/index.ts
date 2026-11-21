@@ -102,6 +102,32 @@ serve(async (req) => {
       connectAcc.mp_nickname ||
       null;
     const email = mpUser?.email || connectAcc.mp_email || null;
+    const isConnectedTestAccount = Boolean(
+      String(email || '').toLowerCase().endsWith('@testuser.com') ||
+      String(nickname || '').toUpperCase().startsWith('TESTUSER')
+    );
+
+    if (mpContext.mode === 'live' && isConnectedTestAccount) {
+      await supabaseAdmin
+        .from('stripe_connect_accounts')
+        .update({
+          charges_enabled: false,
+          payouts_enabled: false,
+          mp_user_id: String(mpUser?.id || connectAcc.mp_user_id || ''),
+          mp_email: email,
+          mp_nickname: nickname,
+        } as any)
+        .eq('tenant_id', tenantId);
+
+      return new Response(JSON.stringify({
+        has_account: true,
+        charges_enabled: false,
+        payouts_enabled: false,
+        is_test_account_in_live: true,
+        mp_email: email,
+        mp_nickname: nickname,
+      }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
 
     await supabaseAdmin
       .from('stripe_connect_accounts')
