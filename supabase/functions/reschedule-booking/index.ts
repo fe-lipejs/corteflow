@@ -59,6 +59,36 @@ serve(async (req) => {
       throw new Error('Agendamento não encontrado.');
     }
 
+    let actorUserId: string | null = null;
+    if (actorType !== 'client') {
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) {
+        throw new Error('Sessão administrativa necessária para reagendar.');
+      }
+      const supabaseAuth = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: { user } } = await supabaseAuth.auth.getUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado para reagendamento administrativo.');
+      }
+      const { data: callerProfile } = await supabase
+        .from('profiles')
+        .select('tenant_id, role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const isAllowed =
+        callerProfile?.role === 'super_admin' ||
+        (callerProfile?.tenant_id === booking.tenant_id && callerProfile?.role !== 'customer');
+      if (!isAllowed) {
+        throw new Error('Permissão negada para reagendar este agendamento.');
+      }
+      actorUserId = user.id;
+    }
+
     // 2. Validar status atual
     const nonReschedulableStatuses = ['canceled', 'completed', 'no_show', 'in_progress', 'arrived'];
     if (nonReschedulableStatuses.includes(booking.status)) {
@@ -189,18 +219,16 @@ serve(async (req) => {
       throw new Error(`Erro ao atualizar agendamento: ${updateError.message}`);
     }
 
-    await supabase.from('booking_history').insert({
-      tenant_id: booking.tenant_id,
-      booking_id: bookingId,
-      action,
-      details: {
-        old_time: booking.scheduled_at,
-        new_time: newTime,
-        old_pro: booking.professional_id,
-        new_pro: finalProId,
-      },
-      actor_type: actorType ?? 'client',
-    });
+    try {
+      await supabase.from('booking_history').insert({
+        tenant_id: booking.tenant_id,
+        booking_id: bookingId,
+        from_status: booking.status,
+        to_status: booking.status,
+        changed_by: actorUserId,
+        note: `${actorType === 'client' ? 'Cliente (Portal)' : 'Admin'} (${action}): ${booking.scheduled_at} -> ${newTime}`,
+      });
+    } catch (_) {}
 
     await dispatchBookingPushEvent(supabase, bookingId, 'booking_rescheduled').catch(() => {});
 

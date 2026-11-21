@@ -58,15 +58,17 @@ serve(async (req) => {
       .maybeSingle();
 
     if (historyData?.id) {
-      await supabaseAdmin.from('billing_events').insert({
-        history_id: historyData.id,
-        tenant_id: tenantId,
-        stripe_event_id: `chk_${crypto.randomUUID()}`,
-        type: 'checkout_initiated',
-        event_type: 'checkout_initiated',
-        payload: { plan_id: plan.id, tenant_id: tenantId, provider: 'mercado_pago' },
-        details: { plan_id: plan.id, tenant_id: tenantId, provider: 'mercado_pago' }
-      }).catch(() => {});
+      try {
+        await supabaseAdmin.from('billing_events').insert({
+          history_id: historyData.id,
+          tenant_id: tenantId,
+          stripe_event_id: `chk_${crypto.randomUUID()}`,
+          type: 'checkout_initiated',
+          event_type: 'checkout_initiated',
+          payload: { plan_id: plan.id, tenant_id: tenantId, provider: 'mercado_pago' },
+          details: { plan_id: plan.id, tenant_id: tenantId, provider: 'mercado_pago' }
+        });
+      } catch (_) {}
     }
 
     const targetCurrency = (

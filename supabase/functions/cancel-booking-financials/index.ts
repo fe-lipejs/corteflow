@@ -37,6 +37,36 @@ serve(async (req) => {
       throw new Error('Booking not found');
     }
 
+    let actorUserId: string | null = null;
+    if (actorType !== 'client') {
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) {
+        throw new Error('Sessão administrativa necessária para cancelar.');
+      }
+      const supabaseAuth = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: { user } } = await supabaseAuth.auth.getUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado para cancelamento administrativo.');
+      }
+      const { data: callerProfile } = await supabase
+        .from('profiles')
+        .select('tenant_id, role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const isAllowed =
+        callerProfile?.role === 'super_admin' ||
+        (callerProfile?.tenant_id === booking.tenant_id && callerProfile?.role !== 'customer');
+      if (!isAllowed) {
+        throw new Error('Permissão negada para cancelar este agendamento.');
+      }
+      actorUserId = user.id;
+    }
+
     if (booking.status === 'canceled') {
       return new Response(JSON.stringify({ success: true, alreadyCanceled: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -200,13 +230,16 @@ serve(async (req) => {
     // 6. Mark booking as canceled
     await supabase.from('bookings').update({ status: 'canceled' }).eq('id', bookingId);
 
-    await supabase.from('booking_history').insert({
-      tenant_id: booking.tenant_id,
-      booking_id: bookingId,
-      action: 'canceled',
-      reason: reason || 'Cancelamento pelo portal',
-      actor_type: actorType,
-    });
+    try {
+      await supabase.from('booking_history').insert({
+        tenant_id: booking.tenant_id,
+        booking_id: bookingId,
+        from_status: booking.status,
+        to_status: 'canceled',
+        changed_by: actorUserId,
+        note: `${actorType === 'client' ? 'Cliente (Portal)' : 'Admin'}: ${reason || 'Cancelamento'}`,
+      });
+    } catch (_) {}
 
     await dispatchBookingPushEvent(supabase, bookingId, 'booking_canceled').catch(() => {});
 

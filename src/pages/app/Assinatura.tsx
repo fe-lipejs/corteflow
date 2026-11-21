@@ -289,6 +289,16 @@ export default function Assinatura() {
     fetchData();
   }, [fetchData]);
 
+  // Evita botão travado em loading se o usuário voltar pelo botão "Voltar" do navegador após abrir o checkout
+  useEffect(() => {
+    const resetLoading = () => {
+      setCheckoutLoading(null);
+      setSyncing(false);
+    };
+    window.addEventListener('pageshow', resetLoading);
+    return () => window.removeEventListener('pageshow', resetLoading);
+  }, []);
+
   const verifiedCheckoutRef = useRef(false);
 
   /*

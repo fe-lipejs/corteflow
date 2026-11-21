@@ -120,6 +120,7 @@ export default function Configuracoes() {
   const [stripeRequiredModalOpen, setStripeRequiredModalOpen] = useState(false);
   const [disconnectStripeModalOpen, setDisconnectStripeModalOpen] = useState(false);
   const [disconnectingStripe, setDisconnectingStripe] = useState(false);
+  const [oauthTestSessionWarning, setOauthTestSessionWarning] = useState<string | null>(null);
   const handledOauthReturnRef = useRef<string | null>(null);
 
   // ─── Form State ───────────────────────────────────────────────────────────
@@ -471,6 +472,19 @@ export default function Configuracoes() {
           mp_nickname: (connectData as any).mp_nickname || null,
           is_oauth: Boolean((connectData as any).mp_refresh_token),
         });
+      } else if (connectData) {
+        const emailStr = String((connectData as any).mp_email || '').toLowerCase();
+        const nickStr = String((connectData as any).mp_nickname || '').toUpperCase();
+        setStripeConnectInfo({
+          has_account: true,
+          charges_enabled: false,
+          payouts_enabled: false,
+          stripe_account_id: connectData.stripe_account_id,
+          mp_email: (connectData as any).mp_email || null,
+          mp_nickname: (connectData as any).mp_nickname || null,
+          is_oauth: Boolean((connectData as any).mp_refresh_token),
+          is_test_account_in_live: emailStr.endsWith('@testuser.com') || nickStr.startsWith('TESTUSER'),
+        });
       } else {
         setStripeConnectInfo(null);
       }
@@ -516,6 +530,9 @@ export default function Configuracoes() {
           handledOauthReturnRef.current = returnKey;
           setActiveTab('stripe');
           window.history.replaceState({}, document.title, `${window.location.pathname}?tab=stripe`);
+          if (mpErrorMsg && (mpErrorMsg.includes('TESTUSER') || mpErrorMsg.includes('conta de testes'))) {
+            setOauthTestSessionWarning(mpErrorMsg);
+          }
           toast.error(mpErrorMsg || 'Não foi possível concluir a conexão com o Mercado Pago.');
         }
       } else if (oauthCode) {
@@ -562,6 +579,22 @@ export default function Configuracoes() {
       syncConnectStatus(false);
     }
   }, [activeTab, tenant?.id]);
+
+  // Evita que "Conectando..." fique travado se o usuário clicar em Voltar no navegador após abrir o Mercado Pago
+  useEffect(() => {
+    const resetConnectState = () => setIsConnectingStripe(false);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        setIsConnectingStripe(false);
+      }
+    };
+    window.addEventListener('pageshow', resetConnectState);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('pageshow', resetConnectState);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
 
   // ─── Slug Uniqueness & Format Validation ──────────────────────────────────
   const slugCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1211,6 +1244,7 @@ export default function Configuracoes() {
 
   const handleConnectStripe = async () => {
     if (!tenant) return;
+    setOauthTestSessionWarning(null);
     setIsConnectingStripe(true);
     try {
       const { data, error } = await supabase.functions.invoke('connect-onboarding-link', {
@@ -1230,6 +1264,7 @@ export default function Configuracoes() {
       }
       if (data?.url) {
         window.location.href = data.url;
+        window.setTimeout(() => setIsConnectingStripe(false), 5000);
         return;
       }
       throw new Error(
@@ -1280,9 +1315,14 @@ export default function Configuracoes() {
       setAllowLocal(true);
       setAllowDeposit(false);
       setAllowFull(false);
+      setPaymentMode('local');
       setDisconnectStripeModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['tenant_settings', tenant.id] });
       queryClient.invalidateQueries({ queryKey: ['tenant_settings'] });
+      if (tenant.slug) {
+        queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(tenant.slug) });
+      }
+      toast.success('Conta Mercado Pago desconectada. Pagamento no local mantido.');
     } catch (err: any) {
       console.error('Error disconnecting Mercado Pago:', err);
       toast.error('Erro ao desconectar Mercado Pago: ' + err.message);
@@ -1308,10 +1348,21 @@ export default function Configuracoes() {
         if (data.just_activated && showModalIfActivated) {
           setShowStripeActivatedModal(true);
         }
-      } else if (data?.is_test_account_in_live) {
+      } else if (data?.is_test_account_in_live || data?.has_account) {
         setStripeConnectInfo(data);
+        setAllowLocal(true);
+        setAllowDeposit(false);
+        setAllowFull(false);
+        setPaymentMode('local');
+        if (tenant.slug) {
+          queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(tenant.slug) });
+        }
       } else {
         setStripeConnectInfo(null);
+        setAllowLocal(true);
+        setAllowDeposit(false);
+        setAllowFull(false);
+        setPaymentMode('local');
       }
     } catch (err) {
       console.warn('Sync connect error:', err);
@@ -2294,6 +2345,49 @@ export default function Configuracoes() {
           {/* ═══════════════════════════ TAB: RECEBIMENTOS & PAGAMENTOS ══════════════════════════ */}
           {activeTab === 'stripe' && (
             <div className="space-y-6">
+              {oauthTestSessionWarning && (
+                <div className="rounded-2xl p-4 sm:p-5 border border-amber-500/35 bg-amber-500/10 space-y-3 relative">
+                  <button
+                    type="button"
+                    onClick={() => setOauthTestSessionWarning(null)}
+                    aria-label="Fechar aviso"
+                    className="absolute top-3 right-3 p-1.5 rounded-lg text-amber-500 hover:bg-amber-500/15 transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <div className="flex items-start gap-3 pr-6">
+                    <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                    <div className="space-y-1.5">
+                      <h4 className="text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-300">
+                        Sessão de testes ativa no seu navegador
+                      </h4>
+                      <p className="text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
+                        {oauthTestSessionWarning}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 pl-8">
+                    <a
+                      href="https://www.mercadopago.com.br/home"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold border border-amber-500/40 bg-amber-500/15 text-amber-700 dark:text-amber-200 hover:bg-amber-500/25 transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <span>Abrir Mercado Pago para sair da conta teste</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={handleConnectStripe}
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold text-white transition-opacity hover:opacity-90 cursor-pointer"
+                      style={{ background: '#009EE3' }}
+                    >
+                      Tentar Conectar Novamente
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* 1. Card Principal: Mercado Pago Direto na Conta do Salão */}
               {(() => {
                 const isConnected = stripeConnectInfo?.charges_enabled === true;
@@ -2385,25 +2479,37 @@ export default function Configuracoes() {
                           </button>
                         </>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={handleConnectStripe}
-                          disabled={isConnectingStripe}
-                          className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 text-white shadow-sm hover:opacity-95 transition-all cursor-pointer disabled:opacity-80"
-                          style={{ background: '#009EE3' }}
-                        >
-                          {isConnectingStripe ? (
-                            <>
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>Conectando...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>Conectar Mercado Pago</span>
-                              <ExternalLink className="w-3.5 h-3.5 opacity-80" />
-                            </>
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleConnectStripe}
+                            disabled={isConnectingStripe}
+                            className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 text-white shadow-sm hover:opacity-95 transition-all cursor-pointer disabled:opacity-80"
+                            style={{ background: '#009EE3' }}
+                          >
+                            {isConnectingStripe ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Conectando...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>Conectar Mercado Pago</span>
+                                <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+                              </>
+                            )}
+                          </button>
+                          {stripeConnectInfo?.has_account && (
+                            <button
+                              type="button"
+                              onClick={() => setDisconnectStripeModalOpen(true)}
+                              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
+                              title="Desconectar conta Mercado Pago"
+                            >
+                              Desconectar
+                            </button>
                           )}
-                        </button>
+                        </>
                       )}
                     </div>
                   </div>

@@ -166,7 +166,7 @@ async function exchangeOAuthCodeAndSaveAccount(params: {
   const mpCtxCheck = await getMercadoPagoContext(supabaseAdmin);
   if (mpCtxCheck.mode === 'live' && isTestAccount) {
     throw new Error(
-      'Você conectou uma conta de testes (TESTUSER). Como a plataforma está em Produção Oficial, autorize sua conta real do Mercado Pago.'
+      `Seu navegador ainda está logado na conta de testes (${nickname}) no Mercado Pago. Saia da conta de teste em mercadopago.com.br (ou use uma aba anônima) para entrar com sua conta real.`
     );
   }
   const expiresAt = tokenData.expires_in

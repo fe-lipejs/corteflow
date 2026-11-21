@@ -119,6 +119,20 @@ serve(async (req) => {
         } as any)
         .eq('tenant_id', tenantId);
 
+      await supabaseAdmin
+        .from('tenant_settings')
+        .update({
+          accept_online_payment: false,
+          accept_local_payment: true,
+          booking_payment_mode: 'local',
+          payment_methods: {
+            pay_local: true,
+            partial_50: false,
+            full_100: false,
+          },
+        } as any)
+        .eq('tenant_id', tenantId);
+
       return new Response(JSON.stringify({
         has_account: true,
         charges_enabled: false,

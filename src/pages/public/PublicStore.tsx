@@ -1754,6 +1754,12 @@ export default function PublicStore() {
     }
   };
 
+  useEffect(() => {
+    const handlePageShow = () => setIsProcessing(false);
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
   const resetAll = () => {
     setBookingCode(null);
     setStep(1);
