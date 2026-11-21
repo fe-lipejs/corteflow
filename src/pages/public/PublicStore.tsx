@@ -611,10 +611,25 @@ export default function PublicStore() {
   const [selectedPro, setSelectedPro] = useState<any | "any" | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerName, setCustomerName] = useState(() => {
+    try {
+      const saved = localStorage.getItem("raffros_client_contact_v1");
+      return saved ? JSON.parse(saved)?.name || "" : "";
+    } catch {
+      return "";
+    }
+  });
+  const [customerPhone, setCustomerPhone] = useState(() => {
+    try {
+      const saved = localStorage.getItem("raffros_client_contact_v1");
+      return saved ? JSON.parse(saved)?.phone || "" : "";
+    } catch {
+      return "";
+    }
+  });
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
+  const [showNotesInput, setShowNotesInput] = useState(false);
   const [paymentScope, setPaymentScope] = useState<PaymentScope>("partial");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pix");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -1475,6 +1490,13 @@ export default function PublicStore() {
     setIsProcessing(true);
     setErrorMsg("");
 
+    try {
+      localStorage.setItem(
+        "raffros_client_contact_v1",
+        JSON.stringify({ name: cleanName, phone: cleanPhone })
+      );
+    } catch {}
+
     if (tenant?.id && !tenant?.isDemo) {
       trackEvent("customer_data_submitted", {
         eventType: "click",
@@ -1632,7 +1654,7 @@ export default function PublicStore() {
           },
         });
 
-        if (paymentResult.status === "redirecting") {
+        if (paymentResult.status === "redirecting" || paymentResult.status === "cancelled_modal") {
           return;
         }
 
@@ -1767,9 +1789,8 @@ export default function PublicStore() {
     setSelectedPro(null);
     setSelectedDate(null);
     setSelectedTime(null);
-    setCustomerName("");
-    setCustomerPhone("");
     setCustomerNotes("");
+    setShowNotesInput(false);
     setPhoneFieldError("");
     setNameFieldError("");
     setErrorMsg("");
@@ -3762,60 +3783,111 @@ export default function PublicStore() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
-                    className="px-5 lg:px-10 py-6 sm:py-8 max-w-5xl mx-auto w-full pb-32 lg:pb-12"
+                    className="px-4 sm:px-6 lg:px-10 py-5 sm:py-8 max-w-5xl mx-auto w-full pb-40 lg:pb-12"
                   >
-                    {/* Booking Card */}
+                    {/* Header de Redução de Ansiedade */}
+                    <div className="mb-4 sm:mb-5 flex items-center justify-between gap-3 flex-wrap">
+                      <div>
+                        <span
+                          className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider"
+                          style={{ color: accent }}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Está quase pronto!</span>
+                        </span>
+                        <h2
+                          className="text-lg sm:text-xl font-extrabold tracking-tight mt-0.5"
+                          style={{ color: theme.textPrimary }}
+                        >
+                          Só falta confirmar seus dados
+                        </h2>
+                      </div>
+                    </div>
+
+                    {/* Resumo Compacto do Agendamento */}
                     <div
-                      className="rounded-3xl p-5 sm:p-6 mb-6 border"
+                      className="rounded-2xl sm:rounded-3xl p-4 sm:p-5 mb-5 border"
                       style={{
                         background: cardBackground,
                         borderColor: cardBorderColor,
                         boxShadow: cardShadowStyle,
                       }}
                     >
-                      <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: accent }}>
-                        Resumo do seu agendamento
-                      </p>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        {[
-                          { icon: Scissors, label: "Serviço", value: selectedService?.name },
-                          { icon: User, label: "Profissional", value: proName },
-                          {
-                            icon: Calendar,
-                            label: "Data",
-                            value: selectedDate ? format(selectedDate, "dd 'de' MMMM", { locale: ptBR }) : "",
-                          },
-                          { icon: Clock, label: "Horário", value: selectedTime || "" },
-                          ...(bookingMode === 'home' ? [
-                            { icon: Home, label: "Atendimento", value: "A Domicílio" },
-                            { icon: MapPin, label: "Endereço", value: (homeLocationData?.address ?? "") || "Não informado" }
-                          ] : [])
-                        ].map(({ icon: Icon, label, value }) => (
-                          <div key={label} className="flex items-start gap-2.5">
-                            <div
-                              className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-                              style={{ background: `${accent}15`, color: accent }}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3
+                              className="text-sm sm:text-base font-extrabold leading-snug"
+                              style={{ color: theme.textPrimary }}
                             >
-                              <Icon className="w-3.5 h-3.5" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>
-                                {label}
-                              </p>
-                              <p className="text-xs sm:text-sm font-bold mt-0.5" style={{ color: theme.textPrimary, wordBreak: 'break-word' }}>
-                                {value}
-                              </p>
-                            </div>
+                              {selectedService?.name}
+                            </h3>
+                            {selectedService?.duration_minutes ? (
+                              <span
+                                className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                                style={{
+                                  background: isDark ? "rgba(255,255,255,0.06)" : "#F1F5F9",
+                                  color: theme.textSecondary,
+                                }}
+                              >
+                                {formatDuration(selectedService.duration_minutes)}
+                              </span>
+                            ) : null}
                           </div>
-                        ))}
+
+                          <div
+                            className="mt-2 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-xs font-medium"
+                            style={{ color: theme.textSecondary }}
+                          >
+                            <span className="inline-flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: accent }} />
+                              <strong style={{ color: theme.textPrimary }}>
+                                {selectedDate ? format(selectedDate, "dd 'de' MMM", { locale: ptBR }) : ""}
+                                {selectedTime ? ` às ${selectedTime}` : ""}
+                              </strong>
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                              <User className="w-3.5 h-3.5 shrink-0" style={{ color: accent }} />
+                              <span>{proName}</span>
+                            </span>
+                            {bookingMode === "home" && (
+                              <span className="inline-flex items-center gap-1.5">
+                                <Home className="w-3.5 h-3.5 shrink-0" style={{ color: accent }} />
+                                <span className="truncate max-w-[220px]">
+                                  A domicílio{homeLocationData?.address ? ` • ${homeLocationData.address}` : ""}
+                                </span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: theme.textMuted }}>
+                            Valor total
+                          </span>
+                          <span
+                            className="text-base sm:text-lg font-black leading-tight block"
+                            style={{ color: theme.textPrimary }}
+                          >
+                            {money(total)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setStep(3)}
+                            className="text-[11px] font-bold underline mt-0.5 cursor-pointer hover:opacity-80"
+                            style={{ color: accent }}
+                          >
+                            Alterar horário
+                          </button>
+                        </div>
                       </div>
                     </div>
 
                     {/* Split Form & Sticky Summary */}
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 sm:gap-8 items-start">
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_330px] gap-5 sm:gap-7 items-start">
                       {/* Left: Inputs & Payment */}
-                      <div className="space-y-6">
-                        {/* Contact Inputs */}
+                      <div className="space-y-5">
+                        {/* 1. Seus Dados (Enxuto e Rápido) */}
                         <div
                           ref={inputsRef}
                           className="p-5 sm:p-6 rounded-3xl border"
@@ -3825,134 +3897,183 @@ export default function PublicStore() {
                             boxShadow: cardShadowStyle,
                           }}
                         >
-                          <h3 className="text-sm font-bold mb-4 flex items-center gap-2" style={{ color: theme.textPrimary }}>
-                            <User className="w-4 h-4" style={{ color: accent }} /> Seus Dados
-                          </h3>
+                          <div className="flex items-center justify-between gap-2 mb-4">
+                            <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                              <User className="w-4 h-4" style={{ color: accent }} /> Seus dados para confirmação
+                            </h3>
+                          </div>
+
                           <div className="space-y-4">
+                            {/* WhatsApp / Telefone */}
                             <div>
-                              <div className="flex items-center justify-between mb-1.5">
-                                <label
-                                  className="block text-xs font-semibold transition-colors"
-                                  style={{ color: phoneFieldError ? "#EF4444" : theme.textPrimary }}
-                                >
-                                  WhatsApp / Telefone com DDD *
-                                </label>
-                                <span className="text-[11px] opacity-65" style={{ color: theme.textSecondary }}>
-                                  Ex: (27) 99999-9999
-                                </span>
-                              </div>
-                              <input
-                                ref={phoneInputRef}
-                                type="tel"
-                                inputMode="numeric"
-                                autoComplete="tel"
-                                placeholder="(27) 99999-9999"
-                                value={customerPhone}
-                                onChange={(e) => {
-                                  const formatted = phoneFormat.format(e.target.value);
-                                  setCustomerPhone(formatted);
-                                  if (phoneFieldError) setPhoneFieldError("");
-                                  if (errorMsg) setErrorMsg("");
-                                }}
-                                maxLength={phoneFormat.maxLength}
-                                className="w-full h-11 rounded-xl border px-3.5 text-sm font-normal focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-zinc-500"
-                                style={{
-                                  background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
-                                  borderColor: phoneFieldError ? "#EF4444" : cardBorderColor,
-                                  boxShadow: phoneFieldError
-                                    ? "0 0 0 2px rgba(239, 68, 68, 0.15)"
-                                    : "none",
-                                  color: theme.textPrimary,
-                                }}
-                                onFocus={(e) => {
-                                  if (!phoneFieldError) e.target.style.borderColor = accent;
-                                }}
-                                onBlur={(e) => {
-                                  if (customerPhone.trim()) {
-                                    const check = phoneFormat.validateWithDetail(customerPhone);
-                                    if (!check.valid) {
-                                      setPhoneFieldError(check.error || "Digite um telefone válido com DDD. Ex: (27) 99999-9999");
-                                      e.target.style.borderColor = "#EF4444";
-                                      return;
+                              <label
+                                className="block text-xs font-bold mb-1.5 transition-colors"
+                                style={{ color: phoneFieldError ? "#EF4444" : theme.textPrimary }}
+                              >
+                                Seu WhatsApp com DDD
+                              </label>
+                              <div className="relative">
+                                <input
+                                  ref={phoneInputRef}
+                                  type="tel"
+                                  inputMode="numeric"
+                                  autoComplete="tel"
+                                  placeholder="(27) 99999-9999"
+                                  value={customerPhone}
+                                  onChange={(e) => {
+                                    const formatted = phoneFormat.format(e.target.value);
+                                    setCustomerPhone(formatted);
+                                    if (phoneFieldError) setPhoneFieldError("");
+                                    if (errorMsg) setErrorMsg("");
+                                  }}
+                                  maxLength={phoneFormat.maxLength}
+                                  className="w-full h-12 rounded-xl border pl-3.5 pr-10 text-sm font-medium focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-zinc-500"
+                                  style={{
+                                    background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
+                                    borderColor: phoneFieldError
+                                      ? "#EF4444"
+                                      : phoneFormat.validate(customerPhone)
+                                        ? "#10B981"
+                                        : cardBorderColor,
+                                    boxShadow: phoneFieldError
+                                      ? "0 0 0 2px rgba(239, 68, 68, 0.15)"
+                                      : "none",
+                                    color: theme.textPrimary,
+                                  }}
+                                  onFocus={(e) => {
+                                    if (!phoneFieldError) e.target.style.borderColor = accent;
+                                  }}
+                                  onBlur={(e) => {
+                                    if (customerPhone.trim()) {
+                                      const check = phoneFormat.validateWithDetail(customerPhone);
+                                      if (!check.valid) {
+                                        setPhoneFieldError(check.error || "Digite seu telefone com DDD. Ex: (27) 99999-9999");
+                                        e.target.style.borderColor = "#EF4444";
+                                        return;
+                                      }
                                     }
-                                  }
-                                  if (!phoneFieldError) e.target.style.borderColor = cardBorderColor;
-                                }}
-                              />
-                              {phoneFieldError ? (
-                                <p className="mt-1.5 text-[11px] font-medium flex items-center gap-1 text-[#EF4444]">
+                                    if (!phoneFieldError) {
+                                      e.target.style.borderColor = phoneFormat.validate(customerPhone)
+                                        ? "#10B981"
+                                        : cardBorderColor;
+                                    }
+                                  }}
+                                />
+                                {phoneFormat.validate(customerPhone) && !phoneFieldError && (
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                )}
+                              </div>
+                              {phoneFieldError && (
+                                <p className="mt-1.5 text-xs font-medium flex items-center gap-1.5 text-[#EF4444]">
                                   <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                                   <span>{phoneFieldError}</span>
                                 </p>
-                              ) : (
-                                <p className="mt-1 text-[11px] opacity-65" style={{ color: theme.textSecondary }}>
-                                  Informe o DDD + número completo (celular ou fixo).
-                                </p>
                               )}
                             </div>
+
+                            {/* Nome Completo */}
                             <div>
                               <label
-                                className="block text-xs font-semibold mb-1.5 transition-colors"
+                                className="block text-xs font-bold mb-1.5 transition-colors"
                                 style={{ color: nameFieldError ? "#EF4444" : theme.textPrimary }}
                               >
-                                Nome Completo *
+                                Seu nome
                               </label>
-                              <input
-                                ref={nameInputRef}
-                                type="text"
-                                placeholder="Seu nome completo"
-                                value={customerName}
-                                onChange={(e) => {
-                                  setCustomerName(e.target.value);
-                                  if (nameFieldError) setNameFieldError("");
-                                  if (errorMsg) setErrorMsg("");
-                                }}
-                                className="w-full h-11 rounded-xl border px-3.5 text-sm font-normal focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-zinc-500"
-                                style={{
-                                  background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
-                                  borderColor: nameFieldError ? "#EF4444" : cardBorderColor,
-                                  boxShadow: nameFieldError
-                                    ? "0 0 0 2px rgba(239, 68, 68, 0.15)"
-                                    : "none",
-                                  color: theme.textPrimary,
-                                }}
-                                onFocus={(e) => {
-                                  if (!nameFieldError) e.target.style.borderColor = accent;
-                                }}
-                                onBlur={(e) => {
-                                  if (!nameFieldError) e.target.style.borderColor = cardBorderColor;
-                                }}
-                              />
+                              <div className="relative">
+                                <input
+                                  ref={nameInputRef}
+                                  type="text"
+                                  autoComplete="name"
+                                  placeholder="Como prefere ser chamado(a)"
+                                  value={customerName}
+                                  onChange={(e) => {
+                                    setCustomerName(e.target.value);
+                                    if (nameFieldError) setNameFieldError("");
+                                    if (errorMsg) setErrorMsg("");
+                                  }}
+                                  className="w-full h-12 rounded-xl border pl-3.5 pr-10 text-sm font-medium focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-zinc-500"
+                                  style={{
+                                    background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
+                                    borderColor: nameFieldError
+                                      ? "#EF4444"
+                                      : customerName.trim().length >= 2
+                                        ? "#10B981"
+                                        : cardBorderColor,
+                                    boxShadow: nameFieldError
+                                      ? "0 0 0 2px rgba(239, 68, 68, 0.15)"
+                                      : "none",
+                                    color: theme.textPrimary,
+                                  }}
+                                  onFocus={(e) => {
+                                    if (!nameFieldError) e.target.style.borderColor = accent;
+                                  }}
+                                  onBlur={(e) => {
+                                    if (!nameFieldError) {
+                                      e.target.style.borderColor =
+                                        customerName.trim().length >= 2 ? "#10B981" : cardBorderColor;
+                                    }
+                                  }}
+                                />
+                                {customerName.trim().length >= 2 && !nameFieldError && (
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                )}
+                              </div>
                               {nameFieldError && (
-                                <p className="mt-1.5 text-[11px] font-medium flex items-center gap-1 text-[#EF4444]">
+                                <p className="mt-1.5 text-xs font-medium flex items-center gap-1.5 text-[#EF4444]">
                                   <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                                   <span>{nameFieldError}</span>
                                 </p>
                               )}
                             </div>
-                            <div>
-                              <label className="block text-xs font-semibold mb-1.5" style={{ color: theme.textSecondary }}>
-                                Observações (opcional)
-                              </label>
-                              <textarea
-                                placeholder="Ex: Preferência de corte, foto de referência..."
-                                value={customerNotes}
-                                onChange={(e) => setCustomerNotes(e.target.value)}
-                                rows={2}
-                                className="w-full rounded-xl border p-3 text-sm font-normal focus:outline-none resize-none transition-all placeholder:text-slate-400 dark:placeholder:text-zinc-500"
-                                style={{
-                                  background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
-                                  borderColor: cardBorderColor,
-                                  color: theme.textPrimary,
-                                }}
-                                onFocus={(e) => (e.target.style.borderColor = accent)}
-                                onBlur={(e) => (e.target.style.borderColor = cardBorderColor)}
-                              />
-                            </div>
+
+                            {/* Observações (Secundário / Sob Demanda) */}
+                            {!showNotesInput && !customerNotes ? (
+                              <button
+                                type="button"
+                                onClick={() => setShowNotesInput(true)}
+                                className="text-xs font-semibold inline-flex items-center gap-1.5 pt-0.5 hover:opacity-80 transition-opacity cursor-pointer"
+                                style={{ color: theme.textSecondary }}
+                              >
+                                <Plus className="w-3.5 h-3.5" style={{ color: accent }} />
+                                <span>Adicionar observação para o profissional (opcional)</span>
+                              </button>
+                            ) : (
+                              <div>
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <label className="block text-xs font-semibold" style={{ color: theme.textSecondary }}>
+                                    Observação (opcional)
+                                  </label>
+                                  {!customerNotes && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowNotesInput(false)}
+                                      className="text-[11px] font-medium hover:underline cursor-pointer"
+                                      style={{ color: theme.textMuted }}
+                                    >
+                                      Ocultar
+                                    </button>
+                                  )}
+                                </div>
+                                <textarea
+                                  placeholder="Alguma preferência ou detalhe para o atendimento?"
+                                  value={customerNotes}
+                                  onChange={(e) => setCustomerNotes(e.target.value)}
+                                  rows={2}
+                                  className="w-full rounded-xl border p-3 text-sm font-normal focus:outline-none resize-none transition-all placeholder:text-slate-400 dark:placeholder:text-zinc-500"
+                                  style={{
+                                    background: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC",
+                                    borderColor: cardBorderColor,
+                                    color: theme.textPrimary,
+                                  }}
+                                  onFocus={(e) => (e.target.style.borderColor = accent)}
+                                  onBlur={(e) => (e.target.style.borderColor = cardBorderColor)}
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
 
-                        {/* Payment Scope & Method */}
+                        {/* 2. Condição e Forma de Pagamento (Intuitivo e Claro) */}
                         <div
                           className="p-5 sm:p-6 rounded-3xl border space-y-4"
                           style={{
@@ -3961,60 +4082,118 @@ export default function PublicStore() {
                             boxShadow: cardShadowStyle,
                           }}
                         >
-                          <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: theme.textPrimary }}>
-                            <CreditCard className="w-4 h-4" style={{ color: accent }} /> Condição de Pagamento
-                          </h3>
-
-                          {/* Scope Pills */}
-                          <div
-                            className="grid gap-2.5"
-                            style={{
-                              gridTemplateColumns: `repeat(${allowedPaymentScopes.length}, 1fr)`,
-                            }}
-                          >
-                            {allowedPaymentScopes.map(({ key, label, desc }) => (
-                              <button
-                                key={key}
-                                onClick={() => setPaymentScope(key)}
-                                className="relative rounded-2xl p-3 text-center border transition-all cursor-pointer"
-                                style={{
-                                  borderColor: paymentScope === key ? accent : cardBorderColor,
-                                  background: paymentScope === key ? `${accent}0d` : "transparent",
-                                  boxShadow: paymentScope === key ? `0 0 0 1px ${accent}` : "none",
-                                }}
-                              >
-                                {paymentScope === key && (
-                                  <CheckCircle2
-                                    className="w-3.5 h-3.5 absolute top-2 right-2"
-                                    style={{ color: accent }}
-                                  />
-                                )}
-                                <p
-                                  className="text-xs font-bold"
-                                  style={{
-                                    color: paymentScope === key ? accent : theme.textPrimary,
-                                  }}
-                                >
-                                  {label}
-                                </p>
-                                <p className="text-[11px] mt-0.5 font-medium" style={{ color: theme.textSecondary }}>
-                                  {desc}
-                                </p>
-                              </button>
-                            ))}
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                              <CreditCard className="w-4 h-4" style={{ color: accent }} /> Como você prefere pagar?
+                            </h3>
                           </div>
 
-                          {/* Online Methods if deposit/full — Real Stripe Live Payment Element com Descanso Visual */}
+                          {/* Opções de Condição de Pagamento em Lista Clara */}
+                          <div className="space-y-2.5">
+                            {allowedPaymentScopes.map(({ key }) => {
+                              const isSelected = paymentScope === key;
+                              const depositPercentVal = settings?.deposit_percentage || 50;
+                              const partialNowVal = total * (depositPercentVal / 100);
+                              const partialRemainingVal = Math.max(0, total - partialNowVal);
+
+                              const optionTitle =
+                                key === "partial"
+                                  ? `Pagar entrada de ${depositPercentVal}%`
+                                  : key === "full"
+                                    ? "Pagar valor total agora"
+                                    : "Pagar no local";
+
+                              const optionSub =
+                                key === "partial"
+                                  ? `Restante de ${money(partialRemainingVal)} pago no salão após o atendimento`
+                                  : key === "full"
+                                    ? "Tudo pago agora online • Nada pendente para o dia"
+                                    : `Você não paga nada agora • Pague ${money(total)} no salão`;
+
+                              const payNowDisplay =
+                                key === "partial"
+                                  ? money(partialNowVal)
+                                  : key === "full"
+                                    ? money(total)
+                                    : "R$ 0 agora";
+
+                              const payNowCaption =
+                                key === "local" ? `Total no salão: ${money(total)}` : "Pagar agora";
+
+                              return (
+                                <button
+                                  key={key}
+                                  type="button"
+                                  onClick={() => setPaymentScope(key)}
+                                  className="w-full rounded-2xl p-3.5 sm:p-4 text-left border transition-all cursor-pointer flex items-center justify-between gap-3"
+                                  style={{
+                                    borderColor: isSelected ? accent : cardBorderColor,
+                                    background: isSelected
+                                      ? `${accent}${isDark ? "14" : "0c"}`
+                                      : isDark
+                                        ? "rgba(255,255,255,0.02)"
+                                        : "#F8FAFC",
+                                    boxShadow: isSelected ? `0 0 0 1.5px ${accent}` : "none",
+                                  }}
+                                >
+                                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                                    {/* Indicador Radio */}
+                                    <div
+                                      className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all"
+                                      style={{
+                                        border: isSelected
+                                          ? `5px solid ${accent}`
+                                          : `1.5px solid ${isDark ? "rgba(255,255,255,0.28)" : "#CBD5E1"}`,
+                                        background: isSelected ? "#FFFFFF" : "transparent",
+                                      }}
+                                    />
+
+                                    <div className="min-w-0 flex-1">
+                                      <p
+                                        className="text-xs sm:text-sm font-bold leading-snug"
+                                        style={{ color: theme.textPrimary }}
+                                      >
+                                        {optionTitle}
+                                      </p>
+                                      <p
+                                        className="text-[11px] mt-0.5 leading-snug"
+                                        style={{ color: theme.textSecondary }}
+                                      >
+                                        {optionSub}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="text-right shrink-0 pl-2">
+                                    <span
+                                      className="text-xs sm:text-sm font-black block leading-tight"
+                                      style={{ color: isSelected ? accent : theme.textPrimary }}
+                                    >
+                                      {payNowDisplay}
+                                    </span>
+                                    <span
+                                      className="text-[10px] font-medium block mt-0.5"
+                                      style={{ color: theme.textMuted }}
+                                    >
+                                      {payNowCaption}
+                                    </span>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Escolha PIX vs Cartão quando pagamento é online */}
                           {paymentScope !== "local" && (
                             <div
-                              className="pt-4 mt-2 border-t space-y-2.5"
+                              className="pt-4 mt-1 border-t space-y-2.5"
                               style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "#F1F5F9" }}
                             >
                               <p
-                                className="text-[11px] font-semibold tracking-wider uppercase opacity-75"
-                                style={{ color: theme.textSecondary }}
+                                className="text-xs font-bold"
+                                style={{ color: theme.textPrimary }}
                               >
-                                Forma de pagamento online
+                                Escolha a forma de pagamento:
                               </p>
                               <StripeLivePaymentSection
                                 ref={stripePaymentRef}
@@ -4051,9 +4230,24 @@ export default function PublicStore() {
                             </div>
                           )}
                         </div>
+
+                        {/* Mensagem de erro visível imediatamente no mobile */}
+                        {errorMsg && (
+                          <div
+                            className="lg:hidden rounded-2xl border p-3.5 text-xs font-semibold flex items-start gap-2.5"
+                            style={{
+                              borderColor: "rgba(239, 68, 68, 0.35)",
+                              background: "rgba(239, 68, 68, 0.08)",
+                              color: "#EF4444",
+                            }}
+                          >
+                            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                            <span>{errorMsg}</span>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Right: Sticky Summary Box */}
+                      {/* Right: Sticky Summary Box (Desktop) / Compact Home Breakdown */}
                       <div className="w-full">
                         <div
                           className="lg:sticky lg:top-24 rounded-3xl border p-5 sm:p-6 space-y-4"
@@ -4064,18 +4258,18 @@ export default function PublicStore() {
                           }}
                         >
                           <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: theme.textSecondary }}>
-                            Total a Pagar
+                            Resumo do Pagamento
                           </p>
 
                           <div className="space-y-2.5 text-xs">
                             <div className="flex justify-between" style={{ color: theme.textSecondary }}>
-                              <span>Valor do Serviço</span>
+                              <span>Valor do serviço</span>
                               <span className="font-semibold" style={{ color: theme.textPrimary }}>{money(selectedService?.price ?? 0)}</span>
                             </div>
                             {bookingMode === 'home' && travelFee > 0 && (
                               <div className="flex justify-between" style={{ color: theme.textSecondary }}>
                                 <span>
-                                  Taxa de Deslocamento
+                                  Taxa de deslocamento
                                   {selectedPro && selectedPro !== 'any' && (selectedPro as any).home_fee_type === 'per_km' && homeLocationData?.distanceKm != null && (
                                     <span className="block text-xs opacity-60 font-normal">{homeLocationData.distanceKm.toFixed(1)} km × {money((selectedPro as any).home_fee_per_km || 0)}/km</span>
                                   )}
@@ -4091,28 +4285,36 @@ export default function PublicStore() {
                             )}
                             {bookingMode === 'home' && (
                               <div className="flex justify-between font-bold border-t pt-2 mt-2" style={{ color: theme.textPrimary, borderColor: cardBorderColor }}>
-                                <span>Total</span>
+                                <span>Total do atendimento</span>
                                 <span>{money(total)}</span>
                               </div>
                             )}
                             <div
-                              className="flex justify-between font-extrabold text-base border-t pt-3"
+                              className="flex justify-between items-baseline font-extrabold text-base border-t pt-3"
                               style={{ borderColor: cardBorderColor }}
                             >
-                              <span style={{ color: theme.textPrimary }}>Pagar Agora</span>
-                              <span style={{ color: accent, fontFamily: theme.fontSerif }}>{money(amountPaid)}</span>
+                              <span style={{ color: theme.textPrimary }}>Pagar agora</span>
+                              <span style={{ color: accent, fontFamily: theme.fontSerif }}>
+                                {paymentScope === "local" ? "R$ 0,00" : money(amountPaid)}
+                              </span>
                             </div>
                             {paymentScope === "partial" && (
-                              <div className="flex justify-between text-[11px]" style={{ color: theme.textSecondary }}>
+                              <div className="flex justify-between text-xs" style={{ color: theme.textSecondary }}>
                                 <span>Restante no salão</span>
-                                <span className="font-semibold">{money(amountDue)}</span>
+                                <span className="font-bold" style={{ color: theme.textPrimary }}>{money(amountDue)}</span>
+                              </div>
+                            )}
+                            {paymentScope === "local" && (
+                              <div className="flex justify-between text-xs" style={{ color: theme.textSecondary }}>
+                                <span>Pagar no salão</span>
+                                <span className="font-bold" style={{ color: theme.textPrimary }}>{money(total)}</span>
                               </div>
                             )}
                           </div>
 
                           {errorMsg && (
                             <div
-                              className="rounded-2xl border p-3 text-xs font-semibold flex items-start gap-2"
+                              className="hidden lg:flex rounded-2xl border p-3 text-xs font-semibold items-start gap-2"
                               style={{
                                 borderColor: "rgba(239, 68, 68, 0.35)",
                                 background: "rgba(239, 68, 68, 0.08)",
@@ -4125,15 +4327,14 @@ export default function PublicStore() {
                           )}
 
                           <motion.button
-                            whileHover={{ scale: 1.02 }}
+                            whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={handleConfirm}
                             disabled={isProcessing}
-                            className="hidden lg:flex w-full py-4 rounded-2xl font-bold text-sm items-center justify-center gap-2 transition-all cursor-pointer shadow-lg disabled:opacity-60"
+                            className="hidden lg:flex w-full py-4 px-4 rounded-2xl font-bold text-sm items-center justify-center gap-2 transition-all cursor-pointer shadow-lg disabled:opacity-60"
                             style={{
                               background: theme.btnPrimaryBg || accent,
                               color: theme.btnPrimaryText,
-                              boxShadow: 'none',
                             }}
                           >
                             {isProcessing ? (
@@ -4149,22 +4350,29 @@ export default function PublicStore() {
                               </>
                             ) : paymentScope === "local" ? (
                               <>
-                                <ShieldCheck className="w-4 h-4" /> Confirmar Agendamento
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span>Confirmar meu agendamento</span>
                               </>
                             ) : paymentMethod === "pix" ? (
                               <>
-                                <ShieldCheck className="w-4 h-4" /> Gerar QR Code PIX • {money(amountPaid)}
+                                <ShieldCheck className="w-4 h-4" />
+                                <span>Confirmar e pagar {money(amountPaid)}</span>
                               </>
                             ) : (
                               <>
-                                <ShieldCheck className="w-4 h-4" /> Pagar com Cartão • {money(amountPaid)}
+                                <CreditCard className="w-4 h-4" />
+                                <span>Continuar para pagamento • {money(amountPaid)}</span>
                               </>
                             )}
                           </motion.button>
 
-                          <p className="text-[10px] text-center flex items-center justify-center gap-1.5" style={{ color: theme.textMuted }}>
-                            <ShieldCheck className="w-3.5 h-3.5 text-green-500" />
-                            <span>Reserva 100% segura</span>
+                          <p className="text-[11px] text-center flex items-center justify-center gap-1.5" style={{ color: theme.textMuted }}>
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <span>
+                              {paymentScope === "local"
+                                ? "Seu horário fica confirmado na hora"
+                                : "Pagamento seguro pelo Mercado Pago"}
+                            </span>
                           </p>
                         </div>
                       </div>
@@ -4389,26 +4597,36 @@ export default function PublicStore() {
             {/* ── MOBILE FIXED BOTTOM BAR (Step 4) ── */}
             {step === 4 && (
               <div
-                className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t px-5 py-3.5 shadow-2xl backdrop-blur-xl"
+                className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t px-4 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom))] shadow-2xl backdrop-blur-xl"
                 style={{
-                  background: isDark ? `${theme.sidebarBg}f0` : "rgba(255,255,255,0.95)",
+                  background: isDark ? `${theme.sidebarBg}f5` : "rgba(255,255,255,0.96)",
                   borderColor: cardBorderColor,
                 }}
               >
-                <div className="flex items-center gap-4 max-w-xl mx-auto">
-                  <div className="min-w-0">
-                    <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>
-                      Pagar Agora
-                    </p>
-                    <p className="text-lg font-black leading-tight" style={{ color: accent }}>
-                      {money(amountPaid)}
-                    </p>
+                <div className="max-w-xl mx-auto space-y-2">
+                  <div className="flex items-center justify-between gap-2 px-0.5">
+                    <div className="flex items-baseline gap-1.5 min-w-0">
+                      <span className="text-[11px] font-semibold" style={{ color: theme.textSecondary }}>
+                        {paymentScope === "local" ? "Pagar no salão:" : "Pagar agora:"}
+                      </span>
+                      <span className="text-base font-black leading-none" style={{ color: accent }}>
+                        {paymentScope === "local" ? money(total) : money(amountPaid)}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-medium truncate" style={{ color: theme.textMuted }}>
+                      {paymentScope === "partial"
+                        ? `Restante no local: ${money(amountDue)}`
+                        : paymentScope === "local"
+                          ? "Nada a pagar agora"
+                          : "Valor total quitado"}
+                    </span>
                   </div>
+
                   <motion.button
-                    whileTap={{ scale: 0.97 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={handleConfirm}
                     disabled={isProcessing}
-                    className="flex-1 py-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md disabled:opacity-60"
+                    className="w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg disabled:opacity-60"
                     style={{
                       background: theme.btnPrimaryBg || accent,
                       color: theme.btnPrimaryText,
@@ -4416,7 +4634,7 @@ export default function PublicStore() {
                   >
                     {isProcessing ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         <span>
                           {paymentScope !== "local"
                             ? paymentMethod === "pix"
@@ -4427,15 +4645,18 @@ export default function PublicStore() {
                       </>
                     ) : paymentScope === "local" ? (
                       <>
-                        <ShieldCheck className="w-4 h-4" /> Confirmar Agendamento
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Confirmar meu agendamento</span>
                       </>
                     ) : paymentMethod === "pix" ? (
                       <>
-                        <ShieldCheck className="w-4 h-4" /> Gerar QR Code PIX
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>Confirmar e pagar {money(amountPaid)}</span>
                       </>
                     ) : (
                       <>
-                        <ShieldCheck className="w-4 h-4" /> Pagar com Cartão
+                        <CreditCard className="w-4 h-4" />
+                        <span>Continuar para pagamento • {money(amountPaid)}</span>
                       </>
                     )}
                   </motion.button>

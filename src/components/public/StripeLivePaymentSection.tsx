@@ -251,11 +251,12 @@ export const StripeLivePaymentSection = forwardRef<
       }
     } catch (_) {}
 
-    reject(
-      new Error(
-        "Pagamento PIX cancelado. Toque novamente no botão abaixo quando quiser gerar um novo QR Code PIX."
-      )
-    );
+    resolve({
+      status: "cancelled_modal",
+      paymentIntentId,
+      bookingId,
+      orderNumber,
+    });
   };
 
   const handleCopyPixCode = async (code: string) => {
@@ -340,11 +341,11 @@ export const StripeLivePaymentSection = forwardRef<
         <button
           type="button"
           onClick={() => handleSelectTab("pix")}
-          className="relative flex items-center justify-center gap-2.5 h-12 px-3.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+          className="relative flex items-center justify-center gap-2.5 h-12 px-3.5 rounded-xl border text-xs sm:text-sm font-bold transition-all cursor-pointer"
           style={{
             borderColor: selectedTab === "pix" ? accent : cardBorderColor,
-            background: selectedTab === "pix" ? `${accent}0d` : "transparent",
-            boxShadow: selectedTab === "pix" ? `0 0 0 1px ${accent}` : "none",
+            background: selectedTab === "pix" ? `${accent}12` : isDark ? "rgba(255,255,255,0.02)" : "#F8FAFC",
+            boxShadow: selectedTab === "pix" ? `0 0 0 1.5px ${accent}` : "none",
             color: selectedTab === "pix" ? accent : textPrimary,
           }}
         >
@@ -364,11 +365,11 @@ export const StripeLivePaymentSection = forwardRef<
         <button
           type="button"
           onClick={() => handleSelectTab("card")}
-          className="relative flex items-center justify-center gap-2.5 h-12 px-3.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+          className="relative flex items-center justify-center gap-2.5 h-12 px-3.5 rounded-xl border text-xs sm:text-sm font-bold transition-all cursor-pointer"
           style={{
             borderColor: selectedTab === "card" ? accent : cardBorderColor,
-            background: selectedTab === "card" ? `${accent}0d` : "transparent",
-            boxShadow: selectedTab === "card" ? `0 0 0 1px ${accent}` : "none",
+            background: selectedTab === "card" ? `${accent}12` : isDark ? "rgba(255,255,255,0.02)" : "#F8FAFC",
+            boxShadow: selectedTab === "card" ? `0 0 0 1.5px ${accent}` : "none",
             color: selectedTab === "card" ? accent : textPrimary,
           }}
         >
@@ -376,7 +377,7 @@ export const StripeLivePaymentSection = forwardRef<
             className="w-5 h-5 shrink-0"
             style={{ color: selectedTab === "card" ? accent : textSecondary }}
           />
-          <span>Cartão de Crédito</span>
+          <span>Cartão</span>
           {selectedTab === "card" && (
             <CheckCircle2
               className="w-3.5 h-3.5 absolute top-2 right-2"
@@ -385,6 +386,15 @@ export const StripeLivePaymentSection = forwardRef<
           )}
         </button>
       </div>
+
+      <p className="text-[11px] leading-snug flex items-center gap-1.5 px-0.5" style={{ color: textSecondary }}>
+        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+        <span>
+          {selectedTab === "pix"
+            ? "O QR Code e o código PIX Copia e Cola aparecem na tela imediatamente."
+            : "Você fará o pagamento com cartão em ambiente seguro do Mercado Pago."}
+        </span>
+      </p>
 
       {/* ── MODAL PIX ULTRA-MINIMALISTA (SEM SCROLL) ── */}
       {activePixModal && (
