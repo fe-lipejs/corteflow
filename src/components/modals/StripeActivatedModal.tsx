@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Sparkles, CreditCard, Store, ShieldCheck, X, Loader2 } from 'lucide-react';
+import { CheckCircle2, Check, CreditCard, Store, ShieldCheck, X, Loader2 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { MercadoPagoMark } from '../icons/MercadoPagoLogo';
 
 interface StripeActivatedModalProps {
   isOpen: boolean;
@@ -60,15 +61,42 @@ export default function StripeActivatedModal({
 
           {/* Header with celebration banner */}
           <div className="p-6 sm:p-8 pb-4 text-center space-y-3 relative overflow-hidden">
-            <div
-              className="w-16 h-16 rounded-3xl border flex items-center justify-center mx-auto shadow-lg"
-              style={{
-                background: `${theme.accent}18`,
-                borderColor: `${theme.accent}35`,
-                color: theme.accent,
-              }}
-            >
-              <Sparkles className="w-8 h-8 animate-pulse" />
+            <div className="flex items-center justify-center gap-2.5 mx-auto">
+              <div
+                className="w-14 h-14 rounded-2xl border overflow-hidden flex items-center justify-center shadow-md shrink-0 bg-black"
+                style={{ borderColor: theme.border }}
+              >
+                <img
+                  src="/icons/logo-raffros.png"
+                  alt="Raffros"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              <div className="flex items-center">
+                <div className="w-4 h-px border-t border-dashed" style={{ borderColor: theme.border }} />
+                <div
+                  className="w-7 h-7 rounded-full border flex items-center justify-center shadow-sm"
+                  style={{
+                    background: `${theme.accent}18`,
+                    borderColor: `${theme.accent}45`,
+                    color: theme.accent,
+                  }}
+                >
+                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                </div>
+                <div className="w-4 h-px border-t border-dashed" style={{ borderColor: theme.border }} />
+              </div>
+
+              <div
+                className="w-14 h-14 rounded-2xl border flex items-center justify-center shadow-md shrink-0"
+                style={{
+                  background: '#009EE318',
+                  borderColor: '#009EE340',
+                }}
+              >
+                <MercadoPagoMark className="w-10 h-7" />
+              </div>
             </div>
 
             <div className="space-y-1">
