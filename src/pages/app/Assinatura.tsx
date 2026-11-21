@@ -1440,7 +1440,7 @@ export default function Assinatura() {
                             <>
                               <ShieldCheck
                                 className="w-3.5 h-3.5 shrink-0"
-                                style={{ color: theme.accent }}
+                                style={{ color: '#10B981' }}
                               />
                               <span
                                 className="text-[10px] font-medium"
@@ -1453,7 +1453,7 @@ export default function Assinatura() {
                             <>
                               <Lock
                                 className="w-3 h-3 shrink-0"
-                                style={{ color: theme.accent }}
+                                style={{ color: '#10B981' }}
                               />
                               <span
                                 className="text-[10px] font-medium"
@@ -1500,7 +1500,7 @@ export default function Assinatura() {
               <span className="flex items-center gap-1.5 text-[10px] font-medium">
                 <ShieldCheck
                   className="w-3.5 h-3.5 shrink-0"
-                  style={{ color: theme.accent }}
+                  style={{ color: '#10B981' }}
                 />
                 <span style={{ color: theme.textMuted }}>
                   Ambiente criptografado
@@ -1515,7 +1515,7 @@ export default function Assinatura() {
               <span className="flex items-center gap-1.5 text-[10px] font-medium">
                 <Lock
                   className="w-3.5 h-3.5 shrink-0"
-                  style={{ color: theme.accent }}
+                  style={{ color: '#10B981' }}
                 />
                 <span style={{ color: theme.textMuted }}>
                   Pix instantâneo e Cartão
@@ -1530,7 +1530,7 @@ export default function Assinatura() {
               <span className="flex items-center gap-1.5 text-[10px] font-medium">
                 <CheckCircle2
                   className="w-3.5 h-3.5 shrink-0"
-                  style={{ color: theme.accent }}
+                  style={{ color: '#10B981' }}
                 />
                 <span style={{ color: theme.textMuted }}>
                   Sem fidelidade • Cancele quando quiser

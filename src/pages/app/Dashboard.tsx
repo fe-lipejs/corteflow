@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getTenantPublicUrl } from '../../lib/tenantUrl';
@@ -66,6 +67,7 @@ export default function Dashboard() {
     handledPartnershipPromoRef.current = tenantId;
 
     const storageKey = `raffros_mp_partnership_promo_${tenantId}`;
+    let nextViews = 1;
     try {
       const raw = localStorage.getItem(storageKey);
       const parsed = raw ? JSON.parse(raw) : { views: 0, dismissedPermanent: false };
@@ -76,18 +78,46 @@ export default function Dashboard() {
         localStorage.setItem(storageKey, JSON.stringify({ views: currentViews, dismissedPermanent: true }));
         return;
       }
+      nextViews = currentViews + 1;
+    } catch {
+      nextViews = 1;
+    }
 
-      const nextViews = currentViews + 1;
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify({ views: nextViews, dismissedPermanent: false })
-      );
+    let cancelled = false;
+    const preloadImg = new window.Image();
+    preloadImg.decoding = 'async';
+    preloadImg.src = '/Nova%20parceria%20Raffros%20e%20Mercado%20Pago.png';
+
+    const showWhenDecoded = async () => {
+      try {
+        if (typeof preloadImg.decode === 'function') {
+          await preloadImg.decode();
+        }
+      } catch {
+        // fallback caso decode já tenha concluído via onload
+      }
+      if (cancelled) return;
+      try {
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({ views: nextViews, dismissedPermanent: false })
+        );
+      } catch {}
       setPartnershipPromoViewCount(nextViews);
       setPartnershipPromoOpen(true);
-    } catch {
-      setPartnershipPromoViewCount(1);
-      setPartnershipPromoOpen(true);
+    };
+
+    if (preloadImg.complete && preloadImg.naturalWidth > 0) {
+      showWhenDecoded();
+    } else {
+      preloadImg.onload = () => {
+        showWhenDecoded();
+      };
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, [tenantId, profile?.role]);
 
   const handleClosePartnershipPromo = (rememberChoice = false) => {
@@ -955,51 +985,58 @@ export default function Dashboard() {
         />
       )}
 
-      {partnershipPromoOpen && (
-        <div
-          className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
-          onClick={() => handleClosePartnershipPromo(false)}
-        >
+      {partnershipPromoOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
           <div
-            className="relative w-full max-w-[440px] rounded-2xl overflow-hidden shadow-2xl border border-white/15 bg-[#0A0A0C]"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+            onClick={() => handleClosePartnershipPromo(false)}
           >
-            <button
-              type="button"
-              onClick={() => handleClosePartnershipPromo(false)}
-              aria-label="Fechar anúncio"
-              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/65 hover:bg-black/85 text-white flex items-center justify-center transition-colors cursor-pointer border border-white/20"
+            <div
+              className="relative w-full max-w-[440px] rounded-2xl overflow-hidden shadow-2xl border border-white/15 bg-[#0A0A0C]"
+              onClick={(e) => e.stopPropagation()}
             >
-              <X className="w-4 h-4" />
-            </button>
+              <button
+                type="button"
+                onClick={() => handleClosePartnershipPromo(false)}
+                aria-label="Fechar anúncio"
+                className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/65 hover:bg-black/85 text-white flex items-center justify-center transition-colors cursor-pointer border border-white/20"
+              >
+                <X className="w-4 h-4" />
+              </button>
 
-            <img
-              src="/Nova%20parceria%20Raffros%20e%20Mercado%20Pago.png"
-              alt="Nova parceria Raffros e Mercado Pago"
-              className="w-full h-auto block select-none"
-            />
-
-            {partnershipPromoViewCount >= 2 && (
-              <div className="px-4 py-3 bg-[#111216] border-t border-white/10 flex items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleClosePartnershipPromo(true)}
-                  className="text-xs font-medium text-zinc-300 hover:text-white underline underline-offset-2 transition-colors cursor-pointer"
-                >
-                  Não mostrar novamente
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleClosePartnershipPromo(false)}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
-                >
-                  Fechar
-                </button>
+              <div className="w-full aspect-square bg-[#0A0A0C] overflow-hidden">
+                <img
+                  src="/Nova%20parceria%20Raffros%20e%20Mercado%20Pago.png"
+                  alt="Nova parceria Raffros e Mercado Pago"
+                  loading="eager"
+                  decoding="sync"
+                  className="w-full h-full object-contain block select-none"
+                />
               </div>
-            )}
-          </div>
-        </div>
-      )}
+
+              {partnershipPromoViewCount >= 2 && (
+                <div className="px-4 py-3 bg-[#111216] border-t border-white/10 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleClosePartnershipPromo(true)}
+                    className="text-xs font-medium text-zinc-300 hover:text-white underline underline-offset-2 transition-colors cursor-pointer"
+                  >
+                    Não mostrar novamente
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleClosePartnershipPromo(false)}
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
