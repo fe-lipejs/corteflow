@@ -1,7 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
-import { getStripeContext, preserveCustomContractAndPricing } from '../_shared/stripe.ts';
+import {
+  getMercadoPagoContext,
+  mpRequest,
+  preserveCustomContractAndPricing,
+} from '../_shared/stripe.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,7 +18,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { stripe } = await getStripeContext(supabaseAdmin);
+    const mpContext = await getMercadoPagoContext(supabaseAdmin);
 
     const supabaseAuth = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -34,7 +38,6 @@ serve(async (req) => {
     if (!profile?.tenant_id) throw new Error("Salão não encontrado para este usuário");
     const tenantId = profile.tenant_id;
 
-    // 1. Check existing subscription record for customer ID
     const { data: existingSub } = await supabaseAdmin
       .from('subscriptions')
       .select('*, subscription_contracts(*)')
@@ -45,88 +48,67 @@ serve(async (req) => {
       ? existingSub?.subscription_contracts[0]
       : existingSub?.subscription_contracts;
 
-    let customerId = existingSub?.stripe_customer_id;
-
-    // Se temos um customerId salvo, verificar se ele existe na conta ativa do Stripe
-    if (customerId) {
-      try {
-        await stripe.customers.retrieve(customerId);
-      } catch (err: any) {
-        if (err?.code === 'resource_missing' || err?.statusCode === 404) {
-          // O ID pertence a outro modo (ex: teste vs live) ou foi excluído
-          customerId = null;
-        }
-      }
-    }
-
-    // 2. If no valid customer ID, search Stripe by user email
-    if (!customerId && user.email) {
-      try {
-        const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-        if (customers.data.length > 0) {
-          customerId = customers.data[0].id;
-        }
-      } catch (_) {}
-    }
-
-    if (!customerId) {
-      return new Response(JSON.stringify({ 
-        synced: false, 
-        message: "Nenhuma conta de faturamento do Stripe foi encontrada para este e-mail." 
+    // Se ainda não há Access Token do Mercado Pago configurado na plataforma, não quebra a UI
+    if (!mpContext.accessToken) {
+      return new Response(JSON.stringify({
+        synced: false,
+        message: "Mercado Pago ainda não configurado nas configurações globais da plataforma."
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       });
     }
 
-    // 3. Find active subscriptions on Stripe for this customer
-    let subs: any;
+    // Buscar pagamentos recentes aprovados no Mercado Pago para este tenant
+    let results: any[] = [];
     try {
-      subs = await stripe.subscriptions.list({
-        customer: customerId,
-        status: 'all',
-        limit: 5,
-        expand: ['data.default_payment_method']
-      });
-    } catch (e: any) {
-      return new Response(JSON.stringify({ 
-        synced: false, 
-        message: "Erro ao consultar assinaturas no Stripe." 
+      const searchRes = await mpRequest<any>(
+        `/v1/payments/search?sort=date_created&criteria=desc&limit=30`,
+        mpContext.accessToken,
+        { method: 'GET' }
+      );
+      results = Array.isArray(searchRes?.results) ? searchRes.results : [];
+    } catch (mpErr: any) {
+      console.warn('[sync-stripe-subscription] Aviso ao consultar Mercado Pago:', mpErr?.message);
+      return new Response(JSON.stringify({
+        synced: false,
+        message: "Não foi possível consultar o Mercado Pago no momento."
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       });
     }
 
-    // Se o salão já está ativo manualmente no banco (sem stripe_subscription_id), só sobrescreve se houver uma assinatura ATIVA no Stripe
-    const isManualActiveInDb = existingSub?.status === 'active' && !existingSub?.stripe_subscription_id;
-    const activeStripeSub = isManualActiveInDb
-      ? subs?.data?.find((s: any) => s.status === 'active' || s.status === 'trialing')
-      : (subs?.data?.find((s: any) => s.status === 'active' || s.status === 'trialing') ||
-         (existingSub?.stripe_subscription_id
-           ? subs?.data?.find((s: any) => s.id === existingSub.stripe_subscription_id)
-           : null));
+    const thirtyFiveDaysAgo = Date.now() - 35 * 24 * 60 * 60 * 1000;
+    const matchedPayment = results.find((p) => {
+      if (p.status !== 'approved') return false;
+      const isThisTenant =
+        p.metadata?.tenant_id === tenantId ||
+        (typeof p.external_reference === 'string' && p.external_reference.includes(`sub::${tenantId}::`));
+      if (!isThisTenant) return false;
+      const approvedAt = new Date(p.date_approved || p.date_created).getTime();
+      if (Number.isNaN(approvedAt) || approvedAt < thirtyFiveDaysAgo) return false;
+      // Não reativa se o dono cancelou explicitamente depois desse pagamento
+      if (existingSub?.status === 'canceled' && existingSub?.canceled_at) {
+        if (new Date(existingSub.canceled_at).getTime() > approvedAt) return false;
+      }
+      return true;
+    });
 
-    if (!activeStripeSub) {
-      return new Response(JSON.stringify({ 
-        synced: false, 
-        message: "Nenhuma assinatura ativa encontrada no Stripe." 
+    if (!matchedPayment) {
+      return new Response(JSON.stringify({
+        synced: false,
+        message: "Nenhum pagamento recente aprovado encontrado no Mercado Pago para este salão."
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       });
     }
 
-    // 4. Resolve plan_id from metadata or matching plan
-    let planId = activeStripeSub.metadata?.plan_id;
-    if (!planId) {
-      // Find plan with starter/pro matching or default to Starter
-      const { data: starterPlan } = await supabaseAdmin
-        .from('plans')
-        .select('id')
-        .eq('key', 'starter')
-        .maybeSingle();
-      planId = starterPlan?.id;
+    let planId = matchedPayment.metadata?.plan_id || existingSub?.plan_id;
+    if (typeof matchedPayment.external_reference === 'string' && matchedPayment.external_reference.startsWith('sub::')) {
+      const parts = matchedPayment.external_reference.split('::');
+      if (parts[2]) planId = parts[2];
     }
 
     if (!planId) {
@@ -134,48 +116,68 @@ serve(async (req) => {
         .from('plans')
         .select('id')
         .eq('active', true)
+        .eq('is_trial_plan', false)
         .order('sort_order', { ascending: true })
         .limit(1)
-        .single();
-      planId = firstPlan.id;
+        .maybeSingle();
+      planId = firstPlan?.id;
     }
 
-    const trialEndsAt = activeStripeSub.trial_end ? new Date(activeStripeSub.trial_end * 1000).toISOString() : null;
-    const currentPeriodEnd = new Date(activeStripeSub.current_period_end * 1000).toISOString();
+    if (!planId) {
+      return new Response(JSON.stringify({
+        synced: false,
+        message: "Plano associado ao pagamento não encontrado."
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
+    const approvedBaseMs = new Date(matchedPayment.date_approved || matchedPayment.date_created).getTime();
+    const currentPeriodEnd = new Date(approvedBaseMs + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const mpSubMarker = `mp_pay_${matchedPayment.id}`;
+    const mpCustomerMarker = matchedPayment.payer?.id ? `mp_cust_${matchedPayment.payer.id}` : existingSub?.stripe_customer_id || null;
 
     const { error: upsertError } = await supabaseAdmin.from('subscriptions').upsert({
       tenant_id: tenantId,
       plan_id: planId,
-      stripe_subscription_id: activeStripeSub.id,
-      stripe_customer_id: customerId,
-      status: activeStripeSub.status,
-      trial_ends_at: trialEndsAt,
+      stripe_subscription_id: mpSubMarker,
+      stripe_customer_id: mpCustomerMarker,
+      status: 'active',
+      trial_ends_at: null,
       current_period_end: currentPeriodEnd,
       grace_period_ends_at: null,
       suspension_reason: null,
-      canceled_at: activeStripeSub.canceled_at ? new Date(activeStripeSub.canceled_at * 1000).toISOString() : null,
+      canceled_at: null,
       latest_invoice_status: 'paid',
       updated_at: new Date().toISOString()
     }, { onConflict: 'tenant_id' });
 
     if (upsertError) throw upsertError;
 
-    const stripeUnitAmountCents = activeStripeSub?.items?.data?.[0]?.price?.unit_amount || null;
-    await preserveCustomContractAndPricing(supabaseAdmin, tenantId, planId, previousContract, stripeUnitAmountCents);
+    const paidCents = matchedPayment.transaction_amount
+      ? Math.round(Number(matchedPayment.transaction_amount) * 100)
+      : null;
+    await preserveCustomContractAndPricing(supabaseAdmin, tenantId, planId, previousContract, paidCents);
 
-    await supabaseAdmin.from('tenants').update({ status: 'active' }).eq('id', tenantId);
+    await supabaseAdmin.from('tenants').update({
+      status: 'active',
+      account_state: 'active',
+      trial_ends_at: null,
+      past_due_since: null,
+      has_used_trial: true,
+    }).eq('id', tenantId);
 
-    return new Response(JSON.stringify({ 
-      synced: true, 
-      status: activeStripeSub.status,
-      subscriptionId: activeStripeSub.id,
+    return new Response(JSON.stringify({
+      synced: true,
+      status: 'active',
+      subscriptionId: mpSubMarker,
       planId
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-
   } catch (error: any) {
-    console.error('sync-stripe-subscription error:', error);
+    console.error('sync-stripe-subscription (MP) error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,

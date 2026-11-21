@@ -1,25 +1,88 @@
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
-export interface StripeContext {
-  stripe: Stripe;
+export interface MercadoPagoContext {
   mode: 'test' | 'live';
-  secretKey: string;
-  publishableKey: string;
+  accessToken: string;
+  testAccessToken: string;
+  publicKey: string;
+  clientId: string;
+  clientSecret: string;
+  webhookSecret: string;
   applicationFeePercent: number;
-  webhookSecret?: string;
+}
+
+export interface TenantMercadoPagoAccount {
+  accountId: string;
+  accessToken: string;
+  publicKey: string | null;
+  mpUserId: string | null;
+  chargesEnabled: boolean;
+  isOAuth: boolean;
+  isTestUser: boolean;
+  email: string | null;
+  nickname: string | null;
+}
+
+function isLegacyStripeSecret(val?: string | null): boolean {
+  if (!val) return false;
+  const trimmed = val.trim();
+  return trimmed.startsWith('sk_') || trimmed.startsWith('rk_') || trimmed.startsWith('pk_');
+}
+
+export function extractMpClientIdFromToken(accessToken?: string | null): string {
+  if (!accessToken) return '';
+  const match = accessToken.trim().match(/^(?:APP_USR|TEST)-(\d+)-/);
+  return match ? match[1] : '';
+}
+
+export async function mpRequest<T = any>(
+  path: string,
+  accessToken: string,
+  options: {
+    method?: string;
+    body?: any;
+    idempotencyKey?: string;
+  } = {}
+): Promise<T> {
+  const method = (options.method || 'GET').toUpperCase();
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+  };
+  if (method === 'POST') {
+    headers['X-Idempotency-Key'] = options.idempotencyKey || crypto.randomUUID();
+  }
+
+  const res = await fetch(`https://api.mercadopago.com${path}`, {
+    method,
+    headers,
+    ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
+  });
+
+  const text = await res.text();
+  let data: any = null;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { raw: text };
+  }
+
+  if (!res.ok) {
+    const causeMsg = Array.isArray(data?.cause) && data.cause[0]?.description
+      ? ` (${data.cause[0].description})`
+      : '';
+    const detail = data?.message || data?.error || `HTTP ${res.status}`;
+    throw new Error(`Mercado Pago: ${detail}${causeMsg}`);
+  }
+
+  return data as T;
 }
 
 /**
- * Obtém o cliente Stripe dinamicamente baseado na tabela `platform_settings`
- * configurada no painel Super Admin (/platform/settings).
- * 
- * Se o Super Admin alternou para 'live', utiliza automaticamente as chaves de produção
- * (stripe_live_secret_key). Se alternou para 'test', utiliza as chaves de teste.
- * Possui fallback transparente para as variáveis Deno.env caso a tabela ainda não
- * possua as chaves preenchidas.
+ * Obtém o contexto do Mercado Pago da Plataforma Raffros a partir da tabela `platform_settings`
+ * configurada no painel Super Admin (/platform/settings), com fallback para Deno.env.
  */
-export async function getStripeContext(supabaseAdmin: SupabaseClient): Promise<StripeContext> {
+export async function getMercadoPagoContext(supabaseAdmin: SupabaseClient): Promise<MercadoPagoContext> {
   const { data: settings, error } = await supabaseAdmin
     .from('platform_settings')
     .select('*')
@@ -27,66 +90,187 @@ export async function getStripeContext(supabaseAdmin: SupabaseClient): Promise<S
     .maybeSingle();
 
   if (error) {
-    console.warn('[StripeContext] Erro ao ler platform_settings, usando fallback Deno.env:', error.message);
+    console.warn('[MercadoPagoContext] Erro ao ler platform_settings, usando fallback Deno.env:', error.message);
   }
 
-  const mode: 'test' | 'live' = settings?.stripe_mode === 'live' ? 'live' : 'test';
+  const rawMode = (settings?.mp_mode || settings?.stripe_mode || 'live').toLowerCase();
+  const mode: 'test' | 'live' = rawMode === 'test' ? 'test' : 'live';
 
-  let secretKey = '';
-  let publishableKey = '';
+  let accessToken = '';
+  let publicKey = '';
 
   if (mode === 'live') {
-    secretKey = settings?.stripe_live_secret_key?.trim()
-      || Deno.env.get('STRIPE_SECRET_KEY_LIVE')
-      || Deno.env.get('STRIPE_SECRET_KEY')
-      || '';
-    publishableKey = settings?.stripe_live_public_key?.trim()
-      || Deno.env.get('STRIPE_PUBLIC_KEY_LIVE')
-      || Deno.env.get('VITE_STRIPE_PUBLIC_KEY')
-      || '';
+    const legacyLiveSecret = !isLegacyStripeSecret(settings?.stripe_live_secret_key)
+      ? settings?.stripe_live_secret_key?.trim()
+      : '';
+    const legacyLivePub = !isLegacyStripeSecret(settings?.stripe_live_public_key)
+      ? settings?.stripe_live_public_key?.trim()
+      : '';
+
+    accessToken =
+      settings?.mp_live_access_token?.trim() ||
+      settings?.mp_test_access_token?.trim() ||
+      legacyLiveSecret ||
+      Deno.env.get('MP_ACCESS_TOKEN_LIVE') ||
+      Deno.env.get('MP_ACCESS_TOKEN') ||
+      '';
+    publicKey =
+      settings?.mp_live_public_key?.trim() ||
+      settings?.mp_test_public_key?.trim() ||
+      legacyLivePub ||
+      Deno.env.get('MP_PUBLIC_KEY_LIVE') ||
+      Deno.env.get('MP_PUBLIC_KEY') ||
+      '';
   } else {
-    secretKey = settings?.stripe_test_secret_key?.trim()
-      || Deno.env.get('STRIPE_SECRET_KEY_TEST')
-      || Deno.env.get('STRIPE_SECRET_KEY')
-      || '';
-    publishableKey = settings?.stripe_test_public_key?.trim()
-      || Deno.env.get('STRIPE_PUBLIC_KEY_TEST')
-      || Deno.env.get('VITE_STRIPE_PUBLIC_KEY')
-      || '';
+    const legacyTestSecret = !isLegacyStripeSecret(settings?.stripe_test_secret_key)
+      ? settings?.stripe_test_secret_key?.trim()
+      : '';
+    const legacyTestPub = !isLegacyStripeSecret(settings?.stripe_test_public_key)
+      ? settings?.stripe_test_public_key?.trim()
+      : '';
+
+    accessToken =
+      settings?.mp_test_access_token?.trim() ||
+      settings?.mp_live_access_token?.trim() ||
+      legacyTestSecret ||
+      Deno.env.get('MP_ACCESS_TOKEN_TEST') ||
+      Deno.env.get('MP_ACCESS_TOKEN') ||
+      '';
+    publicKey =
+      settings?.mp_test_public_key?.trim() ||
+      settings?.mp_live_public_key?.trim() ||
+      legacyTestPub ||
+      Deno.env.get('MP_PUBLIC_KEY_TEST') ||
+      Deno.env.get('MP_PUBLIC_KEY') ||
+      '';
   }
 
-  if (!secretKey) {
-    throw new Error(
-      `[Stripe] Chave secreta (${mode.toUpperCase()}) não encontrada. Configure no painel Super Admin (/platform/settings) ou nas secrets do Supabase.`
-    );
-  }
+  const clientId =
+    settings?.mp_client_id?.trim() ||
+    Deno.env.get('MP_CLIENT_ID') ||
+    extractMpClientIdFromToken(accessToken) ||
+    '';
+  const clientSecret = settings?.mp_client_secret?.trim() || Deno.env.get('MP_CLIENT_SECRET') || '';
+  const webhookSecret =
+    settings?.mp_webhook_secret?.trim() ||
+    Deno.env.get('MP_WEBHOOK_SECRET') ||
+    '';
 
-  const applicationFeePercent = settings?.stripe_application_fee_percent != null && !isNaN(Number(settings.stripe_application_fee_percent))
-    ? Number(settings.stripe_application_fee_percent)
-    : 0;
+  const testAccessToken =
+    settings?.mp_test_access_token?.trim() ||
+    Deno.env.get('MP_ACCESS_TOKEN_TEST') ||
+    (accessToken.startsWith('TEST-') ? accessToken : '');
 
-  const webhookSecret = mode === 'live'
-    ? (settings?.stripe_live_webhook_secret?.trim() || Deno.env.get('STRIPE_WEBHOOK_SECRET_LIVE') || Deno.env.get('STRIPE_WEBHOOK_SECRET'))
-    : (settings?.stripe_test_webhook_secret?.trim() || Deno.env.get('STRIPE_WEBHOOK_SECRET_TEST') || Deno.env.get('STRIPE_WEBHOOK_SECRET'));
-
-  const stripe = new Stripe(secretKey, {
-    apiVersion: '2024-06-20',
-    httpClient: Stripe.createFetchHttpClient(),
-  });
+  const rawFee = settings?.mp_application_fee_percent ?? settings?.stripe_application_fee_percent ?? 0;
+  const applicationFeePercent = !isNaN(Number(rawFee)) ? Math.max(0, Number(rawFee)) : 0;
 
   return {
-    stripe,
     mode,
-    secretKey,
-    publishableKey,
-    applicationFeePercent,
+    accessToken,
+    testAccessToken,
+    publicKey,
+    clientId,
+    clientSecret,
     webhookSecret,
+    applicationFeePercent,
+  };
+}
+
+/**
+ * Obtém as credenciais do Mercado Pago conectadas pelo dono do salão (para repasse direto).
+ * Caso utilize OAuth e o token esteja próximo do vencimento, renova automaticamente via refresh_token.
+ */
+export async function getTenantMercadoPagoAccount(
+  supabaseAdmin: SupabaseClient,
+  tenantId: string,
+  mpContext?: MercadoPagoContext
+): Promise<TenantMercadoPagoAccount | null> {
+  const { data: row } = await supabaseAdmin
+    .from('stripe_connect_accounts')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
+  if (!row || !row.mp_access_token) {
+    return null;
+  }
+
+  let accessToken = String(row.mp_access_token).trim();
+  let isOAuth = Boolean(row.mp_refresh_token);
+  const isTestUser = Boolean(
+    String(row.mp_email || '').toLowerCase().endsWith('@testuser.com') ||
+    String(row.mp_nickname || '').toUpperCase().startsWith('TESTUSER')
+  );
+
+  // Contas sintéticas TESTUSER (@testuser.com) não possuem chave Pix Bacen no endpoint /v1/payments com token APP_USR
+  // (retornam "user_allowed_only_in_test: 400"). Usamos o testAccessToken da plataforma para simular o Pix/Checkout sem erro.
+  if (isTestUser && mpContext?.testAccessToken) {
+    return {
+      accountId: row.stripe_account_id || `mp_${row.mp_user_id || tenantId}`,
+      accessToken: mpContext.testAccessToken,
+      publicKey: row.mp_public_key || mpContext.publicKey || null,
+      mpUserId: row.mp_user_id || null,
+      chargesEnabled: Boolean(row.charges_enabled),
+      isOAuth: false,
+      isTestUser: true,
+      email: row.mp_email || null,
+      nickname: row.mp_nickname || null,
+    };
+  }
+
+  // Renova token OAuth automaticamente se faltar menos de 24h para expirar
+  if (isOAuth && row.mp_token_expires_at && mpContext?.clientId && (mpContext?.clientSecret || mpContext?.accessToken)) {
+    const expiresMs = new Date(row.mp_token_expires_at).getTime();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    if (!Number.isNaN(expiresMs) && expiresMs - Date.now() < oneDayMs) {
+      try {
+        const refreshed = await mpRequest<any>('/oauth/token', mpContext.accessToken || accessToken, {
+          method: 'POST',
+          body: {
+            client_id: mpContext.clientId,
+            client_secret: mpContext.clientSecret || mpContext.accessToken,
+            grant_type: 'refresh_token',
+            refresh_token: row.mp_refresh_token,
+          },
+        });
+
+        if (refreshed?.access_token) {
+          accessToken = refreshed.access_token;
+          const nextExpires = refreshed.expires_in
+            ? new Date(Date.now() + Number(refreshed.expires_in) * 1000).toISOString()
+            : null;
+          await supabaseAdmin
+            .from('stripe_connect_accounts')
+            .update({
+              mp_access_token: refreshed.access_token,
+              mp_refresh_token: refreshed.refresh_token || row.mp_refresh_token,
+              mp_token_expires_at: nextExpires,
+              mp_public_key: refreshed.public_key || row.mp_public_key,
+            })
+            .eq('tenant_id', tenantId);
+        }
+      } catch (refreshErr: any) {
+        console.warn('[getTenantMercadoPagoAccount] Falha ao renovar OAuth token do salão:', refreshErr?.message);
+      }
+    }
+  }
+
+  return {
+    accountId: row.stripe_account_id || `mp_${row.mp_user_id || tenantId}`,
+    accessToken,
+    publicKey: row.mp_public_key || null,
+    mpUserId: row.mp_user_id || null,
+    chargesEnabled: Boolean(row.charges_enabled),
+    isOAuth,
+    isTestUser,
+    email: row.mp_email || null,
+    nickname: row.mp_nickname || null,
   };
 }
 
 /**
  * Preserva limites, recursos, permissões personalizadas e preço promocional (custom_pricing)
- * de um salão quando a assinatura é ativada/atualizada via Stripe Checkout ou Webhook,
+ * de um salão quando a assinatura é ativada/atualizada via Mercado Pago Checkout ou Webhook,
  * evitando que a trigger padrão do banco sobrescreva o que o Super Admin liberou.
  */
 export async function preserveCustomContractAndPricing(
@@ -94,7 +278,7 @@ export async function preserveCustomContractAndPricing(
   tenantId: string,
   planId: string,
   previousContract?: any,
-  stripeUnitAmountCents?: number | null
+  paidUnitAmountCents?: number | null
 ) {
   try {
     const [{ data: sub }, { data: newPlan }, { data: customPrices }] = await Promise.all([
@@ -117,9 +301,10 @@ export async function preserveCustomContractAndPricing(
     if (!sub?.id || !newPlan) return;
 
     // Encontrar preço promocional (exato ou órfão de Trial)
-    let matchedCustomPrice = customPrices?.find(
-      (cp: any) => cp.plan_id === planId && Number(cp.amount_override) > 0
-    ) || customPrices?.find((cp: any) => Number(cp.amount_override) > 0) || null;
+    const matchedCustomPrice =
+      customPrices?.find((cp: any) => cp.plan_id === planId && Number(cp.amount_override) > 0) ||
+      customPrices?.find((cp: any) => Number(cp.amount_override) > 0) ||
+      null;
 
     if (matchedCustomPrice && matchedCustomPrice.plan_id !== planId) {
       await supabaseAdmin
@@ -128,12 +313,11 @@ export async function preserveCustomContractAndPricing(
         .eq('id', matchedCustomPrice.id);
     }
 
-    // Determinar o valor efetivo da assinatura
     let effectivePriceAmount: number | null = null;
     if (matchedCustomPrice?.amount_override && Number(matchedCustomPrice.amount_override) > 0) {
       effectivePriceAmount = Number(matchedCustomPrice.amount_override);
-    } else if (stripeUnitAmountCents && stripeUnitAmountCents > 0) {
-      effectivePriceAmount = Number((stripeUnitAmountCents / 100).toFixed(2));
+    } else if (paidUnitAmountCents && paidUnitAmountCents > 0) {
+      effectivePriceAmount = Number((paidUnitAmountCents / 100).toFixed(2));
     }
 
     const wasCustomizedByAdmin = Boolean(

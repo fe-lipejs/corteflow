@@ -8,7 +8,6 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { RealtimeProvider } from './contexts/RealtimeContext';
-import CookieConsentBanner from './components/cookies/CookieConsentBanner';
 
 // Registrar Service Worker para PWA (tanto em Dev quanto em Prod para habilitar o prompt nativo do Chrome)
 if ('serviceWorker' in navigator) {
@@ -54,7 +53,6 @@ createRoot(document.getElementById('root')!).render(
         <AuthProvider>
           <RealtimeProvider>
             <AppRoutes />
-            <CookieConsentBanner />
           </RealtimeProvider>
         </AuthProvider>
       </ThemeProvider>

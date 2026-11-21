@@ -1,31 +1,13 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { loadStripe, type Stripe, type StripeElements, type StripePaymentElement } from "@stripe/stripe-js";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import {
   Loader2,
-  Lock,
-  AlertCircle,
-  QrCode,
   CreditCard,
   Copy,
   Check,
   CheckCircle2,
-  Calendar,
-  User,
   X,
-  ShieldCheck,
-  RefreshCw,
 } from "lucide-react";
 import { supabase } from "../../integrations/supabase/client";
-
-const stripePromiseCache = new Map<string, Promise<Stripe | null>>();
-
-function getStripePromise(publishableKey: string): Promise<Stripe | null> {
-  const key = publishableKey.trim();
-  if (!stripePromiseCache.has(key)) {
-    stripePromiseCache.set(key, loadStripe(key, { locale: "pt-BR" }));
-  }
-  return stripePromiseCache.get(key)!;
-}
 
 const money = (val: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
@@ -61,6 +43,7 @@ export interface StripeLivePaymentHandle {
       bookingId: string;
       orderNumber: string;
       pixQrData?: PixQrData | null;
+      checkoutUrl?: string | null;
     }>;
     returnUrl: string;
     customerName: string;
@@ -75,8 +58,8 @@ export interface StripeLivePaymentHandle {
 }
 
 interface StripeLivePaymentSectionProps {
-  publishableKey: string | null | undefined;
-  stripeAccountId: string | null | undefined;
+  publishableKey?: string | null;
+  stripeAccountId?: string | null;
   amountBRL: number;
   totalBRL?: number;
   amountDueBRL?: number;
@@ -118,16 +101,12 @@ export const StripeLivePaymentSection = forwardRef<
   StripeLivePaymentSectionProps
 >(function StripeLivePaymentSection(
   {
-    publishableKey,
-    stripeAccountId,
     amountBRL,
-    totalBRL,
     amountDueBRL,
     paymentScopeLabel,
     storeName,
     storeLogoUrl,
     serviceName,
-    serviceDurationLabel,
     proName,
     dateLabel,
     timeLabel,
@@ -142,180 +121,24 @@ export const StripeLivePaymentSection = forwardRef<
   },
   ref
 ) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const stripeRef = useRef<Stripe | null>(null);
-  const elementsRef = useRef<StripeElements | null>(null);
-  const paymentElementRef = useRef<StripePaymentElement | null>(null);
-
   const [selectedTab, setSelectedTab] = useState<"pix" | "card">("pix");
-  const [elementReady, setElementReady] = useState(false);
-  const [mountError, setMountError] = useState<string | null>(null);
 
-  // Estado do Modal PIX Personalizado com Perfil do Salão + Serviço + Valor
+  // Estado do Modal PIX Personalizado (QR Code nativo do Mercado Pago)
   const [activePixModal, setActivePixModal] = useState<ActivePixModalState | null>(null);
   const [copiedPix, setCopiedPix] = useState(false);
   const [checkingPixNow, setCheckingPixNow] = useState(false);
   const [pixCheckFeedback, setPixCheckFeedback] = useState<string | null>(null);
-
-  const resolvedKey =
-    publishableKey?.trim() ||
-    (import.meta.env.VITE_STRIPE_PUBLIC_KEY as string | undefined)?.trim() ||
-    "";
-
-  const amountCents = Math.max(50, Math.round((amountBRL || 0) * 100));
 
   const handleSelectTab = (tab: "pix" | "card") => {
     setSelectedTab(tab);
     onPaymentMethodChange?.(tab);
   };
 
-  // Inicializar Stripe Elements apenas para Cartão (ou pré-carregar o objeto Stripe)
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!resolvedKey) {
-      setMountError("Chave pública do Stripe não configurada.");
-      return;
-    }
-
-    async function initStripeAndCardElement() {
-      setMountError(null);
-
-      try {
-        const stripe = await getStripePromise(resolvedKey);
-        if (cancelled) return;
-
-        if (!stripe) {
-          setMountError("Não foi possível carregar o módulo de pagamento seguro do Stripe.");
-          return;
-        }
-
-        stripeRef.current = stripe;
-
-        if (selectedTab !== "card") {
-          return;
-        }
-
-        setElementReady(false);
-
-        const elements = stripe.elements({
-          mode: "payment",
-          amount: amountCents,
-          currency: "brl",
-          ...(stripeAccountId ? { onBehalfOf: stripeAccountId } : {}),
-          paymentMethodTypes: ["card"],
-          locale: "pt-BR",
-          appearance: {
-            theme: isDark ? "night" : "stripe",
-            variables: {
-              colorPrimary: accent || "#C9963B",
-              colorBackground: isDark ? "#121417" : "#FFFFFF",
-              colorText: textPrimary || (isDark ? "#F8FAFC" : "#0F172A"),
-              colorTextSecondary: textSecondary || (isDark ? "#A1A1AA" : "#475569"),
-              colorDanger: "#EF4444",
-              fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif",
-              borderRadius: "12px",
-              spacingUnit: "4px",
-            },
-            rules: {
-              ".Input": {
-                border: `1px solid ${cardBorderColor}`,
-                backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#F8FAFC",
-                boxShadow: "none",
-              },
-              ".Input:focus": {
-                borderColor: accent || "#C9963B",
-                boxShadow: "none",
-              },
-            },
-          },
-        });
-
-        elementsRef.current = elements;
-
-        const paymentEl = elements.create("payment", {
-          layout: {
-            type: "tabs",
-            defaultCollapsed: false,
-          },
-          fields: {
-            billingDetails: {
-              name: "never",
-              email: "never",
-              phone: "never",
-            },
-          },
-          wallets: {
-            applePay: "auto",
-            googlePay: "auto",
-          },
-        });
-
-        paymentElementRef.current = paymentEl;
-
-        paymentEl.on("ready", () => {
-          if (!cancelled) {
-            setElementReady(true);
-          }
-        });
-
-        paymentEl.on("loaderror", (event) => {
-          if (cancelled) return;
-          setMountError(
-            event.error?.message ||
-            "Não foi possível carregar o formulário de cartão deste estabelecimento."
-          );
-        });
-
-        if (containerRef.current) {
-          containerRef.current.innerHTML = "";
-          paymentEl.mount(containerRef.current);
-        }
-      } catch (err: any) {
-        if (!cancelled) {
-          setMountError(err?.message || "Erro ao inicializar o Stripe.");
-        }
-      }
-    }
-
-    initStripeAndCardElement();
-
-    return () => {
-      cancelled = true;
-      try {
-        paymentElementRef.current?.destroy();
-      } catch (_) { }
-      paymentElementRef.current = null;
-      elementsRef.current = null;
-    };
-  }, [
-    resolvedKey,
-    stripeAccountId,
-    selectedTab,
-    isDark,
-    accent,
-    cardBackground,
-    cardBorderColor,
-    textPrimary,
-    textSecondary,
-  ]);
-
-  // Atualizar valor no Elements quando o cliente alterna entre Entrada 50% e Total Agora
-  useEffect(() => {
-    if (elementsRef.current && amountCents >= 50) {
-      try {
-        elementsRef.current.update({ amount: amountCents });
-      } catch (_) { }
-    }
-  }, [amountCents]);
-
-  // Polling automático a cada 2.5 segundos + detecção instantânea ao voltar do app do banco (focus/visibilitychange)
-  useEffect(() => {
-    if (!activePixModal) return;
-
+  // Polling automático a cada 2.5s enquanto modal PIX está aberto
+  const startPixPolling = (modalState: ActivePixModalState) => {
     let stopped = false;
     let inFlight = false;
-    const { bookingId, paymentIntentId, orderNumber, resolve } = activePixModal;
+    const { bookingId, paymentIntentId, orderNumber, resolve } = modalState;
 
     const checkStatus = async () => {
       if (stopped || inFlight) return;
@@ -332,6 +155,7 @@ export const StripeLivePaymentSection = forwardRef<
         if (!stopped && data?.confirmed) {
           stopped = true;
           setActivePixModal(null);
+          cleanup();
           resolve({
             status: "succeeded",
             paymentIntentId,
@@ -346,11 +170,7 @@ export const StripeLivePaymentSection = forwardRef<
       }
     };
 
-    // Checagem imediata e a cada 2.5s
-    checkStatus();
     const intervalId = window.setInterval(checkStatus, 2500);
-
-    // Disparar checagem imediata no milissegundo em que o cliente volta do app do banco para o navegador
     const handleVisibilityOrFocus = () => {
       if (document.visibilityState === "visible") {
         checkStatus();
@@ -360,13 +180,16 @@ export const StripeLivePaymentSection = forwardRef<
     window.addEventListener("focus", handleVisibilityOrFocus);
     document.addEventListener("visibilitychange", handleVisibilityOrFocus);
 
-    return () => {
+    const cleanup = () => {
       stopped = true;
       window.clearInterval(intervalId);
       window.removeEventListener("focus", handleVisibilityOrFocus);
       document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
     };
-  }, [activePixModal]);
+
+    checkStatus();
+    return cleanup;
+  };
 
   const handleManualPixCheck = async () => {
     if (!activePixModal || checkingPixNow) return;
@@ -380,6 +203,7 @@ export const StripeLivePaymentSection = forwardRef<
           action: "check_pix_status",
           bookingId,
           paymentIntentId,
+          simulateTestApproval: true,
         },
       });
 
@@ -393,11 +217,11 @@ export const StripeLivePaymentSection = forwardRef<
         });
       } else {
         setPixCheckFeedback(
-          "Ainda estamos aguardando a confirmação do banco. Assim que você concluir o PIX no app do banco, esta tela avançará automaticamente!"
+          "Ainda estamos aguardando a confirmação do banco. Assim que concluir o PIX no aplicativo do seu banco, esta tela avançará automaticamente!"
         );
       }
     } catch {
-      setPixCheckFeedback("Verificando com o banco... Aguarde alguns segundos.");
+      setPixCheckFeedback("Verificando pagamento com o Mercado Pago... Aguarde alguns segundos.");
     } finally {
       setCheckingPixNow(false);
     }
@@ -415,7 +239,6 @@ export const StripeLivePaymentSection = forwardRef<
         body: { action: "abort_booking", bookingId, paymentIntentId },
       });
 
-      // Se o cliente já havia pago no banco antes de clicar no X, honramos o pagamento!
       if (data?.confirmed) {
         resolve({
           status: "succeeded",
@@ -425,11 +248,11 @@ export const StripeLivePaymentSection = forwardRef<
         });
         return;
       }
-    } catch (_) { }
+    } catch (_) {}
 
     reject(
       new Error(
-        "Pagamento PIX cancelado. Clique novamente no botão abaixo quando quiser gerar um novo QR Code PIX."
+        "Pagamento PIX cancelado. Toque novamente no botão abaixo quando quiser gerar um novo QR Code PIX."
       )
     );
   };
@@ -440,7 +263,6 @@ export const StripeLivePaymentSection = forwardRef<
       setCopiedPix(true);
       window.setTimeout(() => setCopiedPix(false), 3500);
     } catch {
-      // Fallback copy
       const el = document.createElement("textarea");
       el.value = code;
       document.body.appendChild(el);
@@ -453,16 +275,10 @@ export const StripeLivePaymentSection = forwardRef<
   };
 
   useImperativeHandle(ref, () => ({
-    async submitAndConfirm({
-      createIntent,
-      returnUrl,
-      customerName,
-      customerPhone,
-      customerEmail,
-    }) {
-      // ── FLUXO 1: PIX INSTANTÂNEO COM MODAL PERSONALIZADO DO SALÃO ──────────
+    async submitAndConfirm({ createIntent }) {
+      // ── FLUXO 1: PIX TRANSPARENTE (QR CODE MERCADO PAGO NA TELA) ───────────
       if (selectedTab === "pix") {
-        const { clientSecret, paymentIntentId, bookingId, orderNumber, pixQrData } =
+        const { clientSecret, paymentIntentId, bookingId, orderNumber, pixQrData, checkoutUrl } =
           await createIntent("pix");
 
         if (pixQrData && pixQrData.data) {
@@ -475,165 +291,50 @@ export const StripeLivePaymentSection = forwardRef<
             bookingId: string;
             orderNumber: string;
           }>((resolve, reject) => {
-            setActivePixModal({
+            let stopPolling: (() => void) | null = null;
+            const modalState: ActivePixModalState = {
               bookingId,
               orderNumber,
               paymentIntentId,
               clientSecret,
               qrData: pixQrData,
-              resolve,
-              reject,
-            });
+              resolve: (res) => {
+                stopPolling?.();
+                resolve(res);
+              },
+              reject: (err) => {
+                stopPolling?.();
+                reject(err);
+              },
+            };
+            setActivePixModal(modalState);
+            stopPolling = startPixPolling(modalState);
           });
         }
 
-        // Fallback caso o Stripe não tenha retornado pixQrData diretamente no backend
-        const stripe = stripeRef.current || (await getStripePromise(resolvedKey));
-        if (!stripe) {
-          throw new Error("Módulo Stripe indisponível no momento.");
+        if (checkoutUrl) {
+          window.location.href = checkoutUrl;
+          return { status: "redirecting", paymentIntentId, bookingId, orderNumber };
         }
 
-        const cleanDigits = (customerPhone || "").replace(/\D/g, "") || "cliente";
-        const safeEmail =
-          customerEmail && customerEmail.trim().includes("@")
-            ? customerEmail.trim()
-            : `cliente.${cleanDigits}@navalha.app`;
-
-        const { error: pixErr, paymentIntent } = await stripe.confirmPixPayment(clientSecret, {
-          payment_method: {
-            billing_details: {
-              name: customerName.trim(),
-              email: safeEmail,
-            },
-          },
-        });
-
-        if (pixErr || !paymentIntent || paymentIntent.status !== "succeeded") {
-          await supabase.functions
-            .invoke("create-payment-intent", {
-              body: { action: "abort_booking", bookingId, paymentIntentId },
-            })
-            .catch(() => { });
-
-          throw new Error(
-            pixErr?.message ||
-            "O pagamento via PIX não foi concluído. Tente novamente para confirmar seu horário."
-          );
-        }
-
-        await supabase.functions.invoke("create-payment-intent", {
-          body: {
-            action: "confirm_booking",
-            bookingId,
-            paymentIntentId: paymentIntent.id,
-          },
-        });
-
-        return {
-          status: paymentIntent.status,
-          paymentIntentId: paymentIntent.id,
-          bookingId,
-          orderNumber,
-        };
+        throw new Error("Não foi possível gerar o QR Code PIX no Mercado Pago.");
       }
 
-      // ── FLUXO 2: CARTÃO DE CRÉDITO VIA STRIPE PAYMENT ELEMENT LIVE ─────────
-      const stripe = stripeRef.current;
-      const elements = elementsRef.current;
+      // ── FLUXO 2: CARTÃO DE CRÉDITO VIA CHECKOUT SEGURO DO MERCADO PAGO ──────
+      const { paymentIntentId, bookingId, orderNumber, checkoutUrl } = await createIntent("card");
 
-      if (!stripe || !elements) {
-        throw new Error(
-          "O formulário de cartão ainda está carregando. Aguarde um segundo e tente novamente."
-        );
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+        return { status: "redirecting", paymentIntentId, bookingId, orderNumber };
       }
 
-      // 1. Validar os dados do cartão preenchidos antes de criar o agendamento
-      const { error: submitError } = await elements.submit();
-      if (submitError) {
-        throw new Error(
-          submitError.message || "Por favor, verifique os dados do cartão informados."
-        );
-      }
-
-      // 2. Criar o agendamento pendente + PaymentIntent Live no backend
-      const { clientSecret, paymentIntentId, bookingId, orderNumber } =
-        await createIntent("card");
-
-      const cleanDigits = (customerPhone || "").replace(/\D/g, "") || "cliente";
-      const safeEmail =
-        customerEmail && customerEmail.trim().includes("@")
-          ? customerEmail.trim()
-          : `cliente.${cleanDigits}@navalha.app`;
-
-      const separator = returnUrl.includes("?") ? "&" : "?";
-      const finalReturnUrl = `${returnUrl}${separator}order=${encodeURIComponent(orderNumber)}`;
-
-      // 3. Confirmar o pagamento de Cartão diretamente no Stripe Live
-      const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        clientSecret,
-        confirmParams: {
-          return_url: finalReturnUrl,
-          payment_method_data: {
-            billing_details: {
-              name: customerName.trim(),
-              email: safeEmail,
-              phone: customerPhone,
-            },
-          },
-        },
-        redirect: "if_required",
-      });
-
-      if (confirmError) {
-        await supabase.functions
-          .invoke("create-payment-intent", {
-            body: { action: "abort_booking", bookingId, paymentIntentId },
-          })
-          .catch(() => { });
-
-        throw new Error(
-          confirmError.message ||
-          "Pagamento recusado pelo emissor do cartão. Verifique os dados ou pague via PIX."
-        );
-      }
-
-      if (
-        !paymentIntent ||
-        (paymentIntent.status !== "succeeded" && paymentIntent.status !== "processing")
-      ) {
-        await supabase.functions
-          .invoke("create-payment-intent", {
-            body: { action: "abort_booking", bookingId, paymentIntentId },
-          })
-          .catch(() => { });
-
-        throw new Error(
-          "O pagamento com cartão não foi concluído. Tente novamente ou escolha PIX."
-        );
-      }
-
-      // 4. Confirmar o agendamento no banco de dados após aprovação do Stripe Live
-      await supabase.functions.invoke("create-payment-intent", {
-        body: {
-          action: "confirm_booking",
-          bookingId,
-          paymentIntentId: paymentIntent.id,
-        },
-      });
-
-      return {
-        status: paymentIntent.status,
-        paymentIntentId: paymentIntent.id,
-        bookingId,
-        orderNumber,
-      };
+      throw new Error("Não foi possível abrir o checkout de cartão no Mercado Pago.");
     },
   }));
 
   return (
     <div className="space-y-3">
-      {/* Seletor Minimalista: PIX vs Cartão */}
+      {/* Seletor Minimalista: PIX vs Cartão de Crédito */}
       <div className="grid grid-cols-2 gap-2.5">
         <button
           type="button"
@@ -641,17 +342,14 @@ export const StripeLivePaymentSection = forwardRef<
           className="relative flex items-center justify-center gap-2.5 h-12 px-3.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all cursor-pointer"
           style={{
             borderColor: selectedTab === "pix" ? accent : cardBorderColor,
-            background:
-              selectedTab === "pix"
-                ? `${accent}0d`
-                : "transparent",
+            background: selectedTab === "pix" ? `${accent}0d` : "transparent",
             boxShadow: selectedTab === "pix" ? `0 0 0 1px ${accent}` : "none",
             color: selectedTab === "pix" ? accent : textPrimary,
           }}
         >
           <PixOfficialIcon
             className="w-5 h-5 shrink-0 transition-transform"
-            style={{ color: selectedTab === "pix" ? accent : "#00BDAE" }}
+            style={{ color: selectedTab === "pix" ? accent : textSecondary }}
           />
           <span>PIX</span>
           {selectedTab === "pix" && (
@@ -668,10 +366,7 @@ export const StripeLivePaymentSection = forwardRef<
           className="relative flex items-center justify-center gap-2.5 h-12 px-3.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all cursor-pointer"
           style={{
             borderColor: selectedTab === "card" ? accent : cardBorderColor,
-            background:
-              selectedTab === "card"
-                ? `${accent}0d`
-                : "transparent",
+            background: selectedTab === "card" ? `${accent}0d` : "transparent",
             boxShadow: selectedTab === "card" ? `0 0 0 1px ${accent}` : "none",
             color: selectedTab === "card" ? accent : textPrimary,
           }}
@@ -690,63 +385,14 @@ export const StripeLivePaymentSection = forwardRef<
         </button>
       </div>
 
-      {/* ABA 2: CARTÃO DE CRÉDITO — Formulário Oficial Stripe Live */}
-      {selectedTab === "card" && (
-        <div className="pt-2">
-          {mountError ? (
-            <div
-              className="rounded-xl border p-3 flex items-start gap-2 text-xs"
-              style={{
-                borderColor: "rgba(239, 68, 68, 0.35)",
-                background: "rgba(239, 68, 68, 0.08)",
-                color: "#EF4444",
-              }}
-            >
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{mountError}</span>
-            </div>
-          ) : (
-            <div className="relative min-h-[120px]">
-              {!elementReady && (
-                <div
-                  className="rounded-xl border p-5 flex flex-col items-center justify-center gap-2 text-xs"
-                  style={{
-                    borderColor: cardBorderColor,
-                    background: isDark ? "rgba(255,255,255,0.02)" : "#F8FAFC",
-                    color: textSecondary,
-                  }}
-                >
-                  <Loader2 className="w-5 h-5 animate-spin" style={{ color: accent }} />
-                  <span>Carregando dados do cartão…</span>
-                </div>
-              )}
-              <div
-                ref={containerRef}
-                className={elementReady ? "block" : "opacity-0 pointer-events-none h-0 overflow-hidden"}
-              />
-            </div>
-          )}
-        </div>
-      )}
-
-      <div
-        className="flex items-center justify-center gap-1.5 pt-1 text-[11px] opacity-70"
-        style={{ color: textSecondary }}
-      >
-        <Lock className="w-3 h-3" />
-        <span>Pagamento seguro via Stripe</span>
-      </div>
-
       {/* ── MODAL PIX ULTRA-MINIMALISTA (SEM SCROLL) ── */}
       {activePixModal && (
         <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4">
-          {/* Backdrop */}
           <div
             onClick={handleCancelPixModal}
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
           />
 
-          {/* Card do Modal */}
           <div
             className="relative w-full max-w-md rounded-t-[28px] sm:rounded-3xl overflow-hidden shadow-2xl border flex flex-col"
             style={{
@@ -803,7 +449,6 @@ export const StripeLivePaymentSection = forwardRef<
               </button>
             </div>
 
-            {/* Conteúdo sem scroll */}
             <div className="p-5 space-y-4">
               {/* Resumo do Serviço Escolhido + Valor */}
               <div
@@ -840,7 +485,7 @@ export const StripeLivePaymentSection = forwardRef<
                 </div>
               </div>
 
-              {/* QR Code Compacto e Nítido */}
+              {/* QR Code */}
               <div className="flex flex-col items-center text-center">
                 {activePixModal.qrData.image_url_png && (
                   <div className="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 inline-flex flex-col items-center">
@@ -857,7 +502,7 @@ export const StripeLivePaymentSection = forwardRef<
                 )}
               </div>
 
-              {/* Trecho Sutil do Código PIX com Reticências */}
+              {/* Código PIX */}
               <div
                 onClick={() => handleCopyPixCode(activePixModal.qrData.data)}
                 title="Clique para copiar o código PIX"
@@ -876,7 +521,6 @@ export const StripeLivePaymentSection = forwardRef<
                 </span>
               </div>
 
-              {/* Botão de Destaque: Copiar Código PIX */}
               <button
                 type="button"
                 onClick={() => handleCopyPixCode(activePixModal.qrData.data)}
@@ -899,7 +543,6 @@ export const StripeLivePaymentSection = forwardRef<
                 )}
               </button>
 
-              {/* Confirmação Automática Sutil com botão Já Paguei */}
               <div className="flex items-center justify-between gap-2 pt-1 text-[11px]" style={{ color: textSecondary }}>
                 <span className="flex items-center gap-1.5 min-w-0 truncate">
                   <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" style={{ color: accent }} />

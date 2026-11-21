@@ -279,8 +279,8 @@ async function fetchPublicStore(slug: string) {
   });
 
   const resolvedPublicKey =
+    (stripeConfigData as any)?.public_key ||
     (stripeConfigData as any)?.publishable_key ||
-    import.meta.env.VITE_STRIPE_PUBLIC_KEY ||
     null;
 
   return {

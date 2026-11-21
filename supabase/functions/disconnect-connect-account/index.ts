@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { getStripeContext } from '../_shared/stripe.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,8 +18,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { stripe } = await getStripeContext(supabaseAdmin);
-
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -30,39 +27,14 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Usuário não autenticado");
 
-    // Buscar tenant do usuário
-    const { data: profile } = await supabase.from('profiles').select('tenant_id').eq('id', user.id).single();
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('tenant_id')
+      .eq('id', user.id)
+      .single();
+
     if (!profile?.tenant_id) throw new Error("Salão não encontrado para este usuário");
     const tenantId = profile.tenant_id;
-
-    // Buscar registro connect da conta
-    const { data: connectAcc } = await supabaseAdmin
-      .from('stripe_connect_accounts')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .maybeSingle();
-
-    const accountId = connectAcc?.stripe_account_id;
-
-    if (accountId) {
-      try {
-        // Excluir / desvincular conta Express diretamente na API do Stripe
-        await stripe.accounts.del(accountId);
-      } catch (stripeErr: any) {
-        console.warn("Aviso ao desvincular no Stripe (tentando deauthorize):", stripeErr.message);
-        try {
-          const clientId = Deno.env.get('STRIPE_CONNECT_CLIENT_ID');
-          if (clientId) {
-            await stripe.oauth.deauthorize({
-              client_id: clientId,
-              stripe_user_id: accountId,
-            });
-          }
-        } catch (deauthErr: any) {
-          console.warn("Deauthorize error (ignorado se já excluída):", deauthErr.message);
-        }
-      }
-    }
 
     // 1. Remover vínculo no Supabase
     await supabaseAdmin
@@ -87,10 +59,10 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      message: "Conta Stripe desvinculada com sucesso tanto no Stripe quanto no sistema.",
+      message: "Conta Mercado Pago desvinculada com sucesso.",
     }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
   } catch (err: any) {
-    console.error("Disconnect Connect Error:", err);
+    console.error("Disconnect Mercado Pago Error:", err);
     return new Response(
       JSON.stringify({ error: err.message }),
       { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }

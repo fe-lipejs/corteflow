@@ -26,6 +26,7 @@ import { TENANT_BOOKING_HORIZON_KEY } from '../../hooks/useBookingHorizon';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import FeatureGate from '../../components/FeatureGate';
 import { UpgradeModal } from '../../components/UpgradeModal';
+import { MercadoPagoMark } from '../../components/icons/MercadoPagoLogo';
 import {
   Save, Check, Link as LinkIcon, Copy, ExternalLink, Image as ImageIcon,
   MapPin, Phone, Globe, Mail, Palette, Clock, CreditCard, Upload,
@@ -58,12 +59,6 @@ const FacebookIcon = ({ className, style }: { className?: string; style?: React.
 const WhatsAppIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className={className} style={style}>
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-  </svg>
-);
-
-const StripeIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 28 28" fill="currentColor" className={className} style={style}>
-    <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697.5 12.521.5 5.86.5 1.584 3.977 1.584 9.544c0 6.082 5.679 7.18 8.878 8.371 2.457.915 3.328 1.597 3.328 2.64 0 .972-.947 1.554-2.428 1.554-2.28 0-5.183-1.077-7.147-2.189l-.92 5.584c2.052 1.073 5.378 1.868 8.068 1.868 6.786 0 11.233-3.23 11.233-9.197 0-6.175-5.59-7.25-8.62-8.025z" />
   </svg>
 );
 
@@ -107,13 +102,16 @@ export default function Configuracoes() {
   const [accountDeletedSuccess, setAccountDeletedSuccess] = useState(false);
   const [settingsId, setSettingsId] = useState<string | null>(null);
 
-  // Stripe Connect Status & Modal
+  // Mercado Pago Connect Status & Modal
   const [stripeConnectInfo, setStripeConnectInfo] = useState<{
     has_account: boolean;
     charges_enabled: boolean;
     payouts_enabled: boolean;
     details_submitted?: boolean;
     stripe_account_id?: string;
+    mp_email?: string | null;
+    mp_nickname?: string | null;
+    is_oauth?: boolean;
   } | null>(null);
   const [syncingConnect, setSyncingConnect] = useState(false);
   const [isConnectingStripe, setIsConnectingStripe] = useState(false);
@@ -121,6 +119,7 @@ export default function Configuracoes() {
   const [stripeRequiredModalOpen, setStripeRequiredModalOpen] = useState(false);
   const [disconnectStripeModalOpen, setDisconnectStripeModalOpen] = useState(false);
   const [disconnectingStripe, setDisconnectingStripe] = useState(false);
+  const handledOauthReturnRef = useRef<string | null>(null);
 
   // ─── Form State ───────────────────────────────────────────────────────────
   const [language, setLanguage] = useState<string>('pt');
@@ -467,6 +466,9 @@ export default function Configuracoes() {
           charges_enabled: true,
           payouts_enabled: connectData.payouts_enabled,
           stripe_account_id: connectData.stripe_account_id,
+          mp_email: (connectData as any).mp_email || null,
+          mp_nickname: (connectData as any).mp_nickname || null,
+          is_oauth: Boolean((connectData as any).mp_refresh_token),
         });
       } else {
         setStripeConnectInfo(null);
@@ -487,10 +489,58 @@ export default function Configuracoes() {
 
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
+      const oauthCode = params.get('code');
+      const mpOauth = params.get('mp_oauth');
+      const mpErrorMsg = params.get('mp_error_msg');
+
       if (tabParam && TABS.some(t => t.id === tabParam)) {
         setActiveTab(tabParam as TabId);
       }
-      if (tabParam === 'stripe' || window.location.search.includes('connect')) {
+
+      if (mpOauth === 'success') {
+        const returnKey = `success:${window.location.search}`;
+        if (handledOauthReturnRef.current !== returnKey) {
+          handledOauthReturnRef.current = returnKey;
+          setActiveTab('stripe');
+          window.history.replaceState({}, document.title, `${window.location.pathname}?tab=stripe`);
+          loadSettings();
+          setAllowDeposit(true);
+          setAllowFull(true);
+          toast.success('Conta Mercado Pago conectada com sucesso!');
+          setShowStripeActivatedModal(true);
+        }
+      } else if (mpOauth === 'error') {
+        const returnKey = `error:${mpErrorMsg || 'default'}`;
+        if (handledOauthReturnRef.current !== returnKey) {
+          handledOauthReturnRef.current = returnKey;
+          setActiveTab('stripe');
+          window.history.replaceState({}, document.title, `${window.location.pathname}?tab=stripe`);
+          toast.error(mpErrorMsg || 'Não foi possível concluir a conexão com o Mercado Pago.');
+        }
+      } else if (oauthCode) {
+        if (handledOauthReturnRef.current !== oauthCode) {
+          handledOauthReturnRef.current = oauthCode;
+          setActiveTab('stripe');
+          const redirectUri = `${window.location.origin}/admin/configuracoes?tab=stripe`;
+          window.history.replaceState({}, document.title, `${window.location.pathname}?tab=stripe`);
+          supabase.functions
+            .invoke('connect-onboarding-link', {
+              body: { action: 'exchange_code', code: oauthCode, redirectUri },
+            })
+            .then(({ data, error }) => {
+              if (error || data?.error) {
+                toast.error(data?.error || error?.message || 'Erro ao finalizar conexão com Mercado Pago.');
+              } else if (data?.charges_enabled) {
+                setStripeConnectInfo(data);
+                setAllowDeposit(true);
+                setAllowFull(true);
+                loadSettings();
+                toast.success('Conta Mercado Pago conectada com sucesso!');
+                setShowStripeActivatedModal(true);
+              }
+            });
+        }
+      } else if (tabParam === 'stripe' || window.location.search.includes('connect')) {
         syncConnectStatus(true);
       }
     }
@@ -982,14 +1032,14 @@ export default function Configuracoes() {
         }).eq('id', profile.id);
       }
 
-      // Valida se a conta Stripe está 100% pronta para receber
+      // Valida se a conta Mercado Pago está pronta para receber
       const isStripeFullyActive = stripeConnectInfo?.charges_enabled === true;
       const effectiveAllowLocal = !isStripeFullyActive ? true : allowLocal;
       const effectiveAllowDeposit = isStripeFullyActive ? allowDeposit : false;
       const effectiveAllowFull = isStripeFullyActive ? allowFull : false;
 
       if (!isStripeFullyActive && (!allowLocal || allowDeposit || allowFull)) {
-        toast('Sua conta Stripe ainda não foi finalizada. O pagamento no local foi mantido como padrão para você não perder agendamentos.', { icon: 'ℹ️', duration: 6000 });
+        toast('Sua conta do Mercado Pago ainda não foi conectada. O pagamento no local foi mantido como padrão para você não perder agendamentos.', { icon: 'ℹ️', duration: 6000 });
       }
 
       const activeOptions = [effectiveAllowLocal, effectiveAllowDeposit, effectiveAllowFull].filter(Boolean).length;
@@ -1162,18 +1212,32 @@ export default function Configuracoes() {
     if (!tenant) return;
     setIsConnectingStripe(true);
     try {
-      const { data, error } = await supabase.functions.invoke('connect-onboarding-link');
+      const { data, error } = await supabase.functions.invoke('connect-onboarding-link', {
+        body: { action: 'get_link', origin: window.location.origin },
+      });
       if (error) {
-        throw new Error(error.message || 'Erro ao gerar link de conexão');
+        let detailedMsg = data?.error;
+        if (!detailedMsg && (error as any)?.context) {
+          try {
+            const errBody = await (error as any).context.json();
+            detailedMsg = errBody?.error;
+          } catch {
+            // fallback para mensagem padrão
+          }
+        }
+        throw new Error(detailedMsg || error.message || 'Erro ao iniciar conexão com Mercado Pago');
       }
       if (data?.url) {
         window.location.href = data.url;
-      } else if (data?.error) {
-        throw new Error(data.error);
+        return;
       }
+      throw new Error(
+        data?.error ||
+          'Conexão automática com Mercado Pago indisponível. Verifique as credenciais OAuth no Super Admin (/platform/settings).'
+      );
     } catch (err: any) {
-      console.error('Stripe Connect error:', err);
-      toast.error(`Erro ao iniciar conexão com o Stripe: ${err.message}`);
+      console.error('Mercado Pago Connect error:', err);
+      toast.error(err?.message || 'Erro ao conectar Mercado Pago.');
       setIsConnectingStripe(false);
     }
   };
@@ -1219,8 +1283,8 @@ export default function Configuracoes() {
       queryClient.invalidateQueries({ queryKey: ['tenant_settings', tenant.id] });
       queryClient.invalidateQueries({ queryKey: ['tenant_settings'] });
     } catch (err: any) {
-      console.error('Error disconnecting Stripe:', err);
-      toast.error('Erro ao desconectar Stripe: ' + err.message);
+      console.error('Error disconnecting Mercado Pago:', err);
+      toast.error('Erro ao desconectar Mercado Pago: ' + err.message);
     } finally {
       setDisconnectingStripe(false);
     }
@@ -2227,8 +2291,7 @@ export default function Configuracoes() {
           {/* ═══════════════════════════ TAB: RECEBIMENTOS & PAGAMENTOS ══════════════════════════ */}
           {activeTab === 'stripe' && (
             <div className="space-y-6">
-              {/* 1. Card Principal: Stripe Connect com Selo Verde de Segurança */}
-              {/* 1. Card Principal: Stripe Connect (Padrão Stripe Oficial) */}
+              {/* 1. Card Principal: Mercado Pago Direto na Conta do Salão */}
               {(() => {
                 const isConnected = stripeConnectInfo?.charges_enabled === true;
 
@@ -2241,23 +2304,20 @@ export default function Configuracoes() {
                     }}
                   >
                     <div className="flex items-start gap-4">
-                      {/* Logo Oficial do Stripe */}
+                      {/* Logo Oficial Mercado Pago */}
                       <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                        className="w-14 h-12 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
                         style={{
-                          background: '#635BFF16',
-                          color: '#635BFF',
+                          background: '#009EE318',
                         }}
                       >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z" />
-                        </svg>
+                        <MercadoPagoMark className="w-11 h-8" />
                       </div>
 
                       <div className="space-y-1">
                         <div className="flex items-center gap-2.5 flex-wrap">
                           <h4 className="text-base font-bold" style={{ color: theme.textPrimary }}>
-                            Recebimentos Online
+                            Recebimentos Online — Mercado Pago
                           </h4>
                           {isConnected ? (
                             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
@@ -2271,8 +2331,8 @@ export default function Configuracoes() {
                         </div>
                         <p className="text-xs leading-relaxed max-w-xl font-medium" style={{ color: theme.textSecondary }}>
                           {isConnected
-                            ? 'Sua conta bancária está vinculada e pronta para receber repasses automáticos via Cartão e Pix.'
-                            : 'Receba pagamentos online direto na sua conta bancária com total segurança via Stripe Connect.'}
+                            ? `Sua conta do Mercado Pago${stripeConnectInfo?.mp_nickname || stripeConnectInfo?.mp_email ? ` (${stripeConnectInfo.mp_nickname || stripeConnectInfo.mp_email})` : ''} está vinculada. Tudo o que o cliente pagar no Pix ou Cartão cai direto no seu Mercado Pago.`
+                            : 'Conecte o seu Mercado Pago para receber os pagamentos online dos clientes (Pix instantâneo na hora ou Cartão) direto na sua conta.'}
                         </p>
                       </div>
                     </div>
@@ -2294,26 +2354,23 @@ export default function Configuracoes() {
                             type="button"
                             onClick={handleConnectStripe}
                             disabled={isConnectingStripe}
-                            className="px-4 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer hover:opacity-90 flex items-center gap-1.5"
+                            className="px-4 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer hover:opacity-90 flex items-center gap-1.5 disabled:opacity-70"
                             style={{ borderColor: theme.border, background: theme.cardBg, color: theme.textPrimary }}
                           >
                             {isConnectingStripe ? (
                               <>
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                <span>Abrindo...</span>
+                                <span>Redirecionando...</span>
                               </>
                             ) : (
-                              <>
-                                <span>Painel Stripe</span>
-                                <ExternalLink className="w-3 h-3 opacity-60" />
-                              </>
+                              <span>Alterar Conta</span>
                             )}
                           </button>
                           <button
                             type="button"
                             onClick={() => setDisconnectStripeModalOpen(true)}
                             className="px-3 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
-                            title="Desconectar conta Stripe"
+                            title="Desconectar conta Mercado Pago"
                           >
                             Desconectar
                           </button>
@@ -2324,16 +2381,16 @@ export default function Configuracoes() {
                           onClick={handleConnectStripe}
                           disabled={isConnectingStripe}
                           className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 text-white shadow-sm hover:opacity-95 transition-all cursor-pointer disabled:opacity-80"
-                          style={{ background: '#635BFF' }}
+                          style={{ background: '#009EE3' }}
                         >
                           {isConnectingStripe ? (
                             <>
                               <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>Abrindo Stripe...</span>
+                              <span>Conectando...</span>
                             </>
                           ) : (
                             <>
-                              <span>Conectar com Stripe</span>
+                              <span>Conectar Mercado Pago</span>
                               <ExternalLink className="w-3.5 h-3.5 opacity-80" />
                             </>
                           )}
@@ -2364,7 +2421,7 @@ export default function Configuracoes() {
                         key: 'local' as const,
                         label: 'Pagar no Local',
                         desc: !isStripeFullyActive
-                          ? 'Obrigatório enquanto sua conta Stripe não estiver com cadastro 100% finalizado'
+                          ? 'Obrigatório enquanto sua conta do Mercado Pago não estiver conectada'
                           : 'Pagamento presencial no salão após o atendimento',
                         state: !isStripeFullyActive ? true : allowLocal,
                         isLocked: !isStripeFullyActive,
@@ -2374,19 +2431,19 @@ export default function Configuracoes() {
                       {
                         key: 'deposit' as const,
                         label: 'Sinal / Entrada Online',
-                        desc: 'Exige percentual antecipado para garantir o horário',
+                        desc: 'Exige percentual antecipado via Pix ou Cartão para garantir o horário',
                         state: isStripeFullyActive ? allowDeposit : false,
                         isLocked: !isStripeFullyActive,
-                        lockLabel: 'Requer Stripe Ativo',
+                        lockLabel: 'Requer Mercado Pago Ativo',
                         set: setAllowDeposit,
                       },
                       {
                         key: 'full' as const,
                         label: '100% Antecipado Online',
-                        desc: 'Valor integral pago online na hora do agendamento',
+                        desc: 'Valor integral pago online na hora do agendamento (cai no seu Mercado Pago)',
                         state: isStripeFullyActive ? allowFull : false,
                         isLocked: !isStripeFullyActive,
-                        lockLabel: 'Requer Stripe Ativo',
+                        lockLabel: 'Requer Mercado Pago Ativo',
                         set: setAllowFull,
                       },
                     ].map(m => {
@@ -2432,7 +2489,7 @@ export default function Configuracoes() {
                                   if (m.key !== 'local') {
                                     setStripeRequiredModalOpen(true);
                                   } else {
-                                    toast('O pagamento no local não pode ser desativado até que sua conta Stripe esteja 100% pronta com dados bancários.', { icon: 'ℹ️' });
+                                    toast('O pagamento no local não pode ser desativado até que sua conta do Mercado Pago esteja conectada.', { icon: 'ℹ️' });
                                   }
                                   return;
                                 }
@@ -2946,13 +3003,13 @@ export default function Configuracoes() {
                     <CreditCard className="w-4 h-4 text-blue-400" />
                   </div>
                   <h4 className="font-bold text-base" style={{ color: theme.textPrimary }}>
-                    {subInfo?.status === 'active' ? 'Assinatura Ativa (Stripe)' :
+                    {subInfo?.status === 'active' ? 'Assinatura Ativa (Mercado Pago)' :
                       subInfo?.status === 'trial' ? 'Período de Testes (Trial)' :
                         subInfo?.status === 'canceled' ? 'Cancelada (Sem novas cobranças)' :
                           'Assinatura Regularizada'}
                   </h4>
                   <p className="text-xs font-mono truncate" style={{ color: theme.textMuted }}>
-                    {subInfo?.stripe_subscription_id ? `ID: ${subInfo.stripe_subscription_id}` : 'Cobrança via Stripe Billing'}
+                    {subInfo?.stripe_subscription_id ? `ID: ${subInfo.stripe_subscription_id}` : 'Cobrança via Mercado Pago'}
                   </p>
                 </div>
 
@@ -2976,15 +3033,15 @@ export default function Configuracoes() {
                   </p>
                 </div>
 
-                {/* 5. Recebimento de Pagamentos Online (Stripe Connect) */}
+                {/* 5. Recebimento de Pagamentos Online (Mercado Pago) */}
                 <div className="p-5 rounded-2xl border space-y-3 sm:col-span-2" style={{ background: theme.cardBg, borderColor: theme.border }}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center font-bold">
-                        <StripeIcon className="w-3.5 h-3.5" />
+                      <div className="w-7 h-6 rounded-lg bg-[#009EE3]/15 flex items-center justify-center">
+                        <MercadoPagoMark className="w-5 h-3.5" />
                       </div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#635BFF]">
-                        Recebimento Online (Stripe Connect)
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#009EE3]">
+                        Recebimento Online (Mercado Pago)
                       </span>
                     </div>
                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${stripeConnectInfo?.charges_enabled
@@ -2993,65 +3050,61 @@ export default function Configuracoes() {
                         ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                         : 'bg-neutral-500/10 text-neutral-400 border border-neutral-500/20'
                       }`}>
-                      {stripeConnectInfo?.charges_enabled ? 'Habilitado (Ao Vivo)' : stripeConnectInfo?.stripe_account_id ? 'Em Análise / Pendente' : 'Não Conectado'}
+                      {stripeConnectInfo?.charges_enabled ? 'Habilitado (Ao Vivo)' : stripeConnectInfo?.stripe_account_id ? 'Pendente' : 'Não Conectado'}
                     </span>
                   </div>
                   <h4 className="font-bold text-base" style={{ color: theme.textPrimary }}>
                     {stripeConnectInfo?.charges_enabled
-                      ? 'Conta Bancária Vinculada & Ativa'
+                      ? 'Conta Mercado Pago Vinculada & Ativa'
                       : stripeConnectInfo?.stripe_account_id
-                        ? 'Verificação Bancária Pendente'
+                        ? 'Conexão Pendente'
                         : 'Pagamentos Online Desativados'}
                   </h4>
                   <p className="text-xs" style={{ color: theme.textMuted }}>
                     {stripeConnectInfo?.charges_enabled
-                      ? 'Seu salão está habilitado a receber pagamentos online (Pix, Cartão) diretamente na sua conta bancária.'
-                      : stripeConnectInfo?.stripe_account_id
-                        ? 'Conclua o envio dos seus documentos bancários na aba "Recebimentos & Pagamentos" para liberar cobranças online.'
-                        : 'Conecte sua conta Stripe na aba "Recebimentos & Pagamentos" para cobrar reservas antecipadas dos seus clientes.'}
+                      ? 'Seu salão está habilitado a receber pagamentos online (Pix e Cartão) diretamente na sua conta do Mercado Pago.'
+                      : 'Conecte sua conta do Mercado Pago na aba "Recebimentos & Pagamentos" para cobrar reservas antecipadas dos seus clientes.'}
                   </p>
                   {!stripeConnectInfo?.charges_enabled && (
                     <div className="pt-2">
                       <button
                         type="button"
                         onClick={() => setActiveTab('stripe')}
-                        className="px-4 py-2 text-xs font-bold rounded-xl text-white transition-all flex items-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] bg-[#635BFF] hover:bg-[#5349e4]"
+                        className="px-4 py-2 text-xs font-bold rounded-xl text-white transition-all flex items-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] bg-[#009EE3] hover:bg-[#0089c7]"
                       >
                         <Zap className="w-3.5 h-3.5" />
-                        {stripeConnectInfo?.stripe_account_id ? 'Completar Verificação Stripe' : 'Conectar Conta Stripe'}
+                        Conectar Mercado Pago
                       </button>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Seção de Gerenciamento da Assinatura (Stripe Billing) */}
+              {/* Seção de Gerenciamento da Assinatura */}
               <div className="p-5 rounded-2xl border space-y-4 mt-6" style={{ background: theme.cardBg, borderColor: theme.border }}>
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center font-bold">
-                        <StripeIcon className="w-3.5 h-3.5" />
+                      <div className="w-7 h-6 rounded-lg bg-[#009EE3]/15 flex items-center justify-center">
+                        <MercadoPagoMark className="w-5 h-3.5" />
                       </div>
                       <h4 className="text-sm font-bold" style={{ color: theme.textPrimary }}>
-                        Gerenciamento de Cobrança & Faturamento (Stripe)
+                        Gerenciamento da Assinatura (Mercado Pago)
                       </h4>
                     </div>
                     <p className="text-xs" style={{ color: theme.textSecondary }}>
-                      Acesse o portal oficial do Stripe para atualizar cartão de crédito, baixar notas fiscais ou gerenciar sua assinatura com total segurança.
+                      Veja seu plano atual, renove ou altere de plano a qualquer momento com Pix ou Cartão via Mercado Pago.
                     </p>
                   </div>
                   <div className="flex items-center gap-3 flex-wrap">
                     <button
                       type="button"
-                      onClick={handleOpenCustomerPortal}
-                      disabled={portalLoading}
-                      className="px-4 py-2.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-2 cursor-pointer hover:scale-[1.02] shadow-sm disabled:opacity-50"
+                      onClick={() => navigate('/admin/assinatura')}
+                      className="px-4 py-2.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-2 cursor-pointer hover:scale-[1.02] shadow-sm"
                       style={{ borderColor: theme.border, background: theme.inputBg, color: theme.textPrimary }}
                     >
-                      <StripeIcon className="w-3.5 h-3.5 text-[#635BFF]" />
-                      {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" style={{ color: theme.accent }} />}
-                      {portalLoading ? 'Abrindo...' : 'Acessar Portal do Stripe'}
+                      <Crown className="w-3.5 h-3.5 text-[#009EE3]" />
+                      Ver Minha Assinatura
                     </button>
                   </div>
                 </div>
@@ -3064,7 +3117,7 @@ export default function Configuracoes() {
                   <span>Encerramento da Conta</span>
                 </div>
                 <p className="text-xs text-[#888] leading-relaxed">
-                  Caso queira encerrar sua conta definitivamente, clique no botão abaixo. <strong>O sistema cancelará imediatamente sua assinatura no Stripe</strong> para que você <strong>nunca receba novas cobranças</strong> no seu cartão de crédito, e seu estabelecimento será desativado.
+                  Caso queira encerrar sua conta definitivamente, clique no botão abaixo. <strong>O sistema encerrará imediatamente sua assinatura</strong> para que você <strong>nunca receba novas cobranças</strong>, e seu estabelecimento será desativado.
                 </p>
                 <div className="pt-1">
                   <button
@@ -3831,7 +3884,7 @@ export default function Configuracoes() {
             onConfirmChoice={handleStripeActivatedChoice}
           />
 
-          {/* Modal Informativo: Stripe Necessário */}
+          {/* Modal Informativo: Mercado Pago Necessário */}
           <AnimatePresence>
             {stripeRequiredModalOpen && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -3849,15 +3902,15 @@ export default function Configuracoes() {
                   className="relative w-full max-w-md rounded-3xl p-6 border shadow-2xl z-10 space-y-4"
                   style={{ background: theme.cardBg, borderColor: theme.border }}
                 >
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto" style={{ background: '#635BFF20', color: '#635BFF' }}>
-                    <CreditCard className="w-6 h-6" />
+                  <div className="w-14 h-12 rounded-2xl flex items-center justify-center mx-auto" style={{ background: '#009EE320' }}>
+                    <MercadoPagoMark className="w-11 h-8" />
                   </div>
                   <div className="text-center space-y-1.5">
                     <h3 className="text-lg font-bold" style={{ color: theme.textPrimary }}>
-                      Conexão com o Stripe Necessária
+                      Conexão com Mercado Pago Necessária
                     </h3>
                     <p className="text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
-                      Para habilitar pagamentos online (Pix e cartão de crédito direto dos seus clientes pelo seu site), você precisa conectar sua conta Stripe Connect.
+                      Para habilitar pagamentos online (Pix e cartão de crédito direto dos seus clientes pelo seu site), conecte sua conta do Mercado Pago.
                     </p>
                   </div>
                   <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
@@ -3877,7 +3930,7 @@ export default function Configuracoes() {
                         handleConnectStripe();
                       }}
                       className="w-full sm:w-1/2 py-2.5 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer hover:opacity-95 disabled:opacity-75"
-                      style={{ background: '#635BFF' }}
+                      style={{ background: '#009EE3' }}
                     >
                       {isConnectingStripe ? (
                         <>
@@ -3885,7 +3938,7 @@ export default function Configuracoes() {
                           <span>Conectando...</span>
                         </>
                       ) : (
-                        <span>Conectar Conta</span>
+                        <span>Conectar Mercado Pago</span>
                       )}
                     </button>
                   </div>
@@ -3894,7 +3947,7 @@ export default function Configuracoes() {
             )}
           </AnimatePresence>
 
-          {/* Modal: Desconectar Stripe */}
+          {/* Modal: Desconectar Mercado Pago */}
           <AnimatePresence>
             {disconnectStripeModalOpen && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -3917,7 +3970,7 @@ export default function Configuracoes() {
                   </div>
                   <div className="text-center space-y-1.5">
                     <h3 className="text-lg font-bold" style={{ color: theme.textPrimary }}>
-                      Desconectar Conta Stripe?
+                      Desconectar Conta Mercado Pago?
                     </h3>
                     <p className="text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
                       Ao desconectar, o recebimento de pagamentos online (Pix e cartão) será desativado. Seus clientes só poderão agendar com a opção <strong>"Pagar no Local"</strong>.
@@ -3977,7 +4030,7 @@ export default function Configuracoes() {
                       Conta Deletada com Sucesso!
                     </h3>
                     <p className="text-sm text-zinc-400 leading-relaxed">
-                      Seu salão, dados e assinaturas do Stripe foram permanentemente cancelados e excluídos.
+                      Seu salão, dados e assinaturas foram permanentemente cancelados e excluídos.
                     </p>
                   </div>
                   <div className="pt-2 flex items-center justify-center gap-2 text-xs font-semibold text-zinc-400">

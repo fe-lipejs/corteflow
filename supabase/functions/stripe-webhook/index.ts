@@ -1,11 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
-import { getStripeContext, preserveCustomContractAndPricing } from '../_shared/stripe.ts';
+import {
+  getMercadoPagoContext,
+  getTenantMercadoPagoAccount,
+  mpRequest,
+  preserveCustomContractAndPricing,
+} from '../_shared/stripe.ts';
 import { dispatchBookingPushEvent } from '../_shared/webpush.ts';
-
-const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -17,258 +19,135 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
-  let stripeContext;
   try {
-    stripeContext = await getStripeContext(supabase);
-  } catch (ctxErr: any) {
-    console.error('[stripe-webhook] Erro ao obter contexto Stripe:', ctxErr.message);
-    return new Response('Stripe configuration missing', { status: 500 });
-  }
+    const reqUrl = new URL(req.url);
+    const tenantIdFromQuery = reqUrl.searchParams.get('tenant_id');
+    const topicFromQuery = reqUrl.searchParams.get('topic') || reqUrl.searchParams.get('type') || '';
+    const idFromQuery = reqUrl.searchParams.get('data.id') || reqUrl.searchParams.get('id') || '';
 
-  const { stripe, mode, webhookSecret } = stripeContext;
-
-  const signature = req.headers.get('stripe-signature');
-  if (!signature) {
-    return new Response('No signature', { status: 400 });
-  }
-
-  const body = await req.text();
-
-  if (!webhookSecret) {
-    console.error(`[stripe-webhook] STRIPE_WEBHOOK_SECRET não configurado para o ambiente ${mode.toUpperCase()}`);
-    return new Response('Webhook secret not configured', { status: 500 });
-  }
-
-  let event: Stripe.Event;
-  try {
-    event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret, undefined, cryptoProvider);
-  } catch (err: any) {
-    console.warn(`[stripe-webhook] Falha na assinatura com o secret principal (${mode}): ${err.message}`);
-    
-    // Tenta fallback com env padrão se diferente
-    const fallbackSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
-    if (fallbackSecret && fallbackSecret !== webhookSecret) {
-      try {
-        event = await stripe.webhooks.constructEventAsync(body, signature, fallbackSecret, undefined, cryptoProvider);
-        console.log('[stripe-webhook] Assinatura validada com sucesso usando secret de fallback.');
-      } catch (fallbackErr: any) {
-        console.error(`Webhook signature verification failed: ${fallbackErr.message}`);
-        return new Response(`Webhook Error: ${fallbackErr.message}`, { status: 400 });
-      }
-    } else {
-      console.error(`Webhook signature verification failed: ${err.message}`);
-      return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+    const rawText = await req.text().catch(() => '');
+    let payload: any = {};
+    try {
+      payload = rawText ? JSON.parse(rawText) : {};
+    } catch {
+      payload = {};
     }
-  }
 
-  // 1. Idempotency Check (V3 uses billing_events)
-  const { data: existingEvent } = await supabase
-    .from('billing_events')
-    .select('id')
-    .eq('stripe_event_id', event.id)
-    .maybeSingle();
+    const eventType = payload?.type || payload?.topic || topicFromQuery || '';
+    const resourceId = payload?.data?.id || idFromQuery || payload?.id || '';
 
-  if (existingEvent) {
-    console.log(`Event ${event.id} already processed. Skipping.`);
-    return new Response(JSON.stringify({ received: true, skipped: true }), { status: 200, headers: corsHeaders });
-  }
+    console.log(`[mp-webhook] Recebido type=${eventType} id=${resourceId} tenantQuery=${tenantIdFromQuery || '-'}`);
 
-  let eventTenantId: string | null = null;
-  let processingError: string | null = null;
+    // Aceita apenas notificações de pagamento por enquanto (retorna 200 para outras para evitar retries infinitos)
+    if (!resourceId || (eventType && !['payment', 'payment.created', 'payment.updated'].includes(eventType))) {
+      return new Response(JSON.stringify({ received: true, ignored: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-  try {
-    console.log(`[stripe-webhook] Processing webhook event: ${event.type} in mode ${mode.toUpperCase()}`);
+    const mpContext = await getMercadoPagoContext(supabase);
+    let mpPayment: any = null;
+    let collectorIdForBooking: string | null = null;
 
-    // Helper: Find tenant_id from subscription with metadata fallback
-    const getTenantFromSub = async (sub: any) => {
-      const subId = typeof sub === 'string' ? sub : sub?.id;
-      if (subId) {
-        const { data } = await supabase
-          .from('subscriptions')
-          .select('tenant_id')
-          .eq('stripe_subscription_id', subId)
+    // 1. Se veio tenant_id na query string, é pagamento de agendamento direto para o salão
+    if (tenantIdFromQuery) {
+      const tenantMp = await getTenantMercadoPagoAccount(supabase, tenantIdFromQuery, mpContext);
+      if (tenantMp) {
+        collectorIdForBooking = tenantMp.mpUserId;
+        mpPayment = await mpRequest<any>(`/v1/payments/${resourceId}`, tenantMp.accessToken, {
+          method: 'GET',
+        }).catch(() => null);
+      }
+    }
+
+    // 2. Se não veio tenant_id ou ainda não encontrou, consulta usando o token da Plataforma Raffros
+    if (!mpPayment && mpContext.accessToken) {
+      mpPayment = await mpRequest<any>(`/v1/payments/${resourceId}`, mpContext.accessToken, {
+        method: 'GET',
+      }).catch(() => null);
+    }
+
+    if (!mpPayment) {
+      console.warn(`[mp-webhook] Pagamento ${resourceId} não pôde ser consultado no Mercado Pago.`);
+      return new Response(JSON.stringify({ received: true, not_found: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const eventKey = `mp_${mpPayment.id}_${mpPayment.status}`;
+    const { data: existingEvent } = await supabase
+      .from('billing_events')
+      .select('id')
+      .eq('stripe_event_id', eventKey)
+      .maybeSingle();
+
+    if (existingEvent) {
+      return new Response(JSON.stringify({ received: true, skipped: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    let eventTenantId: string | null = tenantIdFromQuery || mpPayment.metadata?.tenant_id || null;
+
+    // ─── CASO A: Pagamento de Agendamento (Cliente Final → Salão) ───────────
+    const isBookingPayment =
+      Boolean(tenantIdFromQuery) ||
+      mpPayment.metadata?.type === 'booking' ||
+      Boolean(mpPayment.metadata?.booking_id);
+
+    if (isBookingPayment) {
+      const bookingId = mpPayment.metadata?.booking_id || mpPayment.external_reference;
+      if (bookingId && mpPayment.status === 'approved') {
+        const { data: booking } = await supabase
+          .from('bookings')
+          .select('id, tenant_id, payment_mode, amount_total, amount_paid')
+          .eq('id', bookingId)
           .maybeSingle();
-        if (data?.tenant_id) return data.tenant_id;
-      }
-      if (typeof sub === 'object' && sub?.metadata?.tenant_id) {
-        return sub.metadata.tenant_id;
-      }
-      return null;
-    };
 
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const tenantId = session.metadata?.tenant_id;
-        const planId = session.metadata?.plan_id;
-        eventTenantId = tenantId || null;
+        if (booking) {
+          eventTenantId = booking.tenant_id;
+          const paidBRL = Number(mpPayment.transaction_amount || booking.amount_paid || booking.amount_total || 0);
+          const dueBRL = Math.max(0, Number(booking.amount_total || 0) - paidBRL);
+          const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'paid';
+          const detectedMethod = mpPayment.payment_method_id === 'pix' ? 'pix' : 'card';
 
-        if (tenantId && session.subscription) {
-          let stripeSub: any = null;
-          try {
-            stripeSub = await stripe.subscriptions.retrieve(session.subscription as string);
-          } catch (retrieveErr: any) {
-            console.warn(`[stripe-webhook] Não foi possível recuperar subscription ${session.subscription}:`, retrieveErr.message);
-          }
-
-          const isTrialing = stripeSub && stripeSub.status === 'trialing' && stripeSub.trial_end;
-          const trialEndsAt = isTrialing ? new Date(stripeSub.trial_end! * 1000).toISOString() : null;
-          const initialStatus = isTrialing ? 'trialing' : 'active';
-          const initialAccountState = isTrialing ? 'trialing_with_card' : 'active';
-          const periodEnd = stripeSub?.current_period_end ? new Date(stripeSub.current_period_end * 1000).toISOString() : null;
-
-          // Capturar contrato existente antes do upsert para preservar permissões/limites personalizados
-          const { data: prevSubData } = await supabase
-            .from('subscriptions')
-            .select('id, subscription_contracts(*)')
-            .eq('tenant_id', tenantId)
-            .maybeSingle();
-          const prevContract = Array.isArray(prevSubData?.subscription_contracts)
-            ? prevSubData?.subscription_contracts[0]
-            : prevSubData?.subscription_contracts;
-
-          // Update subscriptions table
-          const { error: subErr } = await supabase.from('subscriptions').upsert({
-            tenant_id: tenantId,
-            stripe_subscription_id: session.subscription as string,
-            stripe_customer_id: session.customer as string,
-            plan_id: planId,
-            status: initialStatus,
-            trial_ends_at: trialEndsAt,
-            current_period_end: periodEnd,
-            canceled_at: null,
-            latest_invoice_status: 'paid',
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'tenant_id' });
-
-          if (subErr) console.error(subErr);
-
-          if (planId) {
-            const stripeUnitAmountCents =
-              stripeSub?.items?.data?.[0]?.price?.unit_amount ||
-              session.amount_total ||
-              null;
-            await preserveCustomContractAndPricing(supabase, tenantId, planId, prevContract, stripeUnitAmountCents);
-          }
-
-          // State Machine Update
-          await supabase.from('tenants').update({
-            status: initialStatus === 'active' ? 'active' : 'trial',
-            account_state: initialAccountState,
-            trial_started_at: isTrialing ? new Date().toISOString() : undefined,
-            trial_ends_at: trialEndsAt,
-            has_used_trial: true
-          }).eq('id', tenantId);
-        } else if (session.metadata?.booking_id) {
-          // Booking Payment Completed via Stripe Checkout (Cartão ou Pix)
-          const bookingId = session.metadata.booking_id;
-          const { data: booking } = await supabase.from('bookings').select('payment_mode, amount_total').eq('id', bookingId).maybeSingle();
-          if (booking) {
-            const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'paid';
-            const amountPaidBRL = (session.amount_total || 0) / 100;
-            const amountDueBRL = Math.max(0, Number(booking.amount_total || 0) - amountPaidBRL);
-            const { error: upErr } = await supabase.from('bookings').update({
+          const { error: upErr } = await supabase
+            .from('bookings')
+            .update({
               status: 'confirmed',
               payment_status: newPaymentStatus,
-              amount_paid: amountPaidBRL,
-              amount_due: amountDueBRL,
-            }).eq('id', bookingId);
+              payment_method: detectedMethod,
+              amount_paid: paidBRL,
+              amount_due: dueBRL,
+            })
+            .eq('id', booking.id);
 
-            if (upErr) {
-              await supabase.from('bookings').update({
+          if (upErr) {
+            await supabase
+              .from('bookings')
+              .update({
                 status: 'confirmed',
                 payment_status: booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid',
-                amount_paid: amountPaidBRL,
-                amount_due: amountDueBRL,
-              }).eq('id', bookingId);
-            }
-
-            if (session.payment_intent) {
-              const piId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent.id;
-              await supabase.from('payments').update({
-                status: 'succeeded',
-                stripe_payment_intent_id: piId,
-              }).eq('booking_id', bookingId);
-            }
-
-            await dispatchBookingPushEvent(supabase, bookingId, 'booking_new').catch(() => {});
+                payment_method: detectedMethod,
+                amount_paid: paidBRL,
+                amount_due: dueBRL,
+              })
+              .eq('id', booking.id);
           }
-        }
-        break;
-      }
 
-      case 'customer.subscription.trial_will_end': {
-        const sub = event.data.object as Stripe.Subscription;
-        eventTenantId = await getTenantFromSub(sub);
-        if (eventTenantId) {
-          console.log(`Trial ending soon for tenant: ${eventTenantId}`);
-        }
-        break;
-      }
-
-      case 'customer.subscription.updated': {
-        const sub = event.data.object as Stripe.Subscription;
-        eventTenantId = await getTenantFromSub(sub);
-        
-        if (eventTenantId) {
-          const trialEndsAt = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null;
-          await supabase.from('subscriptions').update({
-            status: sub.status,
-            trial_ends_at: trialEndsAt,
-            current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
-            cancel_at_period_end: sub.cancel_at_period_end,
-            updated_at: new Date().toISOString()
-          }).eq('stripe_subscription_id', sub.id);
-
-          // V3 State Machine Update
-          let newState = 'active';
-          if (sub.status === 'trialing') newState = 'trialing_with_card';
-          if (sub.status === 'past_due') newState = 'past_due';
-          if (sub.status === 'canceled') newState = 'canceled';
-          
-          await supabase.from('tenants').update({
-            account_state: newState,
-            trial_ends_at: trialEndsAt
-          }).eq('id', eventTenantId);
-        }
-        break;
-      }
-
-      case 'customer.subscription.deleted': {
-        const sub = event.data.object as Stripe.Subscription;
-        eventTenantId = await getTenantFromSub(sub);
-
-        if (eventTenantId) {
-          await supabase.from('subscriptions').update({
-            status: 'canceled',
-            canceled_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }).eq('stripe_subscription_id', sub.id);
-
-          await supabase.from('tenants').update({ account_state: 'canceled' }).eq('id', eventTenantId);
-        }
-        break;
-      }
-
-      case 'payment_intent.succeeded': {
-        const pi = event.data.object as Stripe.PaymentIntent;
-        const bookingId = pi.metadata?.booking_id;
-        const tenantId = pi.metadata?.tenant_id;
-        eventTenantId = tenantId || null;
-
-        if (bookingId) {
-          const methodTypes: string[] = Array.isArray(pi.payment_method_types) ? pi.payment_method_types : [];
-          const detectedMethod =
-            pi.metadata?.payment_method_type ||
-            (methodTypes.includes('pix') && !methodTypes.includes('card') ? 'pix' : methodTypes[0] || 'pix');
-
-          const amountReceivedBRL = (pi.amount_received || pi.amount || 0) / 100;
-
+          const mpPayIdStr = String(mpPayment.id);
           const { data: existingPayment } = await supabase
             .from('payments')
             .select('id')
-            .eq('stripe_payment_intent_id', pi.id)
+            .or(`mp_payment_id.eq.${mpPayIdStr},stripe_payment_intent_id.eq.${mpPayIdStr},booking_id.eq.${booking.id}`)
+            .limit(1)
             .maybeSingle();
+
+          const feeAmount =
+            mpPayment.fee_details?.find?.((f: any) => f.type === 'application_fee')?.amount ?? 0;
 
           if (existingPayment?.id) {
             await supabase
@@ -276,113 +155,108 @@ serve(async (req) => {
               .update({
                 status: 'succeeded',
                 payment_method: detectedMethod,
-                amount: amountReceivedBRL,
+                amount: paidBRL,
+                mp_payment_id: mpPayIdStr,
+                stripe_payment_intent_id: mpPayIdStr,
+                mp_collector_id: collectorIdForBooking,
+                platform_fee: Number(feeAmount || 0),
+                net_amount: Math.max(0, paidBRL - Number(feeAmount || 0)),
               })
               .eq('id', existingPayment.id);
-          } else if (tenantId) {
-            const feeBRL = (pi.application_fee_amount || 0) / 100;
+          } else {
             await supabase.from('payments').insert({
-              tenant_id: tenantId,
-              booking_id: bookingId,
-              stripe_payment_intent_id: pi.id,
-              amount: amountReceivedBRL,
-              platform_fee: feeBRL,
-              net_amount: Math.max(0, amountReceivedBRL - feeBRL),
+              tenant_id: booking.tenant_id,
+              booking_id: booking.id,
+              stripe_payment_intent_id: mpPayIdStr,
+              mp_payment_id: mpPayIdStr,
+              mp_collector_id: collectorIdForBooking,
+              amount: paidBRL,
+              platform_fee: Number(feeAmount || 0),
+              net_amount: Math.max(0, paidBRL - Number(feeAmount || 0)),
               payment_method: detectedMethod,
               status: 'succeeded',
             });
           }
 
-          const { data: booking } = await supabase.from('bookings').select('payment_mode, amount_total').eq('id', bookingId).maybeSingle();
-          if (booking) {
-            const newPaymentStatus = booking.payment_mode === 'deposit' ? 'partial_paid' : 'paid';
-            const amountDueBRL = Math.max(0, Number(booking.amount_total || 0) - amountReceivedBRL);
-            const { error: upErr } = await supabase.from('bookings').update({
-              status: 'confirmed',
-              payment_status: newPaymentStatus,
-              amount_paid: amountReceivedBRL,
-              amount_due: amountDueBRL,
-            }).eq('id', bookingId);
-
-            if (upErr) {
-              await supabase.from('bookings').update({
-                status: 'confirmed',
-                payment_status: booking.payment_mode === 'deposit' ? 'partial_paid' : 'full_paid',
-                amount_paid: amountReceivedBRL,
-                amount_due: amountDueBRL,
-              }).eq('id', bookingId);
-            }
-
-            await dispatchBookingPushEvent(supabase, bookingId, 'booking_new').catch(() => {});
-          }
+          await dispatchBookingPushEvent(supabase, booking.id, 'booking_new').catch(() => {});
         }
-        break;
+      }
+    } else {
+      // ─── CASO B: Assinatura Mensal do Salão (Salão → Plataforma Raffros) ──
+      let tenantId = mpPayment.metadata?.tenant_id || null;
+      let planId = mpPayment.metadata?.plan_id || null;
+
+      if (typeof mpPayment.external_reference === 'string' && mpPayment.external_reference.startsWith('sub::')) {
+        const parts = mpPayment.external_reference.split('::');
+        if (parts[1]) tenantId = parts[1];
+        if (parts[2]) planId = parts[2];
       }
 
-      case 'invoice.payment_failed': {
-        const invoice = event.data.object as Stripe.Invoice;
-        const stripeSubId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
-        
-        if (stripeSubId) {
-          eventTenantId = await getTenantFromSub(stripeSubId);
-          if (eventTenantId) {
-            await supabase.from('subscriptions').update({
-              status: 'past_due',
-              latest_invoice_status: 'failed',
-              updated_at: new Date().toISOString()
-            }).eq('stripe_subscription_id', stripeSubId);
-
-            await supabase.from('tenants').update({ 
-              account_state: 'past_due',
-              past_due_since: new Date().toISOString()
-            }).eq('id', eventTenantId);
-          }
-        }
-        break;
+      if (tenantId) {
+        eventTenantId = tenantId;
       }
 
-      case 'invoice.payment_succeeded': {
-        const invoice = event.data.object as Stripe.Invoice;
-        const stripeSubId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
-        
-        if (stripeSubId) {
-          eventTenantId = await getTenantFromSub(stripeSubId);
-          if (eventTenantId) {
-            await supabase.from('subscriptions').update({
-              status: 'active',
-              latest_invoice_status: 'paid',
-              updated_at: new Date().toISOString()
-            }).eq('stripe_subscription_id', stripeSubId);
+      if (tenantId && planId && mpPayment.status === 'approved') {
+        const { data: prevSubData } = await supabase
+          .from('subscriptions')
+          .select('id, subscription_contracts(*)')
+          .eq('tenant_id', tenantId)
+          .maybeSingle();
 
-            await supabase.from('tenants').update({ 
-              account_state: 'active',
-              past_due_since: null
-            }).eq('id', eventTenantId);
-          }
-        }
-        break;
+        const prevContract = Array.isArray(prevSubData?.subscription_contracts)
+          ? prevSubData?.subscription_contracts[0]
+          : prevSubData?.subscription_contracts;
+
+        const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        const mpSubMarker = `mp_pay_${mpPayment.id}`;
+        const mpCustomerMarker = mpPayment.payer?.id ? `mp_cust_${mpPayment.payer.id}` : null;
+
+        await supabase.from('subscriptions').upsert({
+          tenant_id: tenantId,
+          plan_id: planId,
+          stripe_subscription_id: mpSubMarker,
+          stripe_customer_id: mpCustomerMarker,
+          status: 'active',
+          trial_ends_at: null,
+          current_period_end: periodEnd,
+          grace_period_ends_at: null,
+          suspension_reason: null,
+          canceled_at: null,
+          latest_invoice_status: 'paid',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'tenant_id' });
+
+        const paidCents = mpPayment.transaction_amount
+          ? Math.round(Number(mpPayment.transaction_amount) * 100)
+          : null;
+        await preserveCustomContractAndPricing(supabase, tenantId, planId, prevContract, paidCents);
+
+        await supabase.from('tenants').update({
+          status: 'active',
+          account_state: 'active',
+          trial_ends_at: null,
+          past_due_since: null,
+          has_used_trial: true,
+        }).eq('id', tenantId);
       }
     }
 
+    await supabase.from('billing_events').insert({
+      stripe_event_id: eventKey,
+      type: `mp.${eventType || 'payment'}.${mpPayment.status}`,
+      tenant_id: eventTenantId,
+      payload: mpPayment,
+    });
+
+    return new Response(JSON.stringify({ received: true }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (err: any) {
-    processingError = err.message;
-    console.error(`Error processing webhook event ${event.type}: ${err.message}`);
+    console.error('[mp-webhook] Erro ao processar notificação:', err?.message);
+    return new Response(JSON.stringify({ error: err?.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
-
-  if (processingError) {
-    return new Response(`Error: ${processingError}`, { status: 500 });
-  }
-
-  // Audit Log (Idempotency Save V3)
-  await supabase.from('billing_events').insert({
-    stripe_event_id: event.id,
-    type: event.type,
-    tenant_id: eventTenantId,
-    payload: event as any
-  });
-
-  return new Response(JSON.stringify({ received: true }), {
-    status: 200,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
 });

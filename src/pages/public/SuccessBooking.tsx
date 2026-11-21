@@ -17,7 +17,11 @@ export default function SuccessBooking() {
 
   const orderNumber = searchParams.get('order') || searchParams.get('order_number');
   const sessionId = searchParams.get('session_id');
-  const paymentIntentId = searchParams.get('payment_intent');
+  const paymentIntentId =
+    searchParams.get('payment_intent') ||
+    searchParams.get('payment_id') ||
+    searchParams.get('collection_id');
+  const bookingIdParam = searchParams.get('booking_id');
 
   const [booking, setBooking] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
@@ -55,12 +59,23 @@ export default function SuccessBooking() {
             bookingData = bData;
           }
 
+          if (!bookingData && bookingIdParam) {
+            const { data: bData } = await supabase
+              .from('bookings')
+              .select('*, services(name, price), professionals(name), customers(name, phone, email)')
+              .eq('tenant_id', tenantRaw.id)
+              .eq('id', bookingIdParam)
+              .maybeSingle();
+            bookingData = bData;
+          }
+
           if (!bookingData && (paymentIntentId || sessionId)) {
             const targetPi = paymentIntentId || sessionId;
             const { data: pData } = await supabase
               .from('payments')
               .select('booking_id')
-              .eq('stripe_payment_intent_id', targetPi)
+              .or(`mp_payment_id.eq.${targetPi},stripe_payment_intent_id.eq.${targetPi}`)
+              .limit(1)
               .maybeSingle();
 
             if (pData?.booking_id) {
@@ -74,7 +89,7 @@ export default function SuccessBooking() {
           }
 
           if (bookingData) {
-            if (bookingData.status === 'pending' && (paymentIntentId || sessionId)) {
+            if (bookingData.status === 'pending' && (paymentIntentId || sessionId || bookingIdParam)) {
               try {
                 await supabase.functions.invoke('create-payment-intent', {
                   body: {
@@ -121,7 +136,7 @@ export default function SuccessBooking() {
       }
     }
     loadData();
-  }, [slug, orderNumber, sessionId, paymentIntentId]);
+  }, [slug, orderNumber, sessionId, paymentIntentId, bookingIdParam]);
 
   useEffect(() => {
     if (settings?.fantasy_name) {

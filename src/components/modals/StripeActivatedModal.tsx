@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Sparkles, CreditCard, Store, ShieldCheck, X } from 'lucide-react';
+import { CheckCircle2, Sparkles, CreditCard, Store, ShieldCheck, X, Loader2 } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface StripeActivatedModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export default function StripeActivatedModal({
   onClose,
   onConfirmChoice,
 }: StripeActivatedModalProps) {
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -31,51 +33,94 @@ export default function StripeActivatedModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-          className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-3xl w-full max-w-lg overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.9)] text-white relative"
+          className="border rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative"
+          style={{
+            background: theme.cardBg,
+            borderColor: theme.border,
+            color: theme.textPrimary,
+          }}
         >
           {/* Close button */}
           <button
+            type="button"
             onClick={onClose}
             disabled={loading}
-            className="absolute top-4 right-4 p-2 text-[#666] hover:text-white rounded-xl transition-colors z-10"
+            aria-label="Fechar"
+            className="absolute top-4 right-4 p-2 rounded-xl transition-opacity hover:opacity-75 cursor-pointer z-10"
+            style={{ color: theme.textMuted }}
           >
             <X className="w-5 h-5" />
           </button>
 
           {/* Header with celebration banner */}
           <div className="p-6 sm:p-8 pb-4 text-center space-y-3 relative overflow-hidden">
-            <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400 shadow-lg shadow-emerald-500/10">
+            <div
+              className="w-16 h-16 rounded-3xl border flex items-center justify-center mx-auto shadow-lg"
+              style={{
+                background: `${theme.accent}18`,
+                borderColor: `${theme.accent}35`,
+                color: theme.accent,
+              }}
+            >
               <Sparkles className="w-8 h-8 animate-pulse" />
             </div>
 
             <div className="space-y-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 inline-block">
+              <span
+                className="text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full border inline-block"
+                style={{
+                  background: `${theme.accent}12`,
+                  borderColor: `${theme.accent}25`,
+                  color: theme.accent,
+                }}
+              >
                 Conta Conectada
               </span>
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <h2
+                className="text-xl sm:text-2xl font-black tracking-tight"
+                style={{ color: theme.textPrimary }}
+              >
                 Pagamentos Online Ativados! 🎉
               </h2>
             </div>
 
-            <p className="text-xs sm:text-sm text-[#aaa] max-w-md mx-auto leading-relaxed">
-              Sua conta Stripe foi configurada com sucesso e os pagamentos online (entrada ou 100% antecipado) já estão liberados para seus clientes.
+            <p
+              className="text-xs sm:text-sm max-w-md mx-auto leading-relaxed"
+              style={{ color: theme.textSecondary }}
+            >
+              Sua conta do <strong style={{ color: theme.textPrimary }}>Mercado Pago</strong> foi conectada com sucesso e os pagamentos online (Pix e cartão — entrada ou 100% antecipado) já estão liberados para seus clientes.
             </p>
           </div>
 
           {/* Highlight card & Choice */}
           <div className="px-6 sm:px-8 py-4 space-y-4">
-            <div className="p-4 rounded-2xl bg-[#151515] border border-[#262626] space-y-2">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#ddd]">
-                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div
+              className="p-4 rounded-2xl border space-y-2"
+              style={{
+                background: theme.inputBg,
+                borderColor: theme.border,
+              }}
+            >
+              <div
+                className="flex items-center gap-2 text-xs font-bold"
+                style={{ color: theme.textPrimary }}
+              >
+                <ShieldCheck
+                  className="w-4 h-4 shrink-0"
+                  style={{ color: theme.accent }}
+                />
                 <span>O pagamento no local também continua habilitado.</span>
               </div>
-              <p className="text-xs text-[#888] leading-relaxed">
+              <p
+                className="text-xs leading-relaxed"
+                style={{ color: theme.textSecondary }}
+              >
                 Como você deseja operar seus agendamentos a partir de agora?
               </p>
             </div>
@@ -87,22 +132,45 @@ export default function StripeActivatedModal({
                 type="button"
                 onClick={() => handleChoice(false)}
                 disabled={loading}
-                className="w-full p-4 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-left transition-all group flex items-start justify-between gap-3 shadow-md"
+                className="w-full p-4 rounded-2xl border text-left transition-all group flex items-start justify-between gap-3 shadow-md cursor-pointer hover:opacity-95 disabled:opacity-60"
+                style={{
+                  borderColor: `${theme.accent}60`,
+                  background: `${theme.accent}12`,
+                }}
               >
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 mt-0.5">
-                    <Store className="w-4 h-4" />
+                  <div
+                    className="p-2 rounded-xl mt-0.5 shrink-0"
+                    style={{
+                      background: `${theme.accent}20`,
+                      color: theme.accent,
+                    }}
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Store className="w-4 h-4" />
+                    )}
                   </div>
                   <div>
-                    <h4 className="text-xs sm:text-sm font-bold text-emerald-400 group-hover:text-emerald-300">
+                    <h4
+                      className="text-xs sm:text-sm font-bold"
+                      style={{ color: theme.accent }}
+                    >
                       Manter pagamento no local e online
                     </h4>
-                    <p className="text-[11px] text-emerald-200/70 mt-0.5">
+                    <p
+                      className="text-[11px] mt-0.5"
+                      style={{ color: theme.textSecondary }}
+                    >
                       O cliente pode escolher entre pagar no salão ou antecipar online.
                     </p>
                   </div>
                 </div>
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-1" />
+                <CheckCircle2
+                  className="w-5 h-5 shrink-0 mt-1"
+                  style={{ color: theme.accent }}
+                />
               </button>
 
               {/* Option 2: Disable local (Online only) */}
@@ -110,17 +178,33 @@ export default function StripeActivatedModal({
                 type="button"
                 onClick={() => handleChoice(true)}
                 disabled={loading}
-                className="w-full p-4 rounded-2xl border border-[#333] hover:border-[#555] bg-[#141414] hover:bg-[#1a1a1a] text-left transition-all group flex items-start justify-between gap-3"
+                className="w-full p-4 rounded-2xl border text-left transition-all group flex items-start justify-between gap-3 cursor-pointer hover:opacity-90 disabled:opacity-60"
+                style={{
+                  borderColor: theme.border,
+                  background: theme.inputBg,
+                }}
               >
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-[#222] text-[#aaa] group-hover:text-white mt-0.5">
+                  <div
+                    className="p-2 rounded-xl mt-0.5 shrink-0"
+                    style={{
+                      background: `${theme.accent}10`,
+                      color: theme.textSecondary,
+                    }}
+                  >
                     <CreditCard className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-white">
+                    <h4
+                      className="text-xs sm:text-sm font-bold"
+                      style={{ color: theme.textPrimary }}
+                    >
                       Desativar pagamento no local
                     </h4>
-                    <p className="text-[11px] text-[#888] mt-0.5">
+                    <p
+                      className="text-[11px] mt-0.5"
+                      style={{ color: theme.textSecondary }}
+                    >
                       Exigir sempre pagamento online (sinal ou total) para confirmar a reserva.
                     </p>
                   </div>
@@ -130,7 +214,14 @@ export default function StripeActivatedModal({
           </div>
 
           {/* Footer note */}
-          <div className="p-4 sm:px-8 bg-[#0a0a0a] border-t border-[#1f1f1f] text-center text-[11px] text-[#666]">
+          <div
+            className="p-4 sm:px-8 border-t text-center text-[11px]"
+            style={{
+              background: theme.inputBg,
+              borderColor: theme.border,
+              color: theme.textMuted,
+            }}
+          >
             Você pode alterar essas opções a qualquer momento nesta aba.
           </div>
         </motion.div>
@@ -138,4 +229,3 @@ export default function StripeActivatedModal({
     </AnimatePresence>
   );
 }
-

@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { getStripeContext } from "../_shared/stripe.ts";
+import { getMercadoPagoContext, mpRequest } from "../_shared/stripe.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -71,39 +71,44 @@ serve(async (req: Request) => {
 
     const { data: sub } = await supabase
       .from('subscriptions')
-      .select('stripe_subscription_id, status')
+      .select('id, stripe_subscription_id, status')
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (!sub || !sub.stripe_subscription_id) {
+    if (!sub || sub.status === 'canceled') {
       return new Response(JSON.stringify({ error: "Nenhuma assinatura ativa encontrada para este salão." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Obter Stripe dinamicamente com base nas configurações da plataforma (Test ou Live)
-    const { stripe, mode } = await getStripeContext(supabase);
-
-    // Cancelar assinatura no Stripe de forma resiliente
-    try {
-      await stripe.subscriptions.cancel(sub.stripe_subscription_id);
-    } catch (stripeErr: any) {
-      console.warn(`[cancel-subscription] Assinatura ${sub.stripe_subscription_id} não encontrada no Stripe ${mode.toUpperCase()} ou já cancelada:`, stripeErr.message);
+    // Se houver uma assinatura recorrente (preapproval) do Mercado Pago, cancela na API
+    if (sub.stripe_subscription_id && sub.stripe_subscription_id.startsWith('mp_pre_')) {
+      try {
+        const mpContext = await getMercadoPagoContext(supabase);
+        if (mpContext.accessToken) {
+          const preapprovalId = sub.stripe_subscription_id.replace('mp_pre_', '');
+          await mpRequest(`/preapproval/${preapprovalId}`, mpContext.accessToken, {
+            method: 'PUT',
+            body: { status: 'cancelled' },
+          });
+        }
+      } catch (mpErr: any) {
+        console.warn('[cancel-subscription] Aviso ao cancelar preapproval no Mercado Pago:', mpErr?.message);
+      }
     }
 
-    // Atualizar no Supabase
     await supabase
       .from('subscriptions')
       .update({
         status: 'canceled',
         canceled_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .eq('tenant_id', tenantId);
 
-    // Atualizar estado da conta no tenant
     await supabase
       .from('tenants')
       .update({
@@ -111,12 +116,15 @@ serve(async (req: Request) => {
       })
       .eq('id', tenantId);
 
-    return new Response(JSON.stringify({ success: true, message: "Assinatura cancelada com sucesso no Stripe e no sistema." }), {
+    return new Response(JSON.stringify({
+      success: true,
+      message: "Assinatura cancelada com sucesso. Seu acesso continua disponível até o final do período atual."
+    }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {
-    console.error("Cancel subscription error:", error);
+    console.error("Cancel subscription (MP) error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

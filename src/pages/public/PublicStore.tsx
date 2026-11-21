@@ -1603,10 +1603,11 @@ export default function PublicStore() {
                 customerName,
                 customerEmail,
                 customerPhone,
+                returnUrl: returnSuccessUrl,
               },
             });
 
-            if (piErr || piData?.error || !piData?.clientSecret) {
+            if (piErr || piData?.error || (!piData?.clientSecret && !piData?.checkoutUrl)) {
               await supabase.functions
                 .invoke("create-payment-intent", {
                   body: { action: "abort_booking", bookingId: createdBooking.id },
@@ -1615,19 +1616,24 @@ export default function PublicStore() {
               throw new Error(
                 piData?.error ||
                   piErr?.message ||
-                  "Não foi possível iniciar o pagamento online no Stripe. Tente novamente ou escolha 'No local'."
+                  "Não foi possível iniciar o pagamento online no Mercado Pago. Tente novamente ou escolha 'No local'."
               );
             }
 
             return {
-              clientSecret: piData.clientSecret,
-              paymentIntentId: piData.paymentIntentId,
+              clientSecret: piData.clientSecret || piData.preferenceId || "",
+              paymentIntentId: piData.paymentIntentId || piData.preferenceId || "",
               bookingId: createdBooking.id,
               orderNumber: createdBooking.order_number,
               pixQrData: piData.pixQrData || null,
+              checkoutUrl: piData.checkoutUrl || null,
             };
           },
         });
+
+        if (paymentResult.status === "redirecting") {
+          return;
+        }
 
         if (slug) {
           queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(slug) });

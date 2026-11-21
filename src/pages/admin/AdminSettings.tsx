@@ -17,21 +17,21 @@ import {
   Copy,
   ExternalLink,
   Check,
-  Webhook
+  Webhook,
+  Link2
 } from 'lucide-react';
 
 interface PlatformSettingsData {
   id: string;
-  stripe_mode: 'test' | 'live';
-  stripe_test_public_key: string;
-  stripe_test_secret_key: string;
-  stripe_test_webhook_secret: string;
-  stripe_live_public_key: string;
-  stripe_live_secret_key: string;
-  stripe_live_webhook_secret: string;
-  stripe_application_fee_percent: number;
-  stripe_test_account_id: string;
-  stripe_live_account_id: string;
+  mp_mode: 'test' | 'live';
+  mp_test_public_key: string;
+  mp_test_access_token: string;
+  mp_live_public_key: string;
+  mp_live_access_token: string;
+  mp_client_id: string;
+  mp_client_secret: string;
+  mp_webhook_secret: string;
+  mp_application_fee_percent: number;
   stripe_notes: string;
   whatsapp_enabled: boolean;
   email_enabled: boolean;
@@ -40,25 +40,32 @@ interface PlatformSettingsData {
 }
 
 const WEBHOOK_URL = 'https://paefckmkawocjxzuoclq.supabase.co/functions/v1/stripe-webhook';
+const OAUTH_CALLBACK_URL = 'https://paefckmkawocjxzuoclq.supabase.co/functions/v1/connect-onboarding-link';
+
+function extractMpClientIdFromToken(token?: string): string {
+  if (!token) return '';
+  const match = token.trim().match(/^(?:APP_USR|TEST)-(\d+)-/);
+  return match ? match[1] : '';
+}
 
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState<'finance' | 'notifications'>('finance');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
+  const [copiedRedirect, setCopiedRedirect] = useState(false);
 
   const [settings, setSettings] = useState<PlatformSettingsData>({
     id: 'singleton',
-    stripe_mode: 'test',
-    stripe_test_public_key: '',
-    stripe_test_secret_key: '',
-    stripe_test_webhook_secret: '',
-    stripe_live_public_key: '',
-    stripe_live_secret_key: '',
-    stripe_live_webhook_secret: '',
-    stripe_application_fee_percent: 2,
-    stripe_test_account_id: '',
-    stripe_live_account_id: '',
+    mp_mode: 'live',
+    mp_test_public_key: '',
+    mp_test_access_token: '',
+    mp_live_public_key: '',
+    mp_live_access_token: '',
+    mp_client_id: '',
+    mp_client_secret: '',
+    mp_webhook_secret: '',
+    mp_application_fee_percent: 0,
     stripe_notes: '',
     whatsapp_enabled: true,
     email_enabled: true,
@@ -67,10 +74,11 @@ export default function AdminSettings() {
 
   const [showTestSecret, setShowTestSecret] = useState(false);
   const [showLiveSecret, setShowLiveSecret] = useState(false);
-  const [showTestWebhook, setShowTestWebhook] = useState(false);
-  const [showLiveWebhook, setShowLiveWebhook] = useState(false);
+  const [showClientSecret, setShowClientSecret] = useState(false);
+  const [showWebhookSecret, setShowWebhookSecret] = useState(false);
 
-  // Fetch settings from database
+  const oauthRedirectUrl = OAUTH_CALLBACK_URL;
+
   const fetchSettings = async () => {
     try {
       setLoading(true);
@@ -83,18 +91,24 @@ export default function AdminSettings() {
       if (error) throw error;
 
       if (data) {
+        const feeVal =
+          data.mp_application_fee_percent != null && !isNaN(Number(data.mp_application_fee_percent))
+            ? Number(data.mp_application_fee_percent)
+            : data.stripe_application_fee_percent != null && !isNaN(Number(data.stripe_application_fee_percent))
+              ? Number(data.stripe_application_fee_percent)
+              : 0;
+
         setSettings({
           id: data.id || 'singleton',
-          stripe_mode: data.stripe_mode || 'test',
-          stripe_test_public_key: data.stripe_test_public_key || '',
-          stripe_test_secret_key: data.stripe_test_secret_key || '',
-          stripe_test_webhook_secret: data.stripe_test_webhook_secret || '',
-          stripe_live_public_key: data.stripe_live_public_key || '',
-          stripe_live_secret_key: data.stripe_live_secret_key || '',
-          stripe_live_webhook_secret: data.stripe_live_webhook_secret || '',
-          stripe_application_fee_percent: data.stripe_application_fee_percent != null && !isNaN(Number(data.stripe_application_fee_percent)) ? Number(data.stripe_application_fee_percent) : 0,
-          stripe_test_account_id: data.stripe_test_account_id || '',
-          stripe_live_account_id: data.stripe_live_account_id || '',
+          mp_mode: (data.mp_mode || data.stripe_mode || 'live') as 'test' | 'live',
+          mp_test_public_key: data.mp_test_public_key || '',
+          mp_test_access_token: data.mp_test_access_token || '',
+          mp_live_public_key: data.mp_live_public_key || '',
+          mp_live_access_token: data.mp_live_access_token || '',
+          mp_client_id: data.mp_client_id || '',
+          mp_client_secret: data.mp_client_secret || '',
+          mp_webhook_secret: data.mp_webhook_secret || '',
+          mp_application_fee_percent: feeVal,
           stripe_notes: data.stripe_notes || '',
           whatsapp_enabled: data.whatsapp_enabled ?? true,
           email_enabled: data.email_enabled ?? true,
@@ -114,22 +128,44 @@ export default function AdminSettings() {
     fetchSettings();
   }, []);
 
-  // Save settings
   const handleSave = async () => {
     try {
       setSaving(true);
+      const feeNum =
+        settings.mp_application_fee_percent != null && !isNaN(Number(settings.mp_application_fee_percent))
+          ? Number(settings.mp_application_fee_percent)
+          : 0;
+
+      const liveTokenTrimmed = settings.mp_live_access_token.trim();
+      const livePubTrimmed = settings.mp_live_public_key.trim();
+      let testTokenTrimmed = settings.mp_test_access_token.trim();
+      let testPubTrimmed = settings.mp_test_public_key.trim();
+
+      if (!testTokenTrimmed && liveTokenTrimmed.startsWith('TEST-')) {
+        testTokenTrimmed = liveTokenTrimmed;
+      }
+      if (!testPubTrimmed && livePubTrimmed.startsWith('TEST-')) {
+        testPubTrimmed = livePubTrimmed;
+      }
+
+      const autoClientId =
+        settings.mp_client_id.trim() ||
+        extractMpClientIdFromToken(liveTokenTrimmed) ||
+        extractMpClientIdFromToken(testTokenTrimmed);
+
       const payload = {
         id: 'singleton',
-        stripe_mode: settings.stripe_mode,
-        stripe_test_public_key: settings.stripe_test_public_key.trim(),
-        stripe_test_secret_key: settings.stripe_test_secret_key.trim(),
-        stripe_test_webhook_secret: settings.stripe_test_webhook_secret.trim(),
-        stripe_live_public_key: settings.stripe_live_public_key.trim(),
-        stripe_live_secret_key: settings.stripe_live_secret_key.trim(),
-        stripe_live_webhook_secret: settings.stripe_live_webhook_secret.trim(),
-        stripe_application_fee_percent: settings.stripe_application_fee_percent != null && !isNaN(Number(settings.stripe_application_fee_percent)) ? Number(settings.stripe_application_fee_percent) : 0,
-        stripe_test_account_id: settings.stripe_test_account_id.trim(),
-        stripe_live_account_id: settings.stripe_live_account_id.trim(),
+        mp_mode: settings.mp_mode,
+        stripe_mode: settings.mp_mode,
+        mp_test_public_key: testPubTrimmed,
+        mp_test_access_token: testTokenTrimmed,
+        mp_live_public_key: livePubTrimmed,
+        mp_live_access_token: liveTokenTrimmed,
+        mp_client_id: autoClientId,
+        mp_client_secret: settings.mp_client_secret.trim(),
+        mp_webhook_secret: settings.mp_webhook_secret.trim(),
+        mp_application_fee_percent: feeNum,
+        stripe_application_fee_percent: feeNum,
         stripe_notes: settings.stripe_notes.trim(),
         whatsapp_enabled: settings.whatsapp_enabled,
         email_enabled: settings.email_enabled,
@@ -139,14 +175,14 @@ export default function AdminSettings() {
 
       const { error } = await supabase
         .from('platform_settings')
-        .upsert(payload, { onConflict: 'id' });
+        .upsert(payload as any, { onConflict: 'id' });
 
       if (error) throw error;
 
       toast.success(
-        settings.stripe_mode === 'live'
-          ? 'Configurações salvas! Modo PRODUÇÃO (LIVE) ativo na plataforma.'
-          : 'Configurações salvas! Modo TESTE (SANDBOX) ativo na plataforma.'
+        settings.mp_mode === 'live'
+          ? 'Configurações Mercado Pago salvas! Modo PRODUÇÃO ativo.'
+          : 'Configurações Mercado Pago salvas! Modo TESTE ativo.'
       );
       fetchSettings();
     } catch (err: any) {
@@ -157,24 +193,35 @@ export default function AdminSettings() {
     }
   };
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, type: 'webhook' | 'redirect') => {
     navigator.clipboard.writeText(text);
-    setCopiedWebhook(true);
+    if (type === 'webhook') {
+      setCopiedWebhook(true);
+      setTimeout(() => setCopiedWebhook(false), 2500);
+    } else {
+      setCopiedRedirect(true);
+      setTimeout(() => setCopiedRedirect(false), 2500);
+    }
     toast.success('URL copiada para a área de transferência!');
-    setTimeout(() => setCopiedWebhook(false), 2500);
   };
 
-  // Readiness validation
-  const hasLivePublic = settings.stripe_live_public_key.startsWith('pk_live_');
-  const hasLiveSecret = settings.stripe_live_secret_key.startsWith('sk_live_') || settings.stripe_live_secret_key.startsWith('rk_live_');
-  const hasLiveWebhook = settings.stripe_live_webhook_secret.startsWith('whsec_');
-  const isLiveReady = hasLivePublic && hasLiveSecret;
+  const hasLiveToken = settings.mp_live_access_token.trim().length > 10;
+  const hasLivePublic = settings.mp_live_public_key.trim().length > 10;
+  const hasTestToken = settings.mp_test_access_token.trim().length > 10;
+  const activeModeTokenReady = settings.mp_mode === 'test' ? hasTestToken : hasLiveToken;
+  const resolvedClientId =
+    settings.mp_client_id.trim() ||
+    extractMpClientIdFromToken(settings.mp_live_access_token) ||
+    extractMpClientIdFromToken(settings.mp_test_access_token);
+  const hasOAuth =
+    resolvedClientId.length > 0 &&
+    (settings.mp_client_secret.trim().length > 0 || activeModeTokenReady);
 
   return (
     <div className="space-y-6 pb-20 font-sans text-zinc-100">
       <AdminPageHeader
         title="Configurações Globais"
-        subtitle="Gerenciamento da conta mestre do Stripe, alternância entre Modo Teste e Modo Live, e notificações da plataforma."
+        subtitle="Gerenciamento do Mercado Pago (assinaturas dos salões + repasse direto aos estabelecimentos) e notificações."
         icon={<Settings className="w-5 h-5 text-emerald-400" />}
         actions={
           <button
@@ -200,7 +247,7 @@ export default function AdminSettings() {
             }`}
           >
             <CreditCard className="w-4 h-4" />
-            Stripe & Meios de Pagamento
+            Mercado Pago &amp; Meios de Pagamento
           </button>
           <button
             onClick={() => setActiveTab('notifications')}
@@ -211,7 +258,7 @@ export default function AdminSettings() {
             }`}
           >
             <Bell className="w-4 h-4" />
-            Notificações & Canais
+            Notificações &amp; Canais
           </button>
         </div>
 
@@ -228,11 +275,11 @@ export default function AdminSettings() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <Zap className="w-5 h-5 text-emerald-400" />
-                      <h4 className="text-base font-bold text-white">Ambiente do Stripe em Operação</h4>
+                      <Zap className="w-5 h-5 text-[#00BCFF]" />
+                      <h4 className="text-base font-bold text-white">Ambiente do Mercado Pago</h4>
                     </div>
                     <p className="text-xs text-zinc-400 mt-1">
-                      Alterne entre o ambiente de testes (cartões fictícios) e o ambiente oficial de cobranças reais.
+                      Alterne entre as credenciais de teste (Sandbox) e as credenciais oficiais de produção.
                     </p>
                   </div>
 
@@ -240,9 +287,9 @@ export default function AdminSettings() {
                   <div className="flex items-center p-1 bg-[#090C0A] border border-white/10 rounded-xl">
                     <button
                       type="button"
-                      onClick={() => setSettings({ ...settings, stripe_mode: 'test' })}
+                      onClick={() => setSettings({ ...settings, mp_mode: 'test' })}
                       className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                        settings.stripe_mode === 'test'
+                        settings.mp_mode === 'test'
                           ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
                           : 'text-zinc-400 hover:text-white'
                       }`}
@@ -252,9 +299,9 @@ export default function AdminSettings() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSettings({ ...settings, stripe_mode: 'live' })}
+                      onClick={() => setSettings({ ...settings, mp_mode: 'live' })}
                       className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                        settings.stripe_mode === 'live'
+                        settings.mp_mode === 'live'
                           ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20 font-black'
                           : 'text-zinc-400 hover:text-white'
                       }`}
@@ -266,15 +313,32 @@ export default function AdminSettings() {
                 </div>
 
                 {/* Status Notice Banner */}
-                {settings.stripe_mode === 'test' ? (
-                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2.5">
-                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-bold text-amber-300">Modo de Homologação / Testes ATIVO</div>
-                      <p className="text-[11px] text-amber-200/80 mt-0.5">
-                        Toda a plataforma operará com chaves de teste (<code>pk_test_...</code> / <code>sk_test_...</code>).
-                        Na tela de <b>Assinaturas</b> do salão, será exibido aos clientes um aviso informando que o sistema está em modo de testes para que saibam que nenhuma cobrança real será feita.
-                      </p>
+                {settings.mp_mode === 'test' ? (
+                  <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-2">
+                    <div className="flex items-start gap-2.5">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-amber-300">Modo de Testes (Sandbox) ATIVO</div>
+                        <p className="text-[11px] text-amber-200/80 mt-0.5">
+                          A plataforma utilizará o <code>Access Token de Teste</code> (<code>TEST-...</code>).
+                          Um aviso discreto será exibido na tela de assinaturas dos salões indicando ambiente de testes.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-amber-500/20 grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${hasTestToken || hasLiveToken ? 'bg-emerald-400' : 'bg-rose-500'}`} />
+                        <span>Access Token (Teste): {hasTestToken || hasLiveToken ? 'Configurado' : 'Pendente (TEST-...)'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${settings.mp_test_public_key.trim() || hasLivePublic ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                        <span>Public Key (Teste): {settings.mp_test_public_key.trim() || hasLivePublic ? 'Configurada' : 'Opcional (TEST-...)'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${hasOAuth ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                        <span>Conexão Salões: {hasOAuth ? 'OAuth Automático Pronta' : 'Pendente Client ID'}</span>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -282,27 +346,25 @@ export default function AdminSettings() {
                     <div className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                       <div>
-                        <div className="font-bold text-emerald-300">Modo de Produção Oficial (LIVE) SELECIONADO</div>
+                        <div className="font-bold text-emerald-300">Modo Produção Oficial (LIVE) SELECIONADO</div>
                         <p className="text-[11px] text-emerald-200/80 mt-0.5">
-                          Todas as transações e assinaturas serão cobradas <b>em cartões reais</b> via Stripe Billing e Stripe Connect.
-                          O aviso de modo teste na tela de assinaturas dos salões ficará oculto automaticamente.
+                          As assinaturas dos salões (Pix e Cartão) serão recebidas na sua conta Mercado Pago abaixo, e cada agendamento pago online cairá direto no Mercado Pago do respectivo salão.
                         </p>
                       </div>
                     </div>
 
-                    {/* Readiness checklist */}
                     <div className="pt-2 border-t border-emerald-500/20 grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
                       <div className="flex items-center gap-1.5">
-                        <span className={`w-2 h-2 rounded-full ${hasLivePublic ? 'bg-emerald-400' : 'bg-rose-500'}`} />
-                        <span>Public Key: {hasLivePublic ? 'Configurada' : 'Pendente (pk_live_...)'}</span>
+                        <span className={`w-2 h-2 rounded-full ${hasLiveToken ? 'bg-emerald-400' : 'bg-rose-500'}`} />
+                        <span>Access Token (Live): {hasLiveToken ? 'Configurado' : 'Pendente (APP_USR-...)'}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className={`w-2 h-2 rounded-full ${hasLiveSecret ? 'bg-emerald-400' : 'bg-rose-500'}`} />
-                        <span>Secret Key: {hasLiveSecret ? 'Configurada' : 'Pendente (sk_live_...)'}</span>
+                        <span className={`w-2 h-2 rounded-full ${hasLivePublic ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                        <span>Public Key (Live): {hasLivePublic ? 'Configurada' : 'Opcional (APP_USR-...)'}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className={`w-2 h-2 rounded-full ${hasLiveWebhook ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                        <span>Webhook: {hasLiveWebhook ? 'Configurado' : 'Opcional (whsec_...)'}</span>
+                        <span className={`w-2 h-2 rounded-full ${hasOAuth ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                        <span>Conexão Salões: {hasOAuth ? 'OAuth Automático Ativo' : 'Pendente Client Secret'}</span>
                       </div>
                     </div>
                   </div>
@@ -311,24 +373,24 @@ export default function AdminSettings() {
 
               {/* Webhook Configuration Guide Card */}
               <div className="p-4 rounded-2xl bg-[#13131A] border border-white/10 space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2">
-                    <Webhook className="w-4 h-4 text-emerald-400" />
+                    <Webhook className="w-4 h-4 text-[#00BCFF]" />
                     <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-                      Webhook Oficial do Stripe
+                      Webhook Oficial do Mercado Pago
                     </h4>
                   </div>
                   <a
-                    href="https://dashboard.stripe.com/webhooks"
+                    href="https://www.mercadopago.com.br/developers/panel/app"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold"
+                    className="text-[11px] text-[#00BCFF] hover:underline flex items-center gap-1 font-semibold"
                   >
-                    Abrir Stripe Webhooks <ExternalLink className="w-3 h-3" />
+                    Abrir Mercado Pago Developers <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
                 <p className="text-[11px] text-zinc-400">
-                  Cadastre esta URL no seu painel Stripe (tanto em Modo Teste quanto em Modo Live) para sincronização automática de faturas, assinaturas e status de pagamentos:
+                  No painel da sua aplicação no Mercado Pago Developers, vá em <strong>Webhooks → Configurar notificações → Modo Produção</strong> e cole esta URL marcando o evento <strong>Pagamentos (payment)</strong>:
                 </p>
                 <div className="flex items-center gap-2 bg-[#090C0A] border border-white/10 rounded-xl p-2.5">
                   <code className="text-xs text-emerald-400 font-mono flex-1 break-all select-all">
@@ -336,143 +398,47 @@ export default function AdminSettings() {
                   </code>
                   <button
                     type="button"
-                    onClick={() => copyToClipboard(WEBHOOK_URL)}
+                    onClick={() => copyToClipboard(WEBHOOK_URL, 'webhook')}
                     className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
                   >
                     {copiedWebhook ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     {copiedWebhook ? 'Copiado!' : 'Copiar URL'}
                   </button>
                 </div>
-                <div className="text-[11px] text-zinc-500">
-                  Eventos recomendados para selecionar: <code className="text-zinc-300">checkout.session.completed</code>, <code className="text-zinc-300">customer.subscription.*</code>, <code className="text-zinc-300">invoice.payment_*</code>, <code className="text-zinc-300">payment_intent.succeeded</code>.
-                </div>
               </div>
 
-              {/* Stripe Test Keys Section */}
+              {/* Mercado Pago Live Keys Section */}
               <div className="space-y-4 pt-2">
-                <div className="border-b border-white/10 pb-2">
-                  <h4 className="text-sm font-bold text-amber-400 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    1. Chaves de Acesso — Modo Teste (Sandbox)
-                  </h4>
-                  <p className="text-[11px] text-zinc-400 mt-0.5">
-                    Utilizadas quando o modo de testes estiver selecionado acima.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                      Stripe Public Key (Test)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="pk_test_..."
-                      value={settings.stripe_test_public_key}
-                      onChange={e => setSettings({ ...settings, stripe_test_public_key: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                      Stripe Secret Key (Test)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showTestSecret ? 'text' : 'password'}
-                        placeholder="sk_test_..."
-                        value={settings.stripe_test_secret_key}
-                        onChange={e => setSettings({ ...settings, stripe_test_secret_key: e.target.value })}
-                        className="w-full px-3.5 py-2.5 pr-10 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowTestSecret(!showTestSecret)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer"
-                      >
-                        {showTestSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                      Stripe Webhook Secret (Test)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showTestWebhook ? 'text' : 'password'}
-                        placeholder="whsec_..."
-                        value={settings.stripe_test_webhook_secret}
-                        onChange={e => setSettings({ ...settings, stripe_test_webhook_secret: e.target.value })}
-                        className="w-full px-3.5 py-2.5 pr-10 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowTestWebhook(!showTestWebhook)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer"
-                      >
-                        {showTestWebhook ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                      Stripe Connect Master Account ID / Client ID (Test)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="ca_... ou acct_..."
-                      value={settings.stripe_test_account_id}
-                      onChange={e => setSettings({ ...settings, stripe_test_account_id: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Stripe Live Keys Section */}
-              <div className="space-y-4 pt-4">
                 <div className="border-b border-white/10 pb-2">
                   <h4 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4" />
-                    2. Chaves de Acesso — Modo Produção (Live)
+                    1. Credenciais da Plataforma Raffros — Produção (Live)
                   </h4>
                   <p className="text-[11px] text-zinc-400 mt-0.5">
-                    Utilizadas quando o modo de produção oficial estiver selecionado acima.
+                    Sua conta Mercado Pago que receberá as assinaturas mensais dos salões (Solo, Studio, Business).
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-zinc-300 mb-1.5 flex items-center justify-between">
-                      <span>Stripe Public Key (Live)</span>
-                      {hasLivePublic && <span className="text-[10px] text-emerald-400 font-bold">Válida</span>}
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="pk_live_..."
-                      value={settings.stripe_live_public_key}
-                      onChange={e => setSettings({ ...settings, stripe_live_public_key: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5 flex items-center justify-between">
-                      <span>Stripe Secret Key (Live)</span>
-                      {hasLiveSecret && <span className="text-[10px] text-emerald-400 font-bold">Válida</span>}
+                      <span>Access Token (Produção) *</span>
+                      {hasLiveToken && <span className="text-[10px] text-emerald-400 font-bold">Válido</span>}
                     </label>
                     <div className="relative">
                       <input
                         type={showLiveSecret ? 'text' : 'password'}
-                        placeholder="sk_live_..."
-                        value={settings.stripe_live_secret_key}
-                        onChange={e => setSettings({ ...settings, stripe_live_secret_key: e.target.value })}
+                        placeholder="APP_USR-..."
+                        value={settings.mp_live_access_token}
+                        onChange={e => {
+                          const val = e.target.value;
+                          const extractedId = extractMpClientIdFromToken(val);
+                          setSettings(prev => ({
+                            ...prev,
+                            mp_live_access_token: val,
+                            mp_client_id: prev.mp_client_id.trim() ? prev.mp_client_id : extractedId,
+                          }));
+                        }}
                         className="w-full px-3.5 py-2.5 pr-10 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
                       />
                       <button
@@ -484,42 +450,163 @@ export default function AdminSettings() {
                       </button>
                     </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-zinc-300 mb-1.5 flex items-center justify-between">
-                      <span>Stripe Webhook Secret (Live)</span>
-                      {hasLiveWebhook && <span className="text-[10px] text-emerald-400 font-bold">Válido</span>}
+                      <span>Public Key (Produção)</span>
+                      {hasLivePublic && <span className="text-[10px] text-emerald-400 font-bold">Válida</span>}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="APP_USR-..."
+                      value={settings.mp_live_public_key}
+                      onChange={e => setSettings({ ...settings, mp_live_public_key: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Mercado Pago OAuth App (1-clique para os salões conectarem) */}
+              <div className="space-y-4 pt-2">
+                <div className="border-b border-white/10 pb-2">
+                  <h4 className="text-sm font-bold text-[#00BCFF] flex items-center gap-2">
+                    <Link2 className="w-4 h-4" />
+                    2. Conexão dos Salões (Redirecionamento Automático OAuth + Taxa da Plataforma)
+                  </h4>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    Preencha o <b>Client ID</b> (auto-preenchido ao colar seu Access Token), o <b>Client Secret</b> e cadastre a <b>Redirect URI</b> abaixo no seu App no Mercado Pago Developers. Assim as donas de salão clicam em "Conectar Mercado Pago", entram/autorizam no próprio Mercado Pago e voltam com tudo ativo automaticamente, sem precisar copiar nenhuma chave.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#13131A] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="text-[11px] text-zinc-400">
+                    <span className="font-semibold text-zinc-200 block">Redirect URI para cadastrar no Mercado Pago Developers:</span>
+                    <code className="text-[#00BCFF] font-mono break-all select-all">{oauthRedirectUrl}</code>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(oauthRedirectUrl, 'redirect')}
+                    className="px-3 py-1.5 bg-[#009EE3]/15 hover:bg-[#009EE3]/25 text-[#00BCFF] text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shrink-0 self-start sm:self-center"
+                  >
+                    {copiedRedirect ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedRedirect ? 'Copiado!' : 'Copiar Redirect URI'}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Client ID (App ID)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 1234567890123456"
+                      value={settings.mp_client_id}
+                      onChange={e => setSettings({ ...settings, mp_client_id: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-[#00BCFF] outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Client Secret (Opcional — usa Access Token se vazio)
                     </label>
                     <div className="relative">
                       <input
-                        type={showLiveWebhook ? 'text' : 'password'}
-                        placeholder="whsec_..."
-                        value={settings.stripe_live_webhook_secret}
-                        onChange={e => setSettings({ ...settings, stripe_live_webhook_secret: e.target.value })}
-                        className="w-full px-3.5 py-2.5 pr-10 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                        type={showClientSecret ? 'text' : 'password'}
+                        placeholder="Chave secreta do App"
+                        value={settings.mp_client_secret}
+                        onChange={e => setSettings({ ...settings, mp_client_secret: e.target.value })}
+                        className="w-full px-3.5 py-2.5 pr-10 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-[#00BCFF] outline-none text-xs font-mono transition-all placeholder-zinc-600"
                       />
                       <button
                         type="button"
-                        onClick={() => setShowLiveWebhook(!showLiveWebhook)}
+                        onClick={() => setShowClientSecret(!showClientSecret)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer"
                       >
-                        {showLiveWebhook ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {showClientSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                      Stripe Connect Master Account ID / Client ID (Live)
+                      Assinatura Webhook (Opcional)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showWebhookSecret ? 'text' : 'password'}
+                        placeholder="Chave secreta do Webhook"
+                        value={settings.mp_webhook_secret}
+                        onChange={e => setSettings({ ...settings, mp_webhook_secret: e.target.value })}
+                        className="w-full px-3.5 py-2.5 pr-10 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-[#00BCFF] outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowWebhookSecret(!showWebhookSecret)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer"
+                      >
+                        {showWebhookSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mercado Pago Test Keys Section */}
+              <div className="space-y-4 pt-2">
+                <div className="border-b border-white/10 pb-2">
+                  <h4 className="text-sm font-bold text-amber-400 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    3. Credenciais de Teste (Sandbox) — Opcional
+                  </h4>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    Utilizadas apenas quando o Modo Teste estiver selecionado no topo.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Access Token (Teste)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showTestSecret ? 'text' : 'password'}
+                        placeholder="TEST-..."
+                        value={settings.mp_test_access_token}
+                        onChange={e => {
+                          const val = e.target.value;
+                          const extractedId = extractMpClientIdFromToken(val);
+                          setSettings(prev => ({
+                            ...prev,
+                            mp_test_access_token: val,
+                            mp_client_id: prev.mp_client_id.trim() ? prev.mp_client_id : extractedId,
+                          }));
+                        }}
+                        className="w-full px-3.5 py-2.5 pr-10 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowTestSecret(!showTestSecret)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer"
+                      >
+                        {showTestSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                      Public Key (Teste)
                     </label>
                     <input
                       type="text"
-                      placeholder="ca_... ou acct_..."
-                      value={settings.stripe_live_account_id}
-                      onChange={e => setSettings({ ...settings, stripe_live_account_id: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
+                      placeholder="TEST-..."
+                      value={settings.mp_test_public_key}
+                      onChange={e => setSettings({ ...settings, mp_test_public_key: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs font-mono transition-all placeholder-zinc-600"
                     />
                   </div>
                 </div>
@@ -530,7 +617,7 @@ export default function AdminSettings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                      Taxa de Aplicação Padrão da Plataforma (%)
+                      Taxa da Plataforma por Agendamento (%) — OAuth
                     </label>
                     <div className="relative">
                       <input
@@ -538,30 +625,30 @@ export default function AdminSettings() {
                         step="0.1"
                         min="0"
                         max="100"
-                        value={settings.stripe_application_fee_percent}
-                        onChange={e => setSettings({ ...settings, stripe_application_fee_percent: Number(e.target.value) })}
+                        value={settings.mp_application_fee_percent}
+                        onChange={e => setSettings({ ...settings, mp_application_fee_percent: Number(e.target.value) })}
                         className="w-full px-3.5 py-2.5 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-xs transition-all font-mono"
                       />
                       <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs font-bold">%</span>
                     </div>
                     <p className="text-[11px] text-zinc-500 mt-1">
-                      Taxa cobrada pela Raffros sobre cada agendamento/venda dos salões via Stripe Connect.
+                      Aplicada apenas em contas conectadas via OAuth Marketplace (deixe 0 para não descontar taxa nos repasses).
                     </p>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                      Anotações Internas das Contas Stripe (Livre)
+                      Anotações Internas Financeiras (Livre)
                     </label>
                     <textarea
                       rows={2}
-                      placeholder="Ex: Conta jurídica Banco Inter, agência 0001, CNPJ xx.xxx.xxx/0001-xx, responsável financeiro..."
+                      placeholder="Ex: Conta Mercado Pago CNPJ da Raffros, responsável financeiro..."
                       value={settings.stripe_notes}
                       onChange={e => setSettings({ ...settings, stripe_notes: e.target.value })}
                       className="w-full px-3.5 py-2 border border-white/10 bg-[#13131A] rounded-xl text-white focus:border-emerald-500 outline-none text-xs placeholder-zinc-600"
                     />
                     <p className="text-[11px] text-zinc-500 mt-1">
-                      Lembrete: os saques para a conta corrente são gerenciados diretamente pelo painel do Stripe.
+                      Os saques e transferências Pix são gerenciados diretamente pelo app/site do Mercado Pago.
                     </p>
                   </div>
                 </div>
@@ -573,8 +660,8 @@ export default function AdminSettings() {
                   <Info className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>
                     Ambiente ativo atualmente:{' '}
-                    <b className={settings.stripe_mode === 'live' ? 'text-emerald-400' : 'text-amber-400'}>
-                      {settings.stripe_mode === 'live' ? 'PRODUÇÃO OFICIAL (LIVE)' : 'TESTES (SANDBOX)'}
+                    <b className={settings.mp_mode === 'live' ? 'text-emerald-400' : 'text-amber-400'}>
+                      {settings.mp_mode === 'live' ? 'PRODUÇÃO OFICIAL (LIVE)' : 'TESTES (SANDBOX)'}
                     </b>
                   </span>
                 </div>
@@ -586,7 +673,7 @@ export default function AdminSettings() {
                   className="w-full sm:w-auto px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                  {saving ? 'Salvando...' : 'Salvar Configurações do Stripe'}
+                  {saving ? 'Salvando...' : 'Salvar Configurações do Mercado Pago'}
                 </button>
               </div>
             </div>
@@ -595,7 +682,7 @@ export default function AdminSettings() {
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <Bell className="w-5 h-5 text-emerald-400" />
-                  Notificações & Canais de Envio Globais
+                  Notificações &amp; Canais de Envio Globais
                 </h3>
                 <p className="text-zinc-400 text-xs mt-0.5">
                   Controle as políticas de notificação transacionais por WhatsApp e E-mail.

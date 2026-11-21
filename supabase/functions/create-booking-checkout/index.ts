@@ -1,7 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
-import { getStripeContext } from '../_shared/stripe.ts';
+import {
+  getMercadoPagoContext,
+  getTenantMercadoPagoAccount,
+  mpRequest,
+} from '../_shared/stripe.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -9,16 +13,15 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
+      supabaseUrl,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { stripe, mode, applicationFeePercent } = await getStripeContext(supabase);
-
+    const mpContext = await getMercadoPagoContext(supabase);
     const { bookingId, returnUrl } = await req.json();
 
-    // Buscar booking
     const { data: booking } = await supabase
       .from('bookings')
       .select('*, tenants(name), services(name, price)')
@@ -27,132 +30,132 @@ serve(async (req) => {
 
     if (!booking) throw new Error("Agendamento não encontrado");
 
-    // Buscar tenant Stripe Connect Account
-    const { data: stripeAccount } = await supabase
-      .from('stripe_connect_accounts')
-      .select('stripe_account_id, charges_enabled')
-      .eq('tenant_id', booking.tenant_id)
-      .single();
-
-    if (!stripeAccount?.stripe_account_id) {
-      throw new Error("O salão ainda não conectou sua conta de pagamentos online. Por favor, escolha a opção de pagamento no local.");
-    }
-
-    // Validar se a conta Connect existe e está ativa no ambiente do Stripe atual (Test ou Live)
-    try {
-      const acc = await stripe.accounts.retrieve(stripeAccount.stripe_account_id);
-      if (!acc.charges_enabled) {
-        throw new Error("A conta de recebimento do salão ainda está em processo de verificação no Stripe. Por favor, pague no local.");
-      }
-      if ((acc.capabilities as any)?.pix_payments === 'unrequested') {
-        try {
-          await stripe.accounts.updateCapability(stripeAccount.stripe_account_id, 'pix_payments' as any, { requested: true });
-        } catch (_) {}
-      }
-    } catch (accErr: any) {
-      console.warn(`[create-booking-checkout] Conta Connect '${stripeAccount.stripe_account_id}' inválida no ambiente ${mode.toUpperCase()}:`, accErr?.message);
-      throw new Error("Os pagamentos online deste salão ainda não foram ativados no ambiente de cobrança atual. Por favor, escolha 'Pagar no local'.");
+    const tenantMp = await getTenantMercadoPagoAccount(supabase, booking.tenant_id, mpContext);
+    if (!tenantMp || !tenantMp.chargesEnabled) {
+      throw new Error("O salão ainda não conectou sua conta Mercado Pago. Por favor, escolha a opção de pagamento no local.");
     }
 
     const amountTotal = Number(booking.amount_total);
-    const amountToCharge = booking.payment_mode === 'deposit' ? Number(booking.amount_paid) : amountTotal;
-    
-    if (amountToCharge <= 0) {
-      throw new Error("Valor a cobrar inválido");
-    }
+    const amountToCharge = Number(
+      (booking.payment_mode === 'deposit' ? Number(booking.amount_paid) : amountTotal).toFixed(2)
+    );
 
-    const price = Math.round(amountToCharge * 100); // centavos
-    if (price < 50) {
+    if (amountToCharge < 0.5) {
       throw new Error("O valor mínimo para pagamento online é de R$ 0,50.");
     }
 
-    const platformFeePercentage = (typeof applicationFeePercent === 'number' && !isNaN(applicationFeePercent) ? applicationFeePercent : 0) / 100;
-    const applicationFee = Math.round(price * platformFeePercentage);
+    const applicationFeeBRL =
+      tenantMp.isOAuth && mpContext.applicationFeePercent > 0
+        ? Number(((amountToCharge * mpContext.applicationFeePercent) / 100).toFixed(2))
+        : 0;
 
     const serviceName = (booking.services as any)?.name || 'Serviço';
     const salonName = (booking.tenants as any)?.name || 'Salão';
     const description = booking.payment_mode === 'deposit'
-      ? `Sinal/Entrada (${booking.amount_paid} de R$ ${amountTotal}) - ${serviceName}`
+      ? `Sinal/Entrada (R$ ${booking.amount_paid} de R$ ${amountTotal}) - ${serviceName}`
       : `Agendamento de ${serviceName} no ${salonName}`;
+
     let safeReturnUrl = returnUrl || '';
     if (!safeReturnUrl.startsWith('http://') && !safeReturnUrl.startsWith('https://')) {
-      const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://navalha.app';
+      const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://raffros.com';
       const cleanOrigin = origin.replace(/\/$/, '');
       safeReturnUrl = `${cleanOrigin}${safeReturnUrl.startsWith('/') ? '' : '/'}${safeReturnUrl}`;
     }
+    const baseReturn = safeReturnUrl.split('?')[0];
+    const successUrl = `${baseReturn}?order=${booking.order_number}&booking_id=${booking.id}`;
+    const cancelUrl = `${baseReturn}?cancel=true`;
 
-    const buildSessionParams = (paymentMethods: string[]) => ({
-      payment_method_types: paymentMethods as any,
-      line_items: [
+    const prefBody: Record<string, any> = {
+      items: [
         {
-          price_data: {
-            currency: 'brl',
-            product_data: {
-              name: `${serviceName} - ${salonName}`,
-              description: description,
-            },
-            unit_amount: price,
-          },
+          id: booking.service_id || booking.id,
+          title: `${serviceName} - ${salonName}`,
+          description,
           quantity: 1,
+          currency_id: 'BRL',
+          unit_price: amountToCharge,
         },
       ],
-      mode: 'payment' as const,
-      payment_intent_data: {
-        on_behalf_of: stripeAccount.stripe_account_id,
-        ...(applicationFee > 0 ? { application_fee_amount: applicationFee } : {}),
-        transfer_data: {
-          destination: stripeAccount.stripe_account_id,
-        },
-        metadata: {
-          booking_id: booking.id,
-          tenant_id: booking.tenant_id,
-          order_number: booking.order_number,
-        }
+      payment_methods: {
+        excluded_payment_types: [{ id: 'ticket' }],
       },
-      success_url: `${safeReturnUrl}?order=${booking.order_number}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${safeReturnUrl}?cancel=true`,
+      external_reference: booking.id,
+      notification_url: `${supabaseUrl}/functions/v1/stripe-webhook?tenant_id=${booking.tenant_id}`,
+      back_urls: {
+        success: successUrl,
+        pending: successUrl,
+        failure: cancelUrl,
+      },
+      statement_descriptor: salonName.slice(0, 22),
       metadata: {
+        type: 'booking',
         booking_id: booking.id,
         tenant_id: booking.tenant_id,
         order_number: booking.order_number,
       },
-    });
+    };
 
-    // Tentar criar com Pix + Cartão; se o Stripe retornar que Pix não está ativo na conta, tenta apenas com Cartão
-    let session: any;
+    if (successUrl.startsWith('https://') && !successUrl.includes('localhost') && !successUrl.includes('127.0.0.1')) {
+      prefBody.auto_return = 'approved';
+    }
+
+    if (applicationFeeBRL > 0) {
+      prefBody.marketplace_fee = applicationFeeBRL;
+    }
+
+    let pref: any;
+    let usedFallbackToken = false;
     try {
-      session = await stripe.checkout.sessions.create(buildSessionParams(['card', 'pix']));
-    } catch (pixErr: any) {
-      if (pixErr?.message?.toLowerCase().includes('pix')) {
-        console.warn("[create-booking-checkout] Pix não habilitado na conta Stripe, usando apenas Cartão:", pixErr.message);
-        session = await stripe.checkout.sessions.create(buildSessionParams(['card']));
+      pref = await mpRequest<any>('/checkout/preferences', tenantMp.accessToken, {
+        method: 'POST',
+        body: prefBody,
+      });
+    } catch (prefErr: any) {
+      const errMsg = String(prefErr?.message || '');
+      const fallbackTok = mpContext.testAccessToken || mpContext.accessToken;
+      if (
+        fallbackTok &&
+        fallbackTok !== tenantMp.accessToken &&
+        (errMsg.includes('user_allowed_only_in_test') ||
+          errMsg.includes('unauthorized') ||
+          errMsg.includes('401'))
+      ) {
+        delete prefBody.marketplace_fee;
+        usedFallbackToken = true;
+        pref = await mpRequest<any>('/checkout/preferences', fallbackTok, {
+          method: 'POST',
+          body: prefBody,
+        });
       } else {
-        throw pixErr;
+        throw prefErr;
       }
     }
 
-    // Salvar registro de pagamento pendente no banco
-    const piId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
-    if (piId) {
-       await supabase.from('payments').insert({
-         tenant_id: booking.tenant_id,
-         booking_id: booking.id,
-         stripe_payment_intent_id: piId,
-         amount: amountToCharge,
-         platform_fee: applicationFee / 100,
-         net_amount: amountToCharge - (applicationFee / 100),
-         status: 'pending'
-       });
-    }
+    await supabase.from('payments').insert({
+      tenant_id: booking.tenant_id,
+      booking_id: booking.id,
+      stripe_payment_intent_id: pref.id,
+      mp_preference_id: pref.id,
+      mp_collector_id: tenantMp.mpUserId,
+      amount: amountToCharge,
+      platform_fee: applicationFeeBRL,
+      net_amount: Math.max(0, amountToCharge - applicationFeeBRL),
+      status: 'pending',
+    });
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    const url =
+      (mpContext.mode === 'test' || tenantMp.isTestUser || usedFallbackToken) && pref.sandbox_init_point
+        ? pref.sandbox_init_point
+        : pref.init_point;
+
+    return new Response(JSON.stringify({ url, preferenceId: pref.id }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (error: any) {
-    console.error("create-booking-checkout error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  } catch (err: any) {
+    console.error("Create Booking Checkout (MP) Error:", err);
+    return new Response(JSON.stringify({ error: err.message }), {
       status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });

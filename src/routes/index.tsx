@@ -55,6 +55,7 @@ import ChangePassword from '../pages/app/ChangePassword';
 import MinhaComissao from '../pages/app/MinhaComissao';
 import MinhaArea from '../pages/app/MinhaArea';
 import FeatureGate from '../components/FeatureGate';
+import CookieConsentBanner from '../components/cookies/CookieConsentBanner';
 
 // ─── Shared Auth/Onboarding Routes ────────────────────────────────────────────
 function AuthRoutes() {
@@ -211,6 +212,7 @@ export default function AppRoutes() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <CookieConsentBanner />
     </BrowserRouter>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cookie, ShieldCheck, SlidersHorizontal, ArrowRight, Check } from 'lucide-react';
+import { Cookie, SlidersHorizontal } from 'lucide-react';
 import CookiePreferencesModal, { type CookiePreferences } from './CookiePreferencesModal';
 
 const STORAGE_KEY = 'navalha_cookie_preferences_v1';
@@ -24,12 +25,17 @@ export function saveCookiePreferences(prefs: CookiePreferences) {
 }
 
 export default function CookieConsentBanner() {
-  const [hasChecked, setHasChecked] = useState(false);
+  const location = useLocation();
+  const isLandingPage = location.pathname === '/';
   const [showBanner, setShowBanner] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [preferences, setPreferences] = useState<CookiePreferences | null>(null);
 
   useEffect(() => {
+    if (!isLandingPage) {
+      setShowBanner(false);
+      return;
+    }
     const stored = getStoredCookiePreferences();
     if (stored) {
       setPreferences(stored);
@@ -39,8 +45,7 @@ export default function CookieConsentBanner() {
       const timer = setTimeout(() => setShowBanner(true), 1200);
       return () => clearTimeout(timer);
     }
-    setHasChecked(true);
-  }, []);
+  }, [isLandingPage]);
 
   const handleAcceptAll = () => {
     const all: CookiePreferences = {
@@ -71,6 +76,10 @@ export default function CookieConsentBanner() {
     setPreferences(prefs);
     setShowBanner(false);
   };
+
+  if (!isLandingPage) {
+    return null;
+  }
 
   return (
     <>

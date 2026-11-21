@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useQueryClient } from '@tanstack/react-query';
+import { MercadoPagoHorizontalLogo } from '../../components/icons/MercadoPagoLogo';
 import toast from 'react-hot-toast';
 import {
   Crown,
@@ -13,6 +14,7 @@ import {
   AlertTriangle,
   Loader2,
   ShieldCheck,
+  Lock,
   Sparkles,
   Star,
 } from 'lucide-react';
@@ -132,11 +134,11 @@ export default function Assinatura() {
           .select('*')
           .eq('tenant_id', tenant.id),
 
-        supabase.rpc('get_platform_public_config'),
+        supabase.rpc('get_public_stripe_config'),
       ]);
 
-      if (publicConfigData && typeof publicConfigData === 'object' && 'stripe_mode' in publicConfigData) {
-        setStripeMode((publicConfigData as any).stripe_mode);
+      if (publicConfigData && typeof publicConfigData === 'object' && 'mode' in publicConfigData) {
+        setStripeMode((publicConfigData as any).mode);
       }
 
       let activeSub =
@@ -290,29 +292,43 @@ export default function Assinatura() {
   }, [fetchData]);
 
   /*
-   * Confirmação do checkout.
+   * Confirmação do checkout (Mercado Pago).
    */
   useEffect(() => {
-    const params = new URLSearchParams(
-      window.location.search
-    );
+    const params = new URLSearchParams(window.location.search);
 
-    const sessionId =
-      params.get('session_id');
+    const sessionId = params.get('session_id');
+    const paymentId = params.get('payment_id') || params.get('collection_id');
+    const preferenceId = params.get('preference_id');
+    const planId = params.get('plan_id');
+    const mpStatus = params.get('mp_status') || params.get('status') || params.get('collection_status');
 
-    if (!sessionId || !tenant) return;
+    if (!tenant) return;
+
+    if (mpStatus === 'failure' || mpStatus === 'rejected') {
+      toast.error('O pagamento não foi concluído. Você pode escolher um plano e tentar novamente.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
+    if (!sessionId && !paymentId && mpStatus !== 'approved') return;
 
     const verifySession = async () => {
       try {
         setSyncing(true);
 
-        const { error: verifyErr } = await supabase.functions.invoke('verify-checkout-session', {
-          body: { sessionId },
+        const { data: verifyData, error: verifyErr } = await supabase.functions.invoke('verify-checkout-session', {
+          body: {
+            sessionId: sessionId || paymentId || undefined,
+            paymentId: paymentId || undefined,
+            preferenceId: preferenceId || undefined,
+            planId: planId || undefined,
+          },
         });
 
-        if (!verifyErr) {
+        if (!verifyErr && verifyData?.success) {
           setSyncSuccessMessage(
-            'Pagamento confirmado. Seu plano já está ativo.'
+            'Pagamento confirmado no Mercado Pago! Seu plano já está ativo.'
           );
 
           window.history.replaceState(
@@ -322,34 +338,29 @@ export default function Assinatura() {
           );
 
           queryClient.invalidateQueries({
-            queryKey: [
-              'active_subscription_contract',
-            ],
+            queryKey: ['active_subscription_contract'],
           });
-
           queryClient.invalidateQueries({
             queryKey: ['permission_engine'],
           });
-
           queryClient.invalidateQueries({
             queryKey: ['plan_features'],
           });
-
           queryClient.invalidateQueries({
             queryKey: ['tenant-account-state'],
           });
-
           queryClient.invalidateQueries({
             queryKey: ['tenants'],
           });
 
           await fetchData();
+        } else if (verifyData?.pending) {
+          toast(verifyData.message || 'Pagamento em processamento no Mercado Pago.', { icon: '⏳' });
+        } else if (verifyData?.error) {
+          toast.error(verifyData.error);
         }
       } catch (e) {
-        console.error(
-          'Erro ao verificar checkout:',
-          e
-        );
+        console.error('Erro ao verificar checkout Mercado Pago:', e);
       } finally {
         setSyncing(false);
       }
@@ -509,7 +520,16 @@ export default function Assinatura() {
       });
 
       if (invokeErr || data?.error) {
-        throw new Error(invokeErr?.message || data?.error || 'Erro ao criar sessão de checkout');
+        let detailedErr = data?.error;
+        if (!detailedErr && (invokeErr as any)?.context) {
+          try {
+            const errJson = await (invokeErr as any).context.json();
+            detailedErr = errJson?.error;
+          } catch {
+            // fallback para mensagem padrão
+          }
+        }
+        throw new Error(detailedErr || invokeErr?.message || 'Erro ao criar sessão de checkout');
       }
 
       const url = data?.url;
@@ -663,34 +683,24 @@ export default function Assinatura() {
 
           {hasActivePlan &&
             !isTrial &&
-            subscription?.stripe_subscription_id && (
+            subscription?.status !== 'canceled' && (
               <button
-                onClick={
-                  handleOpenCustomerPortal
-                }
-                disabled={portalLoading}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-all hover:shadow-sm disabled:opacity-60"
+                onClick={handleCancelSubscription}
+                disabled={cancelLoading}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-all hover:shadow-sm disabled:opacity-60 cursor-pointer"
                 style={{
                   borderColor: theme.border,
-                  background:
-                    theme.cardBg,
-                  color:
-                    theme.textPrimary,
+                  background: theme.cardBg,
+                  color: theme.textSecondary,
                 }}
               >
-                {portalLoading ? (
+                {cancelLoading ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <ExternalLink
-                    className="w-3.5 h-3.5"
-                    style={{
-                      color:
-                        theme.accent,
-                    }}
-                  />
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
                 )}
 
-                Gerenciar assinatura
+                Cancelar assinatura
               </button>
             )}
         </div>
@@ -1221,13 +1231,13 @@ export default function Assinatura() {
                       <div
                         className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.12em] shadow-md flex items-center gap-1.5 whitespace-nowrap"
                         style={{
-                          background: '#00c853',
-                          color: theme.id !== 'elegant' ? '#000000' : '#FFFFFF',
+                          background: theme.btnPrimaryBg || theme.accent,
+                          color: theme.btnPrimaryText,
                         }}
                       >
                         <Star
                           className="w-3 h-3"
-                          style={{ fill: theme.id !== 'elegant' ? '#000000' : '#FFFFFF', color: theme.id !== 'elegant' ? '#000000' : '#FFFFFF' }}
+                          style={{ fill: theme.btnPrimaryText, color: theme.btnPrimaryText }}
                         />
 
                         Recomendado
@@ -1398,10 +1408,7 @@ export default function Assinatura() {
                                 <CheckCircle2
                                   className="w-4 h-4 shrink-0 mt-0.5"
                                   style={{
-                                    color:
-                                      isRecommended
-                                        ? '#00c853'
-                                        : theme.accent,
+                                    color: theme.accent,
                                   }}
                                 />
 
@@ -1430,10 +1437,7 @@ export default function Assinatura() {
                                 <CheckCircle2
                                   className="w-4 h-4 shrink-0 mt-0.5"
                                   style={{
-                                    color:
-                                      isRecommended
-                                        ? '#00c853'
-                                        : theme.accent,
+                                    color: theme.accent,
                                   }}
                                 />
 
@@ -1477,7 +1481,7 @@ export default function Assinatura() {
                             isCurrent
                               ? `${theme.accent}12`
                               : isRecommended
-                                ? (theme.id === 'elegant' ? '#0f172a' : '#00c853')
+                                ? (theme.btnPrimaryBg || theme.accent)
                                 : theme.id === 'elegant'
                                   ? '#F1F5F9'
                                   : 'rgba(255,255,255,0.07)',
@@ -1486,7 +1490,7 @@ export default function Assinatura() {
                             isCurrent
                               ? theme.accent
                               : isRecommended
-                                ? (theme.id === 'elegant' ? '#FFFFFF' : '#000000')
+                                ? theme.btnPrimaryText
                                 : theme.textPrimary,
 
                           border:
@@ -1531,24 +1535,36 @@ export default function Assinatura() {
                           TRUST LINE
                       ====================================== */}
 
-                      {!isCurrent &&
-                        tenant?.status ===
-                        'trial' && (
-                          <div className="flex items-center justify-center gap-1.5 mt-3">
-                            <ShieldCheck className="w-3 h-3 text-emerald-500" />
-
+                      {!isCurrent && (
+                        <div className="mt-3 space-y-1.5">
+                          {tenant?.status === 'trial' && (
+                            <div className="flex items-center justify-center gap-1.5">
+                              <ShieldCheck
+                                className="w-3.5 h-3.5 shrink-0"
+                                style={{ color: theme.accent }}
+                              />
+                              <span
+                                className="text-[10px] font-medium"
+                                style={{ color: theme.textMuted }}
+                              >
+                                R$ 0 hoje • Cancele em 1 clique
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex items-center justify-center gap-1.5">
+                            <Lock
+                              className="w-3 h-3 shrink-0"
+                              style={{ color: theme.accent }}
+                            />
                             <span
-                              className="text-[9px]"
-                              style={{
-                                color:
-                                  theme.textMuted,
-                              }}
+                              className="text-[10px] font-medium"
+                              style={{ color: theme.textMuted }}
                             >
-                              R$ 0 hoje • Cancele em
-                              1 clique
+                              Ambiente 100% seguro • Sem fidelidade
                             </span>
                           </div>
-                        )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -1562,56 +1578,65 @@ export default function Assinatura() {
       ====================================================== */}
 
       {plans.length > 0 && (
-        <div className="mt-10 text-center">
-          <div className="inline-flex items-center gap-5 flex-wrap justify-center">
-            <span className="flex items-center gap-1.5 text-[10px] font-medium">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+        <div className="mt-10 flex justify-center">
+          <div
+            className="inline-flex flex-col sm:flex-row items-center gap-3 sm:gap-5 px-5 py-3.5 rounded-2xl border shadow-xs text-center"
+            style={{
+              background: theme.cardBg,
+              borderColor: theme.border,
+            }}
+          >
+            <MercadoPagoHorizontalLogo
+              darkBg={theme.id !== 'elegant'}
+              className="h-7 w-auto shrink-0"
+            />
+
+            <span
+              className="hidden sm:inline-block w-px h-5"
+              style={{ background: theme.border }}
+            />
+
+            <div className="inline-flex items-center gap-3.5 sm:gap-4 flex-wrap justify-center">
+              <span className="flex items-center gap-1.5 text-[10px] font-medium">
+                <ShieldCheck
+                  className="w-3.5 h-3.5 shrink-0"
+                  style={{ color: theme.accent }}
+                />
+                <span style={{ color: theme.textMuted }}>
+                  Ambiente criptografado
+                </span>
+              </span>
 
               <span
-                style={{
-                  color:
-                    theme.textMuted,
-                }}
-              >
-                Pagamento seguro
+                className="w-1 h-1 rounded-full"
+                style={{ background: theme.border }}
+              />
+
+              <span className="flex items-center gap-1.5 text-[10px] font-medium">
+                <Lock
+                  className="w-3.5 h-3.5 shrink-0"
+                  style={{ color: theme.accent }}
+                />
+                <span style={{ color: theme.textMuted }}>
+                  Pix instantâneo e Cartão
+                </span>
               </span>
-            </span>
 
-            <span
-              className="w-1 h-1 rounded-full"
-              style={{
-                background:
-                  theme.border,
-              }}
-            />
+              <span
+                className="w-1 h-1 rounded-full"
+                style={{ background: theme.border }}
+              />
 
-            <span
-              className="text-[10px] font-medium"
-              style={{
-                color:
-                  theme.textMuted,
-              }}
-            >
-              Sem fidelidade
-            </span>
-
-            <span
-              className="w-1 h-1 rounded-full"
-              style={{
-                background:
-                  theme.border,
-              }}
-            />
-
-            <span
-              className="text-[10px] font-medium"
-              style={{
-                color:
-                  theme.textMuted,
-              }}
-            >
-              Cancele quando quiser
-            </span>
+              <span className="flex items-center gap-1.5 text-[10px] font-medium">
+                <CheckCircle2
+                  className="w-3.5 h-3.5 shrink-0"
+                  style={{ color: theme.accent }}
+                />
+                <span style={{ color: theme.textMuted }}>
+                  Sem fidelidade • Cancele quando quiser
+                </span>
+              </span>
+            </div>
           </div>
         </div>
       )}
