@@ -63,7 +63,8 @@ serve(async (req) => {
     }
     const baseReturn = safeReturnUrl.split('?')[0];
     const successUrl = `${baseReturn}?order=${booking.order_number}&booking_id=${booking.id}`;
-    const cancelUrl = `${baseReturn}?cancel=true`;
+    const pendingUrl = `${baseReturn}?order=${booking.order_number}&booking_id=${booking.id}&mp_pending=true`;
+    const cancelUrl = `${baseReturn}?cancel=true&booking_id=${booking.id}`;
 
     const prefBody: Record<string, any> = {
       items: [
@@ -77,13 +78,21 @@ serve(async (req) => {
         },
       ],
       payment_methods: {
-        excluded_payment_types: [{ id: 'ticket' }],
+        excluded_payment_types: [
+          { id: 'ticket' },
+          { id: 'atm' },
+        ],
+        excluded_payment_methods: [
+          { id: 'bolbradesco' },
+          { id: 'meliplace' },
+          { id: 'pec' },
+        ],
       },
       external_reference: booking.id,
       notification_url: `${supabaseUrl}/functions/v1/stripe-webhook?tenant_id=${booking.tenant_id}`,
       back_urls: {
         success: successUrl,
-        pending: successUrl,
+        pending: pendingUrl,
         failure: cancelUrl,
       },
       statement_descriptor: salonName.slice(0, 22),

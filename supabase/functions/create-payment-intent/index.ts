@@ -293,21 +293,49 @@ serve(async (req) => {
 
       const tenantMp = await getTenantMercadoPagoAccount(supabase, booking.tenant_id, mpContext);
       if (!tenantMp) {
-        throw new Error("Conta Mercado Pago do salão não encontrada.");
+        return new Response(
+          JSON.stringify({ confirmed: false, error: "Conta Mercado Pago do salão não encontrada." }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
-      const mpPayment = await resolveMercadoPagoPaymentForBooking(
+      if (booking.status === 'confirmed') {
+        return new Response(
+          JSON.stringify({
+            confirmed: true,
+            bookingId: booking.id,
+            order_number: booking.order_number,
+            status: 'succeeded',
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      let mpPayment = await resolveMercadoPagoPaymentForBooking(
         tenantMp.accessToken,
         lookupId,
         booking.id
       );
 
-      if (!mpPayment) {
-        throw new Error("Pagamento ainda não identificado no Mercado Pago.");
+      if (!mpPayment && mpContext.testAccessToken && mpContext.testAccessToken !== tenantMp.accessToken) {
+        mpPayment = await resolveMercadoPagoPaymentForBooking(
+          mpContext.testAccessToken,
+          lookupId,
+          booking.id
+        );
       }
 
-      if (mpPayment.status !== 'approved') {
-        throw new Error(`O pagamento no Mercado Pago ainda não foi aprovado (status: ${mpPayment.status}).`);
+      if (!mpPayment || mpPayment.status !== 'approved') {
+        return new Response(
+          JSON.stringify({
+            confirmed: false,
+            status: mpPayment?.status || 'pending',
+            error: !mpPayment
+              ? 'Pagamento não identificado ou cancelado no Mercado Pago.'
+              : `Pagamento não aprovado (status: ${mpPayment.status}).`,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       await finalizeConfirmedBooking(
@@ -579,7 +607,8 @@ serve(async (req) => {
     }
     const baseReturnUrl = safeReturnUrl.split('?')[0];
     const successUrl = `${baseReturnUrl}?order=${booking.order_number}&booking_id=${booking.id}`;
-    const failureUrl = `${baseReturnUrl}?cancel=true`;
+    const pendingUrl = `${baseReturnUrl}?order=${booking.order_number}&booking_id=${booking.id}&mp_pending=true`;
+    const failureUrl = `${baseReturnUrl}?cancel=true&booking_id=${booking.id}`;
 
     const prefBody: Record<string, any> = {
       items: [
@@ -592,18 +621,27 @@ serve(async (req) => {
           unit_price: amountToCharge,
         },
       ],
-      payer: {
-        name: safeName,
-        email: safeEmail,
-      },
+      ...(mpContext.mode === 'test' || tenantMp.isTestUser
+        ? {}
+        : { payer: { name: safeName, email: safeEmail } }),
       payment_methods: {
-        excluded_payment_types: [{ id: 'ticket' }],
+        // Na escolha de Cartão de Crédito, bloqueia Boleto, Lotérica e segunda via de Pix
+        excluded_payment_types: [
+          { id: 'ticket' },
+          { id: 'atm' },
+          { id: 'bank_transfer' },
+        ],
+        excluded_payment_methods: [
+          { id: 'bolbradesco' },
+          { id: 'meliplace' },
+          { id: 'pec' },
+        ],
       },
       external_reference: booking.id,
       notification_url: notificationUrl,
       back_urls: {
         success: successUrl,
-        pending: successUrl,
+        pending: pendingUrl,
         failure: failureUrl,
       },
       statement_descriptor: salonName.slice(0, 22),

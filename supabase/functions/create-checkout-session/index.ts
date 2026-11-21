@@ -184,8 +184,16 @@ serve(async (req) => {
       ],
       ...(mpContext.mode === 'test' ? {} : { payer: { email: user.email } }),
       payment_methods: {
-        // Exclui boleto para evitar demora de compensação; mantém Pix + Cartão de Crédito + Saldo MP
-        excluded_payment_types: [{ id: 'ticket' }],
+        // Exclui boleto e lotérica para evitar demora de compensação; mantém Pix + Cartão + Saldo MP
+        excluded_payment_types: [
+          { id: 'ticket' },
+          { id: 'atm' },
+        ],
+        excluded_payment_methods: [
+          { id: 'bolbradesco' },
+          { id: 'meliplace' },
+          { id: 'pec' },
+        ],
       },
       external_reference: externalReference,
       notification_url: `${supabaseUrl}/functions/v1/stripe-webhook`,

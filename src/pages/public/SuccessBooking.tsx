@@ -22,9 +22,18 @@ export default function SuccessBooking() {
     searchParams.get('payment_id') ||
     searchParams.get('collection_id');
   const bookingIdParam = searchParams.get('booking_id');
+  const cancelParam = searchParams.get('cancel');
+  const mpPendingParam = searchParams.get('mp_pending');
+  const collectionStatusParam = (
+    searchParams.get('collection_status') ||
+    searchParams.get('status') ||
+    ''
+  ).toLowerCase();
 
   const [booking, setBooking] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [failureReason, setFailureReason] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,6 +55,29 @@ export default function SuccessBooking() {
             .eq('tenant_id', tenantRaw.id)
             .maybeSingle();
           setSettings(sData);
+
+          const isExplicitFailure =
+            cancelParam === 'true' ||
+            ['rejected', 'cancelled', 'failure', 'null'].includes(collectionStatusParam);
+
+          if (isExplicitFailure) {
+            if (bookingIdParam) {
+              await supabase.functions
+                .invoke('create-payment-intent', {
+                  body: {
+                    action: 'abort_booking',
+                    bookingId: bookingIdParam,
+                    paymentIntentId: paymentIntentId || undefined,
+                  },
+                })
+                .catch(() => {});
+            }
+            setIsConfirmed(false);
+            setFailureReason(
+              'O pagamento não foi concluído no Mercado Pago. Nenhuma cobrança foi confirmada.'
+            );
+            return;
+          }
 
           let bookingData: any = null;
 
@@ -88,55 +120,98 @@ export default function SuccessBooking() {
             }
           }
 
-          if (bookingData) {
-            if (bookingData.status === 'pending' && (paymentIntentId || sessionId || bookingIdParam)) {
-              try {
-                await supabase.functions.invoke('create-payment-intent', {
+          if (!bookingData) {
+            setIsConfirmed(false);
+            setFailureReason(
+              'Não encontramos nenhum agendamento confirmado. Tente realizar a reserva novamente.'
+            );
+            return;
+          }
+
+          let bookingIsConfirmed = bookingData.status === 'confirmed';
+
+          if (!bookingIsConfirmed && bookingData.payment_mode !== 'local') {
+            try {
+              const { data: confirmData, error: confirmErr } = await supabase.functions.invoke(
+                'create-payment-intent',
+                {
                   body: {
                     action: 'confirm_booking',
                     bookingId: bookingData.id,
                     paymentIntentId: paymentIntentId || undefined,
                     sessionId: sessionId || undefined,
                   },
-                });
-              } catch (confirmErr) {
-                console.warn('Erro ao confirmar booking via Edge Function:', confirmErr);
+                }
+              );
+
+              if (!confirmErr && confirmData?.confirmed === true) {
+                bookingIsConfirmed = true;
+              } else {
+                const isPendingStatus =
+                  mpPendingParam === 'true' ||
+                  collectionStatusParam === 'pending' ||
+                  collectionStatusParam === 'in_process' ||
+                  confirmData?.status === 'pending' ||
+                  confirmData?.status === 'in_process';
+
+                setFailureReason(
+                  isPendingStatus
+                    ? 'Seu pagamento ainda está aguardando aprovação no Mercado Pago. Seu horário não foi liberado ainda.'
+                    : confirmData?.error ||
+                        'O pagamento não foi aprovado ou foi cancelado. Tente outra forma de pagamento.'
+                );
               }
+            } catch (confirmErr) {
+              console.warn('Erro ao confirmar booking via Edge Function:', confirmErr);
+              setFailureReason(
+                'Não foi possível validar seu pagamento com o Mercado Pago.'
+              );
             }
-
-            const scheduledDate = new Date(bookingData.scheduled_at);
-            const dateStr = scheduledDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-            const fullDateStr = scheduledDate.toLocaleDateString('pt-BR', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-            });
-            const timeStr = scheduledDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-            setBooking({
-              id: bookingData.id,
-              order_number: bookingData.order_number,
-              serviceName: (bookingData.services as any)?.name || 'Serviço',
-              professionalName: (bookingData.professionals as any)?.name || 'Qualquer profissional',
-              date: fullDateStr,
-              shortDate: dateStr,
-              time: timeStr,
-              customerName: (bookingData.customers as any)?.name || 'Cliente',
-              customerPhone: (bookingData.customers as any)?.phone || '',
-              amount_paid: bookingData.amount_paid,
-              amount_total: bookingData.amount_total,
-              payment_mode: bookingData.payment_mode,
-            });
+          } else if (bookingData.payment_mode === 'local' && bookingData.status === 'confirmed') {
+            bookingIsConfirmed = true;
           }
+
+          if (!bookingIsConfirmed) {
+            setIsConfirmed(false);
+            return;
+          }
+
+          setIsConfirmed(true);
+
+          const scheduledDate = new Date(bookingData.scheduled_at);
+          const dateStr = scheduledDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+          const fullDateStr = scheduledDate.toLocaleDateString('pt-BR', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+          });
+          const timeStr = scheduledDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+          setBooking({
+            id: bookingData.id,
+            order_number: bookingData.order_number,
+            serviceName: (bookingData.services as any)?.name || 'Serviço',
+            professionalName: (bookingData.professionals as any)?.name || 'Qualquer profissional',
+            date: fullDateStr,
+            shortDate: dateStr,
+            time: timeStr,
+            customerName: (bookingData.customers as any)?.name || 'Cliente',
+            customerPhone: (bookingData.customers as any)?.phone || '',
+            amount_paid: bookingData.amount_paid,
+            amount_total: bookingData.amount_total,
+            payment_mode: bookingData.payment_mode,
+          });
         }
       } catch (e) {
         console.error('Erro ao carregar dados do agendamento:', e);
+        setIsConfirmed(false);
+        setFailureReason('Não foi possível validar o status do pagamento.');
       } finally {
         setLoading(false);
       }
     }
     loadData();
-  }, [slug, orderNumber, sessionId, paymentIntentId, bookingIdParam]);
+  }, [slug, orderNumber, sessionId, paymentIntentId, bookingIdParam, cancelParam, mpPendingParam, collectionStatusParam]);
 
   useEffect(() => {
     if (settings?.fantasy_name) {
@@ -168,9 +243,72 @@ export default function SuccessBooking() {
     return (
       <PortalLoadingScreen
         portalTheme={portalTheme}
-        message="Localizando confirmação de agendamento…"
-        badgeText="Agendamento Confirmado"
+        message="Verificando pagamento e confirmação…"
+        badgeText="Mercado Pago"
       />
+    );
+  }
+
+  if (!isConfirmed || !booking) {
+    return (
+      <div
+        className="min-h-[100dvh] font-sans flex flex-col items-center justify-center px-5 py-6"
+        style={{ background: pageBg, color: textPrimary }}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.2 }}
+          className="w-full max-w-md rounded-3xl border p-6 sm:p-7 text-center space-y-4 shadow-lg"
+          style={{
+            background: cardBg,
+            borderColor: cardBorder,
+          }}
+        >
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto border"
+            style={{
+              background: 'rgba(239, 68, 68, 0.12)',
+              borderColor: 'rgba(239, 68, 68, 0.30)',
+              color: '#EF4444',
+            }}
+          >
+            <AlertCircle className="w-7 h-7" />
+          </div>
+
+          <div className="space-y-1.5">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight" style={{ color: textPrimary }}>
+              Pagamento não concluído
+            </h1>
+            <p className="text-xs sm:text-sm leading-relaxed" style={{ color: textSecondary }}>
+              {failureReason || 'Não foi possível confirmar seu pagamento. Nenhuma reserva foi confirmada.'}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate(getTenantPublicUrl(slug), { replace: true })}
+            className="w-full py-3.5 px-5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md hover:opacity-95"
+            style={{
+              background: btnBg,
+              color: btnText,
+            }}
+          >
+            <span>Voltar e tentar novamente</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+
+          <div>
+            <Link
+              to={getTenantPortalUrl(slug)}
+              className="text-xs font-medium hover:underline opacity-75 hover:opacity-100"
+              style={{ color: textSecondary }}
+            >
+              Ver meus agendamentos
+            </Link>
+          </div>
+        </motion.div>
+      </div>
     );
   }
 
