@@ -104,7 +104,7 @@ export default function AdminTenants() {
           .maybeSingle(),
         supabase
           .from('plans')
-          .select('id, name, key, is_trial_plan, sort_order, max_professionals, allow_products, features, limits, permissions')
+          .select('id, name, key, is_trial_plan, sort_order, max_professionals, allow_products, features, limits, permissions, plan_prices(amount, currency)')
           .eq('active', true)
           .order('sort_order', { ascending: true })
       ]);
@@ -311,6 +311,12 @@ export default function AdminTenants() {
 
       if (customPriceNum !== null) {
         contractPayload.price_amount = customPriceNum;
+      } else {
+        const targetPlanObj = availablePaidPlans.find((p: any) => p.id === finalPlanIdForSub);
+        const stdBrl = targetPlanObj?.plan_prices?.find((pp: any) => pp.currency === 'BRL')?.amount;
+        if (stdBrl != null) {
+          contractPayload.price_amount = Number(stdBrl);
+        }
       }
 
       const { error } = await supabase

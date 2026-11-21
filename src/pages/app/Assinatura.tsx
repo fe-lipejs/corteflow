@@ -974,17 +974,22 @@ export default function Assinatura() {
                   subscription?.status ===
                   'canceled';
 
+                const isPastDue =
+                  features.subscription_status === 'past_due' ||
+                  subscription?.status === 'past_due';
+
                 const isCurrent =
                   hasActivePlan &&
                   !isTrial &&
                   !isCanceled &&
+                  !isPastDue &&
                   Boolean(subscription?.plan_id)
                     ? subscription!.plan_id === plan.id
-                    : Boolean(!hasActivePlan && !isTrial && plan.is_default);
+                    : Boolean(!hasActivePlan && !isTrial && !isPastDue && plan.is_default);
 
                 /*
                  * Contrato atual sempre
-                 * prevalece sobre o plano.
+                 * prevalece sobre o plano ativo do salão.
                  */
                 let planToDisplay = plan;
 
@@ -995,13 +1000,15 @@ export default function Assinatura() {
                   : contracts;
 
                 if (
-                  (isCurrent || (plan.is_custom_price && contract?.features?._custom_override)) &&
+                  (isCurrent || (isPastDue && subscription?.plan_id === plan.id)) &&
                   contract
                 ) {
+                  const stdOrCustomPlanAmount =
+                    plan.plan_prices?.find((p) => p.currency === displayCurrency)?.amount;
                   const customOrContractAmount =
                     plan.is_custom_price
-                      ? (plan.plan_prices?.find((p) => p.currency === displayCurrency)?.amount ?? contract.price_amount)
-                      : (contract.price_amount > 0 ? contract.price_amount : (plan.plan_prices?.find((p) => p.currency === displayCurrency)?.amount ?? 0));
+                      ? (stdOrCustomPlanAmount ?? contract.price_amount)
+                      : (stdOrCustomPlanAmount ?? contract.price_amount ?? 0);
 
                   planToDisplay = {
                     ...plan,

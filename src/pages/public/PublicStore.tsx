@@ -554,7 +554,7 @@ export default function PublicStore() {
     stepRef.current = step;
     const currentHash = window.location.hash;
     const expectedHash = step === 1 ? '' : `#passo-${step}`;
-    
+
     if (currentHash !== expectedHash) {
       if (step === 1) {
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -575,12 +575,12 @@ export default function PublicStore() {
         setStep(newStep);
       }
     };
-    
+
     // Se a pessoa carregar a página já com um hash de passo, limpamos para forçar a iniciar no passo 1 e não quebrar o fluxo
     if (window.location.hash.startsWith('#passo-')) {
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
     }
-    
+
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
@@ -1495,7 +1495,7 @@ export default function PublicStore() {
         "raffros_client_contact_v1",
         JSON.stringify({ name: cleanName, phone: cleanPhone })
       );
-    } catch {}
+    } catch { }
 
     if (tenant?.id && !tenant?.isDemo) {
       trackEvent("customer_data_submitted", {
@@ -1635,11 +1635,11 @@ export default function PublicStore() {
                 .invoke("create-payment-intent", {
                   body: { action: "abort_booking", bookingId: createdBooking.id },
                 })
-                .catch(() => {});
+                .catch(() => { });
               throw new Error(
                 piData?.error ||
-                  piErr?.message ||
-                  "Não foi possível iniciar o pagamento online no Mercado Pago. Tente novamente ou escolha 'No local'."
+                piErr?.message ||
+                "Não foi possível iniciar o pagamento online no Mercado Pago. Tente novamente ou escolha 'No local'."
               );
             }
 
@@ -1713,7 +1713,7 @@ export default function PublicStore() {
             .invoke("create-payment-intent", {
               body: { action: "abort_booking", bookingId: newBooking.id },
             })
-            .catch(() => {});
+            .catch(() => { });
 
           if (cErr2) {
             let errDetail = cErr2.message;
@@ -1722,7 +1722,7 @@ export default function PublicStore() {
                 const body = await (cErr2 as any).context.json();
                 if (body?.error) errDetail = body.error;
               }
-            } catch (_) {}
+            } catch (_) { }
             throw new Error(errDetail || "Não foi possível iniciar o pagamento online. Por favor, tente novamente ou escolha 'Pagar no local'.");
           }
           if (checkoutData?.error) {
@@ -3248,7 +3248,7 @@ export default function PublicStore() {
                                           }}
                                         />
                                         {hasDiscount && (
-                                          <span 
+                                          <span
                                             className="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm"
                                             style={{ background: accent, color: theme.btnPrimaryText }}
                                           >
