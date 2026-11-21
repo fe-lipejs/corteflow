@@ -128,7 +128,7 @@ serve(async (req) => {
 
     const { data: previousSub } = await supabaseAdmin
       .from('subscriptions')
-      .select('id, subscription_contracts(*)')
+      .select('id, status, canceled_at, subscription_contracts(*)')
       .eq('tenant_id', tenantId)
       .maybeSingle();
 
@@ -136,8 +136,37 @@ serve(async (req) => {
       ? previousSub?.subscription_contracts[0]
       : previousSub?.subscription_contracts;
 
-    const nowMs = Date.now();
-    const currentPeriodEnd = new Date(nowMs + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const approvedMs = new Date(mpPayment.date_approved || mpPayment.date_created || Date.now()).getTime();
+    const periodEndMs = approvedMs + 30 * 24 * 60 * 60 * 1000;
+
+    if (Number.isNaN(periodEndMs) || periodEndMs <= Date.now()) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          pending: false,
+          expired: true,
+          message: "Este pagamento já completou 30 dias. Realize uma nova cobrança para renovar seu plano.",
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    if (
+      previousSub?.status === 'canceled' &&
+      previousSub?.canceled_at &&
+      new Date(previousSub.canceled_at).getTime() > approvedMs
+    ) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          pending: false,
+          message: "Esta assinatura foi cancelada após esse pagamento. Escolha um plano abaixo para reativar.",
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    const currentPeriodEnd = new Date(periodEndMs).toISOString();
     const mpSubMarker = `mp_pay_${mpPayment.id}`;
     const mpCustomerMarker = mpPayment.payer?.id ? `mp_cust_${mpPayment.payer.id}` : null;
 

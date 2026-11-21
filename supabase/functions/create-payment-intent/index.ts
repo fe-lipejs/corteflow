@@ -439,12 +439,27 @@ serve(async (req) => {
       if (paymentIntentId && tenantIdForLookup) {
         const tenantMp = await getTenantMercadoPagoAccount(supabase, tenantIdForLookup, mpContext);
         if (tenantMp) {
+          let activeAbortToken =
+            tenantMp.isTestUser && mpContext.testAccessToken
+              ? mpContext.testAccessToken
+              : tenantMp.accessToken;
           try {
-            const mpPayment = await resolveMercadoPagoPaymentForBooking(
-              tenantMp.accessToken,
+            let mpPayment = await resolveMercadoPagoPaymentForBooking(
+              activeAbortToken,
               paymentIntentId,
               bookingId
             );
+            if (!mpPayment && !tenantMp.isTestUser) {
+              const refreshedTok = await refreshTenantMercadoPagoToken(supabase, tenantIdForLookup, mpContext);
+              if (refreshedTok) {
+                activeAbortToken = refreshedTok;
+                mpPayment = await resolveMercadoPagoPaymentForBooking(
+                  activeAbortToken,
+                  paymentIntentId,
+                  bookingId
+                );
+              }
+            }
             if (mpPayment?.status === 'approved') {
               const { data: paidBk } = await supabase
                 .from('bookings')
@@ -471,7 +486,7 @@ serve(async (req) => {
               }
             }
             if (/^\d+$/.test(String(paymentIntentId))) {
-              await mpRequest(`/v1/payments/${paymentIntentId}`, tenantMp.accessToken, {
+              await mpRequest(`/v1/payments/${paymentIntentId}`, activeAbortToken, {
                 method: 'PUT',
                 body: { status: 'cancelled' },
               }).catch(() => {});

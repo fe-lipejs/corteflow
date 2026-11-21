@@ -79,7 +79,8 @@ serve(async (req) => {
       });
     }
 
-    const thirtyFiveDaysAgo = Date.now() - 35 * 24 * 60 * 60 * 1000;
+    const nowMs = Date.now();
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
     const matchedPayment = results.find((p) => {
       if (p.status !== 'approved') return false;
       if (mpContext.mode === 'live' && p.live_mode === false) return false;
@@ -88,7 +89,13 @@ serve(async (req) => {
         (typeof p.external_reference === 'string' && p.external_reference.includes(`sub::${tenantId}::`));
       if (!isThisTenant) return false;
       const approvedAt = new Date(p.date_approved || p.date_created).getTime();
-      if (Number.isNaN(approvedAt) || approvedAt < thirtyFiveDaysAgo) return false;
+      // Só considera válido o pagamento cujo ciclo de 30 dias ainda não venceu!
+      if (Number.isNaN(approvedAt) || approvedAt + thirtyDaysMs <= nowMs) return false;
+      if (typeof p.external_reference === 'string' && p.external_reference.startsWith('sub::')) {
+        const parts = p.external_reference.split('::');
+        const expectedBRL = Number(parts[3] || 0);
+        if (expectedBRL > 0 && Number(p.transaction_amount || 0) + 0.05 < expectedBRL) return false;
+      }
       // Não reativa se o dono cancelou explicitamente depois desse pagamento
       if (existingSub?.status === 'canceled' && existingSub?.canceled_at) {
         if (new Date(existingSub.canceled_at).getTime() > approvedAt) return false;

@@ -74,8 +74,11 @@ function isTrialExpired(sub: any): boolean {
 function isManualPeriodExpired(sub: any): boolean {
   if (!sub) return false;
   if (sub.status !== 'active') return false;
-  // Se foi ativado manualmente pelo Super Admin (sem cobrança automática na Stripe) e o prazo venceu:
-  if (!sub.stripe_subscription_id && sub.current_period_end) {
+  // Ciclos pré-pagos de 30 dias (Mercado Pago Checkout Pro `mp_pay_*`) ou ativação manual expiram no current_period_end:
+  const isFixedTermCycle =
+    !sub.stripe_subscription_id ||
+    String(sub.stripe_subscription_id).startsWith('mp_pay_');
+  if (isFixedTermCycle && sub.current_period_end) {
     return new Date(sub.current_period_end) < new Date();
   }
   return false;

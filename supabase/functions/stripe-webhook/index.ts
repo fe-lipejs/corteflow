@@ -331,7 +331,7 @@ serve(async (req) => {
         } else {
           const { data: prevSubData } = await supabase
             .from('subscriptions')
-            .select('id, subscription_contracts(*)')
+            .select('id, status, canceled_at, subscription_contracts(*)')
             .eq('tenant_id', tenantId)
             .maybeSingle();
 
@@ -339,35 +339,44 @@ serve(async (req) => {
             ? prevSubData?.subscription_contracts[0]
             : prevSubData?.subscription_contracts;
 
-          const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-          const mpSubMarker = `mp_pay_${mpPayment.id}`;
-          const mpCustomerMarker = mpPayment.payer?.id ? `mp_cust_${mpPayment.payer.id}` : null;
+          const approvedMs = new Date(mpPayment.date_approved || mpPayment.date_created || Date.now()).getTime();
+          const periodEndMs = approvedMs + 30 * 24 * 60 * 60 * 1000;
+          const canceledAfterPayment =
+            prevSubData?.status === 'canceled' &&
+            prevSubData?.canceled_at &&
+            new Date(prevSubData.canceled_at).getTime() > approvedMs;
 
-          await supabase.from('subscriptions').upsert({
-            tenant_id: tenantId,
-            plan_id: planId,
-            stripe_subscription_id: mpSubMarker,
-            stripe_customer_id: mpCustomerMarker,
-            status: 'active',
-            trial_ends_at: null,
-            current_period_end: periodEnd,
-            grace_period_ends_at: null,
-            suspension_reason: null,
-            canceled_at: null,
-            latest_invoice_status: 'paid',
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'tenant_id' });
+          if (!Number.isNaN(periodEndMs) && periodEndMs > Date.now() && !canceledAfterPayment) {
+            const periodEnd = new Date(periodEndMs).toISOString();
+            const mpSubMarker = `mp_pay_${mpPayment.id}`;
+            const mpCustomerMarker = mpPayment.payer?.id ? `mp_cust_${mpPayment.payer.id}` : null;
 
-          const paidCents = paidBRL > 0 ? Math.round(paidBRL * 100) : null;
-          await preserveCustomContractAndPricing(supabase, tenantId, planId, prevContract, paidCents);
+            await supabase.from('subscriptions').upsert({
+              tenant_id: tenantId,
+              plan_id: planId,
+              stripe_subscription_id: mpSubMarker,
+              stripe_customer_id: mpCustomerMarker,
+              status: 'active',
+              trial_ends_at: null,
+              current_period_end: periodEnd,
+              grace_period_ends_at: null,
+              suspension_reason: null,
+              canceled_at: null,
+              latest_invoice_status: 'paid',
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'tenant_id' });
 
-          await supabase.from('tenants').update({
-            status: 'active',
-            account_state: 'active',
-            trial_ends_at: null,
-            past_due_since: null,
-            has_used_trial: true,
-          }).eq('id', tenantId);
+            const paidCents = paidBRL > 0 ? Math.round(paidBRL * 100) : null;
+            await preserveCustomContractAndPricing(supabase, tenantId, planId, prevContract, paidCents);
+
+            await supabase.from('tenants').update({
+              status: 'active',
+              account_state: 'active',
+              trial_ends_at: null,
+              past_due_since: null,
+              has_used_trial: true,
+            }).eq('id', tenantId);
+          }
         }
       } else if (tenantId && (mpPayment.status === 'refunded' || mpPayment.status === 'charged_back')) {
         const isChargeback = mpPayment.status === 'charged_back';

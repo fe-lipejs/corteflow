@@ -2401,6 +2401,65 @@ export default function Configuracoes() {
                 );
               })()}
 
+              {/* Taxas Oficiais do Mercado Pago (Checkout Online) */}
+              <div
+                className="rounded-2xl p-4 sm:p-5 border space-y-3"
+                style={{
+                  background: theme.inputBg,
+                  borderColor: theme.inputBorder,
+                }}
+              >
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="text-xs font-bold" style={{ color: theme.textPrimary }}>
+                    Taxas de recebimento do Mercado Pago
+                  </span>
+                  <span className="text-[11px] font-medium" style={{ color: theme.textMuted }}>
+                    Padrão Checkout Brasil
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div
+                    className="p-3.5 rounded-xl border flex items-center justify-between gap-3"
+                    style={{ background: theme.cardBg, borderColor: theme.border }}
+                  >
+                    <div className="min-w-0">
+                      <span className="text-xs font-bold block" style={{ color: theme.textPrimary }}>
+                        Pix
+                      </span>
+                      <span className="text-[11px] block" style={{ color: theme.textMuted }}>
+                        Cai na hora • 24h por dia
+                      </span>
+                    </div>
+                    <span className="text-sm font-black shrink-0" style={{ color: '#009EE3' }}>
+                      0,99%
+                    </span>
+                  </div>
+
+                  <div
+                    className="p-3.5 rounded-xl border flex items-center justify-between gap-3"
+                    style={{ background: theme.cardBg, borderColor: theme.border }}
+                  >
+                    <div className="min-w-0">
+                      <span className="text-xs font-bold block" style={{ color: theme.textPrimary }}>
+                        Cartão de Crédito (à vista)
+                      </span>
+                      <span className="text-[11px] block" style={{ color: theme.textMuted }}>
+                        Na hora • ou 3,98% em 30 dias
+                      </span>
+                    </div>
+                    <span className="text-sm font-black shrink-0" style={{ color: '#009EE3' }}>
+                      4,98%
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-[11px] leading-relaxed" style={{ color: theme.textMuted }}>
+                  Vendas parceladas possuem acréscimo por parcela. Você pode alterar seu prazo de liberação e conferir as tarifas exatas da sua conta no app do Mercado Pago em{' '}
+                  <strong style={{ color: theme.textSecondary }}>Seu negócio → Custos</strong>.
+                </p>
+              </div>
+
               {/* 2. Formas de Pagamento no Agendamento */}
               <div className="space-y-3">
                 <h3 className="font-bold text-sm" style={{ color: theme.textPrimary }}>

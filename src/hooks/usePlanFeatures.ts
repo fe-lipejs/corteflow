@@ -98,8 +98,11 @@ export function usePlanFeatures(): { features: PlanFeatures; isLoading: boolean 
     isActive = false;
   }
 
-  // Assinatura manual cujo período expirou
-  if (subStatus === 'active' && !sub?.stripe_subscription_id && sub?.current_period_end && new Date(sub.current_period_end) < new Date()) {
+  // Assinatura manual ou ciclo de 30 dias via Mercado Pago (`mp_pay_*`) cujo período expirou
+  const isFixedTermCycle =
+    !sub?.stripe_subscription_id ||
+    String(sub.stripe_subscription_id).startsWith('mp_pay_');
+  if (subStatus === 'active' && isFixedTermCycle && sub?.current_period_end && new Date(sub.current_period_end) < new Date()) {
     subStatus = 'past_due';
     isActive = false;
   }

@@ -61,8 +61,9 @@ export default function SuccessBooking() {
             ['rejected', 'cancelled', 'failure', 'null'].includes(collectionStatusParam);
 
           if (isExplicitFailure) {
+            let confirmedRace = false;
             if (bookingIdParam) {
-              await supabase.functions
+              const { data: abortData } = await supabase.functions
                 .invoke('create-payment-intent', {
                   body: {
                     action: 'abort_booking',
@@ -70,13 +71,18 @@ export default function SuccessBooking() {
                     paymentIntentId: paymentIntentId || undefined,
                   },
                 })
-                .catch(() => {});
+                .catch(() => ({ data: null }));
+              if (abortData?.confirmed === true) {
+                confirmedRace = true;
+              }
             }
-            setIsConfirmed(false);
-            setFailureReason(
-              'O pagamento não foi concluído no Mercado Pago. Nenhuma cobrança foi confirmada.'
-            );
-            return;
+            if (!confirmedRace) {
+              setIsConfirmed(false);
+              setFailureReason(
+                'O pagamento não foi concluído no Mercado Pago. Nenhuma cobrança foi confirmada.'
+              );
+              return;
+            }
           }
 
           let bookingData: any = null;

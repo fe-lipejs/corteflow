@@ -89,7 +89,6 @@ export default function Assinatura() {
     useState<Subscription | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [portalLoading, setPortalLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] =
     useState<string | null>(null);
 
@@ -312,7 +311,7 @@ export default function Assinatura() {
       return;
     }
 
-    if (!sessionId && !paymentId && mpStatus !== 'approved') return;
+    if (!sessionId && !paymentId && !preferenceId && mpStatus !== 'approved' && mpStatus !== 'pending' && mpStatus !== 'in_process') return;
     if (verifiedCheckoutRef.current) return;
     verifiedCheckoutRef.current = true;
 
@@ -418,36 +417,6 @@ export default function Assinatura() {
       toast.error(`Erro: ${err.message}`);
     } finally {
       setSyncing(false);
-    }
-  };
-
-  const handleOpenCustomerPortal = async () => {
-    try {
-      setPortalLoading(true);
-
-      const { data, error: invokeErr } = await supabase.functions.invoke('create-portal-session', {
-        body: { returnUrl: window.location.href },
-      });
-
-      if (invokeErr || data?.error) {
-        throw new Error(
-          invokeErr?.message ||
-          data?.error ||
-          'Erro ao abrir portal do cliente'
-        );
-      }
-
-      if (data?.url) {
-        window.location.href = data.url;
-      }
-    } catch (err: any) {
-      console.error('Portal error:', err);
-
-      toast.error(
-        `Erro ao abrir portal de pagamentos: ${err.message}`
-      );
-    } finally {
-      setPortalLoading(false);
     }
   };
 
@@ -789,6 +758,24 @@ export default function Assinatura() {
         </div>
       )}
 
+      {features.subscription_status === 'past_due' && !isTrialExpired && (
+        <div
+          className="mb-4 px-4 py-2.5 rounded-xl border flex items-center gap-3 text-xs transition-all shadow-sm"
+          style={{
+            background: theme.cardBg,
+            borderColor: theme.border,
+          }}
+        >
+          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md font-bold text-[10px] uppercase tracking-wider shrink-0 bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Renovação Pendente
+          </span>
+          <p className="truncate min-w-0 flex-1" style={{ color: theme.textSecondary }}>
+            O ciclo da sua assinatura encerrou ou está pendente. Renove abaixo para manter seu salão ativo.
+          </p>
+        </div>
+      )}
+
       {subscription?.status === 'canceled' && (
         <div
           className="mb-4 px-4 py-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs transition-all shadow-sm"
@@ -977,17 +964,13 @@ export default function Assinatura() {
                   subscription?.status ===
                   'canceled';
 
-                const hasActiveSub =
-                  subscription &&
-                  !isCanceled;
-
                 const isCurrent =
-                  hasActiveSub
-                    ? subscription.plan_id ===
-                    plan.id
-                    : Boolean(
-                      plan.is_default
-                    );
+                  hasActivePlan &&
+                  !isTrial &&
+                  !isCanceled &&
+                  Boolean(subscription?.plan_id)
+                    ? subscription!.plan_id === plan.id
+                    : Boolean(!hasActivePlan && !isTrial && plan.is_default);
 
                 /*
                  * Contrato atual sempre
@@ -1413,10 +1396,16 @@ export default function Assinatura() {
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             Plano atual
                           </>
-                        ) : tenant?.status ===
-                          'trial' ? (
+                        ) : features.subscription_status === 'past_due' ? (
                           <>
-                            Começar grátis
+                            Renovar plano
+                            <span className="opacity-60">
+                              →
+                            </span>
+                          </>
+                        ) : isTrial ? (
+                          <>
+                            Ativar plano
                             <span className="opacity-60">
                               →
                             </span>

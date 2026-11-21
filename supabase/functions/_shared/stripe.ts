@@ -45,6 +45,9 @@ export async function mpRequest<T = any>(
   } = {}
 ): Promise<T> {
   const method = (options.method || 'GET').toUpperCase();
+  if (!accessToken || !accessToken.trim()) {
+    throw new Error('Mercado Pago: Credencial de acesso não configurada para o ambiente atual.');
+  }
   const headers: Record<string, string> = {
     Authorization: `Bearer ${accessToken}`,
     'Content-Type': 'application/json',
@@ -109,14 +112,12 @@ export async function getMercadoPagoContext(supabaseAdmin: SupabaseClient): Prom
 
     accessToken =
       settings?.mp_live_access_token?.trim() ||
-      settings?.mp_test_access_token?.trim() ||
       legacyLiveSecret ||
       Deno.env.get('MP_ACCESS_TOKEN_LIVE') ||
       Deno.env.get('MP_ACCESS_TOKEN') ||
       '';
     publicKey =
       settings?.mp_live_public_key?.trim() ||
-      settings?.mp_test_public_key?.trim() ||
       legacyLivePub ||
       Deno.env.get('MP_PUBLIC_KEY_LIVE') ||
       Deno.env.get('MP_PUBLIC_KEY') ||
@@ -131,17 +132,13 @@ export async function getMercadoPagoContext(supabaseAdmin: SupabaseClient): Prom
 
     accessToken =
       settings?.mp_test_access_token?.trim() ||
-      settings?.mp_live_access_token?.trim() ||
       legacyTestSecret ||
       Deno.env.get('MP_ACCESS_TOKEN_TEST') ||
-      Deno.env.get('MP_ACCESS_TOKEN') ||
       '';
     publicKey =
       settings?.mp_test_public_key?.trim() ||
-      settings?.mp_live_public_key?.trim() ||
       legacyTestPub ||
       Deno.env.get('MP_PUBLIC_KEY_TEST') ||
-      Deno.env.get('MP_PUBLIC_KEY') ||
       '';
   }
 
