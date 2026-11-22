@@ -58,7 +58,7 @@ import { demoPortalsService } from '../../services/demoPortalsService';
 import type { DemoPortal, DemoService, DemoProfessional, CreateDemoPortalInput } from '../../types/demoPortal';
 
 const COLOR_PRESETS = [
-  { name: 'Rosa Padrão', hex: '#FF5C95' },
+  { name: 'Rosa Padrão', hex: '#FF1E8A' },
   { name: 'Dourado Navalha', hex: '#D4AF37' },
   { name: 'Esmeralda', hex: '#10B981' },
   { name: 'Âmbar Solar', hex: '#F59E0B' },
@@ -100,7 +100,7 @@ export default function AdminDemoPortals() {
   const [ownerWhatsapp, setOwnerWhatsapp] = useState('');
   const [instagram, setInstagram] = useState('');
   const [description, setDescription] = useState('');
-  const [primaryColor, setPrimaryColor] = useState('#FF5C95');
+  const [primaryColor, setPrimaryColor] = useState('#FF1E8A');
   const [expiresInDays, setExpiresInDays] = useState(7);
   const [logoUrl, setLogoUrl] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
@@ -194,7 +194,7 @@ export default function AdminDemoPortals() {
     setOwnerWhatsapp('');
     setInstagram('');
     setDescription('');
-    setPrimaryColor('#FF5C95');
+    setPrimaryColor('#FF1E8A');
     setExpiresInDays(7);
     setLogoUrl('');
     setBannerUrl('');
@@ -226,7 +226,7 @@ export default function AdminDemoPortals() {
     setOwnerWhatsapp(demo.owner_whatsapp);
     setInstagram(demo.instagram || '');
     setDescription(demo.description || '');
-    setPrimaryColor(demo.primary_color || '#FF5C95');
+    setPrimaryColor(demo.primary_color || '#FF1E8A');
     setLogoUrl(demo.logo_url || '');
     setBannerUrl(demo.banner_url || '');
     setCustomSlug(demo.slug || '');
@@ -274,7 +274,7 @@ export default function AdminDemoPortals() {
     setOwnerWhatsapp(demo.owner_whatsapp);
     setInstagram(demo.instagram || '');
     setDescription(demo.description || '');
-    setPrimaryColor(demo.primary_color || '#FF5C95');
+    setPrimaryColor(demo.primary_color || '#FF1E8A');
     setLogoUrl(demo.logo_url || '');
     setBannerUrl(demo.banner_url || '');
     setCustomSlug(newSlug);

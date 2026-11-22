@@ -33,7 +33,7 @@ export function buildPortalTheme(
   logoUrl?: string | null,
   name?: string | null
 ): PortalThemeInfo {
-  const presetId = themePreset || 'classic';
+  const presetId = themePreset || 'elegant';
   const base = getThemeById(presetId);
 
   const rawPrimary = customPalette?.primary ? normalizeAccentColor(customPalette.primary) : null;
@@ -159,7 +159,7 @@ export function useTenantPortalTheme(
   const [cachedInfo, setCachedInfo] = useState<PortalThemeInfo>(() => {
     const fromCache = getCachedPortalTheme(slug);
     if (fromCache) return fromCache;
-    return buildPortalTheme('classic', null, null, null);
+    return buildPortalTheme('elegant', null, null, null);
   });
 
   // Re-read cache whenever slug changes
@@ -232,7 +232,7 @@ export function useTenantPortalTheme(
         .maybeSingle();
 
       return {
-        themePreset: settings?.theme_preset || 'classic',
+        themePreset: settings?.theme_preset || 'elegant',
         customPalette: settings?.custom_palette || null,
         logoUrl: settings?.logo_url || null,
         name: settings?.fantasy_name || tenant.name || null,

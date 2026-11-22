@@ -573,6 +573,6 @@ export function useTheme() {
 
 // ─── Utility: Get theme by ID (for public pages that load theme from DB) ─────
 export function getThemeById(id: string): ThemeTokens {
-  return THEMES[id] || THEME_CLASSIC;
+  return THEMES[id] || THEME_ELEGANT;
 }
 

@@ -320,15 +320,23 @@ export default function Configuracoes() {
       const { data } = await supabase.from('tenant_settings').select('*').eq('tenant_id', tenant.id).maybeSingle();
       if (data) {
         setSettingsId(data.id);
-        setSelectedTheme(data.theme_preset || 'noir');
-        setCustomPalette(data.custom_palette || null);
+        setSelectedTheme(data.theme_preset || 'elegant');
+        const normalizedLoadedPalette = data.custom_palette
+          ? {
+              ...data.custom_palette,
+              ...(data.custom_palette.primary
+                ? { primary: normalizeAccentColor(data.custom_palette.primary) }
+                : {}),
+            }
+          : null;
+        setCustomPalette(normalizedLoadedPalette);
         if (data.theme_preset) setThemeId(data.theme_preset);
-        else setThemeId('noir');
-        if (data.custom_palette) {
-          setContextCustomPalette(data.custom_palette);
-          if (data.custom_palette.fontStyle) {
-            setFontStyle(data.custom_palette.fontStyle);
-            setDraftFontStyle(data.custom_palette.fontStyle);
+        else setThemeId('elegant');
+        if (normalizedLoadedPalette) {
+          setContextCustomPalette(normalizedLoadedPalette);
+          if (normalizedLoadedPalette.fontStyle) {
+            setFontStyle(normalizedLoadedPalette.fontStyle);
+            setDraftFontStyle(normalizedLoadedPalette.fontStyle);
           }
         } else {
           setContextCustomPalette(undefined);
@@ -2032,7 +2040,7 @@ export default function Configuracoes() {
                       <WhatsAppIcon className="w-3.5 h-3.5" style={{ color: '#25D366' }} /> WhatsApp Agendamento
                     </label>
                     {phoneCheckStatus === 'checking' && (
-                      <span className="text-[10px] text-[#FF5C95] font-bold">Verificando...</span>
+                      <span className="text-[10px] text-[#FF1E8A] font-bold">Verificando...</span>
                     )}
                   </div>
                   <input
@@ -3625,7 +3633,7 @@ export default function Configuracoes() {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           {/* Cor 1: Rosa Padrão */}
                           {(() => {
-                            const hex = '#FF5C95';
+                            const hex = '#FF1E8A';
                             const isActive = (normalizeAccentColor(customPalette?.primary) || theme.accent).toUpperCase() === hex.toUpperCase();
                             return (
                               <button
@@ -3645,7 +3653,7 @@ export default function Configuracoes() {
                                   </span>
                                   <div>
                                     <p className="text-xs font-bold" style={{ color: theme.textPrimary }}>Rosa Padrão</p>
-                                    <p className="text-[10px] font-mono" style={{ color: theme.textMuted }}>#FF5C95</p>
+                                    <p className="text-[10px] font-mono" style={{ color: theme.textMuted }}>#FF1E8A</p>
                                   </div>
                                 </div>
                               </button>
@@ -3654,10 +3662,10 @@ export default function Configuracoes() {
 
                           {/* Cor 2: Cor da Logo ou Azul */}
                           {(() => {
-                            const hex = (customPalette?.primary && normalizeAccentColor(customPalette.primary)!.toUpperCase() !== '#FF5C95')
-                              ? customPalette.primary
+                            const hex = (customPalette?.primary && normalizeAccentColor(customPalette.primary)!.toUpperCase() !== '#FF1E8A')
+                              ? normalizeAccentColor(customPalette.primary)!
                               : '#3B82F6';
-                            const isCustomSelected = (normalizeAccentColor(customPalette?.primary) || theme.accent).toUpperCase() === hex.toUpperCase() && hex.toUpperCase() !== '#FF5C95';
+                            const isCustomSelected = (normalizeAccentColor(customPalette?.primary) || theme.accent).toUpperCase() === hex.toUpperCase() && hex.toUpperCase() !== '#FF1E8A';
                             return (
                               <button
                                 key="brand-color"

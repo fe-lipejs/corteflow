@@ -467,7 +467,7 @@ export default function PublicStore() {
 
   // Theme setup directly using preset defaults (Classic, Noir, Elegant)
   const theme = useMemo(() => {
-    const presetId = settings?.theme_preset || "classic";
+    const presetId = settings?.theme_preset || "elegant";
     const base = getThemeById(presetId);
     if (!settings?.custom_palette) return base;
 
@@ -943,7 +943,7 @@ export default function PublicStore() {
   const phoneFormat = usePhoneFormat("pt");
 
   // Derived styles & Contrast Tokens
-  const accent = settings?.custom_palette?.primary || theme.accent;
+  const accent = normalizeAccentColor(settings?.custom_palette?.primary) || theme.accent;
   const contrast = useMemo(() => getThemeContrastEngine(theme), [theme]);
   const isDark = contrast.isDark;
   const storeName = settings?.fantasy_name || tenant?.name || "";
