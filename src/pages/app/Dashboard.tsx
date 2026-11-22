@@ -701,7 +701,7 @@ export default function Dashboard() {
                         <div
                           key={item.id}
                           onClick={() => setSelectedBooking(item)}
-                          className="group flex items-start sm:items-center justify-between gap-3 px-3.5 py-4 sm:px-4 sm:py-4 rounded-2xl border transition-all cursor-pointer hover:bg-[var(--theme-bg-hover)] active:scale-[0.99] shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
+                          className="group flex flex-col gap-2 px-3.5 py-3 sm:px-4 sm:py-3.5 rounded-2xl border transition-all cursor-pointer hover:bg-[var(--theme-bg-hover)] active:scale-[0.99] shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
                           style={{
                             backgroundColor: isPastDay
                               ? 'rgba(239, 68, 68, 0.04)'
@@ -717,48 +717,39 @@ export default function Dashboard() {
                                   : theme.border,
                           }}
                         >
-                          {/* Esquerda: Horário com Pontinho Redondo + Data */}
-                          <div className="flex flex-col shrink-0 min-w-[60px] sm:min-w-[68px] pt-0.5 sm:pt-0">
-                            <div className="flex items-center gap-1.5">
+                          {/* Faixa 1: Horário + Data + Ícones na esquerda | WhatsApp + Preço na direita */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span
+                                  className="font-bold text-xs sm:text-sm tabular-nums leading-none tracking-tight"
+                                  style={{ color: isPastSchedule ? '#EF4444' : theme.textPrimary }}
+                                >
+                                  {format(schedDate, 'HH:mm')}
+                                </span>
+
+                                {isPastSchedule ? (
+                                  <span
+                                    className="w-2 h-2 rounded-full shrink-0"
+                                    style={{ backgroundColor: '#EF4444' }}
+                                    title="Atrasado"
+                                  />
+                                ) : isPending ? (
+                                  <span
+                                    className="w-2 h-2 rounded-full shrink-0"
+                                    style={{ backgroundColor: theme.accent }}
+                                    title="Aguardando confirmação"
+                                  />
+                                ) : null}
+                              </div>
+
                               <span
-                                className="font-bold text-xs sm:text-sm tabular-nums leading-tight tracking-tight"
-                                style={{ color: isPastSchedule ? '#EF4444' : theme.textPrimary }}
+                                className="text-[11px] font-semibold uppercase tracking-wider opacity-65 tabular-nums shrink-0"
+                                style={{ color: isPastSchedule ? '#EF4444' : theme.textSecondary }}
                               >
-                                {format(schedDate, 'HH:mm')}
+                                · {format(schedDate, 'dd MMM', { locale: ptBR })}
                               </span>
 
-                              {/* Pontinho Redondo: Vermelho para atrasados, Accent apenas para pendentes */}
-                              {isPastSchedule ? (
-                                <span
-                                  className="w-2 h-2 rounded-full shrink-0 shadow-sm"
-                                  style={{ backgroundColor: '#EF4444' }}
-                                  title="Atrasado"
-                                />
-                              ) : isPending ? (
-                                <span
-                                  className="w-2 h-2 rounded-full shrink-0 shadow-sm"
-                                  style={{ backgroundColor: theme.accent }}
-                                  title="Aguardando confirmação"
-                                />
-                              ) : null}
-                            </div>
-                            <span
-                              className="text-[10px] font-semibold uppercase tracking-wider leading-tight opacity-65 tabular-nums mt-1"
-                              style={{ color: isPastSchedule ? '#EF4444' : theme.textSecondary }}
-                            >
-                              {format(schedDate, 'dd MMM', { locale: ptBR })}
-                            </span>
-                          </div>
-
-                          {/* Centro: Nome Completo + Ícones + Serviço + Status Visível (sem cortes) */}
-                          <div className="flex-1 min-w-0 pr-1">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <p
-                                className="font-bold text-sm sm:text-[15px] leading-snug break-words tracking-tight"
-                                style={{ color: theme.textPrimary }}
-                              >
-                                {customerName}
-                              </p>
                               <BookingMetaIcons
                                 origin={confInfo.origin}
                                 originLabel={confInfo.originLabel}
@@ -767,72 +758,76 @@ export default function Dashboard() {
                               />
                             </div>
 
-                            <p
-                              className="text-xs leading-relaxed break-words mt-1"
-                              style={{ color: theme.textSecondary }}
-                            >
-                              <span className="opacity-85 font-medium">{serviceName}</span>
-                              {proName && <span className="opacity-65"> · com {proName.split(' ')[0]}</span>}
-                            </p>
-
-                            {/* Status sempre visível em linha própria (nunca cortado por truncate) */}
-                            {(isPastSchedule || isPending) && (
-                              <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
-                                {isPastSchedule && (
-                                  <span
-                                    className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full"
-                                    style={{
-                                      backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                                      color: '#EF4444',
-                                    }}
-                                  >
-                                    {isPastDay ? 'Dia atrasado' : 'Horário atrasado'}
-                                  </span>
-                                )}
-                                {isPending && (
-                                  <span
-                                    className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full"
-                                    style={{
-                                      backgroundColor: `color-mix(in srgb, ${theme.accent} 14%, transparent)`,
-                                      color: theme.accent,
-                                    }}
-                                  >
-                                    <span
-                                      className="w-1.5 h-1.5 rounded-full shrink-0"
-                                      style={{ backgroundColor: theme.accent }}
-                                    />
-                                    Aguardando confirmação
-                                  </span>
-                                )}
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2 shrink-0">
+                              {confInfo.whatsappUrl && (
+                                <a
+                                  href={confInfo.whatsappUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={`WhatsApp: ${customerName} (${confInfo.formattedPhone})`}
+                                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl border hover:opacity-85 active:scale-90 transition-transform flex items-center justify-center shrink-0 cursor-pointer"
+                                  style={{
+                                    backgroundColor: `color-mix(in srgb, ${theme.accent} 12%, transparent)`,
+                                    borderColor: `color-mix(in srgb, ${theme.accent} 25%, transparent)`,
+                                    color: theme.accent,
+                                  }}
+                                >
+                                  <WhatsAppSvgIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                </a>
+                              )}
+                              <span
+                                className="text-xs sm:text-sm font-bold tabular-nums text-right"
+                                style={{ color: theme.textPrimary }}
+                              >
+                                {formatCurrency(item.amount_total || 0)}
+                              </span>
+                            </div>
                           </div>
 
-                          {/* Direita: Botão Quadrado Arredondado WhatsApp na cor do Accent + Preço */}
-                          <div className="flex items-center gap-2 sm:gap-3 shrink-0 self-center">
-                            {confInfo.whatsappUrl && (
-                              <a
-                                href={confInfo.whatsappUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                title={`WhatsApp: ${customerName} (${confInfo.formattedPhone})`}
-                                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border hover:opacity-85 active:scale-90 transition-transform flex items-center justify-center shrink-0 cursor-pointer"
-                                style={{
-                                  backgroundColor: `color-mix(in srgb, ${theme.accent} 12%, transparent)`,
-                                  borderColor: `color-mix(in srgb, ${theme.accent} 25%, transparent)`,
-                                  color: theme.accent,
-                                }}
-                              >
-                                <WhatsAppSvgIcon className="w-4 h-4" />
-                              </a>
-                            )}
-                            <span
-                              className="text-xs sm:text-sm font-bold tabular-nums text-right"
+                          {/* Faixa 2 (100% largura): Nome completo + Serviço + Status em linha única */}
+                          <div className="min-w-0">
+                            <p
+                              className="font-bold text-sm sm:text-[15px] leading-snug break-words tracking-tight"
                               style={{ color: theme.textPrimary }}
                             >
-                              {formatCurrency(item.amount_total || 0)}
-                            </span>
+                              {customerName}
+                            </p>
+
+                            <div className="flex items-center flex-wrap gap-x-2 gap-y-1 mt-0.5">
+                              <span className="text-xs leading-snug" style={{ color: theme.textSecondary }}>
+                                <span className="opacity-85 font-medium">{serviceName}</span>
+                                {proName && <span className="opacity-65"> · com {proName.split(' ')[0]}</span>}
+                              </span>
+
+                              {isPastSchedule && (
+                                <span
+                                  className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+                                  style={{
+                                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                                    color: '#EF4444',
+                                  }}
+                                >
+                                  {isPastDay ? 'Dia atrasado' : 'Horário atrasado'}
+                                </span>
+                              )}
+
+                              {isPending && (
+                                <span
+                                  className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+                                  style={{
+                                    backgroundColor: `color-mix(in srgb, ${theme.accent} 14%, transparent)`,
+                                    color: theme.accent,
+                                  }}
+                                >
+                                  <span
+                                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                                    style={{ backgroundColor: theme.accent }}
+                                  />
+                                  Aguardando confirmação
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
