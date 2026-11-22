@@ -85,46 +85,13 @@ export default function SuccessBooking() {
             }
           }
 
-          let bookingData: any = null;
-
-          if (orderNumber) {
-            const { data: bData } = await supabase
-              .from('bookings')
-              .select('*, services(name, price), professionals(name), customers(name, phone, email)')
-              .eq('tenant_id', tenantRaw.id)
-              .eq('order_number', orderNumber)
-              .maybeSingle();
-            bookingData = bData;
-          }
-
-          if (!bookingData && bookingIdParam) {
-            const { data: bData } = await supabase
-              .from('bookings')
-              .select('*, services(name, price), professionals(name), customers(name, phone, email)')
-              .eq('tenant_id', tenantRaw.id)
-              .eq('id', bookingIdParam)
-              .maybeSingle();
-            bookingData = bData;
-          }
-
-          if (!bookingData && (paymentIntentId || sessionId)) {
-            const targetPi = paymentIntentId || sessionId;
-            const { data: pData } = await supabase
-              .from('payments')
-              .select('booking_id')
-              .or(`mp_payment_id.eq.${targetPi},stripe_payment_intent_id.eq.${targetPi}`)
-              .limit(1)
-              .maybeSingle();
-
-            if (pData?.booking_id) {
-              const { data: bData } = await supabase
-                .from('bookings')
-                .select('*, services(name, price), professionals(name), customers(name, phone, email)')
-                .eq('id', pData.booking_id)
-                .maybeSingle();
-              bookingData = bData;
-            }
-          }
+          const { data: rpcBookingData } = await supabase.rpc('get_public_booking_confirmation', {
+            p_tenant_id: tenantRaw.id,
+            p_order_number: orderNumber || null,
+            p_booking_id: bookingIdParam || null,
+            p_payment_id: (paymentIntentId || sessionId) || null,
+          });
+          let bookingData: any = rpcBookingData || null;
 
           if (!bookingData) {
             setIsConfirmed(false);

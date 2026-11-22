@@ -89,12 +89,76 @@ serve(async (req) => {
       throw new Error("Período de avaliação encerrado. O estabelecimento está temporariamente indisponível para agendamentos.");
     }
 
-    // Fetch tenant_settings for horizon validation, coordinates & deposit_percentage
-    const { data: tenantSettings } = await supabase
-      .from("tenant_settings")
-      .select("latitude, longitude, deposit_percentage, max_advance_days")
-      .eq("tenant_id", tenant_id)
-      .maybeSingle();
+    // Fetch tenant_settings & stripe_connect_accounts for horizon, coordinates, deposit_percentage & payment policy enforcement
+    const [{ data: tenantSettings }, { data: connectAccount }] = await Promise.all([
+      supabase
+        .from("tenant_settings")
+        .select("latitude, longitude, deposit_percentage, max_advance_days, payment_methods, booking_payment_mode, accept_local_payment, accept_online_payment")
+        .eq("tenant_id", tenant_id)
+        .maybeSingle(),
+      supabase
+        .from("stripe_connect_accounts")
+        .select("charges_enabled")
+        .eq("tenant_id", tenant_id)
+        .maybeSingle(),
+    ]);
+
+    const isOnlineGatewayReady = Boolean(connectAccount?.charges_enabled);
+    const pm = (tenantSettings?.payment_methods as any) || null;
+    let allowLocal = true;
+    let allowPartial = false;
+    let allowFull = false;
+
+    if (isOnlineGatewayReady) {
+      if (pm && (pm.pay_local !== undefined || pm.partial_50 !== undefined || pm.full_100 !== undefined)) {
+        allowLocal = pm.pay_local === true;
+        allowPartial = pm.partial_50 === true;
+        allowFull = pm.full_100 === true;
+      } else {
+        const legacyMode = tenantSettings?.booking_payment_mode || "local";
+        if (legacyMode === "deposit") {
+          allowLocal = false;
+          allowPartial = true;
+          allowFull = false;
+        } else if (legacyMode === "full") {
+          allowLocal = false;
+          allowPartial = false;
+          allowFull = true;
+        } else if (legacyMode === "client_choice") {
+          allowLocal = tenantSettings?.accept_local_payment !== false;
+          allowPartial = true;
+          allowFull = true;
+        } else {
+          allowLocal = true;
+          allowPartial = false;
+          allowFull = false;
+        }
+      }
+      if (!allowLocal && !allowPartial && !allowFull) {
+        allowLocal = true;
+      }
+    } else {
+      allowLocal = true;
+      allowPartial = false;
+      allowFull = false;
+    }
+
+    const requestedScope = payment_scope === "full" ? "full" : payment_scope === "partial" ? "partial" : "local";
+    if ((requestedScope === "local" || payment_method === "cash") && !allowLocal) {
+      throw new Error(
+        "Este estabelecimento exige pagamento online (sinal ou valor integral) para confirmar o agendamento."
+      );
+    }
+    if (requestedScope === "partial" && !allowPartial) {
+      throw new Error(
+        "A opção de pagamento de sinal não está habilitada para este estabelecimento."
+      );
+    }
+    if (requestedScope === "full" && !allowFull) {
+      throw new Error(
+        "A opção de pagamento integral online não está habilitada para este estabelecimento."
+      );
+    }
 
     // Antecedência Máxima de Agendamento ("contando com hoje"; null = Sem limite; sem registro = 30)
     const effectiveMaxAdvanceDays: number | null = tenantSettings
@@ -232,14 +296,14 @@ serve(async (req) => {
     }
 
     const serviceHomeExtra = booking_mode === "home" ? (service.home_price_extra || 0) : 0;
-    const amount_total = (service.price || 0) + serviceHomeExtra + travel_fee;
+    const amount_total = Number(((service.price || 0) + serviceHomeExtra + travel_fee).toFixed(2));
     const depositPct = (tenantSettings?.deposit_percentage ?? 50) / 100;
 
     let amount_paid = 0;
     if (payment_scope === "full" && payment_method !== "cash") {
       amount_paid = amount_total;
     } else if (payment_scope === "partial" && payment_method !== "cash") {
-      amount_paid = amount_total * depositPct;
+      amount_paid = Number((amount_total * depositPct).toFixed(2));
     }
 
     let customerId = null;

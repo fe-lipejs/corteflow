@@ -20,7 +20,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { bookingId, actorType = 'client', reason } = await req.json();
+    const { bookingId, actorType = 'client', reason, customerId, accessCode, customerPhone } = await req.json();
 
     if (!bookingId) {
       throw new Error('Missing bookingId');
@@ -65,6 +65,31 @@ serve(async (req) => {
         throw new Error('Permissão negada para cancelar este agendamento.');
       }
       actorUserId = user.id;
+    } else {
+      // Valida titularidade do cliente no Portal para impedir cancelamentos/estornos fraudulentos por terceiros
+      let clientVerified = false;
+      if (customerId && booking.customer_id && String(customerId) === String(booking.customer_id)) {
+        clientVerified = true;
+      } else if (accessCode && booking.access_code && String(accessCode).trim() === String(booking.access_code).trim()) {
+        clientVerified = true;
+      } else if (customerPhone && booking.customer_id) {
+        const cleanDigits = String(customerPhone).replace(/\D/g, '');
+        if (cleanDigits.length >= 10) {
+          const { data: custRow } = await supabase
+            .from('customers')
+            .select('phone')
+            .eq('id', booking.customer_id)
+            .maybeSingle();
+          const dbPhone = String(custRow?.phone || '').replace(/\D/g, '');
+          if (dbPhone && (dbPhone === cleanDigits || dbPhone.endsWith(cleanDigits) || cleanDigits.endsWith(dbPhone))) {
+            clientVerified = true;
+          }
+        }
+      }
+
+      if (!clientVerified) {
+        throw new Error('Não foi possível validar a titularidade deste agendamento para cancelamento.');
+      }
     }
 
     if (booking.status === 'canceled') {

@@ -133,16 +133,16 @@ export default function ClientPortal() {
 
     if (orderParam && tenant?.id && !isLogged) {
       supabase
-        .from('bookings')
-        .select('customer_id, customers(phone)')
-        .eq('tenant_id', tenant.id)
-        .eq('order_number', orderParam)
-        .maybeSingle()
+        .rpc('get_public_booking_confirmation', {
+          p_tenant_id: tenant.id,
+          p_order_number: orderParam,
+        })
         .then(({ data }) => {
-          if (data?.customer_id) {
-            setCustomerId(data.customer_id);
+          const bk = data as any;
+          if (bk?.customer_id) {
+            setCustomerId(bk.customer_id);
             setIsLogged(true);
-            const customerPhone = (data.customers as any)?.phone;
+            const customerPhone = bk?.customers?.phone;
             if (customerPhone) {
               setPhone(phoneFormat.format(customerPhone));
             }
@@ -476,7 +476,10 @@ export default function ClientPortal() {
       await cancelMutation.mutateAsync({
         bookingId: bookingToCancel.id,
         reason: cancelReason,
-        actorType: 'client'
+        actorType: 'client',
+        customerId: customerId || bookingToCancel.customer_id || null,
+        accessCode: bookingToCancel.access_code || null,
+        customerPhone: phone || null,
       });
       toast.success('Agendamento cancelado com sucesso!');
       qc.invalidateQueries({ queryKey: ['customer-bookings', customerId] });
@@ -574,6 +577,9 @@ export default function ClientPortal() {
         newTime: scheduledAt,
         newProId: resolvedProId,
         actorType: 'client',
+        customerId: customerId || rescheduleBooking.customer_id || null,
+        accessCode: rescheduleBooking.access_code || null,
+        customerPhone: phone || null,
       });
       toast.success('Agendamento reagendado com sucesso!');
       setRescheduleBooking(null);

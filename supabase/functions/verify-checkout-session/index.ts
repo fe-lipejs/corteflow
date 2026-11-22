@@ -84,23 +84,22 @@ serve(async (req) => {
       );
     }
 
-    // Extrair tenantId, planId e valor esperado do metadata ou external_reference ("sub::tenantId::planId::amount")
-    let tenantId = mpPayment.metadata?.tenant_id || profile?.tenant_id;
-    let planId = mpPayment.metadata?.plan_id || bodyPlanId;
-    let expectedBRL = 0;
+    // Extrair tenantId, planId e valor esperado exclusivamente do pagamento autenticado no Mercado Pago ("sub::tenantId::planId::amount")
+    let tenantId: string | null = mpPayment.metadata?.tenant_id || null;
+    let planId: string | null = mpPayment.metadata?.plan_id || null;
+    let expectedBRL = Number(mpPayment.metadata?.amount || 0);
+    const isSubReference =
+      typeof mpPayment.external_reference === 'string' && mpPayment.external_reference.startsWith('sub::');
 
-    if (typeof mpPayment.external_reference === 'string' && mpPayment.external_reference.startsWith('sub::')) {
+    if (isSubReference) {
       const parts = mpPayment.external_reference.split('::');
       if (parts[1]) tenantId = parts[1];
       if (parts[2]) planId = parts[2];
       if (parts[3] && Number(parts[3]) > 0) expectedBRL = Number(parts[3]);
     }
 
-    if (mpPayment.status === 'approved' && expectedBRL > 0) {
-      const paidBRL = Number(mpPayment.transaction_amount || 0);
-      if (paidBRL + 0.05 < expectedBRL) {
-        throw new Error("Valor pago inferior ao esperado para o plano.");
-      }
+    if (!isSubReference && mpPayment.metadata?.type !== 'subscription') {
+      throw new Error("Este pagamento do Mercado Pago não corresponde a uma assinatura da plataforma Raffros.");
     }
 
     if (!tenantId || !planId) {
@@ -108,7 +107,46 @@ serve(async (req) => {
     }
 
     if (profile?.role !== 'super_admin' && profile?.tenant_id !== tenantId) {
-      throw new Error("Acesso negado: você não é dono deste salão");
+      throw new Error("Acesso negado: este pagamento pertence a outro estabelecimento.");
+    }
+
+    // Impede reutilização do mesmo payment_id em outro salão
+    const mpSubMarkerCheck = `mp_pay_${mpPayment.id}`;
+    const { data: conflictingSub } = await supabaseAdmin
+      .from('subscriptions')
+      .select('id, tenant_id')
+      .eq('stripe_subscription_id', mpSubMarkerCheck)
+      .neq('tenant_id', tenantId)
+      .limit(1)
+      .maybeSingle();
+
+    if (conflictingSub) {
+      throw new Error("Este comprovante de pagamento já está vinculado a outra assinatura.");
+    }
+
+    if (expectedBRL <= 0) {
+      const [{ data: cpRow }, { data: ppRow }] = await Promise.all([
+        supabaseAdmin
+          .from('custom_pricing')
+          .select('amount_override')
+          .eq('tenant_id', tenantId)
+          .eq('plan_id', planId)
+          .maybeSingle(),
+        supabaseAdmin
+          .from('plan_prices')
+          .select('amount')
+          .eq('plan_id', planId)
+          .eq('currency', 'BRL')
+          .maybeSingle(),
+      ]);
+      expectedBRL = Number(cpRow?.amount_override || ppRow?.amount || 0);
+    }
+
+    if (mpPayment.status === 'approved' && expectedBRL > 0) {
+      const paidBRL = Number(mpPayment.transaction_amount || 0);
+      if (paidBRL + 0.05 < expectedBRL) {
+        throw new Error("Valor pago inferior ao esperado para o plano.");
+      }
     }
 
     if (mpPayment.status !== 'approved') {

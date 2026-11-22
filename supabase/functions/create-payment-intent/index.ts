@@ -16,14 +16,41 @@ async function finalizeConfirmedBooking(
   collectorId: string | null,
   applicationFeePercent: number
 ) {
+  const mpBookingRef = String(mpPayment?.metadata?.booking_id || mpPayment?.external_reference || '').trim();
+  if (!mpBookingRef || mpBookingRef !== String(booking.id).trim()) {
+    throw new Error('Comprovante de pagamento inválido: este pagamento não pertence a este agendamento.');
+  }
+
+  const mpTenantRef = String(mpPayment?.metadata?.tenant_id || '').trim();
+  if (mpTenantRef && mpTenantRef !== String(booking.tenant_id).trim()) {
+    throw new Error('Comprovante de pagamento inválido: estabelecimento divergente.');
+  }
+
+  const mpPayId = mpPayment?.id ? String(mpPayment.id) : null;
+  if (mpPayId) {
+    const { data: conflictPayment } = await supabase
+      .from('payments')
+      .select('id, booking_id')
+      .or(`mp_payment_id.eq.${mpPayId},stripe_payment_intent_id.eq.${mpPayId}`)
+      .neq('booking_id', booking.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (conflictPayment) {
+      throw new Error('Este pagamento já foi utilizado em outro agendamento.');
+    }
+  }
+
   const wasAlreadyConfirmed = booking.status === 'confirmed';
+  const totalAmount = Number(booking.amount_total || 0);
+  const rawExpectedDeposit = Number(booking.amount_paid || 0);
   const expectedAmount =
     booking.payment_mode === 'deposit'
-      ? Number(booking.amount_paid || 0)
-      : Number(booking.amount_total || 0);
+      ? (rawExpectedDeposit > 0 ? rawExpectedDeposit : Number((totalAmount * 0.5).toFixed(2)))
+      : totalAmount;
   const paidAmountBRL = Number(mpPayment?.transaction_amount || 0);
 
-  if (expectedAmount > 0 && paidAmountBRL > 0 && paidAmountBRL + 0.05 < expectedAmount) {
+  if (expectedAmount > 0 && paidAmountBRL + 0.05 < expectedAmount) {
     throw new Error(
       `Valor pago no Mercado Pago (R$ ${paidAmountBRL.toFixed(2)}) inferior ao exigido para a reserva (R$ ${expectedAmount.toFixed(2)}).`
     );
@@ -114,14 +141,34 @@ async function finalizeConfirmedBooking(
 async function resolveMercadoPagoPaymentForBooking(
   accessToken: string,
   paymentIdOrPref?: string | null,
-  bookingId?: string | null
+  bookingId?: string | null,
+  expectedTenantId?: string | null
 ) {
+  const belongsToBooking = (payment: any): boolean => {
+    if (!payment?.id) return false;
+    const payBookingRef = String(payment?.metadata?.booking_id || payment?.external_reference || '').trim();
+    const payTenantRef = String(payment?.metadata?.tenant_id || '').trim();
+    if (bookingId && payBookingRef !== String(bookingId).trim()) {
+      console.warn(
+        `[resolveMercadoPagoPaymentForBooking] Bloqueado payment ${payment.id} (ref=${payBookingRef || 'vazio'}) para booking ${bookingId}.`
+      );
+      return false;
+    }
+    if (expectedTenantId && payTenantRef && payTenantRef !== String(expectedTenantId).trim()) {
+      console.warn(
+        `[resolveMercadoPagoPaymentForBooking] Bloqueado payment ${payment.id} de outro tenant (${payTenantRef}).`
+      );
+      return false;
+    }
+    return true;
+  };
+
   if (paymentIdOrPref && /^\d+$/.test(String(paymentIdOrPref).trim())) {
     try {
       const payment = await mpRequest<any>(`/v1/payments/${String(paymentIdOrPref).trim()}`, accessToken, {
         method: 'GET',
       });
-      if (payment?.id) return payment;
+      if (belongsToBooking(payment)) return payment;
     } catch (_) {}
   }
 
@@ -132,7 +179,7 @@ async function resolveMercadoPagoPaymentForBooking(
         accessToken,
         { method: 'GET' }
       );
-      const list: any[] = searchRes?.results || [];
+      const list: any[] = (searchRes?.results || []).filter(belongsToBooking);
       const approved = list.find((p) => p.status === 'approved');
       if (approved) return approved;
       if (list[0]) return list[0];
@@ -520,27 +567,23 @@ serve(async (req) => {
     }
 
     // ── AÇÃO 3 (Padrão): Criar pagamento Pix (QR Code) ou Cartão (Checkout MP) direto na conta do salão ─
-    const { bookingId, tenantId: bodyTenantId, paymentMethodType, customerName, customerEmail, customerPhone, returnUrl } = body;
+    const { bookingId, paymentMethodType, customerName, customerEmail, customerPhone, returnUrl } = body;
     if (!bookingId) {
       throw new Error("bookingId é obrigatório para iniciar o pagamento.");
     }
 
-    const [{ data: booking }, prefetchedTenantMp] = await Promise.all([
-      supabase
-        .from('bookings')
-        .select('*, tenants(name), services(name, price)')
-        .eq('id', bookingId)
-        .single(),
-      bodyTenantId
-        ? getTenantMercadoPagoAccount(supabase, bodyTenantId, mpContext)
-        : Promise.resolve(null),
-    ]);
+    const { data: booking } = await supabase
+      .from('bookings')
+      .select('*, tenants(name), services(name, price)')
+      .eq('id', bookingId)
+      .single();
 
     if (!booking) {
       throw new Error("Agendamento não encontrado.");
     }
 
-    const tenantMp = prefetchedTenantMp || (await getTenantMercadoPagoAccount(supabase, booking.tenant_id, mpContext));
+    // Sempre busca a conta Mercado Pago a partir do tenant_id oficial gravado no booking (nunca confia em tenantId do body)
+    const tenantMp = await getTenantMercadoPagoAccount(supabase, booking.tenant_id, mpContext);
     if (!tenantMp || !tenantMp.chargesEnabled) {
       throw new Error("O salão ainda não conectou sua conta Mercado Pago. Por favor, escolha 'Pagar no local'.");
     }
@@ -552,8 +595,13 @@ serve(async (req) => {
     }
 
     const amountTotal = Number(booking.amount_total);
+    const rawDepositAmount = Number(booking.amount_paid || 0);
     const amountToCharge = Number(
-      (booking.payment_mode === 'deposit' ? Number(booking.amount_paid) : amountTotal).toFixed(2)
+      (
+        booking.payment_mode === 'deposit'
+          ? (rawDepositAmount > 0 ? rawDepositAmount : amountTotal * 0.5)
+          : amountTotal
+      ).toFixed(2)
     );
 
     if (amountToCharge < 0.5) {

@@ -33,7 +33,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { bookingId, newTime, newProId, actorType = 'client' } = await req.json();
+    const { bookingId, newTime, newProId, actorType = 'client', customerId, accessCode, customerPhone } = await req.json();
 
     if (!bookingId || !newTime) {
       throw new Error('Campos obrigatórios ausentes para reagendar.');
@@ -87,6 +87,30 @@ serve(async (req) => {
         throw new Error('Permissão negada para reagendar este agendamento.');
       }
       actorUserId = user.id;
+    } else {
+      let clientVerified = false;
+      if (customerId && booking.customer_id && String(customerId) === String(booking.customer_id)) {
+        clientVerified = true;
+      } else if (accessCode && booking.access_code && String(accessCode).trim() === String(booking.access_code).trim()) {
+        clientVerified = true;
+      } else if (customerPhone && booking.customer_id) {
+        const cleanDigits = String(customerPhone).replace(/\D/g, '');
+        if (cleanDigits.length >= 10) {
+          const { data: custRow } = await supabase
+            .from('customers')
+            .select('phone')
+            .eq('id', booking.customer_id)
+            .maybeSingle();
+          const dbPhone = String(custRow?.phone || '').replace(/\D/g, '');
+          if (dbPhone && (dbPhone === cleanDigits || dbPhone.endsWith(cleanDigits) || cleanDigits.endsWith(dbPhone))) {
+            clientVerified = true;
+          }
+        }
+      }
+
+      if (!clientVerified) {
+        throw new Error('Não foi possível validar a titularidade deste agendamento para reagendamento.');
+      }
     }
 
     // 2. Validar status atual

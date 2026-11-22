@@ -194,14 +194,44 @@ serve(async (req) => {
           .maybeSingle();
 
         if (booking) {
+          if (tenantIdFromQuery && booking.tenant_id !== tenantIdFromQuery) {
+            console.warn(
+              `[mp-webhook] Divergência de tenant_id para booking ${booking.id} (query=${tenantIdFromQuery}, booking=${booking.tenant_id}). Bloqueado.`
+            );
+            return new Response(JSON.stringify({ received: true, tenant_mismatch: true }), {
+              status: 200,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+
           eventTenantId = booking.tenant_id;
           const mpPayIdStr = String(mpPayment.id);
 
+          const { data: conflictPayment } = await supabase
+            .from('payments')
+            .select('id, booking_id')
+            .or(`mp_payment_id.eq.${mpPayIdStr},stripe_payment_intent_id.eq.${mpPayIdStr}`)
+            .neq('booking_id', booking.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (conflictPayment) {
+            console.warn(
+              `[mp-webhook] Pagamento ${mpPayIdStr} já pertence a outro booking (${conflictPayment.booking_id}). Bloqueado.`
+            );
+            return new Response(JSON.stringify({ received: true, duplicate_payment_other_booking: true }), {
+              status: 200,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+
           if (mpPayment.status === 'approved') {
+            const totalAmount = Number(booking.amount_total || 0);
+            const rawDepositAmount = Number(booking.amount_paid || 0);
             const expectedAmount =
               booking.payment_mode === 'deposit'
-                ? Number(booking.amount_paid || 0)
-                : Number(booking.amount_total || 0);
+                ? (rawDepositAmount > 0 ? rawDepositAmount : Number((totalAmount * 0.5).toFixed(2)))
+                : totalAmount;
             const paidBRL = Number(mpPayment.transaction_amount || 0);
 
             if (expectedAmount > 0 && paidBRL + 0.05 < expectedAmount) {
@@ -323,6 +353,43 @@ serve(async (req) => {
       }
 
       if (tenantId && planId && mpPayment.status === 'approved') {
+        const mpSubMarker = `mp_pay_${mpPayment.id}`;
+        const { data: conflictSub } = await supabase
+          .from('subscriptions')
+          .select('id, tenant_id')
+          .eq('stripe_subscription_id', mpSubMarker)
+          .neq('tenant_id', tenantId)
+          .limit(1)
+          .maybeSingle();
+
+        if (conflictSub) {
+          console.warn(
+            `[mp-webhook] Pagamento de assinatura ${mpPayment.id} já vinculado a outro tenant (${conflictSub.tenant_id}). Ignorado.`
+          );
+          return new Response(JSON.stringify({ received: true, duplicate_sub_other_tenant: true }), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        if (expectedBRL <= 0) {
+          const [{ data: cpRow }, { data: ppRow }] = await Promise.all([
+            supabase
+              .from('custom_pricing')
+              .select('amount_override')
+              .eq('tenant_id', tenantId)
+              .eq('plan_id', planId)
+              .maybeSingle(),
+            supabase
+              .from('plan_prices')
+              .select('amount')
+              .eq('plan_id', planId)
+              .eq('currency', 'BRL')
+              .maybeSingle(),
+          ]);
+          expectedBRL = Number(cpRow?.amount_override || ppRow?.amount || 0);
+        }
+
         const paidBRL = Number(mpPayment.transaction_amount || 0);
         if (expectedBRL > 0 && paidBRL + 0.05 < expectedBRL) {
           console.warn(
@@ -348,7 +415,6 @@ serve(async (req) => {
 
           if (!Number.isNaN(periodEndMs) && periodEndMs > Date.now() && !canceledAfterPayment) {
             const periodEnd = new Date(periodEndMs).toISOString();
-            const mpSubMarker = `mp_pay_${mpPayment.id}`;
             const mpCustomerMarker = mpPayment.payer?.id ? `mp_cust_${mpPayment.payer.id}` : null;
 
             await supabase.from('subscriptions').upsert({

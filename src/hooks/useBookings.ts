@@ -523,9 +523,23 @@ export function useDeleteBooking(tenantId: string) {
 export function useCancelBooking(tenantId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ bookingId, reason, actorType }: { bookingId: string; reason: string; actorType: 'client' | 'admin' }) => {
+    mutationFn: async ({
+      bookingId,
+      reason,
+      actorType,
+      customerId,
+      accessCode,
+      customerPhone,
+    }: {
+      bookingId: string;
+      reason: string;
+      actorType: 'client' | 'admin';
+      customerId?: string | null;
+      accessCode?: string | null;
+      customerPhone?: string | null;
+    }) => {
       const { data, error } = await supabase.functions.invoke('cancel-booking-financials', {
-        body: { bookingId, reason, actorType }
+        body: { bookingId, reason, actorType, customerId, accessCode, customerPhone }
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -548,9 +562,25 @@ export function useCancelBooking(tenantId?: string) {
 export function useRescheduleBooking(tenantId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ bookingId, newTime, newProId, actorType }: { bookingId: string; newTime: string; newProId: string | null; actorType: 'client' | 'admin' }) => {
+    mutationFn: async ({
+      bookingId,
+      newTime,
+      newProId,
+      actorType,
+      customerId,
+      accessCode,
+      customerPhone,
+    }: {
+      bookingId: string;
+      newTime: string;
+      newProId: string | null;
+      actorType: 'client' | 'admin';
+      customerId?: string | null;
+      accessCode?: string | null;
+      customerPhone?: string | null;
+    }) => {
       const { data, error } = await supabase.functions.invoke('reschedule-booking', {
-        body: { bookingId, newTime, newProId, actorType },
+        body: { bookingId, newTime, newProId, actorType, customerId, accessCode, customerPhone },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);

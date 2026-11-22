@@ -464,10 +464,10 @@ export default function Configuracoes() {
         setSubInfo(subData);
       }
 
-      // Load connect account info
+      // Load connect account info (sem ler mp_access_token / mp_refresh_token que são restritos ao backend)
       const { data: connectData } = await supabase
         .from('stripe_connect_accounts')
-        .select('*')
+        .select('id, tenant_id, stripe_account_id, charges_enabled, payouts_enabled, mp_user_id, mp_email, mp_nickname, mp_public_key, mp_token_expires_at')
         .eq('tenant_id', tenant.id)
         .maybeSingle();
       if (connectData && connectData.charges_enabled === true) {
@@ -478,7 +478,7 @@ export default function Configuracoes() {
           stripe_account_id: connectData.stripe_account_id,
           mp_email: (connectData as any).mp_email || null,
           mp_nickname: (connectData as any).mp_nickname || null,
-          is_oauth: Boolean((connectData as any).mp_refresh_token),
+          is_oauth: Boolean((connectData as any).mp_token_expires_at || (connectData as any).mp_user_id),
         });
       } else if (connectData) {
         const emailStr = String((connectData as any).mp_email || '').toLowerCase();
@@ -490,7 +490,7 @@ export default function Configuracoes() {
           stripe_account_id: connectData.stripe_account_id,
           mp_email: (connectData as any).mp_email || null,
           mp_nickname: (connectData as any).mp_nickname || null,
-          is_oauth: Boolean((connectData as any).mp_refresh_token),
+          is_oauth: Boolean((connectData as any).mp_token_expires_at || (connectData as any).mp_user_id),
           is_test_account_in_live: emailStr.endsWith('@testuser.com') || nickStr.startsWith('TESTUSER'),
         });
       } else {

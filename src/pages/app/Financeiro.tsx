@@ -326,6 +326,30 @@ export default function Financeiro() {
       });
 
       // Processar Atendimentos Concluídos (Balcão)
+      // Para agendamentos concluídos neste mês cujo sinal/pagamento online foi pago em mês anterior,
+      // busca os pagamentos vinculados para nunca duplicar receita nem errar o abatimento do sinal.
+      const onlineCompletedBookingIds = (completedBookings || [])
+        .filter((b: any) => {
+          const m = b.payment_mode || 'local';
+          return ['deposit', 'partial', 'partial_50', 'full', 'full_100'].includes(m);
+        })
+        .map((b: any) => b.id);
+
+      let linkedOnlinePayments: any[] = payments || [];
+      const missingOnlineBookingIds = onlineCompletedBookingIds.filter(
+        (id: string) => !(payments || []).some((p: any) => p.booking_id === id)
+      );
+      if (missingOnlineBookingIds.length > 0) {
+        const { data: extraPayments } = await supabase
+          .from('payments')
+          .select('id, booking_id, amount, status')
+          .eq('tenant_id', tenantId)
+          .in('booking_id', missingOnlineBookingIds);
+        if (extraPayments && extraPayments.length > 0) {
+          linkedOnlinePayments = [...linkedOnlinePayments, ...extraPayments];
+        }
+      }
+
       completedBookings?.forEach((b: any) => {
         const mode = b.payment_mode || 'local';
         let localVal = 0;
@@ -336,15 +360,18 @@ export default function Financeiro() {
           method = 'Local (Balcão)';
         } else if (mode === 'deposit' || mode === 'partial' || mode === 'partial_50') {
           const total = Number(b.amount_total || 0);
-          const succeededOnline = payments?.find(
+          const succeededOnline = linkedOnlinePayments.find(
             (p: any) =>
               p.booking_id === b.id && (p.status === 'succeeded' || p.status === 'refunded')
           );
-          const onlinePaid = succeededOnline ? Number(succeededOnline.amount || 0) : total * 0.5;
+          const fallbackPaid = Number(b.amount_paid || 0) > 0 && Number(b.amount_paid || 0) < total
+            ? Number(b.amount_paid)
+            : total * 0.5;
+          const onlinePaid = succeededOnline ? Number(succeededOnline.amount || 0) : fallbackPaid;
           localVal = Math.max(0, total - onlinePaid);
           method = 'Saldo Restante (Balcão)';
         } else if (mode === 'full' || mode === 'full_100') {
-          const hasOnlineRecord = payments?.some(
+          const hasOnlineRecord = linkedOnlinePayments.some(
             (p: any) =>
               p.booking_id === b.id && (p.status === 'succeeded' || p.status === 'refunded')
           );
