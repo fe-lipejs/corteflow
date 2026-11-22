@@ -600,7 +600,7 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="mt-3 flex flex-col gap-4 max-h-[385px] sm:max-h-[520px] overflow-y-auto overscroll-contain pr-1 scrollbar-thin">
+          <div className="mt-3 flex flex-col gap-4 max-h-[450px] sm:max-h-[580px] overflow-y-auto overscroll-contain pr-1 scrollbar-thin">
             {(() => {
               const proximosAgendamentos = upcomingBookings.filter(item => {
                 const isPast = new Date(item.scheduled_at) < new Date();
@@ -684,7 +684,7 @@ export default function Dashboard() {
                   </div>
 
                   {/* Cards Padrão Apple 2026 */}
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2.5">
                     {group.items.map((item) => {
                       const customerName = item.customer?.name || item.customers?.name || 'Cliente';
                       const serviceName = item.service?.name || item.services?.name || 'Serviço';
@@ -701,7 +701,7 @@ export default function Dashboard() {
                         <div
                           key={item.id}
                           onClick={() => setSelectedBooking(item)}
-                          className="group flex items-center justify-between gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer hover:bg-[var(--theme-bg-hover)] active:scale-[0.99] shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
+                          className="group flex items-start sm:items-center justify-between gap-3 px-3.5 py-4 sm:px-4 sm:py-4 rounded-2xl border transition-all cursor-pointer hover:bg-[var(--theme-bg-hover)] active:scale-[0.99] shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
                           style={{
                             backgroundColor: isPastDay
                               ? 'rgba(239, 68, 68, 0.04)'
@@ -713,12 +713,12 @@ export default function Dashboard() {
                               : isPastTime
                                 ? 'rgba(239, 68, 68, 0.25)'
                                 : isPending
-                                  ? `color-mix(in srgb, ${theme.accent} 25%, transparent)`
+                                  ? `color-mix(in srgb, ${theme.accent} 32%, transparent)`
                                   : theme.border,
                           }}
                         >
                           {/* Esquerda: Horário com Pontinho Redondo + Data */}
-                          <div className="flex flex-col shrink-0 min-w-[62px] sm:min-w-[72px]">
+                          <div className="flex flex-col shrink-0 min-w-[60px] sm:min-w-[68px] pt-0.5 sm:pt-0">
                             <div className="flex items-center gap-1.5">
                               <span
                                 className="font-bold text-xs sm:text-sm tabular-nums leading-tight tracking-tight"
@@ -738,23 +738,23 @@ export default function Dashboard() {
                                 <span
                                   className="w-2 h-2 rounded-full shrink-0 shadow-sm"
                                   style={{ backgroundColor: theme.accent }}
-                                  title="Pendente de confirmação"
+                                  title="Aguardando confirmação"
                                 />
                               ) : null}
                             </div>
                             <span
-                              className="text-[10px] font-semibold uppercase tracking-wider leading-tight opacity-65 tabular-nums mt-0.5"
+                              className="text-[10px] font-semibold uppercase tracking-wider leading-tight opacity-65 tabular-nums mt-1"
                               style={{ color: isPastSchedule ? '#EF4444' : theme.textSecondary }}
                             >
                               {format(schedDate, 'dd MMM', { locale: ptBR })}
                             </span>
                           </div>
 
-                          {/* Centro: Nome do Cliente + Ícones Neutros + Serviço e Status */}
+                          {/* Centro: Nome Completo + Ícones + Serviço + Status Visível (sem cortes) */}
                           <div className="flex-1 min-w-0 pr-1">
-                            <div className="flex items-center gap-1.5 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <p
-                                className="font-bold text-sm sm:text-[15px] truncate tracking-tight"
+                                className="font-bold text-sm sm:text-[15px] leading-snug break-words tracking-tight"
                                 style={{ color: theme.textPrimary }}
                               >
                                 {customerName}
@@ -766,33 +766,50 @@ export default function Dashboard() {
                                 paymentLabel={confInfo.paymentLabel}
                               />
                             </div>
+
                             <p
-                              className="text-xs truncate mt-0.5"
+                              className="text-xs leading-relaxed break-words mt-1"
                               style={{ color: theme.textSecondary }}
                             >
-                              <span className="opacity-80">{serviceName}</span>
-                              {proName && <span className="opacity-60"> · com {proName.split(' ')[0]}</span>}
-
-                              {/* Status Diferenciado: Atrasado (Vermelho) e Pendente (Accent) */}
-                              {isPastSchedule && isPending ? (
-                                <>
-                                  <span className="font-bold ml-1.5 text-[#EF4444]">· Atrasado</span>
-                                  <span className="font-semibold ml-1" style={{ color: theme.accent }}>· Aguarda confirmação</span>
-                                </>
-                              ) : isPastSchedule ? (
-                                <span className="font-bold ml-1.5 text-[#EF4444]">
-                                  · {isPastDay ? 'Dia atrasado' : 'Horário atrasado'}
-                                </span>
-                              ) : isPending ? (
-                                <span className="font-semibold ml-1.5" style={{ color: theme.accent }}>
-                                  · Aguarda confirmação
-                                </span>
-                              ) : null}
+                              <span className="opacity-85 font-medium">{serviceName}</span>
+                              {proName && <span className="opacity-65"> · com {proName.split(' ')[0]}</span>}
                             </p>
+
+                            {/* Status sempre visível em linha própria (nunca cortado por truncate) */}
+                            {(isPastSchedule || isPending) && (
+                              <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
+                                {isPastSchedule && (
+                                  <span
+                                    className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full"
+                                    style={{
+                                      backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                                      color: '#EF4444',
+                                    }}
+                                  >
+                                    {isPastDay ? 'Dia atrasado' : 'Horário atrasado'}
+                                  </span>
+                                )}
+                                {isPending && (
+                                  <span
+                                    className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full"
+                                    style={{
+                                      backgroundColor: `color-mix(in srgb, ${theme.accent} 14%, transparent)`,
+                                      color: theme.accent,
+                                    }}
+                                  >
+                                    <span
+                                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                                      style={{ backgroundColor: theme.accent }}
+                                    />
+                                    Aguardando confirmação
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           {/* Direita: Botão Quadrado Arredondado WhatsApp na cor do Accent + Preço */}
-                          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                          <div className="flex items-center gap-2 sm:gap-3 shrink-0 self-center">
                             {confInfo.whatsappUrl && (
                               <a
                                 href={confInfo.whatsappUrl}

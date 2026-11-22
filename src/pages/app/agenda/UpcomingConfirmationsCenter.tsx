@@ -487,7 +487,7 @@ export default function UpcomingConfirmationsCenter({
                               />
                             </div>
                             <p
-                              className="text-sm font-medium mt-0.5 truncate"
+                              className="text-sm font-medium mt-1 leading-snug break-words"
                               style={{ color: theme.textSecondary }}
                             >
                               {booking.service?.name ?? 'Serviço'}

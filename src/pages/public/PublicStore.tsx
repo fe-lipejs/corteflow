@@ -633,6 +633,41 @@ export default function PublicStore() {
   const [paymentScope, setPaymentScope] = useState<PaymentScope>("partial");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pix");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [loadingPhraseIdx, setLoadingPhraseIdx] = useState(0);
+
+  const PIX_LOADING_PHRASES = [
+    "Gerando QR Code PIX…",
+    "Preparando seu Pix…",
+    "Conectando com segurança…",
+    "Só mais um instante…",
+    "Quase lá…",
+  ];
+  const CARD_LOADING_PHRASES = [
+    "Abrindo checkout seguro…",
+    "Conectando ao Mercado Pago…",
+    "Só mais um instante…",
+    "Quase lá…",
+  ];
+
+  useEffect(() => {
+    if (!isProcessing || paymentScope === "local") {
+      setLoadingPhraseIdx(0);
+      return;
+    }
+    const phrases = paymentMethod === "pix" ? PIX_LOADING_PHRASES : CARD_LOADING_PHRASES;
+    setLoadingPhraseIdx(0);
+    const timer = window.setInterval(() => {
+      setLoadingPhraseIdx((prev) => (prev < phrases.length - 1 ? prev + 1 : 0));
+    }, 2200);
+    return () => window.clearInterval(timer);
+  }, [isProcessing, paymentScope, paymentMethod]);
+
+  const activeLoadingText =
+    paymentScope === "local"
+      ? "Confirmando…"
+      : paymentMethod === "pix"
+        ? PIX_LOADING_PHRASES[loadingPhraseIdx % PIX_LOADING_PHRASES.length]
+        : CARD_LOADING_PHRASES[loadingPhraseIdx % CARD_LOADING_PHRASES.length];
   const [errorMsg, setErrorMsg] = useState("");
   const [phoneFieldError, setPhoneFieldError] = useState("");
   const [nameFieldError, setNameFieldError] = useState("");
@@ -4339,14 +4374,18 @@ export default function PublicStore() {
                           >
                             {isProcessing ? (
                               <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                <span>
-                                  {paymentScope !== "local"
-                                    ? paymentMethod === "pix"
-                                      ? "Gerando QR Code PIX…"
-                                      : "Abrindo pagamento…"
-                                    : "Confirmando…"}
-                                </span>
+                                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                                <AnimatePresence mode="wait">
+                                  <motion.span
+                                    key={activeLoadingText}
+                                    initial={{ opacity: 0, y: 4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -4 }}
+                                    transition={{ duration: 0.22 }}
+                                  >
+                                    {activeLoadingText}
+                                  </motion.span>
+                                </AnimatePresence>
                               </>
                             ) : paymentScope === "local" ? (
                               <>
@@ -4634,14 +4673,18 @@ export default function PublicStore() {
                   >
                     {isProcessing ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>
-                          {paymentScope !== "local"
-                            ? paymentMethod === "pix"
-                              ? "Gerando QR Code PIX…"
-                              : "Abrindo pagamento…"
-                            : "Confirmando…"}
-                        </span>
+                        <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                        <AnimatePresence mode="wait">
+                          <motion.span
+                            key={activeLoadingText}
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -4 }}
+                            transition={{ duration: 0.22 }}
+                          >
+                            {activeLoadingText}
+                          </motion.span>
+                        </AnimatePresence>
                       </>
                     ) : paymentScope === "local" ? (
                       <>
