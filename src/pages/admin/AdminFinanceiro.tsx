@@ -25,26 +25,35 @@ interface FinancialStats {
 }
 
 async function fetchFinancialStats(year: number, month: number): Promise<FinancialStats> {
-  const [{ data: subs }, { data: tenants }] = await Promise.all([
+  const [{ data: subs }, { data: tenants }, { data: customPricing }] = await Promise.all([
     supabase.from('subscriptions').select(`
-      id, status, trial_ends_at, current_period_end, tenant_id,
+      id, status, trial_ends_at, current_period_end, tenant_id, plan_id,
       plans (name, plan_prices (amount, currency))
     `),
     supabase.from('tenants').select('id, name, slug, status, created_at'),
+    supabase.from('custom_pricing').select('tenant_id, plan_id, amount_override'),
   ]);
 
   const subList = (subs ?? []) as any[];
   const tenantList = (tenants ?? []) as any[];
+  const customPricingList = (customPricing ?? []) as any[];
 
   const tenantMap = new Map(tenantList.map(t => [t.id, t]));
 
-  // Revenue from active subscriptions (BRL)
+  // Revenue from active subscriptions (BRL, respecting custom overrides)
   const activeSubs = subList.filter(s => s.status === 'active');
   let monthlyRevenue = 0;
   activeSubs.forEach(sub => {
-    const prices = sub.plans?.plan_prices ?? [];
-    const brl = prices.find((p: any) => p.currency === 'BRL') ?? prices[0];
-    if (brl) monthlyRevenue += Number(brl.amount ?? 0);
+    const override = customPricingList.find(
+      c => c.tenant_id === sub.tenant_id && (c.plan_id === sub.plan_id || Number(c.amount_override) > 0)
+    );
+    if (override && override.amount_override != null && Number(override.amount_override) > 0) {
+      monthlyRevenue += Number(override.amount_override);
+    } else {
+      const prices = sub.plans?.plan_prices ?? [];
+      const brl = prices.find((p: any) => p.currency === 'BRL') ?? prices[0];
+      if (brl) monthlyRevenue += Number(brl.amount ?? 0);
+    }
   });
 
   // Delinquent = subscriptions that are suspended/blocked but tenant still exists

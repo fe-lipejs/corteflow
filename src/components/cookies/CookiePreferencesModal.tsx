@@ -70,7 +70,7 @@ export default function CookiePreferencesModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-[#040E20]/80 backdrop-blur-md">
+      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
         <motion.div
           initial={{ opacity: 0, scale: 0.94, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -78,27 +78,27 @@ export default function CookiePreferencesModal({
           transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
           className="w-full max-w-xl rounded-[32px] overflow-hidden flex flex-col max-h-[90vh] text-white relative"
           style={{
-            background: '#1C89C0',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-            boxShadow: '0 40px 100px rgba(0, 0, 0, 0.70), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
+            background: '#0D0D14',
+            border: '1px solid rgba(255, 30, 138, 0.28)',
+            boxShadow: '0 40px 100px rgba(0, 0, 0, 0.85), 0 0 50px rgba(255, 30, 138, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.12)',
           }}
         >
           {/* Header */}
           <div
             className="p-6 border-b flex items-center justify-between"
             style={{
-              background: 'rgba(255, 255, 255, 0.04)',
-              borderColor: 'rgba(255, 255, 255, 0.10)',
+              background: 'rgba(255, 255, 255, 0.03)',
+              borderColor: 'rgba(255, 255, 255, 0.08)',
             }}
           >
             <div className="flex items-center gap-3.5">
               <div
                 className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(255, 149, 186, 0.25), rgba(255, 149, 186, 0.10))',
-                  border: '1px solid rgba(255, 149, 186, 0.35)',
-                  color: '#FF95BA',
-                  boxShadow: 'none',
+                  background: 'linear-gradient(135deg, rgba(255, 30, 138, 0.22), rgba(255, 30, 138, 0.08))',
+                  border: '1px solid rgba(255, 30, 138, 0.40)',
+                  color: '#FF1E8A',
+                  boxShadow: '0 0 20px rgba(255, 30, 138, 0.20)',
                 }}
               >
                 <Cookie className="w-5 h-5" />
@@ -164,7 +164,7 @@ export default function CookiePreferencesModal({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5 font-bold text-white text-sm">
-                  <Sliders className="w-4 h-4 text-[#FF95BA]" />
+                  <Sliders className="w-4 h-4 text-[#FF1E8A]" />
                   <span>Preferências de Interface</span>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -174,7 +174,7 @@ export default function CookiePreferencesModal({
                     onChange={(e) => setPreferences(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-10 h-5.5 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#FF95BA]"></div>
+                  <div className="w-10 h-5.5 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#FF1E8A]"></div>
                 </label>
               </div>
               <p className="text-white/60 leading-relaxed text-xs">
@@ -192,7 +192,7 @@ export default function CookiePreferencesModal({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5 font-bold text-white text-sm">
-                  <Cookie className="w-4 h-4 text-[#FF95BA]" />
+                  <Cookie className="w-4 h-4 text-[#FF1E8A]" />
                   <span>Estatísticas &amp; Desempenho</span>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -202,7 +202,7 @@ export default function CookiePreferencesModal({
                     onChange={(e) => setStatistics(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-10 h-5.5 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#FF95BA]"></div>
+                  <div className="w-10 h-5.5 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#FF1E8A]"></div>
                 </label>
               </div>
               <p className="text-white/60 leading-relaxed text-xs">
@@ -215,8 +215,8 @@ export default function CookiePreferencesModal({
           <div
             className="p-5 border-t flex flex-col sm:flex-row items-center justify-between gap-3"
             style={{
-              background: 'rgba(18, 108, 153, 0.85)',
-              borderColor: 'rgba(255, 255, 255, 0.10)',
+              background: 'rgba(8, 8, 12, 0.90)',
+              borderColor: 'rgba(255, 255, 255, 0.08)',
             }}
           >
             <button
@@ -237,7 +237,11 @@ export default function CookiePreferencesModal({
               <button
                 type="button"
                 onClick={handleAcceptAll}
-                className="flex-1 sm:flex-initial h-10 px-6 rounded-full bg-[#FF95BA] hover:bg-[#FF95BA] text-black text-xs font-black tracking-tight transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                className="flex-1 sm:flex-initial h-10 px-6 rounded-full text-white text-xs font-black tracking-tight transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                style={{
+                  background: 'linear-gradient(135deg, #FF1E8A 0%, #D9006C 100%)',
+                  boxShadow: '0 8px 24px -4px rgba(255, 30, 138, 0.50)',
+                }}
               >
                 Aceitar Todos
               </button>

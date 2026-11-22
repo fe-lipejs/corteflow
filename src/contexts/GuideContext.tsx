@@ -14,7 +14,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     target: '[data-guide="nav-configuracoes"]',
     title: 'Configurações do Estabelecimento ⚙️',
-    description: 'Aqui você personaliza a identidade visual, define horários de funcionamento e conecta o Stripe para receber pagamentos online (Pix e cartão).',
+    description: 'Aqui você personaliza a identidade visual, define horários de funcionamento e conecta o Mercado Pago para receber pagamentos online (Pix e cartão).',
     badge: 'Passo 1 de 4',
     route: '/admin',
   },

@@ -889,7 +889,7 @@ export default function AdminTenants() {
                               }}
                               className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-zinc-300 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors font-medium cursor-pointer"
                             >
-                              <ExternalLink className="w-3.5 h-3.5 text-emerald-400" /> Detalhes Stripe
+                              <ExternalLink className="w-3.5 h-3.5 text-emerald-400" /> Detalhes Mercado Pago
                             </button>
                             {!tenant.deleted_at && (
                               <button
@@ -992,7 +992,7 @@ export default function AdminTenants() {
         </div>
       )}
 
-      {/* Stripe Info Modal */}
+      {/* Mercado Pago Subscription Info Modal */}
       {stripeInfoModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="bg-[#0E0E14] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl text-zinc-100">
@@ -1000,7 +1000,7 @@ export default function AdminTenants() {
               <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mb-4 text-emerald-400">
                 <ShieldAlert className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white">Detalhes do Stripe</h3>
+              <h3 className="text-lg font-bold text-white">Detalhes da Assinatura (Mercado Pago)</h3>
               <p className="text-sm text-zinc-400 mt-1">Informações de assinatura para {stripeInfoModalOpen.name}</p>
             </div>
             
@@ -1016,10 +1016,10 @@ export default function AdminTenants() {
                         <div className="text-zinc-400">Plano:</div>
                         <div className="text-white font-medium">{sub.plans?.name || 'Desconhecido'}</div>
                         
-                        <div className="text-zinc-400">Customer ID:</div>
+                        <div className="text-zinc-400">Conta / Payer MP:</div>
                         <div className="text-zinc-300 font-mono text-xs">{sub.stripe_customer_id || '—'}</div>
                         
-                        <div className="text-zinc-400">Subscription ID:</div>
+                        <div className="text-zinc-400">Pagamento MP:</div>
                         <div className="text-zinc-300 font-mono text-xs">{sub.stripe_subscription_id || '—'}</div>
                         
                         {sub.current_period_end && (
@@ -1053,7 +1053,7 @@ export default function AdminTenants() {
                 </>
               ) : (
                 <div className="text-center py-6 text-zinc-500">
-                  <p>Nenhuma assinatura registrada no Stripe.</p>
+                  <p>Nenhuma assinatura registrada no Mercado Pago.</p>
                 </div>
               )}
             </div>
@@ -1113,7 +1113,7 @@ export default function AdminTenants() {
                       </h4>
                       <p className="text-[11px] text-zinc-400 mt-0.5">
                         {contractHasStripeSub
-                          ? 'Assinatura vinculada ao Stripe (você ainda pode ajustar plano e limites).'
+                          ? 'Assinatura vinculada ao Mercado Pago (você ainda pode ajustar plano, validade e limites).'
                           : 'Se o cliente pagou diretamente a você (Pix/Dinheiro), ative o acesso abaixo.'}
                       </p>
                     </div>
@@ -1338,7 +1338,7 @@ export default function AdminTenants() {
                     Preço Promocional da Mensalidade (R$)
                   </h4>
                   <p className="text-[11px] text-zinc-400 mb-2.5">
-                    Defina um valor personalizado de mensalidade para este salão (ex: 17.90). O Stripe criará a assinatura recorrente exatamente neste valor todos os meses.
+                    Defina um valor personalizado de mensalidade para este salão (ex: 17.90). O Mercado Pago cobrará exatamente este valor nas renovações mensais.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
                     <div>
@@ -1377,7 +1377,7 @@ export default function AdminTenants() {
                   <div className="flex items-center justify-end">
                     {contractCustomPrice && Number(contractCustomPrice) > 0 ? (
                       <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
-                        ✓ Cobrança no Stripe: R$ {Number(contractCustomPrice).toFixed(2).replace('.', ',')}/mês
+                        ✓ Cobrança no Mercado Pago: R$ {Number(contractCustomPrice).toFixed(2).replace('.', ',')}/mês
                       </span>
                     ) : (
                       <span className="text-xs text-zinc-500 whitespace-nowrap">

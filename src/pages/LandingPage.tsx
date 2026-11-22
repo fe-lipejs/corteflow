@@ -26,7 +26,7 @@ import { useAttentionTracker } from '../hooks/useAttentionTracker';
    Apple × Nothing × Raffros
    ========================================================= */
 
-const ACCENT = "#FF95BA";
+const ACCENT = "#FF1E8A";
 const M = {
   booking: "/images/mockups/iphone-booking.png",
   booking2: "/images/mockups/iphone-booking-2.jpeg",
@@ -1860,35 +1860,35 @@ export default function LandingPage() {
           right: 0,
           height: "3px",
           transformOrigin: "0%",
-          backgroundColor: "#FF95BA",
+          backgroundColor: "#FF1E8A",
           zIndex: 999999,
         }}
       />
       <Header />
       <style>{`
         /* =====================================================
-           RAFFROS DESIGN SYSTEM
+           RAFFROS DESIGN SYSTEM — STUDIO NOIR & HOT MAGENTA
            ===================================================== */
 
         :root {
-          --rf-black: #0F172E;
-          --rf-black-2: #141D38;
-          --rf-black-3: #1B2645;
+          --rf-black: #121215;
+          --rf-black-2: #18181C;
+          --rf-black-3: #202026;
 
           --rf-white: #ffffff;
           --rf-paper: #FAF9F7;
-          --rf-paper-2: #F3F1ED;
+          --rf-paper-2: #F1F5F9;
 
-          --rf-text: #1A1F2E;
-          --rf-muted: #6B7280;
-          --rf-muted-dark: #9a9a95;
+          --rf-text: #121215;
+          --rf-muted: #475569;
+          --rf-muted-dark: #A1A1AA;
 
-          --rf-line: rgba(16,16,16,.10);
+          --rf-line: rgba(18,18,21,.10);
           --rf-line-dark: rgba(255,255,255,.11);
 
-          --rf-accent: #FF95BA;
-          --rf-accent-on-dark: #FF95BA;
-          --rf-accent-dark: #F27BA5;
+          --rf-accent: #FF1E8A;
+          --rf-accent-on-dark: #FF1E8A;
+          --rf-accent-dark: #E01177;
 
           --rf-max: 1240px;
 
@@ -3680,7 +3680,7 @@ export default function LandingPage() {
         }
 
         .rf-philosophy-mark svg {
-          color: #1C89C0;
+          color: #FF1E8A;
         }
 
         /* =====================================================
@@ -4847,9 +4847,9 @@ export default function LandingPage() {
           align-items: center;
           gap: 7px;
           padding: 9px 12px;
-          border: 1px solid rgba(255, 149, 186,.28);
-          background: rgba(255, 149, 186,.1);
-          color: #FF95BA;
+          border: 1px solid rgba(255, 30, 138,.35);
+          background: rgba(255, 30, 138,.12);
+          color: #FF1E8A;
           font-family: ui-monospace,SFMono-Regular,Menlo,monospace;
           font-size: 8px;
           text-transform: uppercase;
@@ -6442,29 +6442,32 @@ export default function LandingPage() {
 
 
           /* =====================================================
-             RAFFROS — PALETA FINAL
-             Laranja = ação. Azul = secundário. Neutros = base.
-             Contraste claro/escuro preservado. Sem arco-íris.
+             RAFFROS — PALETA FINAL (PRETO FOSCO, BRANCO & ROSA)
+             Seções escuras = Preto Fosco (#121215)
+             Seções claras = Fundo Branco (#FAF9F7 / #F1F5F9)
+             Rodapé = Fundo Cinza-Branco (#EEF0F4)
+             Ação / Destaques = Rosa (#FF1E8A)
              ===================================================== */
 
           :root {
-            --rf-accent: #FF95BA;
-            --rf-accent-dark: #F27BA5;
-            --rf-blue: #1C89C0;
-            --rf-blue-muted: #5CB3DE;
-            --rf-rose: #FF95BA;
-            --rf-rose-light: #FFD6E5;
-            --rf-ink: #0F172A;
+            --rf-accent: #FF1E8A;
+            --rf-accent-on-dark: #FF1E8A;
+            --rf-accent-dark: #E01177;
+            --rf-blue: #121215;
+            --rf-blue-muted: #3F3F46;
+            --rf-rose: #FF1E8A;
+            --rf-rose-light: #FFD6E9;
+            --rf-ink: #121215;
             --rf-muted: #475569;
             --rf-line: #E2E8F0;
             --rf-paper: #FAF9F7;
             --rf-paper-2: #F1F5F9;
-            --rf-dark: #1C89C0;
-            --rf-dark-2: #1679AB;
-            --rf-dark-card: #1679AB;
+            --rf-dark: #121215;
+            --rf-dark-2: #18181D;
+            --rf-dark-card: #1A1A20;
           }
 
-          /* ── CTAs: laranja puro ── */
+          /* ── CTAs: Rosa sólido ── */
           .rf-primary-button,
           .rf-header-cta,
           .rf-price-button,
@@ -6472,8 +6475,8 @@ export default function LandingPage() {
           .rf-price-button.featured {
             background: var(--rf-accent) !important;
             border-color: var(--rf-accent) !important;
-            color: #000000 !important;
-            -webkit-text-fill-color: #000000 !important;
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
             box-shadow: none !important;
           }
           .rf-primary-button:hover,
@@ -6487,14 +6490,14 @@ export default function LandingPage() {
           }
           .rf-price-badge {
             background: var(--rf-accent) !important;
-            color: #000000 !important;
+            color: #FFFFFF !important;
           }
           .rf-eyebrow-dot {
             background: var(--rf-accent) !important;
             box-shadow: none !important;
           }
 
-          /* ── Header: claro, legível ── */
+          /* ── Header: claro quando rolado, legível ── */
           .rf-header {
             background: transparent !important;
             border-bottom: 1px solid transparent !important;
@@ -6505,7 +6508,7 @@ export default function LandingPage() {
             backdrop-filter: blur(18px) saturate(160%) !important;
             -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
             border-bottom: 1px solid var(--rf-line) !important;
-            box-shadow: 0 4px 24px rgba(15, 23, 46, 0.06) !important;
+            box-shadow: 0 4px 24px rgba(18, 18, 21, 0.06) !important;
           }
           .rf-header .rf-logo,
           .rf-header.rf-header-scrolled .rf-logo {
@@ -6515,16 +6518,16 @@ export default function LandingPage() {
             filter: none !important;
           }
           .rf-header .rf-desktop-nav a {
-            color: rgba(26, 31, 46, 0.6) !important;
+            color: rgba(18, 18, 21, 0.65) !important;
           }
           .rf-header .rf-desktop-nav a:hover {
-            color: var(--rf-ink) !important;
+            color: #FF1E8A !important;
           }
           .rf-header .rf-login {
-            color: rgba(26, 31, 46, 0.7) !important;
+            color: rgba(18, 18, 21, 0.75) !important;
           }
           .rf-header .rf-login:hover {
-            color: var(--rf-ink) !important;
+            color: #FF1E8A !important;
           }
           .rf-header .rf-mobile-menu {
             color: var(--rf-ink) !important;
@@ -6532,346 +6535,11 @@ export default function LandingPage() {
             background: transparent !important;
           }
 
-          /* ── Menu Mobile: Fundo branco limpo, detalhes em azul e destaque em laranja (#FF95BA) ── */
-          .rf-mobile-nav-fullscreen {
-            position: fixed !important;
-            inset: 0 !important;
-            background: #FFFFFF !important;
-            color: #0F172A !important;
-            z-index: 999999 !important;
-            display: flex !important;
-            flex-direction: column !important;
-            padding: 22px 24px 36px !important;
-            overflow-y: auto !important;
-            box-sizing: border-box !important;
-          }
-
-          .rf-mobile-nav-top {
-            display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            margin-bottom: 18px !important;
-          }
-
-          .rf-mobile-logo-link img {
-            height: 28px !important;
-            filter: none !important;
-          }
-
-          .rf-mobile-close {
-            width: 38px !important;
-            height: 38px !important;
-            border-radius: 50% !important;
-            background: #F1F5F9 !important;
-            border: 1px solid #E2E8F0 !important;
-            color: #0F172A !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            cursor: pointer !important;
-            transition: background 0.15s ease !important;
-          }
-
-          .rf-mobile-close:hover {
-            background: #E2E8F0 !important;
-          }
-
-          .rf-mobile-nav-eyebrow {
-            display: inline-flex !important;
-            align-items: center !important;
-            gap: 8px !important;
-            font-size: 10px !important;
-            font-weight: 700 !important;
-            letter-spacing: 0.14em !important;
-            text-transform: uppercase !important;
-            color: #64748B !important;
-            margin-bottom: 20px !important;
-          }
-
-          .rf-mobile-nav-eyebrow .rf-eyebrow-dot {
-            width: 6px !important;
-            height: 6px !important;
-            border-radius: 50% !important;
-            background: var(--rf-accent) !important;
-            box-shadow: none !important;
-          }
-
-          .rf-mobile-nav-links {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 4px !important;
-            padding-left: 0 !important;
-          }
-
-          .rf-mobile-nav-item {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-            padding: 13px 4px !important;
-            font-size: 18px !important;
-            font-weight: 700 !important;
-            letter-spacing: -0.02em !important;
-            color: #0F172A !important;
-            text-decoration: none !important;
-            border-bottom: 1px solid #F1F5F9 !important;
-            transition: color 0.15s ease, padding-left 0.15s ease !important;
-          }
-
-          .rf-mobile-nav-item:hover,
-          .rf-mobile-nav-item:active {
-            color: #1C89C0 !important;
-            padding-left: 6px !important;
-          }
-
-          .rf-mobile-nav-arrow {
-            color: #94A3B8 !important;
-            transition: transform 0.15s ease, color 0.15s ease !important;
-          }
-
-          .rf-mobile-nav-item:hover .rf-mobile-nav-arrow {
-            color: #1C89C0 !important;
-            transform: translateX(3px) !important;
-          }
-
-          .rf-mobile-nav-divider {
-            height: 1px !important;
-            width: 100% !important;
-            background: #E2E8F0 !important;
-            margin: 14px 0 12px !important;
-            opacity: 1 !important;
-          }
-
-          .rf-mobile-playlist-card {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-            padding: 12px 14px !important;
-            border-radius: 14px !important;
-            background: rgba(28, 137, 192, 0.05) !important;
-            border: 1px solid rgba(28, 137, 192, 0.14) !important;
-            text-decoration: none !important;
-            transition: background 0.15s ease, border-color 0.15s ease !important;
-            margin-bottom: 14px !important;
-          }
-
-          .rf-mobile-playlist-card:hover {
-            background: rgba(28, 137, 192, 0.10) !important;
-            border-color: rgba(28, 137, 192, 0.25) !important;
-          }
-
-          .rf-mobile-playlist-left {
-            display: flex !important;
-            align-items: center !important;
-            gap: 12px !important;
-          }
-
-          .rf-mobile-playlist-icon {
-            width: 36px !important;
-            height: 36px !important;
-            border-radius: 10px !important;
-            background: #FFFFFF !important;
-            border: 1px solid #E2E8F0 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
-          }
-
-          .rf-mobile-playlist-title {
-            font-size: 14px !important;
-            font-weight: 700 !important;
-            color: #1C89C0 !important;
-            letter-spacing: -0.01em !important;
-            line-height: 1.2 !important;
-          }
-
-          .rf-mobile-playlist-sub {
-            font-size: 11px !important;
-            color: #64748B !important;
-            margin-top: 2px !important;
-          }
-
-          .rf-mobile-playlist-arrow {
-            color: #1C89C0 !important;
-          }
-
-          .rf-mobile-actions {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 10px !important;
-            margin-top: 8px !important;
-          }
-
-          .rf-mobile-login-btn {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 8px !important;
-            height: 44px !important;
-            border-radius: 12px !important;
-            background: #F8FAFC !important;
-            border: 1px solid #E2E8F0 !important;
-            color: #1C89C0 !important;
-            font-size: 13px !important;
-            font-weight: 600 !important;
-            text-decoration: none !important;
-            transition: background 0.15s ease !important;
-          }
-
-          .rf-mobile-login-btn:hover {
-            background: #F1F5F9 !important;
-          }
-
-          .rf-mobile-primary-cta {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 8px !important;
-            width: 100% !important;
-            height: 50px !important;
-            border-radius: 999px !important;
-            background: var(--rf-accent) !important;
-            color: #000000 !important;
-            font-size: 14px !important;
-            font-weight: 800 !important;
-            border: none !important;
-            cursor: pointer !important;
-            box-shadow: none !important;
-            transition: transform 0.15s ease, box-shadow 0.15s ease !important;
-          }
-
-          .rf-mobile-primary-cta:active {
-            transform: scale(0.98) !important;
-          }
-
-          .rf-mobile-trust-note {
-            text-align: center !important;
-            font-size: 11px !important;
-            color: #94A3B8 !important;
-            margin: 2px 0 0 !important;
-          }
-
-          /* ── HERO: fundo com azul vibrante como protagonista e azul-rosa claro tímido e sutil ── */
-          main .rf-hero {
-            background:
-              #1C89C0 !important;
-            color: #FFFFFF !important;
-          }
-          main .rf-hero h1 {
-            color: #FFFFFF !important;
-            -webkit-text-fill-color: #FFFFFF !important;
-            background: none !important;
-            font-size: clamp(55px, 7vw, 100px) !important;
-            line-height: .91 !important;
-            letter-spacing: -.075em !important;
-            font-weight: 730 !important;
-          }
-          main .rf-hero h1 span {
-            color: var(--rf-accent-on-dark) !important;
-            -webkit-text-fill-color: var(--rf-accent-on-dark) !important;
-            background: none !important;
-            -webkit-background-clip: initial !important;
-            background-clip: initial !important;
-          }
-          main .rf-hero .rf-primary-button {
-            background: var(--rf-accent-on-dark) !important;
-            border-color: var(--rf-accent-on-dark) !important;
-            color: #000000 !important;
-            -webkit-text-fill-color: #000000 !important;
-            box-shadow: none !important;
-          }
-          main .rf-hero .rf-hero-description {
-            color: rgba(255, 255, 255, 0.78) !important;
-          }
-          main .rf-hero .rf-eyebrow-dark {
-            color: rgba(255, 255, 255, 0.65) !important;
-          }
-          main .rf-hero .rf-secondary-button {
-            color: rgba(255, 255, 255, 0.88) !important;
-            border-color: rgba(255, 255, 255, 0.20) !important;
-            background: rgba(255, 255, 255, 0.08) !important;
-          }
-          main .rf-hero .rf-secondary-button:hover {
-            background: rgba(255, 255, 255, 0.14) !important;
-            border-color: rgba(255, 255, 255, 0.32) !important;
-          }
-          main .rf-hero .rf-trust-value {
-            color: var(--rf-accent-on-dark) !important;
-          }
-          main .rf-hero .rf-trust-label {
-            color: rgba(255, 255, 255, 0.5) !important;
-          }
-          main .rf-hero .rf-trust-line,
-          main .rf-hero .rf-hero-trust {
-            border-color: rgba(255, 255, 255, 0.14) !important;
-            background-color: transparent;
-          }
-          main .rf-hero .rf-trust-line {
-            background: rgba(255, 255, 255, 0.14) !important;
-          }
-          main .rf-hero .rf-scroll-indicator {
-            color: rgba(255, 255, 255, 0.35) !important;
-          }
-          main .rf-hero .rf-scroll-indicator div {
-            background: linear-gradient(to bottom, var(--rf-accent-on-dark), transparent) !important;
-          }
-          main .rf-hero .rf-hero-bottom-label {
-            color: rgba(255, 255, 255, 0.25) !important;
-          }
-          main .rf-hero .rf-grid-lines-dark span {
-            background: rgba(255, 255, 255, 0.06) !important;
-          }
-          main .rf-hero .rf-hero-orb-one {
-            background: radial-gradient(circle, rgba(28, 137, 192, 0.25), rgba(255, 149, 186, 0.10) 50%, transparent 70%) !important;
-          }
-          main .rf-hero .rf-hero-orb-two {
-            background: radial-gradient(circle, rgba(255, 149, 186, 0.12), transparent 70%) !important;
-          }
-          main .rf-hero .rf-real-phone-glow {
-            background: radial-gradient(ellipse, rgba(28, 137, 192, 0.40), rgba(255, 149, 186, 0.12) 60%, transparent 70%) !important;
-          }
-
-          /* Spotify card no hero escuro */
-          main .rf-hero .rf-spotify-card {
-            background: rgba(255, 255, 255, 0.08) !important;
-            border-color: rgba(255, 255, 255, 0.14) !important;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25) !important;
-          }
-          main .rf-hero .rf-spotify-card-title {
-            color: #FFFFFF !important;
-          }
-          main .rf-hero .rf-spotify-card-sub {
-            color: rgba(255, 255, 255, 0.55) !important;
-          }
-          main .rf-hero .rf-spotify-card-arrow {
-            color: rgba(255, 255, 255, 0.45) !important;
-          }
-          main .rf-hero .rf-spotify-card:hover {
-            background: rgba(28, 137, 192, 0.16) !important;
-            border-color: rgba(28, 137, 192, 0.35) !important;
-          }
-
-          /* Header no hero: logo e nav brancos quando no topo (sem scroll) */
-          .rf-header:not(.rf-header-scrolled) .rf-logo {
-            color: #FFFFFF !important;
-          }
-          .rf-header:not(.rf-header-scrolled) .rf-logo img {
-            filter: invert(1) !important;
-          }
-          .rf-header:not(.rf-header-scrolled) .rf-desktop-nav a {
-            color: rgba(255, 255, 255, 0.65) !important;
-          }
-          .rf-header:not(.rf-header-scrolled) .rf-desktop-nav a:hover {
-            color: #FFFFFF !important;
-          }
-          .rf-header:not(.rf-header-scrolled) .rf-login {
-            color: rgba(255, 255, 255, 0.75) !important;
-          }
-          .rf-header:not(.rf-header-scrolled) .rf-mobile-menu {
-            color: #FFFFFF !important;
-          }
-
-          /* ── Seções CLARAS ── */
+          /* ── Seções CLARAS (Fundo Branco #FAF9F7 / #F1F5F9) ──
+             - Sua agenda trabalha por você. 24h. (.rf-booking-section)
+             - Cada horário vazio é dinheiro que foi embora. (.rf-philosophy)
+             - Dúvidas rápidas antes de começar. (.rf-faq)
+          ── */
           main .rf-statement,
           main .rf-booking-section,
           main .rf-team-section,
@@ -6883,6 +6551,8 @@ export default function LandingPage() {
           main .rf-personalization-real {
             background: var(--rf-paper) !important;
             color: var(--rf-ink) !important;
+            border-top: none !important;
+            border-bottom: none !important;
           }
           main .rf-philosophy {
             background: var(--rf-paper-2) !important;
@@ -6894,30 +6564,24 @@ export default function LandingPage() {
           main .rf-faq h2,
           main .rf-finance-real h2,
           main .rf-domicilio-real h2,
-          main .rf-personalization-real h2 {
+          main .rf-personalization-real h2,
+          main .rf-detail-row h3 {
             color: var(--rf-ink) !important;
             -webkit-text-fill-color: var(--rf-ink) !important;
             background: none !important;
           }
-          /* "Cada horário vazio é dinheiro que foi embora." na cor preta */
+          /* "Cada horário vazio é dinheiro que foi embora." em Preto Fosco */
           main .rf-philosophy h2 {
-            color: #000000 !important;
-            -webkit-text-fill-color: #000000 !important;
+            color: #121215 !important;
+            -webkit-text-fill-color: #121215 !important;
             background: none !important;
           }
-          /* Span/em em seções claras: azul secundário */
+          /* Span/em em seções claras: Rosa (#FF1E8A) */
           main .rf-statement h2 em,
           main .rf-team-section h2 span,
           main .rf-finance-real h2 span,
           main .rf-domicilio-real h2 span,
-          main .rf-personalization-real h2 span {
-            color: var(--rf-blue) !important;
-            -webkit-text-fill-color: var(--rf-blue) !important;
-            background: none !important;
-            -webkit-background-clip: initial !important;
-            background-clip: initial !important;
-          }
-          /* Span "trabalha por você. 24h." em rosa (#FF95BA) accent */
+          main .rf-personalization-real h2 span,
           main .rf-booking-section h2 span {
             color: var(--rf-accent) !important;
             -webkit-text-fill-color: var(--rf-accent) !important;
@@ -6936,23 +6600,26 @@ export default function LandingPage() {
           main .rf-personalization-real p {
             color: var(--rf-muted) !important;
           }
-          main .rf-eyebrow {
+          main .rf-eyebrow,
+          main .rf-philosophy-label,
+          main .rf-philosophy-mark {
             color: var(--rf-muted) !important;
           }
+          main .rf-booking-details,
+          main .rf-detail-row,
+          main .rf-faq-list,
+          main .rf-faq-item {
+            border-color: var(--rf-line) !important;
+          }
 
-          /* ── Seções ESCURAS: azul vibrante protagonista e azul-rosa tímido sutil ── */
+          /* ── Seções ESCURAS: Preto Fosco (#121215) com destaques em Rosa (#FF1E8A) ── */
           main .rf-problem,
           main .rf-dashboard-section,
           main .rf-pricing,
-          main .rf-final-cta {
-            background:
-              #1C89C0 !important;
-            color: #FFFFFF !important;
-          }
+          main .rf-final-cta,
           main .rf-real-gallery,
           main .rf-payment-real {
-            background:
-              #1C89C0 !important;
+            background: #121215 !important;
             color: #FFFFFF !important;
           }
           main .rf-problem h2,
@@ -6965,7 +6632,6 @@ export default function LandingPage() {
             -webkit-text-fill-color: #FFFFFF !important;
             background: none !important;
           }
-          /* Spans em seções escuras com fundo azul: laranja mais claro e luminoso (#FF95BA) */
           main .rf-problem h2 span,
           main .rf-payment-real h2 span,
           main .rf-pricing h2 span,
@@ -6974,7 +6640,6 @@ export default function LandingPage() {
             -webkit-text-fill-color: var(--rf-accent-on-dark) !important;
             background: none !important;
           }
-          /* im2: Você administra o salão (laranja mais claro no azul) e sem largar o pincel (branco) */
           main .rf-dashboard-section h2 .rf-highlight-orange {
             color: var(--rf-accent-on-dark) !important;
             -webkit-text-fill-color: var(--rf-accent-on-dark) !important;
@@ -6986,8 +6651,8 @@ export default function LandingPage() {
           main .rf-final-cta .rf-final-button {
             background: var(--rf-accent-on-dark) !important;
             border-color: var(--rf-accent-on-dark) !important;
-            color: #000000 !important;
-            -webkit-text-fill-color: #000000 !important;
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
             box-shadow: none !important;
           }
           main .rf-hero .rf-eyebrow-dark .rf-eyebrow-dot,
@@ -7014,66 +6679,48 @@ export default function LandingPage() {
           main .rf-final-cta p,
           main .rf-real-gallery p,
           main .rf-payment-real p {
-            color: rgba(255, 255, 255, 0.6) !important;
+            color: rgba(255, 255, 255, 0.65) !important;
           }
           main .rf-eyebrow-dark {
             color: rgba(255, 255, 255, 0.55) !important;
           }
 
-          /* Final CTA com orbs sutis */
-          main .rf-final-cta {
-            background:
-              radial-gradient(circle at 30% 0%, rgba(28, 137, 192, 0.35), transparent 48%),
-              radial-gradient(circle at 80% 100%, rgba(255, 149, 186, 0.15), transparent 45%),
-              var(--rf-dark) !important;
-          }
-
-          /* ── Feature Strip (im3: textos com presença e legibilidade) ── */
-          main .rf-feature-strip {
-            margin-top: 54px !important;
-            border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
-          }
-          main .rf-feature-strip > div {
-            min-height: auto !important;
-            padding: 24px 22px !important;
-          }
-          main .rf-feature-strip span {
-            font-size: 13px !important;
-            font-weight: 800 !important;
-            color: var(--rf-accent) !important;
-            margin-bottom: 8px !important;
-            letter-spacing: 0.08em !important;
-            display: block !important;
-          }
-          main .rf-feature-strip strong {
-            font-size: 20px !important;
-            font-weight: 700 !important;
-            color: #FFFFFF !important;
-            margin-bottom: 6px !important;
-            display: block !important;
-            letter-spacing: -0.01em !important;
-          }
-          main .rf-feature-strip p {
-            font-size: 14.5px !important;
-            line-height: 1.5 !important;
-            color: rgba(255, 255, 255, 0.78) !important;
-            margin: 0 !important;
-          }
-
-          /* ── Pricing cards ── */
+          /* ── Pricing cards: laterais em Preto Fosco (#1A1A20) e destaque em Branco (#FFFFFF) ── */
           main .rf-price-card:not(.rf-price-featured) {
             background: var(--rf-dark-card) !important;
-            border-color: rgba(255, 255, 255, 0.1) !important;
+            border-color: rgba(255, 255, 255, 0.10) !important;
             color: #FFFFFF !important;
           }
           main .rf-price-featured {
             background: #FFFFFF !important;
-            border-color: rgba(255, 149, 186, 0.35) !important;
+            border-color: rgba(255, 30, 138, 0.35) !important;
             color: var(--rf-ink) !important;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2) !important;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25) !important;
+          }
+          main .rf-price-featured .rf-price-top > span,
+          main .rf-price-featured .rf-price-value strong {
+            color: var(--rf-ink) !important;
+          }
+          main .rf-price-featured .rf-price-top small,
+          main .rf-price-featured .rf-price-value small,
+          main .rf-price-featured .rf-price-value span,
+          main .rf-price-featured .rf-price-foot {
+            color: #64748B !important;
+          }
+          main .rf-price-featured .rf-price-divider {
+            background: rgba(18, 18, 21, 0.10) !important;
+          }
+          main .rf-price-featured .rf-price-features div {
+            color: #334155 !important;
           }
           main .rf-price-features svg {
             color: var(--rf-accent) !important;
+          }
+          main .rf-price-card:not(.rf-price-featured) .rf-price-button {
+            background: var(--rf-accent) !important;
+            border-color: var(--rf-accent) !important;
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
           }
 
           /* ── Acentos pontuais ── */
@@ -7084,13 +6731,14 @@ export default function LandingPage() {
             color: var(--rf-accent) !important;
           }
           main .rf-detail-icon {
-            background: rgba(255, 149, 186, 0.12) !important;
+            background: rgba(255, 30, 138, 0.12) !important;
+            border: none !important;
             color: var(--rf-accent) !important;
           }
           main .rf-payment-tag {
-            border-color: rgba(255, 149, 186, 0.35) !important;
-            background: rgba(255, 149, 186, 0.12) !important;
-            color: #FF95BA !important;
+            border-color: rgba(255, 30, 138, 0.35) !important;
+            background: rgba(255, 30, 138, 0.14) !important;
+            color: #FF1E8A !important;
           }
           main .rf-domicilio-real-points svg,
           main .rf-philosophy-mark svg {
@@ -7106,17 +6754,36 @@ export default function LandingPage() {
             -webkit-text-fill-color: #FFFFFF !important;
           }
 
-          /* FAQ */
+          /* FAQ em Fundo Branco */
           main .rf-faq-item button {
             color: var(--rf-ink) !important;
+          }
+          main .rf-faq-item button:hover {
+            color: #FF1E8A !important;
+          }
+          main .rf-faq-item button svg {
+            color: #FF1E8A !important;
           }
           main .rf-faq-answer-wrap p {
             color: var(--rf-muted) !important;
           }
 
-          /* Footer */
+          /* Footer em Fundo Cinza-Branco (#EEF0F4) */
           main .rf-footer {
             background: #EEF0F4 !important;
+            color: var(--rf-ink) !important;
+            border-top: 1px solid #E2E8F0 !important;
+          }
+          main .rf-footer .rf-footer-logo-img img {
+            filter: none !important;
+          }
+          main .rf-footer p,
+          main .rf-footer span,
+          main .rf-footer small {
+            color: var(--rf-muted) !important;
+          }
+          main .rf-footer strong,
+          main .rf-footer h4 {
             color: var(--rf-ink) !important;
           }
           main .rf-footer a,
@@ -7125,7 +6792,10 @@ export default function LandingPage() {
           }
           main .rf-footer a:hover,
           main .rf-footer button:hover {
-            color: var(--rf-ink) !important;
+            color: #FF1E8A !important;
+          }
+          main .rf-footer-bottom {
+            border-top-color: rgba(18, 18, 21, 0.09) !important;
           }
 
           /* Mobile: layout com tipografia imponente e celular despontando */
@@ -7134,8 +6804,7 @@ export default function LandingPage() {
               height: auto !important;
               min-height: 0 !important;
               padding-bottom: 24px !important;
-              background:
-                #1C89C0 !important;
+              background: #121215 !important;
             }
 
             .rf-hero-mobile-br {
@@ -7169,7 +6838,7 @@ export default function LandingPage() {
               line-height: 1.6 !important;
               margin: 0 0 24px !important;
               max-width: 360px !important;
-              color: rgba(255, 255, 255, 0.85) !important;
+              color: rgba(255, 255, 255, 0.78) !important;
             }
 
             main .rf-hero-actions {
@@ -7201,15 +6870,15 @@ export default function LandingPage() {
 
             main .rf-hero .rf-primary-button {
               background: var(--rf-accent-on-dark) !important;
-              color: #000000 !important;
-              -webkit-text-fill-color: #000000 !important;
+              color: #FFFFFF !important;
+              -webkit-text-fill-color: #FFFFFF !important;
               box-shadow: none !important;
             }
 
             main .rf-hero .rf-secondary-button {
               color: rgba(255, 255, 255, 0.88) !important;
-              border-color: rgba(255, 255, 255, 0.20) !important;
-              background: rgba(255, 255, 255, 0.08) !important;
+              border-color: rgba(255, 255, 255, 0.16) !important;
+              background: #1C1C22 !important;
             }
 
             main .rf-hero-product {
@@ -7288,7 +6957,7 @@ export default function LandingPage() {
               padding: 18px 20px !important;
               border: 1px solid rgba(255, 255, 255, 0.08) !important;
               border-radius: 16px !important;
-              background: rgba(255, 255, 255, 0.03) !important;
+              background: #18181D !important;
             }
 
             main .rf-feature-strip strong {
@@ -7297,79 +6966,12 @@ export default function LandingPage() {
 
             main .rf-feature-strip p {
               font-size: 14px !important;
-              color: rgba(255, 255, 255, 0.78) !important;
+              color: rgba(255, 255, 255, 0.72) !important;
             }
           }
 
           /* =====================================================
-             HERO — ILUMINAÇÃO AMBIENTE (feixes lentos e contínuos)
-             ===================================================== */
-          .rf-hero-light {
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
-            pointer-events: none;
-            z-index: 1;
-          }
-          .rf-hero-light-beam {
-            position: absolute;
-            top: -40%;
-            left: -60%;
-            width: 46%;
-            height: 180%;
-            transform: rotate(18deg);
-            background: linear-gradient(
-              90deg,
-              transparent 0%,
-              rgba(255, 255, 255, 0.025) 30%,
-              rgba(255, 255, 255, 0.11) 50%,
-              rgba(255, 255, 255, 0.025) 70%,
-              transparent 100%
-            );
-            filter: blur(18px);
-            animation: rfLightSweep 16s cubic-bezier(.45,.05,.55,.95) infinite;
-            will-change: transform;
-          }
-          .rf-hero-light-beam-two {
-            width: 28%;
-            animation-duration: 22s;
-            animation-delay: -9s;
-            background: linear-gradient(
-              90deg,
-              transparent 0%,
-              rgba(255, 210, 230, 0.03) 35%,
-              rgba(255, 149, 186, 0.08) 50%,
-              rgba(255, 210, 230, 0.03) 65%,
-              transparent 100%
-            );
-          }
-          .rf-hero-light-glow {
-            position: absolute;
-            width: 620px;
-            height: 620px;
-            top: -180px;
-            right: -160px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.20), transparent 62%);
-            filter: blur(10px);
-            animation: rfLightBreath 9s ease-in-out infinite;
-          }
-          @keyframes rfLightSweep {
-            0%   { transform: translateX(0) rotate(18deg); }
-            100% { transform: translateX(380%) rotate(18deg); }
-          }
-          @keyframes rfLightBreath {
-            0%, 100% { opacity: 0.55; transform: translate(0, 0) scale(1); }
-            50%      { opacity: 1;    transform: translate(-60px, 40px) scale(1.12); }
-          }
-          main .rf-hero .rf-hero-container { position: relative; z-index: 2; }
-          @media (prefers-reduced-motion: reduce) {
-            .rf-hero-light-beam,
-            .rf-hero-light-glow { animation: none !important; }
-          }
-
-          /* =====================================================
-             ANTI-FURO — CARDS NO MESMO ESTILO DE RF-FEATURE-STRIP (IMG2)
+             ANTI-FURO — CARDS EM PRETO FOSCO (#18181D)
              ===================================================== */
           .rf-payment-cards-list {
             display: flex;
@@ -7382,12 +6984,12 @@ export default function LandingPage() {
             padding: 18px 20px !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             border-radius: 16px !important;
-            background: rgba(255, 255, 255, 0.03) !important;
+            background: #18181D !important;
             transition: border-color .2s ease, background .2s ease;
           }
           .rf-payment-cards-list > div:hover {
-            border-color: rgba(255, 255, 255, 0.16) !important;
-            background: rgba(255, 255, 255, 0.05) !important;
+            border-color: rgba(255, 30, 138, 0.45) !important;
+            background: #1E1E25 !important;
           }
           main .rf-payment-cards-list span {
             font-size: 13px !important;
@@ -7412,7 +7014,7 @@ export default function LandingPage() {
           main .rf-payment-cards-list p {
             font-size: 14px !important;
             line-height: 1.5 !important;
-            color: rgba(255, 255, 255, 0.78) !important;
+            color: rgba(255, 255, 255, 0.72) !important;
             margin: 0 !important;
           }
           @media (min-width: 900px) {
@@ -7438,7 +7040,7 @@ export default function LandingPage() {
           }
 
           /* =====================================================
-             MENU MOBILE — MESMA LINGUAGEM DA LANDING
+             MENU MOBILE — PRETO FOSCO & ROSA
              ===================================================== */
           .rf-menu {
             position: fixed;
@@ -7446,8 +7048,7 @@ export default function LandingPage() {
             z-index: 999999;
             overflow: hidden;
             color: #FFFFFF;
-            background:
-              #1C89C0;
+            background: #121215;
           }
           .rf-menu-inner {
             position: relative;
@@ -7478,13 +7079,11 @@ export default function LandingPage() {
             align-items: center;
             justify-content: center;
             color: #FFFFFF;
-            background: rgba(255,255,255,0.10);
-            border: 1px solid rgba(255,255,255,0.18) !important;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: #1C1C22;
+            border: 1px solid rgba(255,255,255,0.14) !important;
             transition: background .2s ease, transform .2s ease;
           }
-          .rf-menu-close:active { transform: scale(0.94); background: rgba(255,255,255,0.18); }
+          .rf-menu-close:active { transform: scale(0.94); background: #26262E; }
           .rf-menu-eyebrow {
             display: inline-flex;
             align-items: center;
@@ -7506,14 +7105,14 @@ export default function LandingPage() {
           .rf-menu-links {
             display: flex;
             flex-direction: column;
-            border-top: 1px solid rgba(255,255,255,0.12);
+            border-top: 1px solid rgba(255,255,255,0.10);
           }
           .rf-menu-link {
             display: flex;
             align-items: center;
             gap: 16px;
             padding: 18px 2px;
-            border-bottom: 1px solid rgba(255,255,255,0.12);
+            border-bottom: 1px solid rgba(255,255,255,0.10);
             color: #FFFFFF;
             text-decoration: none;
           }
@@ -7562,18 +7161,16 @@ export default function LandingPage() {
             border-radius: 16px;
             text-decoration: none;
             color: #FFFFFF;
-            background: rgba(255, 255, 255, 0.08) !important;
-            border: 1px solid rgba(255, 255, 255, 0.14) !important;
-            backdrop-filter: blur(14px) !important;
-            -webkit-backdrop-filter: blur(14px) !important;
+            background: #1C1C22 !important;
+            border: 1px solid rgba(255, 255, 255, 0.10) !important;
             box-shadow: none !important;
             transition: none !important;
           }
           .rf-menu-glass-card:hover,
           .rf-menu-glass-card:active,
           .rf-menu-glass-card:focus {
-            background: rgba(255, 255, 255, 0.08) !important;
-            border-color: rgba(255, 255, 255, 0.14) !important;
+            background: #23232B !important;
+            border-color: var(--rf-accent) !important;
             color: #FFFFFF !important;
             box-shadow: none !important;
             transform: none !important;
@@ -7586,8 +7183,8 @@ export default function LandingPage() {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(0,0,0,0.25);
-            border: 1px solid rgba(255,255,255,0.12);
+            background: #121215;
+            border: 1px solid rgba(255,255,255,0.10);
           }
           .rf-menu-glass-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
           .rf-menu-glass-text strong { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
@@ -7603,7 +7200,7 @@ export default function LandingPage() {
             font-size: 15px;
             font-weight: 800;
             letter-spacing: -0.01em;
-            color: #000000;
+            color: #FFFFFF;
             background: var(--rf-accent-on-dark);
             box-shadow: none;
             transition: transform .15s ease;
@@ -7616,7 +7213,7 @@ export default function LandingPage() {
             font-weight: 500;
             color: rgba(255,255,255,0.78);
             background: transparent;
-            border: 1px solid rgba(255,255,255,0.2) !important;
+            border: 1px solid rgba(255,255,255,0.18) !important;
           }
           .rf-menu-login strong { color: #FFFFFF; font-weight: 700; }
           .rf-menu-note {

@@ -325,149 +325,77 @@ function PlanModal({
                 </div>
               </div>
 
-              {/* Preços e Stripe IDs (Multi-Moedas com suporte a Teste e Live) */}
+              {/* Preços do Plano por Moeda (Mercado Pago) */}
               <div className="space-y-4 mt-4 pt-4 border-t border-white/10">
                 <div>
-                  <h4 className="text-sm font-semibold text-white">Preços e Identificadores do Stripe (Teste &amp; Produção)</h4>
+                  <h4 className="text-sm font-semibold text-white">Preços do Plano por Moeda (Mercado Pago)</h4>
                   <p className="text-[11px] text-zinc-400 mt-0.5">
-                    Cadastre os IDs do Stripe para cada ambiente. Quando a plataforma estiver em Modo Teste, usará o ID de Teste. Quando você alternar para Modo Produção (Live), usará o ID de Produção.
+                    Defina o valor mensal do plano. O Mercado Pago gera o checkout automaticamente com o valor configurado abaixo (ou com o preço promocional personalizado do salão, quando houver).
                   </p>
                 </div>
                 
                 {/* BRL */}
-                <div className="p-3.5 bg-white/[0.02] border border-white/10 rounded-xl space-y-3">
-                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <div className="p-3.5 bg-white/[0.02] border border-white/10 rounded-xl">
+                  <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-white flex items-center gap-1.5">
                       🇧🇷 Real Brasileiro (BRL)
                     </span>
-                    <div className="w-32">
+                    <div className="w-36">
                       <div className="relative">
                         <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-400">R$</span>
                         <input
                           type="number"
+                          step="0.01"
                           value={form.price_brl}
                           onChange={e => setForm(f => ({ ...f, price_brl: Number(e.target.value) }))}
-                          className="w-full pl-8 pr-2.5 py-1 bg-[#13131A] border border-white/10 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500"
+                          className="w-full pl-8 pr-2.5 py-1.5 bg-[#13131A] border border-white/10 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500"
                           placeholder="0.00"
                         />
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[10px] font-bold text-amber-400 mb-1 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> Stripe Price ID (Modo Teste)
-                      </label>
-                      <input
-                        value={form.stripe_price_brl_test}
-                        onChange={e => setForm(f => ({ ...f, stripe_price_brl_test: e.target.value }))}
-                        className="w-full px-2.5 py-1.5 bg-[#13131A] border border-white/10 rounded-lg text-xs text-white font-mono placeholder-zinc-600 outline-none focus:border-amber-500"
-                        placeholder="price_1U8... (test)"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-emerald-400 mb-1 flex items-center gap-1">
-                        <ShieldCheck className="w-3 h-3" /> Stripe Price ID (Modo Live)
-                      </label>
-                      <input
-                        value={form.stripe_price_brl_live}
-                        onChange={e => setForm(f => ({ ...f, stripe_price_brl_live: e.target.value }))}
-                        className="w-full px-2.5 py-1.5 bg-[#13131A] border border-white/10 rounded-lg text-xs text-white font-mono placeholder-zinc-600 outline-none focus:border-emerald-500"
-                        placeholder="price_1U8... (live)"
-                      />
                     </div>
                   </div>
                 </div>
 
                 {/* USD */}
-                <div className="p-3.5 bg-white/[0.02] border border-white/10 rounded-xl space-y-3">
-                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <div className="p-3.5 bg-white/[0.02] border border-white/10 rounded-xl">
+                  <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-white flex items-center gap-1.5">
                       🇺🇸 Dólar Americano (USD)
                     </span>
-                    <div className="w-32">
+                    <div className="w-36">
                       <div className="relative">
                         <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-400">$</span>
                         <input
                           type="number"
+                          step="0.01"
                           value={form.price_usd}
                           onChange={e => setForm(f => ({ ...f, price_usd: Number(e.target.value) }))}
-                          className="w-full pl-8 pr-2.5 py-1 bg-[#13131A] border border-white/10 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500"
+                          className="w-full pl-8 pr-2.5 py-1.5 bg-[#13131A] border border-white/10 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500"
                           placeholder="0.00"
                         />
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[10px] font-bold text-amber-400 mb-1 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> Stripe Price ID (Modo Teste)
-                      </label>
-                      <input
-                        value={form.stripe_price_usd_test}
-                        onChange={e => setForm(f => ({ ...f, stripe_price_usd_test: e.target.value }))}
-                        className="w-full px-2.5 py-1.5 bg-[#13131A] border border-white/10 rounded-lg text-xs text-white font-mono placeholder-zinc-600 outline-none focus:border-amber-500"
-                        placeholder="price_1U8... (test)"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-emerald-400 mb-1 flex items-center gap-1">
-                        <ShieldCheck className="w-3 h-3" /> Stripe Price ID (Modo Live)
-                      </label>
-                      <input
-                        value={form.stripe_price_usd_live}
-                        onChange={e => setForm(f => ({ ...f, stripe_price_usd_live: e.target.value }))}
-                        className="w-full px-2.5 py-1.5 bg-[#13131A] border border-white/10 rounded-lg text-xs text-white font-mono placeholder-zinc-600 outline-none focus:border-emerald-500"
-                        placeholder="price_1U8... (live)"
-                      />
                     </div>
                   </div>
                 </div>
 
                 {/* EUR */}
-                <div className="p-3.5 bg-white/[0.02] border border-white/10 rounded-xl space-y-3">
-                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <div className="p-3.5 bg-white/[0.02] border border-white/10 rounded-xl">
+                  <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-white flex items-center gap-1.5">
                       🇪🇺 Euro (EUR)
                     </span>
-                    <div className="w-32">
+                    <div className="w-36">
                       <div className="relative">
                         <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-400">€</span>
                         <input
                           type="number"
+                          step="0.01"
                           value={form.price_eur}
                           onChange={e => setForm(f => ({ ...f, price_eur: Number(e.target.value) }))}
-                          className="w-full pl-8 pr-2.5 py-1 bg-[#13131A] border border-white/10 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500"
+                          className="w-full pl-8 pr-2.5 py-1.5 bg-[#13131A] border border-white/10 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500"
                           placeholder="0.00"
                         />
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[10px] font-bold text-amber-400 mb-1 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> Stripe Price ID (Modo Teste)
-                      </label>
-                      <input
-                        value={form.stripe_price_eur_test}
-                        onChange={e => setForm(f => ({ ...f, stripe_price_eur_test: e.target.value }))}
-                        className="w-full px-2.5 py-1.5 bg-[#13131A] border border-white/10 rounded-lg text-xs text-white font-mono placeholder-zinc-600 outline-none focus:border-amber-500"
-                        placeholder="price_1U8... (test)"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-emerald-400 mb-1 flex items-center gap-1">
-                        <ShieldCheck className="w-3 h-3" /> Stripe Price ID (Modo Live)
-                      </label>
-                      <input
-                        value={form.stripe_price_eur_live}
-                        onChange={e => setForm(f => ({ ...f, stripe_price_eur_live: e.target.value }))}
-                        className="w-full px-2.5 py-1.5 bg-[#13131A] border border-white/10 rounded-lg text-xs text-white font-mono placeholder-zinc-600 outline-none focus:border-emerald-500"
-                        placeholder="price_1U8... (live)"
-                      />
                     </div>
                   </div>
                 </div>
@@ -805,7 +733,7 @@ export default function AdminPlans() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Planos &amp; Permissões"
-        subtitle="Configure as regras, limites e identificadores Stripe de Teste e Live via Permission Engine"
+        subtitle="Configure os preços, limites e permissões dos planos cobrados via Mercado Pago"
         icon={<Settings className="w-5 h-5 text-emerald-400" />}
         actions={
           <button
@@ -871,22 +799,22 @@ export default function AdminPlans() {
                     ) : <span className="text-xs text-zinc-500">Sem preço</span>}
                   </div>
 
-                  {/* Status das chaves Stripe */}
+                  {/* Status de cobrança Mercado Pago */}
                   <div className="py-2 px-2.5 bg-white/[0.02] border border-white/5 rounded-xl mb-3 space-y-1 text-[10px]">
                     <div className="flex items-center justify-between">
                       <span className="text-zinc-400 flex items-center gap-1">
-                        <AlertTriangle className="w-2.5 h-2.5 text-amber-400" /> Preço Teste:
+                        <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" /> Checkout Mercado Pago:
                       </span>
-                      <span className="font-mono text-zinc-300">
-                        {brlPrice?.stripe_price_id_test || brlPrice?.stripe_price_id ? 'Configurado' : 'Automático'}
+                      <span className="font-mono text-emerald-400 font-semibold">
+                        Pix &amp; Cartão
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-zinc-400 flex items-center gap-1">
-                        <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" /> Preço Live:
+                        <CreditCard className="w-2.5 h-2.5 text-emerald-400" /> Ciclo:
                       </span>
                       <span className="font-mono text-zinc-300">
-                        {brlPrice?.stripe_price_id_live ? 'Configurado' : 'Automático'}
+                        Mensal (30 dias)
                       </span>
                     </div>
                   </div>

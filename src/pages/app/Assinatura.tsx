@@ -392,7 +392,7 @@ export default function Assinatura() {
       if (invokeErr) {
         throw new Error(
           invokeErr.message ||
-          'Erro ao sincronizar com Stripe'
+          'Erro ao sincronizar com o Mercado Pago'
         );
       }
 
@@ -419,7 +419,7 @@ export default function Assinatura() {
       } else {
         toast.error(
           data.message ||
-          'Nenhuma assinatura ativa encontrada no Stripe.'
+          'Nenhuma assinatura ativa encontrada no Mercado Pago.'
         );
       }
     } catch (err: any) {

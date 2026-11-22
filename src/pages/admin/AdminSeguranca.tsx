@@ -191,7 +191,7 @@ export default function AdminSeguranca() {
           <p>🛡️ <strong className="text-white">Autenticação:</strong> Gerenciada 100% pelo Supabase Auth. Sessões renovadas automaticamente. Nunca armazenamos senhas.</p>
           <p>🔑 <strong className="text-white">Roles:</strong> Verificação dupla — frontend (RequireRole) e backend (RLS policies). Um usuário não pode escalar privilégios via API.</p>
           <p>📋 <strong className="text-white">Auditoria:</strong> Execute a migration <code className="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-mono">0013_audit_log.sql</code> para ativar o log completo de ações administrativas.</p>
-          <p>🔔 <strong className="text-white">Chaves:</strong> <code className="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-mono">STRIPE_SECRET_KEY</code> e <code className="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-mono">SUPABASE_SERVICE_ROLE_KEY</code> nunca são expostas no frontend. Use sempre Edge Functions ou variáveis server-side.</p>
+          <p>🔔 <strong className="text-white">Chaves:</strong> <code className="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-mono">MP_ACCESS_TOKEN</code> e <code className="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-mono">SUPABASE_SERVICE_ROLE_KEY</code> nunca são expostas no frontend. Use sempre Edge Functions ou variáveis server-side.</p>
         </div>
       </AdminCard>
     </div>

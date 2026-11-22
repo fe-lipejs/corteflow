@@ -3417,7 +3417,7 @@ export default function Configuracoes() {
                   </div>
                   <h3 className="text-xl font-bold text-center text-white mb-2">Excluir Conta Permanentemente?</h3>
                   <p className="text-sm text-[#888] text-center">
-                    Esta ação <strong>cancelará imediatamente</strong> qualquer assinatura ativa no Stripe e revogará seu acesso ao sistema. O histórico será mantido apenas para fins de auditoria.
+                    Esta ação <strong>cancelará imediatamente</strong> qualquer assinatura ativa no Mercado Pago e revogará seu acesso ao sistema. O histórico será mantido apenas para fins de auditoria.
                   </p>
                 </div>
 

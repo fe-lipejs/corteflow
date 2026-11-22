@@ -10,8 +10,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, CheckCircle2, Upload, Image, Scissors, MapPin, AtSign, Phone as PhoneIcon, FileText, Sparkles, Star, Mail, Loader2, ArrowRight } from 'lucide-react';
 import { normalizeBrazilianPhone, formatPhoneMask } from '../lib/phoneUtils';
 
-const ACCENT = '#FF5C95';
-const ACCENT_HOVER = '#F2447F';
+const ACCENT = '#FF1E8A';
+const ACCENT_HOVER = '#D9006C';
 
 const onboardingSchema = z.object({
   language: z.enum(['pt', 'en', 'es', 'fr', 'de']),

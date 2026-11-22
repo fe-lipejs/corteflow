@@ -220,7 +220,7 @@ export function AdminHistory() {
                         )}
                         {event.payload && Object.keys(event.payload).length > 0 && (
                           <div className="bg-[#13131A] p-3 rounded-lg border border-white/10">
-                            <strong className="text-zinc-200">Stripe Payload:</strong>
+                            <strong className="text-zinc-200">Payload do Evento (Mercado Pago):</strong>
                             <pre className="mt-1 whitespace-pre-wrap font-mono text-[10px] text-zinc-400 overflow-x-auto max-h-32">{JSON.stringify(event.payload, null, 2)}</pre>
                           </div>
                         )}

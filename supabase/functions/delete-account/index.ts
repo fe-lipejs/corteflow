@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.14.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { getMercadoPagoContext, mpRequest } from "../_shared/stripe.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,10 +15,9 @@ serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
 
-    if (!supabaseUrl || !supabaseServiceKey || !stripeSecretKey) {
-      throw new Error("Missing environment variables");
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error("Missing Supabase environment variables");
     }
 
     // Verify JWT
@@ -52,64 +51,63 @@ serve(async (req: Request) => {
       // Body might be empty
     }
 
-    // Find user profile
+    // Find caller profile
     const { data: profile } = await supabase
       .from('profiles')
       .select('tenant_id, role')
       .eq('id', user.id)
       .maybeSingle();
 
-    // Check if user is owner of the tenant
+    const isSuperAdmin = profile?.role === 'super_admin';
+
+    // Check if caller is owner of the tenant
     const { data: tenantCheck } = await supabase
       .from('tenants')
       .select('id, owner_user_id')
       .or(`owner_user_id.eq.${user.id},id.eq.${profile?.tenant_id || '00000000-0000-0000-0000-000000000000'}`)
       .maybeSingle();
 
-    const tenantId = (profile?.role === 'super_admin' && targetTenantId) 
-      ? targetTenantId 
+    const tenantId = (isSuperAdmin && targetTenantId)
+      ? targetTenantId
       : (profile?.tenant_id || tenantCheck?.id);
 
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2023-10-16",
-    });
+    let targetOwnerUserId: string | null = isSuperAdmin && targetTenantId ? null : user.id;
 
     if (tenantId) {
-      // 1. CANCELAR TODAS AS ASSINATURAS DO STRIPE IMEDIATAMENTE
+      if (isSuperAdmin && targetTenantId) {
+        const { data: targetTenantRow } = await supabase
+          .from('tenants')
+          .select('owner_user_id')
+          .eq('id', tenantId)
+          .maybeSingle();
+        targetOwnerUserId = targetTenantRow?.owner_user_id || null;
+      }
+
+      // 1. CANCELAR ASSINATURAS RECORRENTES (PREAPPROVAL) DO MERCADO PAGO SE EXISTIREM
       const { data: subs } = await supabase
         .from('subscriptions')
         .select('stripe_subscription_id, status')
         .eq('tenant_id', tenantId);
 
       if (subs && subs.length > 0) {
+        const mpContext = await getMercadoPagoContext(supabase).catch(() => null);
         for (const s of subs) {
-          if (s.stripe_subscription_id) {
+          if (s.stripe_subscription_id && s.stripe_subscription_id.startsWith('mp_pre_') && mpContext?.accessToken) {
             try {
-              await stripe.subscriptions.cancel(s.stripe_subscription_id);
-              console.log(`Assinatura Stripe ${s.stripe_subscription_id} cancelada com sucesso.`);
-            } catch (stripeErr) {
-              console.error("Erro ao cancelar assinatura no Stripe:", stripeErr);
+              const preapprovalId = s.stripe_subscription_id.replace('mp_pre_', '');
+              await mpRequest(`/preapproval/${preapprovalId}`, mpContext.accessToken, {
+                method: 'PUT',
+                body: { status: 'cancelled' },
+              });
+              console.log(`Assinatura Mercado Pago ${preapprovalId} cancelada com sucesso.`);
+            } catch (mpErr) {
+              console.warn("Aviso ao cancelar preapproval no Mercado Pago:", mpErr);
             }
           }
         }
       }
 
-      // 2. EXCLUIR CONTA STRIPE CONNECT SE EXISTIR
-      const { data: connectAccount } = await supabase
-        .from('stripe_connect_accounts')
-        .select('stripe_account_id')
-        .eq('tenant_id', tenantId)
-        .maybeSingle();
-
-      if (connectAccount?.stripe_account_id) {
-        try {
-          await stripe.accounts.del(connectAccount.stripe_account_id);
-        } catch (err) {
-          console.warn("Aviso ao excluir conta connect:", err);
-        }
-      }
-
-      // 3. EXCLUSÃO TOTAL DOS DADOS DO SALÃO NO BANCO
+      // 2. EXCLUSÃO TOTAL DOS DADOS DO SALÃO NO BANCO
       await supabase.from('stripe_connect_accounts').delete().eq('tenant_id', tenantId);
       await supabase.from('subscriptions').delete().eq('tenant_id', tenantId);
       await supabase.from('tenant_settings').delete().eq('tenant_id', tenantId);
@@ -126,19 +124,19 @@ serve(async (req: Request) => {
       await supabase.from('tenants').delete().eq('id', tenantId);
     }
 
-    // 4. EXCLUIR PERFIL E USUÁRIO DO AUTH (PARA NUNCA MAIS CONSEGUIR LOGAR)
-    await supabase.from('profiles').delete().eq('id', user.id);
-    
-    // Deleta permanentemente o usuário do Auth do Supabase
-    try {
-      await supabase.auth.admin.deleteUser(user.id);
-    } catch (authDelErr) {
-      console.warn("Aviso ao deletar usuário do auth.admin:", authDelErr);
+    // 3. EXCLUIR PERFIL E USUÁRIO DO AUTH (NUNCA EXCLUIR O PRÓPRIO SUPER ADMIN)
+    if (targetOwnerUserId && (!isSuperAdmin || targetOwnerUserId !== user.id)) {
+      await supabase.from('profiles').delete().eq('id', targetOwnerUserId);
+      try {
+        await supabase.auth.admin.deleteUser(targetOwnerUserId);
+      } catch (authDelErr) {
+        console.warn("Aviso ao deletar usuário do auth.admin:", authDelErr);
+      }
     }
 
     return new Response(JSON.stringify({
       success: true,
-      message: "Conta, assinaturas Stripe e usuário excluídos permanentemente."
+      message: "Conta, assinaturas do Mercado Pago e usuário excluídos permanentemente."
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

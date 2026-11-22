@@ -141,7 +141,7 @@ const PROCESS_MAP_STAGES = [
       'Oferecer para ela ver como ficaria com o nome do salão/estúdio dela.'
     ],
     script: 'Entendi perfeitamente. O que montei resolve exatamente isso: você coloca um link na bio, a cliente escolhe o serviço e o horário sozinha, só aparecem horários livres e já cai direto na sua agenda. Quer ver como ficaria com o seu nome? Eu monto rapidinho e te mando.',
-    avoid: 'Listar 20 funcionalidades, falar de banco de dados, Stripe Connect ou termos técnicos.'
+    avoid: 'Listar 20 funcionalidades, falar de banco de dados, API do Mercado Pago ou termos técnicos.'
   },
   {
     ico: '📱',

@@ -240,7 +240,7 @@ export default function Login() {
         isSuperAdminMode
           ? undefined
           : {
-              background: '#1C89C0',
+              background: '#121215',
             }
       }
     >
@@ -263,12 +263,12 @@ export default function Login() {
           background: linear-gradient(
             90deg,
             transparent 0%,
-            rgba(255, 255, 255, 0.03) 30%,
-            rgba(255, 255, 255, 0.12) 50%,
-            rgba(255, 255, 255, 0.03) 70%,
+            rgba(255, 30, 138, 0.04) 30%,
+            rgba(255, 30, 138, 0.16) 50%,
+            rgba(255, 30, 138, 0.04) 70%,
             transparent 100%
           );
-          filter: blur(20px);
+          filter: blur(22px);
           animation: rfAuthSweep 16s cubic-bezier(.45,.05,.55,.95) infinite;
           will-change: transform;
           pointer-events: none;
@@ -335,20 +335,20 @@ export default function Login() {
                 </button>
               </div>
 
-              {/* Card em White Glassmorphism de Altíssimo Padrão */}
+              {/* Card Branco sobre Fundo Preto Fosco (#121215) + Destaques Rosa (#FF1E8A) */}
               <div
                 className="rounded-[28px] p-7 sm:p-9"
                 style={{
-                  background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.90))',
+                  background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.94))',
                   backdropFilter: 'blur(24px) saturate(180%)',
                   WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                  border: '1px solid rgba(255, 255, 255, 0.85)',
-                  boxShadow: '0 30px 80px rgba(4, 18, 48, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.95)',
+                  border: '1px solid rgba(255, 255, 255, 0.90)',
+                  boxShadow: '0 30px 80px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.95)',
                 }}
               >
                 {/* Eyebrow & Headline */}
                 <div className="text-center mb-7">
-                  <h2 className="text-2xl sm:text-[26px] font-black text-[#0F172A] tracking-[-0.035em] leading-tight">
+                  <h2 className="text-2xl sm:text-[26px] font-black text-[#121215] tracking-[-0.035em] leading-tight">
                     {t('login.title') || 'Acesse sua conta'}
                   </h2>
                   <p className="text-[#5B6478] mt-1.5 text-xs sm:text-sm font-normal">
@@ -371,7 +371,7 @@ export default function Login() {
                         type="button"
                         onClick={handleResendConfirmation}
                         disabled={resendingEmail}
-                        className="text-xs font-bold text-[#1C89C0] hover:underline flex items-center gap-1 cursor-pointer"
+                        className="text-xs font-bold text-[#FF1E8A] hover:underline flex items-center gap-1 cursor-pointer"
                       >
                         {resendingEmail ? 'Reenviando...' : 'Reenviar e-mail de ativação →'}
                       </button>
@@ -381,13 +381,13 @@ export default function Login() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#1E293B] mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#121215] mb-1.5">
                       {t('login.email')}
                     </label>
                     <input
                       type="email"
                       required
-                      className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FF95BA] focus:ring-4 focus:ring-[#FF95BA]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                      className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#121215] placeholder-[#94A3B8] outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="seuemail@exemplo.com"
@@ -395,14 +395,14 @@ export default function Login() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#1E293B] mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#121215] mb-1.5">
                       {t('login.password')}
                     </label>
                     <div className="relative">
                       <input
                         type={showPassword ? 'text' : 'password'}
                         required
-                        className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FF95BA] focus:ring-4 focus:ring-[#FF95BA]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                        className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#121215] placeholder-[#94A3B8] outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
@@ -410,7 +410,7 @@ export default function Login() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#0F172A] transition-colors p-1"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#121215] transition-colors p-1"
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -426,7 +426,7 @@ export default function Login() {
                         setForgotSubmitted(false);
                         setForgotPasswordOpen(true);
                       }}
-                      className="text-xs text-[#5B6478] hover:text-[#1C89C0] font-semibold hover:underline cursor-pointer transition-colors"
+                      className="text-xs text-[#5B6478] hover:text-[#FF1E8A] font-semibold hover:underline cursor-pointer transition-colors"
                     >
                       Esqueci minha senha
                     </button>
@@ -436,11 +436,11 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-[52px] rounded-full font-extrabold text-sm text-black flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_14px_30px_rgba(255,149,186,0.35)] hover:brightness-105 active:scale-[0.98] mt-2"
-                    style={{ background: '#FF95BA' }}
+                    className="w-full h-[52px] rounded-full font-extrabold text-sm text-white flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-105 active:scale-[0.98] mt-2"
+                    style={{ background: '#FF1E8A' }}
                   >
                     {loading ? (
-                      <Loader2 className="w-5 h-5 animate-spin text-black" />
+                      <Loader2 className="w-5 h-5 animate-spin text-white" />
                     ) : (
                       <>
                         <span>{t('login.submit') || 'Entrar no painel'}</span>
@@ -454,7 +454,7 @@ export default function Login() {
                   Não tem uma conta?{' '}
                   <Link
                     to="/cadastro"
-                    className="text-[#0F172A] font-bold hover:text-[#1C89C0] underline decoration-[#1C89C0]/50 hover:decoration-[#1C89C0] transition-colors"
+                    className="text-[#121215] font-bold hover:text-[#FF1E8A] underline decoration-[#FF1E8A]/60 hover:decoration-[#FF1E8A] transition-colors"
                   >
                     Criar conta grátis
                   </Link>
@@ -468,7 +468,7 @@ export default function Login() {
                       setPassword('');
                       setError(null);
                     }}
-                    className="text-[11px] text-[#94A3B8] hover:text-[#0F172A] font-semibold tracking-wide uppercase transition-colors cursor-pointer"
+                    className="text-[11px] text-[#94A3B8] hover:text-[#121215] font-semibold tracking-wide uppercase transition-colors cursor-pointer"
                   >
                     Acesso Admin Master
                   </button>
@@ -583,24 +583,22 @@ export default function Login() {
               className="absolute inset-0 bg-slate-950/65 backdrop-blur-md"
             />
 
-            {/* Modal Dialog em White Glassmorphism */}
+            {/* Modal Dialog em Preto Fosco */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               className="relative w-full max-w-md rounded-[28px] p-7 sm:p-8 z-10 space-y-5"
               style={{
-                background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.92))',
-                backdropFilter: 'blur(24px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                border: '1px solid rgba(255, 255, 255, 0.9)',
-                boxShadow: '0 30px 80px rgba(4, 18, 48, 0.45)',
+                background: '#18181D',
+                border: '1px solid rgba(255, 255, 255, 0.10)',
+                boxShadow: '0 30px 80px rgba(0, 0, 0, 0.70)',
               }}
             >
               <button
                 type="button"
                 onClick={() => setForgotPasswordOpen(false)}
-                className="absolute top-5 right-5 text-[#94A3B8] hover:text-[#0F172A] p-2 rounded-full hover:bg-slate-100 transition-colors"
+                className="absolute top-5 right-5 text-zinc-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -608,23 +606,23 @@ export default function Login() {
               {forgotSubmitted ? (
                 /* Estado: Instruções Enviadas / Concluído */
                 <div className="text-center py-2 space-y-4">
-                  <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto">
+                  <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto">
                     <CheckCircle2 className="w-7 h-7" />
                   </div>
-                  <h3 className="text-xl font-extrabold text-[#0F172A] tracking-tight">
+                  <h3 className="text-xl font-extrabold text-white tracking-tight">
                     Solicitação Processada
                   </h3>
-                  <p className="text-xs sm:text-sm text-[#475569] leading-relaxed font-medium">
+                  <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed font-medium">
                     Se encontrarmos uma conta associada aos dados informados, enviaremos as instruções para redefinição de senha ao e-mail cadastrado.
                   </p>
-                  <p className="text-xs text-[#94A3B8] leading-relaxed">
+                  <p className="text-xs text-zinc-500 leading-relaxed">
                     Por motivos de segurança, o link é enviado exclusivamente para o e-mail da conta. Verifique também sua caixa de Spam.
                   </p>
                   <button
                     type="button"
                     onClick={() => setForgotPasswordOpen(false)}
-                    className="w-full h-[48px] rounded-full font-extrabold text-sm text-black shadow-[0_12px_24px_rgba(255,149,186,0.3)] hover:brightness-105 active:scale-[0.98] cursor-pointer transition-all"
-                    style={{ background: '#FF95BA' }}
+                    className="w-full h-[48px] rounded-full font-extrabold text-sm text-white hover:brightness-105 active:scale-[0.98] cursor-pointer transition-all"
+                    style={{ background: '#FF1E8A' }}
                   >
                     Entendido
                   </button>
@@ -633,26 +631,26 @@ export default function Login() {
                 /* Estado: Formulário de solicitação */
                 <div>
                   <div className="flex items-center gap-3 mb-5">
-                    <div className="w-11 h-11 rounded-2xl bg-[#FF95BA]/15 text-[#1C89C0] border border-[#FF95BA]/30 flex items-center justify-center shrink-0">
+                    <div className="w-11 h-11 rounded-2xl bg-[#FF1E8A]/15 text-[#FF1E8A] border border-[#FF1E8A]/30 flex items-center justify-center shrink-0">
                       <KeyRound className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-extrabold text-[#0F172A] tracking-tight">
+                      <h3 className="text-lg font-extrabold text-white tracking-tight">
                         Recuperação de Senha
                       </h3>
-                      <p className="text-xs text-[#64748B]">Informe o e-mail ou telefone da sua conta</p>
+                      <p className="text-xs text-zinc-400">Informe o e-mail ou telefone da sua conta</p>
                     </div>
                   </div>
 
                   {forgotError && (
-                    <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-600 text-xs font-medium">
+                    <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-xs font-medium">
                       {forgotError}
                     </div>
                   )}
 
                   <form onSubmit={handleForgotPassword} className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#1E293B] mb-1.5">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                         E-mail ou telefone
                       </label>
                       <input
@@ -661,11 +659,11 @@ export default function Login() {
                         value={forgotIdentifier}
                         onChange={(e) => setForgotIdentifier(e.target.value)}
                         placeholder="seuemail@exemplo.com ou 27999999999"
-                        className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#FF95BA] focus:ring-4 focus:ring-[#FF95BA]/15 focus:bg-white transition-all font-medium text-sm"
+                        className="w-full px-4 py-3.5 bg-[#121215] border border-white/10 rounded-2xl text-white placeholder-zinc-500 outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 transition-all font-medium text-sm"
                       />
                     </div>
 
-                    <p className="text-[11px] text-[#94A3B8] leading-relaxed">
+                    <p className="text-[11px] text-zinc-400 leading-relaxed">
                       Você pode informar seu e-mail cadastrado ou seu número de telefone celular com DDD. As instruções serão enviadas para o e-mail da sua conta.
                     </p>
 
@@ -673,18 +671,18 @@ export default function Login() {
                       <button
                         type="button"
                         onClick={() => setForgotPasswordOpen(false)}
-                        className="w-1/3 h-[48px] font-bold text-xs text-[#64748B] hover:text-[#0F172A] bg-slate-100 hover:bg-slate-200 rounded-full transition-colors cursor-pointer"
+                        className="w-1/3 h-[48px] font-bold text-xs text-zinc-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors cursor-pointer"
                       >
                         Cancelar
                       </button>
                       <button
                         type="submit"
                         disabled={forgotLoading}
-                        className="w-2/3 h-[48px] font-extrabold text-xs text-black rounded-full shadow-[0_12px_24px_rgba(255,149,186,0.3)] hover:brightness-105 active:scale-[0.98] cursor-pointer transition-all disabled:opacity-60 flex items-center justify-center gap-1.5"
-                        style={{ background: '#FF95BA' }}
+                        className="w-2/3 h-[48px] font-extrabold text-xs text-white rounded-full hover:brightness-105 active:scale-[0.98] cursor-pointer transition-all disabled:opacity-60 flex items-center justify-center gap-1.5"
+                        style={{ background: '#FF1E8A' }}
                       >
                         {forgotLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-black" />
+                          <Loader2 className="w-4 h-4 animate-spin text-white" />
                         ) : (
                           <>
                             <span>Enviar Instruções</span>

@@ -95,19 +95,17 @@ export default function CookieConsentBanner() {
             <div
               className="p-5 sm:p-6 rounded-[28px] text-white space-y-4 relative overflow-hidden"
               style={{
-                background: 'linear-gradient(135deg, rgba(18, 108, 153, 0.94) 0%, rgba(18, 108, 153, 0.90) 50%, rgba(18, 108, 153, 0.85) 100%)',
-                backdropFilter: 'blur(28px) saturate(190%)',
-                WebkitBackdropFilter: 'blur(28px) saturate(190%)',
-                border: '1px solid rgba(255, 255, 255, 0.16)',
-                boxShadow: '0 30px 80px rgba(4, 18, 48, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
+                background: '#18181D',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                boxShadow: '0 30px 80px rgba(0, 0, 0, 0.75)',
               }}
             >
-              {/* Brilho âmbar de fundo sutil */}
+              {/* Brilho neon magenta de fundo sutil */}
               <div
                 aria-hidden="true"
-                className="absolute -top-16 -right-16 w-44 h-44 rounded-full pointer-events-none"
+                className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
                 style={{
-                  background: 'radial-gradient(circle, rgba(255, 149, 186, 0.20), transparent 70%)',
+                  background: 'radial-gradient(circle, rgba(255, 30, 138, 0.28), transparent 70%)',
                   filter: 'blur(35px)',
                 }}
               />
@@ -117,10 +115,10 @@ export default function CookieConsentBanner() {
                 <div
                   className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(255, 149, 186, 0.25), rgba(255, 149, 186, 0.10))',
-                    border: '1px solid rgba(255, 149, 186, 0.35)',
-                    color: '#FF95BA',
-                    boxShadow: 'none',
+                    background: 'linear-gradient(135deg, rgba(255, 30, 138, 0.22), rgba(255, 30, 138, 0.08))',
+                    border: '1px solid rgba(255, 30, 138, 0.40)',
+                    color: '#FF1E8A',
+                    boxShadow: '0 0 20px rgba(255, 30, 138, 0.20)',
                   }}
                 >
                   <Cookie className="w-5 h-5" />
@@ -130,9 +128,9 @@ export default function CookieConsentBanner() {
                   <div className="flex items-center gap-2">
                     <span
                       className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em]"
-                      style={{ color: '#FF95BA' }}
+                      style={{ color: '#FF1E8A' }}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF95BA]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF1E8A] shadow-[0_0_8px_#FF1E8A]" />
                       Privacidade &amp; LGPD
                     </span>
                   </div>
@@ -152,9 +150,9 @@ export default function CookieConsentBanner() {
                 <button
                   type="button"
                   onClick={() => setShowModal(true)}
-                  className="px-3.5 py-2 rounded-full text-xs font-semibold text-white/70 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-white/10 hover:border-white/20"
+                  className="px-3.5 py-2 rounded-full text-xs font-semibold text-white/75 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-white/10 hover:border-white/20"
                 >
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-[#FF95BA]" />
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-[#FF1E8A]" />
                   Preferências
                 </button>
 
@@ -162,14 +160,14 @@ export default function CookieConsentBanner() {
                   <button
                     type="button"
                     onClick={handleRejectNonEssential}
-                    className="flex-1 sm:flex-initial h-10 px-4 sm:px-5 rounded-full border border-white/20 bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-all text-center cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
+                    className="flex-1 sm:flex-initial h-10 px-4 sm:px-5 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 text-white text-xs font-bold transition-all text-center cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
                   >
                     Apenas Necessários
                   </button>
                   <button
                     type="button"
                     onClick={handleAcceptAll}
-                    className="flex-1 sm:flex-initial h-10 px-5 sm:px-6 rounded-full bg-[#FF95BA] hover:bg-[#FF95BA] text-black text-xs font-black tracking-tight transition-all text-center cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
+                    className="flex-1 sm:flex-initial h-10 px-5 sm:px-6 rounded-full bg-[#FF1E8A] hover:bg-[#E01177] text-white text-xs font-black tracking-tight transition-all text-center cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
                   >
                     Aceitar Todos
                   </button>

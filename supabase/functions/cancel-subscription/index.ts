@@ -39,6 +39,16 @@ serve(async (req: Request) => {
       });
     }
 
+    let targetTenantId: string | null = null;
+    try {
+      const body = await req.json();
+      if (body?.target_tenant_id) {
+        targetTenantId = body.target_tenant_id;
+      }
+    } catch {
+      // Body opcional
+    }
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('tenant_id, role')
@@ -61,7 +71,9 @@ serve(async (req: Request) => {
       });
     }
 
-    const tenantId = profile?.tenant_id || tenantCheck?.id;
+    const tenantId = (isSuperAdmin && targetTenantId)
+      ? targetTenantId
+      : (profile?.tenant_id || tenantCheck?.id);
     if (!tenantId) {
       return new Response(JSON.stringify({ error: "Tenant not found" }), {
         status: 400,

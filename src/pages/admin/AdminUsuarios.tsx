@@ -110,7 +110,7 @@ export default function AdminUsuarios() {
       if (!user.tenant_id) throw new Error('Este usuário não possui empresa vinculada.');
 
       try {
-        await supabase.functions.invoke('delete-account', {
+        await supabase.functions.invoke('cancel-subscription', {
           body: { target_tenant_id: user.tenant_id }
         });
       } catch (err) {
@@ -126,7 +126,7 @@ export default function AdminUsuarios() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_users'] });
-      alert('Assinatura cancelada com sucesso no Stripe e no sistema.');
+      alert('Assinatura cancelada com sucesso no Mercado Pago e no sistema.');
       setSelectedUser(null);
       setShowDangerZone(false);
     },
@@ -144,7 +144,7 @@ export default function AdminUsuarios() {
             body: { target_tenant_id: user.tenant_id }
           });
         } catch (e) {
-          console.warn('Stripe cancellation on delete warning:', e);
+          console.warn('Mercado Pago cancellation on delete warning:', e);
         }
 
         await supabase
@@ -163,7 +163,7 @@ export default function AdminUsuarios() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_users'] });
       queryClient.invalidateQueries({ queryKey: ['admin_tenants_v2'] });
-      alert('Conta e empresa associada foram excluídas com sucesso. Qualquer assinatura no Stripe foi cancelada.');
+      alert('Conta e empresa associada foram excluídas com sucesso. Qualquer assinatura no Mercado Pago foi cancelada.');
       setSelectedUser(null);
       setShowDangerZone(false);
       setDeleteConfirmText('');
@@ -432,7 +432,7 @@ export default function AdminUsuarios() {
                     </div>
                     {selectedUser.stripe_subscription_id && (
                       <div className="flex items-center justify-between">
-                        <span className="text-zinc-400">Stripe ID:</span>
+                        <span className="text-zinc-400">ID Mercado Pago:</span>
                         <span className="font-mono text-zinc-400">{selectedUser.stripe_subscription_id.slice(0, 14)}...</span>
                       </div>
                     )}
@@ -466,7 +466,7 @@ export default function AdminUsuarios() {
                         className="px-4 pb-5 pt-1 border-t border-rose-500/20 space-y-4"
                       >
                         <p className="text-xs text-rose-300 leading-relaxed">
-                          Ações nesta seção afetam diretamente o faturamento do Stripe e o acesso deste usuário.
+                          Ações nesta seção afetam diretamente o faturamento no Mercado Pago e o acesso deste usuário.
                         </p>
 
                         {/* Action 1: Cancel Subscription */}
@@ -476,7 +476,7 @@ export default function AdminUsuarios() {
                               <CreditCard className="w-3.5 h-3.5 text-amber-400" /> Cancelar Assinatura / Plano
                             </h4>
                             <p className="text-[11px] text-zinc-400 mt-0.5">
-                              Cancela no Stripe e encerra cobranças recorrentes.
+                              Cancela a assinatura no Mercado Pago e encerra o plano atual.
                             </p>
                           </div>
                           <button
@@ -500,7 +500,7 @@ export default function AdminUsuarios() {
                               <Trash2 className="w-3.5 h-3.5 text-rose-400" /> Apagar Conta Permanentemente
                             </h4>
                             <p className="text-[11px] text-zinc-400 mt-0.5">
-                              Cancela o Stripe primeiro e desativa a conta do salão.
+                              Cancela a assinatura no Mercado Pago e desativa a conta do salão.
                             </p>
                           </div>
 
@@ -521,7 +521,7 @@ export default function AdminUsuarios() {
                               disabled={deleteConfirmText !== selectedUser.full_name || deleteAccount.isPending}
                               className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-rose-600/20 cursor-pointer active:scale-95"
                             >
-                              {deleteAccount.isPending ? 'Apagando conta e cancelando Stripe...' : 'Confirmar e Apagar Conta'}
+                              {deleteAccount.isPending ? 'Apagando conta e cancelando assinatura...' : 'Confirmar e Apagar Conta'}
                             </button>
                           </div>
                         </div>
