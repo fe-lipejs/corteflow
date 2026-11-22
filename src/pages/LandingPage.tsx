@@ -6535,6 +6535,69 @@ export default function LandingPage() {
             background: transparent !important;
           }
 
+          /* ── Hero: Preto Fosco (#121215) com Rosa (#FF1E8A) ── */
+          main .rf-hero {
+            background: #121215 !important;
+            color: #FFFFFF !important;
+          }
+          main .rf-hero h1 {
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+            background: none !important;
+          }
+          main .rf-hero h1 span {
+            color: var(--rf-accent-on-dark) !important;
+            -webkit-text-fill-color: var(--rf-accent-on-dark) !important;
+            background: none !important;
+            -webkit-background-clip: initial !important;
+            background-clip: initial !important;
+          }
+          main .rf-hero .rf-hero-description {
+            color: rgba(255, 255, 255, 0.72) !important;
+          }
+          main .rf-hero .rf-eyebrow-dark {
+            color: rgba(255, 255, 255, 0.65) !important;
+          }
+          main .rf-hero .rf-primary-button {
+            background: #FF1E8A !important;
+            border-color: #FF1E8A !important;
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+            box-shadow: none !important;
+          }
+          main .rf-hero .rf-primary-button:hover {
+            background: #E01177 !important;
+            border-color: #E01177 !important;
+          }
+          main .rf-hero .rf-secondary-button {
+            background: rgba(255, 255, 255, 0.06) !important;
+            border-color: rgba(255, 255, 255, 0.22) !important;
+            color: #FFFFFF !important;
+          }
+          main .rf-hero .rf-secondary-button:hover {
+            background: rgba(255, 30, 138, 0.14) !important;
+            border-color: rgba(255, 30, 138, 0.45) !important;
+          }
+          /* Header sobre o Hero escuro (quando não rolado) */
+          .rf-header:not(.rf-header-scrolled) .rf-logo img {
+            filter: invert(1) !important;
+          }
+          .rf-header:not(.rf-header-scrolled) .rf-desktop-nav a,
+          .rf-header:not(.rf-header-scrolled) .rf-login,
+          .rf-header:not(.rf-header-scrolled) .rf-mobile-menu {
+            color: rgba(255, 255, 255, 0.85) !important;
+          }
+          .rf-header:not(.rf-header-scrolled) .rf-desktop-nav a:hover,
+          .rf-header:not(.rf-header-scrolled) .rf-login:hover {
+            color: #FF1E8A !important;
+          }
+          .rf-header:not(.rf-header-scrolled) .rf-header-cta {
+            background: #FF1E8A !important;
+            border-color: #FF1E8A !important;
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+          }
+
           /* ── Seções CLARAS (Fundo Branco #FAF9F7 / #F1F5F9) ──
              - Sua agenda trabalha por você. 24h. (.rf-booking-section)
              - Cada horário vazio é dinheiro que foi embora. (.rf-philosophy)
