@@ -26,6 +26,7 @@ async function finalizeConfirmedBooking(
     throw new Error('Comprovante de pagamento inválido: estabelecimento divergente.');
   }
 
+  const mpPayId = mpPayment?.id ? String(mpPayment.id) : null;
   if (mpPayId) {
     const { data: conflictPayment } = await supabase
       .from('payments')
