@@ -60,7 +60,7 @@ async function fetchPublicStore(slug: string) {
         instagram: demoPortal.instagram || null,
         theme_preset: 'elegant',
         custom_palette: {
-          primary: demoPortal.primary_color || '#FF5C95',
+          primary: demoPortal.primary_color || '#FF1E8A',
           background: '#F8FAFC',
           card: '#FFFFFF',
           text: '#0F172A',

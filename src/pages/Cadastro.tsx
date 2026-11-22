@@ -280,15 +280,15 @@ export default function Cadastro() {
           </Link>
         </div>
 
-        {/* Card Branco sobre Fundo Preto Fosco (#121215) + Destaques Rosa (#FF1E8A) */}
+        {/* Card Escuro em Preto Fosco (#18181D) sobre Fundo (#121215) + Destaques Rosa (#FF1E8A) */}
         <div
           className="rounded-[28px] p-7 sm:p-9"
           style={{
-            background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.94))',
+            background: 'linear-gradient(145deg, rgba(24, 24, 29, 0.96), rgba(20, 20, 25, 0.94))',
             backdropFilter: 'blur(24px) saturate(180%)',
             WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-            border: '1px solid rgba(255, 255, 255, 0.90)',
-            boxShadow: '0 30px 80px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.95)',
+            border: '1px solid rgba(255, 255, 255, 0.10)',
+            boxShadow: '0 30px 80px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
           }}
         >
           <AnimatePresence mode="wait">
@@ -307,53 +307,53 @@ export default function Cadastro() {
                 </div>
 
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 mb-3">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-400">
                     Conta Criada com Sucesso
                   </span>
                 </div>
 
-                <h3 className="text-2xl font-black text-[#121215] tracking-tight mb-2">
+                <h3 className="text-2xl font-black text-white tracking-tight mb-2">
                   Verifique seu E-mail!
                 </h3>
-                <p className="text-[#5B6478] text-xs sm:text-sm leading-relaxed mb-4">
+                <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-4">
                   Enviamos o link de ativação da sua conta para:
                 </p>
-                <p className="text-xs sm:text-sm font-bold text-[#FF1E8A] font-mono break-all mb-5 px-3.5 py-2.5 bg-slate-50 rounded-2xl border border-slate-200">
+                <p className="text-xs sm:text-sm font-bold text-[#FF1E8A] font-mono break-all mb-5 px-3.5 py-2.5 bg-[#121215] rounded-2xl border border-white/10">
                   {submittedEmail}
                 </p>
 
-                <p className="text-xs text-[#5B6478] leading-relaxed mb-5">
-                  Abra o e-mail no celular ou computador e clique em <strong className="text-[#121215]">"Ativar Minha Conta"</strong> para iniciar a configuração do seu estabelecimento.
+                <p className="text-xs text-zinc-400 leading-relaxed mb-5">
+                  Abra o e-mail no celular ou computador e clique em <strong className="text-white">"Ativar Minha Conta"</strong> para iniciar a configuração do seu estabelecimento.
                 </p>
 
                 {/* Aviso Destacado de SPAM / Lixo Eletrônico */}
                 <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/25 rounded-2xl text-left flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-800 flex items-center justify-center shrink-0 text-sm font-bold">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 text-sm font-bold">
                     📬
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-xs font-bold text-amber-950 mb-0.5">Não encontrou na Caixa de Entrada?</h4>
-                    <p className="text-[11px] text-amber-900 leading-relaxed font-medium">
+                    <h4 className="text-xs font-bold text-amber-300 mb-0.5">Não encontrou na Caixa de Entrada?</h4>
+                    <p className="text-[11px] text-amber-200/85 leading-relaxed font-medium">
                       Verifique sua <strong>pasta de Spam ou Lixo Eletrônico</strong>. Alguns provedores podem filtrar o primeiro e-mail de ativação.
                     </p>
                   </div>
                 </div>
 
                 {resendMessage && (
-                  <div className="mb-5 p-3 bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 text-xs rounded-2xl font-medium">
+                  <div className="mb-5 p-3 bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs rounded-2xl font-medium">
                     {resendMessage}
                   </div>
                 )}
 
                 {resendError && (
-                  <div className="mb-5 p-3 bg-red-500/10 border border-red-500/25 text-red-700 text-xs rounded-2xl font-medium">
+                  <div className="mb-5 p-3 bg-red-500/10 border border-red-500/25 text-red-300 text-xs rounded-2xl font-medium">
                     {resendError}
                   </div>
                 )}
 
                 {/* Resend & Actions */}
-                <div className="pt-4 border-t border-slate-200/80 flex flex-col items-center gap-3.5 text-xs text-[#5B6478]">
+                <div className="pt-4 border-t border-white/10 flex flex-col items-center gap-3.5 text-xs text-zinc-400">
                   <div>
                     Não recebeu o e-mail?{' '}
                     {resendTimer > 0 ? (
@@ -374,7 +374,7 @@ export default function Cadastro() {
 
                   <Link
                     to="/login"
-                    className="w-full h-[46px] rounded-full font-bold text-xs text-[#121215] bg-slate-100 hover:bg-slate-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer mt-1"
+                    className="w-full h-[46px] rounded-full font-bold text-xs text-white bg-white/10 hover:bg-white/15 border border-white/10 flex items-center justify-center gap-1.5 transition-colors cursor-pointer mt-1"
                   >
                     <span>Já confirmou? Fazer Login</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -392,10 +392,10 @@ export default function Cadastro() {
               >
                 {/* Eyebrow & Headline */}
                 <div className="text-center mb-6">
-                  <h2 className="text-2xl sm:text-[26px] font-black text-[#121215] tracking-[-0.035em] leading-tight">
+                  <h2 className="text-2xl sm:text-[26px] font-black text-white tracking-[-0.035em] leading-tight">
                     Crie sua conta
                   </h2>
-                  <p className="text-[#5B6478] mt-1.5 text-xs sm:text-sm font-normal">
+                  <p className="text-zinc-400 mt-1.5 text-xs sm:text-sm font-normal">
                     Sem cartão de crédito. Configure seu salão em minutos.
                   </p>
                 </div>
@@ -403,21 +403,21 @@ export default function Cadastro() {
                 <div className="space-y-3.5">
                   {/* Nome */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#121215] mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                       Nome completo
                     </label>
                     <input
                       type="text"
                       {...register('fullName')}
-                      className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#121215] placeholder-[#94A3B8] outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                      className="w-full px-4 py-3.5 bg-[#121215] border border-white/12 rounded-2xl text-white placeholder-zinc-500 outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 transition-all font-medium text-sm"
                       placeholder="Seu nome completo"
                     />
-                    {errors.fullName && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.fullName.message}</p>}
+                    {errors.fullName && <p className="text-red-400 text-xs mt-1.5 font-medium">{errors.fullName.message}</p>}
                   </div>
 
                   {/* Telefone */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#121215] mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                       Telefone (WhatsApp)
                     </label>
                     <input
@@ -428,78 +428,78 @@ export default function Cadastro() {
                         setValue('phone', masked, { shouldValidate: true });
                         if (errorList.length > 0) setErrorList([]);
                       }}
-                      className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#121215] placeholder-[#94A3B8] outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                      className="w-full px-4 py-3.5 bg-[#121215] border border-white/12 rounded-2xl text-white placeholder-zinc-500 outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 transition-all font-medium text-sm"
                       placeholder="(11) 98888-7777"
                     />
-                    {errors.phone && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.phone.message}</p>}
+                    {errors.phone && <p className="text-red-400 text-xs mt-1.5 font-medium">{errors.phone.message}</p>}
                   </div>
 
                   {/* E-mail */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#121215] mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                       E-mail profissional
                     </label>
                     <input
                       type="email"
                       {...register('email')}
-                      className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#121215] placeholder-[#94A3B8] outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                      className="w-full px-4 py-3.5 bg-[#121215] border border-white/12 rounded-2xl text-white placeholder-zinc-500 outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 transition-all font-medium text-sm"
                       placeholder="seuemail@email.com"
                     />
-                    {errors.email && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.email.message}</p>}
+                    {errors.email && <p className="text-red-400 text-xs mt-1.5 font-medium">{errors.email.message}</p>}
                   </div>
 
                   {/* Senha */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#121215] mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                       Senha de acesso
                     </label>
                     <div className="relative">
                       <input
                         type={showPassword ? 'text' : 'password'}
                         {...register('password')}
-                        className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#121215] placeholder-[#94A3B8] outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                        className="w-full px-4 py-3.5 pr-12 bg-[#121215] border border-white/12 rounded-2xl text-white placeholder-zinc-500 outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 transition-all font-medium text-sm"
                         placeholder="Mínimo 8 caracteres"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#121215] transition-colors p-1"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors p-1"
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                    {errors.password && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.password.message}</p>}
+                    {errors.password && <p className="text-red-400 text-xs mt-1.5 font-medium">{errors.password.message}</p>}
                   </div>
 
                   {/* Confirmar Senha */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#121215] mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                       Confirmar senha
                     </label>
                     <div className="relative">
                       <input
                         type={showConfirmPassword ? 'text' : 'password'}
                         {...register('confirmPassword')}
-                        className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#121215] placeholder-[#94A3B8] outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                        className="w-full px-4 py-3.5 pr-12 bg-[#121215] border border-white/12 rounded-2xl text-white placeholder-zinc-500 outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 transition-all font-medium text-sm"
                         placeholder="Repita sua senha"
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#121215] transition-colors p-1"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors p-1"
                       >
                         {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                    {errors.confirmPassword && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.confirmPassword.message}</p>}
+                    {errors.confirmPassword && <p className="text-red-400 text-xs mt-1.5 font-medium">{errors.confirmPassword.message}</p>}
                   </div>
                 </div>
 
                 {errorList.length > 0 && (
                   <div className="mt-4 p-3.5 bg-red-500/10 border border-red-500/25 rounded-2xl space-y-1">
                     {errorList.map((errItem, idx) => (
-                      <p key={idx} className="text-red-700 text-xs font-semibold flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0" />
+                      <p key={idx} className="text-red-300 text-xs font-semibold flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
                         <span>{errItem}</span>
                       </p>
                     ))}
@@ -526,9 +526,9 @@ export default function Cadastro() {
                   )}
                 </button>
 
-                <div className="mt-6 text-center text-xs sm:text-sm text-[#5B6478]">
+                <div className="mt-6 text-center text-xs sm:text-sm text-zinc-400">
                   Já tem uma conta?{' '}
-                  <Link to="/login" className="text-[#121215] font-bold hover:text-[#FF1E8A] underline decoration-[#FF1E8A]/60 hover:decoration-[#FF1E8A] transition-colors">
+                  <Link to="/login" className="text-white font-bold hover:text-[#FF1E8A] underline decoration-[#FF1E8A]/60 hover:decoration-[#FF1E8A] transition-colors">
                     Fazer Login
                   </Link>
                 </div>

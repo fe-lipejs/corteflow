@@ -172,15 +172,15 @@ export default function RedefinirSenha() {
           </Link>
         </div>
 
-        {/* Card Branco sobre Fundo Preto Fosco (#121215) + Destaques Rosa (#FF1E8A) */}
+        {/* Card Escuro em Preto Fosco (#18181D) sobre Fundo (#121215) + Destaques Rosa (#FF1E8A) */}
         <div
           className="rounded-[28px] p-7 sm:p-9"
           style={{
-            background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.94))',
+            background: 'linear-gradient(145deg, rgba(24, 24, 29, 0.96), rgba(20, 20, 25, 0.94))',
             backdropFilter: 'blur(24px) saturate(180%)',
             WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-            border: '1px solid rgba(255, 255, 255, 0.90)',
-            boxShadow: '0 30px 80px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.95)',
+            border: '1px solid rgba(255, 255, 255, 0.10)',
+            boxShadow: '0 30px 80px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
           }}
         >
           {success ? (
@@ -190,11 +190,11 @@ export default function RedefinirSenha() {
               animate={{ opacity: 1, scale: 1 }}
               className="text-center py-2 space-y-4"
             >
-              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-black text-[#121215] tracking-tight">Senha Redefinida!</h2>
-              <p className="text-xs sm:text-sm text-[#5B6478] leading-relaxed">
+              <h2 className="text-2xl font-black text-white tracking-tight">Senha Redefinida!</h2>
+              <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
                 Sua senha foi alterada com sucesso. Agora você já pode acessar sua conta com a nova credencial.
               </p>
               <div className="pt-2">
@@ -216,11 +216,11 @@ export default function RedefinirSenha() {
               animate={{ opacity: 1, scale: 1 }}
               className="text-center py-2 space-y-4"
             >
-              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-700 flex items-center justify-center mx-auto shadow-inner">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-400 flex items-center justify-center mx-auto shadow-inner">
                 <AlertCircle className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-black text-[#121215] tracking-tight">Link Expirado ou Inválido</h2>
-              <p className="text-xs sm:text-sm text-[#5B6478] leading-relaxed">
+              <h2 className="text-2xl font-black text-white tracking-tight">Link Expirado ou Inválido</h2>
+              <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
                 Por motivos de segurança, os links de redefinição de senha possuem tempo de validade limitado ou já foram utilizados.
               </p>
               <div className="pt-2">
@@ -245,16 +245,16 @@ export default function RedefinirSenha() {
                 <div className="w-12 h-12 rounded-2xl bg-[#FF1E8A]/10 border border-[#FF1E8A]/25 text-[#FF1E8A] flex items-center justify-center mx-auto mb-3 shadow-inner">
                   <KeyRound className="w-6 h-6" />
                 </div>
-                <h2 className="text-2xl sm:text-[26px] font-black text-[#121215] tracking-[-0.035em] leading-tight">
+                <h2 className="text-2xl sm:text-[26px] font-black text-white tracking-[-0.035em] leading-tight">
                   Redefinir Senha
                 </h2>
-                <p className="text-xs sm:text-sm text-[#5B6478] mt-1.5 font-normal">
+                <p className="text-xs sm:text-sm text-zinc-400 mt-1.5 font-normal">
                   Crie uma nova senha segura para sua conta
                 </p>
               </div>
 
               {error && (
-                <div className="mb-5 p-3.5 bg-red-500/10 border border-red-500/25 rounded-2xl text-red-700 text-xs sm:text-sm font-medium">
+                <div className="mb-5 p-3.5 bg-red-500/10 border border-red-500/25 rounded-2xl text-red-300 text-xs sm:text-sm font-medium">
                   {error}
                 </div>
               )}
@@ -262,7 +262,7 @@ export default function RedefinirSenha() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Nova Senha */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#121215] mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                     Nova Senha
                   </label>
                   <div className="relative">
@@ -272,12 +272,12 @@ export default function RedefinirSenha() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Mínimo 8 caracteres"
-                      className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#121215] placeholder-[#94A3B8] outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                      className="w-full px-4 py-3.5 pr-12 bg-[#121215] border border-white/12 rounded-2xl text-white placeholder-zinc-500 outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 transition-all font-medium text-sm"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#121215] transition-colors p-1"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors p-1"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -286,7 +286,7 @@ export default function RedefinirSenha() {
 
                 {/* Confirmar Nova Senha */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#121215] mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                     Confirmar Nova Senha
                   </label>
                   <div className="relative">
@@ -296,12 +296,12 @@ export default function RedefinirSenha() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Repita a nova senha"
-                      className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#121215] placeholder-[#94A3B8] outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                      className="w-full px-4 py-3.5 pr-12 bg-[#121215] border border-white/12 rounded-2xl text-white placeholder-zinc-500 outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 transition-all font-medium text-sm"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#121215] transition-colors p-1"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors p-1"
                     >
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -329,7 +329,7 @@ export default function RedefinirSenha() {
               <div className="mt-6 text-center">
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-1.5 text-xs text-[#5B6478] hover:text-[#FF1E8A] font-bold transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-[#FF1E8A] font-bold transition-colors"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" /> Voltar para o login
                 </Link>

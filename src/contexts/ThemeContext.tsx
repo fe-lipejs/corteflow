@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 
 // ─── Brand Accent ─────────────────────────────────────────────────────────────
-export const DEFAULT_ACCENT = '#FF5C95';
+export const DEFAULT_ACCENT = '#FF1E8A';
 
-// Cores laranja que eram o padrão antigo do sistema. Tenants que ainda têm
-// esses valores salvos em custom_palette passam a usar o novo accent padrão.
-const LEGACY_DEFAULT_ACCENTS = ['#FD6500', '#DE870D', '#FF9D2E'];
+// Cores laranja/rosa antigas que eram o padrão do sistema. Tenants que ainda têm
+// esses valores salvos em custom_palette passam a usar o novo accent padrão (#FF1E8A).
+const LEGACY_DEFAULT_ACCENTS = ['#FD6500', '#DE870D', '#FF9D2E', '#FF5C95'];
 
 export function normalizeAccentColor(hex?: string | null): string | undefined {
   if (!hex) return hex ?? undefined;
@@ -198,31 +198,31 @@ export const THEME_NOIR: ThemeTokens = {
   textMuted: '#71717a', // zinc-500
   textInverse: '#09090b',
 
-  accent: '#FF5C95',
-  accentLight: '#FF74A5',
-  accentMuted: 'rgba(255, 92, 149, 0.12)',
-  accentGradient: 'linear-gradient(135deg, #FF5C95, #FF5C95)',
-  accentHover: '#F2447F',
+  accent: '#FF1E8A',
+  accentLight: '#FF4DA3',
+  accentMuted: 'rgba(255, 30, 138, 0.12)',
+  accentGradient: 'linear-gradient(135deg, #FF1E8A, #FF1E8A)',
+  accentHover: '#E01177',
 
   border: '#27272a', // zinc-800
   borderHover: '#3f3f46', // zinc-700
-  borderActive: '#FF5C95',
+  borderActive: '#FF1E8A',
 
-  btnPrimaryBg: 'linear-gradient(135deg, #FF5C95, #FF5C95)',
-  btnPrimaryText: '#09090b',
+  btnPrimaryBg: 'linear-gradient(135deg, #FF1E8A, #FF1E8A)',
+  btnPrimaryText: '#FFFFFF',
   btnPrimaryHover: 'none',
   btnOutlineBorder: '#27272a',
   btnOutlineText: '#FFFFFF',
-  btnOutlineHoverBg: 'rgba(255, 92, 149, 0.08)',
+  btnOutlineHoverBg: 'rgba(255, 30, 138, 0.08)',
 
-  calendarActiveBg: '#FF5C95',
-  calendarActiveText: '#09090b',
-  calendarAvailableBg: 'rgba(255, 92, 149, 0.08)',
+  calendarActiveBg: '#FF1E8A',
+  calendarActiveText: '#FFFFFF',
+  calendarAvailableBg: 'rgba(255, 30, 138, 0.08)',
   calendarUnavailableBg: 'rgba(255, 255, 255, 0.03)',
 
   inputBg: '#18181b',
   inputBorder: '#27272a',
-  inputFocusBorder: '#FF5C95',
+  inputFocusBorder: '#FF1E8A',
   inputPlaceholder: '#71717a',
   inputText: '#FFFFFF',
 
@@ -234,8 +234,8 @@ export const THEME_NOIR: ThemeTokens = {
   sidebarBg: 'rgba(9, 9, 11, 0.9)',
   sidebarBorder: '#27272a',
   sidebarHover: '#18181b',
-  sidebarActiveItemBg: '#FF5C95',
-  sidebarActiveItemText: '#09090b',
+  sidebarActiveItemBg: '#FF1E8A',
+  sidebarActiveItemText: '#FFFFFF',
 
   success: '#22c55e',
   warning: '#f59e0b',
@@ -274,31 +274,31 @@ export const THEME_ELEGANT: ThemeTokens = {
   textMuted: '#64748B',
   textInverse: '#FFFFFF',
 
-  accent: '#FF5C95',
-  accentLight: '#FF74A5',
-  accentMuted: 'rgba(255, 92, 149, 0.12)',
-  accentGradient: 'linear-gradient(135deg, #FF5C95, #FF5C95)',
-  accentHover: '#F2447F',
+  accent: '#FF1E8A',
+  accentLight: '#FF4DA3',
+  accentMuted: 'rgba(255, 30, 138, 0.12)',
+  accentGradient: 'linear-gradient(135deg, #FF1E8A, #FF1E8A)',
+  accentHover: '#E01177',
 
   border: '#E2E8F0',
   borderHover: '#CBD5E1',
-  borderActive: '#FF5C95',
+  borderActive: '#FF1E8A',
 
-  btnPrimaryBg: 'linear-gradient(135deg, #FF5C95, #FF5C95)',
+  btnPrimaryBg: 'linear-gradient(135deg, #FF1E8A, #FF1E8A)',
   btnPrimaryText: '#FFFFFF',
   btnPrimaryHover: 'none',
   btnOutlineBorder: '#E2E8F0',
   btnOutlineText: '#0F172A',
   btnOutlineHoverBg: '#F1F5F9',
 
-  calendarActiveBg: '#FF5C95',
+  calendarActiveBg: '#FF1E8A',
   calendarActiveText: '#FFFFFF',
-  calendarAvailableBg: 'rgba(255, 92, 149, 0.08)',
+  calendarAvailableBg: 'rgba(255, 30, 138, 0.08)',
   calendarUnavailableBg: '#F8FAFC',
 
   inputBg: '#FFFFFF',
   inputBorder: '#CBD5E1',
-  inputFocusBorder: '#FF5C95',
+  inputFocusBorder: '#FF1E8A',
   inputPlaceholder: '#94A3B8',
   inputText: '#0F172A',
 
@@ -310,7 +310,7 @@ export const THEME_ELEGANT: ThemeTokens = {
   sidebarBg: '#FFFFFF',
   sidebarBorder: '#E2E8F0',
   sidebarHover: '#F1F5F9',
-  sidebarActiveItemBg: '#FF5C95',
+  sidebarActiveItemBg: '#FF1E8A',
   sidebarActiveItemText: '#FFFFFF',
 
   success: '#16a34a',

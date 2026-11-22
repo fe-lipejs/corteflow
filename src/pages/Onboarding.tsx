@@ -585,7 +585,7 @@ export default function Onboarding() {
       style={{
         fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif",
         WebkitFontSmoothing: 'antialiased',
-        background: 'radial-gradient(circle at 85% 10%, rgba(255, 92, 149, 0.05), transparent 45%), radial-gradient(circle at 10% 90%, rgba(15, 23, 42, 0.03), transparent 50%), #F8FAFC',
+        background: 'radial-gradient(circle at 85% 10%, rgba(255, 30, 138, 0.05), transparent 45%), radial-gradient(circle at 10% 90%, rgba(15, 23, 42, 0.03), transparent 50%), #F8FAFC',
       }}
     >
       {/* Brilhos sutis e quentes de fundo (sem azul) */}
@@ -593,7 +593,7 @@ export default function Onboarding() {
         aria-hidden="true"
         className="absolute top-[-20%] right-[-15%] w-[45%] h-[45%] rounded-full pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, rgba(255, 92, 149, 0.08), transparent 70%)',
+          background: 'radial-gradient(circle, rgba(255, 30, 138, 0.08), transparent 70%)',
           filter: 'blur(120px)',
         }}
       />
@@ -601,7 +601,7 @@ export default function Onboarding() {
         aria-hidden="true"
         className="absolute bottom-[-15%] left-[-15%] w-[35%] h-[35%] rounded-full pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, rgba(255, 92, 149, 0.04), transparent 70%)',
+          background: 'radial-gradient(circle, rgba(255, 30, 138, 0.04), transparent 70%)',
           filter: 'blur(100px)',
         }}
       />
@@ -745,7 +745,7 @@ export default function Onboarding() {
                           className="p-4.5 rounded-2xl cursor-pointer transition-all border group hover:-translate-y-0.5"
                           style={{
                             borderColor: isSelected ? ACCENT : '#E2E8F0',
-                            background: isSelected ? 'rgba(255, 92, 149, 0.05)' : '#FFFFFF',
+                            background: isSelected ? 'rgba(255, 30, 138, 0.05)' : '#FFFFFF',
                             boxShadow: 'none',
                           }}
                         >
@@ -892,7 +892,7 @@ export default function Onboarding() {
                                       setValue('slug', sug, { shouldValidate: true });
                                       setUserManuallyEditedSlug(true);
                                     }}
-                                    className="px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-white text-[#1C89C0] hover:bg-[#FF5C95] hover:text-white border border-[#FF5C95]/35 hover:border-[#FF5C95] transition-all active:scale-95 flex items-center gap-1 shadow-sm cursor-pointer"
+                                    className="px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-white text-[#121215] hover:bg-[#FF1E8A] hover:text-white border border-[#FF1E8A]/35 hover:border-[#FF1E8A] transition-all active:scale-95 flex items-center gap-1 shadow-sm cursor-pointer"
                                   >
                                     <span>{sug}</span>
                                     <span className="text-[10px] opacity-70">+</span>
@@ -941,7 +941,7 @@ export default function Onboarding() {
                         <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                         <div
                           onClick={() => !isProcessingLogo && logoInputRef.current?.click()}
-                          className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#FF5C95] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative hover:bg-[#FF5C95]/5"
+                          className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#FF1E8A] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative hover:bg-[#FF1E8A]/5"
                         >
                           {isProcessingLogo ? (
                             <div className="flex flex-col items-center gap-2" style={{ color: ACCENT }}>
@@ -969,7 +969,7 @@ export default function Onboarding() {
                         <input ref={bannerInputRef} type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
                         <div
                           onClick={() => !isProcessingBanner && bannerInputRef.current?.click()}
-                          className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#FF5C95] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative hover:bg-[#FF5C95]/5"
+                          className="h-28 rounded-2xl border-2 border-dashed border-[#CBD5E1] hover:border-[#FF1E8A] cursor-pointer flex items-center justify-center overflow-hidden transition-all bg-white relative hover:bg-[#FF1E8A]/5"
                         >
                           {isProcessingBanner ? (
                             <div className="flex flex-col items-center gap-2" style={{ color: ACCENT }}>
@@ -1277,7 +1277,7 @@ export default function Onboarding() {
                   <div
                     className="bg-white border rounded-[28px] p-6 w-full max-w-[300px] mb-4 relative shadow-sm shrink-0 flex flex-col items-center mt-3"
                     style={{
-                      borderColor: 'rgba(255, 92, 149, 0.25)',
+                      borderColor: 'rgba(255, 30, 138, 0.25)',
                       boxShadow: 'none',
                     }}
                   >

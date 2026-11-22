@@ -96,7 +96,7 @@ export const demoPortalsService = {
         business_type: input.business_type || 'barbearia',
         logo_url: input.logo_url || null,
         banner_url: input.banner_url || null,
-        primary_color: input.primary_color || '#FF5C95',
+        primary_color: input.primary_color || '#FF1E8A',
         services: servicesWithIds,
         professionals: professionalsWithIds,
         owner_whatsapp: input.owner_whatsapp.trim(),

@@ -335,36 +335,36 @@ export default function Login() {
                 </button>
               </div>
 
-              {/* Card Branco sobre Fundo Preto Fosco (#121215) + Destaques Rosa (#FF1E8A) */}
+              {/* Card Escuro em Preto Fosco (#18181D) sobre Fundo (#121215) + Destaques Rosa (#FF1E8A) */}
               <div
                 className="rounded-[28px] p-7 sm:p-9"
                 style={{
-                  background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.94))',
+                  background: 'linear-gradient(145deg, rgba(24, 24, 29, 0.96), rgba(20, 20, 25, 0.94))',
                   backdropFilter: 'blur(24px) saturate(180%)',
                   WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                  border: '1px solid rgba(255, 255, 255, 0.90)',
-                  boxShadow: '0 30px 80px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.95)',
+                  border: '1px solid rgba(255, 255, 255, 0.10)',
+                  boxShadow: '0 30px 80px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
                 }}
               >
                 {/* Eyebrow & Headline */}
                 <div className="text-center mb-7">
-                  <h2 className="text-2xl sm:text-[26px] font-black text-[#121215] tracking-[-0.035em] leading-tight">
+                  <h2 className="text-2xl sm:text-[26px] font-black text-white tracking-[-0.035em] leading-tight">
                     {t('login.title') || 'Acesse sua conta'}
                   </h2>
-                  <p className="text-[#5B6478] mt-1.5 text-xs sm:text-sm font-normal">
+                  <p className="text-zinc-400 mt-1.5 text-xs sm:text-sm font-normal">
                     Gerencie agendamentos, equipe e financeiro
                   </p>
                 </div>
 
                 {resendSuccess && (
-                  <div className="mb-4 p-3.5 bg-emerald-500/10 border border-emerald-500/25 rounded-2xl text-emerald-800 text-xs sm:text-sm font-medium flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <div className="mb-4 p-3.5 bg-emerald-500/10 border border-emerald-500/25 rounded-2xl text-emerald-300 text-xs sm:text-sm font-medium flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     <span>Link de confirmação reenviado com sucesso! Verifique seu e-mail.</span>
                   </div>
                 )}
 
                 {error && (
-                  <div className="mb-5 p-3.5 bg-red-500/10 border border-red-500/25 rounded-2xl text-red-700 text-xs sm:text-sm font-medium space-y-2">
+                  <div className="mb-5 p-3.5 bg-red-500/10 border border-red-500/25 rounded-2xl text-red-300 text-xs sm:text-sm font-medium space-y-2">
                     <p>{error}</p>
                     {error.includes('confirmar seu e-mail') && (
                       <button
@@ -381,13 +381,13 @@ export default function Login() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#121215] mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                       {t('login.email')}
                     </label>
                     <input
                       type="email"
                       required
-                      className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#121215] placeholder-[#94A3B8] outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                      className="w-full px-4 py-3.5 bg-[#121215] border border-white/12 rounded-2xl text-white placeholder-zinc-500 outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 transition-all font-medium text-sm"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="seuemail@exemplo.com"
@@ -395,14 +395,14 @@ export default function Login() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#121215] mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                       {t('login.password')}
                     </label>
                     <div className="relative">
                       <input
                         type={showPassword ? 'text' : 'password'}
                         required
-                        className="w-full px-4 py-3.5 pr-12 bg-[#F8FAFC] border border-[#CBD5E1]/90 rounded-2xl text-[#121215] placeholder-[#94A3B8] outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 focus:bg-white transition-all font-medium text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                        className="w-full px-4 py-3.5 pr-12 bg-[#121215] border border-white/12 rounded-2xl text-white placeholder-zinc-500 outline-none focus:border-[#FF1E8A] focus:ring-4 focus:ring-[#FF1E8A]/15 transition-all font-medium text-sm"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
@@ -410,7 +410,7 @@ export default function Login() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#121215] transition-colors p-1"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors p-1"
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -426,7 +426,7 @@ export default function Login() {
                         setForgotSubmitted(false);
                         setForgotPasswordOpen(true);
                       }}
-                      className="text-xs text-[#5B6478] hover:text-[#FF1E8A] font-semibold hover:underline cursor-pointer transition-colors"
+                      className="text-xs text-zinc-400 hover:text-[#FF1E8A] font-semibold hover:underline cursor-pointer transition-colors"
                     >
                       Esqueci minha senha
                     </button>
@@ -450,17 +450,17 @@ export default function Login() {
                   </button>
                 </form>
 
-                <div className="mt-6 text-center text-xs sm:text-sm text-[#5B6478]">
+                <div className="mt-6 text-center text-xs sm:text-sm text-zinc-400">
                   Não tem uma conta?{' '}
                   <Link
                     to="/cadastro"
-                    className="text-[#121215] font-bold hover:text-[#FF1E8A] underline decoration-[#FF1E8A]/60 hover:decoration-[#FF1E8A] transition-colors"
+                    className="text-white font-bold hover:text-[#FF1E8A] underline decoration-[#FF1E8A]/60 hover:decoration-[#FF1E8A] transition-colors"
                   >
                     Criar conta grátis
                   </Link>
                 </div>
 
-                <div className="mt-6 pt-5 border-t border-[#E2E8F0]/80 text-center">
+                <div className="mt-6 pt-5 border-t border-white/10 text-center">
                   <button
                     onClick={() => {
                       setIsSuperAdminMode(true);
@@ -468,7 +468,7 @@ export default function Login() {
                       setPassword('');
                       setError(null);
                     }}
-                    className="text-[11px] text-[#94A3B8] hover:text-[#121215] font-semibold tracking-wide uppercase transition-colors cursor-pointer"
+                    className="text-[11px] text-zinc-500 hover:text-zinc-300 font-semibold tracking-wide uppercase transition-colors cursor-pointer"
                   >
                     Acesso Admin Master
                   </button>

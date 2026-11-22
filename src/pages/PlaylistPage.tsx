@@ -16,9 +16,9 @@ const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 const ACCENT = '#FF1E8A';
 const ACCENT_ON_DARK = '#FF1E8A';
-const PRIMARY = '#121215';
-const INK = '#121215';
-const MUTED = '#5B6478';
+const PRIMARY = '#FF1E8A';
+const INK = '#FFFFFF';
+const MUTED = 'rgba(255, 255, 255, 0.65)';
 
 const PLAYLIST_ID = import.meta.env['VITE_SPOTIFY_PLAYLIST_ID'] || '6BcMYfYsOH9qUGNp2FRthF';
 const PLAYLIST_URL =
@@ -38,14 +38,14 @@ const VERSOS: { texto: string; ref: string }[] = [
     { texto: 'Vinde a mim, todos os que estais cansados e oprimidos, e eu vos aliviarei.', ref: 'Mateus 11:28' },
 ];
 
-/* Estilo base dos cards BRANCOS em glassmorphism sobre o fundo Preto Fosco */
+/* Estilo base dos cards ESCUROS em Preto Fosco glassmorphism */
 const whiteGlassCard: React.CSSProperties = {
-    background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.94))',
+    background: 'linear-gradient(145deg, rgba(24, 24, 29, 0.96), rgba(20, 20, 25, 0.94))',
     backdropFilter: 'blur(28px) saturate(180%)',
     WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-    border: '1px solid rgba(255, 255, 255, 0.90)',
+    border: '1px solid rgba(255, 255, 255, 0.10)',
     borderRadius: '28px',
-    boxShadow: '0 30px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 #FFFFFF',
+    boxShadow: '0 30px 80px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
     color: INK,
     position: 'relative',
     overflow: 'hidden',
@@ -540,7 +540,8 @@ export default function PlaylistPage() {
                                         height: '42px',
                                         padding: '0 20px',
                                         borderRadius: '9999px',
-                                        background: '#0F172A',
+                                        background: 'rgba(255, 255, 255, 0.08)',
+                                        border: '1px solid rgba(255, 255, 255, 0.14)',
                                         color: '#FFFFFF',
                                         fontSize: '12px',
                                         fontWeight: 800,
@@ -548,17 +549,14 @@ export default function PlaylistPage() {
                                         textDecoration: 'none',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
-                                        boxShadow: '0 4px 16px rgba(15, 23, 42, 0.18)',
                                     }}
                                     onMouseEnter={e => {
-                                        e.currentTarget.style.background = '#1E293B';
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.14)';
                                         e.currentTarget.style.transform = 'translateY(-1px)';
-                                        e.currentTarget.style.boxShadow = '0 8px 22px rgba(15, 23, 42, 0.28)';
                                     }}
                                     onMouseLeave={e => {
-                                        e.currentTarget.style.background = '#0F172A';
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
                                         e.currentTarget.style.transform = 'none';
-                                        e.currentTarget.style.boxShadow = '0 4px 16px rgba(15, 23, 42, 0.18)';
                                     }}
                                 >
                                     <SpotifyGlyph className="w-[16px] h-[16px] text-[#1DB954]" />
@@ -619,15 +617,15 @@ export default function PlaylistPage() {
                         }}
                     >
                         <div style={{ position: 'relative', zIndex: 2 }}>
-                            <Eyebrow onLight>Palavra do dia</Eyebrow>
+                            <Eyebrow>Palavra do dia</Eyebrow>
 
                             <div style={{
                                 margin: '24px auto 0',
                                 width: '56px',
                                 height: '56px',
                                 borderRadius: '18px',
-                                background: 'linear-gradient(135deg, rgba(255, 149, 186, 0.14), rgba(255, 149, 186, 0.04))',
-                                border: '1px solid rgba(255, 149, 186, 0.25)',
+                                background: 'linear-gradient(135deg, rgba(255, 30, 138, 0.16), rgba(255, 30, 138, 0.06))',
+                                border: '1px solid rgba(255, 30, 138, 0.28)',
                                 color: PRIMARY,
                                 display: 'flex',
                                 alignItems: 'center',
@@ -675,8 +673,8 @@ export default function PlaylistPage() {
                                             color: PRIMARY,
                                             padding: '6px 16px',
                                             borderRadius: '9999px',
-                                            background: 'rgba(255, 149, 186, 0.08)',
-                                            border: '1px solid rgba(255, 149, 186, 0.22)',
+                                            background: 'rgba(255, 30, 138, 0.10)',
+                                            border: '1px solid rgba(255, 30, 138, 0.25)',
                                         }}>
                                             {verso.ref}
                                         </cite>
@@ -742,9 +740,9 @@ export default function PlaylistPage() {
                                         alignItems: 'center',
                                         gap: '9px',
                                         borderRadius: '9999px',
-                                        background: '#F1F5F9',
-                                        border: '1px solid #E2E8F0',
-                                        color: INK,
+                                        background: 'rgba(255, 255, 255, 0.07)',
+                                        border: '1px solid rgba(255, 255, 255, 0.14)',
+                                        color: '#FFFFFF',
                                         fontSize: '13.5px',
                                         fontWeight: 700,
                                         cursor: 'pointer',
@@ -752,13 +750,13 @@ export default function PlaylistPage() {
                                         fontFamily: 'inherit',
                                     }}
                                     onMouseEnter={e => {
-                                        e.currentTarget.style.background = '#E2E8F0';
-                                        e.currentTarget.style.borderColor = '#CBD5E1';
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.13)';
+                                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.24)';
                                         e.currentTarget.style.transform = 'translateY(-1px)';
                                     }}
                                     onMouseLeave={e => {
-                                        e.currentTarget.style.background = '#F1F5F9';
-                                        e.currentTarget.style.borderColor = '#E2E8F0';
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
+                                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.14)';
                                         e.currentTarget.style.transform = 'none';
                                     }}
                                 >
