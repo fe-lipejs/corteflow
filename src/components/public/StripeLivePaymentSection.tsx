@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import {
   Loader2,
   CreditCard,
@@ -80,6 +80,7 @@ interface StripeLivePaymentSectionProps {
   cardBorderColor: string;
   textPrimary: string;
   textSecondary: string;
+  selectedMethod?: "pix" | "card";
   onPaymentMethodChange?: (method: "pix" | "card") => void;
 }
 
@@ -119,11 +120,20 @@ export const StripeLivePaymentSection = forwardRef<
     cardBorderColor,
     textPrimary,
     textSecondary,
+    selectedMethod,
     onPaymentMethodChange,
   },
   ref
 ) {
-  const [selectedTab, setSelectedTab] = useState<"pix" | "card">("pix");
+  const [selectedTab, setSelectedTab] = useState<"pix" | "card">(
+    selectedMethod === "card" ? "card" : "pix"
+  );
+
+  useEffect(() => {
+    if (selectedMethod === "pix" || selectedMethod === "card") {
+      setSelectedTab(selectedMethod);
+    }
+  }, [selectedMethod]);
 
   // Estado do Modal PIX Personalizado (QR Code nativo do Mercado Pago)
   const [activePixModal, setActivePixModal] = useState<ActivePixModalState | null>(null);

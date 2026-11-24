@@ -1227,8 +1227,17 @@ export default function PublicStore() {
       if (draft.customerPhone) setCustomerPhone(draft.customerPhone);
       if (draft.customerEmail) setCustomerEmail(draft.customerEmail);
       if (draft.customerNotes) setCustomerNotes(draft.customerNotes);
+      if (draft.bookingMode === "home" || draft.bookingMode === "instore") {
+        setBookingMode(draft.bookingMode);
+      }
+      if (draft.homeLocationData) {
+        setHomeLocationData(draft.homeLocationData);
+        setIsHomeLocationValidated(true);
+      }
       if (draft.paymentScope) setPaymentScope(draft.paymentScope);
-      if (draft.paymentMethod) setPaymentMethod(draft.paymentMethod);
+      if (draft.paymentMethod === "pix" || draft.paymentMethod === "card") {
+        setPaymentMethod(draft.paymentMethod);
+      }
 
       if (draft.alreadyAborted) {
         setIsProcessing(false);
@@ -1853,6 +1862,8 @@ export default function PublicStore() {
                     customerPhone,
                     customerEmail,
                     customerNotes,
+                    bookingMode,
+                    homeLocationData,
                     paymentScope,
                     paymentMethod: methodType,
                     timestamp: Date.now(),
@@ -4036,20 +4047,6 @@ export default function PublicStore() {
                       </div>
                     </div>
 
-                    {errorMsg && (
-                      <div
-                        className="mb-4 rounded-2xl border p-3.5 text-xs sm:text-sm font-semibold flex items-start gap-2.5"
-                        style={{
-                          borderColor: "rgba(239, 68, 68, 0.38)",
-                          background: "rgba(239, 68, 68, 0.10)",
-                          color: "#EF4444",
-                        }}
-                      >
-                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                        <span>{errorMsg}</span>
-                      </div>
-                    )}
-
                     {/* Resumo Compacto do Agendamento */}
                     <div
                       className="rounded-2xl sm:rounded-3xl p-4 sm:p-5 mb-5 border"
@@ -4471,6 +4468,7 @@ export default function PublicStore() {
                                 cardBorderColor={cardBorderColor}
                                 textPrimary={theme.textPrimary}
                                 textSecondary={theme.textSecondary}
+                                selectedMethod={paymentMethod === "card" ? "card" : "pix"}
                                 onPaymentMethodChange={(m) => setPaymentMethod(m)}
                               />
                             </div>
