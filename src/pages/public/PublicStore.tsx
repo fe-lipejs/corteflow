@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 import { format, addDays, startOfDay, endOfDay, differenceInCalendarDays } from "date-fns";
 import { ptBR } from "date-fns/locale/pt-BR";
-import { generateAvailableSlots } from "../../lib/availability";
+import { generateAvailableSlots, resolveEffectiveBusinessHoursForDate } from "../../lib/availability";
 import type { Slot } from "../../lib/availability";
 import {
   buildHorizonDateList,
@@ -1185,13 +1185,14 @@ export default function PublicStore() {
 
   const availableDays = useMemo(() => {
     const blockedList = storeData?.professionalBlockedTimes || [];
+    const specialHoursList = storeData?.specialBusinessHours || [];
     const targetPros =
       selectedPro && selectedPro !== "any"
         ? [selectedPro]
         : professionalsList.filter((p: any) => p.status === 'active' || !p.status);
 
     return horizonData.dates.map((d) => {
-      const h = businessHoursList.find((x: any) => x.weekday === d.getDay());
+      const h = resolveEffectiveBusinessHoursForDate(d, businessHoursList, specialHoursList);
       if (h?.is_open !== true) {
         return { date: d, isOpen: false };
       }
@@ -1220,7 +1221,7 @@ export default function PublicStore() {
 
       return { date: d, isOpen: true };
     });
-  }, [horizonData.dates, businessHoursList, storeData?.professionalBlockedTimes, selectedPro, professionalsList]);
+  }, [horizonData.dates, businessHoursList, storeData?.specialBusinessHours, storeData?.professionalBlockedTimes, selectedPro, professionalsList]);
 
   // Se o salão estiver em "Sem limite" ou personalizado > 365 dias e o cliente escolher uma data além de 360 dias,
   // busca sob demanda agendamentos e bloqueios daquele dia para evitar conflitos.
@@ -1315,7 +1316,8 @@ export default function PublicStore() {
       [selectedService],
       bookingMode,
       (homeLocationData?.distanceKm ?? null),
-      settings?.home_service_radius_km
+      settings?.home_service_radius_km,
+      storeData?.specialBusinessHours || []
     );
   }, [
     selectedDate,

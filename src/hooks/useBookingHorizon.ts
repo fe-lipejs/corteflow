@@ -60,9 +60,9 @@ export function useTenantAvailabilityMeta(tenantId: string | null | undefined) {
   return useQuery({
     queryKey: TENANT_AVAILABILITY_META_KEY(tenantId),
     enabled: !!tenantId,
-    staleTime: 30_000,
+    staleTime: 0,
     queryFn: async () => {
-      const [{ data: proWorkingHours }, { data: proServices }] = await Promise.all([
+      const [{ data: proWorkingHours }, { data: proServices }, { data: specialBusinessHours }] = await Promise.all([
         supabase
           .from('professional_working_hours')
           .select('*')
@@ -71,11 +71,16 @@ export function useTenantAvailabilityMeta(tenantId: string | null | undefined) {
           .from('professional_services')
           .select('*')
           .eq('tenant_id', tenantId!),
+        supabase
+          .from('special_business_hours' as any)
+          .select('*')
+          .eq('tenant_id', tenantId!),
       ]);
 
       return {
         professionalWorkingHours: proWorkingHours ?? [],
         professionalServices: proServices ?? [],
+        specialBusinessHours: (specialBusinessHours as any[]) ?? [],
       };
     },
   });

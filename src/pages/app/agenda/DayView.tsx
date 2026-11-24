@@ -74,6 +74,10 @@ export default function DayView({
   }, [selectedProfessionalId]);
 
   const effectiveHours = useMemo(() => {
+    const dayEntry = (businessHours || []).find((b: any) => b.weekday === day.getDay()) as any;
+    if (dayEntry?._isSpecialPeriod) {
+      return businessHours;
+    }
     if (selectedProfessionalId && proWorkingHours.length > 0) {
       return proWorkingHours.map((ph) => ({
         weekday: ph.weekday,
@@ -85,7 +89,7 @@ export default function DayView({
       }));
     }
     return businessHours;
-  }, [businessHours, selectedProfessionalId, proWorkingHours]);
+  }, [businessHours, selectedProfessionalId, proWorkingHours, day]);
 
   const weekday = day.getDay();
   const bh = effectiveHours.find((b) => b.weekday === weekday);

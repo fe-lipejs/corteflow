@@ -137,7 +137,10 @@ export default function EditBookingModal({
       otherBookings,
       availabilityMeta?.professionalServices ?? [],
       [selectedService],
-      'instore'
+      'instore',
+      null,
+      undefined,
+      availabilityMeta?.specialBusinessHours ?? []
     );
   }, [
     selectedService,

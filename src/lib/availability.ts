@@ -29,6 +29,57 @@ export interface Slot {
   unavailableReason?: SlotUnavailableReason; // set only when available === false
 }
 
+export interface SpecialDayConfig {
+  weekday: number; // 0 (Dom) a 6 (Sáb)
+  is_open: boolean;
+  open_time: string;
+  close_time: string;
+  lunch_start?: string | null;
+  lunch_end?: string | null;
+}
+
+export interface SpecialBusinessHourPeriod {
+  id?: string;
+  tenant_id?: string;
+  name?: string | null;
+  start_date: string; // "YYYY-MM-DD"
+  end_date: string;   // "YYYY-MM-DD"
+  same_hours_for_all?: boolean;
+  days_config: SpecialDayConfig[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface EffectiveSalonHours {
+  weekday: number;
+  is_open: boolean;
+  open_time: string;
+  close_time: string;
+  lunch_start: string | null;
+  lunch_end: string | null;
+  _isSpecialPeriod?: boolean;
+  _specialPeriodId?: string;
+  _specialPeriodName?: string | null;
+}
+
+export type SpecialPeriodStatus = 'scheduled' | 'active' | 'finished';
+
+export function getSpecialPeriodStatus(
+  startDate: string,
+  endDate: string,
+  todayKey = toLocalDateKey(new Date())
+): { key: SpecialPeriodStatus; label: string } {
+  const start = (startDate || '').slice(0, 10);
+  const end = (endDate || '').slice(0, 10);
+  if (todayKey < start) {
+    return { key: 'scheduled', label: 'Programado' };
+  }
+  if (todayKey > end) {
+    return { key: 'finished', label: 'Finalizado' };
+  }
+  return { key: 'active', label: 'Em andamento' };
+}
+
 export interface AvailabilityInput {
   date: Date;
   services: any[];
@@ -46,6 +97,8 @@ export interface AvailabilityInput {
   clientDistanceKm?: number | null;
   /** Global salon home service radius in km (fallback when pro has no own radius) */
   salonHomeRadiusKm?: number;
+  /** Optional list of special business hour periods configured by the salon */
+  specialBusinessHours?: SpecialBusinessHourPeriod[] | null;
 }
 
 // ─── Internal Types ────────────────────────────────────────────────────────────
@@ -53,6 +106,157 @@ export interface AvailabilityInput {
 interface TimeInterval {
   start: Date;
   end: Date;
+}
+
+// ─── Special Business Hours Resolution (Centralized Engine) ──────────────────
+
+/**
+ * Converts a Date or ISO/date string into a local "YYYY-MM-DD" key.
+ */
+export function toLocalDateKey(date: Date | string): string {
+  if (typeof date === 'string') {
+    const trimmed = date.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+    const parsed = new Date(trimmed);
+    if (!isNaN(parsed.getTime())) {
+      return format(parsed, 'yyyy-MM-dd');
+    }
+    return trimmed.slice(0, 10);
+  }
+  return format(date, 'yyyy-MM-dd');
+}
+
+/**
+ * Converts a Date or "YYYY-MM-DD" string into a safe local Date instance.
+ */
+function toTargetDate(date: Date | string): Date {
+  if (typeof date === 'string') {
+    const trimmed = date.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return parse(trimmed, 'yyyy-MM-dd', new Date());
+    }
+    return new Date(trimmed);
+  }
+  return date;
+}
+
+/**
+ * Finds the active special business hour period covering `date`, if any.
+ */
+export function findActiveSpecialPeriodForDate(
+  date: Date | string,
+  specialPeriods?: SpecialBusinessHourPeriod[] | null
+): SpecialBusinessHourPeriod | null {
+  if (!specialPeriods || !Array.isArray(specialPeriods) || specialPeriods.length === 0) {
+    return null;
+  }
+  const dateKey = toLocalDateKey(date);
+  for (const period of specialPeriods) {
+    if (!period || !period.start_date || !period.end_date) continue;
+    const startKey = String(period.start_date).slice(0, 10);
+    const endKey = String(period.end_date).slice(0, 10);
+    if (startKey <= dateKey && dateKey <= endKey) {
+      return period;
+    }
+  }
+  return null;
+}
+
+/**
+ * Central rule of priority:
+ * - When `date` falls within a registered special period (`start_date <= date <= end_date`),
+ *   the special period configuration COMPLETELY REPLACES the standard `businessHours` for that date.
+ * - If the weekday is enabled in the special period, returns the special period's open/close/lunch hours.
+ * - If the weekday is NOT enabled in the special period, returns `is_open: false` (never falls back to standard hours).
+ * - Outside any special period, returns the standard `businessHours` entry for that weekday.
+ */
+export function resolveEffectiveBusinessHoursForDate(
+  date: Date | string,
+  businessHours: any[],
+  specialPeriods?: SpecialBusinessHourPeriod[] | null
+): EffectiveSalonHours | null {
+  const targetDate = toTargetDate(date);
+  const weekday = targetDate.getDay();
+
+  // Check if specialPeriods contains an active period for this date
+  const activeSpecial = findActiveSpecialPeriodForDate(targetDate, specialPeriods);
+  if (activeSpecial) {
+    let rawDays: SpecialDayConfig[] = [];
+    if (Array.isArray(activeSpecial.days_config)) {
+      rawDays = activeSpecial.days_config;
+    } else if (typeof activeSpecial.days_config === 'string') {
+      try {
+        const parsed = JSON.parse(activeSpecial.days_config);
+        if (Array.isArray(parsed)) rawDays = parsed;
+      } catch {
+        rawDays = [];
+      }
+    }
+
+    const specialDay = rawDays.find((d) => Number(d.weekday) === weekday);
+    if (!specialDay || !specialDay.is_open) {
+      return {
+        weekday,
+        is_open: false,
+        open_time: '09:00',
+        close_time: '18:00',
+        lunch_start: null,
+        lunch_end: null,
+        _isSpecialPeriod: true,
+        _specialPeriodId: activeSpecial.id,
+        _specialPeriodName: activeSpecial.name ?? null,
+      };
+    }
+
+    return {
+      weekday,
+      is_open: true,
+      open_time: String(specialDay.open_time || '09:00').slice(0, 5),
+      close_time: String(specialDay.close_time || '18:00').slice(0, 5),
+      lunch_start: specialDay.lunch_start ? String(specialDay.lunch_start).slice(0, 5) : null,
+      lunch_end: specialDay.lunch_end ? String(specialDay.lunch_end).slice(0, 5) : null,
+      _isSpecialPeriod: true,
+      _specialPeriodId: activeSpecial.id,
+      _specialPeriodName: activeSpecial.name ?? null,
+    };
+  }
+
+  // If no specialPeriods array was passed, check if `businessHours` already has a pre-resolved entry
+  const std = (businessHours || []).find((h) => Number(h.weekday) === weekday);
+  if (!std) return null;
+
+  if (std._isSpecialPeriod !== undefined) {
+    return std as EffectiveSalonHours;
+  }
+
+  return {
+    ...std,
+    weekday,
+    is_open: Boolean(std.is_open),
+    open_time: String(std.open_time || '09:00').slice(0, 5),
+    close_time: String(std.close_time || '18:00').slice(0, 5),
+    lunch_start: std.lunch_start ? String(std.lunch_start).slice(0, 5) : null,
+    lunch_end: std.lunch_end ? String(std.lunch_end).slice(0, 5) : null,
+    _isSpecialPeriod: false,
+  };
+}
+
+/**
+ * Returns a `businessHours` array where the entry for `date.getDay()` is replaced
+ * with the effective hours resolved from `specialPeriods` (or standard `businessHours`).
+ */
+export function getEffectiveBusinessHoursForDate(
+  date: Date | string,
+  businessHours: any[],
+  specialPeriods?: SpecialBusinessHourPeriod[] | null
+): any[] {
+  const targetDate = toTargetDate(date);
+  const weekday = targetDate.getDay();
+  const effective = resolveEffectiveBusinessHoursForDate(targetDate, businessHours, specialPeriods);
+  const others = (businessHours || []).filter((h) => Number(h.weekday) !== weekday);
+  return effective ? [...others, effective] : [...others];
 }
 
 // ─── Helper: GCD ──────────────────────────────────────────────────────────────
@@ -136,9 +340,15 @@ function computeFreeBlocks(
   allServices: any[]
 ): TimeInterval[] {
   const weekday = date.getDay();
-  const ph = proWorkingHours.find(
-    (h) => h.professional_id === pro.id && h.weekday === weekday
-  );
+  const isSpecialPeriod = Boolean(salonHours?._isSpecialPeriod);
+
+  // When a special period is active for this date, the special period's schedule
+  // replaces the standard weekly schedule (while preserving blockedTimes and bookings).
+  const ph = isSpecialPeriod
+    ? null
+    : proWorkingHours.find(
+        (h) => h.professional_id === pro.id && h.weekday === weekday
+      );
 
   if (ph && ph.is_working === false) return [];
 
@@ -235,14 +445,17 @@ function getUnavailableReasonForPro(
 ): SlotUnavailableReason | null {
   const slotEnd = addMinutes(slotStart, blockSize);
   const weekday = date.getDay();
+  const isSpecialPeriod = Boolean(salonHours?._isSpecialPeriod);
 
   // 1. Past
   if (isSameDay(slotStart, now) && slotStart <= now) return 'past';
 
-  // 2. Pro not working today
-  const ph = proWorkingHours.find(
-    (h) => h.professional_id === pro.id && h.weekday === weekday
-  );
+  // 2. Pro not working today (ignored when a special salon schedule overrides the standard week)
+  const ph = isSpecialPeriod
+    ? null
+    : proWorkingHours.find(
+        (h) => h.professional_id === pro.id && h.weekday === weekday
+      );
   if (ph && ph.is_working === false) return 'no_fit';
 
   // 3. Outside pro/salon working hours
@@ -353,7 +566,9 @@ export function generateAvailableSlots(
   /** Distance from client to salon in km */
   clientDistanceKm?: number | null,
   /** Global salon home radius (fallback) */
-  salonHomeRadiusKm?: number
+  salonHomeRadiusKm?: number,
+  /** Optional list of special business hours periods */
+  specialBusinessHours?: SpecialBusinessHourPeriod[] | null
 ): Slot[] {
   const services: any[] =
     selectedServices && selectedServices.length > 0
@@ -364,9 +579,12 @@ export function generateAvailableSlots(
 
   if (services.length === 0) return [];
 
-  const targetDate = typeof date === 'string' ? new Date(date) : date;
-  const weekday = targetDate.getDay();
-  const salonHours = businessHours.find((h) => h.weekday === weekday);
+  const targetDate = toTargetDate(date);
+  const salonHours = resolveEffectiveBusinessHoursForDate(
+    targetDate,
+    businessHours,
+    specialBusinessHours
+  );
   if (!salonHours || !salonHours.is_open) return [];
 
   const now = new Date();
@@ -557,7 +775,7 @@ export function generateAvailableSlotsFromInput(input: AvailabilityInput): Slot[
     input.services,
     input.serviceLocation ?? 'instore',
     input.clientDistanceKm ?? null,
-    input.salonHomeRadiusKm ?? 10
+    input.salonHomeRadiusKm ?? 10,
+    input.specialBusinessHours ?? null
   );
 }
-

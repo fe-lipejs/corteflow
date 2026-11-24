@@ -38,6 +38,7 @@ import {
 import StripeActivatedModal from '../../components/modals/StripeActivatedModal';
 import { ImageCropperModal } from '../../components/ImageCropperModal';
 import { PushNotificationSettings } from '../../components/notifications/PushNotificationSettings';
+import { SpecialBusinessHoursSection } from '../../components/settings/SpecialBusinessHoursSection';
 import toast from 'react-hot-toast';
 
 
@@ -2948,6 +2949,9 @@ export default function Configuracoes() {
                     </div>
                   ))}
                 </div>
+
+                {/* ─── HORÁRIOS ESPECIAIS POR PERÍODO ──────────────────────────────── */}
+                <SpecialBusinessHoursSection tenantId={tenant?.id} />
               </FeatureGate>
             </div>
           )}

@@ -71,6 +71,10 @@ export default function WeekView({
   }, [selectedProfessionalId]);
 
   const effectiveHours = useMemo(() => {
+    const hasSpecialOverride = (businessHours || []).some((b: any) => b?._isSpecialPeriod);
+    if (hasSpecialOverride) {
+      return businessHours;
+    }
     if (selectedProfessionalId && proWorkingHours.length > 0) {
       return proWorkingHours.map((ph) => ({
         weekday: ph.weekday,

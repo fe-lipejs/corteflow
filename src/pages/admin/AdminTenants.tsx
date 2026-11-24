@@ -7,7 +7,8 @@ import { motion } from 'framer-motion';
 import {
   Search, ExternalLink, MoreVertical, CheckCircle,
   ShieldAlert, Ban, PlayCircle, Building2, ChevronLeft, ChevronRight,
-  ArrowUpDown, Trash2, RotateCcw, Sliders, Loader2, Sparkles, X, Save, DollarSign, BarChart3
+  ArrowUpDown, Trash2, RotateCcw, Sliders, Loader2, Sparkles, X, Save, DollarSign, BarChart3,
+  Info, Copy, Mail, Phone, MapPin, User, Globe, CreditCard, Check
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminPageHeader from './components/AdminPageHeader';
@@ -54,6 +55,38 @@ export default function AdminTenants() {
   const [deleteModalOpen, setDeleteModalOpen] = useState<Tenant | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [stripeInfoModalOpen, setStripeInfoModalOpen] = useState<Tenant | null>(null);
+
+  // Modal Completo de Informações do Cliente / Salão
+  const [infoModalTenant, setInfoModalTenant] = useState<Tenant | null>(null);
+  const [infoModalLoading, setInfoModalLoading] = useState(false);
+  const [infoModalData, setInfoModalData] = useState<any>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  async function handleOpenInfoModal(tenant: Tenant) {
+    setInfoModalTenant(tenant);
+    setInfoModalData(null);
+    setInfoModalLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('get_super_admin_tenant_info', {
+        p_tenant_id: tenant.id,
+      });
+      if (error) throw error;
+      setInfoModalData(data);
+    } catch (err: any) {
+      console.error('Erro ao buscar informações do salão:', err);
+      toast.error('Erro ao carregar informações completas: ' + (err?.message || ''));
+    } finally {
+      setInfoModalLoading(false);
+    }
+  }
+
+  function handleCopyValue(key: string, value?: string | null) {
+    if (!value) return;
+    navigator.clipboard.writeText(value);
+    setCopiedField(key);
+    toast.success('Copiado!');
+    setTimeout(() => setCopiedField((prev) => (prev === key ? null : prev)), 2000);
+  }
   
   // Customização de Limites & Recursos do Salão
   const [contractModalTenant, setContractModalTenant] = useState<Tenant | null>(null);
@@ -795,12 +828,20 @@ export default function AdminTenants() {
                   {/* Actions */}
                   <div className="col-span-6 md:col-span-5 lg:col-span-2 flex items-center justify-end gap-1.5">
                     <button
+                      onClick={() => handleOpenInfoModal(tenant)}
+                      className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-zinc-200 hover:text-sky-300 bg-white/[0.04] hover:bg-sky-500/15 border border-white/10 hover:border-sky-500/30 rounded-lg transition-all cursor-pointer shadow-xs"
+                      title="Ver informações completas (nome, e-mail, telefone, endereço)"
+                    >
+                      <Info className="w-3.5 h-3.5 text-sky-400" />
+                      <span className="hidden xl:inline">Info</span>
+                    </button>
+                    <button
                       onClick={() => navigate(`/platform/tenants/${tenant.id}/analytics`)}
                       className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-zinc-200 hover:text-emerald-400 bg-white/[0.04] hover:bg-emerald-500/15 border border-white/10 hover:border-emerald-500/30 rounded-lg transition-all cursor-pointer shadow-xs"
                       title="Abrir Raffros Analytics deste estabelecimento"
                     >
                       <BarChart3 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="hidden sm:inline">Ver métricas</span>
+                      <span className="hidden xl:inline">Métricas</span>
                     </button>
                     <button
                       onClick={() => handleOpenContractModal(tenant)}
@@ -864,6 +905,15 @@ export default function AdminTenants() {
                             </div>
                           )}
                           <div>
+                            <button
+                              onClick={() => {
+                                handleOpenInfoModal(tenant);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-zinc-200 hover:bg-sky-500/10 hover:text-sky-300 transition-colors font-semibold cursor-pointer"
+                            >
+                              <Info className="w-3.5 h-3.5 text-sky-400" /> Informações do Cliente
+                            </button>
                             <button
                               onClick={() => {
                                 navigate(`/platform/tenants/${tenant.id}/analytics`);
@@ -1413,6 +1463,362 @@ export default function AdminTenants() {
                     <span>Salvar Ajustes do Salão</span>
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Completo de Informações do Cliente & Estabelecimento */}
+      {infoModalTenant && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#0E0E14] border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl text-zinc-100 flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="p-5 sm:p-6 border-b border-white/10 flex items-center justify-between bg-[#13131A]">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+                  <Info className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg font-bold text-white truncate">
+                    Informações do Cliente — {infoModalTenant.name}
+                  </h3>
+                  <p className="text-xs text-zinc-400 truncate">
+                    /{infoModalTenant.slug} · Cadastro em{' '}
+                    {new Date(infoModalTenant.created_at).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setInfoModalTenant(null)}
+                className="p-1.5 text-zinc-400 hover:text-white rounded-lg transition-colors cursor-pointer shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            {infoModalLoading ? (
+              <div className="p-12 flex flex-col items-center justify-center text-zinc-400">
+                <Loader2 className="w-8 h-8 animate-spin text-sky-400 mb-3" />
+                <p className="text-sm">Carregando ficha cadastral...</p>
+              </div>
+            ) : infoModalData ? (
+              (() => {
+                const owner = infoModalData.owner || {};
+                const settings = infoModalData.settings || {};
+                const mp = infoModalData.mercado_pago || {};
+                const sub = infoModalData.subscription || {};
+                const stats = infoModalData.stats || {};
+                const tInfo = infoModalData.tenant || {};
+
+                const ownerPhone = owner.phone || settings.whatsapp_number || settings.phone || '';
+                const ownerDigits = String(ownerPhone).replace(/\D/g, '');
+                const formattedAddress =
+                  settings.full_address ||
+                  [
+                    [settings.address, settings.street_number].filter(Boolean).join(', '),
+                    settings.complement,
+                    settings.neighborhood,
+                    [settings.city, settings.state].filter(Boolean).join(' - '),
+                    settings.zip_code ? `CEP ${settings.zip_code}` : null,
+                    settings.country,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ');
+
+                const publicUrl = `https://www.raffros.com/${tInfo.slug || infoModalTenant.slug}`;
+
+                return (
+                  <div className="p-5 sm:p-6 space-y-5 overflow-y-auto">
+                    {/* Contadores rápidos */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {[
+                        { label: 'Agendamentos', value: stats.bookings_count ?? 0 },
+                        { label: 'Clientes na base', value: stats.customers_count ?? 0 },
+                        { label: 'Serviços ativos', value: stats.services_count ?? 0 },
+                        { label: 'Profissionais', value: stats.pros_count ?? 0 },
+                      ].map((s) => (
+                        <div
+                          key={s.label}
+                          className="p-3 rounded-xl bg-white/[0.03] border border-white/10"
+                        >
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                            {s.label}
+                          </p>
+                          <p className="text-lg font-black text-white mt-0.5 tabular-nums">
+                            {s.value}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* 1. Dados do Titular / Acesso */}
+                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-3">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5" /> Dados do Cliente (Titular da Conta)
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-zinc-500 block mb-0.5">Nome completo</span>
+                          <span className="text-white font-semibold">
+                            {owner.full_name || 'Não informado'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block mb-0.5">E-mail de login (Auth)</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-white font-mono break-all">
+                              {owner.auth_email || '—'}
+                            </span>
+                            {owner.auth_email && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopyValue('auth_email', owner.auth_email)}
+                                className="p-1 rounded bg-white/5 hover:bg-white/10 text-zinc-300 cursor-pointer shrink-0"
+                                title="Copiar e-mail de login"
+                              >
+                                {copiedField === 'auth_email' ? (
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block mb-0.5">Telefone / WhatsApp</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-white font-semibold">
+                              {ownerPhone || 'Não informado'}
+                            </span>
+                            {ownerPhone && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopyValue('owner_phone', ownerPhone)}
+                                className="p-1 rounded bg-white/5 hover:bg-white/10 text-zinc-300 cursor-pointer shrink-0"
+                                title="Copiar telefone"
+                              >
+                                {copiedField === 'owner_phone' ? (
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block mb-0.5">Último acesso</span>
+                          <span className="text-zinc-200">
+                            {owner.last_sign_in_at
+                              ? new Date(owner.last_sign_in_at).toLocaleString('pt-BR')
+                              : 'Nunca acessou'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. Contato Público & Redes */}
+                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-3">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5" /> Estabelecimento &amp; Contato Público
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-zinc-500 block mb-0.5">Nome Fantasia</span>
+                          <span className="text-white font-semibold">
+                            {settings.fantasy_name || tInfo.name || '—'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block mb-0.5">E-mail de contato</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-zinc-200 font-mono break-all">
+                              {settings.email || owner.auth_email || '—'}
+                            </span>
+                            {(settings.email || owner.auth_email) && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleCopyValue('contact_email', settings.email || owner.auth_email)
+                                }
+                                className="p-1 rounded bg-white/5 hover:bg-white/10 text-zinc-300 cursor-pointer shrink-0"
+                                title="Copiar e-mail de contato"
+                              >
+                                {copiedField === 'contact_email' ? (
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block mb-0.5">WhatsApp do Salão</span>
+                          <span className="text-zinc-200">
+                            {settings.whatsapp_number || settings.phone || '—'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block mb-0.5">Instagram</span>
+                          <span className="text-zinc-200">
+                            {settings.instagram ? `@${String(settings.instagram).replace(/^@/, '')}` : '—'}
+                          </span>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <span className="text-zinc-500 block mb-0.5">Link Público de Agendamento</span>
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={publicUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-emerald-400 hover:underline font-mono truncate"
+                            >
+                              {publicUrl}
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyValue('public_url', publicUrl)}
+                              className="p-1 rounded bg-white/5 hover:bg-white/10 text-zinc-300 cursor-pointer shrink-0"
+                              title="Copiar link"
+                            >
+                              {copiedField === 'public_url' ? (
+                                <Check className="w-3 h-3 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 3. Endereço Completo */}
+                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5" /> Endereço do Estabelecimento
+                        </h4>
+                        {formattedAddress && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyValue('address', formattedAddress)}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-300 hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg cursor-pointer"
+                          >
+                            {copiedField === 'address' ? (
+                              <Check className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-3 h-3" />
+                            )}
+                            <span>Copiar endereço</span>
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-zinc-200 leading-relaxed">
+                        {formattedAddress || 'Nenhum endereço cadastrado nas configurações.'}
+                      </p>
+                      {settings.map_link && (
+                        <a
+                          href={settings.map_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-amber-400 hover:underline"
+                        >
+                          <ExternalLink className="w-3 h-3" /> Abrir no Google Maps
+                        </a>
+                      )}
+                    </div>
+
+                    {/* 4. Financeiro / Mercado Pago & Assinatura */}
+                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-3">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                        <CreditCard className="w-3.5 h-3.5" /> Assinatura &amp; Mercado Pago do Salão
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-zinc-500 block mb-0.5">Plano / Status</span>
+                          <span className="text-white font-semibold">
+                            {sub.plan_name || '—'} · <span className="capitalize">{sub.status || tInfo.status}</span>
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block mb-0.5">Valor Mensal</span>
+                          <span className="text-white font-semibold">
+                            {sub.custom_price_amount
+                              ? `R$ ${Number(sub.custom_price_amount).toFixed(2).replace('.', ',')} (Preço Especial)`
+                              : sub.contract_price != null
+                                ? `R$ ${Number(sub.contract_price).toFixed(2).replace('.', ',')}`
+                                : 'Padrão do plano'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block mb-0.5">Recebimentos Online (MP)</span>
+                          <span className={mp.charges_enabled ? 'text-emerald-400 font-bold' : 'text-zinc-400'}>
+                            {mp.charges_enabled
+                              ? `Conectado (${mp.mp_nickname || mp.mp_email || mp.mp_user_id || 'Ativo'})`
+                              : 'Não conectado (só local)'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block mb-0.5">ID do Salão (Tenant ID)</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-zinc-300 font-mono text-[11px] truncate">{tInfo.id}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyValue('tenant_id', tInfo.id)}
+                              className="p-1 rounded bg-white/5 hover:bg-white/10 text-zinc-300 cursor-pointer shrink-0"
+                            >
+                              {copiedField === 'tenant_id' ? (
+                                <Check className="w-3 h-3 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Botões rápidos de contato */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      {ownerDigits && (
+                        <a
+                          href={`https://wa.me/${ownerDigits.startsWith('55') ? ownerDigits : `55${ownerDigits}`}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 text-xs font-bold transition-colors"
+                        >
+                          <Phone className="w-3.5 h-3.5" /> Chamar no WhatsApp
+                        </a>
+                      )}
+                      {owner.auth_email && (
+                        <a
+                          href={`mailto:${owner.auth_email}`}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-300 hover:bg-sky-500/25 text-xs font-bold transition-colors"
+                        >
+                          <Mail className="w-3.5 h-3.5" /> Enviar E-mail
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="p-8 text-center text-sm text-zinc-400">
+                Não foi possível carregar os dados deste estabelecimento.
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="border-t border-white/10 p-4 flex justify-end bg-[#13131A]">
+              <button
+                onClick={() => setInfoModalTenant(null)}
+                className="px-6 py-2 bg-white/10 hover:bg-white/15 text-white font-bold rounded-xl text-sm transition-all cursor-pointer"
+              >
+                Fechar
               </button>
             </div>
           </div>

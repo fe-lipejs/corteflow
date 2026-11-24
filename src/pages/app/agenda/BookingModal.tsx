@@ -170,7 +170,10 @@ export default function BookingModal({
       dayBookings,
       availabilityMeta?.professionalServices ?? [],
       [selectedService],
-      'instore'
+      'instore',
+      null,
+      undefined,
+      availabilityMeta?.specialBusinessHours ?? []
     );
   }, [
     selectedDate,

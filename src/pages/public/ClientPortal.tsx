@@ -5,7 +5,7 @@ import { supabase } from '../../integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCancelBooking, useRescheduleBooking, useBookingsRealtime } from '../../hooks/useBookings';
 import { format, isBefore, addHours, startOfDay, endOfDay, differenceInCalendarDays } from 'date-fns';
-import { generateAvailableSlots } from '../../lib/availability';
+import { generateAvailableSlots, resolveEffectiveBusinessHoursForDate } from '../../lib/availability';
 import type { Slot } from '../../lib/availability';
 import {
   buildHorizonDateList,
@@ -243,12 +243,16 @@ export default function ClientPortal() {
 
   const availableDays = useMemo(() => {
     return horizonData.dates.map((d) => {
-      const h = storeData?.businessHours?.find((x: any) => x.weekday === d.getDay());
+      const h = resolveEffectiveBusinessHoursForDate(
+        d,
+        storeData?.businessHours || [],
+        storeData?.specialBusinessHours || []
+      );
       const isOriginalDay = originalRescheduleDay ? isSameCalendarDate(d, originalRescheduleDay) : false;
       const isAllowedByHorizon = isOriginalDay || isDateWithinBookingHorizon(d, maxAdvanceDays);
       return { date: d, isOpen: h?.is_open === true && isAllowedByHorizon };
     });
-  }, [horizonData.dates, storeData?.businessHours, originalRescheduleDay, maxAdvanceDays]);
+  }, [horizonData.dates, storeData?.businessHours, storeData?.specialBusinessHours, originalRescheduleDay, maxAdvanceDays]);
 
   const isFarFutureSelection = useMemo(() => {
     if (!newDate || tenant?.isDemo) return false;
@@ -311,7 +315,11 @@ export default function ClientPortal() {
       storeData?.professionals || [], storeData?.services || [], storeData?.businessHours || [],
       storeData?.professionalWorkingHours || [], mergedBlocked,
       otherBookings, storeData?.professionalServices || [],
-      [service]
+      [service],
+      'instore',
+      null,
+      undefined,
+      storeData?.specialBusinessHours || []
     );
   }, [newDate, rescheduleBooking, storeData, maxAdvanceDays, farFutureDayData, originalRescheduleDay]);
 

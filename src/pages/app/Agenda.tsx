@@ -26,6 +26,11 @@ import { supabase } from '../../integrations/supabase/client';
 import toast from 'react-hot-toast';
 import { formatBookingHorizonSummary, isDateWithinBookingHorizon } from '../../lib/bookingHorizon';
 import { useTenantBookingHorizon } from '../../hooks/useBookingHorizon';
+import {
+  getEffectiveBusinessHoursForDate,
+  resolveEffectiveBusinessHoursForDate,
+  type SpecialBusinessHourPeriod,
+} from '../../lib/availability';
 import { trackEvent } from '../../lib/analytics';
 
 import WeekView from './agenda/WeekView';
@@ -83,6 +88,7 @@ export default function Agenda() {
   const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
   const [initialBookingDate, setInitialBookingDate] = useState<Date | undefined>();
   const [businessHours, setBusinessHours] = useState<any[]>([]);
+  const [specialBusinessHours, setSpecialBusinessHours] = useState<SpecialBusinessHourPeriod[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [hasScrolledCards, setHasScrolledCards] = useState(false);
   const [todayAnchor] = useState<Date>(() => new Date());
@@ -95,13 +101,34 @@ export default function Agenda() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Fetch business hours
+  // Fetch business hours & special business hours
   useEffect(() => {
     if (!tenantId) return;
-    supabase.from('business_hours').select('*').eq('tenant_id', tenantId).then(({ data }) => {
-      setBusinessHours(data ?? []);
+    Promise.all([
+      supabase.from('business_hours').select('*').eq('tenant_id', tenantId),
+      supabase.from('special_business_hours' as any).select('*').eq('tenant_id', tenantId),
+    ]).then(([bhRes, sbhRes]) => {
+      setBusinessHours(bhRes.data ?? []);
+      setSpecialBusinessHours((sbhRes.data as any[]) ?? []);
     });
   }, [tenantId]);
+
+  const currentDayBusinessHours = useMemo(
+    () => getEffectiveBusinessHoursForDate(currentDay, businessHours, specialBusinessHours),
+    [currentDay, businessHours, specialBusinessHours]
+  );
+
+  const availabilityModalBusinessHours = useMemo(
+    () => getEffectiveBusinessHoursForDate(availabilityModalDate, businessHours, specialBusinessHours),
+    [availabilityModalDate, businessHours, specialBusinessHours]
+  );
+
+  const weekEffectiveBusinessHours = useMemo(() => {
+    if (!specialBusinessHours.length) return businessHours;
+    return Array.from({ length: 7 }, (_, i) =>
+      resolveEffectiveBusinessHoursForDate(addDays(weekStart, i), businessHours, specialBusinessHours)
+    ).filter(Boolean);
+  }, [weekStart, businessHours, specialBusinessHours]);
 
   const proScopeId = role === 'professional' ? professionalProfile?.id : undefined;
 
@@ -938,7 +965,7 @@ export default function Agenda() {
                   canConfirm={canConfirmBooking}
                   blocks={blockedTimes}
                   targetProIds={targetProIds}
-                  businessHours={businessHours}
+                  businessHours={currentDayBusinessHours}
                   isTogglingDayBlock={batchDaysBlock.isPending}
                   onDayChange={setCurrentDay}
                   onBookingClick={setSelectedBooking}
@@ -967,7 +994,7 @@ export default function Agenda() {
                   <WeekView
                     weekStart={weekStart}
                     bookings={filteredWeekBookings}
-                    businessHours={businessHours}
+                    businessHours={weekEffectiveBusinessHours}
                     selectedProfessionalId={selectedProfessionalId}
                     maxAdvanceDays={maxAdvanceDays}
                     canConfirm={canConfirmBooking}
@@ -983,7 +1010,7 @@ export default function Agenda() {
                   <DayView
                     day={currentDay}
                     bookings={filteredDayBookings}
-                    businessHours={businessHours}
+                    businessHours={currentDayBusinessHours}
                     selectedProfessionalId={selectedProfessionalId}
                     maxAdvanceDays={maxAdvanceDays}
                     canConfirm={canConfirmBooking}
@@ -1018,7 +1045,7 @@ export default function Agenda() {
             tenantId={tenantId}
             professionals={professionals}
             selectedProfessionalId={selectedProfessionalId}
-            businessHours={businessHours}
+            businessHours={availabilityModalBusinessHours}
             bookings={allKnownBookings}
             blocks={blockedTimes}
             canSeeAll={canSeeAll}

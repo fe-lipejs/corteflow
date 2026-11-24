@@ -22,6 +22,25 @@ function computeMaxDateKey(todayKey: string, maxAdvanceDays: number): string {
   return anchor.toISOString().slice(0, 10);
 }
 
+function getSaoPauloMinutesOfDay(date: Date): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Sao_Paulo',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+  const rawHour = Number(parts.find((p) => p.type === 'hour')?.value ?? '0');
+  const minute = Number(parts.find((p) => p.type === 'minute')?.value ?? '0');
+  return (rawHour % 24) * 60 + minute;
+}
+
+function parseTimeToMinutes(timeStr: string | null | undefined, fallback = 0): number {
+  if (!timeStr) return fallback;
+  const [h, m] = String(timeStr).slice(0, 5).split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return fallback;
+  return h * 60 + m;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -172,6 +191,69 @@ serve(async (req) => {
 
     const slotDurationMin = (booking.duration_minutes ?? 30) + (booking.buffer_minutes ?? 0);
     const slotEnd = new Date(newAppointment.getTime() + slotDurationMin * 60 * 1000);
+
+    // 4.0 Validar horário especial (prioridade total no período) ou jornada padrão do salão
+    const targetWeekday = new Date(`${targetDateKey}T12:00:00Z`).getUTCDay();
+    const startMinOfDay = getSaoPauloMinutesOfDay(newAppointment);
+    const endMinOfDay = startMinOfDay + slotDurationMin;
+
+    const { data: activeSpecialPeriods } = await supabase
+      .from('special_business_hours')
+      .select('id, name, start_date, end_date, days_config')
+      .eq('tenant_id', booking.tenant_id)
+      .lte('start_date', targetDateKey)
+      .gte('end_date', targetDateKey)
+      .limit(1);
+
+    if (activeSpecialPeriods && activeSpecialPeriods.length > 0) {
+      const sp = activeSpecialPeriods[0];
+      const daysArr = Array.isArray(sp.days_config)
+        ? sp.days_config
+        : typeof sp.days_config === 'string'
+        ? JSON.parse(sp.days_config)
+        : [];
+      const dayCfg = daysArr.find((d: any) => Number(d.weekday) === targetWeekday);
+      if (!dayCfg || !dayCfg.is_open) {
+        throw new Error('O estabelecimento não estará aberto nesta data conforme o horário especial configurado.');
+      }
+      const openMin = parseTimeToMinutes(dayCfg.open_time, 0);
+      const closeMin = parseTimeToMinutes(dayCfg.close_time, 24 * 60);
+      if (startMinOfDay < openMin || endMinOfDay > closeMin) {
+        throw new Error('O horário selecionado está fora do horário especial de funcionamento deste dia.');
+      }
+      if (dayCfg.lunch_start && dayCfg.lunch_end) {
+        const lStart = parseTimeToMinutes(dayCfg.lunch_start, -1);
+        const lEnd = parseTimeToMinutes(dayCfg.lunch_end, -1);
+        if (lStart >= 0 && lEnd > lStart && startMinOfDay < lEnd && endMinOfDay > lStart) {
+          throw new Error('O horário selecionado coincide com o intervalo de almoço do horário especial.');
+        }
+      }
+    } else if (actorType === 'client') {
+      const { data: stdDay } = await supabase
+        .from('business_hours')
+        .select('is_open, open_time, close_time, lunch_start, lunch_end')
+        .eq('tenant_id', booking.tenant_id)
+        .eq('weekday', targetWeekday)
+        .maybeSingle();
+
+      if (stdDay) {
+        if (!stdDay.is_open) {
+          throw new Error('O estabelecimento está fechado neste dia da semana.');
+        }
+        const openMin = parseTimeToMinutes(stdDay.open_time, 0);
+        const closeMin = parseTimeToMinutes(stdDay.close_time, 24 * 60);
+        if (startMinOfDay < openMin || endMinOfDay > closeMin) {
+          throw new Error('O horário selecionado está fora do expediente de funcionamento.');
+        }
+        if (stdDay.lunch_start && stdDay.lunch_end) {
+          const lStart = parseTimeToMinutes(stdDay.lunch_start, -1);
+          const lEnd = parseTimeToMinutes(stdDay.lunch_end, -1);
+          if (lStart >= 0 && lEnd > lStart && startMinOfDay < lEnd && endMinOfDay > lStart) {
+            throw new Error('O horário selecionado coincide com o intervalo de almoço do estabelecimento.');
+          }
+        }
+      }
+    }
 
     let blockQuery = supabase
       .from('professional_blocked_times')

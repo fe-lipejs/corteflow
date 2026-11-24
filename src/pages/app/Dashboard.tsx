@@ -1,10 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getTenantPublicUrl } from '../../lib/tenantUrl';
 import { supabase } from '../../integrations/supabase/client';
-import { Calendar, DollarSign, UserPlus, Clock, ArrowUpRight, ArrowRight, Loader2, CheckCircle, Check, X } from 'lucide-react';
+import { Calendar, DollarSign, UserPlus, Clock, ArrowUpRight, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useQuery } from '@tanstack/react-query';
 import { addDays, startOfDay, endOfDay, format, isToday, isTomorrow } from 'date-fns';
@@ -57,81 +56,6 @@ export default function Dashboard() {
   const [bookingToConfirm, setBookingToConfirm] = useState<any>(null);
   const [editingBooking, setEditingBooking] = useState<any>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
-  const [partnershipPromoOpen, setPartnershipPromoOpen] = useState(false);
-  const [partnershipPromoViewCount, setPartnershipPromoViewCount] = useState(0);
-  const handledPartnershipPromoRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!tenantId || profile?.role === 'professional') return;
-    if (handledPartnershipPromoRef.current === tenantId) return;
-    handledPartnershipPromoRef.current = tenantId;
-
-    const storageKey = `raffros_mp_partnership_promo_${tenantId}`;
-    let nextViews = 1;
-    try {
-      const raw = localStorage.getItem(storageKey);
-      const parsed = raw ? JSON.parse(raw) : { views: 0, dismissedPermanent: false };
-      if (parsed?.dismissedPermanent) return;
-
-      const currentViews = Number(parsed?.views || 0);
-      if (currentViews >= 4) {
-        localStorage.setItem(storageKey, JSON.stringify({ views: currentViews, dismissedPermanent: true }));
-        return;
-      }
-      nextViews = currentViews + 1;
-    } catch {
-      nextViews = 1;
-    }
-
-    let cancelled = false;
-    const preloadImg = new window.Image();
-    preloadImg.decoding = 'async';
-    preloadImg.src = '/Nova%20parceria%20Raffros%20e%20Mercado%20Pago.png';
-
-    const showWhenDecoded = async () => {
-      try {
-        if (typeof preloadImg.decode === 'function') {
-          await preloadImg.decode();
-        }
-      } catch {
-        // fallback caso decode já tenha concluído via onload
-      }
-      if (cancelled) return;
-      try {
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify({ views: nextViews, dismissedPermanent: false })
-        );
-      } catch {}
-      setPartnershipPromoViewCount(nextViews);
-      setPartnershipPromoOpen(true);
-    };
-
-    if (preloadImg.complete && preloadImg.naturalWidth > 0) {
-      showWhenDecoded();
-    } else {
-      preloadImg.onload = () => {
-        showWhenDecoded();
-      };
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tenantId, profile?.role]);
-
-  const handleClosePartnershipPromo = (rememberChoice = false) => {
-    setPartnershipPromoOpen(false);
-    if (rememberChoice && tenantId) {
-      const storageKey = `raffros_mp_partnership_promo_${tenantId}`;
-      try {
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify({ views: Math.max(partnershipPromoViewCount, 1), dismissedPermanent: true })
-        );
-      } catch {}
-    }
-  };
   const confirmBooking = useConfirmBooking(tenantId);
   const updateStatus = useUpdateBookingStatus(tenantId);
   const updateBooking = useUpdateBooking(tenantId);
@@ -996,59 +920,6 @@ export default function Dashboard() {
           feature={showUpgradeModal}
         />
       )}
-
-      {partnershipPromoOpen &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
-            onClick={() => handleClosePartnershipPromo(false)}
-          >
-            <div
-              className="relative w-full max-w-[440px] rounded-2xl overflow-hidden shadow-2xl border border-white/15 bg-[#0A0A0C]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={() => handleClosePartnershipPromo(false)}
-                aria-label="Fechar anúncio"
-                className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/65 hover:bg-black/85 text-white flex items-center justify-center transition-colors cursor-pointer border border-white/20"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="w-full aspect-square bg-[#0A0A0C] overflow-hidden">
-                <img
-                  src="/Nova%20parceria%20Raffros%20e%20Mercado%20Pago.png"
-                  alt="Nova parceria Raffros e Mercado Pago"
-                  loading="eager"
-                  decoding="sync"
-                  className="w-full h-full object-contain block select-none"
-                />
-              </div>
-
-              {partnershipPromoViewCount >= 2 && (
-                <div className="px-4 py-3 bg-[#111216] border-t border-white/10 flex items-center justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleClosePartnershipPromo(true)}
-                    className="text-xs font-medium text-zinc-300 hover:text-white underline underline-offset-2 transition-colors cursor-pointer"
-                  >
-                    Não mostrar novamente
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleClosePartnershipPromo(false)}
-                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
-                  >
-                    Fechar
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>,
-          document.body
-        )}
     </div>
   );
 }

@@ -118,6 +118,7 @@ async function fetchPublicStore(slug: string) {
         services: demoServices,
         professionals: demoPros,
         businessHours: demoHours,
+        specialBusinessHours: [],
         professionalWorkingHours: [],
         professionalBlockedTimes: [],
         bookings: [],
@@ -180,6 +181,7 @@ async function fetchPublicStore(slug: string) {
     { data: srvData },
     { data: proData },
     { data: hData },
+    { data: specialHoursData },
     { data: proHoursData },
     { data: blockedData },
     { data: bookingsData },
@@ -191,6 +193,7 @@ async function fetchPublicStore(slug: string) {
     supabase.from('services').select('*').eq('tenant_id', tenant.id),
     supabase.from('professionals').select('*').eq('tenant_id', tenant.id),
     supabase.from('business_hours').select('*').eq('tenant_id', tenant.id),
+    supabase.from('special_business_hours' as any).select('*').eq('tenant_id', tenant.id),
     supabase.from('professional_working_hours').select('*').eq('tenant_id', tenant.id),
     supabase
       .from('professional_blocked_times')
@@ -289,6 +292,7 @@ async function fetchPublicStore(slug: string) {
     services,
     professionals,
     businessHours: hData || [],
+    specialBusinessHours: (specialHoursData as any[]) || [],
     professionalWorkingHours: proHoursData || [],
     professionalBlockedTimes: allBlockedTimes,
     bookings: validBookings,
