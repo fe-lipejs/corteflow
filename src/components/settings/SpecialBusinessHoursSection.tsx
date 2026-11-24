@@ -138,8 +138,8 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
         days_config: Array.isArray(row.days_config)
           ? row.days_config
           : typeof row.days_config === 'string'
-          ? JSON.parse(row.days_config)
-          : [],
+            ? JSON.parse(row.days_config)
+            : [],
       }));
       setPeriods(parsed);
     } catch (err: any) {
@@ -1151,19 +1151,19 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
             const statusStyles =
               status.key === 'active'
                 ? {
-                    bg: 'rgba(16, 185, 129, 0.12)',
-                    border: 'rgba(16, 185, 129, 0.35)',
-                    text: '#10B981',
-                    dot: '#10B981',
-                  }
+                  bg: 'rgba(16, 185, 129, 0.12)',
+                  border: 'rgba(16, 185, 129, 0.35)',
+                  text: '#10B981',
+                  dot: '#10B981',
+                }
                 : status.key === 'scheduled'
-                ? {
+                  ? {
                     bg: `${theme.accent}12`,
                     border: `${theme.accent}30`,
                     text: theme.accent,
                     dot: theme.accent,
                   }
-                : {
+                  : {
                     bg: 'rgba(148, 163, 184, 0.14)',
                     border: 'rgba(148, 163, 184, 0.3)',
                     text: textSecondary,

@@ -98,15 +98,30 @@ export default function DayView({
   const closeTimeStr = bh?.close_time ? bh.close_time.slice(0, 5) : '20:00';
 
   const { startHour, endHour } = useMemo(() => {
-    if (!bh || !bh.is_open) return { startHour: 7, endHour: 21 };
-    const openH = parseInt(bh.open_time.split(':')[0], 10);
-    const [ch, cm] = bh.close_time.split(':').map(Number);
-    const closeH = cm > 0 ? ch + 1 : ch;
-    return {
-      startHour: Math.max(0, openH - 1),
-      endHour: Math.min(23, closeH + 1),
-    };
-  }, [bh]);
+    let minH = 7;
+    let maxH = 21;
+    if (bh && bh.is_open) {
+      const openH = parseInt(bh.open_time.split(':')[0], 10);
+      const [ch, cm] = bh.close_time.split(':').map(Number);
+      const closeH = cm > 0 ? ch + 1 : ch;
+      minH = Math.max(0, openH - 1);
+      maxH = Math.min(23, closeH + 1);
+    }
+
+    // Garante que agendamentos já existentes (ex.: feitos em um horário especial que depois foi excluído) nunca fiquem cortados fora da grade
+    for (const b of bookings) {
+      if (b.status === 'canceled') continue;
+      const dt = new Date(b.scheduled_at);
+      const bStartH = dt.getHours();
+      const dur = b.duration_minutes || b.service?.duration_minutes || 30;
+      const bEndDt = new Date(dt.getTime() + dur * 60000);
+      const bEndH = bEndDt.getMinutes() > 0 ? bEndDt.getHours() + 1 : bEndDt.getHours();
+      if (bStartH < minH) minH = Math.max(0, bStartH);
+      if (bEndH > maxH) maxH = Math.min(23, bEndH);
+    }
+
+    return { startHour: minH, endHour: maxH };
+  }, [bh, bookings]);
 
   const hours = useMemo(
     () => Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i),

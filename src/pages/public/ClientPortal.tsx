@@ -330,7 +330,7 @@ export default function ClientPortal() {
   }, [availableSlots]);
 
   useEffect(() => {
-    if (!newDate || !rescheduleBooking) return;
+    if (!newDate || !rescheduleBooking || rescheduleMutation.isPending) return;
     const selectedKey = format(newDate, 'yyyy-MM-dd');
     const dayEntry = availableDays.find((d) => format(d.date, 'yyyy-MM-dd') === selectedKey);
     if (dayEntry && !dayEntry.isOpen) {
@@ -344,7 +344,7 @@ export default function ClientPortal() {
         setNewTime('');
       }
     }
-  }, [newDate, newTime, rescheduleBooking, availableDays, availableSlots]);
+  }, [newDate, newTime, rescheduleBooking, availableDays, availableSlots, rescheduleMutation.isPending]);
   const theme = useMemo(() => {
     const presetId = settings?.theme_preset || "classic";
     const base = getThemeById(presetId);

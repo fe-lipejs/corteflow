@@ -1356,24 +1356,24 @@ export default function PublicStore() {
   ]);
 
   // Se uma atualização em tempo real do salão (horário especial ou bloqueio) fechar o dia selecionado
-  // ou ocupar o horário selecionado enquanto o cliente ainda está escolhendo (etapa <= 3), limpa a seleção obsoleta.
+  // ou ocupar o horário selecionado enquanto o cliente ainda está na Etapa 3 (antes do checkout/pagamento),
+  // limpa a seleção obsoleta sem jamais interromper o modal PIX ou a tela de confirmação.
   useEffect(() => {
-    if (!selectedDate || step > 4) return;
+    if (!selectedDate || step > 3 || isProcessing) return;
     const selectedKey = format(selectedDate, "yyyy-MM-dd");
     const dayEntry = availableDays.find((d) => format(d.date, "yyyy-MM-dd") === selectedKey);
     if (dayEntry && !dayEntry.isOpen) {
       setSelectedDate(null);
       setSelectedTime(null);
-      if (step === 4) setStep(3);
       return;
     }
-    if (selectedTime && step <= 3 && availableSlots.length > 0) {
+    if (selectedTime && availableSlots.length > 0) {
       const slotEntry = availableSlots.find((s) => s.time === selectedTime);
       if (!slotEntry || !slotEntry.available) {
         setSelectedTime(null);
       }
     }
-  }, [selectedDate, selectedTime, availableDays, availableSlots, step]);
+  }, [selectedDate, selectedTime, availableDays, availableSlots, step, isProcessing]);
 
   const isAppleDevice = useMemo(() => {
     if (typeof navigator === "undefined") return false;
@@ -1732,7 +1732,14 @@ export default function PublicStore() {
           },
         });
 
-        if (paymentResult.status === "redirecting" || paymentResult.status === "cancelled_modal") {
+        if (paymentResult.status === "cancelled_modal") {
+          if (slug) {
+            queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(slug) });
+          }
+          return;
+        }
+
+        if (paymentResult.status === "redirecting") {
           return;
         }
 

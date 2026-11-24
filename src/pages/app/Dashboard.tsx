@@ -72,11 +72,11 @@ export default function Dashboard() {
       setSelectedBooking((prev: any) =>
         prev
           ? {
-              ...prev,
-              confirmation_status: 'confirmed',
-              confirmed_at: nowIso,
-              status: prev.status === 'pending' ? 'confirmed' : prev.status,
-            }
+            ...prev,
+            confirmation_status: 'confirmed',
+            confirmed_at: nowIso,
+            status: prev.status === 'pending' ? 'confirmed' : prev.status,
+          }
           : null
       );
     }
@@ -241,7 +241,7 @@ export default function Dashboard() {
     b => b.status === 'confirmed' || b.status === 'completed' || b.status === 'in_progress' || b.status === 'arrived'
   );
   const totalRevenueToday = validTodayBookings.reduce((sum, b) => sum + (b.amount_total || 0), 0);
-  
+
   let occupancy = '0%';
   const todayHours = resolveEffectiveBusinessHoursForDate(
     new Date(),
@@ -249,7 +249,7 @@ export default function Dashboard() {
     availabilityMeta?.specialBusinessHours ?? []
   );
   const activeProsCount = Math.max(1, professionals.filter(p => p.active !== false && (!p.status || p.status === 'active')).length);
-  
+
   if (todayBookings.length === 0) {
     occupancy = '0%';
   } else if (todayHours && todayHours.is_open && todayHours.open_time && todayHours.close_time) {
@@ -265,11 +265,11 @@ export default function Dashboard() {
       }
     }
     totalMinutesOpen = Math.max(60, totalMinutesOpen);
-    
+
     const totalBookedMinutes = todayBookings.reduce((sum, b) => {
       return sum + (b.duration_minutes || b.service?.duration_minutes || 30);
     }, 0);
-    
+
     const availableMinutes = totalMinutesOpen * activeProsCount;
     const occ = Math.round((totalBookedMinutes / availableMinutes) * 100);
     occupancy = `${Math.min(occ, 100)}%`;
@@ -308,7 +308,7 @@ export default function Dashboard() {
     },
     {
       label: 'Novos clientes',
-      value: newCustomersCount === 0 ? 'Nenhum' : (newCustomersCount !== undefined ? newCustomersCount.toString() : '...'), 
+      value: newCustomersCount === 0 ? 'Nenhum' : (newCustomersCount !== undefined ? newCustomersCount.toString() : '...'),
       sub: 'últimos 7 dias',
       icon: UserPlus,
       dark: false,
@@ -322,10 +322,10 @@ export default function Dashboard() {
   const futureRevenue = confirmedRecentBookings
     .filter(b => new Date(b.scheduled_at) >= startOfDay(new Date()))
     .reduce((sum, b) => sum + (b.amount_total || 0), 0);
-  
+
   const next7Days = Array.from({ length: 7 }).map((_, i) => addDays(new Date(), i));
   const weekDays = next7Days.map(d => format(d, 'E', { locale: ptBR }).charAt(0).toUpperCase());
-  
+
   const dailyFutureRevenues = next7Days.map(day => {
     const dayStart = startOfDay(day).getTime();
     const dayEnd = endOfDay(day).getTime();
@@ -336,7 +336,7 @@ export default function Dashboard() {
       })
       .reduce((sum, b) => sum + (b.amount_total || 0), 0);
   });
-  
+
   const maxFutureRevenue = Math.max(...dailyFutureRevenues, 1);
   const futureWeekHeights = dailyFutureRevenues.map(r => (r / maxFutureRevenue) * 100);
 
@@ -345,7 +345,7 @@ export default function Dashboard() {
   confirmedRecentBookings.forEach(b => {
     const serviceData = b.service as any;
     const serviceName = Array.isArray(serviceData) ? serviceData[0]?.name : serviceData?.name;
-    
+
     if (serviceName) {
       if (!servicesStats[serviceName]) {
         servicesStats[serviceName] = { count: 0, revenue: 0 };
@@ -354,7 +354,7 @@ export default function Dashboard() {
       servicesStats[serviceName].revenue += (b.amount_total || 0);
     }
   });
-  
+
   const topServices = Object.entries(servicesStats)
     .sort((a, b) => b[1].count - a[1].count || b[1].revenue - a[1].revenue)
     .slice(0, 3)
@@ -379,21 +379,21 @@ export default function Dashboard() {
       {/* Header com Saudação e Foto/Logo Clicável */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             type="button"
             onClick={() => navigate('/app/configuracoes')}
             className="cursor-pointer group flex-shrink-0 relative focus:outline-none transition-transform hover:scale-105 active:scale-95"
             title="Configurações do Salão"
           >
             {tenantSettings?.logo_url ? (
-              <img 
-                src={tenantSettings.logo_url} 
-                alt="Logo do Estabelecimento" 
+              <img
+                src={tenantSettings.logo_url}
+                alt="Logo do Estabelecimento"
                 className="w-14 h-14 md:w-16 md:h-16 rounded-2xl object-cover border shadow-sm group-hover:border-blue-400 transition-all"
-                style={{ borderColor: theme.border }} 
+                style={{ borderColor: theme.border }}
               />
             ) : (
-              <div 
+              <div
                 className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center font-bold text-lg md:text-xl shadow-sm"
                 style={{ background: theme.accent, color: theme.textInverse }}
               >
@@ -407,16 +407,16 @@ export default function Dashboard() {
               {getGreeting()}, <span style={{ color: theme.accent }}>{firstName}.</span>
             </h1>
             <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-              {todayBookings.length > 0 
-                ? `Você tem ${todayBookings.length} agendamento${todayBookings.length > 1 ? 's' : ''} hoje.` 
+              {todayBookings.length > 0
+                ? `Você tem ${todayBookings.length} agendamento${todayBookings.length > 1 ? 's' : ''} hoje.`
                 : 'Nenhum agendamento para hoje.'}
             </p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-1">
-          <a 
-            href={tenant?.slug ? getTenantPublicUrl(tenant.slug) : '#'} 
-            target="_blank" 
+          <a
+            href={tenant?.slug ? getTenantPublicUrl(tenant.slug) : '#'}
+            target="_blank"
             rel="noreferrer"
             className="flex items-center gap-2 px-4 py-2 font-medium text-sm rounded-xl transition-all"
             style={{ background: theme.bgHover, color: theme.textPrimary, border: `1px solid ${theme.border}` }}
@@ -459,7 +459,7 @@ export default function Dashboard() {
       {(services.length === 0 || professionals.length === 0) && (
         <div className="mb-8 p-6 md:p-8 rounded-3xl relative overflow-hidden" style={{ background: theme.sidebarBg, border: `1px solid ${theme.border}` }}>
           <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-[#C9963B] opacity-[0.03] rounded-full blur-3xl pointer-events-none" />
-          
+
           <div className="relative z-10 flex flex-col md:flex-row gap-6 md:items-center justify-between">
             <div>
               <h2 className="text-xl md:text-2xl font-bold mb-2 flex items-center gap-2" style={{ color: theme.textPrimary }}>
@@ -472,9 +472,9 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 relative z-10">
-            <button 
+            <button
               onClick={() => navigate('/app/servicos')}
-              className="flex items-center gap-4 p-4 rounded-xl text-left transition-all hover:scale-[1.02]" 
+              className="flex items-center gap-4 p-4 rounded-xl text-left transition-all hover:scale-[1.02]"
               style={{ background: theme.bgHover, border: `1px solid ${theme.border}` }}
             >
               <div className={`w-10 h-10 rounded-full flex items-center justify-center ${services.length > 0 ? 'bg-green-500/20 text-green-500' : 'bg-[#C9963B]/20 text-[#C9963B]'}`}>
@@ -486,9 +486,9 @@ export default function Dashboard() {
               </div>
             </button>
 
-            <button 
+            <button
               onClick={() => navigate('/app/equipe')}
-              className="flex items-center gap-4 p-4 rounded-xl text-left transition-all hover:scale-[1.02]" 
+              className="flex items-center gap-4 p-4 rounded-xl text-left transition-all hover:scale-[1.02]"
               style={{ background: theme.bgHover, border: `1px solid ${theme.border}` }}
             >
               <div className={`w-10 h-10 rounded-full flex items-center justify-center ${professionals.length > 0 ? 'bg-green-500/20 text-green-500' : 'bg-[#C9963B]/20 text-[#C9963B]'}`}>
@@ -889,7 +889,7 @@ export default function Dashboard() {
           {/* Top Serviços */}
           <div className="glass-card p-5">
             <h4 className="font-bold text-sm mb-4" style={{ color: theme.textPrimary }}>Top serviços</h4>
-            
+
             {topServices.length === 0 ? (
               <div className="text-center py-4 text-xs opacity-70" style={{ color: theme.textSecondary }}>
                 Sem informações suficientes
@@ -912,7 +912,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-      
+
       {/* Modal de Agendamento */}
       {bookingModalOpen && (
         <BookingModal

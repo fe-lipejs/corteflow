@@ -356,30 +356,6 @@ serve(async (req) => {
       throw new Error("Este horário ou dia está bloqueado para agendamentos. Por favor, escolha outro horário.");
     }
 
-    // 2. Valida se já existe agendamento ativo concorrente no mesmo intervalo
-    if (targetProId) {
-      const searchWindowStart = new Date(bookingStart.getTime() - 240 * 60 * 1000).toISOString();
-      const { data: existingBookings } = await supabase
-        .from("bookings")
-        .select("id, scheduled_at, duration_minutes, buffer_minutes")
-        .eq("tenant_id", tenant_id)
-        .eq("professional_id", targetProId)
-        .in("status", ["confirmed", "pending"])
-        .lt("scheduled_at", bookingEnd.toISOString())
-        .gt("scheduled_at", searchWindowStart);
-
-      const hasCollision = (existingBookings || []).some((b: any) => {
-        const bStart = new Date(b.scheduled_at);
-        const bDur = (b.duration_minutes ?? 30) + (b.buffer_minutes ?? 0);
-        const bEnd = new Date(bStart.getTime() + bDur * 60 * 1000);
-        return bookingStart.getTime() < bEnd.getTime() && bookingEnd.getTime() > bStart.getTime();
-      });
-
-      if (hasCollision) {
-        throw new Error("Este horário acabou de ser preenchido por outro cliente. Por favor, escolha outro horário.");
-      }
-    }
-
     const serviceHomeExtra = booking_mode === "home" ? (service.home_price_extra || 0) : 0;
     const amount_total = Number(((service.price || 0) + serviceHomeExtra + travel_fee).toFixed(2));
     const depositPct = (tenantSettings?.deposit_percentage ?? 50) / 100;
@@ -458,9 +434,11 @@ serve(async (req) => {
       customerId = newCustomer.id;
     }
 
-    // Limpar rascunhos pendentes abandonados (mesmo cliente no mesmo horário ou rascunhos online > 15 min sem pagamento)
+    // Limpar rascunhos pendentes abandonados ANTES da checagem de colisão
+    // (mesmo cliente retentando pagamento no 4G ou rascunhos online > 15 min sem pagamento)
+    const fifteenMinAgoMs = Date.now() - 15 * 60 * 1000;
+    const fifteenMinAgo = new Date(fifteenMinAgoMs).toISOString();
     try {
-      const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
       const { data: staleBookings } = await supabase
         .from("bookings")
         .select("id")
@@ -470,12 +448,54 @@ serve(async (req) => {
         .or(`created_at.lt.${fifteenMinAgo},customer_id.eq.${customerId}`);
 
       if (staleBookings && staleBookings.length > 0) {
-        const staleIds = staleBookings.map((b: any) => b.id);
-        await supabase.from("payments").delete().in("booking_id", staleIds).eq("status", "pending");
-        await supabase.from("bookings").delete().in("id", staleIds).eq("status", "pending");
+        const candidateIds = staleBookings.map((b: any) => b.id);
+        const { data: paidRows } = await supabase
+          .from("payments")
+          .select("booking_id")
+          .in("booking_id", candidateIds)
+          .in("status", ["succeeded", "approved", "paid"]);
+        const paidBookingIds = new Set((paidRows || []).map((p: any) => p.booking_id));
+        const staleIds = candidateIds.filter((id: string) => !paidBookingIds.has(id));
+
+        if (staleIds.length > 0) {
+          await supabase.from("payments").delete().in("booking_id", staleIds).eq("status", "pending");
+          await supabase.from("bookings").delete().in("id", staleIds).eq("status", "pending");
+        }
       }
     } catch (_) {
       // Non-blocking cleanup
+    }
+
+    // 2. Valida se já existe agendamento ativo concorrente no mesmo intervalo
+    if (targetProId) {
+      const searchWindowStart = new Date(bookingStart.getTime() - 240 * 60 * 1000).toISOString();
+      const { data: existingBookings } = await supabase
+        .from("bookings")
+        .select("id, customer_id, scheduled_at, duration_minutes, buffer_minutes, status, payment_mode, created_at")
+        .eq("tenant_id", tenant_id)
+        .eq("professional_id", targetProId)
+        .in("status", ["confirmed", "pending", "arrived", "in_progress"])
+        .lt("scheduled_at", bookingEnd.toISOString())
+        .gt("scheduled_at", searchWindowStart);
+
+      const hasCollision = (existingBookings || []).some((b: any) => {
+        if (
+          b.status === "pending" &&
+          b.payment_mode !== "local" &&
+          ((b.created_at && new Date(b.created_at).getTime() < fifteenMinAgoMs) ||
+            (customerId && b.customer_id === customerId))
+        ) {
+          return false;
+        }
+        const bStart = new Date(b.scheduled_at);
+        const bDur = (b.duration_minutes ?? 30) + (b.buffer_minutes ?? 0);
+        const bEnd = new Date(bStart.getTime() + bDur * 60 * 1000);
+        return bookingStart.getTime() < bEnd.getTime() && bookingEnd.getTime() > bStart.getTime();
+      });
+
+      if (hasCollision) {
+        throw new Error("Este horário acabou de ser preenchido por outro cliente. Por favor, escolha outro horário.");
+      }
     }
 
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();

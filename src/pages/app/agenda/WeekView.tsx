@@ -88,20 +88,34 @@ export default function WeekView({
     return businessHours;
   }, [businessHours, selectedProfessionalId, proWorkingHours]);
 
-  // Dynamic hour range from effective hours
+  // Dynamic hour range from effective hours + existing bookings (so bookings from a deleted special period are never clipped)
   const { startHour, endHour } = useMemo(() => {
     const openDays = effectiveHours.filter((b) => b.is_open);
-    if (!openDays.length) return { startHour: 7, endHour: 22 };
-    const opens = openDays.map((b) => parseInt(b.open_time.split(':')[0], 10));
-    const closes = openDays.map((b) => {
-      const [h, m] = b.close_time.split(':').map(Number);
-      return m > 0 ? h + 1 : h;
-    });
-    return {
-      startHour: Math.max(0, Math.min(...opens) - 1),
-      endHour: Math.min(23, Math.max(...closes) + 1),
-    };
-  }, [effectiveHours]);
+    let minH = 7;
+    let maxH = 22;
+    if (openDays.length > 0) {
+      const opens = openDays.map((b) => parseInt(b.open_time.split(':')[0], 10));
+      const closes = openDays.map((b) => {
+        const [h, m] = b.close_time.split(':').map(Number);
+        return m > 0 ? h + 1 : h;
+      });
+      minH = Math.max(0, Math.min(...opens) - 1);
+      maxH = Math.min(23, Math.max(...closes) + 1);
+    }
+
+    for (const b of bookings) {
+      if (b.status === 'canceled') continue;
+      const dt = new Date(b.scheduled_at);
+      const bStartH = dt.getHours();
+      const dur = b.duration_minutes || b.service?.duration_minutes || 30;
+      const bEndDt = new Date(dt.getTime() + dur * 60000);
+      const bEndH = bEndDt.getMinutes() > 0 ? bEndDt.getHours() + 1 : bEndDt.getHours();
+      if (bStartH < minH) minH = Math.max(0, bStartH);
+      if (bEndH > maxH) maxH = Math.min(23, bEndH);
+    }
+
+    return { startHour: minH, endHour: maxH };
+  }, [effectiveHours, bookings]);
 
   const hours = useMemo(
     () => Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i),

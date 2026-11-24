@@ -131,18 +131,18 @@ export default function BookingModal({
 
   // Se o dia selecionado inicialmente estiver fechado (no horário padrão ou especial), avança para o primeiro dia aberto
   useEffect(() => {
-    if (!businessHours || businessHours.length === 0) return;
+    if (!businessHours || businessHours.length === 0 || !availabilityMeta) return;
     const currentEff = resolveEffectiveBusinessHoursForDate(
       selectedDate,
       businessHours,
-      availabilityMeta?.specialBusinessHours ?? []
+      availabilityMeta.specialBusinessHours ?? []
     );
     if (currentEff && !currentEff.is_open) {
       const firstOpenDay = horizonData.dates.find((d) => {
         const eff = resolveEffectiveBusinessHoursForDate(
           d,
           businessHours,
-          availabilityMeta?.specialBusinessHours ?? []
+          availabilityMeta.specialBusinessHours ?? []
         );
         return eff?.is_open === true;
       });
@@ -151,7 +151,7 @@ export default function BookingModal({
         setSelectedTime(null);
       }
     }
-  }, [businessHours, availabilityMeta?.specialBusinessHours, selectedDate, horizonData.dates]);
+  }, [businessHours, availabilityMeta, selectedDate, horizonData.dates]);
 
   const activeProfessionals = useMemo(() => {
     let list = professionals.filter((p) => p.active !== false && (!p.status || p.status === 'active'));
