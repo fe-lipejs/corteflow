@@ -60,6 +60,23 @@ export default function SuccessBooking() {
             cancelParam === 'true' ||
             ['rejected', 'cancelled', 'failure', 'null'].includes(collectionStatusParam);
 
+          const markPendingCheckoutForRetry = (reasonMsg: string) => {
+            try {
+              const rawDraft = sessionStorage.getItem('raffros_pending_mp_checkout_v1');
+              if (rawDraft) {
+                const parsed = JSON.parse(rawDraft);
+                sessionStorage.setItem(
+                  'raffros_pending_mp_checkout_v1',
+                  JSON.stringify({
+                    ...parsed,
+                    alreadyAborted: true,
+                    failureNotice: reasonMsg,
+                  })
+                );
+              }
+            } catch {}
+          };
+
           if (isExplicitFailure) {
             let confirmedRace = false;
             if (bookingIdParam) {
@@ -77,10 +94,13 @@ export default function SuccessBooking() {
               }
             }
             if (!confirmedRace) {
+              const msg =
+                collectionStatusParam === 'rejected'
+                  ? 'O pagamento foi recusado pela operadora do cartão. Nenhuma cobrança foi realizada — você pode tentar outro cartão ou pagar via PIX.'
+                  : 'O pagamento não foi concluído no Mercado Pago. Nenhuma cobrança foi confirmada.';
+              markPendingCheckoutForRetry(msg);
               setIsConfirmed(false);
-              setFailureReason(
-                'O pagamento não foi concluído no Mercado Pago. Nenhuma cobrança foi confirmada.'
-              );
+              setFailureReason(msg);
               return;
             }
           }
@@ -94,10 +114,10 @@ export default function SuccessBooking() {
           let bookingData: any = rpcBookingData || null;
 
           if (!bookingData) {
+            const msg = 'O pagamento não foi concluído no Mercado Pago. Nenhuma cobrança foi realizada.';
+            markPendingCheckoutForRetry(msg);
             setIsConfirmed(false);
-            setFailureReason(
-              'Não encontramos nenhum agendamento confirmado. Tente realizar a reserva novamente.'
-            );
+            setFailureReason(msg);
             return;
           }
 
@@ -113,6 +133,7 @@ export default function SuccessBooking() {
                     bookingId: bookingData.id,
                     paymentIntentId: paymentIntentId || undefined,
                     sessionId: sessionId || undefined,
+                    abortIfUnpaid: mpPendingParam !== 'true',
                   },
                 }
               );
@@ -121,18 +142,18 @@ export default function SuccessBooking() {
                 bookingIsConfirmed = true;
               } else {
                 const isPendingStatus =
-                  mpPendingParam === 'true' ||
-                  collectionStatusParam === 'pending' ||
-                  collectionStatusParam === 'in_process' ||
                   confirmData?.status === 'pending' ||
-                  confirmData?.status === 'in_process';
+                  confirmData?.status === 'in_process' ||
+                  (mpPendingParam === 'true' && confirmData?.status !== 'not_found' && confirmData?.status !== 'rejected' && confirmData?.status !== 'cancelled');
 
-                setFailureReason(
-                  isPendingStatus
-                    ? 'Seu pagamento ainda está aguardando aprovação no Mercado Pago. Seu horário não foi liberado ainda.'
-                    : confirmData?.error ||
-                        'O pagamento não foi aprovado ou foi cancelado. Tente outra forma de pagamento.'
-                );
+                const msg = isPendingStatus
+                  ? 'Seu pagamento ainda está aguardando aprovação no Mercado Pago. Assim que compensar, seu horário será confirmado.'
+                  : confirmData?.error ||
+                    'O pagamento não foi aprovado ou foi cancelado no Mercado Pago. Nenhuma cobrança foi realizada.';
+                if (!isPendingStatus) {
+                  markPendingCheckoutForRetry(msg);
+                }
+                setFailureReason(msg);
               }
             } catch (confirmErr) {
               console.warn('Erro ao confirmar booking via Edge Function:', confirmErr);
@@ -149,6 +170,9 @@ export default function SuccessBooking() {
             return;
           }
 
+          try {
+            sessionStorage.removeItem('raffros_pending_mp_checkout_v1');
+          } catch {}
           setIsConfirmed(true);
 
           const scheduledDate = new Date(bookingData.scheduled_at);

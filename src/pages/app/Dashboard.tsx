@@ -527,7 +527,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Card Sucinto e Minimalista: Número de agendamentos que faltam confirmar (abre popup ao clicar) */}
+      {/* Card Sucinto e Minimalista: Só exibe quando houver agendamentos que faltam confirmar */}
       {(() => {
         const pendingConfirmations = upcomingBookings.filter((item) => {
           const isFinished =
@@ -537,6 +537,7 @@ export default function Dashboard() {
         });
 
         const count = pendingConfirmations.length;
+        if (count === 0) return null;
 
         return (
           <>
@@ -545,21 +546,15 @@ export default function Dashboard() {
               onClick={() => setPendingConfirmModalOpen(true)}
               className="w-full glass-card px-4 py-3.5 sm:px-5 sm:py-4 mb-5 flex items-center justify-between gap-3 text-left transition-all hover:scale-[1.005] active:scale-[0.99] cursor-pointer"
               style={{
-                borderColor:
-                  count > 0
-                    ? `color-mix(in srgb, ${theme.accent} 32%, ${theme.border})`
-                    : theme.border,
+                borderColor: `color-mix(in srgb, ${theme.accent} 32%, ${theme.border})`,
               }}
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-serif font-bold text-base tabular-nums"
                   style={{
-                    backgroundColor:
-                      count > 0
-                        ? `color-mix(in srgb, ${theme.accent} 14%, transparent)`
-                        : 'rgba(16, 185, 129, 0.12)',
-                    color: count > 0 ? theme.accent : '#10B981',
+                    backgroundColor: `color-mix(in srgb, ${theme.accent} 14%, transparent)`,
+                    color: theme.accent,
                   }}
                 >
                   {count}
@@ -569,9 +564,7 @@ export default function Dashboard() {
                     {count === 1 ? '1 agendamento falta confirmar' : `${count} faltam confirmar`}
                   </p>
                   <p className="text-[11px] truncate" style={{ color: theme.textMuted }}>
-                    {count > 0
-                      ? 'Toque para abrir e confirmar os agendamentos pendentes'
-                      : 'Todos os agendamentos estão confirmados'}
+                    Toque para abrir e confirmar os agendamentos pendentes
                   </p>
                 </div>
               </div>

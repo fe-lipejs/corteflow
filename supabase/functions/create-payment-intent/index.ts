@@ -351,18 +351,32 @@ serve(async (req) => {
 
     // ── AÇÃO 1: Confirmar agendamento após retorno do Checkout Pro ──────────
     if (action === 'confirm_booking') {
-      const { bookingId, paymentIntentId, sessionId } = body;
-      const lookupId = paymentIntentId || sessionId;
+      const { bookingId, paymentIntentId, sessionId, abortIfUnpaid } = body;
+      let lookupId = paymentIntentId || sessionId;
       let resolvedBookingId = bookingId;
 
       if (!resolvedBookingId && lookupId) {
         const { data: payRow } = await supabase
           .from('payments')
-          .select('booking_id')
+          .select('booking_id, mp_payment_id')
           .or(`mp_payment_id.eq.${lookupId},stripe_payment_intent_id.eq.${lookupId},mp_preference_id.eq.${lookupId}`)
           .limit(1)
           .maybeSingle();
         if (payRow?.booking_id) resolvedBookingId = payRow.booking_id;
+        if (payRow?.mp_payment_id && /^\d+$/.test(String(payRow.mp_payment_id))) {
+          lookupId = payRow.mp_payment_id;
+        }
+      } else if (resolvedBookingId && (!lookupId || !/^\d+$/.test(String(lookupId)))) {
+        const { data: payRow } = await supabase
+          .from('payments')
+          .select('mp_payment_id')
+          .eq('booking_id', resolvedBookingId)
+          .not('mp_payment_id', 'is', null)
+          .limit(1)
+          .maybeSingle();
+        if (payRow?.mp_payment_id && /^\d+$/.test(String(payRow.mp_payment_id))) {
+          lookupId = payRow.mp_payment_id;
+        }
       }
 
       if (!resolvedBookingId) {
@@ -437,13 +451,36 @@ serve(async (req) => {
       }
 
       if (!mpPayment || mpPayment.status !== 'approved') {
+        const rawStatus = mpPayment?.status || 'not_found';
+        const isStillProcessing = rawStatus === 'in_process' || rawStatus === 'pending';
+        let aborted = false;
+
+        if (rawStatus === 'rejected' || rawStatus === 'cancelled') {
+          await supabase
+            .from('payments')
+            .update({ status: 'failed' })
+            .eq('booking_id', booking.id)
+            .eq('status', 'pending');
+        }
+
+        if (abortIfUnpaid && !isStillProcessing && booking.status === 'pending') {
+          await supabase.from('payments').delete().eq('booking_id', booking.id).in('status', ['pending', 'failed']);
+          await supabase.from('bookings').delete().eq('id', booking.id).eq('status', 'pending');
+          aborted = true;
+        }
+
         return new Response(
           JSON.stringify({
             confirmed: false,
-            status: mpPayment?.status || 'pending',
+            aborted,
+            status: rawStatus,
             error: !mpPayment
-              ? 'Pagamento não identificado ou cancelado no Mercado Pago.'
-              : `Pagamento não aprovado (status: ${mpPayment.status}).`,
+              ? 'O pagamento não foi concluído no Mercado Pago. Nenhuma cobrança foi realizada.'
+              : rawStatus === 'rejected'
+                ? 'O pagamento foi recusado pela operadora do cartão. Nenhuma cobrança foi feita — tente outro cartão ou pague via PIX.'
+                : rawStatus === 'cancelled'
+                  ? 'O pagamento foi cancelado no Mercado Pago. Nenhuma cobrança foi realizada.'
+                  : `Pagamento ainda não aprovado (status: ${rawStatus}).`,
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );

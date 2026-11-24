@@ -1175,6 +1175,120 @@ export default function PublicStore() {
     }
   }, [step, allowedPaymentScopes, paymentScope]);
 
+  // Recuperação automática quando o cliente sai para o Checkout do Mercado Pago (Cartão)
+  // e retorna usando o botão "Voltar" do navegador/celular ou clicando em "Voltar e tentar novamente"
+  useEffect(() => {
+    if (!tenant?.id || !rawServicesList.length) return;
+
+    const checkReturnedMercadoPagoCheckout = async () => {
+      let draft: any = null;
+      try {
+        const raw = sessionStorage.getItem("raffros_pending_mp_checkout_v1");
+        if (!raw) return;
+        draft = JSON.parse(raw);
+      } catch {
+        return;
+      }
+
+      if (!draft || !draft.bookingId) return;
+      if (draft.slug && slug && draft.slug !== slug) return;
+
+      // Ignora rascunhos com mais de 45 minutos
+      if (draft.timestamp && Date.now() - Number(draft.timestamp) > 45 * 60 * 1000) {
+        try {
+          sessionStorage.removeItem("raffros_pending_mp_checkout_v1");
+        } catch {}
+        return;
+      }
+
+      try {
+        sessionStorage.removeItem("raffros_pending_mp_checkout_v1");
+      } catch {}
+
+      // Restaura as seleções do cliente na tela
+      if (draft.serviceId) {
+        const foundSvc = rawServicesList.find((s: any) => s.id === draft.serviceId);
+        if (foundSvc) setSelectedService(foundSvc);
+      }
+      if (draft.proId) {
+        if (draft.proId === "any") {
+          setSelectedPro("any");
+        } else {
+          const foundPro = professionalsList.find((p: any) => p.id === draft.proId);
+          if (foundPro) setSelectedPro(foundPro);
+        }
+      }
+      if (draft.dateIso && /^\d{4}-\d{2}-\d{2}$/.test(draft.dateIso)) {
+        const [yy, mm, dd] = draft.dateIso.split("-").map(Number);
+        if (yy && mm && dd) setSelectedDate(new Date(yy, mm - 1, dd));
+      }
+      if (draft.time) setSelectedTime(draft.time);
+      if (draft.customerName) setCustomerName(draft.customerName);
+      if (draft.customerPhone) setCustomerPhone(draft.customerPhone);
+      if (draft.customerEmail) setCustomerEmail(draft.customerEmail);
+      if (draft.customerNotes) setCustomerNotes(draft.customerNotes);
+      if (draft.paymentScope) setPaymentScope(draft.paymentScope);
+      if (draft.paymentMethod) setPaymentMethod(draft.paymentMethod);
+
+      if (draft.alreadyAborted) {
+        setIsProcessing(false);
+        setStep(4);
+        if (slug) {
+          queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(slug) });
+        }
+        setErrorMsg(
+          draft.failureNotice ||
+            "O pagamento não foi concluído no Mercado Pago. Nenhuma cobrança foi realizada — você pode tentar novamente ou escolher outra forma de pagamento."
+        );
+        return;
+      }
+
+      setIsProcessing(true);
+      try {
+        const { data: confirmData } = await supabase.functions.invoke("create-payment-intent", {
+          body: {
+            action: "confirm_booking",
+            bookingId: draft.bookingId,
+            paymentIntentId: draft.paymentIntentId || undefined,
+            abortIfUnpaid: true,
+          },
+        });
+
+        if (slug) {
+          queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(slug) });
+        }
+
+        if (confirmData?.confirmed === true) {
+          completedBookingRef.current = true;
+          setBookingCode(confirmData.order_number || draft.orderNumber);
+          setErrorMsg("");
+          setStep(5);
+        } else {
+          setStep(4);
+          setErrorMsg(
+            confirmData?.error ||
+              "O pagamento não foi concluído no Mercado Pago. Nenhuma cobrança foi realizada — você pode tentar novamente ou escolher outra forma de pagamento."
+          );
+        }
+      } catch {
+        setStep(4);
+        setErrorMsg(
+          "O pagamento não foi concluído no Mercado Pago. Nenhuma cobrança foi realizada — você pode tentar novamente."
+        );
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    checkReturnedMercadoPagoCheckout();
+
+    const handlePageShow = () => {
+      checkReturnedMercadoPagoCheckout();
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [tenant?.id, rawServicesList, professionalsList, slug, queryClient]);
+
   const distanceKm = useMemo(
     () => (userPos ? haversineKm(userPos, storeCoords) : null),
     [userPos, storeCoords]
@@ -1721,6 +1835,32 @@ export default function PublicStore() {
               );
             }
 
+            if (piData.checkoutUrl) {
+              try {
+                sessionStorage.setItem(
+                  "raffros_pending_mp_checkout_v1",
+                  JSON.stringify({
+                    slug: slug ?? "",
+                    tenantId: tenant.id,
+                    bookingId: createdBooking.id,
+                    orderNumber: createdBooking.order_number,
+                    paymentIntentId: piData.paymentIntentId || piData.preferenceId || "",
+                    serviceId: selectedService.id,
+                    proId: selectedPro === "any" ? "any" : selectedPro?.id || "any",
+                    dateIso: format(selectedDate, "yyyy-MM-dd"),
+                    time: selectedTime,
+                    customerName: customerName.trim(),
+                    customerPhone,
+                    customerEmail,
+                    customerNotes,
+                    paymentScope,
+                    paymentMethod: methodType,
+                    timestamp: Date.now(),
+                  })
+                );
+              } catch {}
+            }
+
             return {
               clientSecret: piData.clientSecret || piData.preferenceId || "",
               paymentIntentId: piData.paymentIntentId || piData.preferenceId || "",
@@ -1736,12 +1876,19 @@ export default function PublicStore() {
           if (slug) {
             queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(slug) });
           }
+          setErrorMsg(
+            "O pagamento PIX não foi concluído. Nenhuma cobrança foi realizada — você pode tentar novamente ou escolher outra forma de pagamento."
+          );
           return;
         }
 
         if (paymentResult.status === "redirecting") {
           return;
         }
+
+        try {
+          sessionStorage.removeItem("raffros_pending_mp_checkout_v1");
+        } catch {}
 
         if (slug) {
           queryClient.invalidateQueries({ queryKey: PUBLIC_STORE_QUERY_KEY(slug) });
@@ -3888,6 +4035,20 @@ export default function PublicStore() {
                         </h2>
                       </div>
                     </div>
+
+                    {errorMsg && (
+                      <div
+                        className="mb-4 rounded-2xl border p-3.5 text-xs sm:text-sm font-semibold flex items-start gap-2.5"
+                        style={{
+                          borderColor: "rgba(239, 68, 68, 0.38)",
+                          background: "rgba(239, 68, 68, 0.10)",
+                          color: "#EF4444",
+                        }}
+                      >
+                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span>{errorMsg}</span>
+                      </div>
+                    )}
 
                     {/* Resumo Compacto do Agendamento */}
                     <div
