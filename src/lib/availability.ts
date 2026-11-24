@@ -172,6 +172,11 @@ export function findActiveSpecialPeriodForDate(
  * - If the weekday is NOT enabled in the special period, returns `is_open: false` (never falls back to standard hours).
  * - Outside any special period, returns the standard `businessHours` entry for that weekday.
  */
+function normalizeCloseTimeStr(raw: string | null | undefined, fallback = '18:00'): string {
+  const clean = String(raw || fallback).slice(0, 5);
+  return clean === '00:00' ? '23:59' : clean;
+}
+
 export function resolveEffectiveBusinessHoursForDate(
   date: Date | string,
   businessHours: any[],
@@ -214,7 +219,7 @@ export function resolveEffectiveBusinessHoursForDate(
       weekday,
       is_open: true,
       open_time: String(specialDay.open_time || '09:00').slice(0, 5),
-      close_time: String(specialDay.close_time || '18:00').slice(0, 5),
+      close_time: normalizeCloseTimeStr(specialDay.close_time, '18:00'),
       lunch_start: specialDay.lunch_start ? String(specialDay.lunch_start).slice(0, 5) : null,
       lunch_end: specialDay.lunch_end ? String(specialDay.lunch_end).slice(0, 5) : null,
       _isSpecialPeriod: true,
@@ -236,7 +241,7 @@ export function resolveEffectiveBusinessHoursForDate(
     weekday,
     is_open: Boolean(std.is_open),
     open_time: String(std.open_time || '09:00').slice(0, 5),
-    close_time: String(std.close_time || '18:00').slice(0, 5),
+    close_time: normalizeCloseTimeStr(std.close_time, '18:00'),
     lunch_start: std.lunch_start ? String(std.lunch_start).slice(0, 5) : null,
     lunch_end: std.lunch_end ? String(std.lunch_end).slice(0, 5) : null,
     _isSpecialPeriod: false,

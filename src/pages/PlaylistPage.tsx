@@ -281,18 +281,20 @@ export default function PlaylistPage() {
             <div className="rf-ambient-beam-two" aria-hidden="true" />
             <div className="rf-ambient-orb" aria-hidden="true" />
 
-            {/* ── HEADER (PERFEITAMENTE ALINHADO COM A LANDING PAGE) ── */}
+            {/* ── HEADER (PERFEITAMENTE ALINHADO COM A LANDING PAGE + SAFE AREA IPHONE) ── */}
             <header style={{
                 position: 'fixed',
                 top: 0,
                 left: 0,
                 right: 0,
                 zIndex: 9999,
-                height: '68px',
+                paddingTop: 'var(--app-safe-top, env(safe-area-inset-top, 0px))',
+                height: 'calc(68px + var(--app-safe-top, env(safe-area-inset-top, 0px)))',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '0 clamp(16px, 4vw, 36px)',
+                paddingLeft: 'clamp(16px, 4vw, 36px)',
+                paddingRight: 'clamp(16px, 4vw, 36px)',
                 background: 'rgba(9, 9, 14, 0.84)',
                 backdropFilter: 'blur(20px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(20px) saturate(180%)',
@@ -413,7 +415,7 @@ export default function PlaylistPage() {
             </header>
 
             {/* ── MAIN CONTENT ── */}
-            <main style={{ position: 'relative', zIndex: 2, paddingTop: '120px', paddingBottom: '120px' }}>
+            <main style={{ position: 'relative', zIndex: 2, paddingTop: 'calc(112px + var(--app-safe-top, env(safe-area-inset-top, 0px)))', paddingBottom: '120px' }}>
 
                 {/* ── HERO COPY ── */}
                 <section style={{ position: 'relative', overflow: 'hidden', paddingBottom: '54px' }}>

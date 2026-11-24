@@ -6243,9 +6243,12 @@ export default function LandingPage() {
             right: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
-            height: 64px !important;
+            padding-top: var(--app-safe-top, env(safe-area-inset-top, 0px)) !important;
+            height: calc(64px + var(--app-safe-top, env(safe-area-inset-top, 0px))) !important;
             border-radius: 0 !important;
-            padding: 0 24px !important;
+            padding-left: 20px !important;
+            padding-right: 20px !important;
+            padding-bottom: 0 !important;
             box-sizing: border-box !important;
             margin: 0 !important;
             display: flex !important;
@@ -6261,8 +6264,10 @@ export default function LandingPage() {
 
           @media (min-width: 768px) {
             .rf-header {
+              padding-top: 0 !important;
               height: 72px !important;
-              padding: 0 48px !important;
+              padding-left: 48px !important;
+              padding-right: 48px !important;
             }
           }
 
@@ -6533,6 +6538,13 @@ export default function LandingPage() {
             color: var(--rf-ink) !important;
             border: none !important;
             background: transparent !important;
+            min-width: 44px !important;
+            min-height: 44px !important;
+            position: relative !important;
+            z-index: 10 !important;
+            cursor: pointer !important;
+            touch-action: manipulation !important;
+            -webkit-tap-highlight-color: transparent !important;
           }
 
           /* ── Hero: Preto Fosco (#121215) com Rosa (#FF1E8A) ── */
@@ -6875,7 +6887,7 @@ export default function LandingPage() {
             }
 
             main .rf-hero-container {
-              padding-top: 54px !important;
+              padding-top: calc(74px + var(--app-safe-top, env(safe-area-inset-top, 0px))) !important;
               padding-bottom: 16px !important;
               display: flex !important;
               flex-direction: column !important;
@@ -7119,7 +7131,7 @@ export default function LandingPage() {
             height: 100%;
             display: flex;
             flex-direction: column;
-            padding: 20px 24px calc(28px + env(safe-area-inset-bottom));
+            padding: calc(16px + var(--app-safe-top, env(safe-area-inset-top, 0px))) 24px calc(28px + env(safe-area-inset-bottom, 0px));
             overflow-y: auto;
             box-sizing: border-box;
           }

@@ -9,6 +9,19 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { RealtimeProvider } from './contexts/RealtimeContext';
 
+// Configura globalmente a Safe Area do iPhone logo no boot (Landing Page, Login, Cadastro, Playlist e Painel)
+if (typeof window !== 'undefined') {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  const isStandalone =
+    window.matchMedia('(display-mode: standalone)').matches || Boolean((navigator as any).standalone);
+  if (isIOS) {
+    document.documentElement.style.setProperty(
+      '--app-safe-top',
+      isStandalone ? 'max(env(safe-area-inset-top, 0px), 48px)' : 'max(env(safe-area-inset-top, 0px), 44px)'
+    );
+  }
+}
+
 // Registrar Service Worker para PWA (tanto em Dev quanto em Prod para habilitar o prompt nativo do Chrome)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

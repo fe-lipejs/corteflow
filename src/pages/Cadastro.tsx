@@ -205,9 +205,10 @@ export default function Cadastro() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      className="min-h-screen flex items-center justify-center px-4 pb-6 relative overflow-hidden"
       style={{
         background: '#121215',
+        paddingTop: 'calc(var(--app-safe-top, env(safe-area-inset-top, 0px)) + 4.25rem)',
       }}
     >
       <style>{`
@@ -259,10 +260,13 @@ export default function Cadastro() {
         ))}
       </div>
 
-      {/* Botão de voltar ao site */}
+      {/* Botão de voltar ao site (respeita Safe Area do iPhone) */}
       <Link
         to="/"
-        className="absolute top-6 left-6 z-20 inline-flex items-center gap-2 text-xs font-semibold text-white/75 hover:text-white transition-colors bg-white/10 hover:bg-white/15 px-3.5 py-2 rounded-full backdrop-blur-md border border-white/15"
+        style={{
+          top: 'calc(var(--app-safe-top, env(safe-area-inset-top, 0px)) + 14px)',
+        }}
+        className="absolute left-5 z-20 inline-flex items-center gap-2 text-xs font-semibold text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/15 px-3.5 py-2.5 rounded-full backdrop-blur-md border border-white/15"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         <span>Início</span>

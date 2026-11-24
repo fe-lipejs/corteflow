@@ -7,7 +7,7 @@ import { supabase } from '../../../integrations/supabase/client';
 import { useBookingsByDay, type CreateBookingInput } from '../../../hooks/useBookings';
 import type { Service } from '../../../hooks/useServices';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { generateAvailableSlots } from '../../../lib/availability';
+import { generateAvailableSlots, resolveEffectiveBusinessHoursForDate } from '../../../lib/availability';
 import {
   buildHorizonDateList,
   CAROUSEL_LOAD_MORE_STEP,
@@ -128,6 +128,30 @@ export default function BookingModal({
   );
 
   const availableDays = horizonData.dates;
+
+  // Se o dia selecionado inicialmente estiver fechado (no horário padrão ou especial), avança para o primeiro dia aberto
+  useEffect(() => {
+    if (!businessHours || businessHours.length === 0) return;
+    const currentEff = resolveEffectiveBusinessHoursForDate(
+      selectedDate,
+      businessHours,
+      availabilityMeta?.specialBusinessHours ?? []
+    );
+    if (currentEff && !currentEff.is_open) {
+      const firstOpenDay = horizonData.dates.find((d) => {
+        const eff = resolveEffectiveBusinessHoursForDate(
+          d,
+          businessHours,
+          availabilityMeta?.specialBusinessHours ?? []
+        );
+        return eff?.is_open === true;
+      });
+      if (firstOpenDay) {
+        setSelectedDate(firstOpenDay);
+        setSelectedTime(null);
+      }
+    }
+  }, [businessHours, availabilityMeta?.specialBusinessHours, selectedDate, horizonData.dates]);
 
   const activeProfessionals = useMemo(() => {
     let list = professionals.filter((p) => p.active !== false && (!p.status || p.status === 'active'));
@@ -514,6 +538,16 @@ export default function BookingModal({
                           const [yy, mm, dd] = e.target.value.split('-').map(Number);
                           const picked = startOfDay(new Date(yy, mm - 1, dd));
                           if (!isDateWithinBookingHorizon(picked, maxAdvanceDays)) return;
+                          const pickedHours = resolveEffectiveBusinessHoursForDate(
+                            picked,
+                            businessHours,
+                            availabilityMeta?.specialBusinessHours ?? []
+                          );
+                          if (pickedHours && !pickedHours.is_open) {
+                            setError('O estabelecimento está fechado na data selecionada.');
+                            return;
+                          }
+                          setError(null);
                           setSelectedDate(picked);
                           setSelectedTime(null);
                         }}
@@ -524,8 +558,11 @@ export default function BookingModal({
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {availableDays.map((day) => {
-                    const dow = day.getDay();
-                    const dayHours = businessHours.find((h: any) => h.weekday === dow);
+                    const dayHours = resolveEffectiveBusinessHoursForDate(
+                      day,
+                      businessHours,
+                      availabilityMeta?.specialBusinessHours ?? []
+                    );
                     const isOpen = dayHours?.is_open;
                     const isSelected = format(day, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
                     return (

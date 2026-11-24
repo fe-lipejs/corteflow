@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Calendar,
+  CalendarClock,
   Clock,
   Plus,
   Pencil,
   Trash2,
   Check,
-  Sparkles,
   AlertCircle,
   Loader2,
   X,
@@ -23,7 +23,6 @@ import {
   type SpecialDayConfig,
   type SpecialPeriodStatus,
   getSpecialPeriodStatus,
-  toLocalDateKey,
 } from '../../lib/availability';
 
 export { getSpecialPeriodStatus, type SpecialPeriodStatus };
@@ -235,13 +234,17 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
   };
 
   const effectiveDaysConfig = useMemo((): SpecialDayConfig[] => {
+    const normalizeClose = (t: string) => (t === '00:00' ? '23:59' : t);
     if (!sameHoursForAll) {
-      return daysConfig;
+      return daysConfig.map((d) => ({
+        ...d,
+        close_time: normalizeClose(d.close_time),
+      }));
     }
     return daysConfig.map((d) => ({
       ...d,
       open_time: sharedOpenTime,
-      close_time: sharedCloseTime,
+      close_time: normalizeClose(sharedCloseTime),
       lunch_start: sharedHasLunch ? sharedLunchStart : null,
       lunch_end: sharedHasLunch ? sharedLunchEnd : null,
     }));
@@ -398,13 +401,15 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
           .from('special_business_hours' as any)
           .insert(payload);
         if (error) throw error;
-        toast.success('Horário especial cadastrado com sucesso!');
+        toast.success('Horário especial aplicado com sucesso!');
       }
 
       setIsFormOpen(false);
       setEditingId(null);
       await fetchPeriods();
       queryClient.invalidateQueries({ queryKey: [PUBLIC_STORE_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: ['publicStore'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant_availability_meta'] });
     } catch (err: any) {
       console.error('Erro ao salvar horário especial:', err);
       setFormError(err?.message || 'Não foi possível salvar o horário especial.');
@@ -428,6 +433,8 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
       setConfirmDeleteId(null);
       await fetchPeriods();
       queryClient.invalidateQueries({ queryKey: [PUBLIC_STORE_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: ['publicStore'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant_availability_meta'] });
     } catch (err: any) {
       console.error('Erro ao excluir horário especial:', err);
       toast.error('Não foi possível excluir o horário especial.');
@@ -455,9 +462,11 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
       .join(', ');
   };
 
-  const describePeriodHours = (period: SpecialBusinessHourPeriod): string => {
+  const getPeriodHoursSummary = (
+    period: SpecialBusinessHourPeriod
+  ): { mainHours: string; lunchHours: string | null } => {
     const openDays = (period.days_config || []).filter((d) => d.is_open);
-    if (openDays.length === 0) return 'Sem expediente';
+    if (openDays.length === 0) return { mainHours: 'Sem expediente', lunchHours: null };
     const first = openDays[0];
     const allSame = openDays.every(
       (d) =>
@@ -465,32 +474,30 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
         String(d.close_time).slice(0, 5) === String(first.close_time).slice(0, 5)
     );
     if (allSame) {
-      const base = `${String(first.open_time).slice(0, 5)} às ${String(first.close_time).slice(0, 5)}`;
-      if (first.lunch_start && first.lunch_end) {
-        return `${base} (Intervalo: ${String(first.lunch_start).slice(0, 5)}–${String(first.lunch_end).slice(0, 5)})`;
-      }
-      return base;
+      const mainHours = `${String(first.open_time).slice(0, 5)} às ${String(first.close_time).slice(0, 5)}`;
+      const lunchHours =
+        first.lunch_start && first.lunch_end
+          ? `${String(first.lunch_start).slice(0, 5)} às ${String(first.lunch_end).slice(0, 5)}`
+          : null;
+      return { mainHours, lunchHours };
     }
-    return 'Horários personalizados por dia';
+    return { mainHours: 'Horários personalizados por dia', lunchHours: null };
   };
 
   return (
     <div
-      className="mt-6 p-5 sm:p-6 rounded-2xl border space-y-6 transition-all"
-      style={{ background: cardBg, borderColor }}
+      className="mt-6 pt-6 border-t space-y-5 transition-all"
+      style={{ borderColor }}
     >
-      {/* Cabeçalho da Seção */}
-      <div
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-5"
-        style={{ borderColor }}
-      >
-        <div className="space-y-1.5">
+      {/* Cabeçalho da Seção (Sem encaixotamento duplo no mobile) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
           <div className="flex items-center gap-2.5">
             <div
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: `${theme.accent}15`, color: theme.accent }}
             >
-              <Sparkles className="w-4 h-4" />
+              <CalendarClock className="w-4 h-4" />
             </div>
             <h3
               className="text-base sm:text-lg font-bold tracking-tight uppercase"
@@ -508,11 +515,11 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
           <button
             type="button"
             onClick={openNewForm}
-            className="min-h-[48px] px-5 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.98] shrink-0"
+            className="min-h-[48px] px-5 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] shrink-0 cursor-pointer"
             style={{
               background: theme.accent,
               color: '#FFFFFF',
-              boxShadow: `0 8px 20px -6px ${theme.accent}66`,
+              boxShadow: 'none',
             }}
           >
             <Plus className="w-5 h-5 stroke-[2.5]" />
@@ -521,12 +528,12 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
         )}
       </div>
 
-      {/* Formulário Guiado em 5 Etapas */}
+      {/* Formulário Guiado em 5 Etapas (Largura total aproveitada no mobile) */}
       {isFormOpen && (
         <div
           className="rounded-2xl border p-4 sm:p-6 space-y-6 transition-all"
           style={{
-            background: inputBg,
+            background: cardBg,
             borderColor: `${theme.accent}45`,
           }}
         >
@@ -552,7 +559,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                 setEditingId(null);
                 setFormError(null);
               }}
-              className="w-10 h-10 rounded-xl flex items-center justify-center border transition-colors"
+              className="w-10 h-10 rounded-xl flex items-center justify-center border transition-colors cursor-pointer"
               style={{ borderColor, color: textSecondary }}
               aria-label="Fechar"
             >
@@ -583,7 +590,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
               placeholder="Ex: Temporada de dezembro, Horário especial de Natal..."
               className="w-full min-h-[48px] px-4 py-3 rounded-xl border text-sm sm:text-base font-medium outline-none transition-all"
               style={{
-                background: cardBg,
+                background: inputBg,
                 borderColor,
                 color: textPrimary,
               }}
@@ -597,10 +604,10 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                   key={suggestion}
                   type="button"
                   onClick={() => setPeriodName(suggestion)}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all active:scale-95"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all active:scale-95 cursor-pointer"
                   style={{
                     background:
-                      periodName === suggestion ? `${theme.accent}18` : cardBg,
+                      periodName === suggestion ? `${theme.accent}18` : inputBg,
                     borderColor:
                       periodName === suggestion ? theme.accent : borderColor,
                     color: periodName === suggestion ? theme.accent : textPrimary,
@@ -642,7 +649,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                   }}
                   className="w-full min-h-[48px] px-4 py-3 rounded-xl border text-sm sm:text-base font-semibold outline-none"
                   style={{
-                    background: cardBg,
+                    background: inputBg,
                     borderColor,
                     color: textPrimary,
                   }}
@@ -660,7 +667,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                   onChange={(e) => setEndDate(e.target.value)}
                   className="w-full min-h-[48px] px-4 py-3 rounded-xl border text-sm sm:text-base font-semibold outline-none"
                   style={{
-                    background: cardBg,
+                    background: inputBg,
                     borderColor,
                     color: textPrimary,
                   }}
@@ -699,9 +706,9 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                 <button
                   type="button"
                   onClick={() => selectAllWeekdays(true)}
-                  className="text-xs font-bold px-3 py-1.5 rounded-xl border transition-all"
+                  className="text-xs font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer"
                   style={{
-                    background: cardBg,
+                    background: inputBg,
                     borderColor,
                     color: theme.accent,
                   }}
@@ -711,9 +718,9 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                 <button
                   type="button"
                   onClick={() => selectAllWeekdays(false)}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all cursor-pointer"
                   style={{
-                    background: cardBg,
+                    background: inputBg,
                     borderColor,
                     color: textSecondary,
                   }}
@@ -727,7 +734,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
               Toque nos dias da semana em que o horário especial será aplicado:
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
               {ORDERED_WEEKDAYS.map((wd) => {
                 const dayState = daysConfig.find((d) => d.weekday === wd.weekday);
                 const isSelected = Boolean(dayState?.is_open);
@@ -736,12 +743,12 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                     key={wd.weekday}
                     type="button"
                     onClick={() => toggleWeekday(wd.weekday)}
-                    className="min-h-[56px] p-3 rounded-xl border font-bold text-sm flex flex-col items-center justify-center gap-1 transition-all active:scale-95"
+                    className="min-h-[54px] p-2.5 rounded-xl border font-bold text-sm flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
                     style={{
-                      background: isSelected ? theme.accent : cardBg,
+                      background: isSelected ? theme.accent : inputBg,
                       borderColor: isSelected ? theme.accent : borderColor,
                       color: isSelected ? '#FFFFFF' : textPrimary,
-                      boxShadow: isSelected ? `0 6px 16px -4px ${theme.accent}55` : 'none',
+                      boxShadow: 'none',
                     }}
                   >
                     <span className="text-sm font-extrabold">{wd.short}</span>
@@ -757,7 +764,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
             </div>
           </div>
 
-          {/* Etapa 4 — Horários */}
+          {/* Etapa 4 — Horários (Sem card extra aninhado para não apertar lateralmente no celular) */}
           <div className="space-y-4 pt-4 border-t" style={{ borderColor }}>
             <div className="flex items-center gap-2.5">
               <span
@@ -775,9 +782,9 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
             <button
               type="button"
               onClick={() => setSameHoursForAll((prev) => !prev)}
-              className="w-full min-h-[52px] p-4 rounded-xl border flex items-center justify-between gap-3 text-left transition-all"
+              className="w-full min-h-[52px] p-3.5 sm:p-4 rounded-xl border flex items-center justify-between gap-3 text-left transition-all cursor-pointer"
               style={{
-                background: sameHoursForAll ? `${theme.accent}12` : cardBg,
+                background: sameHoursForAll ? `${theme.accent}12` : inputBg,
                 borderColor: sameHoursForAll ? theme.accent : borderColor,
               }}
             >
@@ -804,10 +811,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
             </button>
 
             {sameHoursForAll ? (
-              <div
-                className="p-4 sm:p-5 rounded-xl border space-y-4"
-                style={{ background: cardBg, borderColor }}
-              >
+              <div className="space-y-4 pt-1">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs sm:text-sm font-bold block" style={{ color: textPrimary }}>
@@ -844,15 +848,15 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                 </div>
 
                 {/* Intervalo de almoço opcional */}
-                <div className="pt-2 border-t space-y-3" style={{ borderColor }}>
+                <div className="pt-2 space-y-3">
                   <button
                     type="button"
                     onClick={() => setSharedHasLunch((prev) => !prev)}
-                    className="flex items-center gap-2.5 text-xs sm:text-sm font-bold py-1.5"
+                    className="flex items-center gap-2.5 text-xs sm:text-sm font-bold py-1.5 cursor-pointer"
                     style={{ color: sharedHasLunch ? theme.accent : textSecondary }}
                   >
                     <div
-                      className="w-5 h-5 rounded-md border flex items-center justify-center"
+                      className="w-5 h-5 rounded-md border flex items-center justify-center shrink-0"
                       style={{
                         background: sharedHasLunch ? theme.accent : 'transparent',
                         borderColor: sharedHasLunch ? theme.accent : textSecondary,
@@ -861,7 +865,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                     >
                       {sharedHasLunch && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                     </div>
-                    <Coffee className="w-4 h-4" />
+                    <Coffee className="w-4 h-4 shrink-0" />
                     <span>Definir intervalo de almoço (opcional)</span>
                   </button>
 
@@ -875,7 +879,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                           type="time"
                           value={sharedLunchStart}
                           onChange={(e) => setSharedLunchStart(e.target.value)}
-                          className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border text-sm font-bold outline-none"
+                          className="w-full min-h-[48px] px-4 py-2.5 rounded-xl border text-base font-bold outline-none"
                           style={{
                             background: inputBg,
                             borderColor,
@@ -891,7 +895,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                           type="time"
                           value={sharedLunchEnd}
                           onChange={(e) => setSharedLunchEnd(e.target.value)}
-                          className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border text-sm font-bold outline-none"
+                          className="w-full min-h-[48px] px-4 py-2.5 rounded-xl border text-base font-bold outline-none"
                           style={{
                             background: inputBg,
                             borderColor,
@@ -912,8 +916,8 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                   return (
                     <div
                       key={wd.weekday}
-                      className="p-4 rounded-xl border space-y-3"
-                      style={{ background: cardBg, borderColor }}
+                      className="p-3.5 sm:p-4 rounded-xl border space-y-3"
+                      style={{ background: inputBg, borderColor }}
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-bold" style={{ color: textPrimary }}>
@@ -940,7 +944,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                             }
                             className="w-full min-h-[44px] px-3 py-2 rounded-xl border text-sm font-bold outline-none"
                             style={{
-                              background: inputBg,
+                              background: cardBg,
                               borderColor,
                               color: textPrimary,
                             }}
@@ -958,7 +962,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                             }
                             className="w-full min-h-[44px] px-3 py-2 rounded-xl border text-sm font-bold outline-none"
                             style={{
-                              background: inputBg,
+                              background: cardBg,
                               borderColor,
                               color: textPrimary,
                             }}
@@ -980,7 +984,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                             }
                             className="w-full min-h-[44px] px-3 py-2 rounded-xl border text-sm font-semibold outline-none"
                             style={{
-                              background: inputBg,
+                              background: cardBg,
                               borderColor,
                               color: textPrimary,
                             }}
@@ -998,7 +1002,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                                   updateDayField(wd.weekday, 'lunch_start', null);
                                   updateDayField(wd.weekday, 'lunch_end', null);
                                 }}
-                                className="text-[10px] font-bold underline"
+                                className="text-[10px] font-bold underline cursor-pointer"
                                 style={{ color: theme.accent }}
                               >
                                 Limpar
@@ -1017,7 +1021,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                             }
                             className="w-full min-h-[44px] px-3 py-2 rounded-xl border text-sm font-semibold outline-none"
                             style={{
-                              background: inputBg,
+                              background: cardBg,
                               borderColor,
                               color: textPrimary,
                             }}
@@ -1031,7 +1035,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
             )}
           </div>
 
-          {/* Etapa 5 — Salvar */}
+          {/* Etapa 5 — Aplicar */}
           <div className="space-y-4 pt-4 border-t" style={{ borderColor }}>
             <div className="flex items-center gap-2.5">
               <span
@@ -1041,14 +1045,14 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                 5
               </span>
               <span className="text-sm sm:text-base font-bold" style={{ color: textPrimary }}>
-                Resumo antes de salvar
+                Resumo antes de aplicar
               </span>
             </div>
 
             <div
               className="p-4 rounded-xl border space-y-1.5"
               style={{
-                background: cardBg,
+                background: inputBg,
                 borderColor: `${theme.accent}45`,
               }}
             >
@@ -1082,9 +1086,9 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                   setEditingId(null);
                   setFormError(null);
                 }}
-                className="min-h-[48px] px-5 py-3 rounded-xl border font-bold text-sm transition-all"
+                className="min-h-[48px] px-5 py-3 rounded-xl border font-bold text-sm transition-all cursor-pointer"
                 style={{
-                  background: cardBg,
+                  background: inputBg,
                   borderColor,
                   color: textSecondary,
                 }}
@@ -1096,22 +1100,22 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                 type="button"
                 disabled={saving}
                 onClick={handleSavePeriod}
-                className="min-h-[50px] px-7 py-3.5 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg transition-all active:scale-[0.99] disabled:opacity-50"
+                className="min-h-[50px] px-7 py-3.5 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                 style={{
                   background: theme.accent,
                   color: '#FFFFFF',
-                  boxShadow: `0 10px 24px -6px ${theme.accent}77`,
+                  boxShadow: 'none',
                 }}
               >
                 {saving ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Salvando...</span>
+                    <span>Aplicando...</span>
                   </>
                 ) : (
                   <>
                     <Check className="w-5 h-5 stroke-[2.5]" />
-                    <span>Salvar horário especial</span>
+                    <span>Aplicar horário especial</span>
                   </>
                 )}
               </button>
@@ -1120,7 +1124,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
         </div>
       )}
 
-      {/* Listagem dos Horários Especiais */}
+      {/* Listagem dos Horários Especiais (Cards alinhados, sem quebras tortas) */}
       {loading ? (
         <div className="py-8 flex items-center justify-center gap-2.5 text-sm" style={{ color: textSecondary }}>
           <Loader2 className="w-5 h-5 animate-spin" style={{ color: theme.accent }} />
@@ -1131,7 +1135,7 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
           className="p-6 sm:p-8 rounded-2xl border text-center space-y-2"
           style={{ background: inputBg, borderColor }}
         >
-          <Calendar className="w-8 h-8 mx-auto opacity-60" style={{ color: theme.accent }} />
+          <CalendarClock className="w-8 h-8 mx-auto opacity-60" style={{ color: theme.accent }} />
           <p
             className="text-sm sm:text-base font-medium max-w-lg mx-auto leading-relaxed"
             style={{ color: textSecondary }}
@@ -1140,115 +1144,84 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-3">
           {periods.map((period) => {
             const status = getSpecialPeriodStatus(period.start_date, period.end_date);
+            const hoursInfo = getPeriodHoursSummary(period);
             const statusStyles =
               status.key === 'active'
                 ? {
-                    bg: 'rgba(16, 185, 129, 0.14)',
+                    bg: 'rgba(16, 185, 129, 0.12)',
                     border: 'rgba(16, 185, 129, 0.35)',
                     text: '#10B981',
+                    dot: '#10B981',
                   }
                 : status.key === 'scheduled'
                 ? {
-                    bg: `${theme.accent}15`,
-                    border: `${theme.accent}35`,
+                    bg: `${theme.accent}12`,
+                    border: `${theme.accent}30`,
                     text: theme.accent,
+                    dot: theme.accent,
                   }
                 : {
                     bg: 'rgba(148, 163, 184, 0.14)',
                     border: 'rgba(148, 163, 184, 0.3)',
                     text: textSecondary,
+                    dot: textSecondary,
                   };
 
             return (
               <div
                 key={period.id}
-                className="p-5 rounded-2xl border flex flex-col justify-between gap-4 transition-all"
+                className="p-4 sm:p-5 rounded-2xl border transition-all space-y-4"
                 style={{
-                  background: inputBg,
+                  background: cardBg,
                   borderColor:
                     status.key === 'active' ? 'rgba(16, 185, 129, 0.4)' : borderColor,
                 }}
               >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h4 className="text-base font-bold" style={{ color: textPrimary }}>
+                {/* Topo do Card: Título, Período em 1 linha e Badge de Status */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="min-w-0">
+                    <div className="flex items-center flex-wrap gap-2">
+                      <h4
+                        className="text-base font-bold tracking-tight"
+                        style={{ color: textPrimary }}
+                      >
                         {period.name || 'Horário especial'}
                       </h4>
-                      <p className="text-xs sm:text-sm font-semibold mt-0.5" style={{ color: textSecondary }}>
-                        {formatDateBR(period.start_date)} – {formatDateBR(period.end_date)}
-                      </p>
-                    </div>
-                    <span
-                      className="text-[11px] font-bold px-3 py-1 rounded-full border shrink-0"
-                      style={{
-                        background: statusStyles.bg,
-                        borderColor: statusStyles.border,
-                        color: statusStyles.text,
-                      }}
-                    >
-                      Status: {status.label}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5 pt-1">
-                    <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold" style={{ color: textPrimary }}>
-                      <Clock className="w-4 h-4 shrink-0" style={{ color: theme.accent }} />
-                      <span>{describePeriodHours(period)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: textSecondary }}>
-                      <Calendar className="w-4 h-4 shrink-0" style={{ color: theme.accent }} />
-                      <span>{describePeriodDays(period)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Ações: Editar / Excluir */}
-                <div className="flex items-center justify-end gap-2.5 pt-3 border-t" style={{ borderColor }}>
-                  {confirmDeleteId === period.id ? (
-                    <div className="flex items-center gap-2 w-full justify-between">
-                      <span className="text-xs font-bold text-red-500">
-                        Confirmar exclusão?
+                      <span
+                        className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full border shrink-0"
+                        style={{
+                          background: statusStyles.bg,
+                          borderColor: statusStyles.border,
+                          color: statusStyles.text,
+                        }}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{ background: statusStyles.dot }}
+                        />
+                        {status.label}
                       </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteId(null)}
-                          className="min-h-[38px] px-3 py-1.5 rounded-xl border text-xs font-bold"
-                          style={{
-                            background: cardBg,
-                            borderColor,
-                            color: textSecondary,
-                          }}
-                        >
-                          Não
-                        </button>
-                        <button
-                          type="button"
-                          disabled={deletingId === period.id}
-                          onClick={() => period.id && handleDeletePeriod(period.id)}
-                          className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-red-500 text-white text-xs font-bold flex items-center gap-1.5"
-                        >
-                          {deletingId === period.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-3.5 h-3.5" />
-                          )}
-                          <span>Sim, excluir</span>
-                        </button>
-                      </div>
                     </div>
-                  ) : (
-                    <>
+                    <p
+                      className="text-xs sm:text-sm font-semibold mt-1 tabular-nums"
+                      style={{ color: textSecondary }}
+                    >
+                      {formatDateBR(period.start_date)} até {formatDateBR(period.end_date)}
+                    </p>
+                  </div>
+
+                  {/* Ações alinhadas e proporcionais */}
+                  {confirmDeleteId !== period.id && (
+                    <div className="grid grid-cols-2 sm:flex items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0" style={{ borderColor }}>
                       <button
                         type="button"
                         onClick={() => openEditForm(period)}
-                        className="min-h-[42px] px-4 py-2 rounded-xl border text-xs sm:text-sm font-bold flex items-center gap-2 transition-all active:scale-95"
+                        className="min-h-[40px] px-3.5 py-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
                         style={{
-                          background: cardBg,
+                          background: inputBg,
                           borderColor,
                           color: textPrimary,
                         }}
@@ -1259,9 +1232,9 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                       <button
                         type="button"
                         onClick={() => setConfirmDeleteId(period.id || null)}
-                        className="min-h-[42px] px-4 py-2 rounded-xl border text-xs sm:text-sm font-bold flex items-center gap-2 transition-all active:scale-95"
+                        className="min-h-[40px] px-3.5 py-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
                         style={{
-                          background: cardBg,
+                          background: inputBg,
                           borderColor,
                           color: '#EF4444',
                         }}
@@ -1269,9 +1242,90 @@ export const SpecialBusinessHoursSection: React.FC<SpecialBusinessHoursSectionPr
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Excluir</span>
                       </button>
-                    </>
+                    </div>
                   )}
                 </div>
+
+                {/* Bloco de Informações em Pílulas/Linhas Alinhadas (Nunca quebra no meio de parênteses) */}
+                <div
+                  className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3 rounded-xl border"
+                  style={{ background: inputBg, borderColor }}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Clock className="w-4 h-4 shrink-0" style={{ color: theme.accent }} />
+                    <div className="min-w-0">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider" style={{ color: textSecondary }}>
+                        Expediente
+                      </span>
+                      <span className="text-xs sm:text-sm font-bold tabular-nums" style={{ color: textPrimary }}>
+                        {hoursInfo.mainHours}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Coffee className="w-4 h-4 shrink-0" style={{ color: theme.accent }} />
+                    <div className="min-w-0">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider" style={{ color: textSecondary }}>
+                        Intervalo
+                      </span>
+                      <span className="text-xs sm:text-sm font-semibold tabular-nums" style={{ color: textPrimary }}>
+                        {hoursInfo.lunchHours || 'Sem intervalo'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Calendar className="w-4 h-4 shrink-0" style={{ color: theme.accent }} />
+                    <div className="min-w-0">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider" style={{ color: textSecondary }}>
+                        Dias ativos
+                      </span>
+                      <span className="text-xs sm:text-sm font-semibold truncate block" style={{ color: textPrimary }}>
+                        {describePeriodDays(period)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Confirmação de Exclusão */}
+                {confirmDeleteId === period.id && (
+                  <div
+                    className="flex items-center justify-between gap-2 pt-3 border-t"
+                    style={{ borderColor }}
+                  >
+                    <span className="text-xs font-bold text-red-500">
+                      Confirmar exclusão deste período?
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="min-h-[38px] px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer"
+                        style={{
+                          background: inputBg,
+                          borderColor,
+                          color: textSecondary,
+                        }}
+                      >
+                        Não
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deletingId === period.id}
+                        onClick={() => period.id && handleDeletePeriod(period.id)}
+                        className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-red-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        {deletingId === period.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                        <span>Sim, excluir</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

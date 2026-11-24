@@ -18,6 +18,7 @@ import {
 import { BOOKING_STATUS_CONFIG, type Booking } from '../../../hooks/useBookings';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { isDateWithinBookingHorizon } from '../../../lib/bookingHorizon';
+import { resolveEffectiveBusinessHoursForDate } from '../../../lib/availability';
 import { getBookingConfirmationInfo } from '../../../lib/bookingConfirmation';
 import { BookingMetaIcons, WhatsAppSvgIcon } from './BookingMetaIcons';
 import {
@@ -32,6 +33,7 @@ interface Props {
   blocks?: NormalizedBlock[];
   targetProIds?: string[];
   businessHours?: any[];
+  specialBusinessHours?: any[];
   maxAdvanceDays?: number | null;
   canConfirm?: boolean;
   isTogglingDayBlock?: boolean;
@@ -53,6 +55,7 @@ export default function MobileTimeline({
   blocks = [],
   targetProIds = [],
   businessHours = [],
+  specialBusinessHours = [],
   maxAdvanceDays,
   canConfirm = false,
   isTogglingDayBlock = false,
@@ -87,14 +90,17 @@ export default function MobileTimeline({
   }, [currentDay]);
 
   const getScheduleForDay = (d: Date) => {
-    const bh = businessHours.find((x: any) => x.weekday === d.getDay());
+    const bh = resolveEffectiveBusinessHoursForDate(d, businessHours, specialBusinessHours);
     return {
       openTime: bh?.open_time ? String(bh.open_time).slice(0, 5) : '08:00',
       closeTime: bh?.close_time ? String(bh.close_time).slice(0, 5) : '20:00',
     };
   };
 
-  const currentDaySched = useMemo(() => getScheduleForDay(currentDay), [currentDay, businessHours]);
+  const currentDaySched = useMemo(
+    () => getScheduleForDay(currentDay),
+    [currentDay, businessHours, specialBusinessHours]
+  );
 
   const currentDayBlockStatus = useMemo(
     () =>

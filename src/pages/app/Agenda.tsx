@@ -573,6 +573,15 @@ export default function Agenda() {
     refetchToday();
     refetchUpcomingCenter();
     refetchBlocks();
+    if (tenantId) {
+      Promise.all([
+        supabase.from('business_hours').select('*').eq('tenant_id', tenantId),
+        supabase.from('special_business_hours' as any).select('*').eq('tenant_id', tenantId),
+      ]).then(([bhRes, sbhRes]) => {
+        setBusinessHours(bhRes.data ?? []);
+        setSpecialBusinessHours((sbhRes.data as any[]) ?? []);
+      });
+    }
   };
 
   if (!engine.isLoading && !engine.hasPermission('agenda.visualizar_todos') && !engine.hasPermission('agenda.visualizar_minha')) {
@@ -966,6 +975,7 @@ export default function Agenda() {
                   blocks={blockedTimes}
                   targetProIds={targetProIds}
                   businessHours={currentDayBusinessHours}
+                  specialBusinessHours={specialBusinessHours}
                   isTogglingDayBlock={batchDaysBlock.isPending}
                   onDayChange={setCurrentDay}
                   onBookingClick={setSelectedBooking}
@@ -1077,6 +1087,7 @@ export default function Agenda() {
             proScopeId={proScopeId}
             targetProIds={targetProIds}
             businessHours={businessHours}
+            specialBusinessHours={specialBusinessHours}
             knownBookings={allKnownBookings}
             knownBlocks={blockedTimes}
             isTogglingDayBlock={batchDaysBlock.isPending}
@@ -1101,6 +1112,7 @@ export default function Agenda() {
             tenantId={tenantId}
             targetProIds={targetProIds}
             businessHours={businessHours}
+            specialBusinessHours={specialBusinessHours}
             knownBlocks={blockedTimes}
             onOpenDaySlots={(date: Date) => {
               setBlockedOverviewOpen(false);

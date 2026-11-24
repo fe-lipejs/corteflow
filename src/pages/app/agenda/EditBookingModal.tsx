@@ -6,7 +6,7 @@ import { ptBR } from 'date-fns/locale/pt-BR';
 import { useBookingsByDay, type Booking, type CreateBookingInput } from '../../../hooks/useBookings';
 import type { Service } from '../../../hooks/useServices';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { generateAvailableSlots } from '../../../lib/availability';
+import { generateAvailableSlots, resolveEffectiveBusinessHoursForDate } from '../../../lib/availability';
 import {
   buildHorizonDateList,
   CAROUSEL_LOAD_MORE_STEP,
@@ -414,8 +414,11 @@ export default function EditBookingModal({
 
             <div className="flex gap-2 overflow-x-auto pb-2">
               {availableDays.map((day) => {
-                const dow = day.getDay();
-                const dayHours = businessHours.find((h: any) => h.weekday === dow);
+                const dayHours = resolveEffectiveBusinessHoursForDate(
+                  day,
+                  businessHours,
+                  availabilityMeta?.specialBusinessHours ?? []
+                );
                 const isOriginalDay = isSameCalendarDate(day, initialCalendarDay);
                 const isOpen = (dayHours?.is_open || isOriginalDay) && isDateAllowedForEdit(day);
                 const isSelected = format(day, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');

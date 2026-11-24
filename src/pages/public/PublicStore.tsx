@@ -311,6 +311,7 @@ export default function PublicStore() {
   const rawServicesList: any[] = storeData?.services || [];
   const professionalsList: any[] = storeData?.professionals || [];
   const businessHoursList: any[] = storeData?.businessHours || [];
+  const specialBusinessHoursList: any[] = storeData?.specialBusinessHours || [];
 
   const [bookingMode, setBookingMode] = useState<'instore' | 'home'>('instore');
   const [isHomeLocationValidated, setIsHomeLocationValidated] = useState(false);
@@ -611,6 +612,26 @@ export default function PublicStore() {
   const [selectedPro, setSelectedPro] = useState<any | "any" | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+
+  // Resolve os horários de funcionamento da semana de referência (hoje ou data selecionada)
+  // para que o quadro "Horários de Funcionamento" na loja pública também exiba o Horário Especial ativo.
+  const displayBusinessHoursList = useMemo(() => {
+    if (!businessHoursList.length) return [];
+    if (!specialBusinessHoursList.length) return businessHoursList;
+    const refDate = startOfDay(selectedDate || new Date());
+    const refWeekday = refDate.getDay();
+    const weekSunday = addDays(refDate, -refWeekday);
+    return [0, 1, 2, 3, 4, 5, 6]
+      .map((wd) => {
+        const dayDate = addDays(weekSunday, wd);
+        return resolveEffectiveBusinessHoursForDate(
+          dayDate,
+          businessHoursList,
+          specialBusinessHoursList
+        );
+      })
+      .filter(Boolean);
+  }, [businessHoursList, specialBusinessHoursList, selectedDate]);
   const [customerName, setCustomerName] = useState(() => {
     try {
       const saved = localStorage.getItem("raffros_client_contact_v1");
@@ -1333,6 +1354,26 @@ export default function PublicStore() {
     maxAdvanceDays,
     farFutureDayData,
   ]);
+
+  // Se uma atualização em tempo real do salão (horário especial ou bloqueio) fechar o dia selecionado
+  // ou ocupar o horário selecionado enquanto o cliente ainda está escolhendo (etapa <= 3), limpa a seleção obsoleta.
+  useEffect(() => {
+    if (!selectedDate || step > 4) return;
+    const selectedKey = format(selectedDate, "yyyy-MM-dd");
+    const dayEntry = availableDays.find((d) => format(d.date, "yyyy-MM-dd") === selectedKey);
+    if (dayEntry && !dayEntry.isOpen) {
+      setSelectedDate(null);
+      setSelectedTime(null);
+      if (step === 4) setStep(3);
+      return;
+    }
+    if (selectedTime && step <= 3 && availableSlots.length > 0) {
+      const slotEntry = availableSlots.find((s) => s.time === selectedTime);
+      if (!slotEntry || !slotEntry.available) {
+        setSelectedTime(null);
+      }
+    }
+  }, [selectedDate, selectedTime, availableDays, availableSlots, step]);
 
   const isAppleDevice = useMemo(() => {
     if (typeof navigator === "undefined") return false;
@@ -2356,7 +2397,7 @@ export default function PublicStore() {
                 </div>
 
                 {/* Business Hours */}
-                {businessHoursList.length > 0 && (
+                {displayBusinessHoursList.length > 0 && (
                   <div
                     className="px-6 py-4 border-t max-h-48 overflow-y-auto"
                     style={{
@@ -2373,7 +2414,7 @@ export default function PublicStore() {
                       </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                      {businessHoursList.map((h: any) => {
+                      {displayBusinessHoursList.map((h: any) => {
                         const isToday = h.weekday === todayWeekday;
                         return (
                           <div
@@ -2495,13 +2536,13 @@ export default function PublicStore() {
                     <Navigation className="w-3.5 h-3.5" /> Como chegar (Abrir no GPS)
                   </a>
 
-                  {businessHoursList.length > 0 && (
+                  {displayBusinessHoursList.length > 0 && (
                     <div>
                       <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: theme.textMuted }}>
                         Horários
                       </p>
                       <div className="space-y-1.5">
-                        {businessHoursList.map((h: any) => {
+                        {displayBusinessHoursList.map((h: any) => {
                           const isToday = h.weekday === todayWeekday;
                           return (
                             <div
@@ -4783,12 +4824,12 @@ export default function PublicStore() {
                   )}
 
                   {/* 2. Business Hours */}
-                  {businessHoursList && businessHoursList.length > 0 && (
+                  {displayBusinessHoursList && displayBusinessHoursList.length > 0 && (
                     <div className="p-5 border-b flex items-start gap-4" style={{ borderColor: cardBorderColor }}>
                       <Clock className="w-5 h-5 shrink-0 mt-0.5" style={{ color: theme.textSecondary }} />
                       <div className="text-[13px] font-medium space-y-2 w-full pr-2">
                         {["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"].map((dayName, idx) => {
-                          const day = businessHoursList.find((h: any) => h.weekday === idx);
+                          const day = displayBusinessHoursList.find((h: any) => h.weekday === idx);
                           if (!day) return null;
                           return (
                             <div key={idx} className="flex justify-between items-center w-full">

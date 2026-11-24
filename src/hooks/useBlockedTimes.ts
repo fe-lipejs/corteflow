@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { startOfDay, endOfDay, format, addMinutes, isBefore, isAfter, addDays } from 'date-fns';
 import { supabase } from '../integrations/supabase/client';
+import { resolveEffectiveBusinessHoursForDate } from '../lib/availability';
 
 export interface NormalizedBlock {
   id: string;
@@ -448,7 +449,8 @@ export async function applyDayBlocksInDb(params: {
 export function groupBlocksByDaySummary(
   blocks: NormalizedBlock[],
   targetProIds: string[],
-  businessHours: any[]
+  businessHours: any[],
+  specialBusinessHours?: any[] | null
 ): Array<{
   date: Date;
   dateKey: string;
@@ -490,7 +492,7 @@ export function groupBlocksByDaySummary(
   for (const key of sortedKeys) {
     const [yy, mm, dd] = key.split('-').map(Number);
     const d = new Date(yy, mm - 1, dd);
-    const bh = businessHours.find((x: any) => x.weekday === d.getDay());
+    const bh = resolveEffectiveBusinessHoursForDate(d, businessHours, specialBusinessHours);
     const openTime = bh?.open_time ? String(bh.open_time).slice(0, 5) : '08:00';
     const closeTime = bh?.close_time ? String(bh.close_time).slice(0, 5) : '20:00';
 

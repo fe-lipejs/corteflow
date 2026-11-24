@@ -471,9 +471,14 @@ input[type="time"].themed-input {
   --app-safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* No iPhone em modo PWA instalado (standalone), garante que o topo nunca fique
-   atrás do relógio, sinal de rede, Wi-Fi e bateria, mesmo que o WebKit reporte 0px no boot */
+/* No iPhone (Safari, WebView do Instagram/WhatsApp ou PWA instalado), garante que
+   o cabeçalho e o botão hambúrguer nunca fiquem na zona morta dos ícones de hora, Wi-Fi e bateria */
 @supports (-webkit-touch-callout: none) {
+  @media (max-width: 768px) {
+    :root {
+      --app-safe-top: max(env(safe-area-inset-top, 0px), 44px);
+    }
+  }
   @media (display-mode: standalone) {
     :root {
       --app-safe-top: max(env(safe-area-inset-top, 0px), 48px);

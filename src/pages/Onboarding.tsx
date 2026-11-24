@@ -581,11 +581,12 @@ export default function Onboarding() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4 sm:p-6 relative overflow-hidden"
+      className="min-h-screen flex items-center justify-center px-4 pb-6 sm:p-6 relative overflow-hidden"
       style={{
         fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif",
         WebkitFontSmoothing: 'antialiased',
         background: 'radial-gradient(circle at 85% 10%, rgba(255, 30, 138, 0.05), transparent 45%), radial-gradient(circle at 10% 90%, rgba(15, 23, 42, 0.03), transparent 50%), #F8FAFC',
+        paddingTop: 'calc(var(--app-safe-top, env(safe-area-inset-top, 0px)) + 1.25rem)',
       }}
     >
       {/* Brilhos sutis e quentes de fundo (sem azul) */}

@@ -26,6 +26,7 @@ interface Props {
   tenantId: string;
   targetProIds: string[];
   businessHours: any[];
+  specialBusinessHours?: any[];
   knownBlocks?: NormalizedBlock[];
   onOpenDaySlots?: (date: Date) => void;
   onSelectDayInAgenda?: (date: Date) => void;
@@ -39,6 +40,7 @@ export default function BlockedOverviewModal({
   tenantId,
   targetProIds,
   businessHours,
+  specialBusinessHours = [],
   knownBlocks = [],
   onOpenDaySlots,
   onSelectDayInAgenda,
@@ -61,8 +63,8 @@ export default function BlockedOverviewModal({
   }, [knownBlocks, upcomingBlocks]);
 
   const allSummaries = useMemo(
-    () => groupBlocksByDaySummary(mergedBlocks, targetProIds, businessHours),
-    [mergedBlocks, targetProIds, businessHours]
+    () => groupBlocksByDaySummary(mergedBlocks, targetProIds, businessHours, specialBusinessHours),
+    [mergedBlocks, targetProIds, businessHours, specialBusinessHours]
   );
 
   const fullDaysList = useMemo(

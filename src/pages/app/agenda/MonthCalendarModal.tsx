@@ -33,6 +33,7 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { type Booking } from '../../../hooks/useBookings';
 import { useLockBodyScroll } from '../../../hooks/useLockBodyScroll';
 import { supabase } from '../../../integrations/supabase/client';
+import { resolveEffectiveBusinessHoursForDate } from '../../../lib/availability';
 import {
   type NormalizedBlock,
   useTenantBlocksInRange,
@@ -48,6 +49,7 @@ interface Props {
   proScopeId?: string;
   targetProIds: string[];
   businessHours: any[];
+  specialBusinessHours?: any[];
   knownBookings: Booking[];
   knownBlocks: NormalizedBlock[];
   isTogglingDayBlock?: boolean;
@@ -67,6 +69,7 @@ export default function MonthCalendarModal({
   proScopeId,
   targetProIds,
   businessHours,
+  specialBusinessHours = [],
   knownBookings,
   knownBlocks,
   isTogglingDayBlock = false,
@@ -168,7 +171,7 @@ export default function MonthCalendarModal({
   );
 
   const getScheduleForDay = (d: Date) => {
-    const bh = businessHours.find((x: any) => x.weekday === d.getDay());
+    const bh = resolveEffectiveBusinessHoursForDate(d, businessHours, specialBusinessHours);
     return {
       isOpen: bh ? bh.is_open !== false : true,
       openTime: bh?.open_time ? String(bh.open_time).slice(0, 5) : '08:00',
@@ -452,9 +455,8 @@ export default function MonthCalendarModal({
                       key={dateKey}
                       type="button"
                       onClick={() => handleDayCardClick(dateKey)}
-                      className={`py-3.5 px-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all relative cursor-pointer select-none active:scale-95 ${
-                        isClosed && !isBlocked ? 'opacity-45' : ''
-                      }`}
+                      className={`py-3.5 px-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all relative cursor-pointer select-none active:scale-95 ${isClosed && !isBlocked ? 'opacity-45' : ''
+                        }`}
                       style={{
                         borderColor: isBlocked ? theme.accent : theme.border,
                         backgroundColor: isBlocked
@@ -688,9 +690,8 @@ export default function MonthCalendarModal({
                       onSelectDay(day);
                       onClose();
                     }}
-                    className={`relative h-12 rounded-2xl flex flex-col items-center justify-center transition-all active:scale-95 cursor-pointer border ${
-                      !inCurrentMonth ? 'opacity-30' : ''
-                    }`}
+                    className={`relative h-12 rounded-2xl flex flex-col items-center justify-center transition-all active:scale-95 cursor-pointer border ${!inCurrentMonth ? 'opacity-30' : ''
+                      }`}
                     style={{
                       backgroundColor: isSelected
                         ? theme.accent
@@ -718,9 +719,8 @@ export default function MonthCalendarModal({
                     )}
 
                     <span
-                      className={`text-sm font-extrabold leading-none tabular-nums ${
-                        isClosedDay && !isSelected ? 'opacity-40 line-through' : ''
-                      }`}
+                      className={`text-sm font-extrabold leading-none tabular-nums ${isClosedDay && !isSelected ? 'opacity-40 line-through' : ''
+                        }`}
                     >
                       {format(day, 'dd')}
                     </span>
@@ -780,9 +780,8 @@ export default function MonthCalendarModal({
                       ? 'Fechado no horário padrão'
                       : inspectedBookings.length === 0
                         ? 'Dia livre · Nenhum agendamento'
-                        : `${inspectedBookings.length} ${
-                            inspectedBookings.length === 1 ? 'agendamento marcado' : 'agendamentos marcados'
-                          }`}
+                        : `${inspectedBookings.length} ${inspectedBookings.length === 1 ? 'agendamento marcado' : 'agendamentos marcados'
+                        }`}
                 </p>
               </div>
 

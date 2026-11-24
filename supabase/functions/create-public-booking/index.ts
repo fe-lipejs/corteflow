@@ -49,9 +49,11 @@ function getSaoPauloMinutesOfDay(date: Date): number {
   return (rawHour % 24) * 60 + minute;
 }
 
-function parseTimeToMinutes(timeStr: string | null | undefined, fallback = 0): number {
+function parseTimeToMinutes(timeStr: string | null | undefined, fallback = 0, isCloseTime = false): number {
   if (!timeStr) return fallback;
-  const [h, m] = String(timeStr).slice(0, 5).split(":").map(Number);
+  const clean = String(timeStr).slice(0, 5);
+  if (isCloseTime && clean === "00:00") return 24 * 60;
+  const [h, m] = clean.split(":").map(Number);
   if (Number.isNaN(h) || Number.isNaN(m)) return fallback;
   return h * 60 + m;
 }
@@ -298,14 +300,14 @@ serve(async (req) => {
       if (!dayCfg || !dayCfg.is_open) {
         throw new Error("O estabelecimento não estará aberto nesta data conforme o horário especial configurado.");
       }
-      const openMin = parseTimeToMinutes(dayCfg.open_time, 0);
-      const closeMin = parseTimeToMinutes(dayCfg.close_time, 24 * 60);
+      const openMin = parseTimeToMinutes(dayCfg.open_time, 0, false);
+      const closeMin = parseTimeToMinutes(dayCfg.close_time, 24 * 60, true);
       if (startMinOfDay < openMin || endMinOfDay > closeMin) {
         throw new Error("O horário selecionado está fora do horário especial de funcionamento deste dia.");
       }
       if (dayCfg.lunch_start && dayCfg.lunch_end) {
-        const lStart = parseTimeToMinutes(dayCfg.lunch_start, -1);
-        const lEnd = parseTimeToMinutes(dayCfg.lunch_end, -1);
+        const lStart = parseTimeToMinutes(dayCfg.lunch_start, -1, false);
+        const lEnd = parseTimeToMinutes(dayCfg.lunch_end, -1, false);
         if (lStart >= 0 && lEnd > lStart && startMinOfDay < lEnd && endMinOfDay > lStart) {
           throw new Error("O horário selecionado coincide com o intervalo de almoço do horário especial.");
         }
@@ -322,8 +324,8 @@ serve(async (req) => {
         if (!stdDay.is_open) {
           throw new Error("O estabelecimento está fechado neste dia da semana.");
         }
-        const openMin = parseTimeToMinutes(stdDay.open_time, 0);
-        const closeMin = parseTimeToMinutes(stdDay.close_time, 24 * 60);
+        const openMin = parseTimeToMinutes(stdDay.open_time, 0, false);
+        const closeMin = parseTimeToMinutes(stdDay.close_time, 24 * 60, true);
         if (startMinOfDay < openMin || endMinOfDay > closeMin) {
           throw new Error("O horário selecionado está fora do expediente de funcionamento.");
         }

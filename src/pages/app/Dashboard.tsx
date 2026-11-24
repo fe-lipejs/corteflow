@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getTenantPublicUrl } from '../../lib/tenantUrl';
 import { supabase } from '../../integrations/supabase/client';
-import { Calendar, DollarSign, UserPlus, Clock, ArrowUpRight, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
+import { Calendar, DollarSign, UserPlus, Clock, ArrowUpRight, ArrowRight, Loader2, CheckCircle, Check } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useQuery } from '@tanstack/react-query';
 import { addDays, startOfDay, endOfDay, format, isToday, isTomorrow } from 'date-fns';
@@ -20,11 +20,14 @@ import {
   useUpdateBooking,
 } from '../../hooks/useBookings';
 import { getBookingConfirmationInfo } from '../../lib/bookingConfirmation';
+import { resolveEffectiveBusinessHoursForDate } from '../../lib/availability';
+import { useTenantAvailabilityMeta } from '../../hooks/useBookingHorizon';
 import { BookingMetaIcons, WhatsAppSvgIcon } from './agenda/BookingMetaIcons';
 import BookingConfirmationModal from './agenda/BookingConfirmationModal';
 import BookingModal from './agenda/BookingModal';
 import EditBookingModal from './agenda/EditBookingModal';
 import BookingDetailSheet from './agenda/BookingDetailSheet';
+import KpiListModal from './agenda/KpiListModal';
 import { PWAInstallButton } from '../../components/pwa/PWAInstallButton';
 import { usePermissionEngine } from '../../hooks/usePermissionEngine';
 import { UpgradeModal } from '../../components/UpgradeModal';
@@ -56,6 +59,7 @@ export default function Dashboard() {
   const [bookingToConfirm, setBookingToConfirm] = useState<any>(null);
   const [editingBooking, setEditingBooking] = useState<any>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
+  const [pendingConfirmModalOpen, setPendingConfirmModalOpen] = useState(false);
   const confirmBooking = useConfirmBooking(tenantId);
   const updateStatus = useUpdateBookingStatus(tenantId);
   const updateBooking = useUpdateBooking(tenantId);
@@ -135,7 +139,7 @@ export default function Dashboard() {
         .gte('scheduled_at', pastLookback)
         .not('status', 'in', '(canceled,no_show)')
         .order('scheduled_at', { ascending: true })
-        .limit(30);
+        .limit(60);
 
       if (profile?.role === 'professional' && professionalProfile?.id) {
         query = query.eq('professional_id', professionalProfile.id);
@@ -221,6 +225,7 @@ export default function Dashboard() {
 
   const { data: professionals = [] } = useProfessionals(tenantId || null);
   const { data: services = [] } = useServices(tenantId || null);
+  const { data: availabilityMeta } = useTenantAvailabilityMeta(tenantId || null);
   const createBooking = useCreateBooking(tenantId || '');
 
   // Enable Real-time updates for the dashboard!
@@ -238,16 +243,28 @@ export default function Dashboard() {
   const totalRevenueToday = validTodayBookings.reduce((sum, b) => sum + (b.amount_total || 0), 0);
   
   let occupancy = '0%';
-  const todayWeekday = new Date().getDay(); // 0-6
-  const todayHours = businessHours.find(h => h.weekday === todayWeekday);
+  const todayHours = resolveEffectiveBusinessHoursForDate(
+    new Date(),
+    businessHours,
+    availabilityMeta?.specialBusinessHours ?? []
+  );
   const activeProsCount = Math.max(1, professionals.filter(p => p.active !== false && (!p.status || p.status === 'active')).length);
   
   if (todayBookings.length === 0) {
     occupancy = '0%';
   } else if (todayHours && todayHours.is_open && todayHours.open_time && todayHours.close_time) {
-    const startHour = parseInt(todayHours.open_time.split(':')[0], 10);
-    const endHour = parseInt(todayHours.close_time.split(':')[0], 10);
-    const totalMinutesOpen = Math.max(60, (endHour - startHour) * 60);
+    const [sh, sm] = todayHours.open_time.split(':').map(Number);
+    const [eh, em] = todayHours.close_time.split(':').map(Number);
+    let totalMinutesOpen = (eh * 60 + (em || 0)) - (sh * 60 + (sm || 0));
+    if (todayHours.lunch_start && todayHours.lunch_end) {
+      const [lsh, lsm] = todayHours.lunch_start.split(':').map(Number);
+      const [leh, lem] = todayHours.lunch_end.split(':').map(Number);
+      const lunchMinutes = (leh * 60 + (lem || 0)) - (lsh * 60 + (lsm || 0));
+      if (lunchMinutes > 0 && lunchMinutes < totalMinutesOpen) {
+        totalMinutesOpen -= lunchMinutes;
+      }
+    }
+    totalMinutesOpen = Math.max(60, totalMinutesOpen);
     
     const totalBookedMinutes = todayBookings.reduce((sum, b) => {
       return sum + (b.duration_minutes || b.service?.duration_minutes || 30);
@@ -487,7 +504,7 @@ export default function Dashboard() {
       )}
 
       {/* 4 KPIs Principais */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-5 md:mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-5 md:mb-6">
         {kpis.map((k, i) => (
           <div key={i} className="glass-card p-4 md:p-6 relative overflow-hidden group">
             <div>
@@ -509,6 +526,79 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* Card Sucinto e Minimalista: Número de agendamentos que faltam confirmar (abre popup ao clicar) */}
+      {(() => {
+        const pendingConfirmations = upcomingBookings.filter((item) => {
+          const isFinished =
+            item.status === 'completed' || item.status === 'canceled' || item.status === 'no_show';
+          if (isFinished) return false;
+          return getBookingConfirmationInfo(item).isPending;
+        });
+
+        const count = pendingConfirmations.length;
+
+        return (
+          <>
+            <button
+              type="button"
+              onClick={() => setPendingConfirmModalOpen(true)}
+              className="w-full glass-card px-4 py-3.5 sm:px-5 sm:py-4 mb-5 flex items-center justify-between gap-3 text-left transition-all hover:scale-[1.005] active:scale-[0.99] cursor-pointer"
+              style={{
+                borderColor:
+                  count > 0
+                    ? `color-mix(in srgb, ${theme.accent} 32%, ${theme.border})`
+                    : theme.border,
+              }}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-serif font-bold text-base tabular-nums"
+                  style={{
+                    backgroundColor:
+                      count > 0
+                        ? `color-mix(in srgb, ${theme.accent} 14%, transparent)`
+                        : 'rgba(16, 185, 129, 0.12)',
+                    color: count > 0 ? theme.accent : '#10B981',
+                  }}
+                >
+                  {count}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-bold truncate" style={{ color: theme.textPrimary }}>
+                    {count === 1 ? '1 agendamento falta confirmar' : `${count} faltam confirmar`}
+                  </p>
+                  <p className="text-[11px] truncate" style={{ color: theme.textMuted }}>
+                    {count > 0
+                      ? 'Toque para abrir e confirmar os agendamentos pendentes'
+                      : 'Todos os agendamentos estão confirmados'}
+                  </p>
+                </div>
+              </div>
+
+              <span
+                className="inline-flex items-center gap-1 text-xs font-semibold shrink-0"
+                style={{ color: theme.accent }}
+              >
+                <span>Ver</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            </button>
+
+            {pendingConfirmModalOpen && (
+              <KpiListModal
+                title="Faltam confirmar"
+                subtitle={`${count} agendamento(s) aguardando sua confirmação`}
+                icon={Clock}
+                iconColor={theme.accent}
+                bookings={pendingConfirmations}
+                onClose={() => setPendingConfirmModalOpen(false)}
+                onBookingClick={(b) => setSelectedBooking(b)}
+              />
+            )}
+          </>
+        );
+      })()}
 
       {/* Bottom section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

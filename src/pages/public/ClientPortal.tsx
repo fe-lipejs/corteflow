@@ -328,6 +328,23 @@ export default function ClientPortal() {
       (s) => s.available || (s.unavailableReason !== 'past' && s.unavailableReason !== 'no_fit')
     );
   }, [availableSlots]);
+
+  useEffect(() => {
+    if (!newDate || !rescheduleBooking) return;
+    const selectedKey = format(newDate, 'yyyy-MM-dd');
+    const dayEntry = availableDays.find((d) => format(d.date, 'yyyy-MM-dd') === selectedKey);
+    if (dayEntry && !dayEntry.isOpen) {
+      setNewDate(null);
+      setNewTime('');
+      return;
+    }
+    if (newTime && availableSlots.length > 0) {
+      const slotEntry = availableSlots.find((s) => s.time === newTime);
+      if (!slotEntry || !slotEntry.available) {
+        setNewTime('');
+      }
+    }
+  }, [newDate, newTime, rescheduleBooking, availableDays, availableSlots]);
   const theme = useMemo(() => {
     const presetId = settings?.theme_preset || "classic";
     const base = getThemeById(presetId);
